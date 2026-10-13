@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
+use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use Illuminate\Support\Collection;
@@ -68,6 +69,11 @@ class PerhitunganBuilder
                 $this->tabel($sesi, 'sebelum_adjustment', 'Before Adjustment Reading', $profil),
                 $this->tabel($sesi, 'sesudah_adjustment', 'After Adjustment Reading', $profil),
             ],
+            // Versi data acuan yang MENGHITUNG angka di atas, dibaca dari
+            // stempel `uncertainty_calculations.paket_acuan_versi_id` (Studio
+            // Data Acuan FR-20). `null` = tanpa stempel / tidak seragam —
+            // tidak ditebak dari tanggal.
+            'paket_acuan_versi' => app(PenentuVersiAcuan::class)->ringkasanStempel($sesi),
         ];
     }
 

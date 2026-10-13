@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Acuan\SumberAcuan;
 use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriLokalDb;
@@ -151,6 +152,13 @@ class AppServiceProvider extends ServiceProvider
                 ? new DirektoriBerlapis([$lokal, $luar])
                 : $luar;
         });
+
+        // Sumber data acuan: SINGLETON, bukan bind. Lingkup versi yang dibuka
+        // `denganVersi()` hidup di instance ini, dan kelas `Tabel*` mengambilnya
+        // lewat container di tengah hitungan. Instance baru per resolve berarti
+        // lingkup yang dibuka pemanggil tidak pernah terlihat oleh tabelnya —
+        // hitungan jalan dari JSON tanpa satu pun error. Lihat SumberAcuan.
+        $this->app->singleton(SumberAcuan::class);
     }
 
     /**

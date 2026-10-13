@@ -468,6 +468,171 @@ class MicrometerProfile extends CalibrationProfile
         return self::SATUAN;
     }
 
+    /**
+     * Skema `tabel-standar-micrometer.json` untuk Studio Data Acuan.
+     *
+     * Lembar & kolom diturunkan dari katalog
+     * (`docs/studio-data-acuan/katalog/paket/micrometer/skema.json`); SATUAN
+     * dan alamat sel diambil dari [TabelStandarMicrometer],
+     * [MicrometerCalculator], dan `docs/skrip/gen-tabel-standar-micrometer.py`
+     * — bukan dari `satuan_tebakan` katalog. Kolom yang asalnya teks kertas
+     * atau angka telanjang di rumus memegang `asal` null.
+     *
+     * Dua kolom `perlu_konfirmasi`, keduanya sudah jadi pertanyaan lab
+     * terbuka (`docs/pertanyaan-lab-micrometer.md`):
+     *  - `delta_alpha_per_c` — α baja atau δα balok/rangka, dan `ci` termalnya
+     *    dihitung dengan L dalam mm sementara budget dalam µm (§5, §11);
+     *  - `vi_type_b` — dasar angka 200 untuk semua komponen Type B (§6).
+     *
+     * `boleh_tambah_baris` hanya untuk balok ukur: master menyediakan 123 slot
+     * `Standar_GB!Q10:R132` dan baru 32 yang terisi. Tangga & daftar khusus
+     * ketidakpastian adalah cabang rumus `PERHITUNGAN!H23`, pita CMC adalah
+     * empat kertas & lingkup akreditasi, titik pra-cetak dipatok kertas
+     * ([BARIS_KERTAS]) — menambah barisnya mengubah struktur, bukan data.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (
+            string $kode,
+            string $label,
+            string $tipe,
+            ?string $satuan,
+            ?string $asal,
+            bool $perluKonfirmasi = false,
+        ): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perluKonfirmasi,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-micrometer.json',
+            'lembar' => [
+                [
+                    'kode' => 'standar',
+                    'label' => 'Identitas standar balok ukur',
+                    'jalur' => 'standar',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    // Dibaca generator dari sheet DATABASE workbook 0-25 mm.
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'DATABASE!S13'),
+                        $kolom('merk_tipe', 'Merk/tipe', 'teks', null, 'DATABASE!T13'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'DATABASE!U13'),
+                        $kolom('traceability', 'Ketertelusuran', 'teks', null, 'DATABASE!V13'),
+                        // Titik nol umur drift — MicrometerCalculator::umurStandarHari.
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi standar', 'tanggal', null, 'DATABASE!W13'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'balok_ukur',
+                    'label' => 'Balok ukur — nilai terkoreksi',
+                    'jalur' => 'balok_ukur',
+                    'jenis' => 'baris',
+                    'kunci' => 'nominal_mm',
+                    'kolom' => [
+                        $kolom('nominal_mm', 'Nominal', 'desimal', 'mm', 'Standar_GB!Q10:Q132'),
+                        $kolom('nilai_terkoreksi_mm', 'Nilai terkoreksi', 'desimal', 'mm', 'Standar_GB!R10:R132'),
+                    ],
+                    'boleh_tambah_baris' => true,
+                ],
+                [
+                    'kode' => 'ketidakpastian_balok_tangga',
+                    'label' => 'Ketidakpastian balok ukur — tangga nominal',
+                    'jalur' => 'ketidakpastian_balok_um/aturan',
+                    'jenis' => 'daftar',
+                    // Posisi = urutan tangga: dibaca dari atas, yang pertama cocok menang.
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('maks', 'Nominal maksimum', 'desimal', 'mm', 'PERHITUNGAN!H23'),
+                        $kolom('u', 'Ketidakpastian', 'desimal', 'µm', 'PERHITUNGAN!H23'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'ketidakpastian_balok_khusus',
+                    'label' => 'Ketidakpastian balok ukur — nominal khusus',
+                    'jalur' => 'ketidakpastian_balok_um/persis',
+                    'jenis' => 'baris',
+                    'kunci' => 'nominal_mm',
+                    'kolom' => [
+                        $kolom('nominal_mm', 'Nominal', 'desimal', 'mm', 'PERHITUNGAN!H23'),
+                        $kolom('u_um', 'Ketidakpastian', 'desimal', 'µm', 'PERHITUNGAN!H23'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'ketidakpastian_balok_lainnya',
+                    'label' => 'Ketidakpastian balok ukur — di luar tangga',
+                    'jalur' => 'ketidakpastian_balok_um',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('lainnya', 'Nominal di luar tangga & daftar khusus', 'desimal', 'µm', 'PERHITUNGAN!H23'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'pita_cmc',
+                    'label' => 'Pita CMC & varian kertas',
+                    'jalur' => 'cmc',
+                    'jenis' => 'daftar',
+                    'kunci' => 'kode',
+                    'kolom' => [
+                        $kolom('kode', 'Kode varian', 'teks', null, null),
+                        $kolom('label', 'Label pita', 'teks', null, 'DATABASE!S5:S8'),
+                        $kolom('kode_dokumen', 'Nomor formulir', 'teks', null, null),
+                        $kolom('judul_rentang', 'Judul rentang', 'teks', null, null),
+                        $kolom('kapasitas_min_mm', 'Kapasitas minimum', 'desimal', 'mm', null),
+                        // Ambang `<=` yang memilih pita — TabelStandarMicrometer::pitaCmc.
+                        $kolom('kapasitas_maks_mm', 'Kapasitas maksimum', 'desimal', 'mm', 'INPUT DATA!F5'),
+                        $kolom('u95_um', 'CMC (U95)', 'desimal', 'µm', 'DATABASE!T5:T8'),
+                        $kolom('balok_pra_evaluasi_mm', 'Balok ukur pra-evaluasi', 'daftar_angka', 'mm', 'PERHITUNGAN!H22:M22'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'titik_pra_cetak',
+                    'label' => 'Titik pra-cetak kertas',
+                    'jalur' => 'cmc/*/titik',
+                    'jenis' => 'daftar',
+                    // Posisi = nomor baris kertas; CalibrationController memetakan titik lewat posisi.
+                    'kunci' => null,
+                    'kolom' => [
+                        // Nominal disalin dari kertas SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1, bukan sel master.
+                        $kolom('nominal_cetak_mm', 'Nominal cetak', 'desimal', 'mm', null),
+                        $kolom('tumpukan_mm', 'Tumpukan keping', 'daftar_angka', 'mm', 'PERHITUNGAN!C31:E63'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'konstanta',
+                    'label' => 'Konstanta metode',
+                    'jalur' => 'konstanta',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    // Angka telanjang di dalam rumus master — tidak punya sel sendiri.
+                    'kolom' => [
+                        $kolom('delta_alpha_per_c', 'Δα koefisien muai', 'desimal', '/°C', null, true),
+                        $kolom('wringing_um', 'Lapisan wringing', 'desimal', 'µm', null),
+                        $kolom('geometri_um', 'Kesalahan geometri', 'desimal', 'µm', null),
+                        // Drift = (a + b × kapasitas_mm) × umur_hari / 365.
+                        $kolom('drift_a_um', 'Drift — suku tetap', 'desimal', 'µm/tahun', null),
+                        $kolom('drift_b_um_per_mm', 'Drift — suku per panjang', 'desimal', 'µm/(mm·tahun)', null),
+                        $kolom('suhu_acuan_c', 'Suhu acuan', 'desimal', '°C', null),
+                        $kolom('vi_type_b', 'Derajat kebebasan Type B', 'bulat', null, null, true),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public function desimalSertifikat(): ?int
     {
         // Lima desimal mm — nilai terkoreksi balok ukur master (`2.50014`,

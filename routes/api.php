@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DataAcuanController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\DokumenGenerikController;
 use App\Http\Controllers\Api\EquipmentController;
@@ -411,6 +412,21 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
+
+    // Studio Data Acuan (CR-48) — BACA saja di P1 (izin `data-acuan.lihat`).
+    // Semua role lab; teknisi cuma melihat versi `aktif` (draf, banding, dan
+    // riwayat sel → 404), dan itu disaring di controller, bukan dengan
+    // menyembunyikan tombol. Paket dicari per organisasi pemanggil + kode
+    // profil; versi lab lain → 404. Rute tulis lahir di P2 bersama izinnya.
+    Route::prefix('data-acuan')->group(function () {
+        Route::get('/paket', [DataAcuanController::class, 'daftarPaket']);
+        Route::get('/paket/{kode}', [DataAcuanController::class, 'paket']);
+        Route::get('/paket/{kode}/berlaku', [DataAcuanController::class, 'berlaku']);
+        Route::get('/paket/{kode}/versi', [DataAcuanController::class, 'garisWaktu']);
+        Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
+        Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
+        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+    });
 
     // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
     // Semua role boleh; teknisi cuma dapat pekerjaannya sendiri (di service).

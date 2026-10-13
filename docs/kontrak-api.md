@@ -459,6 +459,11 @@ profil: `docs/SPEC-turbidimeter-profile.md`.
 > dari nilai ini; grid sensor Enclosure digambar di bagian pertama halaman TERAKHIR. Kertas
 > cetak, geometri OCR, dan sertifikat tidak membaca kunci ini. Dijaga `LembarKerjaDuaHalamanTest`.
 
+> **`versi_acuan` + `ETag` (8 Okt 2026).** Tiap lembar sekarang membawa
+> `data.versi_acuan` (`null` untuk profil yang data acuannya belum berversi) dan
+> header `ETag`; `If-None-Match` yang cocok → `304` tanpa badan. Field lama tidak
+> berubah. Rinciannya §15.
+
 ### Lembar **Timbangan** (`profil=timbangan`) — alat ke-21, kelompok Massa
 
 ✅ **Live 31 Agt 2026.** Satu-satunya lembar yang bentuknya **tujuh blok**, bukan satu tabel
@@ -2560,6 +2565,211 @@ yang satu diunggahin gambar TTD.
 > placeholder. Yang belum: **file PNG tanda tangan asli + jabatan resminya** dari lab.
 > Nggak ada kode yang perlu diubah waktu file aslinya masuk — admin tinggal unggah
 > lewat panel atau endpoint di atas.
+
+---
+
+## 15. Data Acuan (baca) — Studio Data Acuan P1 (8 Okt 2026)
+
+Data acuan = lapis 1 olah data (tabel balok ukur, pita CMC, konstanta metode) yang
+dulu cuma ada di `database/data/*.json`, sekarang berversi di database. Rancangan
+lengkapnya `docs/studio-data-acuan/` (02-SRS FR-01/03/04/11/21/28, 03-SDD §3).
+Hari ini baru **Micrometer** yang punya paket.
+
+**BACA saja.** Satu izin, `data-acuan.lihat` (muncul di `GET /api/me/permissions`),
+dan semua role lab memilikinya. Izin tulis (`sunting`/`impor`/`ajukan`/`sahkan`)
+belum lahir — rute tulisnya belum ada.
+
+| Siapa | Yang dilihat |
+|---|---|
+| admin, viewer, super admin | semua paket & semua versi lab sendiri, banding, riwayat sel |
+| teknisi | paket + versi **`aktif`** saja. Versi lain → `404` (bukan `403`: 403 mengakui drafnya ada). Daftar/detail paket TANPA `jumlah_draf`/`jumlah_diajukan`/`versi_terjadwal` (kuncinya tidak dikirim, bukan `null`). Banding & riwayat sel → `404` |
+| organisasi lain | `404` di semua rute ber-parameter. Paket dicari per lab pemanggil + kode profil, jadi `paket/micrometer` selalu paket lab SENDIRI |
+
+Penyembunyian tombol di aplikasi cuma kenyamanan — aturan di atas ditegakkan server.
+
+> **Angka dikirim apa adanya, tipe ikut.** Respons rute `/data-acuan/*` di-encode
+> dengan `JSON_PRESERVE_ZERO_FRACTION`: `20.0` tetap `20.0`, `200` tetap `200`. Isi
+> kanonik membedakan keduanya (tipe itu sampai ke calculator), jadi klien yang
+> mengkanonikkan ulang `isi` yang diterimanya mendapat `isi_sha256` yang sama.
+> Jangan dibulatkan di klien selain untuk tampilan.
+
+### `GET /api/data-acuan/paket` — daftar paket (FR-01)
+
+```json
+{
+  "data": [
+    {
+      "kode": "micrometer", "nama": "Micrometer", "skema_versi": 1, "diimpor": true,
+      "versi_aktif": { "id": 12, "nomor": 1, "status": "aktif", "berlaku_mulai": "2024-01-01",
+                       "berlaku_sampai": null, "sha256": "ba1fa153…f585" },
+      "versi_terjadwal": [],
+      "jumlah_draf": 0
+    }
+  ]
+}
+```
+
+- `versi_aktif` = versi `data` yang **berlaku hari ini** (aturan sama dengan
+  `berlaku` di bawah), atau `null`.
+- Profil yang punya skema tapi lab ini belum mengimpornya ikut tampil dengan
+  `diimpor: false`, `versi_aktif: null` — tampilkan abu-abu "belum diimpor".
+- `versi_terjadwal` & `jumlah_draf` (versi `data`) **tidak dikirim ke teknisi**.
+
+### `GET /api/data-acuan/paket/{kode}` — detail paket
+
+Bentuk sama dengan satu baris daftar, plus `skema` (lembar & kolom dari
+`skemaAcuan()` profil — label, satuan, tipe, `asal` sel master, `perlu_konfirmasi`)
+dan, selain teknisi, `jumlah_diajukan`. Kode yang tidak dimiliki lab ini → `404`.
+
+### `GET /api/data-acuan/paket/{kode}/berlaku?tanggal=2025-05-02&jenis=data` (FR-04)
+
+"Sesi bertanggal X dihitung pakai versi data acuan yang mana?" — versi berstatus
+`aktif`/`pensiun` yang rentangnya memuat tanggal itu (inklusif), **tanpa** jatuh ke
+versi aktif hari ini.
+
+```json
+{ "data": { "id": 12, "paket": "micrometer", "jenis": "data", "nomor": 1, "status": "aktif",
+            "berlaku_mulai": "2024-01-01", "berlaku_sampai": null, "isi_sha256": "ba1f…", "…": "…" },
+  "alasan": null }
+```
+
+Tidak ada → `{"data": null, "alasan": "Tanggal 2023-12-31 sebelum versi data pertama berlaku (2024-01-01)."}`.
+`tanggal` wajib `YYYY-MM-DD`; `jenis` opsional `data` (bawaan) | `bentuk` → selain itu `422`.
+
+**Teknisi** cuma melihat versi `aktif`. Tanggal yang jatuh di versi `pensiun`, tanggal
+sebelum versi pertama, dan jenis yang belum punya versi dijawab SAMA:
+`{"data": null, "alasan": "Tidak ada versi aktif yang berlaku pada tanggal itu."}` — tanpa
+status dan tanpa tanggal versi non-aktif, jadi ketiganya tidak bisa dibedakan dari sisi
+teknisi. Alasan rinci (contoh di atas) hanya untuk admin, viewer, super admin. Klien
+cukup menampilkan `alasan` apa adanya; jangan mengurainya.
+
+### `GET /api/data-acuan/paket/{kode}/versi` — garis waktu (FR-28)
+
+List versi (tanpa `isi`), urut `jenis` lalu `nomor`. Teknisi: yang `aktif` saja.
+
+### `GET /api/data-acuan/versi/{versi}` — satu versi + isi
+
+Metadata (`id, paket, jenis, nomor, status, skema_versi, dasar_versi_id,
+berlaku_mulai, berlaku_sampai, isi_sha256, alasan, rujukan, catatan_keputusan,
+dibuat_oleh, diajukan_oleh, diajukan_pada, disahkan_oleh, disahkan_pada,
+ditolak_oleh, ditolak_pada, lock_versi, created_at, updated_at`) + `isi` = dokumen
+kanonik terurai (objek tetap objek). `*_oleh` masih **id user**. `isi_sha256: null`
+= draf yang isinya belum dikunci. Teknisi + versi bukan `aktif` → `404`.
+
+### `GET /api/data-acuan/versi/{versi}/banding/{pembanding}` — banding (FR-11)
+
+`{versi}` = lama, `{pembanding}` = baru. Bukan untuk teknisi (`404`).
+
+```json
+{
+  "data": {
+    "paket": "micrometer", "skema_versi": 1,
+    "lama": { "id": 12, "nomor": 1, "…": "…" }, "baru": { "id": 15, "nomor": 2, "…": "…" },
+    "lembar": [
+      { "kode": "balok_ukur", "label": "Balok ukur — nilai terkoreksi",
+        "sel_berubah": [
+          { "lembar": "balok_ukur", "kunci": "19.0", "kolom": "nilai_terkoreksi_mm",
+            "lama": 19.00011, "baru": 19.00211,
+            "selisih_absolut": 0.0019999999999988916, "selisih_relatif": 0.00010526254847992415 }
+        ],
+        "baris_tambah": [], "baris_hapus": [] }
+    ],
+    "ringkasan": { "lembar_berubah": 1, "sel_berubah": 1, "baris_tambah": 0, "baris_hapus": 0 }
+  }
+}
+```
+
+- `lembar` memuat SEMUA lembar skema (yang tidak berubah: list kosong).
+- `selisih_absolut` = `baru − lama` (**bertanda**), `selisih_relatif` = selisih ÷ |lama|
+  (`null` kalau lama nol). Presisi penuh float apa adanya — contoh di atas memang
+  `0.0019999999999988916`, bukan `0.002`; format tampilan urusan klien. Dua kunci
+  ini hanya ada kalau lama & baru sama-sama angka. Angka di contoh ini angka uji.
+- `baris_tambah`/`baris_hapus`: `[{kunci, sel: {kolom: nilai}}]`.
+- `422 {message, kode}`: `versi_beda_paket`, `versi_beda_jenis`, `jenis_belum_didukung`
+  (versi `bentuk`), `skema_tidak_ada`.
+
+**Kunci baris** (dipakai juga di rute riwayat): lembar `objek` → `0`; lembar `baris`
+→ kunci objeknya (`1.0`, `101.6`, `200`); lembar `daftar` → nilai kolom kunci
+(`A`), atau posisi mulai `0` kalau tanpa kunci; jalur ber-`*` diberi awalan elemen
+induk dengan `:` — titik pra-cetak varian ke-2 baris ke-4 = `1:3`.
+
+### `GET /api/data-acuan/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat` (FR-03, FR-28)
+
+Bukan untuk teknisi (`404`). `lembar`/`kolom` di luar skema → `404`; kunci yang tidak
+ada di versi mana pun → `200` dengan `ada: false`.
+
+```json
+{
+  "data": {
+    "paket": "micrometer", "versi": { "id": 15, "nomor": 2, "…": "…" },
+    "lembar": "balok_ukur", "kunci": "19.0",
+    "kolom": { "kode": "nilai_terkoreksi_mm", "label": "Nilai terkoreksi", "tipe": "desimal",
+               "satuan": "mm", "asal": "Standar_GB!R10:R132", "perlu_konfirmasi": false },
+    "ada": true, "nilai": 19.00211,
+    "riwayat": [
+      { "versi": { "id": 12, "nomor": 1, "…": "…" }, "ada": true, "nilai": 19.00011 },
+      { "versi": { "id": 15, "nomor": 2, "…": "…" }, "ada": true, "nilai": 19.00211 }
+    ],
+    "suntingan": [
+      { "id": 7, "paket_acuan_versi_id": 15, "nomor_versi": 2, "nilai_lama": "19.00011",
+        "nilai_baru": "19.00211", "sumber": "ketik", "alasan": "…",
+        "user": { "id": 3, "nama": "…" }, "created_at": "2026-10-08T10:00:00+07:00" }
+    ]
+  }
+}
+```
+
+`riwayat` = semua versi paket berjenis sama, urut nomor (termasuk draf).
+
+### Field baru di endpoint lama (tambahan saja — field lama tidak berubah)
+
+**`GET /api/calibrations/lembar-kerja`** (FR-21):
+
+```json
+{ "data": { "…": "…", "versi_acuan": { "paket": "micrometer",
+                                       "data": { "nomor": 1, "sha256": "ba1f…" },
+                                       "bentuk": null } } }
+```
+
+- `versi_acuan` **selalu ada**; `null` untuk profil yang data acuannya belum
+  berversi (hari ini semua selain Micrometer).
+- `data` = versi yang berlaku **hari ini** di lab pemanggil, atau `null` kalau server
+  masih membaca berkas JSON (`DATA_ACUAN_SUMBER=json`, bawaan) atau belum ada versi
+  berlaku. Lembarnya dibangun DI DALAM versi itu, jadi nominal titik pra-cetak di
+  layar berasal dari versi yang sama dengan yang menghitung sesinya.
+- `bentuk` (versi bentuk lembar, lapis 3) masih `null` — lahir di P6.
+- Header **`ETag`** = `"` + sha256 badan JSON final + `"`, `Cache-Control: private,
+  no-cache`. Kirim `If-None-Match: <ETag>` → **`304` tanpa badan** kalau tidak ada
+  yang berubah (versi acuan, peran, alat, pengulangan, isi master yang tercetak).
+  ETag lain → `200` badan penuh.
+
+**`GET /api/calibrations/{id}/perhitungan`** (kunci tingkat atas), **`GET
+/api/calibrations/{id}/validasi`** (di samping `valid/boleh_terbit/temuan/ringkasan`),
+dan **snapshot sertifikat** (kunci tingkat atas; `snapshot.versi` TETAP `1`):
+
+```json
+"paket_acuan_versi": { "nomor": 1, "sha256": "ba1f…", "paket": "micrometer" }
+```
+
+Dibaca dari **stempel** hasil tersimpan (`uncertainty_calculations.paket_acuan_versi_id`)
+— bukan dicari ulang dari tanggal. Tanpa stempel = hasilnya tanpa stempel (sesi dihitung
+dari berkas JSON, sesi lama) atau stempelnya **tidak seragam** antar titik.
+
+- **Perhitungan & validasi:** kuncinya **selalu ada**; tanpa stempel → `null`.
+- **Snapshot sertifikat:** kuncinya **hanya ada bila hasilnya berstempel**. Tanpa stempel
+  kuncinya TIDAK ADA (bukan `null`) — sama persis dengan snapshot yang terbit sebelum
+  fitur ini, jadi `sertifikat:bangun-ulang` tidak menilai sertifikat lama "berubah" lalu
+  menulis ulang snapshot, `validasi`, dan PDF-nya. Pembaca: kunci tidak ada = `null`
+  (`snapshot['paket_acuan_versi'] ?? null`). Snapshot membekukannya saat terbit.
+
+**Status yang mungkin** (rute `/data-acuan/*`):
+
+| Kode | Kapan |
+|---|---|
+| `200` | Beres (termasuk `berlaku` tanpa versi → `data: null` + `alasan`) |
+| `404` | Paket/versi bukan milik lab ini · teknisi membuka versi non-aktif, banding, atau riwayat · lembar/kolom di luar skema |
+| `422` | Query `berlaku` salah · banding dua versi beda paket/jenis |
+| `401` | Tanpa token |
 
 ---
 

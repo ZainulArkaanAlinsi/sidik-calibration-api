@@ -15,6 +15,8 @@ use App\Models\Formula;
 use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\PaketAcuan;
+use App\Models\PaketAcuanVersi;
 use App\Models\Penugasan;
 use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
@@ -130,6 +132,12 @@ class BatasAntarLabTest extends TestCase
         // Koreksi & foto pelat nama (1 Okt, §42) — batasnya perusahaan, bukan lab.
         'api/pelanggan/v1/koreksi/{koreksi}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
         'api/pelanggan/v1/foto/{foto}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+
+        // Studio Data Acuan (8 Okt). Sapuan ini mengisi SEMUA `{param}` dengan
+        // id yang sama, jadi `{lembar}/{kunci}/{kolom}` ikut jadi angka dan
+        // pemiliknya sendiri dapat 404 (lembar di luar skema). Isolasinya
+        // disapu `IzinDataAcuanTest` dengan lembar/kolom yang nyata.
+        'api/data-acuan/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat' => 'butuh lembar/kolom skema nyata — disapu IzinDataAcuanTest',
     ];
 
     /**
@@ -172,6 +180,14 @@ class BatasAntarLabTest extends TestCase
             // Koreksi data & foto pelat nama dari pelanggan (1 Okt, §42) — sisi lab.
             'koreksi pelanggan' => ['api/koreksi-pelanggan/{koreksi}', 'koreksi'],
             'foto pelanggan' => ['api/foto-pelanggan/{foto}', 'foto'],
+            // Studio Data Acuan (8 Okt) — paket dicari per lab + kode profil,
+            // versi lewat id. `berlaku` tanpa `tanggal` → 422 buat pemiliknya
+            // (bukan 404), jadi kontrol pemiliknya tetap bermakna.
+            'data-acuan paket' => ['api/data-acuan/paket/{kode}', 'kodeAcuan'],
+            'data-acuan berlaku' => ['api/data-acuan/paket/{kode}/berlaku', 'kodeAcuan'],
+            'data-acuan garis waktu' => ['api/data-acuan/paket/{kode}/versi', 'kodeAcuan'],
+            'data-acuan versi' => ['api/data-acuan/versi/{versi}', 'versiAcuan'],
+            'data-acuan banding' => ['api/data-acuan/versi/{versi}/banding/{pembanding}', 'versiAcuan'],
         ];
     }
 
@@ -414,6 +430,25 @@ class BatasAntarLabTest extends TestCase
                 'status' => KoreksiPelanggan::STATUS_MENUNGGU,
             ])->id,
             'foto' => $this->fotoLabB($labB, $pelanggan, $alat),
+            // Paket micrometer lab B + satu versi aktif. Lab A tidak punya
+            // paket, jadi `paket/micrometer` yang bocor akan memulangkan
+            // milik lab B.
+            'versiAcuan' => PaketAcuanVersi::create([
+                'paket_acuan_id' => PaketAcuan::create([
+                    'organization_id' => $labB->id,
+                    'kode_profil' => 'micrometer',
+                    'nama' => 'Micrometer',
+                    'skema_versi' => 1,
+                ])->id,
+                'organization_id' => $labB->id,
+                'jenis' => PaketAcuanVersi::JENIS_DATA,
+                'nomor_versi' => 1,
+                'status' => PaketAcuanVersi::STATUS_AKTIF,
+                'isi' => '{}',
+                'skema_versi' => 1,
+                'berlaku_mulai' => '2024-01-01',
+            ])->id,
+            'kodeAcuan' => 'micrometer',
         ];
     }
 

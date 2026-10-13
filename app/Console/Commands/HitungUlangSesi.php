@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\CalibrationSession;
+use App\Models\PaketAcuanVersi;
 use App\Models\RawMeasurement;
+use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Services\GumCalculator;
@@ -74,6 +76,7 @@ class HitungUlangSesi extends Command
         GumCalculator $gum,
         RumusKalibrasi $rumus,
         CalibrationValidator $validator,
+        PenentuVersiAcuan $acuan,
     ): int {
         $kering = (bool) $this->option('dry-run');
         $gagal = 0;
@@ -570,7 +573,16 @@ class HitungUlangSesi extends Command
                 continue;
             }
 
-            $perGrup = $profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+            // Data acuan: stempel hasil tersimpan menang selama versinya masih
+            // aktif/pensiun; selain itu versi yang berlaku pada tanggal sesi
+            // (`PenentuVersiAcuan::untukSesiTersimpan`). Versi yang jadi
+            // lingkup hitungan ini yang distempel ulang di bawah.
+            $pilihanAcuan = $acuan->untukSesiTersimpan($sesi);
+
+            ['hasil' => $perGrup, 'versi' => $versiAcuan] = $acuan->jalankanDengan(
+                $pilihanAcuan['versi'],
+                fn (): ?array => $profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat),
+            );
 
             if ($perGrup === null) {
                 $this->error(
@@ -632,6 +644,35 @@ class HitungUlangSesi extends Command
 
             $this->line("{$sesi->nomor_sesi}:");
 
+            // Dicetak hanya untuk sesi yang menyentuh data acuan berversi
+            // (profil ber-skema, atau hasilnya pernah distempel) — puluhan alat
+            // lain tidak punya apa pun untuk dilaporkan di sini.
+            if ($profil->untukAlat($alat)->skemaAcuan() !== null || $pilihanAcuan['stempel'] !== null) {
+                $this->line('  data acuan: '.($versiAcuan !== null
+                    ? 'versi '.PenentuVersiAcuan::label($versiAcuan)
+                    : 'berkas JSON').' — '.$pilihanAcuan['alasan']);
+            }
+
+            // Sumber bukan `db` tapi hasil tersimpan berstempel: angka barunya
+            // dari berkas JSON, jadi stempelnya memang HARUS lepas (invarian
+            // `PenentuVersiAcuan`: angka dari versi DB ⇔ berstempel) — tapi
+            // tidak boleh lepas diam-diam, karena yang hilang bukti versi mana
+            // yang dulu menghitung sesi ini (tinjau P1 S-4). Peringatan saja,
+            // tanpa prompt: perintah ini dijalankan non-interaktif.
+            if ($versiAcuan === null && config('acuan.sumber') !== 'db') {
+                $stempelLama = $this->labelStempelAcuan($sesi);
+
+                if ($stempelLama !== []) {
+                    $this->warn(sprintf(
+                        '  PERINGATAN: stempel data acuan %s %s — DATA_ACUAN_SUMBER = "%s", bukan "db", '
+                        .'jadi angkanya dihitung dari berkas JSON dan hasil barunya tersimpan TANPA stempel.',
+                        implode(', ', $stempelLama),
+                        $kering ? 'bakal DILEPAS' : 'DILEPAS',
+                        (string) config('acuan.sumber'),
+                    ));
+                }
+            }
+
             if ($hilang !== []) {
                 $this->warn('  titik '.implode(', ', $hilang).' punya hasil tersimpan tapi nggak kehitung ulang — hasil lamanya bakal hilang:');
 
@@ -677,13 +718,14 @@ class HitungUlangSesi extends Command
 
             $versi = $rumus->versiUntukSesi($sesi);
 
-            DB::transaction(function () use ($sesi, $baru, $versi): void {
+            DB::transaction(function () use ($sesi, $baru, $versi, $versiAcuan): void {
                 $sesi->uncertaintyCalculations()->delete();
 
                 foreach ($baru as $hitungan) {
                     $sesi->uncertaintyCalculations()->create([
                         ...$hitungan,
                         'formula_version_id' => $versi?->id,
+                        'paket_acuan_versi_id' => $versiAcuan?->id,
                     ]);
                 }
             });
@@ -710,5 +752,39 @@ class HitungUlangSesi extends Command
         }
 
         return $gagal === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Label versi data acuan yang menstempel hasil tersimpan sesi ini
+     * (`#12 micrometer v1, aktif`), satu per versi berbeda — termasuk bila
+     * stempelnya tidak seragam antar titik. Kosong = tidak ada yang berstempel.
+     *
+     * @return list<string>
+     */
+    private function labelStempelAcuan(CalibrationSession $sesi): array
+    {
+        $id = $sesi->uncertaintyCalculations
+            ->pluck('paket_acuan_versi_id')
+            ->filter(static fn ($v): bool => $v !== null)
+            ->map(static fn ($v): int => (int) $v)
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($id->isEmpty()) {
+            return [];
+        }
+
+        $versi = PaketAcuanVersi::query()
+            ->with(['paketAcuan' => fn ($q) => $q->withTrashed()])
+            ->whereIn('id', $id->all())
+            ->get()
+            ->keyBy('id');
+
+        return $id
+            ->map(static fn (int $v): string => $versi->has($v)
+                ? PenentuVersiAcuan::label($versi->get($v))
+                : "#{$v} (versinya tidak ada lagi)")
+            ->all();
     }
 }

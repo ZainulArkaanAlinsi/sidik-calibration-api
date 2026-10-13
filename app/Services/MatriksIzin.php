@@ -126,6 +126,13 @@ class MatriksIzin
         'kategori.kemampuan.tambah' => ['POST', 'api/categories/{kode}/kemampuan'],
         'teknisi.kelola' => ['GET', 'api/technicians'],
 
+        // --- data acuan (Studio Data Acuan, CR-48). Baca saja di P1; izin
+        // tulis (`sunting`/`impor`/`ajukan`/`sahkan`, `bentuk-lembar.sunting`)
+        // lahir bersama rutenya. Semua role lab boleh membuka — teknisi cuma
+        // melihat versi `aktif`, dan itu disaring di `DataAcuanController`,
+        // bukan di sini.
+        'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
+
         // --- organisasi & pengguna
         'organisasi.lihat' => ['GET', 'api/organization'],
         'organisasi.ubah' => ['PUT', 'api/organization'],

@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\PaketAcuanVersi;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
+use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\AnakTimbanganMentah;
@@ -130,19 +132,7 @@ class CalibrationValidator
         // cara peringatan berhenti dibaca orang.
         $temuan = $sesi->adalahAutoclave()
             ? $this->periksaAutoclave($sesi)
-            : [
-                ...$this->periksaAlatTanpaCmc($sesi),
-                ...$this->periksaKelengkapanHitung($sesi),
-                ...$this->periksaPembacaanMustahil($sesi),
-                ...$this->periksaKondisiLingkunganMustahil($sesi),
-                ...$this->periksaTiapTitik($sesi),
-                ...$this->periksaU95MeledakDariCmc($sesi),
-                ...$this->periksaKeputusanSesi($sesi),
-                ...$this->periksaKelengkapanSertifikat($sesi),
-                ...$this->periksaPeringatanProfil($sesi),
-                ...$this->periksaVersiRumus($sesi),
-                ...$this->periksaPenahanProfil($sesi),
-            ];
+            : $this->periksaTitikDiLingkupAcuan($sesi);
 
         $ringkasan = [
             self::ERROR => 0,
@@ -2032,6 +2022,102 @@ class CalibrationValidator
             ),
             $this->profil->untukAlat($alat)->penahanTerbit($sesi),
         );
+    }
+
+    /**
+     * Seluruh pemeriksaan sesi bertitik, dijalankan di lingkup versi data
+     * acuan yang SAMA dengan yang menghitung hasil tersimpan.
+     *
+     * Hitung ulang dari mentah ([periksaTiapTitik]) dan peringatan profil
+     * (pita CMC Micrometer) membaca tabel acuan; kalau keduanya membaca versi
+     * lain dari yang menghitung angka tersimpan, sesi berstempel v1 yang
+     * diperiksa sesudah v2 aktif memunculkan selisih palsu di tiap titik.
+     * Aturan versinya satu dengan `kalibrasi:hitung-ulang`
+     * (`PenentuVersiAcuan::untukSesiTersimpan`): stempel menang selama masih
+     * aktif/pensiun, selain itu versi yang berlaku pada tanggal sesi.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaTitikDiLingkupAcuan(CalibrationSession $sesi): array
+    {
+        $acuan = app(PenentuVersiAcuan::class);
+        $pilihan = $acuan->untukSesiTersimpan($sesi);
+
+        $temuan = $acuan->jalankanDengan($pilihan['versi'], fn (): array => [
+            ...$this->periksaAlatTanpaCmc($sesi),
+            ...$this->periksaKelengkapanHitung($sesi),
+            ...$this->periksaPembacaanMustahil($sesi),
+            ...$this->periksaKondisiLingkunganMustahil($sesi),
+            ...$this->periksaTiapTitik($sesi),
+            ...$this->periksaU95MeledakDariCmc($sesi),
+            ...$this->periksaKeputusanSesi($sesi),
+            ...$this->periksaKelengkapanSertifikat($sesi),
+            ...$this->periksaPeringatanProfil($sesi),
+            ...$this->periksaVersiRumus($sesi),
+            ...$this->periksaPenahanProfil($sesi),
+        ])['hasil'];
+
+        return [...$temuan, ...$this->periksaVersiAcuan($sesi, $pilihan)];
+    }
+
+    /**
+     * Stempel versi data acuan (`paket_acuan_versi_id`) di hasil tersimpan.
+     *
+     * - `versi_acuan_ditarik` (PERINGATAN): angka sesi ini dihitung dengan
+     *   versi yang sudah DITARIK. Pemeriksaan di atas sudah menghitung ulang
+     *   dengan versi yang berlaku, jadi selisihnya (kalau ada) ikut terlapor
+     *   per titik; jalan keluarnya `kalibrasi:hitung-ulang`.
+     * - `versi_acuan_tanpa_stempel` (INFO): hasil tersimpan tanpa stempel
+     *   padahal sesi ini punya versi berlaku — dihitung dari berkas JSON
+     *   (mis. disimpan sebelum sumber dipindah ke `db`). Bukan penahan:
+     *   pemeriksaan di atas sudah mengadu angkanya ke versi itu.
+     *
+     * Belum ada ERROR di P1; penahan terbit karena versi ditarik
+     * (`menunggu_keputusan_tm`, FR-19) lahir bersama alur tariknya.
+     *
+     * @param  array{versi: ?PaketAcuanVersi, stempel: ?PaketAcuanVersi, alasan: string}  $pilihan
+     * @return list<array<string, mixed>>
+     */
+    private function periksaVersiAcuan(CalibrationSession $sesi, array $pilihan): array
+    {
+        $stempel = $pilihan['stempel'];
+
+        if ($stempel?->status === PaketAcuanVersi::STATUS_DITARIK) {
+            return [$this->temuan(
+                self::PERINGATAN,
+                'versi_acuan_ditarik',
+                sprintf(
+                    'Hasil hitung sesi ini dihitung dengan data acuan versi %s yang sudah DITARIK%s. '
+                    .'Hitung ulang sesinya (`php artisan kalibrasi:hitung-ulang %s`) supaya angkanya memakai versi yang berlaku.',
+                    PenentuVersiAcuan::label($stempel),
+                    filled($stempel->catatan_keputusan) ? ' (alasan: '.$stempel->catatan_keputusan.')' : '',
+                    $sesi->nomor_sesi ?? $sesi->getKey(),
+                ),
+                [
+                    'paket_acuan_versi_id' => $stempel->getKey(),
+                    'versi_berlaku_id' => $pilihan['versi']?->getKey(),
+                ],
+            )];
+        }
+
+        $tanpaStempel = $sesi->uncertaintyCalculations->isNotEmpty()
+            && $sesi->uncertaintyCalculations->every(fn (UncertaintyCalculation $u): bool => $u->paket_acuan_versi_id === null);
+
+        if ($tanpaStempel && $pilihan['versi'] !== null) {
+            return [$this->temuan(
+                self::INFO,
+                'versi_acuan_tanpa_stempel',
+                sprintf(
+                    'Hasil hitung sesi ini tersimpan tanpa stempel versi data acuan (dihitung dari berkas JSON), '
+                    .'padahal pada tanggal kalibrasinya berlaku versi %s. Pemeriksaan ini sudah mengadu angkanya '
+                    .'ke versi itu; hitung ulang sesinya untuk menstempelnya.',
+                    PenentuVersiAcuan::label($pilihan['versi']),
+                ),
+                ['versi_berlaku_id' => $pilihan['versi']->getKey()],
+            )];
+        }
+
+        return [];
     }
 
     /**

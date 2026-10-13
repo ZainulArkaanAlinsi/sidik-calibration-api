@@ -17,6 +17,8 @@ use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organization;
+use App\Models\PaketAcuan;
+use App\Models\PaketAcuanVersi;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
 use App\Models\PermintaanKalibrasi;
@@ -233,7 +235,28 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'ukuran' => 1,
         ]);
 
+        // Studio Data Acuan (CR-48 P1, 8 Okt) — seorganisasi, alasan sama.
+        $versiAcuan = PaketAcuanVersi::create([
+            'paket_acuan_id' => PaketAcuan::create([
+                'organization_id' => $org->id,
+                'kode_profil' => 'micrometer',
+                'nama' => 'Micrometer',
+                'skema_versi' => 1,
+            ])->id,
+            'organization_id' => $org->id,
+            'jenis' => PaketAcuanVersi::JENIS_DATA,
+            'nomor_versi' => 1,
+            'status' => PaketAcuanVersi::STATUS_AKTIF,
+            'isi' => '{}',
+            'skema_versi' => 1,
+            'berlaku_mulai' => '2024-01-01',
+        ]);
+
         $this->isiParameter = [
+            'versi' => (string) $versiAcuan->id,
+            'pembanding' => (string) $versiAcuan->id,
+            'lembar' => 'balok_ukur',
+            'kolom' => 'nilai_terkoreksi_mm',
             'koreksi' => (string) $koreksi->id,
             'foto' => (string) $foto->id,
             'orderItem' => (string) $barisPaket->id,

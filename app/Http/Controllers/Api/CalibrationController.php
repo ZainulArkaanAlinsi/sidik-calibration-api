@@ -13,6 +13,7 @@ use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Organization;
+use App\Models\PaketAcuanVersi;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
@@ -22,6 +23,7 @@ use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluDisahkan;
 use App\Notifications\SesiPerluRevisi;
 use App\Rules\PenunjukanWaktu;
+use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
@@ -272,65 +274,133 @@ class CalibrationController extends Controller
             'organization_id' => $request->user()->organization_id,
         ]);
 
-        $bentuk = $profil->bentukLembarKerja(
-            untukAdmin: $request->user()->isAdmin(),
-            equipment: $konteksAlat,
+        // Data acuan berversi (Studio Data Acuan FR-21). Lembarnya DIBANGUN di
+        // lingkup versi yang berlaku hari ini — versi yang sama yang akan
+        // menghitung sesi yang diisi dari lembar ini — supaya nominal titik
+        // pra-cetak di layar tidak berasal dari berkas JSON sementara
+        // hitungannya dari versi DB. Tanpa versi (sumber `json`, profil tanpa
+        // `skemaAcuan()`, atau belum ada versi berlaku) tidak ada lingkup dan
+        // perilakunya persis seperti sebelum Studio.
+        $versiAcuan = $this->versiAcuanLembar($request, $profil);
+
+        ['hasil' => $bentuk] = app(PenentuVersiAcuan::class)->jalankanDengan($versiAcuan, function () use ($request, $profil, $alat, $konteksAlat): array|JsonResponse {
+            $bentuk = $profil->bentukLembarKerja(
+                untukAdmin: $request->user()->isAdmin(),
+                equipment: $konteksAlat,
+            );
+
+            // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan
+            // buat titik yang sama — artinya master alatnya belum bilang varian
+            // mana yang dipakai, dan yang bakal milih jadinya teknisi.
+            //
+            // Itu keputusan yang bukan haknya. Varian satuan nentuin style
+            // sertifikat, dan salah pilih bikin nilai acuannya meleset 1000×:
+            // 1413 di baris `1,412 mS/cm` keluar Correction -1411,588 (sesi 53,
+            // 12 Agt 2026). Waktu alatnya masih sedikit, orang lab hafal mana yang
+            // benar; begitu alatnya banyak, nggak ada yang tau.
+            //
+            // Dicek dari BENTUKNYA — ada baris yang saling `eksklusif_dengan` —
+            // bukan dari nama profil, jadi profil baru yang punya varian ikut
+            // kejaga tanpa nyentuh baris ini.
+            if ($alat !== null && self::adaVarianBelumDitentukan($bentuk)) {
+                return response()->json([
+                    'message' => 'Alat ini punya titik dengan dua varian satuan, dan master alatnya belum '
+                        .'nyebut yang mana. Isi "Resolusi per titik" di data Alat dulu — satuan yang kepakai '
+                        .'itu properti alat pelanggan, bukan pilihan teknisi di lapangan.',
+                ], 422);
+            }
+
+            if ($request->filled('pengulangan')) {
+                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
+            }
+
+            // Dua halaman — persiapan | pengukuran — buat SEMUA lembar (permintaan
+            // pemilik proyek 25 Sep 2026). Satu aturan di satu tempat; generator
+            // mock HP memanggil fungsi yang sama supaya mock tidak menyimpang.
+            $bentuk = CalibrationProfile::susunDuaHalaman($bentuk);
+
+            // Bekal buat BIKIN ALAT BARU langsung dari lembar ini.
+            //
+            // Kenapa perlu: sejak dropdown "Pilih alat" disaring ke lembar yang
+            // lagi dibuka, kategori yang belum punya satu alat pun jadi BUNTU —
+            // dropdown-nya mati ("Belum ada alat."), dan tombol kirim nahan sesi
+            // yang alatnya belum dipilih. Lembar Bath persis begitu: bisa dibuka,
+            // bisa dibaca, nggak bisa dipakai.
+            //
+            // Jalan keluarnya nggak boleh "buka menu Master Alat, tebak
+            // kategorinya, balik lagi ke sini". Kategori & nama kemampuan itu
+            // properti LEMBAR, dan server yang tahu — jadi server yang mengirimnya,
+            // dan HP tinggal membuka form yang dua kotak teratasnya sudah terisi.
+            //
+            // Ditaruh di sini, bukan di tiap `bentukLembarKerja()`, supaya ketujuh
+            // belas lembar dapat bekal yang sama tanpa satu pun profil perlu
+            // disentuh — termasuk profil ke-18.
+            $bentuk['alat_baru'] = self::bekalAlatBaru($profil, $request->user()->organization_id);
+
+            // Bentuk kertasnya buat pindai foto ikut dikirim, biar mobile tinggal
+            // meneruskan apa adanya ke endpoint ekstraksi — nggak perlu hafal alat
+            // mana yang kertasnya beda, dan nggak ada daftar kedua yang bisa basi.
+            $bentuk['pindai_foto'] = $profil->bentukPindaiFoto();
+
+            return $bentuk;
+        });
+
+        // Penolakan dari dalam penyusun lembar (alat tanpa varian, dst.).
+        if ($bentuk instanceof JsonResponse) {
+            return $bentuk;
+        }
+
+        // `null` untuk profil yang data acuannya belum berversi — kuncinya
+        // tetap ada supaya bentuk respons seragam di semua lembar.
+        $bentuk['versi_acuan'] = $profil->skemaAcuan() === null ? null : [
+            'paket' => $profil->kode(),
+            'data' => $versiAcuan === null ? null : [
+                'nomor' => (int) $versiAcuan->nomor_versi,
+                'sha256' => PenentuVersiAcuan::sha256($versiAcuan),
+            ],
+            // Versi bentuk lembar (lapis 3) lahir di P6.
+            'bentuk' => null,
+        ];
+
+        return $this->responsLembarKerja($request, $bentuk);
+    }
+
+    /**
+     * Versi data acuan yang berlaku HARI INI untuk lembar profil ini di lab
+     * pemanggil — `null` bila profilnya tanpa `skemaAcuan()`, sumbernya bukan
+     * `db`, atau belum ada versi berlaku (tanpa fallback, `PenentuVersiAcuan`).
+     */
+    private function versiAcuanLembar(Request $request, CalibrationProfile $profil): ?PaketAcuanVersi
+    {
+        if ($profil->skemaAcuan() === null || config('acuan.sumber') !== 'db') {
+            return null;
+        }
+
+        return app(PenentuVersiAcuan::class)->untukProfil(
+            (int) $request->user()->organization_id,
+            $profil->kode(),
+            now(),
         );
+    }
 
-        // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan
-        // buat titik yang sama — artinya master alatnya belum bilang varian
-        // mana yang dipakai, dan yang bakal milih jadinya teknisi.
-        //
-        // Itu keputusan yang bukan haknya. Varian satuan nentuin style
-        // sertifikat, dan salah pilih bikin nilai acuannya meleset 1000×:
-        // 1413 di baris `1,412 mS/cm` keluar Correction -1411,588 (sesi 53,
-        // 12 Agt 2026). Waktu alatnya masih sedikit, orang lab hafal mana yang
-        // benar; begitu alatnya banyak, nggak ada yang tau.
-        //
-        // Dicek dari BENTUKNYA — ada baris yang saling `eksklusif_dengan` —
-        // bukan dari nama profil, jadi profil baru yang punya varian ikut
-        // kejaga tanpa nyentuh baris ini.
-        if ($alat !== null && self::adaVarianBelumDitentukan($bentuk)) {
-            return response()->json([
-                'message' => 'Alat ini punya titik dengan dua varian satuan, dan master alatnya belum '
-                    .'nyebut yang mana. Isi "Resolusi per titik" di data Alat dulu — satuan yang kepakai '
-                    .'itu properti alat pelanggan, bukan pilihan teknisi di lapangan.',
-            ], 422);
-        }
+    /**
+     * Respons lembar kerja ber-`ETag` (FR-21): sha256 atas badan JSON FINAL,
+     * jadi otomatis beda per peran, alat, jumlah pengulangan, versi acuan,
+     * dan isi master lab yang ikut tercetak. `If-None-Match` yang cocok →
+     * `304` tanpa badan. `private, no-cache`: klien boleh menyimpan, tapi
+     * wajib bertanya ulang tiap kali — versi acuan bisa berganti hari ini.
+     *
+     * @param  array<string, mixed>  $bentuk
+     */
+    private function responsLembarKerja(Request $request, array $bentuk): JsonResponse
+    {
+        $respons = response()->json(['data' => $bentuk]);
 
-        if ($request->filled('pengulangan')) {
-            $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
-        }
+        $respons->setEtag(hash('sha256', (string) $respons->getContent()));
+        $respons->headers->set('Cache-Control', 'private, no-cache');
+        $respons->isNotModified($request);
 
-        // Dua halaman — persiapan | pengukuran — buat SEMUA lembar (permintaan
-        // pemilik proyek 25 Sep 2026). Satu aturan di satu tempat; generator
-        // mock HP memanggil fungsi yang sama supaya mock tidak menyimpang.
-        $bentuk = CalibrationProfile::susunDuaHalaman($bentuk);
-
-        // Bekal buat BIKIN ALAT BARU langsung dari lembar ini.
-        //
-        // Kenapa perlu: sejak dropdown "Pilih alat" disaring ke lembar yang
-        // lagi dibuka, kategori yang belum punya satu alat pun jadi BUNTU —
-        // dropdown-nya mati ("Belum ada alat."), dan tombol kirim nahan sesi
-        // yang alatnya belum dipilih. Lembar Bath persis begitu: bisa dibuka,
-        // bisa dibaca, nggak bisa dipakai.
-        //
-        // Jalan keluarnya nggak boleh "buka menu Master Alat, tebak
-        // kategorinya, balik lagi ke sini". Kategori & nama kemampuan itu
-        // properti LEMBAR, dan server yang tahu — jadi server yang mengirimnya,
-        // dan HP tinggal membuka form yang dua kotak teratasnya sudah terisi.
-        //
-        // Ditaruh di sini, bukan di tiap `bentukLembarKerja()`, supaya ketujuh
-        // belas lembar dapat bekal yang sama tanpa satu pun profil perlu
-        // disentuh — termasuk profil ke-18.
-        $bentuk['alat_baru'] = self::bekalAlatBaru($profil, $request->user()->organization_id);
-
-        // Bentuk kertasnya buat pindai foto ikut dikirim, biar mobile tinggal
-        // meneruskan apa adanya ke endpoint ekstraksi — nggak perlu hafal alat
-        // mana yang kertasnya beda, dan nggak ada daftar kedua yang bisa basi.
-        $bentuk['pindai_foto'] = $profil->bentukPindaiFoto();
-
-        return response()->json(['data' => $bentuk]);
+        return $respons;
     }
 
     /**
@@ -515,20 +585,24 @@ class CalibrationController extends Controller
      */
     public function preview(CalibrationRequest $request, PerhitunganBuilder $builder): JsonResponse
     {
-        $susunan = $this->susunPengukuran($request);
-
         // Sesi TIRUAN, sengaja nggak pernah disimpen. Relasinya diisi di memori
         // (setRelation) supaya PerhitunganBuilder & KondisiLingkungan bisa jalan
         // di atasnya — dua-duanya cuma baca atribut & koleksi, nggak nyentuh DB
         // buat itu. Kalau relasinya nggak diisi duluan, `loadMissing` di
         // PerhitunganBuilder bakal query `calibration_session_id IS NULL` dan
         // nimpa hasil hitung kita sama koleksi kosong.
+        //
+        // Dibuat SEBELUM pengukurannya disusun: versi data acuan yang jadi
+        // lingkup hitungan dicari dari alat & tanggal sesi ini, persis seperti
+        // sesi yang nanti disimpan `store()` — lihat [susunDiLingkupAcuan].
         $sesi = new CalibrationSession([
             ...$this->atributDariRequest($request),
             'organization_id' => $request->user()->organization_id,
             'teknisi_id' => $request->user()->id,
             'status' => CalibrationSession::STATUS_DRAFT,
         ]);
+
+        $susunan = $this->susunDiLingkupAcuan($sesi, $request)['hasil'];
 
         $sesi->setRelation('rawMeasurements', new EloquentCollection(array_map(
             fn (array $baris): RawMeasurement => new RawMeasurement($baris),
@@ -703,11 +777,22 @@ class CalibrationController extends Controller
         // teknis: sesi yang belum punya satu pun pembacaan berarti tidak ada
         // angka teknisi yang sedang diganti — yang terjadi pengisian pertama,
         // dan menuntut alasan koreksi di situ salah alamat.
+        //
+        // Disusun di lingkup versi data acuan yang SAMA dengan yang nanti
+        // menyimpan (alat & tanggal dari payload ini): baris balok ukur dan
+        // nominal Micrometer ikut tabel acuan, jadi menyusunnya dari sumber
+        // lain bisa melaporkan "berubah" untuk angka yang tidak disentuh.
         $koreksiTerkirim = $request->user()->isAdmin()
             && $calibration->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
             && $request->has('measurements')
             && $pembacaanLama !== []
-            && $this->potretDariSusunan($this->susunPengukuran($request)['mentah']) !== $pembacaanLama;
+            && $this->potretDariSusunan($this->susunDiLingkupAcuan(
+                new CalibrationSession([
+                    ...$this->atributDariRequest($request),
+                    'organization_id' => $calibration->organization_id,
+                ]),
+                $request,
+            )['hasil']['mentah']) !== $pembacaanLama;
 
         $catatanJejak = null;
 
@@ -1197,7 +1282,12 @@ class CalibrationController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $calibration);
 
-        return response()->json(['data' => $this->validator->periksa($calibration)]);
+        return response()->json(['data' => [
+            ...$this->validator->periksa($calibration),
+            // Versi data acuan dari stempel hasil tersimpan (Studio Data Acuan
+            // B4); `null` = tanpa stempel / tidak seragam.
+            'paket_acuan_versi' => app(PenentuVersiAcuan::class)->ringkasanStempel($calibration),
+        ]]);
     }
 
     /**
@@ -1487,7 +1577,11 @@ class CalibrationController extends Controller
         // membaca baris sesi ini sama sekali (jalur koreksi admin di `update()`
         // sudah memanggilnya sebelum transaksi), jadi urutannya tidak mengubah
         // hasil hitung.
-        $susunan = $this->susunPengukuran($request);
+        //
+        // `$versiAcuan` = versi data acuan yang BENAR-BENAR jadi lingkup
+        // hitungan ini (null = berkas JSON), dan itu yang distempel di bawah —
+        // tidak dicari ulang.
+        ['hasil' => $susunan, 'versi' => $versiAcuan] = $this->susunDiLingkupAcuan($sesi, $request);
 
         // Kiriman yang menghasilkan NOL baris untuk sesi yang sudah punya
         // pembacaan ditolak, bukan dituruti. Dulu `measurements: []` — tabel di
@@ -1524,10 +1618,28 @@ class CalibrationController extends Controller
             $sesi->uncertaintyCalculations()->create([
                 ...$hitungan,
                 'formula_version_id' => $versiRumus?->id,
+                'paket_acuan_versi_id' => $versiAcuan?->id,
             ]);
         }
 
         return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
+    }
+
+    /**
+     * [susunPengukuran] di lingkup versi data acuan yang berlaku untuk `$sesi`
+     * (`PenentuVersiAcuan::jalankan`, Studio Data Acuan FR-20) — satu pintu
+     * untuk `store`, `update`, dan `preview`, supaya preview menghitung dengan
+     * data acuan yang sama dengan yang nanti tersimpan.
+     *
+     * `versi` null = dihitung dari berkas JSON (sumber bukan `db`, profil alat
+     * belum punya data acuan berversi, atau belum ada versi berlaku pada
+     * tanggal sesi).
+     *
+     * @return array{hasil: array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}, versi: ?PaketAcuanVersi}
+     */
+    private function susunDiLingkupAcuan(CalibrationSession $sesi, CalibrationRequest $request): array
+    {
+        return app(PenentuVersiAcuan::class)->jalankan($sesi, fn (): array => $this->susunPengukuran($request));
     }
 
     /**

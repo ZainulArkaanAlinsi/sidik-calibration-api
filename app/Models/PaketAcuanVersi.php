@@ -123,6 +123,22 @@ class PaketAcuanVersi extends Model
         return $hasil;
     }
 
+    /**
+     * `isi` tidak disalin ke `audit_logs`.
+     *
+     * Isinya seluruh tabel acuan (Micrometer saja 175 sel); menyalinnya
+     * tiap kali baris versi dibuat/diubah melipatgandakan dokumen itu di tabel
+     * riwayat tanpa menambah keterbacaan. Jejak perubahan isi per sel sudah
+     * dicatat `paket_acuan_suntingan` (nilai lama & baru per sel), dan
+     * `isi_sha256` — yang membuktikan isi mana yang dikunci — tetap tercatat.
+     *
+     * @return list<string>
+     */
+    protected function kolomDilewat(): array
+    {
+        return ['updated_at', 'created_at', 'isi'];
+    }
+
     /** @return BelongsTo<PaketAcuan, $this> */
     public function paketAcuan(): BelongsTo
     {

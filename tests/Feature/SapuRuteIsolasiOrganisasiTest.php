@@ -93,6 +93,15 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
         // Koreksi data & foto pelat nama dari pelanggan (1 Okt, §42).
         'koreksi' => 'koreksi',
         'foto' => 'foto',
+        // Studio Data Acuan (CR-48 P1, 8 Okt). `versi`/`pembanding` = id
+        // `paket_acuan_versi`; `lembar`/`kolom` = kode skema profil, bukan
+        // penunjuk baris. Belum ada baris lab 2-nya di `tanamDataLab2()`, jadi
+        // rute `data-acuan/versi/*` DILEWATI sapuan ini — isolasinya disapu
+        // sendiri oleh `IzinDataAcuanTest` (404 untuk versi lab lain).
+        'versi' => 'versi acuan',
+        'pembanding' => 'versi acuan pembanding',
+        'lembar' => 'lembar acuan (kode skema)',
+        'kolom' => 'kolom acuan (kode skema)',
     ];
 
     /**

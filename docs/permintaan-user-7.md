@@ -5050,8 +5050,71 @@ terjawab.
   `docs/pertanyaan-lab-studio-acuan.md`.
 - Tidak ada perubahan di `app/`, migrasi, atau test.
 
-**Status:** P0 selesai. P1 (`docs/studio-data-acuan/prompts/P1-fondasi-server.md`) menunggu
-perintah pemilik.
+### P1 — fondasi server (8 Okt 2026, berjalan)
+
+Rencana disetujui pemilik 8 Okt dengan empat penyimpangan dari prompt P1:
+
+1. **P1 hanya membuat 3 dari 6 tabel rancangan**: `paket_acuan`, `paket_acuan_versi`,
+   `paket_acuan_suntingan`. `simulasi_acuan` dan `simulasi_acuan_sesi` menyusul di P2,
+   `unggahan_workbook` di P5. Kolom `calibration_sessions.bentuk_versi_id` menyusul di P6.
+2. **Data dari DB hanya dibaca di jalur yang menstempel.** Di luar lingkup versi,
+   `TabelStandarMicrometer` tetap membaca JSON. Alasannya: Dial Indicator memakai balok ukur
+   Micrometer, dan versi baru Micrometer tidak boleh mengubah angka Dial Indicator tanpa stempel.
+   Menyimpang dari kalimat ADR-04 "fallback JSON hanya di testing".
+3. **Izin P1 hanya `data-acuan.lihat`.** Izin tulis lahir bersama rutenya di P2/P6.
+4. Peta `PARAMETER` di `SapuRuteIsolasiOrganisasiTest` ditambah nama parameter rute baru.
+
+**Alasan kolom stempel `uncertainty_calculations.paket_acuan_versi_id`:**
+- Versi yang dipakai harus tercatat saat hasil dihitung. Mencari ulang dari `tanggal_kalibrasi`
+  tidak cukup, karena rentang berlaku berubah sesudahnya (versi baru menutup rentang lama, versi
+  bisa ditarik, versi terjadwal bisa bertanggal mundur).
+- Menaruhnya di JSON `type_b_components` tidak cukup: tanpa FK tidak ada integritas, dan tanpa
+  index tidak bisa menjawab "hasil mana yang dihitung dengan versi X" (dasar simulasi P2 dan
+  penahan terbit saat versi ditarik).
+- Polanya sama dengan `formula_version_id`: nullable, `nullOnDelete`. `null` = dihitung dari JSON.
+- `bentuk_versi_id` ditunda karena di P1 belum punya penulis maupun pembaca.
+
+**Versi 1 Micrometer terbukti setara master:** isi `.xlsm` = `tabel-standar-micrometer.json`
+(8 Okt, lihat P0 di atas), jadi versi 1 yang dibangun dari JSON itu setara workbook.
+
+**Status:** B1 data layer selesai (`f3b1b7b`). B2 selesai: `SumberAcuan`, `acuan:impor-awal`,
+`skemaAcuan()` Micrometer (8 lembar, 175/175 daun JSON). Versi 1 kanonik sha256
+`ba1fa153808d125a2ff1e54ca3589e25c723b59ccb23a68df7372862ef56f585`. B3 selesai:
+`PenentuVersiAcuan` + stempel di store/update/preview/hitung-ulang + validator (`versi_acuan_ditarik`
+PERINGATAN, `versi_acuan_tanpa_stempel` INFO). Dengan `DATA_ACUAN_SUMBER=json` stempel ditulis
+`null`, bukan "tetap ditulis" seperti 07 §2 tahap 3: stempel yang menunjuk versi yang tidak
+benar-benar dipakai lebih buruk daripada null. B4 selesai: izin `data-acuan.lihat`, tujuh rute
+`GET /api/data-acuan/*` (daftar paket, detail, berlaku, garis waktu, versi, banding, riwayat sel;
+teknisi hanya versi aktif, organisasi lain 404), `versi_acuan` + ETag/304 di lembar-kerja, kunci
+`paket_acuan_versi` di perhitungan, validasi, dan snapshot (`VERSI` snapshot tetap 1). Kontrak:
+`docs/kontrak-api.md` §15. `RuteInternalMenolakRoleLainTest` dan `BatasAntarLabTest` ikut
+ditambah fixture rute baru; tidak ada asersi yang diubah.
+
+**Tinjau P1 (9 Okt):** peninjau dan penjaga angka sama-sama LULUS. Angka dari JSON dan dari versi 1
+DB identik bit per bit untuk keempat rentang Micrometer, pipeline 4 sesi seeder, dan 49 sesi alat
+lain (termasuk Dial Indicator). Perbaikan putaran 1:
+- Snapshot sertifikat hanya memuat `paket_acuan_versi` bila berstempel, supaya
+  `sertifikat:bangun-ulang` tidak menulis ulang semua sertifikat lama.
+- `GET /data-acuan/paket/{kode}/berlaku` untuk teknisi memberi alasan generik tanpa status atau
+  tanggal versi yang tidak aktif.
+- `kalibrasi:hitung-ulang` mencetak peringatan bila stempel dilepas karena sumbernya `json`.
+- Test untuk tiga kode 422 di banding dan untuk cabang `untukSesiTersimpan`.
+
+**Dibawa ke P2** (belum dikerjakan, tidak berdampak selama hanya ada versi 1):
+- `lembar-kerja` memilih versi dengan tanggal hari ini, sedangkan simpan memakai
+  `tanggal_kalibrasi`. Baris Micrometer dipetakan ke nominal cetak lewat posisi, dan klien tidak
+  mengirim balik sha versi. Versi yang mengubah `titik_pra_cetak` bisa menggeser nominal tanpa error.
+- Template OCR (`TemplateLembarKerja`) dan `dalamLingkupAkreditasiSesi` di
+  `CertificateSnapshotBuilder` membaca di luar lingkup versi, jadi memakai JSON.
+- Validator diam bila stempel tidak seragam antar titik (yang muncul hanya `hitung_ulang_beda`
+  dengan penyebab yang salah) dan bila stempel menunjuk versi organisasi atau paket lain. Perlu
+  temuan PERINGATAN sendiri. `ringkasanStempel` hanya mengecek organisasi, tidak `kode_profil`.
+- Belum ada penjaga bahwa isi versi yang sudah terkunci tidak boleh diubah atau dihapus. Pengecekan
+  `isi_sha256` di `SumberAcuan` hanya terjadi saat cache miss.
+
+**Perlu dicek di .xlsm oleh pemilik:** asal `PERHITUNGAN!H23` untuk balok khusus 101,6 dan
+200 mm serta nilai `lainnya`, dan `INPUT DATA!F5` untuk ambang kapasitas pita CMC. Keduanya baru
+berbukti dari komentar kode.
 
 ## Gelombang & status
 
