@@ -5150,9 +5150,11 @@ itu wajib punya catatan sumber (`AGENTS.md` §Olah data butir 4). Tidak membloki
 mengizinkan suntingan, tetapi tidak boleh diam. Kesalahan master yang sudah diketahui (mis. veff
 Volumetric Fixed yang dibagi satu baris `K43`, `docs/pertanyaan-lab-volumetric.md` no. 1) tidak
 otomatis ditiru: lembar pertama memakai blok bawaan; meniru master butuh versi baru, simulasi,
-pengesahan, dan jawaban lab. Karena `TINV`/`T.INV.2T` di lembar sekarang ikut jalur terbit, beda
-algoritmenya dengan `StudentTDistribution` (keduanya memotong derajat bebas ke bawah) diukur di
-spike S0a sebelum lembar mana pun aktif.
+pengesahan, dan jawaban lab. Spike S0a (10 Okt 2026) menjawab soal t-quantile: `TINV`/`T.INV.2T`
+bawaan mesin rumus tidak dipakai (2.162,91 ms pada df 10⁶); `k` di lembar memakai fungsi kustom
+`SIDIK.KFAKTOR` yang identik bit dengan `GumCalculator`, dan simpangan baku memakai `SIDIK.STDEV`
+(STDEV bawaan satu lintasan, selisih sampai 6,7e-8). Rincian: `docs/sidik-studio/03-SDD.md`
+ADR-49-02 dan §6.4.
 
 **Syarat yang membuat K-49-02 aman** (berlaku untuk setiap versi rumus yang dibuat di Studio):
 1. Server tetap satu-satunya tempat menghitung. Studio menyunting; server mengevaluasi untuk
