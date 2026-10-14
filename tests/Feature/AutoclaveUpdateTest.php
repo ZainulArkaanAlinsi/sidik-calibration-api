@@ -358,6 +358,230 @@ class AutoclaveUpdateTest extends TestCase
         );
     }
 
+    /** Sesi terkirim yang sudah dikembalikan admin, nomor order-nya sudah diisi admin. */
+    private function lembarDikembalikan(): CalibrationSession
+    {
+        $sesi = $this->kirimanTeknisi();
+        CalibrationSession::query()->whereKey($sesi->id)->update([
+            'status' => CalibrationSession::STATUS_PERLU_REVISI,
+            'nomor_order' => 'ORD-ADMIN-01',
+            'catatan_revisi' => 'Disk 1 kolom 3 nggak kebaca.',
+        ]);
+
+        return $sesi->fresh();
+    }
+
+    public function test_teknisi_tidak_bisa_menimpa_nomor_order_admin_lewat_put(): void
+    {
+        $sesi = $this->lembarDikembalikan();
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payloadDiubah([
+                'nomor_order' => 'ORD-TEKNISI-99',
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL);
+
+        $this->assertSame('ORD-ADMIN-01', $sesi->fresh()->nomor_order);
+    }
+
+    public function test_teknisi_tidak_bisa_mengisi_field_admin_lewat_post(): void
+    {
+        $id = $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave', $this->payload([
+                'nomor_order' => 'ORD-TEKNISI-99',
+                'suhu_ketidakpastian' => 0.5,
+            ]))
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertNull(CalibrationSession::findOrFail($id)->nomor_order);
+    }
+
+    public function test_field_admin_bernilai_angka_divalidasi(): void
+    {
+        $sesi = $this->kirimanTeknisi();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payload([
+                'suhu_ketidakpastian' => 'bukan-angka',
+                'kelembaban_ketidakpastian' => -1,
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['suhu_ketidakpastian', 'kelembaban_ketidakpastian']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/calibrations/autoclave', $this->payload(['suhu_ketidakpastian' => 'bukan-angka']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('suhu_ketidakpastian');
+    }
+
+    public function test_teknisi_boleh_simpan_draf_revisi_lembar_yang_dikembalikan(): void
+    {
+        // Sama kayak `update()`: revisi lembar yang dikembalikan boleh disimpan
+        // dulu sebagai draft — antrean draft offline mengirimnya begitu.
+        $dikembalikan = $this->lembarDikembalikan();
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$dikembalikan->id}", $this->payloadDiubah(['status' => 'draft']))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT);
+
+        $sesi = $dikembalikan->fresh();
+        $this->assertSame(CalibrationSession::STATUS_DRAFT, $sesi->status);
+        $this->assertNull($sesi->submitted_at);
+        $this->assertSame([121.10, 121.40, 121.05, 121.45, 121.20], $sesi->hasil_autoclave['lembar']['suhu']['disk'][0]);
+    }
+
+    public function test_sesi_yang_menunggu_approval_tidak_bisa_disimpan_balik_jadi_draft(): void
+    {
+        $antre = $this->kirimanTeknisi();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$antre->id}", $this->payload(['status' => 'draft']))
+            ->assertStatus(422)
+            ->assertJsonPath(
+                'message',
+                'Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. '
+                    .'Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak.',
+            );
+
+        $sesi = $antre->fresh();
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->status);
+        $this->assertTrue($antre->submitted_at->equalTo($sesi->submitted_at));
+    }
+
+    public function test_sunting_admin_mempertahankan_waktu_kirim_tapi_kirim_ulang_revisi_memperbaruinya(): void
+    {
+        $sesi = $this->kirimanTeknisi();
+        $dikirim = $sesi->submitted_at;
+        $this->assertNotNull($dikirim);
+
+        $this->travel(3)->hours();
+
+        // Admin menyunting kepala lembar sesi yang sedang antre — bukan
+        // pengiriman baru.
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payload(['alat_serial_number' => 'SN-02']))
+            ->assertOk();
+        $this->assertTrue($dikirim->equalTo($sesi->fresh()->submitted_at));
+
+        // Kirim ulang sesudah dikembalikan = pengiriman baru, sama kayak `update()`.
+        CalibrationSession::query()->whereKey($sesi->id)->update(['status' => CalibrationSession::STATUS_PERLU_REVISI]);
+        $this->travel(1)->day();
+        $kirimUlang = now()->startOfSecond();
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payloadDiubah())
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL);
+
+        $baru = $sesi->fresh()->submitted_at;
+        $this->assertTrue($baru->greaterThan($dikirim));
+        $this->assertTrue($baru->greaterThanOrEqualTo($kirimUlang));
+    }
+
+    public function test_draft_tanpa_set_point_tersimpan_lalu_terkirim_identik_dengan_post_langsung(): void
+    {
+        // Draft boleh belum ada set point (request: nullable kalau draft). Dulu
+        // POST/PUT draft seperti itu 500 di `AutoclaveInputBuilder`.
+        $tanpaSetPoint = $this->payload(['status' => 'draft']);
+        unset($tanpaSetPoint['set_point']);
+
+        $id = $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave', $tanpaSetPoint)
+            ->assertCreated()
+            ->assertJsonPath('data.hasil_autoclave.set_point', null)
+            ->json('data.id');
+
+        // Set point kosong TIDAK dikarang — angka lainnya tetap dihitung.
+        $draft = CalibrationSession::findOrFail($id);
+        $this->assertNull($draft->hasil_autoclave['set_point']);
+        $this->assertArrayNotHasKey('set_point', $draft->hasil_autoclave['lembar']);
+        $this->assertEqualsWithDelta(0.4419439029528431, $draft->hasil_autoclave['suhu']['u95'], 1e-9);
+
+        $tanpaSetPointDiubah = $this->payloadDiubah(['status' => 'draft']);
+        unset($tanpaSetPointDiubah['set_point']);
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$id}", $tanpaSetPointDiubah)
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT)
+            ->assertJsonPath('data.hasil_autoclave.set_point', null);
+
+        // Kirim tanpa set point tetap ditolak, di PUT sama kayak di POST.
+        $kirimTanpaSetPoint = $this->payloadDiubah();
+        unset($kirimTanpaSetPoint['set_point']);
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$id}", $kirimTanpaSetPoint)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('set_point');
+        $this->assertSame(CalibrationSession::STATUS_DRAFT, CalibrationSession::findOrFail($id)->status);
+
+        // Lengkapi set point lalu kirim → hasilnya identik dengan POST langsung.
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$id}", $this->payloadDiubah())
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL);
+
+        $langsung = $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave', $this->payloadDiubah())
+            ->assertCreated()
+            ->json('data.id');
+
+        $terkirim = CalibrationSession::findOrFail($id)->hasil_autoclave;
+        // `assertEquals`: kolom JSON menyimpan 121.0 sebagai `121` (perilaku
+        // lama POST, bukan bagian perubahan ini).
+        $this->assertEquals(121.0, $terkirim['set_point']);
+        $this->assertEquals(CalibrationSession::findOrFail($langsung)->hasil_autoclave, $terkirim);
+    }
+
+    public function test_kiriman_tanpa_bacaan_tidak_menimpa_lembar_yang_berisi(): void
+    {
+        $draft = $this->draftTeknisi();
+        $kosong = $this->payload(['status' => 'draft']);
+        unset($kosong['suhu'], $kosong['tekanan']);
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$draft->id}", $kosong)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('lembar');
+
+        $this->assertEquals($draft->hasil_autoclave, $draft->fresh()->hasil_autoclave);
+
+        // Blok yang dikirim tapi barisnya kosong semua juga dihitung kosong.
+        $barisKosong = $this->payload(['status' => 'draft']);
+        unset($barisKosong['suhu']);
+        $barisKosong['tekanan'] = ['satuan' => 'MPa', 'display' => 'Digital', 'pembacaan_standar' => [null, null]];
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$draft->id}", $barisKosong)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('lembar');
+
+        $this->assertEquals($draft->hasil_autoclave, $draft->fresh()->hasil_autoclave);
+    }
+
+    public function test_draft_yang_memang_masih_kosong_boleh_disimpan_kosong_lagi(): void
+    {
+        // `set_point` ikut terkirim: dia setelan, bukan bacaan, jadi tidak
+        // menjadikan lembar ini "berisi". Draft tanpa set point diuji terpisah.
+        $kosong = $this->payload(['status' => 'draft']);
+        unset($kosong['suhu'], $kosong['tekanan']);
+
+        $id = $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave', $kosong)
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$id}", [...$kosong, 'alat_serial_number' => 'SN-03'])
+            ->assertOk();
+
+        $this->assertSame('SN-03', CalibrationSession::findOrFail($id)->alat_serial_number);
+    }
+
     public function test_put_generik_tetap_ke_update_bukan_ke_jalur_autoklaf(): void
     {
         // `PUT /calibrations/{id}` dan `PUT /calibrations/autoclave/{id}` tidak

@@ -64,9 +64,15 @@ disimpannya. Gampang dicari, rapi.
 > disimpan muncul dua kali di layar Draf. Sekarang ada `PUT /calibrations/autoclave/{id}`
 > (`CalibrationController::perbaruiAutoclave`) — body sama dengan POST, sesi yang sama yang
 > diperbarui, penjaga identik `PUT /calibrations/{id}` (pemilik/admin, `disetujui` 422, koreksi
-> admin wajib alasan). Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest`
-> (12 test). **Sisi mobile belum** — HP harus memanggil PUT kalau draft-nya sudah punya id.
-> Gate MySQL belum dijalankan untuk perubahan ini.
+> admin wajib alasan). Tambahan review: sesi `menunggu_approval` tidak bisa balik jadi draft
+> (422; `perlu_revisi` → draft tetap boleh), sunting admin atas sesi antre tidak menggeser
+> `submitted_at`, kiriman tanpa bacaan untuk lembar berisi ditolak (422, tidak ada yang dihapus),
+> field admin dari teknisi dibuang di POST & PUT Autoklaf, dan draft tanpa `set_point` tersimpan
+> (dulu 500 di `AutoclaveInputBuilder`; set point kosong disimpan null, tidak dikarang).
+> Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest` (21 test). **Sisi mobile
+> belum** — HP harus memanggil PUT kalau draft-nya sudah punya id. Gate MySQL belum dijalankan
+> untuk perubahan ini. Celah yang sengaja belum ditutup: sesi lama tanpa `lembar` (koreksi admin
+> tak terdeteksi) dan kabar admin berulang tiap sesi antre disimpan ulang.
 
 ## 5. TITS & TIDS satu pintu
 

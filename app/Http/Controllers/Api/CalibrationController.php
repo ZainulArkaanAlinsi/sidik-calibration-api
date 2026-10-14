@@ -492,6 +492,11 @@ class CalibrationController extends Controller
      * admin bisa mengubah pembacaan lalu menyetujuinya sendiri tanpa
      * `PemisahanWewenang` tahu.
      *
+     * Tambahan di luar `update()`: sesi `menunggu_approval` tidak bisa disimpan
+     * balik jadi draft (422), sunting admin atas sesi yang antre tidak menggeser
+     * `submitted_at`, dan kiriman tanpa satu bacaan pun untuk lembar yang sudah
+     * berisi ditolak (422) — pembacaan lama tetap utuh.
+     *
      * `nomor_sesi`, `teknisi_id`, `organization_id`, `client_request_id` tidak
      * disentuh. `replay()` sengaja tidak dipanggil: PUT menunjuk sesinya lewat
      * URL, bukan lewat `client_request_id`.
@@ -530,12 +535,55 @@ class CalibrationController extends Controller
                 throw new HttpResponseException(response()->json(['message' => $penolakan], 422));
             }
 
+            $status = $this->statusKirimanAutoclave($request);
+
+            // Sesi yang sedang ANTRE approval nggak mundur jadi draft lewat
+            // simpan: dia hilang diam-diam dari antrean admin. Mengembalikan
+            // lembar itu tugas `reject()`, bukan tombol Simpan Draf. (Yang bisa
+            // sampai sini dengan status itu cuma admin — teknisi sudah ditolak
+            // `penolakanStatusUbah`.) `perlu_revisi` → draft TETAP boleh, sama
+            // kayak `update()`: teknisi yang merevisi lembar yang dikembalikan
+            // perlu Simpan Draf, dan antrean draft offline mengirimnya begitu.
+            if (
+                $status['status'] === CalibrationSession::STATUS_DRAFT
+                && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+            ) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. '
+                        .'Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak.',
+                ], 422));
+            }
+
+            // Sunting admin atas sesi yang sedang antre bukan pengiriman baru —
+            // waktu kirimnya dipertahankan. Kirim ulang dari `perlu_revisi` /
+            // `draft` memang pengiriman baru dan diisi `now()`, sama kayak
+            // `update()`.
+            if (
+                $status['submitted_at'] !== null
+                && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+                && $sesi->submitted_at !== null
+            ) {
+                $status['submitted_at'] = $sesi->submitted_at;
+            }
+
             $lembarLama = $sesi->hasil_autoclave['lembar'] ?? [];
+
+            // Kiriman tanpa satu bacaan pun untuk lembar yang SUDAH berisi bacaan
+            // ditolak, bukan dituruti — padanan penjaga "tabel kosong" di
+            // `isiUlangPengukuran()`. Antrean draft offline yang mengirim form
+            // yang belum termuat ulang bakal menimpa seluruh lembar dengan 200.
+            if (! self::lembarAutoclaveBerisiBacaan($request->dataUkur()) && self::lembarAutoclaveBerisiBacaan($lembarLama)) {
+                throw ValidationException::withMessages([
+                    'lembar' => 'Lembar Autoklaf yang dikirim nggak berisi satu bacaan pun, padahal lembar ini sudah '
+                        .'punya bacaan — nggak ada yang dihapus. Muat ulang lembarnya dulu, lalu simpan lagi.',
+                ]);
+            }
+
             $catatanKoreksi = $this->catatanKoreksiAutoclave($sesi, $request, $lembarLama);
 
             $sesi->update([
                 ...$this->atributDariRequest($request),
-                ...$this->statusKirimanAutoclave($request),
+                ...$status,
                 'keputusan' => null,
                 'hasil_autoclave' => $snapshot,
                 // Sama kayak `update()`: catatan & tanda kolom revisi lama nggak
@@ -668,6 +716,38 @@ class CalibrationController extends Controller
         return $koreksi
             ? AuditLog::CATATAN_KOREKSI_PEMBACAAN.$this->alasanKoreksiWajib($request)
             : null;
+    }
+
+    /**
+     * Ada satu pun angka di baris bacaan matriks Autoklaf? Barisnya sama dengan
+     * yang punya cermin `ocr.*` di `AutoclaveStoreRequest`: tiga disk suhu,
+     * indikator, suhu ruang, Indikator Pressure, dan pembacaan standar tekanan.
+     * Setelan (set point, satuan, display, resolusi) bukan bacaan.
+     *
+     * @param  array<string, mixed>  $lembar
+     */
+    private static function lembarAutoclaveBerisiBacaan(array $lembar): bool
+    {
+        $suhu = is_array($lembar['suhu'] ?? null) ? $lembar['suhu'] : [];
+        $tekanan = is_array($lembar['tekanan'] ?? null) ? $lembar['tekanan'] : [];
+
+        $baris = [
+            ...array_values(is_array($suhu['disk'] ?? null) ? $suhu['disk'] : []),
+            $suhu['indikator'] ?? [],
+            $suhu['suhu_ruang'] ?? [],
+            $tekanan['indikator_pressure'] ?? [],
+            $tekanan['pembacaan_standar'] ?? [],
+        ];
+
+        foreach ($baris as $deret) {
+            foreach ((array) $deret as $nilai) {
+                if ($nilai !== null && $nilai !== '') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Urutan kunci peta disamakan & angka jadi float, supaya yang diadu cuma isinya. */

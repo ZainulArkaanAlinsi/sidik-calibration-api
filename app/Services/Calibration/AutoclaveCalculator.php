@@ -63,7 +63,13 @@ class AutoclaveCalculator
      */
     public function hitung(array $input): array
     {
-        $setPoint = $this->wajibFloat($input, 'set_point');
+        // Set point boleh null untuk DRAFT. Tidak satu pun angka olahan di bawah
+        // bergantung padanya — dia cuma diteruskan ke snapshot dan dicetak di
+        // sertifikat — jadi draft tanpa set point tetap dihitung sejauh datanya
+        // ada, dengan `set_point: null`, bukan angka karangan. Kiriman non-draft
+        // dan preview tetap mewajibkannya di FormRequest. Yang DIKIRIM tapi
+        // bukan angka tetap dilempar.
+        $setPoint = ($input['set_point'] ?? null) === null ? null : $this->wajibFloat($input, 'set_point');
         $cmcSuhu = (float) ($input['cmc']['suhu'] ?? 0.34);
         $cmcTekananBar = (float) ($input['cmc']['tekanan'] ?? 0.059);
 
@@ -88,7 +94,7 @@ class AutoclaveCalculator
      * @param  array<string, mixed>  $suhu
      * @return array<string, mixed>
      */
-    private function hitungSuhu(array $suhu, float $setPoint, float $cmc): array
+    private function hitungSuhu(array $suhu, ?float $setPoint, float $cmc): array
     {
         // Blok suhu DIKIRIM tapi isinya kosong tetap dilempar (bukan di-null-in
         // diam-diam): teknisi yang ngirim blok suhu bermaksud ngukur suhu, dan
