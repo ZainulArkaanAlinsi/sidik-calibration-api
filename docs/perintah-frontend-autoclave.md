@@ -10,6 +10,7 @@ sesi kerja frontend — tidak perlu membuka dokumen lain.
 | Metode | `SIDIK-IK-CAL-0531_Rev.4` |
 | Master | `Master Olah Data_Autoclave.xlsm` (LK-285-IDN) |
 | Status backend | Olah data + lembar kerja + endpoint preview **selesai & terverifikasi ke master di MySQL**. Simpan/approve/sertifikat = fase berikut (lihat §7) |
+| Simpan ulang (§8) | `PUT /calibrations/autoclave/{id}` — `main` `56668b1` (PR #235 = `b8b2ca0` + `29c8868`), **live di produksi 15 Okt 2026**. Mobile sudah memakainya (PR mobile #205, rilis 1.0.695) |
 
 ---
 
@@ -292,9 +293,288 @@ Pembulatan tampilan tidak boleh mengubah angka yang dikirim balik saat simpan
 
 ## 7. Yang BELUM ada (fase berikut, jangan diasumsikan)
 
-- Simpan sesi Autoklaf ke DB + status draft/approval + PDF/Excel sertifikat.
+- ~~Simpan sesi Autoklaf ke DB + status draft/approval~~ — **sudah ada**:
+  `POST` & `PUT /calibrations/autoclave`, lihat §8. Status PDF/Excel sertifikat
+  Autoklaf tidak diperiksa ulang waktu §8 ditulis — cek `docs/BACA-DULU-BACKEND.md`.
 - Template OCR/pindai foto Autoklaf (geometri kertas belum diukur).
 - Seeder `standards` untuk kalibrator Autoklaf (sekarang di `config/autoclave.php`).
 
 Untuk sekarang: layar input + tombol "Hitung" (panggil preview) + tampilkan
 hasil. Itu jalur yang sudah siap dan terverifikasi.
+
+## 8. Simpan ulang sesi yang sudah ada — `PUT /calibrations/autoclave/{id}`
+
+> **Live di produksi 15 Okt 2026.** `main` `56668b1` (PR #235: `b8b2ca0` +
+> `29c8868`); run CI `Tes` untuk SHA itu hijau, termasuk langkah yang memastikan
+> versi barunya tersaji. Dijaga `tests/Feature/AutoclaveUpdateTest.php` (21 test).
+> Ringkasan kontraknya juga ada di `docs/kontrak-api.md` §4.
+
+### 8.1 Kapan `POST`, kapan `PUT`
+
+| Lembar di HP | Panggil | Jawaban |
+|---|---|---|
+| Baru, belum pernah tersimpan di server (belum punya id sesi) | `POST /calibrations/autoclave` | **201** `{data}` |
+| Dibuka lagi dan **sudah punya id sesi** — `draft`, atau `perlu_revisi` (dikembalikan admin) | `PUT /calibrations/autoclave/{id}` | **200** `{data, meta}` |
+
+Kenapa harus dibedakan: `POST` **selalu** melahirkan sesi baru. `client_request_id`
+cuma menyaring kiriman ulang yang persis sama (retry jaringan → 200 replay); lembar
+yang dibuka lagi membawa `client_request_id` baru, jadi tiap "Simpan Draf" lewat
+`POST` menghasilkan draft kembar. `PUT` menunjuk sesinya lewat URL —
+`client_request_id` di body `PUT` boleh ikut tapi **diabaikan** (tidak ada replay,
+nilai lama tidak ditimpa). `nomor_sesi` dan pengisi lembar (`teknisi_id`) juga tidak
+berubah, termasuk kalau yang menyimpan admin.
+
+Jangan menyimpan sesi Autoklaf lewat `PUT /calibrations/{id}` generik — jalur itu
+memvalidasi body `measurements[]`, bukan body Autoklaf. Sebaliknya, `PUT
+/calibrations/autoclave/{id}` ke sesi yang bukan Autoklaf dijawab 422 (§8.9).
+
+### 8.2 Body — sama persis dengan `POST /calibrations/autoclave`
+
+Satu FormRequest untuk keduanya (`AutoclaveStoreRequest`). Auth `role:admin,teknisi`.
+Tidak ada throttle khusus (beda dari preview).
+
+**Identitas sesi**
+
+| Field | Aturan |
+|---|---|
+| `equipment_id` | **wajib**, alat milik lab sendiri yang belum dihapus |
+| `status` | `"draft"` atau `"menunggu_approval"`; tidak dikirim = `menunggu_approval` |
+| `tanggal_kalibrasi` | wajib kecuali `status: "draft"`; tidak boleh di masa depan |
+| `tanggal_terima` | opsional, ≤ `tanggal_kalibrasi` |
+| `input_method` | `manual` \| `ocr` |
+| `lokasi` | `lab` \| `onsite`; `lokasi_nama` teks |
+| `room_id`, `calibration_method_id`, `thermohygro_standard_id` | opsional, milik lab sendiri |
+| `suhu_awal`, `suhu_akhir`, `kelembaban_awal`, `kelembaban_akhir` | angka; kelembaban 0–100 |
+| `waktu_awal`, `waktu_akhir` | `HH:mm` atau `HH:mm:ss` |
+| `catatan_teknisi`, `alat_model`, `alat_serial_number`, `alat_merk`, `pemilik_nama`, `pemilik_alamat` | teks |
+| `client_request_id` | UUID; dipakai `POST` saja |
+| `nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian` | **khusus admin** — lihat §8.4 |
+
+**Data ukur** — `set_point`, `suhu`, `tekanan`, `waktu`: bentuk dan aturannya persis
+§3 (preview), dengan satu beda: `set_point` boleh kosong untuk draft (§8.5).
+
+**`ocr` (opsional)** — tebakan mesin per sel, **bercermin ke jalur nilainya** dengan
+awalan `ocr.`: `ocr.suhu.disk.<i>`, `ocr.suhu.indikator`, `ocr.suhu.suhu_ruang`,
+`ocr.tekanan.indikator_pressure`, `ocr.tekanan.pembacaan_standar`. Tiap jalur deret
+maksimal 20 sel, **sejajar indeks** dengan deret nilainya (termasuk `null`-nya); tiap
+sel `{"raw_text": "...", "confidence": 0..1}` atau `null`. Baris `waktu` tidak punya
+padanan `ocr`. Contoh (dari `TebakanMesinAutoclaveTest`):
+
+```json
+"ocr": { "suhu": { "disk": [ [ {"raw_text": "121.27", "confidence": 0.9} ] ] } }
+```
+
+**`lembar` BUKAN field body.** Server sendiri yang menyalin data ukur kiriman
+(`set_point`, `waktu`, `suhu`, `tekanan` — yang `null` dibuang) ke
+`hasil_autoclave.lembar`, dan blok `ocr` ke `hasil_autoclave.ocr` di sebelahnya.
+Kunci `lembar` di body diabaikan. Untuk mengisi ulang formulir draft yang dibuka
+lagi, baca `hasil_autoclave.lembar` dari respons atau `GET /calibrations/{id}`.
+
+**Kirim lembar UTUH di tiap `PUT`, bukan selisihnya.**
+- `hasil_autoclave` dihitung ulang **hanya** dari kiriman ini. Blok `tekanan` yang
+  tidak ikut terkirim = hilang dari snapshot baru.
+- Beberapa kolom identitas selalu ditulis ulang: `equipment_id`, `input_method`
+  (tidak dikirim → `manual`), `lokasi` (tidak dikirim → `lab`), `tanggal_kalibrasi`
+  (tidak dikirim → kosong). Kolom identitas lain yang tidak dikirim dibiarkan.
+
+### 8.3 Siapa boleh menyimpan, dan status apa
+
+| Status sesi sekarang | Teknisi pengisi | Admin (lab sama) | Teknisi lain / lab lain | Viewer, super_admin |
+|---|---|---|---|---|
+| `draft` | boleh | boleh | **404** | **403** |
+| `perlu_revisi` | boleh | boleh | **404** | **403** |
+| `menunggu_approval` | **422** | boleh, tapi tidak bisa jadi draft lagi | **404** | **403** |
+| `disetujui` | **422** (terkunci) | **422** (terkunci) | **404** | **403** |
+| status lain (mis. `menunggu_pengesahan`) | **422** | **422** | **404** | **403** |
+
+Perpindahan status:
+
+| Status sekarang | Kirim `status: "draft"` | Kirim tanpa `status` / `"menunggu_approval"` |
+|---|---|---|
+| `draft` | tetap `draft`, `submitted_at: null` | `menunggu_approval`, `submitted_at` = waktu kirim ini |
+| `perlu_revisi` | `draft`, `submitted_at: null` | `menunggu_approval`, `submitted_at` = waktu kirim ini |
+| `menunggu_approval` (admin) | **422** — tidak ada jalan mundur ke draft | tetap `menunggu_approval`, `submitted_at` **lama dipertahankan** |
+| `disetujui` | **422** | **422** |
+
+`submitted_at` cuma terisi waktu **mengirim**; simpan draft selalu `null`. Sunting
+admin atas sesi yang sudah antre bukan pengiriman baru, jadi waktunya tidak bergeser.
+Mengembalikan lembar ke teknisi itu tugas **Tolak** (`POST /calibrations/{id}/reject`),
+bukan Simpan Draf.
+
+Tiap kiriman yang berakhir `menunggu_approval` memicu efek yang sama dengan `POST`:
+admin dikabari dan lembar diarsip ke folder PT.
+
+**`catatan_revisi` & `revisi_field` dikosongkan** di tiap `PUT` yang berhasil —
+termasuk Simpan Draf pertama atas lembar `perlu_revisi`. Kalau layar revisi
+menyorot kolom dari `revisi_field`, simpan catatannya di sisi HP sebelum menyimpan;
+sesudah `PUT`, server tidak memulangkannya lagi.
+
+Sesinya dikunci (`lockForUpdate`) selama simpan, dan status dibaca dari baris yang
+terkunci — approve yang balapan dengan `PUT` tidak bisa membuat sesi `disetujui`
+tertimpa.
+
+### 8.4 Field khusus admin dibuang dari kiriman non-admin
+
+`nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian` yang dikirim akun
+**non-admin dibuang diam-diam** (bukan 422), di `POST` maupun `PUT`: kirimannya
+tetap 200/201, nilainya tidak sampai ke database, dan nomor order yang sudah diisi
+admin tetap utuh. Jangan tampilkan ketiganya di form teknisi. Dari admin, dua field
+ketidakpastian divalidasi angka ≥ 0 (gagal → 422 `errors.<field>`).
+
+### 8.5 Draft tanpa `set_point` diterima
+
+Draft boleh disimpan sebelum set point diketahui, di `POST` maupun `PUT`.
+`hasil_autoclave` tetap dihitung dari bacaan yang ada dengan
+`hasil_autoclave.set_point: null` — server **tidak mengarang** set point (tidak ada
+angka olahan yang bergantung padanya; dia cuma dicetak di sertifikat), dan
+`hasil_autoclave.lembar` tidak memuat kunci `set_point`. Kiriman **non-draft** tanpa
+`set_point` tetap **422** `errors.set_point`, dan sesinya tetap `draft`.
+
+### 8.6 `PUT` kosong ke lembar yang sudah berisi → 422 `errors.lembar`
+
+Kalau kiriman tidak memuat **satu bacaan pun**, padahal lembar tersimpan sudah
+punya bacaan, server menolak dan **tidak menghapus apa-apa**:
+
+```json
+{
+  "message": "Lembar Autoklaf yang dikirim nggak berisi satu bacaan pun, padahal lembar ini sudah punya bacaan — nggak ada yang dihapus. Muat ulang lembarnya dulu, lalu simpan lagi.",
+  "errors": {
+    "lembar": ["Lembar Autoklaf yang dikirim nggak berisi satu bacaan pun, padahal lembar ini sudah punya bacaan — nggak ada yang dihapus. Muat ulang lembarnya dulu, lalu simpan lagi."]
+  }
+}
+```
+
+"Bacaan" = sel berisi di `suhu.disk[*]`, `suhu.indikator`, `suhu.suhu_ruang`,
+`tekanan.indikator_pressure`, `tekanan.pembacaan_standar`. Setelan (`set_point`,
+`satuan`, `display`, `resolusi_alat`, `uut_setting`, `tekanan_atm_awal`, `waktu`)
+bukan bacaan.
+
+Yang wajib dilakukan HP: **jangan mengulang kiriman yang sama** (hasilnya tetap
+422). Simpan isian lokal, muat ulang sesi (`GET /calibrations/{id}`), isi formulir
+dari `hasil_autoclave.lembar`, baru simpan lagi. Kasus khasnya antrean draft offline
+yang mengirim formulir yang belum termuat ulang. Draft yang memang **belum pernah**
+berisi bacaan tetap boleh disimpan kosong lagi.
+
+### 8.7 Koreksi admin atas lembar yang sudah dikirim
+
+Admin yang **mengubah angka** di lembar sesi `menunggu_approval` wajib mengirim
+`alasan_koreksi` (10–500 karakter); tanpa itu **422** `errors.alasan_koreksi` dan
+lembar teknisi tetap utuh. Yang dibandingkan isi `lembar` sesudah dibakukan, jadi
+beda urutan kunci atau `121` lawan `121.0` tidak dihitung koreksi; menyimpan ulang
+tanpa mengubah angka (mis. cuma nomor seri) tidak meminta alasan.
+
+Koreksi tercatat di jejak audit (nilai `lembar` lama & baru, alasan, pelaku), dan
+admin itu **tidak bisa menyetujui** sesi yang sama
+(`penyetuju_mengoreksi_pembacaan`).
+
+### 8.8 Respons 200
+
+`{data: CalibrationResource, meta: {belum_dihitung: []}}` — `data` sama bentuknya
+dengan `GET /calibrations/{id}`. `meta.belum_dihitung` selalu `[]` (Autoklaf tidak
+punya titik GUM); kuncinya ada supaya bentuknya sama dengan `PUT /calibrations/{id}`.
+`POST` tidak membawa `meta`.
+
+Kerangka di bawah dirangkai dari `CalibrationResource::toArray()` dan fixture
+`AutoclaveUpdateTest`, **bukan** disalin dari respons produksi. `id`, `nomor_sesi`,
+dan tanggal ilustratif; field lain `CalibrationResource` (equipment, teknisi,
+pelanggan, kondisi lingkungan, dst.) dipangkas.
+
+```json
+{
+  "data": {
+    "id": 101,
+    "nomor_sesi": "KAL/2026/10/0003",
+    "nomor_order": null,
+    "status": "draft",
+    "input_method": "manual",
+    "tanggal_kalibrasi": "2026-10-14",
+    "submitted_at": null,
+    "catatan_revisi": null,
+    "revisi_field": [],
+    "hasil_autoclave": {
+      "set_point": 121.0,
+      "suhu": { "kestabilan": 0.045, "keseragaman": 0.464, "variasi": 0.10, "u95": 0.4419439029528431 },
+      "tekanan": { "satuan": "MPa", "standar_terkoreksi": 0.1231, "koreksi": 0.0111, "u95": 0.0059 },
+      "lembar": {
+        "set_point": 121.0,
+        "waktu": ["02:00:00", "04:00:00", "06:00:00", "08:00:00", "10:00:00"],
+        "suhu": { "disk": [[121.27, 121.26, 121.26, 121.26, 121.28], [121.30, 121.26, 121.26, 121.25, 121.25], [121.26, 121.26, 121.28, 121.35, 121.28]], "indikator": [121, 121, 121, 121, 121], "suhu_ruang": [25, 25, 25, 25, 25] },
+        "tekanan": { "indikator_pressure": [0.112, 0.112, 0.112, 0.112, 0.112], "tekanan_atm_awal": [0, 0, 0, 0, 0], "satuan": "MPa", "display": "Digital", "pembacaan_standar": [1.233, 1.231, 1.225, 1.224, 1.242] }
+      }
+    }
+  },
+  "meta": { "belum_dihitung": [] }
+}
+```
+
+`hasil_autoclave.suhu` & `.tekanan` di atas **dipangkas** — isinya lengkap persis
+respons preview §3 untuk data yang sama (POST, PUT, dan preview memakai jalur hitung
+yang sama; `AutoclaveUpdateTest` mengunci U95 suhu `0.4419439029528431` untuk data
+ini). `hasil_autoclave.ocr` cuma ada kalau blok `ocr` dikirim.
+
+Dua catatan parsing:
+- Angka bulat bisa pulang tanpa desimal (`121`, bukan `121.0`) sesudah lewat kolom
+  JSON — dicatat di `AutoclaveUpdateTest`. Parse sebagai `num`, jangan di-cast
+  langsung ke `double`.
+- `submitted_at` ISO 8601 penuh, bukan string tampilan.
+
+### 8.9 Kode galat
+
+Dua bentuk 422: validasi (`{message, errors: {<field>: [...]}}`) dan penolakan
+status/jenis sesi (`{message}` saja, tanpa `errors`). Tampilkan `message` apa adanya.
+
+| Keadaan | Jawaban |
+|---|---|
+| Tidak login | **401** |
+| Viewer, super_admin (gerbang rute `role:admin,teknisi`) | **403** |
+| Id tidak ada; teknisi yang bukan pengisi lembar; sesi lab lain | **404** |
+| Body tidak lolos `AutoclaveStoreRequest` (termasuk non-draft tanpa `set_point` → `errors.set_point`, field admin bukan angka/negatif → `errors.<field>`) | **422** `errors.*` |
+| Sesi bukan sesi Autoklaf | **422** `message`: "Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf." |
+| Sesi `disetujui` (semua peran) | **422** `message`: "Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit." |
+| Teknisi atas sesi `menunggu_approval`; semua peran atas status lain selain `draft`/`perlu_revisi`/`menunggu_approval`/`disetujui` | **422** `message`: "Sesi yang lagi nunggu approval nggak bisa diubah teknisi. Minta admin yang ngedit, atau minta lembarnya dibalikin dulu." |
+| `status: "draft"` untuk sesi `menunggu_approval` | **422** `message`: "Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak." |
+| Kiriman tanpa bacaan ke lembar yang sudah berisi | **422** `errors.lembar` (§8.6) |
+| Admin mengubah angka lembar `menunggu_approval` tanpa alasan | **422** `errors.alasan_koreksi` (§8.7) |
+
+Sesudah gerbang rute, urutannya: validasi body → kepemilikan (404) → jenis sesi →
+status → larangan mundur ke draft → lembar kosong → alasan koreksi. Akibatnya body
+yang tidak valid ke sesi milik orang lain dijawab **422**, bukan 404 — validasi
+FormRequest jalan sebelum isi controller.
+
+### 8.10 Status sisi mobile — sudah jalan
+
+- PR mobile #205 (merge `114c0eb`), rilis **1.0.695** (tag `v1.0.695+695` →
+  `114c0eb`, terbit 15 Okt 2026 WIB).
+- `_kirimMatriks` di `lib/screens/calibration/lembar_kerja_screen.dart` memanggil
+  `AutoclaveService.perbarui` (`PUT`) kalau lembar sudah punya `sesiId`, dan
+  `simpan` (`POST`) kalau belum. Kalau kiriman sebelumnya sudah pernah dicoba
+  (mis. putus jaringan, mungkin sudah sampai), HP memanggil `POST` draft dulu —
+  dijawab replay kalau sesinya ternyata sudah ada — lalu memastikan isinya lewat
+  `PUT` ke id yang didapat.
+- Galat 422 tampil sebagai snackbar umum (`lkGagalKirim`). **Belum** ada penanganan
+  khusus `errors.lembar` (muat ulang otomatis) dan **belum** ada isian
+  `alasan_koreksi` di HP (grep `alasan_koreksi` di `lib/` = 0 hasil) — koreksi angka
+  oleh admin atas sesi antre dari HP akan selalu 422.
+
+### 8.11 Celah yang diketahui — belum ditutup, sengaja ditulis
+
+1. **Sesi lama tanpa `lembar` tidak terdeteksi sebagai koreksi admin.** `lembar`
+   baru ikut disimpan sejak 20 Agt 2026 (`2b64fec`). Untuk sesi Autoklaf yang
+   tersimpan sebelum itu, admin yang mengubah angkanya **tidak** diminta
+   `alasan_koreksi`, penanda koreksinya tidak tertulis, sehingga pemisahan wewenang
+   tidak tahu admin itu ikut mengubah angka. Penjaga `errors.lembar` (§8.6) juga
+   tidak melindungi sesi semacam ini. Nilai lama `hasil_autoclave` tetap terekam di
+   jejak audit umum, tapi tanpa penanda koreksi. Jumlah sesi semacam ini di produksi
+   belum dihitung.
+2. **Kabar admin bisa berulang.** Tiap `PUT` yang berakhir `menunggu_approval`
+   mengirim ulang notifikasi "sesi menunggu approval" ke semua admin aktif (kecuali
+   teknisi pengisi) — termasuk sunting admin atas sesi yang sudah antre, dan admin
+   yang menyunting ikut dikabari.
+3. **Tidak ada versi — simpan terakhir yang menang.** `PUT` tidak memeriksa
+   `updated_at`/ETag dan tidak pernah menjawab 409. Dua perangkat (atau antrean
+   offline teknisi + sunting admin) yang menyimpan sesi yang sama: yang terakhir
+   menimpa tanpa peringatan. Nilai sebelumnya tetap ada di jejak audit, tapi tidak
+   ada yang diberi tahu. Satu-satunya kasus yang dijaga server adalah kiriman tanpa
+   bacaan (§8.6). Di sisi HP: muat ulang sesi sebelum menyunting lembar yang lama
+   terbuka, dan jangan memutar ulang antrean offline yang sudah basi tanpa memuat
+   ulang.

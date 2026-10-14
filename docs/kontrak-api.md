@@ -805,7 +805,7 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > | 5 Enclosure (grid) | `measurements[].sensor_grid[].ocr` | deret, sejajar `pembacaan` baris itu |
 > | 5 Enclosure (dua baris deret) | `measurements[].indikator_ocr` · `.suhu_ruang_ocr` | deret, sejajar deret angkanya |
 > | Timbangan (blok Repeatability) | `spesifikasi_alat.keterulangan.baris[].<kolom>_ocr` | deret, sejajar `<kolom>` |
-> | Autoklaf (`POST /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
+> | Autoklaf (`POST` · `PUT /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
 >
 > ### Aturan yang MENGIKAT
 >
@@ -954,7 +954,7 @@ Lainnya:
 
 Rincian untuk HP: `docs/perintah-frontend-volumetric.md` §8.
 
-#### `POST /api/calibrations/autoclave` · `PUT /api/calibrations/autoclave/{id}` — simpan & perbarui sesi Autoklaf (PUT sejak 14 Okt 2026)
+#### `POST /api/calibrations/autoclave` · `PUT /api/calibrations/autoclave/{id}` — simpan & perbarui sesi Autoklaf (PUT live di produksi 15 Okt 2026, `main` `56668b1`)
 
 Lembar Autoklaf (matriks) tidak lewat `POST`/`PUT /calibrations`: bodynya data ukur
 mentah (`set_point`, `suhu`, `tekanan`, `waktu`, `ocr`) + identitas sesi, dan hasilnya
@@ -971,6 +971,11 @@ dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.
   - `hasil_autoclave` dihitung ulang dari kiriman lewat jalur yang sama dengan `POST`
     (termasuk `lembar` mentah & blok `ocr`). `nomor_sesi`, pengisi lembar
     (`teknisi_id`), dan `client_request_id` tidak berubah.
+  - `lembar` **bukan field body** — server yang menyalin data ukur kiriman ke
+    `hasil_autoclave.lembar`. Data ukur diganti UTUH dari kiriman ini (blok yang tidak
+    dikirim hilang dari snapshot), dan `equipment_id`, `input_method` (→ `manual`),
+    `lokasi` (→ `lab`), `tanggal_kalibrasi` (→ kosong) selalu ditulis ulang. HP wajib
+    mengirim lembar utuh, bukan selisihnya.
   - `status: "draft"` → jadi/tetap draft, `submitted_at` null. Berlaku untuk sesi
     `draft` **dan `perlu_revisi`** (Simpan Draf revisi lembar yang dikembalikan, sama
     dengan `PUT /calibrations/{id}`). Sesi `menunggu_approval` tidak bisa disimpan balik
@@ -995,7 +1000,7 @@ dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.
 | Keadaan | Jawaban |
 |---|---|
 | Teknisi yang bukan pengisi lembar, atau sesi lab lain | **404** |
-| Viewer | **403** (gerbang rute `role:admin,teknisi`) |
+| Viewer, super_admin | **403** (gerbang rute `role:admin,teknisi`) |
 | Sesi bukan sesi Autoklaf (`hasil_autoclave` kosong) | **422** `message`: "Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf." |
 | Sesi `disetujui` (semua peran) | **422** `message`: "Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit." |
 | Teknisi atas sesi `menunggu_approval` (atau status lain di luar `draft`/`perlu_revisi`) | **422** `message`: "Sesi yang lagi nunggu approval nggak bisa diubah teknisi. …" |
@@ -1010,6 +1015,18 @@ Admin boleh mengubah `draft`, `perlu_revisi`, dan `menunggu_approval`. Koreksi a
 angka yang sudah dikirim tercatat di jejak audit (nilai lama & baru `lembar` + alasan), dan
 admin itu **tidak bisa** menyetujui sesi yang sama (`penyetuju_mengoreksi_pembacaan`).
 Menyimpan ulang tanpa mengubah angka (mis. cuma nomor seri) tidak meminta alasan.
+
+**Batas yang diketahui (belum ditutup, 15 Okt 2026):**
+- Sesi Autoklaf yang tersimpan sebelum `lembar` ikut disimpan (20 Agt 2026, `2b64fec`)
+  tidak terdeteksi sebagai koreksi admin — tanpa `alasan_koreksi`, tanpa penanda untuk
+  `PemisahanWewenang` — dan tidak dilindungi penjaga `errors.lembar`.
+- Tiap `PUT` yang berakhir `menunggu_approval` mengirim ulang kabar ke semua admin aktif,
+  termasuk sunting admin atas sesi yang sudah antre.
+- Tidak ada versi/ETag: simpan terakhir yang menang, tidak ada 409. Nilai lama tetap di
+  `audit_logs` (`Diaudit`), tapi tidak ada yang diperingatkan.
+
+Mobile memakai `PUT` ini sejak rilis 1.0.695 (PR mobile #205). Rincian untuk HP:
+`docs/perintah-frontend-autoclave.md` §8.
 
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 

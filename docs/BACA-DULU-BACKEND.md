@@ -54,6 +54,49 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 15 Oktober 2026 — `PUT /calibrations/autoclave/{id}`: draft Autoklaf tidak lagi dobel (LIVE)
+
+**Status: live di produksi 15 Okt 2026.** `main` `56668b1` = PR #235 (`b8b2ca0` +
+`29c8868`). Run CI `Tes` untuk SHA itu hijau, termasuk langkah yang memastikan versi
+barunya tersaji. Mobile sudah memakainya: PR mobile #205, rilis 1.0.695.
+
+**Masalahnya:** Autoklaf cuma punya `POST /calibrations/autoclave`, dan `POST` selalu
+melahirkan sesi baru — draft yang dibuka lagi lalu disimpan muncul dua kali di layar
+Draf. Sekarang ada `PUT /calibrations/autoclave/{calibration}`
+(`CalibrationController::perbaruiAutoclave`, `routes/api.php` grup
+`role:admin,teknisi`) yang memperbarui sesi yang SAMA.
+
+| Aturan | Perilaku |
+|---|---|
+| Body | sama persis dengan `POST` (`AutoclaveStoreRequest`), termasuk blok `ocr`; `hasil_autoclave` (+ `lembar` mentah) dihitung lewat jalur yang sama dengan `POST` |
+| Siapa | teknisi pengisi atau admin lab yang sama; teknisi lain / lab lain **404**; viewer & super_admin **403** |
+| Status | `draft` & `perlu_revisi` boleh; `menunggu_approval` admin saja; `disetujui` **422** terkunci |
+| Mundur ke draft | `menunggu_approval` → draft **ditolak 422**; `perlu_revisi` → draft boleh |
+| `submitted_at` | diisi cuma waktu mengirim; sunting admin atas sesi antre mempertahankan waktu lama |
+| Field admin | `nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian` dari non-admin dibuang diam-diam (POST & PUT) |
+| PUT kosong | kiriman tanpa satu bacaan ke lembar yang sudah berisi → **422** `errors.lembar`, tidak ada yang dihapus |
+| `set_point` | boleh kosong untuk draft (POST & PUT) → `hasil_autoclave.set_point: null`, tidak dikarang; non-draft tetap 422 |
+| Koreksi admin | ubah angka lembar `menunggu_approval` wajib `alasan_koreksi`; tercatat di `audit_logs` dan memblokir admin itu menyetujui |
+
+Dijaga `tests/Feature/AutoclaveUpdateTest.php` (21 test). Kontrak:
+`docs/kontrak-api.md` §4; handoff HP: `docs/perintah-frontend-autoclave.md` §8.
+
+**Gate MySQL penuh:** sedang berjalan saat entri ini ditulis (15 Okt 2026); hasilnya
+belum tercatat di sini.
+
+**Celah yang diketahui — belum ditutup:**
+1. Sesi Autoklaf yang tersimpan sebelum `lembar` ikut disimpan (20 Agt 2026,
+   `2b64fec`) tidak terdeteksi sebagai koreksi admin, dan tidak dilindungi penjaga
+   `errors.lembar`. Jumlahnya di produksi belum dihitung.
+2. Kabar "sesi menunggu approval" ke admin bisa berulang: dikirim di tiap `PUT` yang
+   berakhir `menunggu_approval`, termasuk sunting admin atas sesi yang sudah antre.
+3. Tidak ada versi: simpan terakhir yang menang, tidak ada 409. Nilai lama tetap di
+   `audit_logs`, tapi tidak ada yang diperingatkan.
+4. Mobile belum punya isian `alasan_koreksi` dan belum menangani `errors.lembar`
+   secara khusus (keduanya tampil sebagai snackbar galat umum).
+
+---
+
 ## 17 September 2026 — KOREKSI: entitas Order HIDUP LAGI, dan halaman ini yang basi
 
 Yang di bawah nulis Order "nggak jadi dibangun" dan "`main` nol rute". **Dua-duanya
