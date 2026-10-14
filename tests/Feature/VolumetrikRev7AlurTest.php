@@ -525,13 +525,19 @@ class VolumetrikRev7AlurTest extends TestCase
         );
 
         // `SERTIFIKAT!B29:W30`: neraca + Termometer & Sensor Std., sensor PRT
-        // tidak dicetak terpisah.
+        // tidak dicetak terpisah. Kunci tiap baris diurutkan dulu: kolom JSON
+        // MySQL menyimpan kunci objek urut panjang-lalu-byte, SQLite apa adanya.
+        $urutKunci = static fn (array $daftar): array => array_map(static function (array $baris): array {
+            ksort($baris);
+
+            return $baris;
+        }, $daftar);
         $this->assertSame(
-            [
+            $urutKunci([
                 ['name' => 'Electronic Balance Fujitsu', 'merk_type' => 'Fujitsu/FSR-A', 'serial_number' => 'SIDIK/134/2024', 'traceable_to' => 'LK-305-IDN'],
                 ['name' => 'Termometer & Sensor Std.', 'merk_type' => 'Yokogawa/CA 150 Handy Cal', 'serial_number' => '23P1005', 'traceable_to' => 'LK-285-IDN'],
-            ],
-            $snapshot['standar_digunakan'],
+            ]),
+            $urutKunci($snapshot['standar_digunakan']),
         );
 
         // Nominal dengan nol di belakang (`E21` format `0.00`).
