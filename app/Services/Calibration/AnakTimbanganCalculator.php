@@ -132,29 +132,11 @@ class AnakTimbanganCalculator
         $kelasUut = $konteks['kelas_uut'] ?? null;
         $kelasStandar = $konteks['kelas_standar'] ?? null;
         // Neraca yang dicentang — boleh lebih dari satu (lihat [pilihNeraca]).
-        // Konteks lama yang cuma membawa `timbangan` dibaca sebagai daftar
-        // berisi satu neraca itu.
-        $namaNeraca = array_values(array_filter(
-            (array) ($konteks['timbangan_daftar'] ?? []),
-            static fn ($n): bool => is_string($n) && trim($n) !== '',
-        ));
-
-        if ($namaNeraca === [] && is_string($konteks['timbangan'] ?? null) && trim($konteks['timbangan']) !== '') {
-            $namaNeraca = [$konteks['timbangan']];
-        }
-
-        $neracaSesi = [];
-        $neracaAsing = [];
-
-        foreach ($namaNeraca as $nama) {
-            $baris = TabelStandarAnakTimbangan::timbangan($nama);
-
-            if ($baris === null) {
-                $neracaAsing[] = $nama;
-            } else {
-                $neracaSesi[] = $baris;
-            }
-        }
+        [
+            'nama' => $namaNeraca,
+            'neraca' => $neracaSesi,
+            'asing' => $neracaAsing,
+        ] = self::neracaTercentang($konteks);
 
         // Prasyarat tingkat SESI. Satu pun yang hilang membuat seluruh sesi
         // tidak bisa dihitung — bukan "dihitung sebagian", karena densitas udara
@@ -453,6 +435,49 @@ class AnakTimbanganCalculator
             'titik' => $hasil,
             'ditolak' => $ditolak,
         ];
+    }
+
+    /**
+     * Neraca yang dicentang sesi ini, dibaca dari blok sesi.
+     *
+     * Satu-satunya pembaca daftar neraca. [hitungSesi] memakainya untuk
+     * menimbang, `AnakTimbanganProfile` untuk DESIMAL CETAK tiap keping
+     * (keputusan pemilik 14 Okt 2026: desimal = resolusi neraca yang
+     * menimbang). Dua pembaca yang menyusun daftarnya sendiri-sendiri bisa
+     * berselisih tentang neraca keping yang sama — keping ditimbang di
+     * Analytical tapi dicetak dengan desimal Semi Micro, tanpa satu pun error.
+     *
+     * Konteks lama yang cuma membawa `timbangan` dibaca sebagai daftar berisi
+     * satu neraca itu. Nama yang tidak ada di tabel standar masuk `asing`.
+     *
+     * @param  array<string, mixed>  $konteks  keluaran `AnakTimbanganMentah::blokSesi()`
+     * @return array{nama: list<string>, neraca: list<array<string, mixed>>, asing: list<string>}
+     */
+    public static function neracaTercentang(array $konteks): array
+    {
+        $namaNeraca = array_values(array_filter(
+            (array) ($konteks['timbangan_daftar'] ?? []),
+            static fn ($n): bool => is_string($n) && trim($n) !== '',
+        ));
+
+        if ($namaNeraca === [] && is_string($konteks['timbangan'] ?? null) && trim($konteks['timbangan']) !== '') {
+            $namaNeraca = [$konteks['timbangan']];
+        }
+
+        $neracaSesi = [];
+        $neracaAsing = [];
+
+        foreach ($namaNeraca as $nama) {
+            $baris = TabelStandarAnakTimbangan::timbangan($nama);
+
+            if ($baris === null) {
+                $neracaAsing[] = $nama;
+            } else {
+                $neracaSesi[] = $baris;
+            }
+        }
+
+        return ['nama' => $namaNeraca, 'neraca' => $neracaSesi, 'asing' => $neracaAsing];
     }
 
     /**

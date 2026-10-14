@@ -155,7 +155,12 @@ class PerhitunganBuilder
                     // Resolusi per titik (Turbidimeter). null buat alat resolusi
                     // seragam — layar jatuh ke resolusi alat. Ini yang bikin
                     // lembar perhitungan nampilin "4,60" bukan "4,6".
-                    'desimal' => $profil->desimalTitik($titikUkur),
+                    //
+                    // Lewat varian ber-SESI: pembacaan Anak Timbangan ditulis
+                    // sebanyak desimal resolusi neraca yang menimbang keping
+                    // itu (format kolom `INPUT DATA` master), dan neracanya
+                    // dipilih dari centang sesi. Bawaannya `desimalTitik()`.
+                    'desimal' => $profil->desimalTitikSesi($sesi, $titikUkur),
                     'resolusi' => $profil->resolusiTitik($titikUkur),
                     'pembacaan' => $pembacaan
                         ->map(fn (RawMeasurement $m): array => [

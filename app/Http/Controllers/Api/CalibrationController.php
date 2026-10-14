@@ -582,6 +582,11 @@ class CalibrationController extends Controller
                         $t,
                         $sesi->equipment,
                         $sesi->organization,
+                        // Sesi TIRUAN ini membawa `spesifikasi_alat` dari
+                        // request — desimal per keping Anak Timbangan (neraca
+                        // dari centang) lahir dari situ, sama dengan sesi
+                        // tersimpan.
+                        $sesi,
                     ))
                     ->all(),
                 // Dua tabel lembar kerja (Before/After adjustment) lengkap sama

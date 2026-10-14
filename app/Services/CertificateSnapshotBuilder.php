@@ -285,7 +285,7 @@ class CertificateSnapshotBuilder
         $cetak = $profil?->cetakDalamSatuanAlat($sesi);
 
         $baris = self::titikUrut($sesi)
-            ->map(function ($titik) use ($alat, $organisasi, $profil, $cetak): array {
+            ->map(function ($titik) use ($sesi, $alat, $organisasi, $profil, $cetak): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
                 //
                 // Alat yang resolusinya berubah per rentang (Turbidimeter:
@@ -310,7 +310,17 @@ class CertificateSnapshotBuilder
                 // 3000 cP) karena skalanya beda ratusan kali. Delapan alat
                 // lain balik null di hook pertama dan jatuh ke jalur yang
                 // persis sama seperti sebelumnya.
-                $desimal = $profil?->desimalSertifikatTitik((float) $titik->titik_ukur)
+                //
+                // Hook per baris dipanggil lewat varian ber-SESI: Anak
+                // Timbangan mencetak desimal resolusi neraca yang menimbang
+                // keping itu, dan neracanya dipilih dari centang sesi. Bawaan
+                // varian itu meneruskan ke `desimalSertifikatTitik()`, jadi
+                // alat lain tidak bergeser. Satuannya satuan yang DICETAK —
+                // label yang sama dengan kunci `satuan` di bawah.
+                $satuanCetak = $cetak['satuan']
+                    ?? $profil?->satuanTitik((float) $titik->titik_ukur, $alat);
+
+                $desimal = $profil?->desimalSertifikatTitikSesi($sesi, (float) $titik->titik_ukur, $satuanCetak)
                     ?? $profil?->desimalSertifikat()
                     ?? ($organisasi
                         ? $organisasi->desimalSertifikat($resolusi)
@@ -434,7 +444,7 @@ class CertificateSnapshotBuilder
                     // Detector: master memformat U95 keempat gasnya `0.0` ·
                     // `0.0` · `0.0` · `0.00`, dan `U95` oksigen 0,887 runtuh
                     // jadi `0,9` kalau dipukul rata satu desimal.
-                    'desimal_u95' => $profil?->desimalU95Titik((float) $titik->titik_ukur)
+                    'desimal_u95' => $profil?->desimalU95TitikSesi($sesi, (float) $titik->titik_ukur, $satuanCetak)
                         ?? $profil?->desimalU95(),
                     'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
                         ? null
@@ -470,8 +480,7 @@ class CertificateSnapshotBuilder
                     // satu sumber — label yang pindah tanpa angkanya (atau
                     // sebaliknya) itu persis bentuk kekeliruan yang bikin
                     // `cetakDalamSatuanAlat()` ada.
-                    'satuan' => $cetak['satuan']
-                        ?? $profil?->satuanTitik((float) $titik->titik_ukur, $alat),
+                    'satuan' => $satuanCetak,
                     // Koreksi negatif yang membulat ke nol kecetak `-0,0` atau
                     // `0,0` — beda per alat, dibaca dari master masing-masing
                     // (lihat `CalibrationProfile::tandaNolDicetak()`).
