@@ -538,6 +538,11 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Simpan sesi Autoklaf (snapshot hasil di kolom JSON, bukan titik ukur).
         // Masuk riwayat/approval yang sama kayak alat lain.
         Route::post('/calibrations/autoclave', [CalibrationController::class, 'simpanAutoclave']);
+        // Nerusin draft Autoklaf / ngirim ulang revisinya ke sesi yang SAMA. Tanpa
+        // ini tiap simpan ulang lewat POST di atas melahirkan sesi baru — draft
+        // dobel. Body sama persis kayak POST. Dua segmen sesudah `calibrations/`,
+        // jadi nggak pernah ketangkap `PUT /calibrations/{calibration}` di bawah.
+        Route::put('/calibrations/autoclave/{calibration}', [CalibrationController::class, 'perbaruiAutoclave']);
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 

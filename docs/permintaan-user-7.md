@@ -59,6 +59,15 @@ permintaan 7 akan membangunnya lagi.
 Layar khusus draf, seperti perpustakaan: **dikelompokkan per alat**, ada namanya, ada kapan
 disimpannya. Gampang dicari, rapi.
 
+> **14 Okt 2026 — draft Autoklaf tidak lagi dobel (sisi server).** Lembar Autoklaf cuma punya
+> `POST /calibrations/autoclave`, dan itu selalu membuat sesi baru: draft yang dibuka lagi lalu
+> disimpan muncul dua kali di layar Draf. Sekarang ada `PUT /calibrations/autoclave/{id}`
+> (`CalibrationController::perbaruiAutoclave`) — body sama dengan POST, sesi yang sama yang
+> diperbarui, penjaga identik `PUT /calibrations/{id}` (pemilik/admin, `disetujui` 422, koreksi
+> admin wajib alasan). Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest`
+> (12 test). **Sisi mobile belum** — HP harus memanggil PUT kalau draft-nya sudah punya id.
+> Gate MySQL belum dijalankan untuk perubahan ini.
+
 ## 5. TITS & TIDS satu pintu
 
 Khusus Temperatur Indikator **tanpa sensor** dan **dengan sensor**: sebelum masuk ke lembarnya,
