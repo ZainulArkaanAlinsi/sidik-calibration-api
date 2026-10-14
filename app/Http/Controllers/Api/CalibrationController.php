@@ -66,6 +66,7 @@ use App\Support\WaktuMentah;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -449,39 +450,19 @@ class CalibrationController extends Controller
             return $replay;
         }
 
-        $hasil = $this->autoclave->hitung($this->perakitAutoclave->dari($request->dataUkur()));
-        $draft = $request->string('status')->value() === CalibrationSession::STATUS_DRAFT;
+        $snapshot = $this->snapshotAutoclave($request);
 
-        $sesi = DB::transaction(function () use ($request, $clientRequestId, $hasil, $draft): CalibrationSession {
+        $sesi = DB::transaction(function () use ($request, $clientRequestId, $snapshot): CalibrationSession {
             $sesi = CalibrationSession::create([
                 ...$this->atributDariRequest($request),
                 'organization_id' => $request->user()->organization_id,
                 'teknisi_id' => $request->user()->id,
                 'client_request_id' => $clientRequestId,
                 'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
-                'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
-                'submitted_at' => $draft ? null : now(),
+                ...$this->statusKirimanAutoclave($request),
                 // Autoklaf nggak divonis PASS/FAIL (AutoclaveProfile::punyaToleransi=false).
                 'keputusan' => null,
-                // Hasil olah data + LEMBAR MENTAHNYA. Kalkulator cuma balikin
-                // angka olahan, jadi tanpa `lembar` yang ditulis teknisi
-                // (termasuk baris kertas Indikator Pressure, Tekanan atm awal,
-                // dan jam tiap kolom) hilang begitu sesi terkirim — nggak ada
-                // yang bisa ngadu ulang sertifikat ke kertasnya.
-                'hasil_autoclave' => [
-                    ...$hasil,
-                    'lembar' => $request->dataUkur(),
-                    // Tebakan mesin per sel, kalau ada. Disimpan SEBELAH
-                    // `lembar`, bukan di dalamnya: `lembar` itu yang diumpankan
-                    // ke kalkulator waktu sesi dihitung ulang, dan kunci asing
-                    // di situ nggak punya tempat.
-                    //
-                    // Autoklaf nggak pernah menulis `raw_measurements` — hasil
-                    // ukurnya cuma snapshot JSON ini — jadi tanpa blok ini
-                    // akurasi kameranya nggak punya sumber sama sekali. Yang
-                    // membacanya `ocr:akurasi-kamera`.
-                    ...($request->bacaanMesin() === [] ? [] : ['ocr' => $request->bacaanMesin()]),
-                ],
+                'hasil_autoclave' => $snapshot,
             ]);
 
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
@@ -492,8 +473,213 @@ class CalibrationController extends Controller
             return $sesi->fresh()->load(self::RELASI);
         });
 
+        $this->sesudahSimpanAutoclave($sesi, 'dibuat');
+
+        return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    }
+
+    /**
+     * Perbarui sesi Autoklaf yang SUDAH ada (`PUT /calibrations/autoclave/{id}`).
+     *
+     * Teknisi yang membuka lagi draft Autoklaf-nya lalu menyimpan cuma punya
+     * `POST`, dan `POST` selalu melahirkan sesi baru — draft dobel. Ini
+     * pasangannya: body SAMA PERSIS (`AutoclaveStoreRequest`), snapshot dihitung
+     * lewat jalur yang SAMA ([snapshotAutoclave]), dan sesi yang lama yang ditimpa.
+     *
+     * Penjaganya identik `update()`: pemilik atau admin (teknisi lain 404 lewat
+     * [pastikanBolehLihat]), status lewat [penolakanStatusUbah], dan admin yang
+     * mengganti angka lembar yang sudah dikirim wajib menulis alasan — tanpa itu
+     * admin bisa mengubah pembacaan lalu menyetujuinya sendiri tanpa
+     * `PemisahanWewenang` tahu.
+     *
+     * Tambahan di luar `update()`: sesi `menunggu_approval` tidak bisa disimpan
+     * balik jadi draft (422), sunting admin atas sesi yang antre tidak menggeser
+     * `submitted_at`, dan kiriman tanpa satu bacaan pun untuk lembar yang sudah
+     * berisi ditolak (422) — pembacaan lama tetap utuh.
+     *
+     * `nomor_sesi`, `teknisi_id`, `organization_id`, `client_request_id` tidak
+     * disentuh. `replay()` sengaja tidak dipanggil: PUT menunjuk sesinya lewat
+     * URL, bukan lewat `client_request_id`.
+     *
+     * Nilai lama `hasil_autoclave` (termasuk `lembar`) tidak hilang: `Diaudit`
+     * menyimpan nilai lama & barunya di `audit_logs` pada update yang sama.
+     */
+    public function perbaruiAutoclave(AutoclaveStoreRequest $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        abort_if(
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            403,
+            'Cuma teknisi yang ngerjain sesi ini yang boleh ngubahnya.',
+        );
+
+        $snapshot = $this->snapshotAutoclave($request);
+
+        $sesi = DB::transaction(function () use ($request, $calibration, $snapshot): CalibrationSession {
+            // Dikunci, lalu status & jenisnya dibaca dari baris yang terkunci —
+            // bukan dari model rute — supaya approve yang balapan dengan simpan
+            // ini nggak bikin sesi `disetujui` tertimpa.
+            $sesi = CalibrationSession::query()
+                ->whereKey($calibration->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $sesi->adalahAutoclave()) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf.',
+                ], 422));
+            }
+
+            if (($penolakan = $this->penolakanStatusUbah($sesi, $request->user())) !== null) {
+                throw new HttpResponseException(response()->json(['message' => $penolakan], 422));
+            }
+
+            $status = $this->statusKirimanAutoclave($request);
+
+            // Sesi yang sedang ANTRE approval nggak mundur jadi draft lewat
+            // simpan: dia hilang diam-diam dari antrean admin. Mengembalikan
+            // lembar itu tugas `reject()`, bukan tombol Simpan Draf. (Yang bisa
+            // sampai sini dengan status itu cuma admin — teknisi sudah ditolak
+            // `penolakanStatusUbah`.) `perlu_revisi` → draft TETAP boleh, sama
+            // kayak `update()`: teknisi yang merevisi lembar yang dikembalikan
+            // perlu Simpan Draf, dan antrean draft offline mengirimnya begitu.
+            if (
+                $status['status'] === CalibrationSession::STATUS_DRAFT
+                && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+            ) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. '
+                        .'Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak.',
+                ], 422));
+            }
+
+            // Sunting admin atas sesi yang sedang antre bukan pengiriman baru —
+            // waktu kirimnya dipertahankan. Kirim ulang dari `perlu_revisi` /
+            // `draft` memang pengiriman baru dan diisi `now()`, sama kayak
+            // `update()`.
+            if (
+                $status['submitted_at'] !== null
+                && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+                && $sesi->submitted_at !== null
+            ) {
+                $status['submitted_at'] = $sesi->submitted_at;
+            }
+
+            $lembarLama = $sesi->hasil_autoclave['lembar'] ?? [];
+
+            // Kiriman tanpa satu bacaan pun untuk lembar yang SUDAH berisi bacaan
+            // ditolak, bukan dituruti — padanan penjaga "tabel kosong" di
+            // `isiUlangPengukuran()`. Antrean draft offline yang mengirim form
+            // yang belum termuat ulang bakal menimpa seluruh lembar dengan 200.
+            if (! self::lembarAutoclaveBerisiBacaan($request->dataUkur()) && self::lembarAutoclaveBerisiBacaan($lembarLama)) {
+                throw ValidationException::withMessages([
+                    'lembar' => 'Lembar Autoklaf yang dikirim nggak berisi satu bacaan pun, padahal lembar ini sudah '
+                        .'punya bacaan — nggak ada yang dihapus. Muat ulang lembarnya dulu, lalu simpan lagi.',
+                ]);
+            }
+
+            $catatanKoreksi = $this->catatanKoreksiAutoclave($sesi, $request, $lembarLama);
+
+            $sesi->update([
+                ...$this->atributDariRequest($request),
+                ...$status,
+                'keputusan' => null,
+                'hasil_autoclave' => $snapshot,
+                // Sama kayak `update()`: catatan & tanda kolom revisi lama nggak
+                // relevan lagi begitu lembarnya disimpan ulang.
+                'catatan_revisi' => null,
+                'revisi_field' => null,
+            ]);
+
+            if ($catatanKoreksi !== null) {
+                // Penanda yang dibaca `PemisahanWewenang::pernahMengoreksi()`.
+                // Ditulis di transaksi yang sama: koreksi tanpa jejaknya nggak
+                // boleh ada.
+                AuditLog::create([
+                    'organization_id' => $sesi->organization_id,
+                    'entity_type' => $sesi->getTable(),
+                    'entity_id' => $sesi->getKey(),
+                    'action' => AuditLog::ACTION_DIUBAH,
+                    'old_data' => ['lembar' => $lembarLama],
+                    'new_data' => ['lembar' => $request->dataUkur()],
+                    'changed_by' => Auth::id(),
+                    'note' => $catatanKoreksi,
+                ]);
+            }
+
+            $this->kondisi->terapkan($sesi);
+
+            return $sesi->fresh()->load(self::RELASI);
+        });
+
+        $this->sesudahSimpanAutoclave($sesi, 'diubah');
+
+        return response()->json([
+            'data' => new CalibrationResource($sesi),
+            // Autoklaf nggak lewat titik GUM, jadi nggak pernah ada titik yang
+            // "belum dihitung". Kuncinya tetap ada supaya bentuk jawabannya sama
+            // dengan `PUT /calibrations/{id}`.
+            'meta' => ['belum_dihitung' => []],
+        ]);
+    }
+
+    /**
+     * Snapshot `hasil_autoclave` dari kiriman — satu jalur buat POST dan PUT.
+     *
+     * @return array<string, mixed>
+     */
+    private function snapshotAutoclave(AutoclaveStoreRequest $request): array
+    {
+        $hasil = $this->autoclave->hitung($this->perakitAutoclave->dari($request->dataUkur()));
+
+        // Hasil olah data + LEMBAR MENTAHNYA. Kalkulator cuma balikin
+        // angka olahan, jadi tanpa `lembar` yang ditulis teknisi
+        // (termasuk baris kertas Indikator Pressure, Tekanan atm awal,
+        // dan jam tiap kolom) hilang begitu sesi terkirim — nggak ada
+        // yang bisa ngadu ulang sertifikat ke kertasnya.
+        return [
+            ...$hasil,
+            'lembar' => $request->dataUkur(),
+            // Tebakan mesin per sel, kalau ada. Disimpan SEBELAH
+            // `lembar`, bukan di dalamnya: `lembar` itu yang diumpankan
+            // ke kalkulator waktu sesi dihitung ulang, dan kunci asing
+            // di situ nggak punya tempat.
+            //
+            // Autoklaf nggak pernah menulis `raw_measurements` — hasil
+            // ukurnya cuma snapshot JSON ini — jadi tanpa blok ini
+            // akurasi kameranya nggak punya sumber sama sekali. Yang
+            // membacanya `ocr:akurasi-kamera`.
+            ...($request->bacaanMesin() === [] ? [] : ['ocr' => $request->bacaanMesin()]),
+        ];
+    }
+
+    /**
+     * Status & `submitted_at` kiriman Autoklaf. `status: draft` = simpan dulu
+     * (`submitted_at` null); selain itu — termasuk tidak dikirim — masuk antrean
+     * approval.
+     *
+     * @return array{status: string, submitted_at: Carbon|null}
+     */
+    private function statusKirimanAutoclave(AutoclaveStoreRequest $request): array
+    {
+        $status = $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)->value();
+
+        return [
+            'status' => $status,
+            'submitted_at' => $status === CalibrationSession::STATUS_DRAFT ? null : now(),
+        ];
+    }
+
+    /**
+     * Efek samping SESUDAH commit simpan Autoklaf (POST & PUT): kabar admin
+     * (cuma kalau masuk antrean approval — lihat [kabarinAdmin]), siaran
+     * realtime, dan arsip lembar ke folder PT kalau sudah dikirim.
+     */
+    private function sesudahSimpanAutoclave(CalibrationSession $sesi, string $aksi): void
+    {
         $this->kabarinAdmin($sesi);
-        $this->siarkan($sesi, 'dibuat');
+        $this->siarkan($sesi, $aksi);
 
         if ($sesi->submitted_at !== null) {
             try {
@@ -505,8 +691,81 @@ class CalibrationController extends Controller
                 ]);
             }
         }
+    }
 
-        return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    /**
+     * Catatan koreksi kalau ADMIN mengganti angka lembar Autoklaf yang sudah
+     * dikirim teknisi (`menunggu_approval`); null kalau bukan koreksi.
+     *
+     * Padanan cabang koreksi di `update()`. Yang diadu `lembar` (data ukur),
+     * bukan hasil olahannya, dan sesudah dibakukan ([bakukanLembarAutoclave]) —
+     * JSON yang balik dari MySQL bisa beda urutan kunci & beda tipe angka
+     * (`121` lawan `121.0`), dan beda semacam itu bukan koreksi.
+     *
+     * @param  array<string, mixed>  $lembarLama
+     *
+     * @throws ValidationException kalau koreksinya tanpa `alasan_koreksi`
+     */
+    private function catatanKoreksiAutoclave(CalibrationSession $sesi, AutoclaveStoreRequest $request, array $lembarLama): ?string
+    {
+        $koreksi = $request->user()->isAdmin()
+            && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+            && $lembarLama !== []
+            && self::bakukanLembarAutoclave($lembarLama) !== self::bakukanLembarAutoclave($request->dataUkur());
+
+        return $koreksi
+            ? AuditLog::CATATAN_KOREKSI_PEMBACAAN.$this->alasanKoreksiWajib($request)
+            : null;
+    }
+
+    /**
+     * Ada satu pun angka di baris bacaan matriks Autoklaf? Barisnya sama dengan
+     * yang punya cermin `ocr.*` di `AutoclaveStoreRequest`: tiga disk suhu,
+     * indikator, suhu ruang, Indikator Pressure, dan pembacaan standar tekanan.
+     * Setelan (set point, satuan, display, resolusi) bukan bacaan.
+     *
+     * @param  array<string, mixed>  $lembar
+     */
+    private static function lembarAutoclaveBerisiBacaan(array $lembar): bool
+    {
+        $suhu = is_array($lembar['suhu'] ?? null) ? $lembar['suhu'] : [];
+        $tekanan = is_array($lembar['tekanan'] ?? null) ? $lembar['tekanan'] : [];
+
+        $baris = [
+            ...array_values(is_array($suhu['disk'] ?? null) ? $suhu['disk'] : []),
+            $suhu['indikator'] ?? [],
+            $suhu['suhu_ruang'] ?? [],
+            $tekanan['indikator_pressure'] ?? [],
+            $tekanan['pembacaan_standar'] ?? [],
+        ];
+
+        foreach ($baris as $deret) {
+            foreach ((array) $deret as $nilai) {
+                if ($nilai !== null && $nilai !== '') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Urutan kunci peta disamakan & angka jadi float, supaya yang diadu cuma isinya. */
+    private static function bakukanLembarAutoclave(mixed $nilai): mixed
+    {
+        if (is_array($nilai)) {
+            $baku = array_map(self::bakukanLembarAutoclave(...), $nilai);
+
+            if (! array_is_list($baku)) {
+                ksort($baku);
+            }
+
+            return $baku;
+        }
+
+        return is_int($nilai) || is_float($nilai) || (is_string($nilai) && is_numeric($nilai))
+            ? (float) $nilai
+            : $nilai;
     }
 
     /**
@@ -685,21 +944,8 @@ class CalibrationController extends Controller
         // `disetujui` tetap terkunci buat SEMUA orang, admin sekalipun:
         // sertifikatnya udah terbit dan udah kekirim ke pelanggan. Ngubahnya
         // lewat jalur terbitkan-ulang, bukan lewat sini.
-        $statusBolehDiubah = [
-            CalibrationSession::STATUS_DRAFT,
-            CalibrationSession::STATUS_PERLU_REVISI,
-        ];
-
-        if ($request->user()->isAdmin()) {
-            $statusBolehDiubah[] = CalibrationSession::STATUS_MENUNGGU_APPROVAL;
-        }
-
-        if (! in_array($calibration->status, $statusBolehDiubah, true)) {
-            return response()->json([
-                'message' => $calibration->status === CalibrationSession::STATUS_DISETUJUI
-                    ? 'Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit.'
-                    : 'Sesi yang lagi nunggu approval nggak bisa diubah teknisi. Minta admin yang ngedit, atau minta lembarnya dibalikin dulu.',
-            ], 422);
+        if (($penolakan = $this->penolakanStatusUbah($calibration, $request->user())) !== null) {
+            return response()->json(['message' => $penolakan], 422);
         }
 
         // Koreksi angka yang SUDAH dikirim teknisi wajib menyebut alasannya, dan
@@ -728,18 +974,9 @@ class CalibrationController extends Controller
         $catatanJejak = null;
 
         if ($koreksiTerkirim) {
-            $alasanKoreksi = (string) Validator::make($request->all(), [
-                'alasan_koreksi' => ['required', 'string', 'min:10', 'max:500'],
-            ], [
-                'alasan_koreksi.required' => 'Alasan koreksi wajib diisi — angka yang diganti admin harus '
-                    .'bisa dijelaskan ke asesor, bukan cuma berubah.',
-                'alasan_koreksi.min' => 'Alasan koreksi terlalu pendek; tulis apa yang salah dan dari mana '
-                    .'angka benarnya.',
-            ])->validate()['alasan_koreksi'];
-
             // Awalannya konstanta: `PemisahanWewenang` mencocokkannya untuk
             // mengenali admin yang ikut mengubah angka sesi ini.
-            $catatanJejak = AuditLog::CATATAN_KOREKSI_PEMBACAAN.$alasanKoreksi;
+            $catatanJejak = AuditLog::CATATAN_KOREKSI_PEMBACAAN.$this->alasanKoreksiWajib($request);
         } elseif (
             // Revisi teknisi atas lembar yang DIKEMBALIKAN admin. Beda dari
             // draft: angka-angka ini sudah pernah disubmit dan dibaca admin, jadi
@@ -791,6 +1028,52 @@ class CalibrationController extends Controller
             'data' => new CalibrationResource($sesi),
             'meta' => ['belum_dihitung' => $this->belumDihitungTerakhir],
         ]);
+    }
+
+    /**
+     * Pesan 422 kalau [$pengubah] tidak boleh mengubah sesi pada status ini;
+     * null kalau boleh. Alasan aturannya ditulis di `update()`.
+     *
+     * Satu fungsi buat `update()` dan `perbaruiAutoclave()`: penjaga status yang
+     * disalin cuma dijaga ingatan, dan yang lupa ikut berubah membuka sesi
+     * `disetujui` di satu jalur saja.
+     */
+    private function penolakanStatusUbah(CalibrationSession $sesi, User $pengubah): ?string
+    {
+        $statusBolehDiubah = [
+            CalibrationSession::STATUS_DRAFT,
+            CalibrationSession::STATUS_PERLU_REVISI,
+        ];
+
+        if ($pengubah->isAdmin()) {
+            $statusBolehDiubah[] = CalibrationSession::STATUS_MENUNGGU_APPROVAL;
+        }
+
+        if (in_array($sesi->status, $statusBolehDiubah, true)) {
+            return null;
+        }
+
+        return $sesi->status === CalibrationSession::STATUS_DISETUJUI
+            ? 'Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit.'
+            : 'Sesi yang lagi nunggu approval nggak bisa diubah teknisi. Minta admin yang ngedit, atau minta lembarnya dibalikin dulu.';
+    }
+
+    /**
+     * `alasan_koreksi` yang wajib menyertai koreksi admin atas angka yang sudah
+     * dikirim teknisi. Dipakai `update()` dan `perbaruiAutoclave()`.
+     *
+     * @throws ValidationException
+     */
+    private function alasanKoreksiWajib(Request $request): string
+    {
+        return (string) Validator::make($request->all(), [
+            'alasan_koreksi' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'alasan_koreksi.required' => 'Alasan koreksi wajib diisi — angka yang diganti admin harus '
+                .'bisa dijelaskan ke asesor, bukan cuma berubah.',
+            'alasan_koreksi.min' => 'Alasan koreksi terlalu pendek; tulis apa yang salah dan dari mana '
+                .'angka benarnya.',
+        ])->validate()['alasan_koreksi'];
     }
 
     /**

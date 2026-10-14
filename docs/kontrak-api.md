@@ -954,6 +954,63 @@ Lainnya:
 
 Rincian untuk HP: `docs/perintah-frontend-volumetric.md` §8.
 
+#### `POST /api/calibrations/autoclave` · `PUT /api/calibrations/autoclave/{id}` — simpan & perbarui sesi Autoklaf (PUT sejak 14 Okt 2026)
+
+Lembar Autoklaf (matriks) tidak lewat `POST`/`PUT /calibrations`: bodynya data ukur
+mentah (`set_point`, `suhu`, `tekanan`, `waktu`, `ocr`) + identitas sesi, dan hasilnya
+dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.md`.
+
+- **`POST /api/calibrations/autoclave`** → **201** `{data: CalibrationResource}`. Selalu
+  membuat sesi BARU (kecuali `client_request_id` yang sama → **200** replay).
+- **`PUT /api/calibrations/autoclave/{id}`** → **200**
+  `{data: CalibrationResource, meta: {belum_dihitung: []}}`. Memperbarui sesi yang SAMA —
+  dipakai waktu draft Autoklaf dibuka lagi lalu disimpan/dikirim. Dulu HP cuma punya
+  `POST`, jadi tiap simpan ulang melahirkan draft kedua.
+  - **Body sama persis dengan `POST`** (`AutoclaveStoreRequest`). `client_request_id`
+    boleh ikut, tapi diabaikan: sesinya ditunjuk lewat URL, tidak ada replay.
+  - `hasil_autoclave` dihitung ulang dari kiriman lewat jalur yang sama dengan `POST`
+    (termasuk `lembar` mentah & blok `ocr`). `nomor_sesi`, pengisi lembar
+    (`teknisi_id`), dan `client_request_id` tidak berubah.
+  - `status: "draft"` → jadi/tetap draft, `submitted_at` null. Berlaku untuk sesi
+    `draft` **dan `perlu_revisi`** (Simpan Draf revisi lembar yang dikembalikan, sama
+    dengan `PUT /calibrations/{id}`). Sesi `menunggu_approval` tidak bisa disimpan balik
+    jadi draft (422, tabel di bawah).
+  - Tanpa `status` atau `menunggu_approval` → masuk antrean approval, admin dikabari,
+    lembar diarsip ke folder PT — sama dengan `POST`. `submitted_at`:
+    - dari `draft`/`perlu_revisi` → waktu kirim ini (`now()`), sama dengan `PUT /calibrations/{id}`;
+    - sunting admin atas sesi yang sudah `menunggu_approval` → waktu kirim lama
+      **dipertahankan** (sunting bukan pengiriman baru).
+  - **`set_point` boleh kosong untuk draft** (di `POST` maupun `PUT`). `hasil_autoclave`
+    tetap dihitung dari bacaan yang ada, dengan `set_point: null` — server **tidak
+    mengarang** set point (tak satu pun angka olahan bergantung padanya; dia cuma dicetak
+    di sertifikat). Kiriman non-draft tanpa `set_point` tetap **422** `errors.set_point`.
+  - Field admin (`nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian`)
+    dari akun non-admin **dibuang diam-diam** (bukan 422), di `POST` maupun `PUT` —
+    sama dengan `POST /calibrations`. Dari admin, dua field ketidakpastian divalidasi
+    `numeric|min:0`.
+  - `catatan_revisi` & `revisi_field` dikosongkan, sama dengan `PUT /calibrations/{id}`.
+  - `meta.belum_dihitung` selalu `[]` (Autoklaf tidak punya titik GUM); kuncinya ada
+    supaya bentuknya sama dengan `PUT /calibrations/{id}`. `POST` tidak membawa `meta`.
+
+| Keadaan | Jawaban |
+|---|---|
+| Teknisi yang bukan pengisi lembar, atau sesi lab lain | **404** |
+| Viewer | **403** (gerbang rute `role:admin,teknisi`) |
+| Sesi bukan sesi Autoklaf (`hasil_autoclave` kosong) | **422** `message`: "Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf." |
+| Sesi `disetujui` (semua peran) | **422** `message`: "Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit." |
+| Teknisi atas sesi `menunggu_approval` (atau status lain di luar `draft`/`perlu_revisi`) | **422** `message`: "Sesi yang lagi nunggu approval nggak bisa diubah teknisi. …" |
+| `status: "draft"` untuk sesi `menunggu_approval` (praktisnya admin — teknisi sudah ditolak baris di atas) | **422** `message`: "Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak." |
+| Kiriman non-draft tanpa `set_point` | **422** `errors.set_point`, sama dengan `POST` |
+| Kiriman tanpa satu bacaan pun (disk, indikator, suhu ruang, Indikator Pressure, pembacaan standar semuanya kosong/absen) padahal lembar tersimpan sudah berisi bacaan | **422** `errors.lembar` — **tidak ada yang dihapus**. HP wajib menyimpan isian lokalnya dan memuat ulang lembar, bukan mengulang kiriman yang sama. Draft yang memang belum berisi bacaan tetap boleh disimpan kosong |
+| Admin mengubah angka lembar sesi `menunggu_approval` tanpa `alasan_koreksi` | **422** `errors.alasan_koreksi` (min 10, maks 500 karakter) — sama dengan `PUT /calibrations/{id}` |
+| Admin mengirim `suhu_ketidakpastian`/`kelembaban_ketidakpastian` bukan angka atau negatif | **422** `errors.<field>` |
+| Body tidak lolos `AutoclaveStoreRequest` | **422** `errors.*`, sama dengan `POST` |
+
+Admin boleh mengubah `draft`, `perlu_revisi`, dan `menunggu_approval`. Koreksi admin atas
+angka yang sudah dikirim tercatat di jejak audit (nilai lama & baru `lembar` + alasan), dan
+admin itu **tidak bisa** menyetujui sesi yang sama (`penyetuju_mengoreksi_pembacaan`).
+Menyimpan ulang tanpa mengubah angka (mis. cuma nomor seri) tidak meminta alasan.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;
