@@ -97,56 +97,59 @@ Kolom:
 - **Jalur hari ini**: `grup` = profil menimpa `hitungPerGrup()` (budget lahir dari konteks sesi);
   `budget` = profil menyetor `komponenBudget()` ke `GumCalculator::hitungTitik()`. Menentukan
   `mode_iterasi` Lembar Hitung (`per_titik`/`per_sesi`) dan resolver yang dibutuhkan.
-- **`.xlsm`**: `manifest` = sha256 tercatat di `database/data/manifest-workbook-*.json`, berkas ada di
-  mesin pemilik; `diminta` = sudah diminta di ST-T-008; `belum` = belum diserahkan (riset D: tidak ada
-  `.xlsm` di checkout utama, worktree, maupun paket Downloads).
+- **`.xlsm`** (diperbarui 13 Okt 2026 dari `_agents_workspace/studio-data-acuan/01-riset-peta-workbook.md`,
+  pencocokan NAMA berkas atas 57 `.xlsm` di Downloads pemilik + subfolder `suhu\`): `manifest` = sha256
+  tercatat di `database/data/manifest-workbook-*.json`; `ada` = berkas ada di Downloads pemilik, sha256
+  belum dicatat (dicatat otomatis oleh `studio:impor-workbook --xlsm`, ST-T-208); `belum` = tidak ada
+  `.xlsm`. `Qn` = pertanyaan pemilik bernomor di riset peta. Keterangan 9 Okt ("tidak ada `.xlsm` di
+  Downloads") basi — agen saat itu tidak bisa membaca folder itu.
 - **Catatan mesin**: hal yang diketahui dari kode/riset yang memengaruhi Lembar Hitung.
 - **Gelombang**: usulan, `05-Task-Breakdown.md` S6.
 
 | # | Kode profil | Kelas PHP (induk) | Jalur hari ini | Folder master | `.xlsm` | Rumus di CSV | Catatan mesin | Pertanyaan lab terbuka | Gelombang | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `labu_ukur` | `LabuUkurProfile` (`FixedVolumetricGlasswareProfile`) | grup | `Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026` | diminta | ya (1.070) | contoh lengkap `03-SDD.md` §6.5; `#REF!` 14, tautan luar 70 (SENSOR_PT100 `[4]`, dibaca dari `FC_Prt_Pt100` lokal); veff master `K43` tidak ditiru di v1 (blok agregasi bawaan, K-49-07; meniru butuh versi baru + jawaban lab) | `pertanyaan-lab-volumetric.md` (13 butir), V-1–V-3 | **Pilot S4** | `belum` |
-| 2 | `pipet_volume` | `PipetVolumeProfile` (Fixed) | grup | idem | diminta | ya | idem | idem | **Pilot S4** | `belum` |
-| 3 | `picnometer` | `PicnometerProfile` (Fixed) | grup | idem | diminta | ya | idem; keluarga Fixed/Graduated dipertanyakan | idem no. 6 | **Pilot S4** | `belum` |
-| 4 | `buret` | `BuretProfile` (`GraduatedVolumetricGlasswareProfile`) | grup | `Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026` | diminta | ya (1.343) | `per_sesi` (satu budget semua titik); nol hantu master `H55` sebagai catatan pembanding; larik 24; `#REF!` 17 | `pertanyaan-lab-volumetric.md` no. 2, 4, 5, 9, 10, 12 | **Pilot S4** | `belum` |
-| 5 | `gelas_ukur` | `GelasUkurProfile` (Graduated) | grup | idem | diminta | ya | idem | idem | **Pilot S4** | `belum` |
-| 6 | `pipet_ukur` | `PipetUkurProfile` (Graduated) | grup | idem | diminta | ya | idem; lembar pemilik memakai struktur Fixed | V-4 | **Pilot S4** | `belum` |
+| 1 | `labu_ukur` | `LabuUkurProfile` (`FixedVolumetricGlasswareProfile`) | grup | `Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026` | ada (Fixed; salinan per-alat LU-200/250/500-1, Q4) | ya (1.070) | contoh lengkap `03-SDD.md` §6.5; `#REF!` 14, tautan luar 70 (SENSOR_PT100 `[4]`, dibaca dari `FC_Prt_Pt100` lokal); veff master `K43` tidak ditiru di v1 (blok agregasi bawaan, K-49-07; meniru butuh versi baru + jawaban lab) | `pertanyaan-lab-volumetric.md` (13 butir), V-1–V-3 | **Pilot S4** | `belum` |
+| 2 | `pipet_volume` | `PipetVolumeProfile` (Fixed) | grup | idem | ada (Fixed) | ya | idem | idem | **Pilot S4** | `belum` |
+| 3 | `picnometer` | `PicnometerProfile` (Fixed) | grup | idem | ada (Fixed) | ya | idem; keluarga Fixed/Graduated dipertanyakan | idem no. 6 | **Pilot S4** | `belum` |
+| 4 | `buret` | `BuretProfile` (`GraduatedVolumetricGlasswareProfile`) | grup | `Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026` | ada (Graduated) | ya (1.343) | `per_sesi` (satu budget semua titik); nol hantu master `H55` sebagai catatan pembanding; larik 24; `#REF!` 17 | `pertanyaan-lab-volumetric.md` no. 2, 4, 5, 9, 10, 12 | **Pilot S4** | `belum` |
+| 5 | `gelas_ukur` | `GelasUkurProfile` (Graduated) | grup | idem | ada (Graduated) | ya | idem | idem | **Pilot S4** | `belum` |
+| 6 | `pipet_ukur` | `PipetUkurProfile` (Graduated) | grup | idem | ada (Graduated; salinan PV 0.5/2/3/4-1-26 — PV = pipet_ukur atau pipet_volume? Q1) | ya | idem; lembar pemilik memakai struktur Fixed | V-4 | **Pilot S4** | `belum` |
 | 7 | `micrometer` | `MicrometerProfile` | grup | `Panjang_CSV/Master_Olah_Data_Micrometer_{0-25,25-50,50-75,75-100}mm` | **manifest** (4) | tidak | Data Acuan DB berstempel (P1); `NOW()` master → tanggal sesi (`MicrometerCalculator.php:55,164`); `skemaAcuan()` satu-satunya | `pertanyaan-lab-micrometer.md`, `keputusan-lab-micrometer.md`, T-1–T-9 | **Pilot S4** | `belum` |
-| 8 | `dial_indicator` | `DialIndicatorProfile` | grup | `Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator` | belum | tidak | memakai balok ukur Micrometer (lingkup versi P1); `#REF!` nilai 18 | `pertanyaan-lab-dial-indicator.md` | W1 | `belum` |
-| 9 | `jangka_sorong` | `JangkaSorongProfile` | grup | `…/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_` | belum | tidak | — | `pertanyaan-lab-jangka-sorong.md` | W1 | `belum` |
-| 10 | `height_gauge` | `HeightGaugeProfile` | grup | `Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026` | belum | tidak | `NOW()` → tanggal sesi (`HeightGaugeCalculator.php:77,210`); rujukan `L27` meleset dihitung benar; tanpa lantai CMC | `pertanyaan-lab-height-gauge.md` | W1 | `belum` |
-| 11 | `sieve` | `SieveProfile` | grup | `…/Master_Olah_Data_Sieve_Mesh` | belum | tidak | `faktorCakupanTetap()` (k tetap) → sel `k_tetap` di blok agregasi bawaan | `pertanyaan-lab-sieve.md` | W1 | `belum` |
-| 12 | `utm` | `UtmProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_UTM` | belum | ya (761) | larik 16, INDEX/MATCH 16 | `pertanyaan-lab-gaya.md` | W2 | `belum` |
-| 13 | `load_cell` | `LoadCellProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_Load_Cell` | belum | ya (758) | larik 16 | idem | W2 | `belum` |
-| 14 | `proving_ring` | `ProvingRingProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_Proving_Ring` | belum | ya (687) | larik 18; `#REF!` 3 | idem | W2 | `belum` |
-| 15 | `timer_stopwatch` | `TimerStopwatchProfile` | grup | `Waktu_/Master_Olda_Timer_dan_Stopwatch` | belum | tidak | kelompok Waktu & Frekuensi: empat kerusakan master dihitung benar, lima titik hantu diblokir (baris G9 `permintaan-user-7.md`) | `pertanyaan-lab-waktu-frekuensi.md` | W3 | `belum` |
-| 16 | `centrifuge` | `CentrifugeProfile` (`ProfilPutaran`) | grup | `Waktu_/Master_Olda_Centrifuge` | belum | tidak | `#REF!` nilai 87 | idem | W3 | `belum` |
-| 17 | `tachometer` | `TachometerProfile` (`ProfilPutaran`) | grup | `Waktu_/Master_Olda_Tachometer` | belum | tidak | `#REF!` nilai 87 | idem | W3 | `belum` |
-| 18 | `timbangan` | `TimbanganProfile` | grup | `Massa_Timbangan/_New__Master_Olda_Timbangan_{gram,kg}`, `…/_TERBARU__Master_Olda_Timbangan_Subtitusi_291025` | belum | tidak | tiga varian master (`VarianMasterTimbangan`), dua budget per titik | `pertanyaan-lab-timbangan.md` | W4 | `belum` |
-| 19 | `anak_timbangan` | `AnakTimbanganProfile` | grup | `Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp` | belum | tidak | 21 CSV (sheet data sensitivitas & drift per standar) | `pertanyaan-lab-anak-timbangan.md` | W4 | `belum` |
-| 20 | `tits` | `TitsProfile` | grup | `suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_{Measure,Source}_utk_UUT` | belum | tidak | pencocokan TERDEKAT tabel kalibrator (`TabelKalibratorSuhu.php:35-38`), bukan interpolasi | `pertanyaan-lab-tits.md` | W5 | `belum` |
-| 21 | `tids` | `TidsProfile` | grup | `…/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_`, `…/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N` | belum | tidak | dua keluarga standar | `pertanyaan-lab-tids-workbook.md` | W5 | `belum` |
-| 22 | `oven` | `OvenProfile` (`EnclosureProfileBase`) | grup | `…/Master_Olah_Data_Suhu_Enclosure_Constant_Yokogawa`, `…/Master_Olah_Data_Suhu_Enclosure_Recorder` | belum | tidak | lima profil Enclosure satu rancangan; pencocokan terdekat; `#REF!` nilai 124 + 12 | `pertanyaan-lab-enclosure.md` | W5 | `belum` |
-| 23 | `furnace` | `FurnaceProfile` (Enclosure) | grup | idem | belum | tidak | idem | idem | W5 | `belum` |
-| 24 | `bath` | `BathProfile` (Enclosure) | grup | idem | belum | tidak | idem | idem | W5 | `belum` |
-| 25 | `inkubator` | `InkubatorProfile` (Enclosure) | grup | idem | belum | tidak | idem | idem | W5 | `belum` |
-| 26 | `refrigerator` | `RefrigeratorProfile` (Enclosure) | grup | idem | belum | tidak | idem | idem | W5 | `belum` |
-| 27 | `thermocouple` | `ThermocoupleProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu_Thermocouple` | belum | tidak | — | `pertanyaan-lab-suhu-3alat.md` | W5 | `belum` |
-| 28 | `thermometer_glass` | `ThermometerGlassProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu_Thermometer_Glass` | belum | tidak | pola catatan `pengulangan_standar_dibagi_n` (`AGENTS.md` §Olah data 4); `#REF!` nilai 108 | idem | W5 | `belum` |
-| 29 | `thermohygro` | `ThermohygroProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu___Kelembapan` | belum | tidak | — | `pertanyaan-lab-thermohygro-satuan.md`, `pertanyaan-lab-suhu-3alat.md` | W5 | `belum` |
-| 30 | `flowmeter_totalizer` | `FlowmeterTotalizerProfile` (`FlowmeterProfile`) | grup | `Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_` (gravimetri), `Aliran_2/1_3_…Ultrasonic_Totalizer…` (UFM) | belum | tidak | varian metode UFM/gravimetri (`VarianMetodeFlowmeter`); pencocokan terdekat (`FlowmeterCalculator.php:101`) | `pertanyaan-lab-flowmeter.md`, `pertanyaan-lab-flowmeter-gravimetri.md` | W6 | `belum` |
-| 31 | `flowmeter_flowrate` | `FlowmeterFlowrateProfile` (`FlowmeterProfile`) | grup | `Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026` (gravimetri), `Aliran_2/Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026` (UFM) | belum | tidak | idem; deret UUT bersarang tiga durasi | idem | W6 | `belum` |
-| 32 | `hydrometer` | `HydrometerProfile` | grup | `Hydrometer/Hydrometer_0.600-0.650_gmL`, `Hydrometer/Hydrometer_1.800-2.000_gmL` | belum | ya (1.214 + 1.186) | OFFSET 5 + FORECAST 5 per workbook (ditulis ulang tanpa volatile); polinom densitas orde-5, Cuckow; IFERROR 38 | `pertanyaan-lab-hydrometer.md` (§7 pita CMC, §14 rujukan meleset) | W7 | `belum` |
-| 33 | `ph_meter` | `PhMeterProfile` | budget | `instrument-analiitk/pH_meter_IMTE-WQ-129` | belum | tidak | konstanta di PHP (CR-48 fase 4); dua master | `pertanyaan-lab-ph-dua-master.md` | W8 | `belum` |
-| 34 | `turbidimeter` | `TurbidimeterProfile` | budget | `…/Master_Olah_Data_Turbidimeter` | belum | tidak | konstanta di PHP; `#REF!` nilai 8 | — | W8 | `belum` |
-| 35 | `chlorine_meter` | `ChlorineProfile` | budget | `…/Master_Olah_Data_Chlorine_Meter` | belum | tidak | konstanta di PHP | — | W8 | `belum` |
-| 36 | `refractometer` | `RefractometerProfile` | budget | `…/Master_Olah_Data_Refractometer` | belum | tidak | konstanta di PHP; `#REF!` nilai 23 | — | W8 | `belum` |
-| 37 | `conductivity_meter` | `ConductivityProfile` | budget | `…/Master_Olah_Data_Conductivity` | belum | tidak | konstanta di PHP | `pertanyaan-lab-conductivity.md` | W8 | `belum` |
-| 38 | `spectrophotometer` | `SpectrophotometerProfile` | grup | `…/Master_Olah_Data_Spectrofotometer` | belum | tidak | STDEV terbesar per kelompok (`hitungPerGrup`) | `pertanyaan-lab-r2-spektro.md` | W8 | `belum` |
-| 39 | `viscometer` | `ViscometerProfile` | budget | `…/5__Viscometer_86068360_terbaru_`, `…/Master_Olah_Data_Viscometer` | belum | tidak | `faktorCakupanTetap()` k = 2 (`GumCalculator.php:544-547`) → sel `k_tetap` di blok agregasi bawaan | `pertanyaan-lab-viscometer.md` | W8 | `belum` |
-| 40 | `autoclave` | `AutoclaveProfile` | budget | `…/Master_Olah_Data_Autoclave` | belum | tidak | `AutoclaveCalculator` + `AutoclaveInputBuilder`; tabel suhu–tekanan | — | W8 | `belum` |
-| 41 | `do_meter` | `DoMeterProfile` | budget | `…/Master_Olah_Data_DO_Meter` | belum | tidak | konstanta di PHP | — | W8 | `belum` |
-| 42 | `gas_detector` | `GasDetectorProfile` | budget | `…/Gas_Detector_Uli_Skin__std_Rigaz_` | belum | tidak | pergeseran ruangan (riset A §6) | `pertanyaan-lab-gas-detector.md` | W8 | `belum` |
+| 8 | `dial_indicator` | `DialIndicatorProfile` | grup | `Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator` | ada | tidak | memakai balok ukur Micrometer (lingkup versi P1); `#REF!` nilai 18 | `pertanyaan-lab-dial-indicator.md` | W1 | `belum` |
+| 9 | `jangka_sorong` | `JangkaSorongProfile` | grup | `…/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_` | ada | tidak | — | `pertanyaan-lab-jangka-sorong.md` | W1 | `belum` |
+| 10 | `height_gauge` | `HeightGaugeProfile` | grup | `Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026` | ada (2 berkas berukuran sama — duplikat? Q5) | tidak | `NOW()` → tanggal sesi (`HeightGaugeCalculator.php:77,210`); rujukan `L27` meleset dihitung benar; tanpa lantai CMC | `pertanyaan-lab-height-gauge.md` | W1 | `belum` |
+| 11 | `sieve` | `SieveProfile` | grup | `…/Master_Olah_Data_Sieve_Mesh` | ada | tidak | `faktorCakupanTetap()` (k tetap) → sel `k_tetap` di blok agregasi bawaan | `pertanyaan-lab-sieve.md` | W1 | `belum` |
+| 12 | `utm` | `UtmProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_UTM` | ada | ya (761) | larik 16, INDEX/MATCH 16 | `pertanyaan-lab-gaya.md` | W2 | `belum` |
+| 13 | `load_cell` | `LoadCellProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_Load_Cell` | ada | ya (758) | larik 16 | idem | W2 | `belum` |
+| 14 | `proving_ring` | `ProvingRingProfile` (`GayaProfile`) | grup | `Alat_Gaya/Gaya_Proving_Ring` | ada | ya (687) | larik 18; `#REF!` 3 | idem | W2 | `belum` |
+| 15 | `timer_stopwatch` | `TimerStopwatchProfile` | grup | `Waktu_/Master_Olda_Timer_dan_Stopwatch` | ada | tidak | kelompok Waktu & Frekuensi: empat kerusakan master dihitung benar, lima titik hantu diblokir (baris G9 `permintaan-user-7.md`) | `pertanyaan-lab-waktu-frekuensi.md` | W3 | `belum` |
+| 16 | `centrifuge` | `CentrifugeProfile` (`ProfilPutaran`) | grup | `Waktu_/Master_Olda_Centrifuge` | ada | tidak | `#REF!` nilai 87 | idem | W3 | `belum` |
+| 17 | `tachometer` | `TachometerProfile` (`ProfilPutaran`) | grup | `Waktu_/Master_Olda_Tachometer` | ada | tidak | `#REF!` nilai 87 | idem | W3 | `belum` |
+| 18 | `timbangan` | `TimbanganProfile` | grup | `Massa_Timbangan/_New__Master_Olda_Timbangan_{gram,kg}`, `…/_TERBARU__Master_Olda_Timbangan_Subtitusi_291025` | ada | tidak | tiga varian master (`VarianMasterTimbangan`), dua budget per titik | `pertanyaan-lab-timbangan.md` | W4 | `belum` |
+| 19 | `anak_timbangan` | `AnakTimbanganProfile` | grup | `Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp` | belum (tidak ada di Downloads, Q6) | tidak | 21 CSV (sheet data sensitivitas & drift per standar) | `pertanyaan-lab-anak-timbangan.md` | W4 | `belum` |
+| 20 | `tits` | `TitsProfile` | grup | `suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_{Measure,Source}_utk_UUT` | ada | tidak | pencocokan TERDEKAT tabel kalibrator (`TabelKalibratorSuhu.php:35-38`), bukan interpolasi | `pertanyaan-lab-tits.md` | W5 | `belum` |
+| 21 | `tids` | `TidsProfile` | grup | `…/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_`, `…/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N` | ada | tidak | dua keluarga standar | `pertanyaan-lab-tids-workbook.md` | W5 | `belum` |
+| 22 | `oven` | `OvenProfile` (`EnclosureProfileBase`) | grup | `…/Master_Olah_Data_Suhu_Enclosure_Constant_Yokogawa`, `…/Master_Olah_Data_Suhu_Enclosure_Recorder` | ada (Constant Yokogawa + Recorder; workbook mana untuk alat mana Q3) | tidak | lima profil Enclosure satu rancangan; pencocokan terdekat; `#REF!` nilai 124 + 12 | `pertanyaan-lab-enclosure.md` | W5 | `belum` |
+| 23 | `furnace` | `FurnaceProfile` (Enclosure) | grup | idem | ada (idem) | tidak | idem | idem | W5 | `belum` |
+| 24 | `bath` | `BathProfile` (Enclosure) | grup | idem | ada (idem) | tidak | idem | idem | W5 | `belum` |
+| 25 | `inkubator` | `InkubatorProfile` (Enclosure) | grup | idem | ada (idem) | tidak | idem | idem | W5 | `belum` |
+| 26 | `refrigerator` | `RefrigeratorProfile` (Enclosure) | grup | idem | ada (idem) | tidak | idem | idem | W5 | `belum` |
+| 27 | `thermocouple` | `ThermocoupleProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu_Thermocouple` | ada | tidak | — | `pertanyaan-lab-suhu-3alat.md` | W5 | `belum` |
+| 28 | `thermometer_glass` | `ThermometerGlassProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu_Thermometer_Glass` | ada | tidak | pola catatan `pengulangan_standar_dibagi_n` (`AGENTS.md` §Olah data 4); `#REF!` nilai 108 | idem | W5 | `belum` |
+| 29 | `thermohygro` | `ThermohygroProfile` (`ProfilSuhuPasangan`) | grup | `…/Master_Olah_Data_Suhu___Kelembapan` | ada | tidak | — | `pertanyaan-lab-thermohygro-satuan.md`, `pertanyaan-lab-suhu-3alat.md` | W5 | `belum` |
+| 30 | `flowmeter_totalizer` | `FlowmeterTotalizerProfile` (`FlowmeterProfile`) | grup | `Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_` (gravimetri), `Aliran_2/1_3_…Ultrasonic_Totalizer…` (UFM) | ada | tidak | varian metode UFM/gravimetri (`VarianMetodeFlowmeter`); pencocokan terdekat (`FlowmeterCalculator.php:101`) | `pertanyaan-lab-flowmeter.md`, `pertanyaan-lab-flowmeter-gravimetri.md` | W6 | `belum` |
+| 31 | `flowmeter_flowrate` | `FlowmeterFlowrateProfile` (`FlowmeterProfile`) | grup | `Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026` (gravimetri), `Aliran_2/Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026` (UFM) | ada | tidak | idem; deret UUT bersarang tiga durasi | idem | W6 | `belum` |
+| 32 | `hydrometer` | `HydrometerProfile` | grup | `Hydrometer/Hydrometer_0.600-0.650_gmL`, `Hydrometer/Hydrometer_1.800-2.000_gmL` | belum (tidak ada di Downloads, Q6) | ya (1.214 + 1.186) | OFFSET 5 + FORECAST 5 per workbook (ditulis ulang tanpa volatile); polinom densitas orde-5, Cuckow; IFERROR 38 | `pertanyaan-lab-hydrometer.md` (§7 pita CMC, §14 rujukan meleset) | W7 | `belum` |
+| 33 | `ph_meter` | `PhMeterProfile` | budget | `instrument-analiitk/pH_meter_IMTE-WQ-129` | ada (salinan per-alat IMTE-WQ-129, Q7) | tidak | konstanta di PHP (CR-48 fase 4); dua master | `pertanyaan-lab-ph-dua-master.md` | W8 | `belum` |
+| 34 | `turbidimeter` | `TurbidimeterProfile` | budget | `…/Master_Olah_Data_Turbidimeter` | ada | tidak | konstanta di PHP; `#REF!` nilai 8 | — | W8 | `belum` |
+| 35 | `chlorine_meter` | `ChlorineProfile` | budget | `…/Master_Olah_Data_Chlorine_Meter` | ada | tidak | konstanta di PHP | — | W8 | `belum` |
+| 36 | `refractometer` | `RefractometerProfile` | budget | `…/Master_Olah_Data_Refractometer` | ada | tidak | konstanta di PHP; `#REF!` nilai 23 | — | W8 | `belum` |
+| 37 | `conductivity_meter` | `ConductivityProfile` | budget | `…/Master_Olah_Data_Conductivity` | ada | tidak | konstanta di PHP | `pertanyaan-lab-conductivity.md` | W8 | `belum` |
+| 38 | `spectrophotometer` | `SpectrophotometerProfile` | grup | `…/Master_Olah_Data_Spectrofotometer` | ada | tidak | STDEV terbesar per kelompok (`hitungPerGrup`) | `pertanyaan-lab-r2-spektro.md` | W8 | `belum` |
+| 39 | `viscometer` | `ViscometerProfile` | budget | `…/5__Viscometer_86068360_terbaru_`, `…/Master_Olah_Data_Viscometer` | ada (Master + salinan 86068360, Q7) | tidak | `faktorCakupanTetap()` k = 2 (`GumCalculator.php:544-547`) → sel `k_tetap` di blok agregasi bawaan | `pertanyaan-lab-viscometer.md` | W8 | `belum` |
+| 40 | `autoclave` | `AutoclaveProfile` | budget | `…/Master_Olah_Data_Autoclave` | ada | tidak | `AutoclaveCalculator` + `AutoclaveInputBuilder`; tabel suhu–tekanan | — | W8 | `belum` |
+| 41 | `do_meter` | `DoMeterProfile` | budget | `…/Master_Olah_Data_DO_Meter` | ada | tidak | konstanta di PHP | — | W8 | `belum` |
+| 42 | `gas_detector` | `GasDetectorProfile` | budget | `…/Gas_Detector_Uli_Skin__std_Rigaz_` | ada (salinan "Uli Skin (std Rigaz)", Q7) | tidak | pergeseran ruangan (riset A §6) | `pertanyaan-lab-gas-detector.md` | W8 | `belum` |
 | 43 | `pressure_gauge` | `PressureGaugeProfile` (`TekananProfile`) | grup | `6_Alat_Pressure_Piston_MasterOlahData_CSV/Master_Olda_Pressure_{DRUCK07G_-0.82bar_new,DRUCK13G_020bar,SPMK}` | **manifest** | ya (869/844/832) | `versiRumus()` + log metode append-only + `tahan_terbit` (`TekananProfile.php:129`, `database/data/log-metode-tekanan-piston.json`); rekonsiliasi ST-T-169 | `pertanyaan-lab-tekanan.md` | W9 | `belum` |
 | 44 | `vacuum_gauge` | `VacuumGaugeProfile` (`TekananProfile`) | grup | DRUCK07G, DRUCK13G (tanpa SPMK, `VacuumGaugeProfile.php:51-53`) | **manifest** | ya | idem | idem | W9 | `belum` |
 | 45 | `differential_pressure` | `DifferentialPressureProfile` (`TekananProfile`) | grup | `…/Master_Olda_Pressure_Differential` | **manifest** | ya (977) | idem; tautan luar 1 | idem | W9 | `belum` |
@@ -155,7 +158,13 @@ Kolom:
 | 48 | `buret_digital` | `BuretDigitalProfile` (`PistonVolumeProfile`) | grup | idem | **manifest** | ya | idem | idem | W9 | `belum` |
 
 Ringkasan: 48 profil; pilot S4 = 7 profil (Volumetric 6 + Micrometer); S6 = 41 profil dalam 9
-gelombang. Jalur `budget` = 9 profil (semua di W8); 39 profil `grup`.
+gelombang. Jalur `budget` = 9 profil (semua di W8); 39 profil `grup`. `.xlsm`: 46 profil punya
+berkas (7 `manifest`, 39 `ada`), 2 `belum` (anak_timbangan, hydrometer).
+
+Mode **Asli Excel** (S1b, 13 Okt 2026): ke-46 folder CSV di repo sudah terimpor ke `workbook_master`
+(DB lokal tablet: 473 lembar, 135.489 sel, 6.360 rumus, 99 lembar DATABASE/SERTIFIKAT dikecualikan);
+peta folder → profil `PetaProfilWorkbook`. Enam folder tekanan/piston tidak ter-track (memuat data
+pelanggan) dan menunggu impor `.xlsm` (ST-T-208).
 
 ## 4. Kenapa pilot Volumetric dan Micrometer
 
@@ -163,7 +172,7 @@ gelombang. Jalur `budget` = 9 profil (semua di W8); 39 profil `grup`.
 |---|---|---|
 | Contoh pemilik | lembar "CALIBRATION BUDGET UNCERTAINTY" Pipet Ukur (9 Okt) | pilot CR-48 |
 | Rumus di CSV | ya (1.070 + 1.343 sel) | tidak |
-| `.xlsm` | diminta (ST-T-008) | ada di mesin pemilik (manifest 4 berkas) |
+| `.xlsm` | ada di Downloads pemilik (Fixed + Graduated + salinan LU/PV; 13 Okt) | ada di mesin pemilik (manifest 4 berkas) |
 | Bukti kode = master | V20 Fixed dan uc pipet 1 ml selisih 0 (`04-paritas-volumetric.md`) | 53 nilai pada 5·10⁻⁶ (§17), isi `.xlsm` = JSON (§48 P0) |
 | Yang diuji pilot | rantai panjang, larik INDEX/MATCH, tabel acuan, resolver CMC, catatan penyimpangan, mode `per_titik` dan `per_sesi` | Data Acuan berstempel DB, empat varian, `NOW()` → tanggal sesi |
 | Pertanyaan terbuka | V-1–V-4 + 13 butir (tidak menghalangi paritas, karena paritas lawan PHP) | T-1–T-9 (toleransi uji pembanding) |

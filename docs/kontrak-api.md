@@ -2773,6 +2773,323 @@ dari berkas JSON, sesi lama) atau stempelnya **tidak seragam** antar titik.
 
 ---
 
+## 16. Studio Workbook — "Workbook Alat", mode Asli Excel baca-saja (S1b, 13 Okt 2026)
+
+Workbook master tiap alat ditampilkan persis Excel (nama & urutan sheet, alamat sel, nilai,
+rumus, format, merge, lebar, freeze) untuk dilihat dan dicocokkan. Keputusan K-49-08..12
+(`docs/permintaan-user-7.md` §49), rancangan `docs/sidik-studio/03-SDD.md` §4.6 + ADR-49-10.
+Isinya diimpor server lewat `php artisan studio:impor-workbook` (CSV di repo atau `.xlsm`
+ber-sandi); **tidak ada endpoint tulis, unggah, atau unduh berkas asli** di tahap ini.
+
+**Izin:** `workbook.lihat` (muncul di `GET /api/me/permissions`) — admin, teknisi, viewer; super
+admin membaca lewat aturan baca (lab sendiri saja). Pelanggan `403`, tanpa token `401`.
+Workbook lab lain dan lembar yang bukan milik workbook di URL → `404`. Throttle `studio-baca`
+300/menit per pengguna. Angka dikirim dengan tipenya (`JSON_PRESERVE_ZERO_FRACTION`: `60.0`
+tetap `60.0`); jangan dibulatkan di klien selain untuk tampilan.
+
+**Sheet DATABASE / SERTIFIKAT** (+ `SERTIFIKAT (2)`, `SERTIFIKAT STYLE n`, `Certificate (n)`,
+`konsep`) — **berubah 13 Okt 2026 (K-49-12, format kanonik 3):** isinya DIIMPOR dan dikirim
+apa adanya seperti sheet lain (`dikecualikan: false`, `alasan_dikecualikan: null`). Lembarnya
+hanya ditandai `tautan_tabel` (`customers` / `certificates`) — tampilkan sebagai keterangan
+"lembar ini juga ada di tabel X", bukan sebagai pengganti grid. Isi itu terkurung organisasi
+(lab lain `404`). Baris lama format 1-2 bisa masih ber-`dikecualikan: true` + `sel: []` sampai
+diimpor ulang; tangani keduanya.
+
+**Satu master aktif per jenis (K-49-13, keputusan pemilik 15 Okt 2026).** Studio hanya memuat
+master asli; olah data/pekerjaan tidak pernah masuk. Tiap workbook punya `kunci_jenis`
+(`{keluarga|kode_profil}:{varian}`, mis. `micrometer:micrometer-0-25mm`; varian beda rentang/
+standar = jenis berbeda: Micrometer 0-25 ≠ 25-50, Timbangan gram ≠ kg ≠ substitusi, Enclosure
+Constant-Yokogawa ≠ Recorder). Impor master baru untuk jenis yang sama MENGGANTI yang aktif; yang
+lama jadi **riwayat** — tersembunyi dari daftar, tetap bisa dibuka (detail, lembar, gambar,
+hitung) lewat id-nya atau `…/riwayat`. Workbook yang **diarsipkan** (dikeluarkan dari Studio)
+dijawab `404` di semua rute Studio; barisnya tidak dihapus.
+
+### `GET /api/studio/workbook?kode_profil=micrometer&cari=volumetric`
+
+**Hanya master AKTIF** (K-49-13; riwayat lewat `GET …/{workbook}/riwayat`). Filter opsional:
+`kode_profil` (persis), `cari` (bagian `nama`). Urut: **`xlsm` dulu**, lalu `nama` (tahap A,
+13 Okt 2026).
+
+```json
+{ "data": [ {
+  "id": 14, "nama": "Master_Olah_Data_Micrometer_0-25mm",
+  "kode_profil": "micrometer", "keluarga": null,
+  "sumber": "csv", "sha256": "3f0c…", "ukuran": 48213, "jumlah_lembar": 8,
+  "berkas_asli_tersimpan": false, "berkas_asli_terenkripsi": null,
+  "ada_versi_xlsm": true, "versi_xlsm_id": 61,
+  "kunci_jenis": "micrometer:micrometer-0-25mm", "aktif": true, "status": "aktif",
+  "versi": 2, "digantikan_oleh_id": null, "jumlah_riwayat": 1,
+  "diimpor_pada": "2026-10-13T08:12:30+00:00"
+} ] }
+```
+
+- **Field jenis (K-49-13, 15 Okt 2026; juga di detail & riwayat; tambahan — klien lama tidak
+  terpengaruh):**
+
+  | Field | Bentuk | Arti |
+  |---|---|---|
+  | `kunci_jenis` | string | jenis/varian master; kelompok "satu aktif" |
+  | `aktif` | bool | master aktif jenisnya (selalu `true` di daftar) |
+  | `status` | `aktif` \| `riwayat` | arsip tidak pernah dikirim (404) |
+  | `versi` | int ≥ 1 | urutan impor di dalam jenis (1 = paling awal). Master aktif BIASANYA versi terbesar, tetapi admin bisa mengaktifkan versi lama — jangan menyimpulkan "aktif" dari angka ini |
+  | `digantikan_oleh_id` | int \| null | riwayat → id workbook yang menggantikannya |
+  | `jumlah_riwayat` | int | jumlah versi lama (riwayat, tanpa arsip) di jenis yang sama — tampilkan tombol "Riwayat (n)" bila > 0 |
+
+- `kode_profil: null` + `keluarga` terisi = satu workbook melayani beberapa profil
+  (`volumetric_fixed`, `volumetric_graduated`, `enclosure`, `piston_volume`,
+  `tekanan_druck`) atau pemetaannya masih pertanyaan lab (`volumetric`). Kelompokkan daftar
+  dengan `keluarga ?? kode_profil`.
+- `sumber`: `csv` (ekspor di repo; nilai, rumus hanya di sebagian folder, tanpa format/gaya/tata
+  letak) atau `xlsm` (berkas asli: rumus + format + gaya + tata letak).
+- `berkas_asli_tersimpan`: `.xlsm` asli tersimpan di server apa adanya (K-49-11). Belum ada
+  rute unduhnya.
+- `berkas_asli_terenkripsi` (13 Okt 2026, tinjau S1b #5): `true` = berkas asli yang tersimpan
+  masih terenkripsi; `false` = sumber `.xlsm`-nya ZIP polos (tidak bersandi) dan disimpan apa
+  adanya — tampilkan sebagai peringatan, jangan sebagai "terenkripsi"; `null` = tidak ada berkas
+  asli (`sumber: csv`). Klien lama yang tidak membacanya tidak terpengaruh (field tambahan).
+- `versi_xlsm_id` / `ada_versi_xlsm` (tahap A, 13 Okt 2026; juga di detail): id workbook
+  `xlsm` yang sebaiknya dibuka untuk baris ini. Baris `xlsm` → id-nya sendiri. Baris `csv` →
+  id versi `.xlsm` setara di lab yang sama (nama sama bila `_`/spasi/tanda baca diabaikan, atau
+  `keluarga ?? kode_profil` sama dan nama yang satu akhiran nama yang lain; beberapa → yang
+  terbaru), atau `null`. `ada_versi_xlsm = versi_xlsm_id != null`. Sesudah `.xlsm` diimpor, baris
+  csv setara TETAP ada (sumber berbeda); klien yang ingin "persis Excel" membuka `versi_xlsm_id`
+  — jangan menyalin aturan pencocokan ke klien.
+
+### `GET /api/studio/workbook/{workbook}` — meta + daftar lembar TANPA sel
+
+```json
+{ "data": {
+  "id": 14, "nama": "…", "kode_profil": "micrometer", "keluarga": null, "sumber": "xlsm",
+  "sha256": "…", "ukuran": 912384, "jumlah_lembar": 8, "berkas_asli_tersimpan": true,
+  "berkas_asli_terenkripsi": true, "diimpor_pada": "…", "catatan": "…",
+  "lembar": [
+    { "id": 101, "urutan": 1, "nama": "INPUT DATA", "tersembunyi": "tidak",
+      "dikecualikan": false, "alasan_dikecualikan": null, "tautan_tabel": null,
+      "jumlah_baris": 42, "jumlah_kolom": 26, "jumlah_sel": 312, "jumlah_rumus": 40,
+      "tata_letak": {
+        "merge": ["A5:C5"],
+        "lebar_kolom": { "B": 20.0 },
+        "tinggi_baris": { "3": 30.0 },
+        "kolom_tersembunyi": ["E"], "baris_tersembunyi": [4],
+        "lebar_kolom_bawaan": 12.5, "tinggi_baris_bawaan": 18.0, "lebar_perkiraan": false,
+        "freeze": "B3", "garis_kisi": false, "zoom": 85, "jumlah_komentar": 1 } },
+    { "id": 102, "urutan": 2, "nama": "DATABASE", "tersembunyi": "tidak",
+      "dikecualikan": false, "alasan_dikecualikan": null,
+      "tautan_tabel": "customers", "jumlah_baris": 120, "jumlah_kolom": 30,
+      "jumlah_sel": 2400, "jumlah_rumus": 0,
+      "tata_letak": { "merge": [], "lebar_kolom": { "A": 9.140625 }, "tinggi_baris": {}, "freeze": null, "…": "…" } }
+  ] } }
+```
+
+- `tersembunyi`: `tidak` | `hidden` | `veryHidden` (status sheet Excel; csv selalu `tidak`).
+- `urutan` xlsm = urutan sheet Excel. csv tidak menyimpan urutan sheet: `INPUT DATA` dulu, lalu
+  nama berkas urut alami tanpa peka huruf.
+- `tata_letak` selalu berbentuk sama (semua kunci di bawah selalu ada; baris lama yang
+  kehilangan kunci diisi nilai bawaan kolom "csv"). Bentuknya kontrak mobile
+  `TataLetakLembar.fromJson` (diubah 13 Okt 2026, tinjau S1b #1 → format kanonik 2; tahap A →
+  format kanonik 3, sha256 csv ikut berubah):
+
+  | Kunci | Bentuk | Arti | csv |
+  |---|---|---|---|
+  | `lebar_kolom` | **objek** huruf kolom → angka, `{"B": 20.0}`; kosong `{}` | lebar kolom dalam satuan lebar kolom Excel (karakter, termasuk ruang tepi — Calibri 11: `9.140625` = 64 px) | PERKIRAAN (lihat `lebar_perkiraan`) |
+  | `tinggi_baris` | **objek** nomor baris (kunci string) → angka, `{"3": 30.0}`; kosong `{}` | tinggi baris dalam poin | `{}` |
+  | `merge` | list `"A1:C1"` | sel gabungan | `[]` |
+  | `kolom_tersembunyi` | list huruf kolom | | `[]` |
+  | `baris_tersembunyi` | list int (1-basis) | | `[]` |
+  | `lebar_kolom_bawaan` | angka \| `null` | lebar kolom yang tidak ada di `lebar_kolom` (satuan sama). xlsm: `defaultColWidth` sheet, bila tidak ada → lebar bawaan font bawaan workbook (Calibri 11 → `9.140625`) | `null` |
+  | `tinggi_baris_bawaan` | angka \| `null` | tinggi baris yang tidak ada di `tinggi_baris` (poin). xlsm: `defaultRowHeight` kustom sheet, bila tidak ada → tinggi bawaan font (Calibri 11 → `15.0`) | `null` |
+  | `lebar_perkiraan` | bool | `true` = `lebar_kolom` BUKAN dari Excel, melainkan perkiraan server: panjang teks terpanjang di kolom (huruf, per baris) + 1, dibatasi 4..60; kolom tanpa sel tidak dicantumkan | `true` |
+  | `freeze` | `"B4"` \| `null` | sel kiri-atas area yang TIDAK beku (`B4` = baris 1–3 & kolom A beku). xlsm: dari `xSplit`/`ySplit` pane beku, tidak terpengaruh posisi gulir saat master disimpan | `null` |
+  | `garis_kisi` | bool | garis kisi sheet tampil (`showGridLines`) | `true` |
+  | `zoom` | int \| `null` | persen zoom sheet bila bukan 100 | `null` |
+  | `jumlah_komentar` | int | tambahan; boleh diabaikan | `0` |
+
+  Peta kosong selalu dikirim sebagai objek JSON `{}`, tidak pernah `[]`.
+
+### `GET /api/studio/workbook/{workbook}/riwayat` — semua versi jenis yang sama (K-49-13)
+
+Baca saja, izin & throttle sama dengan detail. `{workbook}` boleh versi mana pun di jenis itu.
+Memuat master aktif + semua riwayat (tanpa arsip): **master aktif dulu, lalu riwayat dengan versi
+terbesar dulu** (diubah 15 Okt 2026, tinjau C-3 #3 — dulu murni versi terbesar dulu, sehingga
+master aktif versi lama muncul di tengah); tiap baris berbentuk sama dengan baris daftar. Lab
+lain / arsip → `404`.
+
+**Lama/baru diputuskan dari `status` dan `digantikan_oleh_id`, BUKAN dari `versi`.** `versi` =
+urutan impor di dalam jenis dan tidak pernah dinomori ulang; admin bisa mengaktifkan versi lama
+(`studio:rapikan-workbook --aktifkan`), jadi master aktif bisa ber-`versi` lebih kecil dari
+riwayatnya. Tampilkan "aktif" hanya untuk `status: "aktif"`, dan penanda "digantikan #id" dari
+`digantikan_oleh_id`.
+
+**`id` bisa berganti sesudah ekstrak ulang.** `studio:impor-workbook --ganti` (dipakai sesudah
+format kanonik naik) membuat baris BARU yang mewarisi jenis, status, versi, dan penunjuk riwayat,
+lalu baris lama dihapus — `id` lama dijawab `404` di semua rute Studio. Klien yang menyimpan `id`
+(tab terbuka, riwayat navigasi, simulasi `/hitung`) memperlakukan `404` sebagai "muat ulang daftar"
+dan mencari kembali lewat `kunci_jenis`, bukan sebagai galat fatal.
+
+```json
+{ "data": [
+  { "id": 139, "nama": "1. 1 Anak Timbangan F1 …", "sumber": "xlsm", "status": "aktif",
+    "aktif": true, "versi": 2, "digantikan_oleh_id": null, "jumlah_riwayat": 1, "…": "…" },
+  { "id": 102, "nama": "1__1_Anak_Timbangan_F1_…", "sumber": "csv", "status": "riwayat",
+    "aktif": false, "versi": 1, "digantikan_oleh_id": 139, "jumlah_riwayat": 1, "…": "…" }
+], "kunci_jenis": "anak_timbangan:anak-timbangan-f1-1mg-500-g-202501022-imp" }
+```
+
+Detail (`GET …/{workbook}`) baris riwayat tetap `200` dengan `status: "riwayat"` — tampilkan
+penanda "Versi lama — digantikan #`digantikan_oleh_id`" di atas grid.
+
+### `GET /api/studio/workbook/{workbook}/lembar/{lembar}?baris_dari=1&baris_sampai=200`
+
+Sel dalam rentang baris inklusif (1-basis). `baris_dari` bawaan `1`; `baris_sampai` bila tidak
+dikirim = `baris_dari + 199` (200 baris mulai `baris_dari`, jadi `?baris_dari=300` → `300..499`).
+Rentang lebih dari **500 baris dipangkas** ke 500 dan `baris_sampai` di jawaban menyebut batas
+yang dipakai. `baris_sampai < baris_dari` atau bukan bilangan ≥ 1 → `422`.
+
+```json
+{ "data": {
+  "sel": [
+    { "a": "C2", "b": 2, "f": "0.000", "g": null, "k": 3, "n": 3.0,
+      "r": "=B2*2", "s": "3.000", "t": "f" },
+    { "a": "A1", "b": 1, "f": null, "g": { "isi": "#FFFF00", "tebal": true }, "k": 1, "n": null,
+      "r": null, "s": "Judul", "t": "s" },
+    { "a": "F6", "b": 6, "f": null, "k": 6, "n": null, "r": null, "s": "", "t": "kosong",
+      "g": { "border": { "atas": "thin", "bawah": "thin", "kanan": "thin", "kiri": "thin" } } }
+  ],
+  "baris_dari": 1, "baris_sampai": 200, "jumlah_baris": 42 } }
+```
+
+| Kunci | Arti |
+|---|---|
+| `a` | alamat A1 |
+| `b`, `k` | baris & kolom, 1-basis (kolom A = 1) |
+| `t` | `n` angka · `s` teks · `b` boolean · `e` galat (`#REF!`…) · `f` rumus (nilai cache di `n`/`s`) · `kosong` sel tanpa nilai yang disimpan karena ber-`isi` atau ber-`border` (yang digambar Excel walau kosong; gaya huruf/perataan saja tidak) |
+| `n` | angka (float) bila nilainya numerik, selain itu `null`. Tidak pernah dibulatkan |
+| `s` | teks tampil. csv: teks sel apa adanya. xlsm: nilai cache diformat dengan `f` — server TIDAK menghitung ulang rumus |
+| `r` | rumus dengan `=` di depan seperti bilah rumus Excel; rumus larik `{=…}`; `null` = konstan |
+| `f` | number format Excel, `null` = General (csv selalu `null`) |
+| `g` | gaya ringkas, hanya kunci yang bukan bawaan (kontrak mobile `GayaSel.fromJson`, diubah 13 Okt 2026, tinjau S1b #2): `tebal` `true`, `miring` `true`, `isi` warna isi `"#RRGGBB"`, `teks` warna teks `"#RRGGBB"` (hitam bawaan tidak dikirim), `rata` perataan horizontal Excel apa adanya (`left`, `center`, `right`, `fill`, `justify`, `centerContinuous`, `distributed`; `general` tidak dikirim), `border` objek per sisi `{"atas","kanan","bawah","kiri"}` → gaya garis Excel (`thin`, `medium`, `thick`, `double`, `dashed`, `dotted`, `hair`, …), hanya sisi yang bergaris. **Tahap A (format 3):** `vertikal` perataan vertikal Excel apa adanya (`top`, `center`, `justify`, `distributed`) — **tanpa kunci = `bottom`** (bawaan Excel), `bungkus` `true` (wrap text), `ukuran` ukuran font dalam poin (float, mis. `8.0`) bila beda dari font bawaan workbook, `font` nama font bila beda dari font bawaan workbook (tanpa kunci = font bawaan, umumnya Calibri 11). `null` = tanpa gaya (csv selalu `null`) |
+
+Sel kosong tidak dikirim (kecuali `t: "kosong"` di atas). Urutan: baris, lalu kolom. Kunci
+objek sel terurut alfabet (bentuk kanonik server). Lembar lama ber-`dikecualikan: true`
+(format 1-2) → `sel: []` dan `jumlah_baris: 0`, berapa pun rentangnya.
+
+**Status yang mungkin** (rute `/studio/workbook/*`):
+
+| Kode | Kapan |
+|---|---|
+| `200` | Beres |
+| `404` | Workbook bukan milik lab ini · lembar bukan milik workbook di URL · id tidak ada |
+| `422` | `baris_dari`/`baris_sampai` salah |
+| `403` | Peran bukan orang lab (pelanggan) |
+| `401` | Tanpa token |
+| `429` | Lewat jatah `studio-baca` |
+| `426` | `{"kode":"klien_kedaluwarsa","message":"…","versi_minimum":"x.y.z"}` — lihat di bawah |
+
+### Tahap C (14 Okt 2026) — Lembar Hitung "persis Excel", gambar, conditional formatting
+
+**Impor:** `studio:impor-workbook --xlsm=<berkas|folder> --oleh=<id|email>` menerima `.xlsm` DAN
+`.xlsx`. `--oleh` (orang lab di organisasi tujuan) WAJIB kecuali `--kering` — sejak 15 Okt 2026
+(tinjau C-3 #2), sama dengan `studio:rapikan-workbook`: jejak audit perubahan master selalu punya
+pelaku. Sandi
+hanya ditanya bila ada berkas bersandi. Berkas tanpa sandi disimpan terenkripsi kunci aplikasi
+(`*.enc`, `berkas_asli_terenkripsi: false` tetap berarti "sumbernya tanpa sandi"). Format kanonik
+naik ke **4** (`tata_letak` + `gambar`, `cf`, `cf_gaya_dasar`).
+
+**Lembar (resource yang sudah ada):** `tersembunyi` SUDAH ada sejak S1b sebagai string
+`"tidak" | "hidden" | "veryHidden"` (bukan bool — klien mobile sudah mengurainya begitu).
+`tata_letak.gambar`: `[{"id":"<32 hex>","dari":{"kolom":"E","baris":2,"dx":3,"dy":4},"lebar":px,
+"tinggi":px,"jenis":"png"|"jpeg"|"lain"(+"ekstensi":"emf"…)}]` — id = sha256 gambar (gambar sama
+di banyak tempat = id sama). `tata_letak.cf` / `cf_gaya_dasar`: aturan conditional formatting &
+gaya sebelum CF — klien TIDAK perlu membacanya; `g` sel sudah memuat hasil CF (impor: dari nilai
+cache Excel; `/hitung`: dari nilai baru). Didukung `cellIs` (semua operator, pembanding literal),
+`containsText`/`notContainsText`/`beginsWith`/`endsWith`, `containsBlanks`/`notContainsBlanks`,
+`containsErrors`/`notContainsErrors`; efek ke `g.isi`, `g.teks`, `g.tebal`, `g.miring`.
+`iconSet`/`dataBar`/`colorScale`/`expression` tercatat `didukung:false`, tidak mengubah `g`.
+
+#### `GET /api/studio/workbook/{workbook}/gambar/{id}`
+
+Byte gambar (`image/png` / `image/jpeg`, `Cache-Control: private, max-age=86400`). Jenis lain →
+`415 {"kode":"jenis_gambar_tidak_didukung","jenis":"emf"}`. Id yang tidak terdaftar di workbook
+ini → `404`. Izin & throttle = baca workbook.
+
+#### `POST /api/studio/workbook/{workbook}/hitung` (throttle `studio-hitung` 30/menit/pengguna)
+
+Izin `workbook.hitung`: **admin, teknisi, super_admin** (viewer & pelanggan `403`, lab lain `404`).
+Rute ini TIDAK menulis data apa pun — stateless: klien mengirim SEMUA edit yang berlaku.
+
+```json
+{"edit":[{"lembar_id":12,"a":"E12","isi":"3"},{"lembar_id":12,"a":"E21","isi":"21.3"}],
+ "waktu_acuan":"2026-10-14T10:00:00+07:00"}
+```
+
+`isi` diketik seperti Excel: `""` = kosongkan; diawali `=` = rumus (sintaks Inggris, koma);
+diawali `'` = teks apa adanya; angka bertitik desimal (`12.5`, `-3`, `1e-3`, `5%`); `TRUE`/`FALSE`;
+selain itu teks ("1,5" dan "14/10/2026" tetap TEKS). Edit ganda di sel sama: yang terakhir
+berlaku. `waktu_acuan` (opsional) = jam dinding NOW()/TODAY() di offset yang dikirim; tanpa itu
+= sekarang WIB.
+
+```json
+200 {"data":{"lembar":[{"lembar_id":12,"sel":[{"a":"E12","b":12,"f":null,"g":null,"k":5,"n":3.0,"r":null,"s":"3","t":"n"}, …]}],
+            "jumlah_dihitung":412,"durasi_ms":1830,
+            "galat":[{"lembar_id":14,"a":"AB24","pesan":"Mesin gagal menghitung sel ini (…) — nilai cache Excel dipakai."}]}}
+```
+
+`sel` = hanya sel yang nilai/teks tampil/gayanya beda dari snapshot impor + SEMUA sel yang diedit,
+format & urutan kunci sama persis dengan `GET …/lembar/{lembar}` → klien menimpa (overlay) di
+atas grid. Angka presisi penuh (`n`), `s` diformat dengan number format sel. Lembar tanpa sel
+berubah tidak dikirim. `galat`: sel yang tidak bisa dihitung mesin (nilainya = nilai cache Excel)
+dan sel yang dihitung dari nilai itu — tampilkan sebagai peringatan, jangan disembunyikan.
+
+| Kode | Kapan |
+|---|---|
+| `401` | Tanpa token |
+| `403` | Peran tanpa izin `workbook.hitung` (viewer, pelanggan) — jangan coba lagi |
+| `404` | Workbook bukan milik lab ini · id tidak ada · workbook diarsipkan (dikeluarkan dari Studio, K-49-13). Riwayat tetap boleh dihitung |
+| `409 berkas_asli_tidak_ada` | Workbook sumber CSV / berkas asli hilang |
+| `409 perlu_sandi` | Workbook bersandi yang model hitungnya belum/tidak lagi disiapkan → admin: `php artisan studio:siapkan-hitung <id>` |
+| `422 edit_tidak_valid` | lembar_id bukan milik workbook · alamat salah · rumus tak terurai · rumus > 8192 huruf · fungsi di luar daftar putih (WEBSERVICE, FILTERXML, CALL, REGISTER, INFO, CELL, RAND…) · rujukan **baris penuh** (`1:1`, `$2:$5`) — mesin memotongnya beda dari Excel, tulis rentangnya (`A1:Z1`) — `errors` per `edit.N.*` |
+| `422 rumus_terlalu_berat` | Pagar beban rumus EDIT (dicek sebelum mesin jalan): merujuk > **10.000 sel** (rentang + nama; kolom penuh `A:A` dihitung sampai baris terakhir berisi di lembar itu, termasuk sel yang diedit) · hasil kali dua rentang terbesar > **250.000** (fungsi larik/pencarian/siaran yang kuadratik) · rujukan dinamis (`INDIRECT`, `OFFSET`, rentang yang ujungnya hasil fungsi `A1:INDEX(…)`) · **teks × larik** (15 Okt 2026, tinjau C-3 #1): jumlah operasi teks per unsur (operator `&`, LEFT/RIGHT/MID/TRIM/UPPER/LOWER/PROPER/CLEAN/CONCATENATE/REPLACE/SUBSTITUTE/REPT/TEXT/FIXED/DOLLAR/T/CHAR/UNICHAR/ADDRESS) × larik terbesar yang bisa terbentuk (rentang; dua rentang atau lebih → siaran baris × kolom, dengan TRANSPOSE → dua sisi terpanjang) > **4.000** — tiap unsur bisa 32.767 huruf, `REPT("a",32767)&ROW(A1:A10000)` = 366 MB dalam satu operasi; `&` antar sel tunggal tidak pernah kena — kecuali mengetik ulang rumus asli sel itu apa adanya. `errors` per `edit.N.isi`, pesan menyebut angkanya |
+| `422 hitung_terlalu_berat` | (15 Okt 2026, tinjau C-3 #1) Pemakaian memori hitung melewati ambang server (0,8 × batas memori request) di tengah evaluasi — diperiksa per sel, tiap kali sel/rentang dibaca, dan per unsur fungsi teks (mis. rumus ASLI `REPT(…,B1+0*ROW(A1:A10000))` dengan B1 disunting 32.767). Tanpa `errors`; edit terakhir yang dibatalkan biasanya cukup. Jangan diulang tanpa mengubah edit |
+| `422` (validasi) | `edit` bukan larik · > 300 edit · `waktu_acuan` bukan tanggal |
+| `429` | Lewat jatah `studio-hitung` (30/menit/pengguna; tiap request ikut dihitung, termasuk yang dijawab 422/409/504). Body `{"message":"…"}`; header **`Retry-After`** (detik sampai boleh lagi), `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (epoch) → klien menunggu `Retry-After` lalu kirim ulang edit terakhir |
+| `504 hitung_terlalu_lama` | Melewati batas 20 s — diperiksa sebelum tiap sel DAN tiap kali sel/rentang dibaca di dalam evaluasi satu sel |
+
+Rumus ASLI workbook tidak ditimbang (INDIRECT/OFFSET bawaan workbook tetap jalan), tetapi mesin
+tidak pernah merinci rentang > 100.000 sel (mis. `INDIRECT` yang membaca alamat dari sel yang
+diedit jadi `A1:A1048576`): sel itu masuk `galat` dengan pesan
+`"Mesin tidak menghitung sel ini (rentang N sel melebihi batas 100000 sel) — nilai cache Excel dipakai."`
+dan request tetap `200`.
+
+**Batas argumen fungsi (tinjau C-2, 15 Okt 2026).** Batas Excel ditegakkan di dalam fungsinya,
+jadi berlaku untuk rumus edit DAN untuk rumus asli yang menerima nilai sunting (`=REPT("-",B3)`
+dengan B3 = 1e9). Hasilnya galat SEL biasa (bukan 4xx), sama dengan yang ditampilkan Excel
+(diadu lewat Excel COM): `FIXED`/`DOLLAR` desimal ≥ 128 atau hasil > 255 huruf → `#VALUE!` ·
+`REPT` hasil > 32.767 huruf atau hitungan ≥ 2³¹ → `#VALUE!` · `TEXT` format atau hasil > 255
+huruf, atau format tanggal untuk serial di luar 1900–9999 → `#VALUE!` · `SUBSTITUTE` hasil >
+32.767 huruf → `#VALUE!` · `FACT` n > 170 → `#NUM!` · `COMBIN` luap atau n ≥ 2³¹−1 → `#NUM!` ·
+`GCD`/`LCM` argumen (atau hasil LCM) > 2⁵³ → `#NUM!` · `DATE`/`EDATE`/`EOMONTH`/`WORKDAY`/
+`NETWORKDAYS` di luar 1900–9999 → `#NUM!`. Satu batas MESIN (bukan Excel): `TDIST`/`T.DIST.2T`/
+`T.DIST.RT`/`CHISQ.INV`/`CHIINV`/`CHISQ.INV.RT` dengan derajat bebas > 10⁶ → `#NUM!` (Excel memberi
+nilai sampai 10¹⁰; biaya mesin tumbuh dengan df).
+
+**Paritas statistik (15 Okt 2026, tinjau C-3 #5, diadu ke Excel COM):** `T.DIST.RT` dengan x < 0
+kini memberi nilai seperti Excel (= 1 − `T.DIST.RT(−x)`; dulu `#NUM!`); `TDIST`/`T.DIST.2T` dengan
+x < 0 tetap `#NUM!` — Excel juga. `CHIINV`/`CHISQ.INV.RT` dulu memulangkan **100** diam-diam bila
+akarnya > 100 (mis. `CHIINV(0.05,150)`); kini akar sebenarnya (Excel 179,58…), p = 1 → 0, p = 0 →
+`#NUM!`. Sisa selisih terhadap Excel di tingkat ULP (rinciannya di laporan bangun).
+
+### Identitas klien & `426 klien_kedaluwarsa` (semua rute `/api/*`, ST-T-013)
+
+Studio mengirim `X-Klien: sidik-studio` dan `X-Versi-Klien: <versi build>` di setiap request.
+Server mencatat keduanya di konteks log (dipangkas ke `[A-Za-z0-9._+-]`, 64 huruf). Bila
+`X-Klien` = `sidik-studio` (tanpa peka huruf) dan versi < `STUDIO_VERSI_MINIMUM` (bawaan
+`0.0.0` = tidak pernah), jawabannya `426` di rute mana pun, termasuk `POST /login`. Versi
+dibanding `mayor.minor.patch`; akhiran `-beta`/`+45` diabaikan; versi tidak terbaca dianggap
+`0.0.0`. Request tanpa header (aplikasi lapangan) tidak pernah kena. Header ini bukan kontrol
+akses — izin tetap dari server.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

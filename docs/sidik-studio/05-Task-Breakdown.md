@@ -57,7 +57,7 @@ secara independen (hitung ulang, bukan membaca test pembangun), dan laporannya d
 |---|---|---|---|---|---|---|---|
 | ST-T-011 | Cangkang final: navigasi tiga lebar, seksi berizin, bilah atas/status, Beranda dasar | `studio/lib/layar/cangkang_studio.dart`, `seksi_studio.dart`, `layar/beranda/beranda_screen.dart`, `widget/bilah_status.dart` | golden 1280/1138/711 terang+gelap; seksi tanpa izin tidak tampil (test) | 3 | ST-T-005 | PM | FR-STU-011–014, ST-02 |
 | ST-T-012 | Masuk, sesi, keluar, izin, header `X-Klien`/`X-Versi-Klien` | `studio/lib/layar/masuk_screen.dart`, `gerbang_masuk.dart`, `inti/lingkungan_studio.dart` | test: 401 → dialog, layar kembali; logout menyapu cache; izin dimuat ulang saat kembali dari latar | 2 | ST-T-011 | PM | FR-STU-001–009, ST-01 |
-| ST-T-013 | Server: catat `X-Klien`/`X-Versi-Klien` di log; mekanisme `426 klien_kedaluwarsa` dengan versi minimum Studio dari config | `app/Http/Middleware/` (baru), `bootstrap/app.php`, `config/` + `.env.example` + `render.yaml` | tanpa header tetap 200 (test); versi di bawah minimum 426 hanya untuk `X-Klien: sidik-studio` | 1 | — | PA | FR-STU-003 |
+| ST-T-013 | Server: catat `X-Klien`/`X-Versi-Klien` di log; mekanisme `426 klien_kedaluwarsa` dengan versi minimum Studio dari config | `app/Http/Middleware/` (baru), `bootstrap/app.php`, `config/` + `.env.example` + `render.yaml` | tanpa header tetap 200 (test); versi di bawah minimum 426 hanya untuk `X-Klien: sidik-studio`. **13 Okt 2026, dikerjakan di S1b:** `IdentitasKlien` (grup `api`), `config/studio.php` `versi_minimum` ← `STUDIO_VERSI_MINIMUM` (bawaan 0.0.0), `IdentitasKlienTest` 4/4 | 1 | — | PA | FR-STU-003 |
 | ST-T-014 | Pindah layar Data Acuan M2 ke Studio; cabut menu Data Acuan dari aplikasi lapangan (data layer tetap) | `studio/lib/layar/seksi_studio.dart`; repo mobile `lib/screens/shell/*` | suite flutter akar & studio hijau; aplikasi lapangan tanpa menu Data Acuan; label `versi_acuan` tetap | 2 | ST-T-011 | PM | FR-STU-070, 185; ST-20–23 |
 | ST-T-015 | Grid bersama `widget/grid/grid_sel.dart` dasar: virtualisasi, seleksi, navigasi keyboard §4.1 (tanpa rumus), salin TSV; keputusan widget (bawaan vs `two_dimensional_scrollables`) | `studio/lib/widget/grid/*` (+ `pubspec.yaml` bila dependensi baru) | 2.000 × 20 bergulir ≥ 55 fps di laptop kantor & tablet uji (rekam frame); dependensi baru hanya dengan izin PL | 4 | ST-T-011 | PM, PL | NFR-STU-04, SDD §12 |
 | ST-T-016 | Keadaan global ST-90: pita offline, dialog 409, simpan gagal, 429, 426, sesi berakhir | `studio/lib/widget/keadaan_layar.dart`, `dialog_alasan.dart`, `dialog_sandi.dart` | widget test per keadaan; isian tetap sesudah gagal | 2 | ST-T-011 | PM | `04-UI-UX-Flow.md` §3 |
@@ -67,6 +67,38 @@ secara independen (hitung ulang, bukan membaca test pembangun), dan laporannya d
 | ST-T-020 | Uji perangkat: exe di Windows kantor, APK di tablet uji (sideload karena HyperOS memblokir `adb install`, `00-status.md`) | catatan uji + tangkapan layar | tiga lebar diperiksa; daftar yang tidak bisa diuji ditulis | 0,5 | ST-T-019 | PL, PM | NFR-STU-10 |
 
 **Subtotal S1: 17,5 hari-orang.**
+
+## S1b — Workbook Alat, mode Asli Excel baca-saja (K-49-08..12, 13 Okt 2026)
+
+Tahap baru yang dimajukan pemilik (K-49-09) sesudah S1, sebelum S2. Rencana
+`_agents_workspace/studio-data-acuan/02-rencana-S1b.md` disetujui 13 Okt 2026. Rancangan:
+`03-SDD.md` ADR-49-10 (revisi) dan §4.6; kontrak `docs/kontrak-api.md` §Studio Workbook.
+
+| ID | Tugas | Berkas dibuat / diubah | DoD khusus | Est. | Dep. | Owner | Link |
+|---|---|---|---|---|---|---|---|
+| ST-T-201 | Migrasi additive `workbook_master` + `workbook_master_lembar`, model (`WorkbookMaster` Diaudit; lembar tanpa `organization_id`, `sel` tersembunyi dari `toArray`) | `database/migrations/2026_10_13_100000_create_workbook_master_tables.php`, `app/Models/WorkbookMaster.php`, `WorkbookMasterLembar.php` | nama index eksplisit ≤ 64; unik `(organization_id, sha256)`; nol kolom di tabel lama. **Selesai 13 Okt** | 0,5 | — | PA | SDD §4.6, K-49-08 |
+| ST-T-202 | Pembaca CSV + kanonik + pengecualian lembar + peta profil | `app/Services/Studio/Workbook/{PembacaCsvWorkbook,KanonikWorkbook,PengecualianLembar,PetaProfilWorkbook}.php` | sha256 stabil; sel kosong tidak disimpan; `nilai [=rumus]`/`[ARRAY:=…]` terurai; DATABASE/SERTIFIKAT tidak dibuka; semua kode peta ada di registry. **Selesai 13 Okt** (`WorkbookPembacaCsvTest`, `WorkbookPetaDanPengecualianTest`) | 1,5 | ST-T-201 | PA | 01-riset-peta-workbook.md |
+| ST-T-203 | Pembaca `.xlsm`: dekripsi sendiri ke temp privat per impor, `setMaxEncryptionSpinCount(100000)`, nilai cache + rumus + format + gaya ringkas + tata letak; penyapu temp | `app/Services/Studio/Workbook/{PembacaXlsmWorkbook,GagalBacaWorkbook,PenyapuTempWorkbook}.php`, `app/Console/Commands/SapuTempWorkbook.php`, `routes/console.php`, `config/studio.php` | jalur sukses, sandi salah, spin > batas, bukan OOXML, exception DI TENGAH `load()` → temp privat kosong; sandi tidak di pesan/jejak; isi sheet dikecualikan tidak dibuat di memori. **Selesai 13 Okt** (`StudioImporWorkbookXlsmTest`) | 2 | ST-T-202, ST-T-006 | PA | ADR-49-10, 03-spike-S0c.md |
+| ST-T-204 | Perintah `studio:impor-workbook` (`--csv`, `--xlsm`, `--akar`, `--organisasi`, `--kering`, `--oleh`, `--ganti` csv saja, `--saya-paham-data-pelanggan` wajib untuk `--xlsm`); berkas asli disimpan identik byte (K-49-11), ZIP polos ditandai `berkas_terenkripsi=false` | `app/Console/Commands/ImporWorkbookStudio.php`, `app/Services/Studio/Workbook/ImporWorkbook.php` | idempoten per sha256; sandi lewat `secret()`, tidak tampil; gagal sandi per berkas → lanjut; `--kering` nol tulis; kanari DATABASE/SERTIFIKAT tidak di DB/keluaran. **Selesai 13 Okt** (`StudioImporWorkbookCsvTest`, `StudioImporWorkbookXlsmTest`) | 1,5 | ST-T-202, 203 | PA | K-49-10, K-49-11 |
+| ST-T-205 | API baca `GET /studio/workbook`, `/{workbook}`, `/{workbook}/lembar/{lembar}` + Resource; izin `workbook.lihat`; throttle `studio-baca` | `app/Http/Controllers/Api/Studio/WorkbookController.php`, `app/Http/Resources/Studio/*`, `routes/api.php`, `app/Services/MatriksIzin.php`, `app/Providers/AppServiceProvider.php` | admin/teknisi/viewer/super_admin 200, pelanggan 403, tanpa token 401; lab lain 404 (+ jejak lintas lab); lembar workbook lain 404; maks 500 baris/halaman; lembar dikecualikan `sel: []`; rute tersapu tiga test sapu. **Selesai 13 Okt** (`StudioWorkbookApiTest`) | 1,5 | ST-T-201 | PA | FR-STU-003, SDD §4.6 |
+| ST-T-206 | ST-T-013 (lihat S1) dikerjakan bersama S1b | lihat ST-T-013 | lihat ST-T-013. **Selesai 13 Okt** | — | — | PA | FR-STU-003 |
+| ST-T-207 | Impor CSV nyata ke DB lokal tablet + pindah server lokal ke worktree S1b | (data lokal, tidak di-commit) | ringkasan jumlah workbook/lembar/sel/rumus/dikecualikan dilaporkan. **13 Okt:** 46 workbook, 473 lembar, 135.489 sel, 6.360 rumus, 99 dikecualikan, 4 tanpa `kode_profil`; impor ulang = `sudah_ada 46`. Pindah server: orkestrator | 0,25 | ST-T-204 | PA, PL | `03-bangun-S1b-api.md` |
+| ST-T-208 | Impor `.xlsm` semua alat (57 berkas) dengan sandi di terminal pemilik — lewat `impor-xlsm.ps1` (ST-T-214) | (data, tidak di-commit) | jumlah berkas sukses/gagal sandi/duplikat dilaporkan; temp privat kosong sesudahnya; keputusan redaksi INPUT DATA **sudah diambil: K-49-12, tidak diredaksi** | 0,25 | ST-T-204, ST-T-211..214 | PL | K-49-10, K-49-11, K-49-12 |
+| ST-T-209 | Studio: grid `TableView` (merge, kepala terkunci, lebar, freeze), daftar per keluarga, layar workbook (tab sheet, bilah rumus, inspektur, penanda lembar dikecualikan), seksi `workbookAlat` bergerbang `workbook.lihat` | `studio/lib/widget/grid/grid_sel.dart`, `studio/lib/data/workbook_*`, `studio/lib/layar/workbook/*`, `pubspec.yaml` (`two_dimensional_scrollables ^0.5.5`, diizinkan PL 13 Okt) | 2.000 × 20 ≥ 55 fps Windows + tablet; golden; kontrak sel sama persis `kontrak-api.md`. Berjalan (agen mobile, `03-bangun-S1b-mobile.md`) | 5 | ST-T-205, ST-T-015 | PM | 02-rencana-S1b.md |
+| ST-T-210 | Tinjau S1b (API↔mobile, izin, kebocoran DATABASE) + suite SQLite & MySQL penuh | laporan `_agents_workspace/` | 0 temuan kritis/tinggi; dua suite hijau sebelum S1b disebut selesai | 1 | ST-T-201–209 | PN, PL | DoD umum |
+
+**Tahap A — "Workbook Alat persis Excel" (sisi API, K-49-12, 13 Okt 2026).** Laporan
+`_agents_workspace/studio-data-acuan/03-bangun-A-api.md`.
+
+| ID | Tugas | Berkas dibuat / diubah | DoD khusus | Est. | Dep. | Owner | Link |
+|---|---|---|---|---|---|---|---|
+| ST-T-211 | K-49-12: isi DATABASE/SERTIFIKAT/konsep disimpan (xlsm & csv); `PengecualianLembar` tinggal penanda `tautan_tabel`; penahan `--saya-paham-data-pelanggan` dicabut | `app/Services/Studio/Workbook/{PengecualianLembar,PembacaCsvWorkbook,PembacaXlsmWorkbook,ImporWorkbook}.php`, `app/Console/Commands/ImporWorkbookStudio.php`, `app/Models/WorkbookMasterLembar.php` | kanari sintetis TERSIMPAN & terbaca lab pemilik; 404 + tanpa kanari untuk 4 peran lab lain; fixture sintetis saja (repo PUBLIC). **Selesai 13 Okt** (`StudioImporWorkbook{Csv,Xlsm}Test`, `StudioWorkbookApiTest`, `WorkbookPembacaCsvTest`) | 0,5 | ST-T-201..205 | PA | K-49-12 |
+| ST-T-212 | Format kanonik 3 — tata letak `.xlsm` setia Excel: lebar/tinggi bawaan, `freeze` dari xSplit/ySplit, `garis_kisi`, `zoom`; `g` + `bungkus`/`vertikal`/`ukuran`/`font`; sel kosong hanya bila ber-isi/garis | `KanonikWorkbook.php`, `PembacaXlsmWorkbook.php`, `tests/Concerns/WorkbookUji.php` | fixture: freeze disimpan dalam keadaan digulir tetap `B3`; bawaan sheet 12,5/18; tanpa bawaan → 9,140625/15; sel kosong cuma-tebal tidak disimpan. **Selesai 13 Okt** | 1 | ST-T-203 | PA | SDD §4.6, kontrak §16 |
+| ST-T-213 | CSV: `lebar_kolom` perkiraan (panjang teks + 1, 4..60) + `lebar_perkiraan = true`; impor ulang CSV ke DB lokal `--csv --ganti` (cadangan dulu) | `PembacaCsvWorkbook.php`; data lokal | cadangan `studio-lokal.sebelum-A.sqlite` terverifikasi; ringkasan impor dilaporkan; ulang = `sudah_ada`. **Selesai 13 Okt:** 46 diganti, 473 lembar, 169.521 sel, 7.186 rumus, 0 dikecualikan, 99 bertautan; ulang `sudah_ada 46` | 0,5 | ST-T-202 | PA | `03-bangun-A-api.md` |
+| ST-T-214 | `--ganti` untuk xlsm (sumber sama, nama sama, lab sama; ekstrak ulang berkas sama); API daftar xlsm dulu + `ada_versi_xlsm`/`versi_xlsm_id`; skrip pemilik `impor-xlsm.ps1` (di luar repo) | `ImporWorkbook.php`, `ImporWorkbookStudio.php`, `VersiXlsmWorkbook.php` (baru), `WorkbookMasterResource.php`, `WorkbookController.php`; `C:\Users\USER\sidik-studio-lokal\impor-xlsm.ps1` | csv/xlsm lain/lab lain tidak tersentuh `--ganti`; pasangan hanya di lab sama; sandi hanya lewat prompt pemilik. **Selesai 13 Okt** (skrip belum dijalankan — butuh sandi pemilik, ST-T-208) | 0,5 | ST-T-204, ST-T-205 | PA | K-49-10, K-49-12 |
+
+**Subtotal S1b: 13,5 hari-orang** (PA ±7, PM ±5, sisanya tinjau/pemilik) **+ tahap A sisi API
+2,5** (ST-T-211..214).
 
 ## S2 — Kelola Data
 
@@ -180,11 +212,12 @@ alat menurut kerumitan: rumus di CSV (13 folder) lebih ringan daripada yang butu
 |---|---|---|
 | S0 | 11,75 | sebagian sudah berjalan paralel (S0a, S0b) |
 | S1 | 17,5 | PM; bisa paralel dengan S2 server |
+| S1b | 13,5 | dimajukan K-49-09; sisi API selesai 13 Okt, mobile berjalan |
 | S2 | 26,5 | PA ±16, PM ±9, sisanya tinjau/Lab |
 | S3 | 18,5 | PA ±11,5, PM ±7 |
 | S4 | 62 | jalur kritis; PA + PJA; tahap bayangan memakan waktu kalender (Q-49-03); +6 karena K-49-07 (ST-T-106, 107) |
 | S5 | 42 | PM ±31, PA ±8 |
-| **S0–S5** | **≈ 178** | dengan PA dan PM paralel + tinjau: ±4–5 bulan kalender, belum termasuk menunggu jawaban Lab dan suite MySQL |
+| **S0–S5** | **≈ 178** (+13,5 S1b = ≈ 191,5) | dengan PA dan PM paralel + tinjau: ±4–5 bulan kalender, belum termasuk menunggu jawaban Lab dan suite MySQL |
 | S6 | ≈ 184,5 | 41 profil sisanya (48 profil − 7 profil pilot S4); bergantung penyerahan `.xlsm` (39 dari 52 folder CSV tanpa rumus) |
 
 Jalur kritis: ST-T-003 → 004 → 090 → 091 → 106 → 093/094 → 095 → 096 → 099 → 107 → 100 → 103 → 104. Tanpa

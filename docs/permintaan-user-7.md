@@ -5137,6 +5137,12 @@ UNCERTAINTY" workbook Volumetric Glassware (Pipet Ukur).
 | K-49-05 | Pengesah versi rumus & data acuan | `super_admin`, dan wajib orang kedua: berbeda dari pembuat draf (`PemisahanWewenang`). |
 | K-49-06 | Hapus dari Studio | **Tidak ada hapus permanen.** Studio hanya mengarsipkan (soft delete) dengan riwayat. Hapus permanen tetap lewat `docs/aturan-akses-database.md` butir 4. |
 | K-49-07 | Agregasi budget (u_c, veff Welch–Satterthwaite, faktor k), lantai CMC, PASS/FAIL | **Ikut bisa disunting per alat di Lembar Hitung.** Mengubah `AGENTS.md` §Profil kalibrasi ("tetap di kelas bersama") untuk alat yang punya Lembar Hitung aktif, dengan syarat di bawah. Dijawab pemilik 9 Okt 2026 lewat pilihan terstruktur; menjawab Q-49-10. |
+| K-49-08 | "Sama persis dengan Excel" | **Dua mode.** (a) **Asli Excel**: tata letak dan angka persis workbook master (nama sheet, baris/kolom, alamat sel, merge, lebar, format), untuk melihat dan mencocokkan. (b) **Rapi**: sheet standar per alat (MASUKAN/ACUAN/KONSTANTA/PERHITUNGAN/BUDGET), untuk menyunting. Isi sheet **DATABASE dan SERTIFIKAT** (data pelanggan & sertifikat) **tidak diekstrak dan tidak disimpan**; lembarnya tetap terdaftar dengan tanda `dikecualikan`, alasan, dan tautan ke tabel `customers` / `certificates`. Pemilik, 13 Okt 2026. |
+| K-49-09 | Prioritas | Tampilan **Asli Excel baca-saja dimajukan** ke tahap baru **S1b** (sesudah S1, sebelum S2). Edit rumus tetap S5. Pemilik, 13 Okt 2026. |
+| K-49-10 | Cakupan Asli Excel | **Semua alat**, bukan pilot: 57 `.xlsm` di Downloads + subfolder `suhu\` (berkas kunci `~$` dilewati), ditambah ekspor CSV di repo. Database = semua tabel (menegaskan K-49-03). Pemilik, 13 Okt 2026. |
+| K-49-11 | Berkas `.xlsm` asli | **Ikut disimpan, apa adanya**: byte asli yang masih TERENKRIPSI, tidak pernah versi terdekripsi, di disk privat (`local` → `storage/app/private/workbook-master/{organization_id}/{sha256}.xlsm`), dengan disk, path, sha256, dan ukuran di baris workbook. Sandi tidak pernah disimpan atau dilog. **Membalik Q-49-06** ("berkas tidak disimpan"). Isi DATABASE/SERTIFIKAT tetap tidak diekstrak (K-49-08) — **dicabut K-49-12**. Pemilik, 13 Okt 2026, saat menyetujui rencana S1b. |
+| K-49-12 | Data pelanggan di workbook | **Ditampilkan apa adanya**, termasuk isi sheet DATABASE, SERTIFIKAT (+ `(n)`, `STYLE n`, `Certificate (n)`), `konsep`, dan blok identitas pelanggan di INPUT DATA, untuk sumber `.xlsm` **dan** `.csv`. **Mencabut pengecualian isi K-49-08** (dan menutup risiko terbuka S1b soal redaksi INPUT DATA: tidak diredaksi). Lembar itu tetap ditandai `tautan_tabel` (`customers` / `certificates`) dengan `dikecualikan = false`. Batasnya pindah ke penyimpanan: berkas & DB tetap di luar repo (repo PUBLIC — test memakai fixture sintetis), dan API mengurung isinya per organisasi (lab lain 404). Penahan `--saya-paham-data-pelanggan` dicabut. Pemilik, 13 Okt 2026. |
+| K-49-13 | Satu master per jenis | **Studio HANYA berisi master asli, SATU master aktif per jenis/varian**; olah data/pekerjaan tidak pernah masuk Studio. Impor master baru untuk jenis yang sama = **mengganti** yang aktif, yang lama disimpan sebagai **riwayat tersembunyi** (bisa dibuka), tidak dihapus. Varian beda rentang/standar = jenis berbeda (Micrometer 4 rentang, Timbangan gram/kg/substitusi, Enclosure Constant-Yokogawa vs Recorder, dst.). Implementasi: `workbook_master.kunci_jenis/aktif/versi/digantikan_oleh_id/diarsipkan_pada`, `studio:impor-workbook --gantikan/--kunci-jenis`, `studio:rapikan-workbook` (riwayat/aktifkan/arsip, tanpa hapus), `GET /api/studio/workbook/{w}/riwayat`; kontrak `docs/kontrak-api.md` §16. Pemilik, 15 Okt 2026. |
 
 **Syarat K-49-07** (penjabaran gerbang paritas dan simulasi di atas, bukan aturan baru): setiap
 Lembar Hitung lahir dari templat yang memuat blok agregasi GUM bawaan, setara `GumCalculator`
@@ -5194,6 +5200,89 @@ bergeser 1–3 baris di 46 folder non-tekanan, jadi tidak bisa dipakai sebagai p
 **Temuan terpisah, belum dikerjakan:** `CalibrationController::isiUlangPengukuran()` menghapus
 `raw_measurements` dan `uncertainty_calculations` saat revisi tanpa menyimpan nilai lama. Ini
 dugaan pelanggaran `AGENTS.md` §Peran butir 5 dan belum dibuktikan dengan test.
+
+### §49 S1b — Workbook Alat, mode Asli Excel baca-saja (sisi API, 13 Okt 2026)
+
+Dasar: K-49-08..11. Rencana `_agents_workspace/studio-data-acuan/02-rencana-S1b.md` (lokal),
+disetujui pemilik 13 Okt 2026. Rincian teknis: `docs/sidik-studio/03-SDD.md` ADR-49-10 (revisi)
+dan §4.6, kontrak `docs/kontrak-api.md` §Studio Workbook, tugas ST-T-201..209.
+
+- **Dua tabel additive**, nol kolom di tabel lama: `workbook_master` (satu baris per workbook per
+  lab, unik `(organization_id, sha256)`) dan `workbook_master_lembar` (satu baris per sheet; sel
+  sebagai JSON kanonik LONGTEXT, tata letak JSON).
+- **Impor:** `php artisan studio:impor-workbook --csv` (folder CSV di repo, nilai + rumus bila
+  ada) dan `--xlsm=<berkas|folder|pola>` (sandi lewat prompt tersembunyi, sekali per jalan).
+  Idempoten per sha256; `--kering` tanpa tulis; `--oleh=<id|email>` mengisi `diimpor_oleh` +
+  pelaku audit dan **wajib kecuali `--kering`** (15 Okt 2026, tinjau C-3 #2; juga
+  `studio:rapikan-workbook`); `--ganti` mengganti impor lama ber-sumber sama (csv↔csv, xlsm↔xlsm) bernama
+  sama di lab yang sama sesudah format kanonik naik (xlsm: berkas yang sama diekstrak ulang).
+  Penahan `--saya-paham-data-pelanggan` sudah dicabut (K-49-12).
+- **Dekripsi `.xlsm` tidak memakai temp sistem.** Spike S0c membuktikan reader PhpSpreadsheet
+  meninggalkan ZIP terdekripsi di temp sistem saat exception/kill. Sekarang paket didekripsi
+  sendiri (`AgileEncryption::decryptFile`) ke subfolder acak `storage/app/private/tmp-workbook`,
+  dihapus sesudah reader dilepas, dengan shutdown handler dan penyapu terjadwal
+  `studio:sapu-temp-workbook` (tiap jam, sisa > 60 menit). Putaran kunci dibatasi 100.000.
+- **API baca:** `GET /api/studio/workbook`, `/{workbook}`, `/{workbook}/lembar/{lembar}` (sel
+  per rentang baris, maks 500). Izin `workbook.lihat` (admin, teknisi, viewer; super admin baca
+  lab sendiri). Tidak ada endpoint tulis maupun unduh berkas asli.
+- **ST-T-013:** `X-Klien`/`X-Versi-Klien` masuk konteks log; Studio di bawah
+  `STUDIO_VERSI_MINIMUM` dijawab 426 `klien_kedaluwarsa` (bawaan 0.0.0 = tidak pernah).
+- **Impor CSV nyata ke DB lokal tablet (13 Okt):** 46 workbook, 473 lembar, 135.489 sel, 6.360
+  rumus, 99 lembar dikecualikan, 4 workbook tanpa `kode_profil` (keluarga Fixed/Graduated
+  Volumetric dan dua Enclosure). Enam folder tekanan/piston tidak ada di repo (di-gitignore
+  karena memuat data pelanggan) dan menunggu impor `.xlsm`.
+
+**Risiko yang dulu terbuka — DITUTUP K-49-12 (13 Okt 2026):** blok "IDENTITAS CUSTOMER" di
+INPUT DATA `.xlsm` asli memang memuat nama pelanggan sesi terakhir. Pemilik memutuskan: diterima,
+ditampilkan apa adanya (data internal lab, terkurung organisasi), tidak diredaksi.
+
+### §49 Tahap A — "Workbook Alat persis Excel" (sisi API, 13 Okt 2026)
+
+Dasar: K-49-12. Rincian: SDD §4.6 + ADR-49-10, kontrak `docs/kontrak-api.md` §16, tugas
+ST-T-211..214.
+
+- **Isi lembar disimpan (K-49-12).** DATABASE/SERTIFIKAT/konsep dibaca dari `.xlsm` dan `.csv`
+  apa adanya; `PengecualianLembar` tinggal penanda `tautan_tabel`. Dijaga test: kanari sintetis
+  TERSIMPAN dan terbaca lab pemiliknya, dan 404 + tanpa kanari untuk keempat peran lab lain.
+- **Format kanonik 3** (tata letak `.xlsm` setia Excel, semua dari PhpSpreadsheet): lebar/tinggi
+  per kolom/baris + bawaan sheet (cadangan: tabel font bawaan PhpSpreadsheet), merge, kolom/baris
+  tersembunyi, `freeze` dari `xSplit`/`ySplit` pane (bukan `topLeftCell`), `garis_kisi`, `zoom`;
+  gaya `g` + `bungkus`, `vertikal`, `ukuran`, `font`; sel kosong disimpan hanya bila ber-isi
+  atau ber-garis. Batas yang diketahui: `baseColWidth` tanpa `defaultColWidth` tidak dibaca
+  PhpSpreadsheet; gaya baris/kolom utuh tanpa elemen sel tidak ikut.
+- **CSV:** `lebar_kolom` PERKIRAAN dari panjang teks terpanjang + 1 (4..60), ditandai
+  `tata_letak.lebar_perkiraan = true`.
+- **Daftar API:** xlsm dulu; `ada_versi_xlsm` + `versi_xlsm_id` memasangkan csv dengan versi
+  `.xlsm`-nya (nama setara, atau profil sama + akhiran nama) di lab yang sama.
+- **Impor `.xlsm` oleh pemilik:** skrip lokal `C:\Users\USER\sidik-studio-lokal\impor-xlsm.ps1`
+  (di luar repo) — sandi diketik pemilik di prompt `secret()`, tidak pernah lewat agen.
+- **Impor ulang CSV ke DB lokal tablet (13 Okt, format 3, `--csv --ganti`, cadangan
+  `studio-lokal.sebelum-A.sqlite`):** 46 diganti, 473 lembar, 169.521 sel (sebelumnya 135.489),
+  7.186 rumus, 0 dikecualikan, 99 lembar bertautan (semuanya berisi); ulang = `sudah_ada 46`.
+
+### §49 Tahap C — Lembar Hitung "persis Excel" (sisi API, 14 Okt 2026)
+
+Permintaan pemilik 14 Okt: Studio = Excel persis termasuk cara olah datanya, GENERIK untuk
+semua workbook kalibrasi. Kontrak `docs/kontrak-api.md` §16 "Tahap C". Belum commit.
+
+- **Impor `.xlsx`** lewat `studio:impor-workbook --xlsm=…`; sandi ditanya hanya bila ada berkas
+  bersandi. Berkas tanpa sandi disimpan terenkripsi kunci aplikasi (`*.enc`). Format kanonik 4
+  (`tata_letak.gambar`, `cf`, `cf_gaya_dasar`); `tersembunyi` (string, sejak S1b) tetap.
+- **`POST /api/studio/workbook/{w}/hitung`** (admin, teknisi, super_admin; tidak menulis DB):
+  mesin `App\Services\Studio\Hitung` = PhpSpreadsheet 5.10 + hitung sel kotor saja (graf
+  dependensi dari parser, rumus tak kotor = konstan bernilai cache Excel), pruning ON dengan
+  ulang pruning OFF bila "internal error", STDEV dua lintasan, TINV dari tabel nilai Excel,
+  `^`/POWER seperti Excel (kuadrat-berulang / √ / exp·ln), NOW/TODAY = `waktu_acuan`, daftar
+  putih fungsi, ≤300 edit, rumus ≤8192, batas 20 s → 504. Model hitung di-cache terenkripsi
+  per sha256 berkas (disapu `studio:sapu-temp-workbook`; `studio:siapkan-hitung` untuk bersandi).
+- **Gambar** `GET …/gambar/{id}` (PNG/JPEG, lain 415); **conditional formatting** diterapkan
+  server ke `g` (impor & hasil hitung; cellIs/teks/kosong/galat; iconSet dll. tidak).
+- **Paritas** generik: `docs/skrip/paritas-excel.ps1` (Excel COM pada SALINAN + `studio:paritas-excel`
+  + `studio:paritas-skenario`). Angka & akar beda per workbook di
+  `_agents_workspace/studio-data-acuan/C-anak-timbangan/excel-parity-report.md` (di luar repo).
+- **Menunggu pemilik:** super_admin boleh `/hitung` (rute tidak menulis); proteksi lembar Excel
+  tidak ditegakkan mesin; workbook bersandi (57 `.xlsm` + 2 Hydrometer `.xlsx`) — paritas &
+  impor dijalankan pemilik dengan sandinya.
 
 ## Gelombang & status
 

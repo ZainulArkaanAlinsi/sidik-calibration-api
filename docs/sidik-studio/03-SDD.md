@@ -318,26 +318,70 @@ satu baris tiap sesi nyata disimpan (ADR-49-04 tahap 1). Pengawasan PHP sesudah 
 tidak masuk tabel ini; dicatat sebagai temuan validator (lihat §7.5). **Akibat.** `paket_acuan_versi.simulasi_terakhir_id` (sudah
 ada, tanpa FK, migrasi L108) menunjuk ke `simulasi_versi`.
 
-### ADR-49-10 — Impor `.xlsm`: dekripsi di memori, berkas tidak disimpan
+### ADR-49-10 — Impor `.xlsm`: dekripsi ke temp PRIVAT di disk, berkas asli terenkripsi disimpan (revisi 13 Okt 2026)
 
-**Konteks.** Workbook master terenkripsi (manifest Micrometer: "berkas terenkripsi asli",
-`database/data/manifest-workbook-micrometer.json`) dan memuat sheet `DATABASE` berisi data
-pelanggan. Sandi tidak boleh tersimpan atau sampai ke agen. **Keputusan.** Sandi diketik pengguna
-di Studio, ikut request unggah, dipakai di memori, lalu dibuang. Berkas asli tidak disimpan
-(bawaan, Q-49-06); yang disimpan sha256, nama, ukuran, laporan, dan draf hasil. ⏳ **Menunggu spike
-S0c** untuk cara dekripsi — tindak lanjut ST-T-006, menunggu `.xlsm` asli Volumetric (Fixed +
-Graduated) dan Micrometer dari pemilik (ST-T-008); per 13 Okt 2026 belum dimulai:
-- **Opsi A (disukai):** `PhpOffice\PhpSpreadsheet\Reader\Xlsx::setEncryptionPassword()`
-  (`vendor/.../Reader/Xlsx.php:76`, dukungan `AgileEncryption` dengan batas spin count L74-88).
-  Perlu dibuktikan workbook lab memakai skema Agile, bukan Standard.
-- **Opsi B:** dekripsi di klien Studio sebelum unggah (perlu pustaka Dart; berkas terdekripsi tidak
-  pernah ditulis ke disk).
-- **Opsi C:** alat dekripsi terpisah di server (dependensi runtime baru, butuh izin pemilik).
+**Konteks.** Workbook master terenkripsi (Agile 4.4, SHA-512, AES-256, spin 100.000 — enam berkas
+diperiksa S0c) dan memuat sheet `DATABASE`/`SERTIFIKAT` berisi data pelanggan. Sandi tidak boleh
+tersimpan atau sampai ke agen.
 
-Karena sandi ada di request, job antrean **tidak** boleh membawa sandi di payload: dekripsi terjadi
-di request (sinkron, berbatas ukuran dan waktu), lalu yang diantrekan adalah salinan terdekripsi di
-penyimpanan sementara privat yang dihapus begitu job selesai — atau seluruh impor sinkron bila
-spike menunjukkan cukup cepat. Yang dipilih ditulis di revisi dokumen ini sesudah S0c.
+**Yang berubah dari rancangan awal, dan kenapa.**
+1. *"Dekripsi di memori" tidak berlaku.* Spike S0c (`_agents_workspace/studio-data-acuan/03-spike-S0c.md`)
+   membuktikan Opsi A (`Reader\Xlsx::setEncryptionPassword()`) menulis ZIP TERDEKRIPSI — termasuk
+   sheet DATABASE — ke `sys_get_temp_dir()` (`Xlsx.php:162-203`). Jalur sukses dan sandi salah
+   bersih, tetapi berkas itu **tertinggal** bila exception terjadi di tengah `load()` (Windows:
+   `@unlink` gagal karena ZIP masih dipegang reader) atau proses mati. `AgileEncryption::decrypt()`
+   memang di memori, tetapi `ZipArchive` tetap butuh berkas. `sys_temp_dir` itu PHP_INI_SYSTEM, jadi
+   tidak bisa dipindah dari dalam proses.
+2. *Berkas asli ikut disimpan* (K-49-11, membalik Q-49-06): byte asli yang masih terenkripsi, di disk
+   privat, tidak pernah versi terdekripsi.
+
+**Keputusan (S1b, dikerjakan).** Opsi A dipertahankan untuk MEMBACA, tetapi dekripsinya tidak
+lewat reader:
+- `PembacaXlsmWorkbook` mendekripsi sendiri lewat API publik `OLE` + `AgileEncryption::parse(…, 100000)`
+  + `AgileEncryption::decryptFile()` ke **subfolder acak per impor** di
+  `config('studio.temp_workbook')` = `storage/app/private/tmp-workbook/impor-<acak>/`, lalu memberi
+  reader ZIP polos itu (reader tidak lagi membuat temp sendiri). Batas putaran kunci 100.000:
+  berkas ber-spin lebih besar ditolak sebelum penurunan kunci yang mahal (`profil_enkripsi_ditolak`).
+- Reader dan `Spreadsheet` hanya hidup di satu fungsi; begitu fungsi itu selesai (sukses atau
+  exception) ZIP-nya terlepas, lalu `finally` memanggil `gc_collect_cycles()` dan menghapus subfolder.
+  Exception reader **tidak dirantai** keluar (jejaknya menahan argumen objek).
+- Proses mati di tengah jalan: shutdown handler menghapus subfolder yang masih terdaftar aktif.
+  Dibunuh paksa: `studio:sapu-temp-workbook` (terjadwal tiap jam, juga dipanggil di awal tiap impor
+  `--xlsm`) menghapus sisa berumur > 60 menit.
+- Sandi: diminta lewat prompt tersembunyi perintah artisan (`$this->secret()`), sekali per jalan;
+  parameter yang membawanya bertanda `#[SensitiveParameter]`, galat dekripsi tidak dirantai (jejak
+  `decryptFile()` membawa sandi sebagai argumen), pesan galat tidak pernah memuatnya.
+- Berkas asli: disalin apa adanya ke disk `local` di `workbook-master/{organization_id}/{sha256}.xlsm`,
+  dibaca balik dan diadu sha256-nya sebelum baris ditulis; transaksi gagal → berkas yang baru
+  ditulis dihapus. Kolom `berkas_disk`, `berkas_path`, `sha256`, `ukuran` di `workbook_master` (§4.6).
+- ~~Isi sheet dikecualikan tidak pernah dibuat di memori (`IReadFilter`), dan tidak pernah
+  ditulis.~~ **Dicabut K-49-12 (13 Okt 2026):** semua sheet dibaca dan disimpan apa adanya,
+  termasuk DATABASE/SERTIFIKAT/konsep; lembar itu hanya ditandai `tautan_tabel`. Saringan baca
+  (`saringan()`) tinggal `DefaultReadFilter`, dipertahankan sebagai titik suntik test.
+- Sumber `.xlsm` yang ternyata ZIP polos (tidak bersandi) tetap disimpan apa adanya (K-49-11),
+  tetapi ditandai `workbook_master.berkas_terenkripsi = false` + catatan, dan API mengirim
+  `berkas_asli_terenkripsi: false` (tinjau S1b #5, 13 Okt 2026). Dipilih menyimpan + menandai,
+  bukan menolak: K-49-11 meminta byte asli "apa adanya", dan penolakan akan membuat master yang
+  sah tetapi tidak bersandi tidak bisa dilihat sama sekali.
+- ~~Jalur `--xlsm` ditahan tanpa `--saya-paham-data-pelanggan`~~ — **dicabut K-49-12**: pemilik
+  memutuskan data pelanggan (isi DATABASE/SERTIFIKAT/konsep dan blok identitas di INPUT DATA)
+  ditampilkan apa adanya, tanpa redaksi. Batasnya di penyimpanan: DB dan disk privat di luar repo
+  (repo PUBLIC; test hanya memakai fixture sintetis), isi terkurung organisasi di API (404).
+- **`--ganti` untuk xlsm (tahap A):** sha xlsm = byte berkas, tidak ikut format kanonik. Dengan
+  `--ganti`, berkas yang byte-nya sudah ada di baris xlsm bernama sama (lab sama) didekripsi &
+  diekstrak ulang lalu menggantikan baris itu dalam satu transaksi (audit `dihapus`); berkas asli
+  di disk tidak dihapus. Tidak pernah menyeberang sumber (csv tidak mengganti xlsm dan sebaliknya).
+- **Pembungkus untuk pemilik:** `C:\Users\USER\sidik-studio-lokal\impor-xlsm.ps1` (lokal, di luar
+  repo) menjalankan perintah ini terhadap DB SQLite lokal; sandi tetap diketik pemilik di prompt
+  `secret()`.
+- Dijaga `StudioImporWorkbookXlsmTest`: fixture terenkripsi dibangkitkan di test; jalur sukses, sandi
+  salah, profil spin > batas, bukan OOXML, dan exception DI TENGAH `load()` (saringan yang meledak
+  selagi ZIP terdekripsi terbukti ada) — semuanya diakhiri temp privat kosong.
+
+**Yang belum (tahap unggah dari Studio, ST-T-137).** S1b mengimpor lewat perintah artisan di mesin
+pemilik. Unggahan lewat Studio memakai kelas yang sama; job antrean tetap **tidak** boleh membawa
+sandi: dekripsi di request (sinkron, berbatas ukuran & waktu) atau seluruh impor sinkron bila cukup
+cepat. Opsi B (dekripsi di klien) dan C (alat terpisah) tidak dipakai.
 
 ## 4. Model data
 
@@ -353,6 +397,7 @@ organizations 1─* formulas 1─* formula_versions 1─* lembar_hitung_suntinga
                                        └─* simulasi_versi (target polimorfik) 1─* simulasi_versi_sesi
 organizations 1─* paket_acuan 1─* paket_acuan_versi ─* simulasi_versi (target polimorfik)
 organizations 1─* unggahan_workbook ─0..1 formula_versions (draf hasil impor)
+organizations 1─* workbook_master 1─* workbook_master_lembar        (S1b, mode Asli Excel, §4.6)
 users ─ dibuat/diajukan/disahkan/ditolak oleh ─ formula_versions
 ```
 
@@ -464,6 +509,78 @@ formula_version_id null (draf hasil), user_id, timestamps`. Unique `uw_org_sha_u
 sha256)`. **Tidak ada kolom path berkas** (ADR-49-10, Q-49-06). Bila Q-49-06 dijawab "simpan",
 tambah `berkas_path` nullable ke disk privat pada migrasi tersendiri.
 
+> 13 Okt 2026: Q-49-06 dijawab "simpan" (K-49-11). Untuk mode Asli Excel, berkas asli disimpan
+> lewat `workbook_master.berkas_disk/berkas_path` (§4.6). `unggahan_workbook` (draf Lembar Hitung,
+> S5) belum dibuat; saat lahir, dia merujuk `workbook_master` alih-alih menyimpan berkas kedua.
+
+### 4.6 `workbook_master` dan `workbook_master_lembar` (baru, S1b — K-49-08..12)
+
+Migrasi `2026_10_13_100000_create_workbook_master_tables.php`. Hasil ekstraksi workbook master
+alat, mode **Asli Excel** baca-saja. Dua tabel additive; nol kolom di tabel lama.
+
+`workbook_master` (model `WorkbookMaster`, `Diaudit`):
+
+| Kolom | Tipe | Catatan |
+|---|---|---|
+| id | bigint | |
+| organization_id | foreignId → organizations | `wm_org_fk`, cascade; disaring tangan (`sidik-query-organisasi`) |
+| kode_profil | string(64) null | null = keluarga banyak profil / belum terpetakan (`PetaProfilWorkbook`) |
+| keluarga | string(64) null | `volumetric_fixed`, `volumetric_graduated`, `enclosure`, `piston_volume`, `tekanan_druck`, `volumetric` |
+| nama | string | csv: nama folder; xlsm: nama berkas tanpa ekstensi |
+| sumber | string(8) | `csv` \| `xlsm` |
+| sha256 | char(64) | csv: sha256 isi kanonik (`KanonikWorkbook`); xlsm: sha256 BYTE berkas asli terenkripsi |
+| ukuran | unsignedBigInteger | csv: jumlah byte semua CSV folder; xlsm: byte berkas asli |
+| jumlah_lembar | unsignedInteger | |
+| berkas_disk, berkas_path | string null | K-49-11: `local`, `workbook-master/{org}/{sha256}.xlsm`; null untuk csv |
+| berkas_terenkripsi | boolean null | migrasi `2026_10_13_100100`: true = berkas asli tersimpan terenkripsi; false = sumber `.xlsm` ZIP polos, disimpan apa adanya; null = tanpa berkas (csv) |
+| catatan | text null | asal folder CSV, catatan peta profil (keluarga, salinan per-alat, pertanyaan lab) |
+| diimpor_oleh | foreignId → users null | `wm_diimpor_oleh_fk`, nullOnDelete; artisan: dari `--oleh=<id\|email>` (orang lab di organisasi tujuan; juga jadi pelaku `audit_logs`), null bila tidak diisi |
+| timestamps | | |
+
+Unique `wm_org_sha_unik (organization_id, sha256)` (impor idempoten); index
+`wm_org_profil_idx (organization_id, kode_profil)`.
+
+`workbook_master_lembar` (model `WorkbookMasterLembar`; tanpa `organization_id`, diraih lewat induk):
+
+| Kolom | Tipe | Catatan |
+|---|---|---|
+| id | bigint | |
+| workbook_master_id | foreignId | `wml_wm_fk`, cascade |
+| urutan | unsignedInteger | xlsm: urutan sheet Excel; csv: INPUT DATA dulu, lalu nama berkas alami tanpa peka huruf |
+| nama | string | nama sheet / nama berkas CSV |
+| tersembunyi | string(12) | `tidak` \| `hidden` \| `veryHidden` |
+| dikecualikan | boolean | dulu K-49-08 (DATABASE, SERTIFIKAT, …); **sejak K-49-12 selalu false** untuk impor format 3 — kolom dibiarkan untuk baris lama |
+| alasan_dikecualikan | string null | format 3: selalu null |
+| tautan_tabel | string(64) null | `customers` \| `certificates` — penanda informatif DATABASE / SERTIFIKAT (+ `(n)`, `STYLE n`), `Certificate (n)`, `konsep`; isinya tetap disimpan (K-49-12) |
+| jumlah_baris, jumlah_kolom, jumlah_sel, jumlah_rumus | unsignedInteger | baris lama ber-`dikecualikan` → semua 0 |
+| tata_letak | json | `{merge[], lebar_kolom{huruf: lebar}, tinggi_baris{baris: tinggi}, kolom_tersembunyi[], baris_tersembunyi[], lebar_kolom_bawaan, tinggi_baris_bawaan, lebar_perkiraan, freeze, garis_kisi, zoom, jumlah_komentar}` — kunci kontrak mobile `TataLetakLembar.fromJson`. Di kolom DB peta kosong boleh `[]`; ke kabel dan ke hash selalu lewat `KanonikWorkbook::tataLetakKabel()` yang menulis `{}` dan melengkapi kunci yang hilang (baris lama) |
+| sel | longText | JSON kanonik byte-stabil (alasan LONGTEXT = `paket_acuan_versi.isi`); baris lama ber-`dikecualikan` → `[]`; tidak ikut `toArray()` |
+| timestamps | | |
+
+Unique `wml_wm_urutan_unik (workbook_master_id, urutan)`.
+
+**Format sel** (dipakai API apa adanya, `KanonikWorkbook`):
+`{"a":"C5","b":5,"k":3,"t":"n|s|b|e|f|kosong","n":<float|null>,"s":"<teks tampil>","r":"=…"|"{=…}"|null,"f":"<numfmt>"|null,"g":{tebal,miring,isi,teks,rata,border}|null}`.
+`n` tidak pernah dibulatkan; `s` xlsm = nilai CACHE diformat number format sel (rumus tidak
+dihitung ulang); `r` larik ditulis `{=…}`; `kosong` = sel tanpa nilai yang disimpan karena bergaya.
+Gaya `g` (kunci kontrak mobile `GayaSel.fromJson`): `tebal`/`miring` `true`, `isi`/`teks` warna
+`#RRGGBB`, `rata` perataan horizontal Excel apa adanya (tanpa `general`), `border` objek per sisi
+`{atas,kanan,bawah,kiri}` → gaya garis Excel, hanya sisi bergaris; format 3 menambah `vertikal`
+(tanpa kunci = `bottom`), `bungkus`, `ukuran` (pt, bila beda dari font bawaan workbook), `font`
+(bila beda). Sel `kosong` disimpan hanya bila ber-`isi` atau ber-`border`.
+sha256 workbook = sha256 kanonik `{format:3, lembar:[meta + tata_letak kabel + sel_sha256]}`.
+**Format 2** (13 Okt 2026, tinjau S1b #1-#2): bentuk `tata_letak` dan kunci `g` mengikuti mobile,
+jadi sha256 csv berubah walau CSV-nya sama. Baris csv format 1 diganti lewat
+`studio:impor-workbook --csv --ganti` (hapus baris csv bernama sama di lab yang sama, lalu tulis
+yang baru, satu transaksi per workbook; baris xlsm tidak pernah disentuh).
+**Format 3** (13 Okt 2026, tahap A, K-49-12): isi DATABASE/SERTIFIKAT/konsep ikut diekstrak;
+tata letak `.xlsm` setia Excel — lebar/tinggi bawaan sheet (cadangan: tabel `Shared\Font`
+PhpSpreadsheet untuk font bawaan workbook), `freeze` dari `xSplit`/`ySplit` pane beku (bukan
+`topLeftCell`), `garis_kisi`, `zoom`; CSV `lebar_kolom` perkiraan (panjang teks + 1, 4..60) dengan
+`lebar_perkiraan = true`. Batas yang diketahui: `baseColWidth` tanpa `defaultColWidth` tidak
+dibaca PhpSpreadsheet (memakai lebar bawaan font); gaya baris/kolom utuh tanpa elemen sel tidak
+ikut. `--ganti` kini juga untuk xlsm (ADR-49-10). API daftar: xlsm dulu + `versi_xlsm_id`
+(`VersiXlsmWorkbook`).
 ### 4.5 Yang tidak butuh skema baru
 
 - **Kelola Data**: registry di kode; jejak di `audit_logs` (aksi baru `diekspor` cukup konstanta,
@@ -1550,6 +1667,7 @@ Galat yang mungkin: `galat_statis_ada`, `simulasi_belum_ada`, `simulasi_kedaluwa
 | `agregasi_beda_dari_gum` | — (temuan validator PERINGATAN, tidak memblokir) | agregat lembar beda dari pengawas `GumCalculator` (FR-STU-134) |
 | `paritas_php_beda` | — (temuan validator PERINGATAN, menahan terbit) | pengawasan PHP versi `setara_php` (FR-STU-119b) |
 | `sandi_workbook_salah`, `berkas_bukan_ooxml`, `berkas_terlalu_besar` | 422 | impor |
+| `profil_enkripsi_ditolak`, `berkas_rusak`, `gagal_muat` | 422 (saat unggah lahir) | impor; S1b sudah memakainya di keluaran `studio:impor-workbook` (`GagalBacaWorkbook`) |
 | `klien_kedaluwarsa` | 426 | versi Studio terlalu lama untuk kontrak API |
 
 ## 9. Kinerja
