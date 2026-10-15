@@ -145,7 +145,7 @@ class PemisahanWewenangPersetujuanTest extends TestCase
 
         Livewire::actingAs($this->adminA)
             ->test(ListCalibrationSessions::class)
-            ->callAction(TestAction::make('approve')->table($sesi), ['abaikan_peringatan' => true]);
+            ->callAction(TestAction::make('approve')->table($sesi), ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true]);
 
         $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $sesi->fresh()->status);
         $this->assertFalse(Queue::pushed(GenerateCertificate::class)->isEmpty());

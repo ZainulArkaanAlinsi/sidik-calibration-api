@@ -389,7 +389,7 @@ class ChaosTerbitSertifikatTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ListCalibrationSessions::class)
-            ->callAction(TestAction::make('approve')->table($this->sesi), ['abaikan_peringatan' => true]);
+            ->callAction(TestAction::make('approve')->table($this->sesi), ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true]);
 
         $this->assertSame(
             $adminLain->id,
