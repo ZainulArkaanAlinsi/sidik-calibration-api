@@ -605,7 +605,8 @@ class WorksheetExtractionTest extends TestCase
         Config::set('services.vision.aktif', false);
 
         $this->kirim($this->teknisi)
-            ->assertStatus(503)
+            ->assertStatus(410)
+            ->assertJsonPath('kode', 'ai_server_dinonaktifkan')
             ->assertJsonPath('fallback_manual', true);
 
         Http::assertNothingSent();

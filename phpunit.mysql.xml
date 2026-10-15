@@ -85,6 +85,7 @@
         <!-- Alasannya sama persis kayak di phpunit.xml: dompdf rakus memori. -->
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="VISION_AKTIF" value="true"/>
         <env name="VISION_DRIVER" value="anthropic"/>
         <env name="APP_TIMEZONE" value="Asia/Jakarta"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

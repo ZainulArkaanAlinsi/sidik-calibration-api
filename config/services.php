@@ -91,11 +91,12 @@ return [
          * jalur keluarnya data yang nggak dipakai siapa-siapa itu yang paling
          * gampang lolos dari perhatian waktu ditinjau.
          *
-         * Bawaannya `true` supaya nyalain PR ini nggak diam-diam mematikan
-         * sesuatu yang mungkin masih dipakai klien lain. Yang mutusin
-         * mematikannya lab, lewat satu baris `.env` — bukan lewat hapus kode.
+         * Bawaannya `false` (K-50-11, 15 Okt 2026): lembar kerja dibaca ML Kit di HP,
+         * fotonya tidak pernah meninggalkan HP. Jalur server menjawab 410
+         * `ai_server_dinonaktifkan`. Kode tidak dihapus; menyalakannya lagi
+         * butuh keputusan pemilik lewat `.env`.
          */
-        'aktif' => (bool) env('VISION_AKTIF', true),
+        'aktif' => (bool) env('VISION_AKTIF', false),
     ],
 
     'gemini' => [
@@ -168,6 +169,9 @@ return [
         'project_id' => env('FCM_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
         'timeout' => (int) env('FCM_TIMEOUT', 10),
+        // Tampilan notifikasi Android: nama drawable & warna aksen (primary tema, #043EA1).
+        'ikon_kecil' => env('FCM_IKON_KECIL', 'ic_stat_sidik'),
+        'warna_aksen' => env('FCM_WARNA_AKSEN', '#043EA1'),
     ],
 
     /*

@@ -36,6 +36,7 @@
           nggak difake. Test nggak boleh ikut berubah tiap ada yang ganti
           setelan lokal.
         -->
+        <env name="VISION_AKTIF" value="true"/>
         <env name="VISION_DRIVER" value="anthropic"/>
         <!--
           Alamat penyedianya dipatok di `Tests\TestCase::setUp()`, BUKAN di

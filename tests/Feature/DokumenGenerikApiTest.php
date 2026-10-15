@@ -103,7 +103,8 @@ class DokumenGenerikApiTest extends TestCase
         $r = $this->actingAs($this->teknisi())
             ->postJson('/api/dokumen/baca', ['foto' => $this->foto()]);
 
-        $r->assertStatus(503)->assertJsonPath('status', 'dimatikan');
+        $r->assertStatus(410)->assertJsonPath('status', 'dimatikan')
+            ->assertJsonPath('kode', 'ai_server_dinonaktifkan');
 
         // Yang paling penting: fotonya NGGAK PERNAH dikirim ke mana pun.
         Http::assertNothingSent();

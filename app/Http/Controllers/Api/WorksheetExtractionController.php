@@ -110,8 +110,10 @@ class WorksheetExtractionController extends Controller
                 $user,
                 'dimatikan',
                 'Pindai AI dimatikan di server (`VISION_AKTIF=false`).',
-                'Pindai AI lagi dimatikan. Pakai pindai lembar penuh atau isi manual.',
-                503,
+                'Pindai AI di server sudah dinonaktifkan. Foto lembar kerja dibaca di HP (ML Kit) '
+                    .'dan tidak pernah dikirim ke server. Pakai pindai di aplikasi atau isi manual.',
+                410,
+                'ai_server_dinonaktifkan',
             );
         }
 
@@ -325,6 +327,7 @@ class WorksheetExtractionController extends Controller
         string $error,
         string $pesan,
         int $kode,
+        ?string $kodeMesin = null,
     ): JsonResponse {
         WorksheetExtractionLog::create([
             'calibration_session_id' => $sesi?->id,
@@ -334,10 +337,11 @@ class WorksheetExtractionController extends Controller
             'error' => $error,
         ]);
 
-        return response()->json([
+        return response()->json(array_filter([
             'message' => $pesan,
+            'kode' => $kodeMesin,
             'fallback_manual' => true,
-        ], $kode);
+        ], static fn ($v): bool => $v !== null), $kode);
     }
 
     /**

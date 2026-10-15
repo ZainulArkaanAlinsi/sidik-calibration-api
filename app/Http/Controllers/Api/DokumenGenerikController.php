@@ -87,9 +87,10 @@ class DokumenGenerikController extends Controller
             return response()->json([
                 'ok' => false,
                 'status' => 'dimatikan',
-                'pesan' => 'Baca dokumen dimatikan di server (`VISION_AKTIF=false`). '
-                    .'Pakai pindai lembar bertemplate atau isi manual.',
-            ], 503);
+                'kode' => 'ai_server_dinonaktifkan',
+                'pesan' => 'Baca dokumen di server sudah dinonaktifkan (`VISION_AKTIF=false`). '
+                    .'Foto dibaca di HP (ML Kit), tidak pernah dikirim ke server.',
+            ], 410);
         }
 
         $berkas = $request->file('foto');

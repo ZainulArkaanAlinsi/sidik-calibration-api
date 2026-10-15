@@ -190,6 +190,9 @@ services:
       - key: AWS_URL
         sync: false
 
+      # K-50-11: lembar kerja dibaca ML Kit di HP; jalur AI server mati (410).
+      - key: VISION_AKTIF
+        value: "false"
       - key: VISION_DRIVER
         value: gemini
       # Cadangan otomatis kalau Gemini menolak (kuota/kredit habis, key salah,
