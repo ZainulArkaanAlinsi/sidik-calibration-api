@@ -79,15 +79,69 @@ class Angka
             return $kosong;
         }
 
-        $teks = number_format($nilai, $desimal, ',', '');
+        $teks = self::tampilanExcel(abs($nilai), $desimal);
+        $nol = trim(str_replace(['0', ','], '', $teks)) === '';
 
         // `$nilai < 0` sengaja dicek di nilai ASLI, bukan di hasil pembulatan —
         // itu justru bedanya: -0,004 membulat ke nol, tapi tetap negatif.
-        if ($tandaNol && $nilai < 0 && ! str_starts_with($teks, '-')) {
+        if ($nilai < 0 && (! $nol || $tandaNol)) {
             $teks = '-'.$teks;
         }
 
         return $teks;
+    }
+
+    /**
+     * Angka MUTLAK seperti yang DITAMPILKAN Excel pada format `0.0…`: dibulatkan
+     * dulu ke 15 angka penting (presisi tampilan Excel), baru ke desimal yang
+     * diminta, setengah menjauhi nol. Tanpa pemisah ribuan.
+     *
+     * `number_format()` membulatkan nilai biner EKSAK, jadi nilai yang secara
+     * desimal tepat di tengah tapi tersimpan sedikit di bawahnya
+     * (`0,1499999999999996` = ½ × selisih dua pembacaan) tercetak `0,1`,
+     * sedangkan master Excel yang sama mencetak `0,2`. Nilai yang tidak dekat
+     * titik tengah tidak berubah sama sekali.
+     *
+     * Dikerjakan di string desimal, bukan dengan `round()`, supaya hasilnya
+     * tidak bergantung lagi pada representasi biner.
+     */
+    public static function tampilanExcel(float $mutlak, int $desimal): string
+    {
+        $desimal = max(0, $desimal);
+        $mutlak = abs($mutlak);
+
+        if ($mutlak == 0.0 || ! is_finite($mutlak)) {
+            return number_format(0, $desimal, ',', '');
+        }
+
+        [$mantisa, $eksponen] = explode('e', sprintf('%.14e', $mutlak));
+        $digit = str_replace('.', '', $mantisa);
+        $bulat = (int) $eksponen + 1;
+
+        if ($bulat <= 0) {
+            $digit = str_repeat('0', 1 - $bulat).$digit;
+            $bulat = 1;
+        }
+
+        $perlu = $bulat + $desimal;
+        $digit = str_pad($digit, $perlu + 1, '0');
+        $simpan = substr($digit, 0, $perlu);
+
+        if ((int) $digit[$perlu] >= 5) {
+            $i = $perlu - 1;
+
+            while ($i >= 0 && $simpan[$i] === '9') {
+                $simpan[$i] = '0';
+                $i--;
+            }
+
+            $simpan = $i < 0 ? '1'.$simpan : substr_replace($simpan, (string) ((int) $simpan[$i] + 1), $i, 1);
+        }
+
+        $utuh = ltrim(substr($simpan, 0, strlen($simpan) - $desimal), '0');
+        $utuh = $utuh === '' ? '0' : $utuh;
+
+        return $desimal > 0 ? $utuh.','.substr($simpan, -$desimal) : $utuh;
     }
 
     /**
