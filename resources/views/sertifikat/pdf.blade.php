@@ -846,6 +846,16 @@
          terbit. Alat lain balik `null` dan blok ini tidak dicetak. --}}
     @php($tekanan = $snapshot['tekanan'] ?? null)
 
+    {{-- Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator): DUA bagian,
+         persis sheet `SERTIFIKAT` kedua master enclosure — A) Sebaran Suhu per
+         posisi termokopel (Terukur + Koreksi terhadap Indikator) dan B) Kinerja
+         Enklosur (Keseragaman/Kestabilan/Variasi). Tabel bawaan `Standard |
+         UUT | Correction` SALAH buat alat ini: kolom `koreksi` barisnya
+         menyimpan Keseragaman, dan tercetak sebagai `Correction` dia kebaca
+         "tambahkan 0,8 °C ke pembacaan alat". Disusun
+         `CertificateSnapshotBuilder::enclosure()`; alat lain balik `null`. --}}
+    @php($enclosure = $snapshot['enclosure'] ?? null)
+
     @if ($flowmeter)
         @php($mm = fn ($v) => $v === null ? '—' : \App\Support\Angka::id((float) $v, 2).' mm')
         <div class="judul-sub">PIPE SPECIFICATION &amp; SENSOR MOUNTING</div>
@@ -1270,6 +1280,112 @@
                 {{ \App\Support\Angka::id($kP, floor($kP) == $kP ? 0 : 1) }}
             </div>
         @endif
+    @elseif ($enclosure)
+        {{-- Desimal PER KOLOM ikut format sel `SERTIFIKAT` varian masternya
+             (`EnclosureProfileBase::FORMAT_CETAK`), dibekukan di snapshot;
+             `null` = format General. Pembulatannya tampilan Excel
+             (`Angka::tampilanExcel`). --}}
+        {{-- Kepala kolom sensor — master: "(No. 1 Sensor Acuan)". Acuan =
+             termokopel bernomor terkecil yang terisi DI SET POINT ITU, jadi
+             kalau termokopel itu kosong di satu set point acuannya bergeser, dan
+             kepala kolom yang tetap menyebut "No. 1" jadi pernyataan yang salah.
+
+             Master mencetak 9 kolom posisi. Grid yang lebih lebar dipecah per
+             12 kolom dengan susunan yang sama — satu tabel 20+ kolom meluber
+             keluar kertas dan angka di kanannya terpotong tanpa jejak.
+
+             Sengaja direktif php SEBARIS, bukan blok php-endphp: regex blok
+             Blade menelan semua direktif sebaris di atasnya sampai penutup
+             blok pertama yang ditemuinya — termasuk yang tertulis di komentar. --}}
+        @php($fE = is_array($enclosure['desimal'] ?? null) ? $enclosure['desimal'] : [])
+        @php($nolE = (bool) ($enclosure['tanda_nol'] ?? true))
+        @php($dE = fn ($kolom) => array_key_exists($kolom, $fE) ? $fE[$kolom] : 1)
+        @php($nE = fn ($v, $kolom) => $v === null ? '—' : ($dE($kolom) === null ? \App\Support\Angka::nilaiStandar((float) $v, 10) : \App\Support\Angka::hasil((float) $v, (int) $dE($kolom), tandaNol: $nolE)))
+        @php($spE = array_values($enclosure['set_point'] ?? []))
+        @php($posisiE = array_values($enclosure['posisi'] ?? []))
+        @php($acuanE = collect($spE)->pluck('posisi_acuan')->filter(fn ($p) => $p !== null)->unique()->values())
+        @php($teksAcuanE = $acuanE->count() <= 1 ? 'No. '.($acuanE->first() ?? 1).' Sensor Acuan' : 'Sensor Acuan per set point: No. '.collect($spE)->map(fn ($s) => $s['posisi_acuan'] ?? '—')->implode(' / '))
+        @php($blokPosisiE = $posisiE === [] ? [[]] : array_chunk($posisiE, 12, true))
+        @php($cetakKE = fn ($n) => $nE($n, 'k'))
+        @php($kE = collect($spE)->pluck('faktor_cakupan_k')->filter(fn ($n) => $n !== null)->values())
+
+        <div class="judul-kelompok">A) SEBARAN SUHU</div>
+        @foreach ($blokPosisiE as $blokPosisi)
+        <table class="data">
+            <thead>
+                <tr>
+                    <th rowspan="2">Pembacaan Indikator Enklosur (°C)</th>
+                    <th rowspan="2">Standar dan Koreksi Indikator (°C)</th>
+                    <th colspan="{{ max(1, count($blokPosisi)) }}">Sensor No. ({{ $teksAcuanE }})</th>
+                    <th rowspan="2">U<sub>95%</sub> &plusmn; (°C)</th>
+                </tr>
+                <tr>
+                    @forelse ($blokPosisi as $pos)
+                        <th>{{ $pos['posisi'] }}</th>
+                    @empty
+                        <th>—</th>
+                    @endforelse
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($spE as $sp)
+                    <tr>
+                        <td rowspan="2">{{ $nE($sp['indikator'] ?? null, 'indikator') }}</td>
+                        <td>Terukur (°C)</td>
+                        @forelse ($blokPosisi as $idx => $pos)
+                            <td>{{ $nE($sp['sensor'][$idx]['terukur'] ?? null, 'terukur') }}</td>
+                        @empty
+                            <td>—</td>
+                        @endforelse
+                        <td rowspan="2">{{ $nE($sp['u95'] ?? null, 'u95') }}</td>
+                    </tr>
+                    <tr>
+                        <td>Koreksi (°C)</td>
+                        @forelse ($blokPosisi as $idx => $pos)
+                            <td>{{ $nE($sp['sensor'][$idx]['koreksi'] ?? null, 'koreksi') }}</td>
+                        @empty
+                            <td>—</td>
+                        @endforelse
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endforeach
+
+        {{-- Satu kalimat, seperti master (`SERTIFIKAT!P37` = `k` set point
+             pertama). `≈` kalau `k` set point lain beda di presisi yang
+             dicetak — aturan yang sama dengan tabel bawaan di bawah. --}}
+        @if ($kE->isNotEmpty())
+            <div class="ket-k">
+                The uncertainty is taken at a confidence level 95 % and coverage factor ( k )
+                {{ $kE->map($cetakKE)->unique()->count() > 1 ? '≈' : '=' }}
+                {{ $cetakKE($kE->first()) }}
+            </div>
+        @endif
+
+        <div class="judul-kelompok">B) KINERJA ENKLOSUR</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Suhu Setting (°C)</th>
+                    <th>Suhu yang diukur Indikator Enklosur (°C)</th>
+                    <th>Keseragaman (°C)</th>
+                    <th>Kestabilan (°C)</th>
+                    <th>Variasi Keseluruhan (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($spE as $sp)
+                    <tr>
+                        <td>{{ $nE($sp['set_point'] ?? null, 'setting') }}</td>
+                        <td>{{ $nE($sp['indikator'] ?? null, 'indikator_kinerja') }}</td>
+                        <td>{{ $nE($sp['keseragaman'] ?? null, 'kinerja') }}</td>
+                        <td>{{ $nE($sp['kestabilan'] ?? null, 'kinerja') }}</td>
+                        <td>{{ $nE($sp['variasi_keseluruhan'] ?? null, 'kinerja') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     @else
 
     @forelse ($kelompok as $judulKelompok => $barisKelompok)
@@ -1520,7 +1636,10 @@
          `$timbangan` juga: bagian 7-nya nyetak kalimat `coverage factor ( K )`
          sendiri, dan bagian 3-nya pakai U95 of Correction yang faktor
          cakupannya lain. --}}
-    @php($adaKGrup = $autoclave !== null || $timbangan !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
+    {{-- `$enclosure` juga: blok A-nya sudah mencetak kalimat `k`-nya sendiri
+         (1,96 di sesi contoh), dan kalimat baku `k = 2` di bawahnya akan
+         membantahnya. --}}
+    @php($adaKGrup = $autoclave !== null || $timbangan !== null || $enclosure !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
     <div class="catatan">
         @foreach ($snapshot['catatan'] ?? [] as $catatan)
             @continue ($adaKGrup && str_contains($catatan, 'Coverage Factor'))

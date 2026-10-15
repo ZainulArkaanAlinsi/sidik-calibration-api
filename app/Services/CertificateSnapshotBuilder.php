@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\TekananProfile;
 use App\Support\Angka;
@@ -117,7 +118,16 @@ class CertificateSnapshotBuilder
             'catatan_atas_hasil' => $profil?->catatanAtasTabelHasil($sesi),
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
             'header' => $this->header($sesi, $sertifikat),
-            'hasil' => $this->hasil($sesi),
+            // Enclosure TIDAK punya tabel `Standard | UUT | Correction`. Baris
+            // `uncertainty_calculations`-nya memang menyimpan Keseragaman di
+            // kolom `koreksi` (wakil "koreksi terbesar", lihat
+            // `EnclosureProfileBase::barisHitungan`), jadi kalau dicetak lewat
+            // tabel bawaan keluarnya `Correction 0,8` — dibaca pelanggan
+            // sebagai "tambahkan 0,8 °C ke pembacaan alat", padahal angka itu
+            // selisih antar-posisi di dalam chamber. Isi sertifikatnya ada di
+            // kunci `enclosure` di bawah; tabel titiknya sengaja kosong, sama
+            // seperti Autoklaf.
+            'hasil' => $profil instanceof EnclosureProfileBase ? [] : $this->hasil($sesi),
             // Autoklaf nggak punya tabel hasil empat kolom — sertifikatnya TIGA
             // bagian (A Sebaran Suhu, B Kinerja, C Tekanan) yang bentuknya beda
             // satu sama lain. `null` di tujuh alat lain, dan waktu null lembar
@@ -165,6 +175,15 @@ class CertificateSnapshotBuilder
             // melewatinya.
             'tekanan' => $profil instanceof TekananProfile
                 ? $profil->tabelSertifikatTekanan($sesi)
+                : null,
+            // Enclosure (Oven, Furnace, Bath, Inkubator, Refrigerator): DUA
+            // bagian, persis sheet `SERTIFIKAT` kedua master enclosure —
+            // A) Sebaran Suhu per posisi termokopel, B) Kinerja Enklosur.
+            // `instanceof` dengan alasan yang sama seperti `flowmeter` &
+            // `tekanan`. Snapshot lama tidak punya kuncinya dan blade
+            // melewatinya. Lihat [enclosure()].
+            'enclosure' => $profil instanceof EnclosureProfileBase
+                ? $this->enclosure($sesi, $profil)
                 : null,
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),
@@ -547,6 +566,137 @@ class CertificateSnapshotBuilder
             fn (array $b): array => [...$b, 'r2' => $r2[(string) ($b['remark'] ?? '')]],
             $baris,
         );
+    }
+
+    /**
+     * Isi sertifikat Enclosure: A) Sebaran Suhu + B) Kinerja Enklosur.
+     *
+     * Bentuknya dibaca dari sheet `SERTIFIKAT` kedua master enclosure
+     * (`…Enclosure_Constant_Yokogawa.xlsm` & `…Enclosure_Recorder.xlsm`):
+     *
+     *   A  `B25`  Pembacaan Indikator Enklosur = `PERHITUNGAN FC!R40`
+     *      `F24:S24` Sensor No. 1..9 — "(No. 1 Sensor Acuan)"
+     *      `F25..`   Terukur = rata-rata terkoreksi sensor (`FC!Z23..`)
+     *      `F26..`   Koreksi = Terukur − Indikator (`F25-$B$25`)
+     *      `U25`     U95% ± per set point
+     *   B  Suhu Setting (`FC!C21`) · Indikator · Keseragaman (`R42`) ·
+     *      Kestabilan (`R41`) · Variasi Keseluruhan (`R43`)
+     *
+     * Angkanya TIDAK dihitung di sini. Semuanya sudah disimpan profil di
+     * `type_b_components` (`sumber: sebaran_sensor`) waktu sesi dihitung —
+     * jalur yang sama dipakai preview, simpan, validasi, dan
+     * `kalibrasi:hitung-ulang`. Yang dikerjakan di sini cuma menyusun ulang
+     * jadi tabel, presisi penuh; pembulatan urusan blade.
+     *
+     * ## Kolom = POSISI termokopel, bukan urutan per set point
+     *
+     * Master menomori kolom 1..9 (bukan nomor termokopel: Type N mulai no. 3).
+     * Di sistem ini posisinya tidak dicatat, jadi diturunkan dari aturan yang
+     * sudah dipakai kalkulator untuk Sensor Acuan: termokopel bernomor terkecil
+     * = posisi 1 (`docs/pertanyaan-lab-enclosure.md` #13). Urutannya diambil
+     * dari GABUNGAN nomor di seluruh sesi, bukan per set point — kalau satu
+     * termokopel kosong di satu set point, kolomnya kosong di baris itu, bukan
+     * seluruh angka di kanannya bergeser satu kolom ke posisi yang salah.
+     *
+     * Jejak `sebaran_sensor` yang hilang bikin sertifikat GAGAL terbit, bukan
+     * terbit tanpa sebaran: tabel yang cuma separuh terisi di dokumen
+     * terakreditasi kebaca seperti hasil pengukuran. `GenerateCertificate`
+     * menangkap lemparan ini dan mengirim pesannya ke admin.
+     *
+     * @return array<string, mixed>
+     */
+    private function enclosure(CalibrationSession $sesi, EnclosureProfileBase $profil): array
+    {
+        $titik = self::titikUrut($sesi)->values();
+        $jejakPerTitik = [];
+
+        foreach ($titik as $t) {
+            $jejak = collect(is_array($t->type_b_components) ? $t->type_b_components : [])
+                ->first(fn ($k): bool => is_array($k) && ($k['sumber'] ?? null) === 'sebaran_sensor');
+
+            if (! is_array($jejak) || ! is_array($jejak['sensor'] ?? null) || $jejak['sensor'] === []) {
+                throw new RuntimeException(sprintf(
+                    'Set point %s °C (titik %d) nggak punya jejak `sebaran_sensor` — tabel Sebaran Suhu & '
+                    .'Kinerja Enklosur nggak bisa disusun. Sertifikatnya nggak diterbitkan: tabel yang '
+                    .'separuh terisi kebaca seperti hasil pengukuran. Jalankan `php artisan '
+                    .'kalibrasi:hitung-ulang` untuk sesi ini, lalu terbitkan ulang.',
+                    rtrim(rtrim(number_format((float) $t->titik_ukur, 6, '.', ''), '0'), '.'),
+                    (int) $t->titik_ke,
+                ));
+            }
+
+            $jejakPerTitik[] = $jejak;
+        }
+
+        // Nomor termokopel di seluruh sesi, terurut → posisi 1..N.
+        $nomor = collect($jejakPerTitik)
+            ->flatMap(fn (array $j): array => array_map(static fn ($s): int => (int) $s['no'], $j['sensor']))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+        $posisiDari = array_flip($nomor);
+
+        $setPoint = [];
+
+        foreach ($titik as $i => $t) {
+            $jejak = $jejakPerTitik[$i];
+            $sensor = array_fill(0, count($nomor), null);
+
+            foreach ($jejak['sensor'] as $s) {
+                $p = $posisiDari[(int) $s['no']];
+                $sensor[$p] = [
+                    'posisi' => $p + 1,
+                    'no' => (int) $s['no'],
+                    'channel' => isset($s['channel']) ? (int) $s['channel'] : null,
+                    'terukur' => (float) $s['rata_rata_terkoreksi'],
+                    'koreksi' => (float) $s['koreksi_vs_indikator'],
+                ];
+            }
+
+            $acuan = isset($jejak['sensor_acuan']) ? (int) $jejak['sensor_acuan'] : null;
+
+            $setPoint[] = [
+                'titik_ke' => (int) $t->titik_ke,
+                'set_point' => (float) $t->titik_ukur,
+                // Rata-rata pembacaan Indikator enclosure — `rata_rata` baris
+                // ini (`EnclosureProfileBase::barisHitungan`). Kolom `Koreksi`
+                // tiap sensor diukur relatif ke angka ini.
+                'indikator' => (float) $t->rata_rata,
+                'sensor_acuan' => $acuan,
+                'posisi_acuan' => $acuan !== null && isset($posisiDari[$acuan]) ? $posisiDari[$acuan] + 1 : null,
+                'sensor' => $sensor,
+                'keseragaman' => (float) $jejak['keseragaman'],
+                'kestabilan' => (float) $jejak['kestabilan'],
+                'variasi_keseluruhan' => (float) $jejak['variasi_keseluruhan'],
+                // U95 YANG DILAPORKAN (sudah MAX dengan lantai CMC).
+                'u95' => $t->ketidakpastian_diperluas === null ? null : (float) $t->ketidakpastian_diperluas,
+                'faktor_cakupan_k' => $t->faktor_cakupan_k === null ? null : (float) $t->faktor_cakupan_k,
+            ];
+        }
+
+        // Varian master menentukan format sel cetak (Recorder `0.00`,
+        // Constant/Yokogawa `0.0`). Kalibrator dibaca dari jejak `konteks_sesi`
+        // yang ditulis profil waktu sesi dihitung.
+        $konteks = collect(is_array($titik->first()?->type_b_components) ? $titik->first()->type_b_components : [])
+            ->first(fn ($k): bool => is_array($k) && ($k['sumber'] ?? null) === 'konteks_sesi');
+        $format = $profil->formatCetakSertifikat(is_array($konteks) ? ($konteks['merk_kalibrator'] ?? null) : null);
+
+        return [
+            'satuan' => EnclosureProfileBase::SATUAN,
+            // Ikut DIBEKUKAN, sama alasannya seperti `desimal` di tabel hasil.
+            // Per KOLOM (`null` = format General), lihat
+            // `EnclosureProfileBase::FORMAT_CETAK`.
+            'varian_master' => $format['varian'],
+            'desimal' => $format['desimal'],
+            'tanda_nol' => $profil->tandaNolDicetak(),
+            'posisi' => array_map(
+                static fn (int $no, int $i): array => ['posisi' => $i + 1, 'no' => $no],
+                $nomor,
+                array_keys($nomor),
+            ),
+            'set_point' => $setPoint,
+        ];
     }
 
     /**

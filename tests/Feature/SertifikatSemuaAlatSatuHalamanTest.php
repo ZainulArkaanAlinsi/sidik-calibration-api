@@ -251,6 +251,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // melaporkan U95 per parameter.
         '0736-CAL-526 (Sieve Mesh)',
         '22506.01.A (Temperature Calibrator)',
+        // Kedua Enclosure masuk sini 15 Okt 2026, dan sebabnya isi, bukan tata
+        // letak yang menyusut: sertifikatnya dulu SALAH mencetak satu baris
+        // `Standard | UUT | Correction` per set point (Correction = Keseragaman).
+        // Sekarang mencetak dua bagian master seperti Autoklaf — A) Sebaran
+        // Suhu (dua baris × 9 posisi per set point) dan B) Kinerja Enklosur —
+        // jadi 4 set point Inkubator = 8 baris + 4 baris + dua kepala tabel.
+        '2405.03.AV (Incubator)',
+        '2406.25.AI (Oven)',
         '2406.32.C (Chlorine Meter)',
         '2406.51.S (Autoclave)',
         '2602.03.A (Multi Gas Detector)',

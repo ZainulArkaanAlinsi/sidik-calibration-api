@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Certificate;
+use App\Support\Angka;
 use Illuminate\Support\Collection;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\CellAlignment;
@@ -226,13 +227,20 @@ class CertificateExcelExporter
      * ngerekap & ngitung. Jadi teks bikin kolomnya nggak bisa dijumlah, dan
      * separator koma bikin Excel-nya baca sebagai kalimat.
      */
-    private function bulat(mixed $nilai, int $desimal): ?float
+    private function bulat(mixed $nilai, ?int $desimal): ?float
     {
         if ($nilai === null) {
             return null;
         }
 
-        $hasil = round((float) $nilai, $desimal);
+        // `null` = format General: angka apa adanya, derau biner dipangkas.
+        if ($desimal === null) {
+            return round((float) $nilai, 10);
+        }
+
+        // Pembulatan TAMPILAN Excel, sama dengan PDF (`Angka::hasil`) — beda
+        // jalur pembulatan antara dua berkas satu sertifikat itu temuan audit.
+        $hasil = ($nilai < 0 ? -1 : 1) * (float) str_replace(',', '.', Angka::tampilanExcel((float) $nilai, $desimal));
 
         // `round(-0.2, 0)` di PHP balikin NEGATIF NOL, dan Excel nulisnya `-0`.
         // Nilainya sama dengan nol, tapi di kolom Correction sertifikat itu
@@ -247,6 +255,14 @@ class CertificateExcelExporter
     private function tulisHasil(Writer $writer, array $snapshot): void
     {
         $writer->addRow(Row::fromValues(['CALIBRATION REPORT'], (new Style)->setFontBold()));
+
+        // Enclosure punya dua tabel sendiri, bukan tabel empat kolom — dan
+        // `hasil`-nya sengaja kosong. Lihat `CertificateSnapshotBuilder::enclosure()`.
+        if (is_array($snapshot['enclosure'] ?? null)) {
+            $this->tulisEnclosure($writer, $snapshot['enclosure'], $snapshot['catatan'] ?? []);
+
+            return;
+        }
 
         $adaRemark = collect($snapshot['hasil'] ?? [])
             ->contains(fn ($b) => filled($b['remark'] ?? null));
@@ -314,6 +330,88 @@ class CertificateExcelExporter
         // Dua catatan baku di bawah tabel — bagian dari dokumen, bukan hiasan.
         foreach ($snapshot['catatan'] ?? [] as $catatan) {
             $writer->addRow(Row::fromValues([$catatan], (new Style)->setFontItalic()));
+        }
+    }
+
+    /**
+     * Sertifikat Enclosure: A) Sebaran Suhu + B) Kinerja Enklosur, susunan
+     * yang sama dengan PDF (`pdf.blade.php`, cabang `$enclosure`) dan sheet
+     * `SERTIFIKAT` master. Angka dibulatkan ke desimal yang dibekukan di
+     * snapshot — sama dengan yang tercetak di PDF — tapi tetap angka.
+     *
+     * Kalimat baku "Coverage Factor (k) = 2" TIDAK ditulis: `k` alat ini
+     * dihitung dari `v_eff` (1,96 di sesi contoh), dan kalimatnya ditulis
+     * sendiri di bawah tabel A — persis PDF.
+     *
+     * @param  array<string, mixed>  $enclosure
+     * @param  list<string>  $catatan
+     */
+    private function tulisEnclosure(Writer $writer, array $enclosure, array $catatan): void
+    {
+        // Desimal per kolom, format sel master varian ini (`null` = General).
+        $fmt = is_array($enclosure['desimal'] ?? null) ? $enclosure['desimal'] : [];
+        $d = static fn (string $kolom): ?int => array_key_exists($kolom, $fmt) ? $fmt[$kolom] : 1;
+        $posisi = array_values($enclosure['posisi'] ?? []);
+        $setPoint = array_values($enclosure['set_point'] ?? []);
+
+        $writer->addRow(Row::fromValues(['A) Sebaran Suhu'], (new Style)->setFontBold()));
+        $writer->addRow(Row::fromValues(array_merge(
+            ['Pembacaan Indikator Enklosur (°C)', 'Standar dan Koreksi Indikator (°C)'],
+            array_map(static fn (array $p): string => 'Sensor No. '.$p['posisi'], $posisi),
+            ['U95% ± (°C)'],
+        ), $this->gayaHeaderTabel()));
+
+        foreach ($setPoint as $sp) {
+            $sensor = $sp['sensor'] ?? [];
+
+            $writer->addRow(Row::fromValues(array_merge(
+                [$this->bulat($sp['indikator'] ?? null, $d('indikator')), 'Terukur (°C)'],
+                array_map(fn (int $i): ?float => $this->bulat($sensor[$i]['terukur'] ?? null, $d('terukur')), array_keys($posisi)),
+                [$this->bulat($sp['u95'] ?? null, $d('u95'))],
+            )));
+            $writer->addRow(Row::fromValues(array_merge(
+                ['', 'Koreksi (°C)'],
+                array_map(fn (int $i): ?float => $this->bulat($sensor[$i]['koreksi'] ?? null, $d('koreksi')), array_keys($posisi)),
+            )));
+        }
+
+        $k = collect($setPoint)->pluck('faktor_cakupan_k')->first(fn ($n): bool => $n !== null);
+
+        if ($k !== null) {
+            $writer->addRow(Row::fromValues([
+                'The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =',
+                $this->bulat($k, $d('k')),
+            ], (new Style)->setFontItalic()));
+        }
+
+        $this->kosong($writer);
+        $writer->addRow(Row::fromValues(['B) Kinerja Enklosur'], (new Style)->setFontBold()));
+        $writer->addRow(Row::fromValues([
+            'Suhu Setting (°C)',
+            'Suhu yang diukur Indikator Enklosur (°C)',
+            'Keseragaman (°C)',
+            'Kestabilan (°C)',
+            'Variasi Keseluruhan (°C)',
+        ], $this->gayaHeaderTabel()));
+
+        foreach ($setPoint as $sp) {
+            $writer->addRow(Row::fromValues([
+                $this->bulat($sp['set_point'] ?? null, $d('setting')),
+                $this->bulat($sp['indikator'] ?? null, $d('indikator_kinerja')),
+                $this->bulat($sp['keseragaman'] ?? null, $d('kinerja')),
+                $this->bulat($sp['kestabilan'] ?? null, $d('kinerja')),
+                $this->bulat($sp['variasi_keseluruhan'] ?? null, $d('kinerja')),
+            ]));
+        }
+
+        $this->kosong($writer);
+
+        foreach ($catatan as $baris) {
+            if (str_contains((string) $baris, 'Coverage Factor')) {
+                continue;
+            }
+
+            $writer->addRow(Row::fromValues([$baris], (new Style)->setFontItalic()));
         }
     }
 
