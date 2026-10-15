@@ -2862,6 +2862,7 @@ dijawab `404` di semua rute Studio; barisnya tidak dihapus.
   "id": 14, "nama": "…", "kode_profil": "micrometer", "keluarga": null, "sumber": "xlsm",
   "sha256": "…", "ukuran": 912384, "jumlah_lembar": 8, "berkas_asli_tersimpan": true,
   "berkas_asli_terenkripsi": true, "diimpor_pada": "…", "catatan": "…",
+  "boleh_edit_sel_terkunci": false,
   "lembar": [
     { "id": 101, "urutan": 1, "nama": "INPUT DATA", "tersembunyi": "tidak",
       "dikecualikan": false, "alasan_dikecualikan": null, "tautan_tabel": null,
@@ -2872,7 +2873,8 @@ dijawab `404` di semua rute Studio; barisnya tidak dihapus.
         "tinggi_baris": { "3": 30.0 },
         "kolom_tersembunyi": ["E"], "baris_tersembunyi": [4],
         "lebar_kolom_bawaan": 12.5, "tinggi_baris_bawaan": 18.0, "lebar_perkiraan": false,
-        "freeze": "B3", "garis_kisi": false, "zoom": 85, "jumlah_komentar": 1 } },
+        "freeze": "B3", "garis_kisi": false, "zoom": 85, "jumlah_komentar": 1,
+        "dilindungi": true, "sel_tidak_terkunci": ["B2:B3", "E5:E1048576"] } },
     { "id": 102, "urutan": 2, "nama": "DATABASE", "tersembunyi": "tidak",
       "dikecualikan": false, "alasan_dikecualikan": null,
       "tautan_tabel": "customers", "jumlah_baris": 120, "jumlah_kolom": 30,
@@ -2903,8 +2905,14 @@ dijawab `404` di semua rute Studio; barisnya tidak dihapus.
   | `garis_kisi` | bool | garis kisi sheet tampil (`showGridLines`) | `true` |
   | `zoom` | int \| `null` | persen zoom sheet bila bukan 100 | `null` |
   | `jumlah_komentar` | int | tambahan; boleh diabaikan | `0` |
+  | `dilindungi` | bool | **format 5 (K-49-15, 15 Okt 2026):** sheet dilindungi di Excel (`Protect Sheet`). Baris lama tanpa kunci → `false` | `false` |
+  | `sel_tidak_terkunci` | list rentang A1 (`"B2:B3"`, `"F2"`, `"E5:E1048576"`, `"G8:XFD8"`) | **format 5:** himpunan sel yang TIDAK terkunci, hanya diisi bila `dilindungi`; rentang boleh tumpang tindih. **Sel terkunci ⇔ `dilindungi` DAN tidak ada rentang yang memuatnya** — juga untuk sel kosong yang tidak dikirim di `sel`. Lihat "Proteksi lembar" di Tahap C | `[]` |
 
   Peta kosong selalu dikirim sebagai objek JSON `{}`, tidak pernah `[]`.
+
+- `boleh_edit_sel_terkunci` (detail saja, K-49-15, 15 Okt 2026): `true` = pemanggil boleh
+  menyunting sel terkunci di lembar yang dilindungi (saat ini hanya `super_admin`). Dari server —
+  jangan disimpulkan dari peran di klien.
 
 ### `GET /api/studio/workbook/{workbook}/riwayat` — semua versi jenis yang sama (K-49-13)
 
@@ -2992,8 +3000,11 @@ objek sel terurut alfabet (bentuk kanonik server). Lembar lama ber-`dikecualikan
 (tinjau C-3 #2), sama dengan `studio:rapikan-workbook`: jejak audit perubahan master selalu punya
 pelaku. Sandi
 hanya ditanya bila ada berkas bersandi. Berkas tanpa sandi disimpan terenkripsi kunci aplikasi
-(`*.enc`, `berkas_asli_terenkripsi: false` tetap berarti "sumbernya tanpa sandi"). Format kanonik
-naik ke **4** (`tata_letak` + `gambar`, `cf`, `cf_gaya_dasar`).
+(`*.enc`, `berkas_asli_terenkripsi: false` tetap berarti "sumbernya tanpa sandi"; K-49-15
+mencatatnya sebagai keputusan, membalik "apa adanya" K-49-11 untuk berkas tanpa sandi). Format
+kanonik naik ke **4** (`tata_letak` + `gambar`, `cf`, `cf_gaya_dasar`), lalu **5** (15 Okt 2026,
+K-49-15: `tata_letak` + `dilindungi`, `sel_tidak_terkunci`) — master lama perlu diimpor ulang
+(`--ganti`) untuk mendapat proteksinya; sampai itu lembarnya `dilindungi: false`.
 
 **Lembar (resource yang sudah ada):** `tersembunyi` SUDAH ada sejak S1b sebagai string
 `"tidak" | "hidden" | "veryHidden"` (bukan bool — klien mobile sudah mengurainya begitu).
@@ -3014,8 +3025,17 @@ ini → `404`. Izin & throttle = baca workbook.
 
 #### `POST /api/studio/workbook/{workbook}/hitung` (throttle `studio-hitung` 30/menit/pengguna)
 
-Izin `workbook.hitung`: **admin, teknisi, super_admin** (viewer & pelanggan `403`, lab lain `404`).
-Rute ini TIDAK menulis data apa pun — stateless: klien mengirim SEMUA edit yang berlaku.
+Izin `workbook.hitung`: **admin, teknisi, super_admin** (viewer & pelanggan `403`, lab lain `404`;
+super_admin dikonfirmasi K-49-15 — kendali Studio ada di super_admin). Rute ini TIDAK menulis data
+apa pun — stateless: klien mengirim SEMUA edit yang berlaku.
+
+**Proteksi lembar (K-49-15, 15 Okt 2026).** Di lembar ber-`tata_letak.dilindungi: true`, sel yang
+tidak dimuat rentang mana pun di `tata_letak.sel_tidak_terkunci` TERKUNCI: hanya `super_admin`
+(`boleh_edit_sel_terkunci: true` di detail) yang boleh menyuntingnya. Selain itu server menjawab
+`422 sel_terkunci` — tombol gembok di klien hanya kenyamanan, server yang memutuskan. Aturan
+Excel yang ditiru server: sel terkunci kecuali gayanya `locked = false`; sel kosong ikut gaya baris,
+lalu gaya kolom (kolom input yang dibuka utuh tetap terbuka sampai baris 1.048.576). "Allow Edit
+Ranges" Excel tidak dibaca: sel terkunci di rentang itu tetap terkunci bagi selain super_admin.
 
 ```json
 {"edit":[{"lembar_id":12,"a":"E12","isi":"3"},{"lembar_id":12,"a":"E21","isi":"21.3"}],
@@ -3050,6 +3070,7 @@ dan sel yang dihitung dari nilai itu — tampilkan sebagai peringatan, jangan di
 | `422 edit_tidak_valid` | lembar_id bukan milik workbook · alamat salah · rumus tak terurai · rumus > 8192 huruf · fungsi di luar daftar putih (WEBSERVICE, FILTERXML, CALL, REGISTER, INFO, CELL, RAND…) · rujukan **baris penuh** (`1:1`, `$2:$5`) — mesin memotongnya beda dari Excel, tulis rentangnya (`A1:Z1`) — `errors` per `edit.N.*` |
 | `422 rumus_terlalu_berat` | Pagar beban rumus EDIT (dicek sebelum mesin jalan): merujuk > **10.000 sel** (rentang + nama; kolom penuh `A:A` dihitung sampai baris terakhir berisi di lembar itu, termasuk sel yang diedit) · hasil kali dua rentang terbesar > **250.000** (fungsi larik/pencarian/siaran yang kuadratik) · rujukan dinamis (`INDIRECT`, `OFFSET`, rentang yang ujungnya hasil fungsi `A1:INDEX(…)`) · **teks × larik** (15 Okt 2026, tinjau C-3 #1): jumlah operasi teks per unsur (operator `&`, LEFT/RIGHT/MID/TRIM/UPPER/LOWER/PROPER/CLEAN/CONCATENATE/REPLACE/SUBSTITUTE/REPT/TEXT/FIXED/DOLLAR/T/CHAR/UNICHAR/ADDRESS) × larik terbesar yang bisa terbentuk (rentang; dua rentang atau lebih → siaran baris × kolom, dengan TRANSPOSE → dua sisi terpanjang) > **4.000** — tiap unsur bisa 32.767 huruf, `REPT("a",32767)&ROW(A1:A10000)` = 366 MB dalam satu operasi; `&` antar sel tunggal tidak pernah kena — kecuali mengetik ulang rumus asli sel itu apa adanya. `errors` per `edit.N.isi`, pesan menyebut angkanya |
 | `422 hitung_terlalu_berat` | (15 Okt 2026, tinjau C-3 #1) Pemakaian memori hitung melewati ambang server (0,8 × batas memori request) di tengah evaluasi — diperiksa per sel, tiap kali sel/rentang dibaca, dan per unsur fungsi teks (mis. rumus ASLI `REPT(…,B1+0*ROW(A1:A10000))` dengan B1 disunting 32.767). Tanpa `errors`; edit terakhir yang dibatalkan biasanya cukup. Jangan diulang tanpa mengubah edit |
+| `422 sel_terkunci` | (K-49-15) Edit ke sel TERKUNCI di lembar yang dilindungi Excel, oleh selain super_admin. Semua sel terkunci di request disebut sekaligus: `{"message":"2 sel terkunci di lembar yang dilindungi Excel: INPUT DATA!C2, INPUT DATA!A20. Hanya super admin yang boleh mengubahnya.","kode":"sel_terkunci","errors":{"edit.1.a":["…"],"edit.2.a":["…"]},"sel_terkunci":[{"lembar_id":12,"a":"C2"},{"lembar_id":12,"a":"A20"}]}` (alamat dinormalkan: huruf besar, tanpa `$`). Tidak ada yang dihitung; buang edit itu (atau minta super admin) lalu kirim ulang |
 | `422` (validasi) | `edit` bukan larik · > 300 edit · `waktu_acuan` bukan tanggal |
 | `429` | Lewat jatah `studio-hitung` (30/menit/pengguna; tiap request ikut dihitung, termasuk yang dijawab 422/409/504). Body `{"message":"…"}`; header **`Retry-After`** (detik sampai boleh lagi), `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` (epoch) → klien menunggu `Retry-After` lalu kirim ulang edit terakhir |
 | `504 hitung_terlalu_lama` | Melewati batas 20 s — diperiksa sebelum tiap sel DAN tiap kali sel/rentang dibaca di dalam evaluasi satu sel |

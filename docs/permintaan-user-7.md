@@ -5143,6 +5143,7 @@ UNCERTAINTY" workbook Volumetric Glassware (Pipet Ukur).
 | K-49-11 | Berkas `.xlsm` asli | **Ikut disimpan, apa adanya**: byte asli yang masih TERENKRIPSI, tidak pernah versi terdekripsi, di disk privat (`local` → `storage/app/private/workbook-master/{organization_id}/{sha256}.xlsm`), dengan disk, path, sha256, dan ukuran di baris workbook. Sandi tidak pernah disimpan atau dilog. **Membalik Q-49-06** ("berkas tidak disimpan"). Isi DATABASE/SERTIFIKAT tetap tidak diekstrak (K-49-08) — **dicabut K-49-12**. Pemilik, 13 Okt 2026, saat menyetujui rencana S1b. |
 | K-49-12 | Data pelanggan di workbook | **Ditampilkan apa adanya**, termasuk isi sheet DATABASE, SERTIFIKAT (+ `(n)`, `STYLE n`, `Certificate (n)`), `konsep`, dan blok identitas pelanggan di INPUT DATA, untuk sumber `.xlsm` **dan** `.csv`. **Mencabut pengecualian isi K-49-08** (dan menutup risiko terbuka S1b soal redaksi INPUT DATA: tidak diredaksi). Lembar itu tetap ditandai `tautan_tabel` (`customers` / `certificates`) dengan `dikecualikan = false`. Batasnya pindah ke penyimpanan: berkas & DB tetap di luar repo (repo PUBLIC — test memakai fixture sintetis), dan API mengurung isinya per organisasi (lab lain 404). Penahan `--saya-paham-data-pelanggan` dicabut. Pemilik, 13 Okt 2026. |
 | K-49-13 | Satu master per jenis | **Studio HANYA berisi master asli, SATU master aktif per jenis/varian**; olah data/pekerjaan tidak pernah masuk Studio. Impor master baru untuk jenis yang sama = **mengganti** yang aktif, yang lama disimpan sebagai **riwayat tersembunyi** (bisa dibuka), tidak dihapus. Varian beda rentang/standar = jenis berbeda (Micrometer 4 rentang, Timbangan gram/kg/substitusi, Enclosure Constant-Yokogawa vs Recorder, dst.). Implementasi: `workbook_master.kunci_jenis/aktif/versi/digantikan_oleh_id/diarsipkan_pada`, `studio:impor-workbook --gantikan/--kunci-jenis`, `studio:rapikan-workbook` (riwayat/aktifkan/arsip, tanpa hapus), `GET /api/studio/workbook/{w}/riwayat`; kontrak `docs/kontrak-api.md` §16. Pemilik, 15 Okt 2026. |
+| K-49-15 | Kendali Studio & proteksi lembar Excel | **Kendali Studio ada di `super_admin`**; di bawahnya Master Data (`admin`); `teknisi` pegawai biasa. (1) `super_admin` boleh memakai semua fitur Studio, termasuk `POST …/hitung` (sudah jalan sejak tahap C, dikonfirmasi). (2) **Proteksi sheet Excel dihormati:** di lembar yang dilindungi di `.xlsm` asli, sel TERKUNCI tidak bisa disunting di simulasi Studio oleh admin atau peran lain selain `super_admin` (server menolak 422 `sel_terkunci`); `super_admin` boleh menyunting semuanya; sel tidak terkunci tetap mengikuti aturan yang ada (xlsm + berkas asli tersimpan + izin `workbook.hitung`). (3) Dicatat, sudah jalan: berkas asli tanpa sandi disimpan **terenkripsi kunci aplikasi** (`*.enc`) — **membalik "apa adanya" K-49-11** untuk berkas tanpa sandi; `tersembunyi` tetap teks (`tidak`/`hidden`/`veryHidden`); workbook bersandi perlu disiapkan ulang (`php artisan studio:siapkan-hitung <id>`, sandi pemilik) sesudah cache model hitungnya disapu karena 30 hari tidak dipakai. Implementasi: format kanonik 5 (`tata_letak.dilindungi`, `tata_letak.sel_tidak_terkunci`), `ProteksiLembar`, detail `boleh_edit_sel_terkunci`; kontrak `docs/kontrak-api.md` §16. Pemilik, 15 Okt 2026. |
 
 **Syarat K-49-07** (penjabaran gerbang paritas dan simulasi di atas, bukan aturan baru): setiap
 Lembar Hitung lahir dari templat yang memuat blok agregasi GUM bawaan, setara `GumCalculator`
@@ -5280,9 +5281,27 @@ semua workbook kalibrasi. Kontrak `docs/kontrak-api.md` §16 "Tahap C". Belum co
 - **Paritas** generik: `docs/skrip/paritas-excel.ps1` (Excel COM pada SALINAN + `studio:paritas-excel`
   + `studio:paritas-skenario`). Angka & akar beda per workbook di
   `_agents_workspace/studio-data-acuan/C-anak-timbangan/excel-parity-report.md` (di luar repo).
-- **Menunggu pemilik:** super_admin boleh `/hitung` (rute tidak menulis); proteksi lembar Excel
-  tidak ditegakkan mesin; workbook bersandi (57 `.xlsm` + 2 Hydrometer `.xlsx`) — paritas &
-  impor dijalankan pemilik dengan sandinya.
+- **Dijawab K-49-15 (15 Okt 2026):** super_admin boleh `/hitung` (dikonfirmasi); proteksi lembar
+  Excel kini ditegakkan server (lihat bawah). **Masih menunggu pemilik:** workbook bersandi (57
+  `.xlsm` + 2 Hydrometer `.xlsx`) — paritas & impor dijalankan pemilik dengan sandinya.
+
+### §49 K-49-15 — proteksi lembar Excel di Studio (sisi API, 15 Okt 2026)
+
+- **Impor (format kanonik 5):** per lembar `tata_letak.dilindungi` (`<sheetProtection sheet="1">`)
+  dan `tata_letak.sel_tidak_terkunci` — HIMPUNAN sel yang tidak terkunci sebagai rentang A1
+  (hanya bila dilindungi), bukan penanda per sel. Aturan Excel ditiru: terkunci kecuali gaya
+  `locked="0"`; sel yang tidak ada di berkas ikut gaya baris, lalu gaya kolom, lalu xf 0 — kolom
+  input yang dibuka lewat gaya kolom utuh tetap terbuka sampai baris 1.048.576. Baris format ≤ 4
+  tanpa kunci = tidak dilindungi. `App\Services\Studio\Workbook\ProteksiLembar`.
+- **`/hitung`:** edit ke sel terkunci di lembar dilindungi → 422 `sel_terkunci` (semua alamat
+  disebut di `sel_terkunci`), kecuali `super_admin`. Diperiksa sebelum model hitung dimuat.
+- **Detail workbook:** `boleh_edit_sel_terkunci` (true hanya super_admin) — klien tidak menebak
+  dari peran.
+- **Batas yang diketahui:** "Allow Edit Ranges" (`<protectedRanges>`) tidak dibaca (PhpSpreadsheet
+  hanya membaca sandi format lama) — sel terkunci di rentang itu tetap terkunci bagi selain
+  super_admin (lebih ketat dari Excel).
+- **Perlu impor ulang** (`--ganti`) supaya master yang ada mendapat kunci format 5; sampai itu,
+  semua lembar dianggap tidak dilindungi. Dijaga `StudioProteksiLembarTest`.
 
 ## Gelombang & status
 
