@@ -66,8 +66,14 @@ final class KanonikWorkbook
      * 4 (14 Okt 2026, tahap C): `tata_letak` + `gambar` (drawing per lembar),
      * `cf` (aturan conditional formatting) + `cf_gaya_dasar`; `g` sel di
      * rentang CF sudah memuat hasil CF dari nilai cache.
+     *
+     * 5 (15 Okt 2026, K-49-15): `tata_letak` + `dilindungi` (proteksi sheet
+     * Excel) dan `sel_tidak_terkunci` (rentang sel yang TIDAK terkunci, hanya
+     * bila dilindungi — `ProteksiLembar`). Baris format ≤ 4 tanpa kunci ini =
+     * tidak dilindungi (`tataLetakKabel` mengisi bawaan). Sel kanonik tidak
+     * berubah: status kunci tidak disimpan per sel.
      */
-    public const FORMAT = 4;
+    public const FORMAT = 5;
 
     private function __construct() {}
 
@@ -145,6 +151,10 @@ final class KanonikWorkbook
      *  - `cf` (format 4) aturan conditional formatting (`FormatBersyarat`),
      *    `cf_gaya_dasar` peta alamat → `g` sebelum CF (untuk `/hitung`).
      *    Klien tidak perlu membaca keduanya: `g` sel sudah memuat hasil CF.
+     *  - `dilindungi` (format 5) bool — sheet dilindungi di Excel;
+     *    `sel_tidak_terkunci` list rentang A1 sel yang TIDAK terkunci (kosong
+     *    bila tidak dilindungi). Sel terkunci ⇔ `dilindungi` dan tidak ada
+     *    rentang yang memuatnya (`ProteksiLembar`). CSV: false / [].
      *
      * Di PHP peta ditulis sebagai array berkunci; peta kosong = `[]` di sini
      * dan di kolom DB. Ke kabel dan ke hash selalu lewat `tataLetakKabel()`,
@@ -170,6 +180,8 @@ final class KanonikWorkbook
             'gambar' => [],
             'cf' => [],
             'cf_gaya_dasar' => [],
+            'dilindungi' => false,
+            'sel_tidak_terkunci' => [],
         ];
     }
 

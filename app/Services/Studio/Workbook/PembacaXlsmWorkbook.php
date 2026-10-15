@@ -85,7 +85,9 @@ use Throwable;
  *  - gaya sel: tebal/miring/warna/isi/rata/vertikal/bungkus/ukuran/font/garis.
  *    Sel kosong disimpan hanya bila ber-isi atau ber-garis (yang digambar
  *    Excel walau kosong). Gaya baris/kolom utuh (`<row s>`, `<col style>`)
- *    tanpa elemen sel tidak ikut — batas yang diketahui.
+ *    tanpa elemen sel tidak ikut — batas yang diketahui;
+ *  - proteksi lembar (format 5, K-49-15): `dilindungi` + `sel_tidak_terkunci`
+ *    (`ProteksiLembar` — status kunci MEMAKAI gaya baris/kolom utuh).
  */
 class PembacaXlsmWorkbook
 {
@@ -367,6 +369,7 @@ class PembacaXlsmWorkbook
 
         $lembar = [];
         $gambar = [];
+        $proteksi = new ProteksiLembar($ss);
 
         foreach ($ss->getAllSheets() as $i => $sheet) {
             $tersembunyi = match ($sheet->getSheetState()) {
@@ -375,7 +378,7 @@ class PembacaXlsmWorkbook
                 default => 'tidak',
             };
 
-            $lembar[] = $this->lembar($ss, $sheet, $i + 1, $tersembunyi, $gambar);
+            $lembar[] = $this->lembar($ss, $sheet, $i + 1, $tersembunyi, $gambar, $proteksi);
         }
 
         return ['lembar' => $lembar, 'model_hitung' => ModelHitung::dariSpreadsheet($ss), 'gambar' => $gambar];
@@ -385,7 +388,7 @@ class PembacaXlsmWorkbook
      * @param  array<string, array{jenis: string, byte: string}>  $gambar  diisi byte gambar lembar ini
      * @return array<string, mixed>
      */
-    private function lembar(Spreadsheet $ss, Worksheet $sheet, int $urutan, string $tersembunyi, array &$gambar): array
+    private function lembar(Spreadsheet $ss, Worksheet $sheet, int $urutan, string $tersembunyi, array &$gambar, ProteksiLembar $proteksi): array
     {
         $koleksi = $sheet->getCellCollection();
         $sel = [];
@@ -430,6 +433,8 @@ class PembacaXlsmWorkbook
         $tata['gambar'] = $this->gambar($sheet, $gambar);
         $tata['cf'] = array_map(static fn (array $a): array => array_diff_key($a, ['batas' => true]), $cf);
         $tata['cf_gaya_dasar'] = $gayaDasarCf;
+        // Format 5 (K-49-15): proteksi lembar + himpunan sel yang TIDAK terkunci.
+        $tata = array_replace($tata, $proteksi->dariSheet($sheet));
 
         return [
             'urutan' => $urutan,
