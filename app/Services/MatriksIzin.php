@@ -133,6 +133,14 @@ class MatriksIzin
         // bukan di sini.
         'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
 
+        // --- Sidik Studio, Workbook Alat mode Asli Excel (S1b). Baca saja;
+        // semua role lab, super admin lewat aturan baca. Izin tulis/unduh
+        // berkas asli lahir bersama rutenya di tahap berikutnya.
+        'workbook.lihat' => ['GET', 'api/studio/workbook'],
+        // Tahap C: hitung ulang "bagaimana jika" (tidak menulis data lab) —
+        // admin, teknisi, super admin; viewer tidak.
+        'workbook.hitung' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
+
         // --- organisasi & pengguna
         'organisasi.lihat' => ['GET', 'api/organization'],
         'organisasi.ubah' => ['PUT', 'api/organization'],

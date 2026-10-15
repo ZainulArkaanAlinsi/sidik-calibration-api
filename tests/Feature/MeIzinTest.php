@@ -16,6 +16,7 @@ use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
 use App\Models\PermintaanKalibrasi;
 use App\Models\User;
+use App\Models\WorkbookMaster;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -348,6 +349,20 @@ class MeIzinTest extends TestCase
                 'nomor' => 'PMT/uji/'.uniqid(),
                 'status' => 'baru',
                 'metode_pengantaran' => 'diantar_sendiri',
+            ])->id;
+        }
+
+        // Studio tahap C (14 Okt): workbook SEORGANISASI — milik lab lain → 404
+        // sebelum gerbang role sempat jalan. Sumber csv cukup: badan kosong
+        // sudah ditolak validasi (422 = lolos gerbang) sebelum berkas asli ditanya.
+        if (str_contains($uri, '{workbook}')) {
+            $ganti['{workbook}'] = (string) WorkbookMaster::create([
+                'organization_id' => $user->organization_id,
+                'nama' => 'Workbook uji '.uniqid(),
+                'sumber' => WorkbookMaster::SUMBER_CSV,
+                'sha256' => hash('sha256', uniqid('', true)),
+                'ukuran' => 1,
+                'jumlah_lembar' => 0,
             ])->id;
         }
 

@@ -34,6 +34,8 @@ use App\Http\Controllers\Api\PermintaanPelangganController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
+use App\Http\Controllers\Api\Studio\HitungWorkbookController;
+use App\Http\Controllers\Api\Studio\WorkbookController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
@@ -426,6 +428,23 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
         Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
         Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+    });
+
+    // Sidik Studio S1b — "Workbook Alat", mode Asli Excel, BACA-SAJA (izin
+    // `workbook.lihat`, §49 K-49-08..11). Semua role lab; workbook lab lain dan
+    // lembar yang bukan milik workbook di URL → 404 di controller. Lembar
+    // DATABASE/SERTIFIKAT terdaftar tapi selalu tanpa sel. Parameter lembar
+    // sengaja `{lembarWorkbook}`, bukan `{lembar}`: nama itu sudah dipakai
+    // data-acuan untuk KODE skema (string), dan sapuan rute mengisi parameter
+    // per nama. Tidak ada rute tulis/unduh berkas asli di tahap ini.
+    Route::prefix('studio/workbook')->middleware('throttle:studio-baca')->group(function () {
+        Route::get('/', [WorkbookController::class, 'index']);
+        Route::get('/{workbook}', [WorkbookController::class, 'show']);
+        // K-49-13: semua versi (aktif + riwayat) di jenis workbook ini — baca saja.
+        Route::get('/{workbook}/riwayat', [WorkbookController::class, 'riwayat']);
+        Route::get('/{workbook}/lembar/{lembarWorkbook}', [WorkbookController::class, 'lembar']);
+        // Tahap C: byte gambar lembar (PNG/JPEG; lain → 415). Izin = baca workbook.
+        Route::get('/{workbook}/gambar/{gambar}', [WorkbookController::class, 'gambar']);
     });
 
     // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
@@ -878,6 +897,16 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])->gr
     // Kembalikan ke ADMIN, bukan ke teknisi — angkanya tidak dipersoalkan.
     Route::post('/calibrations/{calibration}/kembalikan-dari-pengesahan', [PengesahanController::class, 'kembalikan'])
         ->middleware('throttle:pengesahan-balik');
+});
+
+// Sidik Studio tahap C — Lembar Hitung "persis Excel": hitung ulang workbook
+// dengan edit sementara (stateless). Admin, teknisi, DAN super admin; viewer
+// tidak. Grup saudara karena super admin tidak bisa POST di grup luar. Rute ini
+// TIDAK menulis data lab (hanya cache model hitung turunan berkas asli) — dibuka
+// untuk super admin sebagai keputusan yang menunggu konfirmasi pemilik.
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,super_admin'])->group(function () {
+    Route::post('/studio/workbook/{workbook}/hitung', HitungWorkbookController::class)
+        ->middleware('throttle:studio-hitung');
 });
 
 // Dikerjakan admin (meja depan) DAN super admin (pengendali). Tetap grup

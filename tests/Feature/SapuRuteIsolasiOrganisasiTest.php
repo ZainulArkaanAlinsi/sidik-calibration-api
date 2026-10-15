@@ -20,7 +20,11 @@ use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
+use App\Services\Studio\Workbook\KanonikWorkbook;
+use App\Services\Studio\Workbook\PembacaCsvWorkbook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteTerdaftar;
 use Illuminate\Support\Facades\Route as Router;
@@ -102,6 +106,10 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
         'pembanding' => 'versi acuan pembanding',
         'lembar' => 'lembar acuan (kode skema)',
         'kolom' => 'kolom acuan (kode skema)',
+        // Sidik Studio S1b (13 Okt) — workbook master + lembarnya. Lembar
+        // lab 2 ditanam dengan sel berpenanda, jadi rute sel ikut disapu isi.
+        'workbook' => 'workbook master',
+        'lembarWorkbook' => 'lembar workbook master',
     ];
 
     /**
@@ -232,6 +240,10 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'orderItem', 'penugasanItem', 'formulaVersion',
             // Modul pelanggan sisi lab (M1-05) punya test isolasinya sendiri.
             'pengajuan', 'undangan',
+            // Studio tahap C (14 Okt): id gambar = sha256 isi gambar, diraih
+            // lewat induk `{workbook}` (PenjagaOrganisasi di baris pertama);
+            // lab lain → 404 diuji dengan gambar nyata di StudioGambarWorkbookTest.
+            'gambar',
         ];
 
         foreach ($bukanPemilikData as $nama) {
@@ -444,7 +456,27 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'ukuran' => 1,
         ]);
 
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $this->lab2->id,
+            'nama' => 'BOCOR-WORKBOOK-LAB2',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('b', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+        $lembarWorkbook = WorkbookMasterLembar::create([
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'BOCOR-LEMBAR-LAB2',
+            'tata_letak' => [],
+            'jumlah_baris' => 1,
+            'jumlah_sel' => 1,
+            'sel' => KanonikWorkbook::sel([PembacaCsvWorkbook::sel(1, 1, 'BOCOR-SEL-WORKBOOK-LAB2')]),
+        ]);
+
         $this->idLab2 = [
+            'workbook' => $workbook->id,
+            'lembarWorkbook' => $lembarWorkbook->id,
             'koreksi' => $koreksi->id,
             'foto' => $foto->id,
             'technician' => $teknisiLab2->id,
@@ -488,6 +520,9 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'BOCOR-CATATAN-PERMINTAAN-LAB2',
             'BOCOR-CATATAN-KOREKSI-LAB2',
             'BOCOR-PESAN-LAB2',
+            'BOCOR-WORKBOOK-LAB2',
+            'BOCOR-LEMBAR-LAB2',
+            'BOCOR-SEL-WORKBOOK-LAB2',
         ];
     }
 }

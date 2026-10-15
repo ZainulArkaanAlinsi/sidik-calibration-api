@@ -22,6 +22,8 @@ use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -116,6 +118,13 @@ class BatasAntarLabTest extends TestCase
         // 404-nya soal sel, bukan soal lab.
         'api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop' => 'butuh sel & citra crop nyata',
 
+        // Studio tahap C (14 Okt): id gambar = 32 hex sha256 gambar + byte
+        // terenkripsi di disk — sapuan mengisi parameter dengan id angka, jadi
+        // pemiliknya pun 404. `PenjagaOrganisasi::pastikanSatu()` di baris
+        // pertama; lab lain → 404 diuji dengan gambar nyata di
+        // `StudioGambarWorkbookTest::test_izin_gambar_sama_dengan_baca_workbook`.
+        'api/studio/workbook/{workbook}/gambar/{gambar}' => 'butuh gambar nyata (id sha256); isolasi diuji StudioGambarWorkbookTest',
+
         // Rute APLIKASI PELANGGAN (slice F). Batasnya PERUSAHAAN, bukan lab:
         // token internal (admin lab mana pun) sudah ditolak `aplikasi:pelanggan`
         // sebelum organisasi sempat ditanya, jadi sapuan di sini hijau karena
@@ -188,6 +197,12 @@ class BatasAntarLabTest extends TestCase
             'data-acuan garis waktu' => ['api/data-acuan/paket/{kode}/versi', 'kodeAcuan'],
             'data-acuan versi' => ['api/data-acuan/versi/{versi}', 'versiAcuan'],
             'data-acuan banding' => ['api/data-acuan/versi/{versi}/banding/{pembanding}', 'versiAcuan'],
+            // Sidik Studio S1b (13 Okt) — Workbook Alat. Sapuan mengisi SEMUA
+            // parameter dengan id yang sama, jadi lembarnya ditanam dengan id
+            // = id workbook (lihat `punyaLabB`) supaya kontrol pemiliknya 200.
+            'studio workbook' => ['api/studio/workbook/{workbook}', 'workbookStudio'],
+            'studio workbook riwayat' => ['api/studio/workbook/{workbook}/riwayat', 'workbookStudio'],
+            'studio workbook lembar' => ['api/studio/workbook/{workbook}/lembar/{lembarWorkbook}', 'workbookStudio'],
         ];
     }
 
@@ -449,7 +464,37 @@ class BatasAntarLabTest extends TestCase
                 'berlaku_mulai' => '2024-01-01',
             ])->id,
             'kodeAcuan' => 'micrometer',
+            'workbookStudio' => $this->workbookLabB($labB),
         ];
+    }
+
+    /**
+     * Workbook Studio milik lab B + satu lembar ber-id SAMA dengan workbook-nya
+     * (sapuan mengisi `{workbook}` dan `{lembarWorkbook}` dengan id yang sama).
+     * Tabel lembar kosong di awal tiap test (RefreshDatabase), jadi id itu
+     * belum terpakai — di SQLite maupun MySQL.
+     */
+    private function workbookLabB(Organization $labB): int
+    {
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $labB->id,
+            'nama' => 'Workbook lab B',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('c', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+
+        (new WorkbookMasterLembar)->forceFill([
+            'id' => $workbook->id,
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'INPUT DATA',
+            'tata_letak' => [],
+            'sel' => '[]',
+        ])->save();
+
+        return $workbook->id;
     }
 
     /**

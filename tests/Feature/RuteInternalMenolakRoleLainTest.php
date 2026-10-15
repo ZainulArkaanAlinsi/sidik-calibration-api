@@ -26,6 +26,8 @@ use App\Models\Room;
 use App\Models\Standard;
 use App\Models\UndanganPelanggan;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteLaravel;
@@ -252,7 +254,30 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'berlaku_mulai' => '2024-01-01',
         ]);
 
+        // Sidik Studio S1b (13 Okt) — workbook + lembarnya, seorganisasi,
+        // alasan sama: id yang tidak ada → 404 sebelum gerbang role keuji.
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $org->id,
+            'nama' => 'Workbook Contoh',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('a', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+        $lembarWorkbook = WorkbookMasterLembar::create([
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'INPUT DATA',
+            'tata_letak' => [],
+            'sel' => '[]',
+        ]);
+
         $this->isiParameter = [
+            'workbook' => (string) $workbook->id,
+            'lembarWorkbook' => (string) $lembarWorkbook->id,
+            // Studio tahap C: id gambar = 32 hex sha256; gerbang role jalan
+            // sebelum controller mencarinya.
+            'gambar' => str_repeat('a', 32),
             'versi' => (string) $versiAcuan->id,
             'pembanding' => (string) $versiAcuan->id,
             'lembar' => 'balok_ukur',
