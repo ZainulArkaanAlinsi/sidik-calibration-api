@@ -314,6 +314,14 @@ class FlowmeterCalculator
         $tabel = $this->tabel();
         $mode = (string) $konteks['mode'];
         $satuan = (string) ($konteks['satuan'] ?? '');
+        // Satuan standar yang BEDA dari satuan UUT menandai kalibrasi di lokasi:
+        // UFM membaca volume fluida proses yang sama yang dibaca UUT. Sama
+        // dengan satuan UUT (atau kosong) = jalur master, nol pergeseran.
+        // Dibandingkan TANPA peka huruf: `Lpm` lawan `LPM` itu satuan yang sama,
+        // dan dibaca beda dia diam-diam memindahkan sesi lab ke jalur "fluida
+        // sama" (rasio densitas 1) — temuan penjaga-angka F-5.
+        $satuanStd = trim((string) ($konteks['satuan_standar'] ?? ''));
+        $satuanStd = ($satuanStd === '' || strcasecmp($satuanStd, trim($satuan)) === 0) ? null : $satuanStd;
         $ditolak = [];
         $peringatan = [];
 
@@ -347,7 +355,7 @@ class FlowmeterCalculator
 
         foreach ($titik as $t) {
             $nomor = (int) $t['titik_ke'];
-            $hasil = $this->hitungTitik($t, $mode, $satuan, $resolusiMentah, $geometri, $uTemperature);
+            $hasil = $this->hitungTitik($t, $mode, $satuan, $resolusiMentah, $geometri, $uTemperature, $satuanStd);
 
             if (isset($hasil['alasan'])) {
                 $ditolak[] = ['titik_ke' => $nomor, 'alasan' => $hasil['alasan']];
@@ -407,9 +415,13 @@ class FlowmeterCalculator
         float $resolusiMentah,
         ?array $geometri,
         float $uTemperature,
+        ?string $satuanStd = null,
     ): array {
         $tabel = $this->tabel();
         $flowrate = $mode === TabelStandarFlowmeter::MODE_FLOWRATE;
+        // Kalibrasi di LOKASI (isian 14 Okt 2026): standar membaca satuan volume
+        // sendiri, dan fluida yang lewat standar = fluida yang lewat UUT.
+        $fluidaSama = $satuanStd !== null;
         $satuanHasil = $flowrate ? 'Lpm' : 'L';
 
         // --- densitas UUT: dipakai KONVERSI satuan massa DAN rasio densitas --
@@ -481,10 +493,20 @@ class FlowmeterCalculator
         $stdKonv = [];
 
         foreach ($std as $nilai) {
-            $hasil = $this->konversi($mode, $nilai, $satuan, $densitasUut);
+            $hasil = $fluidaSama
+                ? $this->konversiStandarVolume($mode, $nilai, $satuanStd)
+                : $this->konversi($mode, $nilai, $satuan, $densitasUut);
 
             if ($hasil === null) {
-                return ['alasan' => $this->alasanSatuan($mode, $satuan)];
+                return ['alasan' => $fluidaSama
+                    ? sprintf(
+                        'Satuan standar `%s` tidak dikenal atau bukan satuan VOLUME. UFM membaca volume; '
+                        .'yang sah untuk mode %s: %s.',
+                        $satuanStd,
+                        $mode,
+                        implode(', ', array_keys($this->faktorStandarVolume($mode))),
+                    )
+                    : $this->alasanSatuan($mode, $satuan)];
             }
 
             $stdKonv[] = $hasil;
@@ -511,8 +533,17 @@ class FlowmeterCalculator
         // Simpangan baku UUT: MAX dari simpangan baku tiap ulangan atas ketiga
         // durasi (`PERHITUNGAN FC!Q28`). Cuma ada di Flowrate — Totalizer belum
         // ikut revisi 20 Mei 2026.
+        //
+        // Isian SEBAGIAN (lapangan 14 Okt 2026): tiap ulangan cuma SATU durasi
+        // (kolom 20" saja). Simpangan baku atas satu angka tidak ada, dan
+        // `max(0, 0, 0)` menghapus komponennya diam-diam. Di kasus itu sebaran
+        // diambil ANTAR-ULANGAN — lebih besar (ikut memuat goyangan aliran
+        // antar-ulangan), jadi arahnya aman. Tercatat di jejak audit.
+        $uutSatuDurasi = $flowrate && max(array_map('count', $ulanganKonv)) < 2;
         $stdevUut = $flowrate
-            ? max(array_map(fn (array $u): float => $this->simpanganBaku($u), $ulanganKonv))
+            ? ($uutSatuDurasi
+                ? $this->simpanganBaku(array_map(static fn (array $u): float => $u[0], $ulanganKonv))
+                : max(array_map(fn (array $u): float => $this->simpanganBaku($u), $ulanganKonv)))
             : null;
 
         // Simpangan baku standar: selisih BERPASANGAN standar-vs-UUT per
@@ -534,7 +565,11 @@ class FlowmeterCalculator
         // Diuji `max !== min`, bukan `stdev > 0`: simpangan baku nilai identik
         // cuma nol EKSAK kalau nilainya bisa direpresentasikan persis dalam
         // biner, dan pembacaan flowmeter (1002,65 / 309,776) umumnya tidak.
-        if (! $this->punyaSebaran($selisih) || ($flowrate && ! $this->punyaSebaranBersarang($ulanganKonv))) {
+        $uutBersebar = $uutSatuDurasi
+            ? $this->punyaSebaran(array_merge(...$ulanganKonv))
+            : $this->punyaSebaranBersarang($ulanganKonv);
+
+        if (! $this->punyaSebaran($selisih) || ($flowrate && ! $uutBersebar)) {
             return ['alasan' => 'Pembacaan titik ini tidak punya sebaran sama sekali — seluruh ulangannya bernilai '
                 .'persis sama. Simpangan bakunya nol, jadi komponen pengulangan hilang dari budget dan '
                 .'U95 terbit lebih kecil sambil tetap terlihat wajar. Ulangi pengukurannya dan catat '
@@ -566,17 +601,37 @@ class FlowmeterCalculator
             $this->deretAngka($t['suhu_akhir'] ?? []),
         );
 
-        if ($suhuTitik === []) {
-            return ['alasan' => 'Suhu air titik ini belum tercatat, jadi densitas standar tidak bisa dihitung dan '
-                .'rasio densitas jatuh ke pembagian nol. Isi suhu air awal dan akhir.',
-            ];
-        }
+        if ($fluidaSama) {
+            // Standar dan UUT mengukur fluida YANG SAMA di pipa yang sama, jadi
+            // rasio densitas standar/UUT = 1 — densitas air pada suhu ruang
+            // (rantai master, untuk rig air di lab) tidak berlaku untuk minyak
+            // proses. Suhu hanya dibutuhkan kalau densitas fluida tidak diketik.
+            $rhoFluida = $densitasUut ?? ($suhuTitik === []
+                ? null
+                : array_sum(array_map(fn (float $s): float => $this->densitasAir($s), $suhuTitik))
+                    / count($suhuTitik));
 
-        $rhoStd = array_sum(array_map(fn (float $s): float => $this->densitasAir($s), $suhuTitik))
-            / count($suhuTitik);
-        // Densitas UUT kosong itu SAH — jatuh ke densitas air pada suhu sesi,
-        // persis `IFERROR(IF(AVERAGE(...)=0; AVERAGE(rho); ...))` master.
-        $rhoUut = $densitasUut ?? $rhoStd;
+            if ($rhoFluida === null) {
+                return ['alasan' => 'Densitas fluida belum diisi dan suhu fluida tidak tercatat, jadi koefisien '
+                    .'sensitivitas suhu tidak bisa dihitung. Isi densitas fluida (kg/L) atau suhu fluida.',
+                ];
+            }
+
+            $rhoStd = $rhoFluida;
+            $rhoUut = $rhoFluida;
+        } else {
+            if ($suhuTitik === []) {
+                return ['alasan' => 'Suhu air titik ini belum tercatat, jadi densitas standar tidak bisa dihitung dan '
+                    .'rasio densitas jatuh ke pembagian nol. Isi suhu air awal dan akhir.',
+                ];
+            }
+
+            $rhoStd = array_sum(array_map(fn (float $s): float => $this->densitasAir($s), $suhuTitik))
+                / count($suhuTitik);
+            // Densitas UUT kosong itu SAH — jatuh ke densitas air pada suhu sesi,
+            // persis `IFERROR(IF(AVERAGE(...)=0; AVERAGE(rho); ...))` master.
+            $rhoUut = $densitasUut ?? $rhoStd;
+        }
 
         $stdTerkoreksiSimpel = $stdRata + $baris['koreksi'];
         $stdTerkoreksi = ($rhoStd / $rhoUut) * $stdRata + $baris['koreksi'];
@@ -637,6 +692,10 @@ class FlowmeterCalculator
             'densitas_standar' => $rhoStd,
             'densitas_uut' => $rhoUut,
             'densitas_uut_diketik' => $densitasUut !== null,
+            'satuan_standar' => $satuanStd,
+            'fluida_sama' => $fluidaSama,
+            'uut_satu_durasi' => $uutSatuDurasi,
+            'suhu_tercatat' => $suhuTitik !== [],
             'deviasi' => $deviasi,
             'simpangan_baku_uut' => $stdevUut,
             'simpangan_baku_standar' => $stdevStd,
@@ -855,6 +914,46 @@ class FlowmeterCalculator
             $mode,
             implode(', ', $this->tabel()->satuanDikenal($mode)),
         );
+    }
+
+    /**
+     * Faktor satuan VOLUME untuk bacaan standar (UFM membaca volume) ke satuan
+     * budget (L / Lpm). Satuan tabel master yang berbasis massa (`null`)
+     * dibuang; `L/h` ditambahkan untuk Flowrate karena itu satuan layar UFM di
+     * lokasi — 1 L/h = 1/60 Lpm menurut definisi, bukan angka master.
+     *
+     * @return array<string, float>
+     */
+    private function faktorStandarVolume(string $mode): array
+    {
+        $faktor = [];
+
+        foreach ($this->tabel()->satuanDikenal($mode) as $kode) {
+            $f = $this->tabel()->faktorSatuan($mode, $kode);
+
+            if ($f !== null) {
+                $faktor[$kode] = $f;
+            }
+        }
+
+        if ($mode === TabelStandarFlowmeter::MODE_FLOWRATE) {
+            $faktor['L/h'] = 1.0 / 60.0;
+        }
+
+        return $faktor;
+    }
+
+    private function konversiStandarVolume(string $mode, float $nilai, string $satuanStd): ?float
+    {
+        // Dicocokkan tanpa peka huruf (`l/h` = `L/h`); yang tidak dikenal pulang
+        // `null` dan titiknya DITOLAK dengan alasan yang menyebut daftar sahnya.
+        foreach ($this->faktorStandarVolume($mode) as $kode => $faktor) {
+            if (strcasecmp($kode, $satuanStd) === 0) {
+                return $nilai * $faktor;
+            }
+        }
+
+        return null;
     }
 
     /** @param  list<float>  $nilai */

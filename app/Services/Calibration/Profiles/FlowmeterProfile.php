@@ -637,6 +637,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 [
                     'mode' => $blok['mode'],
                     'satuan' => $blok['satuan'],
+                    'satuan_standar' => $blok['satuan_standar'],
                     'resolusi' => $blok['resolusi'],
                     'diameter_pipa_mm' => $blok['diameter_pipa_mm'],
                     'ketebalan_pipa_mm' => $blok['ketebalan_pipa_mm'],
@@ -835,6 +836,53 @@ abstract class FlowmeterProfile extends CalibrationProfile
             'ci' => 0.0,
             'vi' => 0.0,
         ];
+
+        // Penyimpangan dari master untuk isian LAPANGAN (14 Okt 2026) — wajib
+        // terbaca di jejak sesi (AGENTS.md §Olah data butir 4). Ketiganya tidak
+        // pernah muncul di sesi yang mengikuti kertas & master lengkap.
+        $catatan = [];
+
+        if ($h['fluida_sama'] ?? false) {
+            $catatan[] = ['flowmeter_standar_lapangan_fluida_sama', sprintf(
+                'Standar dibaca dalam %s (volume) terpisah dari satuan UUT; standar & UUT mengukur fluida '
+                .'yang SAMA di pipa proses, jadi rasio densitas standar/UUT = 1 (master: densitas air '
+                .'pada suhu / densitas UUT). Densitas fluida %s kg/L dipakai untuk konversi satuan massa '
+                .'UUT dan untuk ci suhu. Rujukan: PERHITUNGAN FC master Flowrate (rasio densitas) — '
+                .'penyimpangan untuk kalibrasi di lokasi, belum divalidasi lab.',
+                $h['satuan_standar'],
+                $h['densitas_uut'],
+            )];
+        }
+
+        if ($h['uut_satu_durasi'] ?? false) {
+            $catatan[] = ['flowmeter_uut_satu_durasi', sprintf(
+                'Tiap ulangan UUT cuma satu durasi (isian sebagian). Pengulangan pembacaan UUT diambil '
+                .'sebagai simpangan baku ANTAR-ULANGAN %s %s, bukan MAX simpangan baku antar-durasi per '
+                .'ulangan (master PERHITUNGAN FC!Q28). Arahnya memperbesar U.',
+                $h['simpangan_baku_uut'],
+                $this->satuanHasil(),
+            )];
+        }
+
+        if (! ($h['suhu_tercatat'] ?? true)) {
+            $catatan[] = ['flowmeter_suhu_tidak_tercatat', sprintf(
+                'Suhu fluida tidak tercatat di lembar. Komponen suhu memakai u(suhu) %s °C dari standar suhu '
+                .'saja (Ut-water = 0) — tidak ada angka suhu yang dikarang.',
+                $hasil['u_temperature'],
+            )];
+        }
+
+        foreach ($catatan as [$sumber, $keterangan]) {
+            $budget[] = [
+                'sumber' => $sumber,
+                'keterangan' => $keterangan,
+                'distribusi' => 'jejak',
+                'nilai' => null,
+                'u_baku' => 0.0,
+                'ci' => 0.0,
+                'vi' => 0.0,
+            ];
+        }
 
         return $budget;
     }
