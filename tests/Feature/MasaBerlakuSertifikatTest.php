@@ -150,7 +150,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => '2028-03-31'])
             ->assertOk()
-            ->assertJsonPath('data.certificate_id', null);
+            ->assertJsonPath('data.sertifikat.pdf_url', null);
 
         Queue::assertPushed(GenerateCertificate::class, function (GenerateCertificate $job) use ($sesi): bool {
             return $job->calibrationSessionId === $sesi->id
@@ -174,7 +174,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk()
-            ->assertJsonPath('data.certificate_id', null);
+            ->assertJsonPath('data.sertifikat.pdf_url', null);
 
         Queue::assertPushed(GenerateCertificate::class, function (GenerateCertificate $job) use ($sesi): bool {
             return $job->calibrationSessionId === $sesi->id && $job->berlakuSampai === null;

@@ -1342,16 +1342,46 @@ class CalibrationController extends Controller
             ? Carbon::parse($data['berlaku_sampai'])->toDateString()
             : null;
 
-        $berhasilDisetujui = CalibrationSession::whereKey($calibration->id)
-            ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
-            ->update([
-                'status' => CalibrationSession::STATUS_DISETUJUI,
-                'reviewed_by' => $request->user()->id,
-                'reviewed_at' => now(),
-                'catatan_revisi' => null,
-                'revisi_field' => null,
-                'updated_at' => now(),
-            ]);
+        // Nomor dipesan di transaksi yang SAMA dengan perubahan status: nomor
+        // yang bentrok dengan persetujuan lain yang bersamaan membatalkan
+        // seluruhnya (sesi tetap menunggu_approval), bukan baru ketahuan di job.
+        $galatPesan = null;
+
+        try {
+            $berhasilDisetujui = DB::transaction(function () use ($calibration, $request, $nomorSertifikat, $berlakuSampaiDiminta, &$galatPesan): int {
+                $baris = CalibrationSession::whereKey($calibration->id)
+                    ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+                    ->update([
+                        'status' => CalibrationSession::STATUS_DISETUJUI,
+                        'reviewed_by' => $request->user()->id,
+                        'reviewed_at' => now(),
+                        'catatan_revisi' => null,
+                        'revisi_field' => null,
+                        'updated_at' => now(),
+                    ]);
+
+                if ($baris === 1 && $nomorSertifikat !== null) {
+                    $galatPesan = NomorSertifikat::pesan($calibration, $request->user()->id, $berlakuSampaiDiminta, $nomorSertifikat);
+
+                    if ($galatPesan !== null) {
+                        throw new \RuntimeException($galatPesan['kode']);
+                    }
+                }
+
+                return $baris;
+            });
+        } catch (\RuntimeException $e) {
+            if ($galatPesan === null) {
+                throw $e;
+            }
+
+            return response()->json([
+                'message' => $galatPesan['pesan'],
+                'kode' => $galatPesan['kode'],
+                'errors' => ['nomor_sertifikat' => [$galatPesan['pesan']]],
+                ...(isset($galatPesan['sertifikat']) ? ['sertifikat' => $galatPesan['sertifikat']] : []),
+            ], 422);
+        }
 
         if ($berhasilDisetujui === 0) {
             return response()->json([

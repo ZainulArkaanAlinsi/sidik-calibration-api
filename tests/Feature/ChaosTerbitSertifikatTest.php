@@ -130,26 +130,13 @@ class ChaosTerbitSertifikatTest extends TestCase
         $job = Queue::pushed(GenerateCertificate::class)->first();
         $this->assertNotNull($job, 'Approve tidak mengantrekan penerbitan sama sekali.');
 
-        $gagalkan = true;
-        Certificate::creating(function () use (&$gagalkan): void {
-            if ($gagalkan) {
-                throw new RuntimeException('simulasi: deadlock waktu mengalokasikan nomor');
-            }
-        });
-
-        $galat = null;
-
-        try {
-            app()->call([$job, 'handle']);
-        } catch (RuntimeException $e) {
-            $galat = $e;
-        }
-
-        $this->assertNotNull($galat, 'Gangguannya tidak tersuntik — eksperimen tidak sah.');
-        $this->assertSame(0, Certificate::where('calibration_session_id', $this->sesi->id)->count());
+        // Sejak nomor dipesan di transaksi approve, baris pemegang nomor sudah
+        // ada SEBELUM job jalan: antrean mati tidak lagi bisa menyisakan sesi
+        // disetujui tanpa baris.
+        $galat = new RuntimeException('simulasi: deadlock waktu mengalokasikan nomor');
+        $this->assertSame(1, Certificate::where('calibration_session_id', $this->sesi->id)->count());
 
         // Yang dilakukan worker begitu percobaannya habis.
-        $gagalkan = false;
         $job->failed($galat);
 
         $sertifikat = Certificate::where('calibration_session_id', $this->sesi->id)->first();

@@ -103,6 +103,64 @@ class NomorSertifikatDanTarikTest extends TestCase
         $this->setujui($kedua, 'KAL/2026/002', $this->adminLain)->assertOk();
     }
 
+    public function test_balapan_dua_persetujuan_nomor_sama_yang_kalah_422_dan_tetap_menunggu_approval(): void
+    {
+        $pemenang = $this->sesiAntre();
+        $kalah = $this->sesiAntre();
+        $nomor = 'KAL/2026/BALAP';
+
+        // Persetujuan lain "menang" TEPAT sesudah `periksa()` kalah lolos: baris
+        // pemegang nomor muncul ketika UPDATE status sesi yang kalah berjalan.
+        $siap = true;
+        DB::beforeExecuting(function (string $sql) use (&$siap, $pemenang, $nomor): void {
+            if ($siap && str_starts_with(strtolower($sql), 'update "calibration_sessions"')) {
+                $siap = false;
+                DB::table('certificates')->insert([
+                    'organization_id' => $this->org->id,
+                    'calibration_session_id' => $pemenang->id,
+                    'nomor' => $nomor,
+                    'qr_token' => 'tokenbalap1',
+                    'qr_payload' => 'http://x/verify/tokenbalap1',
+                    'status' => Certificate::STATUS_GAGAL,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        $this->setujui($kalah, $nomor, $this->adminLain)
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'nomor_sertifikat_dipakai');
+
+        $segar = $kalah->fresh();
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $segar->status);
+        $this->assertNull($segar->reviewed_by);
+        $this->assertFalse(Certificate::where('calibration_session_id', $kalah->id)->exists());
+    }
+
+    public function test_tinggalkan_jalan_pulih_tidak_melempar_saat_nomor_bentrok(): void
+    {
+        $pemilik = $this->sesiAntre();
+        Certificate::forceCreate([
+            'organization_id' => $this->org->id,
+            'calibration_session_id' => $pemilik->id,
+            'nomor' => 'KAL/2026/DUP',
+            'qr_token' => 'tokendup001',
+            'qr_payload' => 'http://x/verify/tokendup001',
+            'status' => Certificate::STATUS_TERBIT,
+        ]);
+
+        $sesi = $this->sesiAntre();
+        $sesi->forceFill(['status' => CalibrationSession::STATUS_DISETUJUI])->saveQuietly();
+
+        (new GenerateCertificate($sesi->id, $this->admin->id, null, 'KAL/2026/DUP'))
+            ->tinggalkanJalanPulih(new \RuntimeException('antrean mati'));
+
+        $baris = Certificate::where('calibration_session_id', $sesi->id)->sole();
+        $this->assertSame(Certificate::STATUS_GAGAL, $baris->status);
+        $this->assertNull($baris->nomor);
+    }
+
     public function test_nomor_yang_diketik_dipakai_sertifikat_dan_snapshotnya(): void
     {
         $sesi = $this->sesiAntre();

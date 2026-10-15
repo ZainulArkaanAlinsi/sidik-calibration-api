@@ -250,8 +250,11 @@ class OcrMeasurementTest extends TestCase
             return $job->calibrationSessionId === $sesi->id
                 && $job->issuedBy === $this->admin->id;
         });
+        // Nomornya sudah dipesan di transaksi approve (baris `gagal` pemegang
+        // nomor), tapi belum ada yang terbit.
         $this->assertDatabaseMissing('certificates', [
             'calibration_session_id' => $sesi->id,
+            'status' => 'terbit',
         ]);
     }
 

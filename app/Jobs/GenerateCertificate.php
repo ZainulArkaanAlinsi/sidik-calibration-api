@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -408,49 +409,68 @@ class GenerateCertificate implements ShouldQueue
      */
     public function tinggalkanJalanPulih(\Throwable $penyebab): void
     {
-        $sertifikat = DB::transaction(function (): ?Certificate {
-            // Lock yang sama dengan `handle()`: job lain untuk sesi ini yang
-            // kebetulan sedang membuat barisnya ditunggu, bukan ditabrak.
-            $sesi = CalibrationSession::whereKey($this->calibrationSessionId)->lockForUpdate()->first();
+        try {
+            $sertifikat = DB::transaction(function (): ?Certificate {
+                // Lock yang sama dengan `handle()`: job lain untuk sesi ini yang
+                // kebetulan sedang membuat barisnya ditunggu, bukan ditabrak.
+                $sesi = CalibrationSession::whereKey($this->calibrationSessionId)->lockForUpdate()->first();
 
-            $dasar = $this->revisiDariId === null ? null : Certificate::query()->find($this->revisiDariId);
+                $dasar = $this->revisiDariId === null ? null : Certificate::query()->find($this->revisiDariId);
 
-            $sudahAda = $dasar !== null
-                ? Certificate::query()->where('calibration_session_id', $this->calibrationSessionId)->where('revision_of', $dasar->id)->exists()
-                : $sesi?->certificate()->exists();
+                $sudahAda = $dasar !== null
+                    ? Certificate::query()->where('calibration_session_id', $this->calibrationSessionId)->where('revision_of', $dasar->id)->exists()
+                    : $sesi?->certificate()->exists();
 
-            if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI || $sudahAda) {
-                return null;
+                if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI || $sudahAda) {
+                    return null;
+                }
+
+                $token = $this->tokenUnik();
+
+                $atribut = [
+                    'organization_id' => $sesi->organization_id,
+                    'issued_by' => $this->issuedBy,
+                    'qr_token' => $token,
+                    'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
+                    'berlaku_sampai' => $this->berlakuSampai,
+                    'status' => Certificate::STATUS_GAGAL,
+                ];
+
+                if ($dasar !== null) {
+                    // Nomor revisi sudah pasti (`<dasar>-R<n>`) — dipegang barisnya supaya
+                    // retry tidak mencari nomor lain.
+                    return Certificate::query()->create([
+                        ...$atribut,
+                        'calibration_session_id' => $sesi->id,
+                        'revision_of' => $dasar->id,
+                        'revisi_ke' => (int) $dasar->revisi_ke + 1,
+                        'nomor' => Certificate::nomorDasar((string) $dasar->nomor).'-R'.((int) $dasar->revisi_ke + 1),
+                        'alasan_revisi' => 'Sertifikat '.$dasar->nomor.' ditarik: '.$dasar->alasan_ditarik,
+                    ]);
+                }
+
+                // Nomor yang diketik admin (K-50-04) ikut disimpan: nomor manual
+                // sudah dipesan pemiliknya, tidak boleh hilang gara-gara antrean macet.
+                return $sesi->certificate()->create([...$atribut, 'nomor' => $this->nomorSertifikat]);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // Nomor yang dipegang job ini ternyata sudah milik baris lain
+            // (balapan, atau nomor manual bentrok). `failed()` tidak boleh
+            // melempar dan sesi disetujui tidak boleh tanpa baris: ulangi
+            // SEKALI tanpa nomor — `handle()` memberi nomor saat diterbitkan ulang.
+            Log::error('Baris `gagal` bentrok dengan nomor yang sudah dipakai.', [
+                'calibration_session_id' => $this->calibrationSessionId,
+                'nomor' => $this->nomorSertifikat,
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($this->nomorSertifikat !== null && $this->revisiDariId === null) {
+                $this->nomorSertifikat = null;
+                $this->tinggalkanJalanPulih($penyebab);
             }
 
-            $token = $this->tokenUnik();
-
-            $atribut = [
-                'organization_id' => $sesi->organization_id,
-                'issued_by' => $this->issuedBy,
-                'qr_token' => $token,
-                'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
-                'berlaku_sampai' => $this->berlakuSampai,
-                'status' => Certificate::STATUS_GAGAL,
-            ];
-
-            if ($dasar !== null) {
-                // Nomor revisi sudah pasti (`<dasar>-R<n>`) — dipegang barisnya supaya
-                // retry tidak mencari nomor lain.
-                return Certificate::query()->create([
-                    ...$atribut,
-                    'calibration_session_id' => $sesi->id,
-                    'revision_of' => $dasar->id,
-                    'revisi_ke' => (int) $dasar->revisi_ke + 1,
-                    'nomor' => Certificate::nomorDasar((string) $dasar->nomor).'-R'.((int) $dasar->revisi_ke + 1),
-                    'alasan_revisi' => 'Sertifikat '.$dasar->nomor.' ditarik: '.$dasar->alasan_ditarik,
-                ]);
-            }
-
-            // Nomor yang diketik admin (K-50-04) ikut disimpan: nomor manual
-            // sudah dipesan pemiliknya, tidak boleh hilang gara-gara antrean macet.
-            return $sesi->certificate()->create([...$atribut, 'nomor' => $this->nomorSertifikat]);
-        });
+            return;
+        }
 
         if ($sertifikat === null) {
             return;

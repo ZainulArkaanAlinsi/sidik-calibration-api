@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Str;
 
 /**
  * Aturan satu-satunya untuk NOMOR SERTIFIKAT yang diketik Master Data/super
@@ -81,6 +84,53 @@ final class NomorSertifikat
                     'status' => $ada->status,
                     'nomor_sesi' => $ada->session?->nomor_sesi,
                 ],
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * PESAN nomornya di dalam transaksi persetujuan — memanggil ini WAJIB di
+     * dalam `DB::transaction` yang juga mengubah status sesi.
+     *
+     * `periksa()` saja cek-lalu-tulis: dua Setujui bersamaan (sesi berbeda,
+     * nomor sama) sama-sama lolos, dan yang kalah baru ketahuan di job
+     * penerbitan — saat sesinya sudah `disetujui`. Menyisipkan baris sertifikat
+     * `gagal` yang memegang nomor itu membuat unique index
+     * `certificates(organization_id, nomor)` menembak SEKARANG, sebelum
+     * persetujuan di-commit. `GenerateCertificate::handle()` memakai ulang
+     * baris ini (nomor & token dipertahankan), dan kalau antrean macet baris
+     * itulah yang memunculkan tombol "Terbitkan ulang".
+     *
+     * @return array{kode: string, pesan: string, sertifikat?: array<string, mixed>}|null null = nomor terpesan
+     */
+    public static function pesan(CalibrationSession $sesi, ?int $issuedBy, ?string $berlakuSampai, string $nomor): ?array
+    {
+        $galat = self::periksa($sesi->organization_id, $nomor);
+
+        if ($galat !== null) {
+            return $galat;
+        }
+
+        do {
+            $token = Str::lower(Str::random(10));
+        } while (Certificate::query()->where('qr_token', $token)->exists());
+
+        try {
+            $sesi->certificate()->create([
+                'organization_id' => $sesi->organization_id,
+                'issued_by' => $issuedBy,
+                'nomor' => $nomor,
+                'qr_token' => $token,
+                'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
+                'berlaku_sampai' => $berlakuSampai,
+                'status' => Certificate::STATUS_GAGAL,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return [
+                'kode' => self::KODE_DIPAKAI,
+                'pesan' => "No. Sertifikat {$nomor} baru saja dipakai sertifikat lain. Pakai nomor lain.",
             ];
         }
 
