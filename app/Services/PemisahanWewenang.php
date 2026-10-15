@@ -2,13 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\AuditLog;
 use App\Models\CalibrationSession;
 use App\Models\User;
 
 /**
- * Pemisahan wewenang: yang ikut mengisi data sesi ≠ yang menyetujui atau
- * mengesahkannya.
+ * Pemisahan wewenang: yang MENGISI lembar sesi ≠ yang menyetujuinya.
  *
  * ISO/IEC 17025:2017 tidak menuliskan "orang A tidak boleh jadi orang B" dengan
  * kalimat itu, tapi §6.2 (personel diberi wewenang khusus untuk meninjau dan
@@ -24,12 +22,19 @@ use App\Models\User;
  * sengaja tidak dipertahankan: `render.yaml` memakunya "false", jadi keputusan
  * yang bergantung pada env bisa diam-diam tidak berlaku di produksi.
  *
- * ## Siapa yang dianggap "ikut mengisi"
+ * ## Siapa yang dianggap "ikut mengisi" (diubah 15 Okt 2026)
  *
- * - pengisi lembar kerja (`teknisi_id`);
- * - admin yang MENGOREKSI pembacaannya — baris `audit_logs` berawalan
- *   `AuditLog::CATATAN_KOREKSI_PEMBACAAN`, ditulis `catatKoreksiPembacaan()`;
+ * - pengisi lembar kerja (`teknisi_id`) — TETAP tidak boleh menyetujui
+ *   lembarnya sendiri (cabang `penyetuju_sama_dengan_teknisi`);
  * - yang MENGONFIRMASI hasil pindai OCR (`raw_measurements.verified_by`).
+ *
+ * Cabang "admin yang MENGOREKSI pembacaan" DICABUT (K-50-02, pemilik proyek 15
+ * Okt 2026): sejak Tolak dicabut (K-50-01) Master Data mengoreksi lembar teknisi
+ * sendiri lalu menyetujuinya — koreksinya tercatat lama → baru + alasan
+ * (`audit_logs`, `input_asli`, `GET /calibrations/{c}/bandingkan`), jadi
+ * independensi review dijaga jejak, bukan larangan. Keputusan pemilik yang
+ * melonggarkan independensi ISO/IEC 17025 §7.8; dicatat di AGENTS.md.
+ * Pengesahan (`sahkan`) sudah tidak ada (K-50-07), jadi `periksa()` dicabut.
  *
  * Mengisi kolom administratif (nomor order, metode, berlaku sampai) TIDAK
  * dihitung: itu memang tugas pemeriksa, bukan mengubah angka orang lain.
@@ -46,21 +51,7 @@ class PemisahanWewenang
 {
     public const KODE_PENYETUJU_SAMA_DENGAN_TEKNISI = 'penyetuju_sama_dengan_teknisi';
 
-    public const KODE_PENYETUJU_MENGOREKSI = 'penyetuju_mengoreksi_pembacaan';
-
     public const KODE_PENYETUJU_MEMVERIFIKASI_OCR = 'penyetuju_mengonfirmasi_pindai';
-
-    public const KODE_PENGESAH_SAMA_DENGAN_TEKNISI = 'pengesah_sama_dengan_teknisi';
-
-    public const KODE_PENGESAH_SAMA_DENGAN_PEMERIKSA = 'pengesah_sama_dengan_pemeriksa';
-
-    public const KODE_PENGESAH_SAMA_DENGAN_PENGAJU = 'pengesah_sama_dengan_pengaju';
-
-    public const KODE_PENGESAH_MENGOREKSI = 'pengesah_mengoreksi_pembacaan';
-
-    public const KODE_PENGESAH_MEMVERIFIKASI_OCR = 'pengesah_mengonfirmasi_pindai';
-
-    public const KODE_PENANDATANGAN_SAMA_DENGAN_TEKNISI = 'penandatangan_sama_dengan_teknisi';
 
     /**
      * Periksa satu rencana PERSETUJUAN sesi (API `approve()` dan panel).
@@ -83,92 +74,11 @@ class PemisahanWewenang
             ];
         }
 
-        if ($this->pernahMengoreksi($sesi, $penyetuju)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENYETUJU_MENGOREKSI,
-                'pesan' => 'Kamu yang mengoreksi angka pembacaan sesi ini, jadi pemeriksaannya harus '
-                    .'oleh orang lain.',
-            ];
-        }
-
         if ($this->pernahMengonfirmasiPindai($sesi, $penyetuju)) {
             $temuan[] = [
                 'kode' => self::KODE_PENYETUJU_MEMVERIFIKASI_OCR,
                 'pesan' => 'Kamu yang mengonfirmasi hasil pindai sesi ini, jadi pemeriksaannya harus '
                     .'oleh orang lain.',
-            ];
-        }
-
-        return $this->hasil($temuan);
-    }
-
-    /**
-     * Periksa satu rencana PENGESAHAN (`PengesahanController::sahkan()`).
-     *
-     * @return array{
-     *     bersih: bool,
-     *     memblokir: bool,
-     *     temuan: list<array{kode: string, pesan: string}>
-     * }
-     */
-    public function periksa(
-        CalibrationSession $sesi,
-        User $pengesah,
-        ?int $penandatanganUserId = null,
-    ): array {
-        $temuan = [];
-
-        if ($this->sama($sesi->teknisi_id, $pengesah->id)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENGESAH_SAMA_DENGAN_TEKNISI,
-                'pesan' => 'Kamu yang mengisi lembar kerja ini, jadi tidak bisa mengesahkannya sendiri.',
-            ];
-        }
-
-        if ($this->sama($sesi->reviewed_by, $pengesah->id)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENGESAH_SAMA_DENGAN_PEMERIKSA,
-                'pesan' => 'Pemeriksa dan pengesah lembar kerja ini orang yang sama. '
-                    .'Pemeriksaan kedua jadi kehilangan gunanya.',
-            ];
-        }
-
-        // Dipisah dari pemeriksa: sejak gerbang pengesahan ada, "yang memeriksa"
-        // dan "yang mengajukan terbit" bisa beda orang kalau adminnya lebih dari
-        // satu. Dua-duanya tetap harus beda dari pengesah.
-        if (
-            $this->sama($sesi->diajukan_oleh, $pengesah->id)
-            && ! $this->sama($sesi->diajukan_oleh, $sesi->reviewed_by)
-        ) {
-            $temuan[] = [
-                'kode' => self::KODE_PENGESAH_SAMA_DENGAN_PENGAJU,
-                'pesan' => 'Kamu yang mengajukan sertifikat ini untuk diterbitkan, jadi tidak bisa '
-                    .'mengesahkannya sendiri.',
-            ];
-        }
-
-        if ($this->pernahMengoreksi($sesi, $pengesah)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENGESAH_MENGOREKSI,
-                'pesan' => 'Kamu yang mengoreksi angka pembacaan sesi ini, jadi tidak bisa mengesahkannya.',
-            ];
-        }
-
-        if ($this->pernahMengonfirmasiPindai($sesi, $pengesah)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENGESAH_MEMVERIFIKASI_OCR,
-                'pesan' => 'Kamu yang mengonfirmasi hasil pindai sesi ini, jadi tidak bisa mengesahkannya.',
-            ];
-        }
-
-        // Ini yang paling kelihatan di luar: nama teknisi terpampang di kotak
-        // tanda tangan dokumen yang seharusnya disahkan atasannya. Auditor
-        // membacanya dari kertas, tanpa perlu membuka sistem.
-        if ($this->sama($penandatanganUserId, $sesi->teknisi_id)) {
-            $temuan[] = [
-                'kode' => self::KODE_PENANDATANGAN_SAMA_DENGAN_TEKNISI,
-                'pesan' => 'Nama yang bakal tercetak di kotak tanda tangan itu teknisi yang '
-                    .'mengerjakan alatnya sendiri. Pilih penandatangan lain.',
             ];
         }
 
@@ -198,16 +108,6 @@ class PemisahanWewenang
     private function sama(int|string|null $a, int|string|null $b): bool
     {
         return $a !== null && $b !== null && (int) $a === (int) $b;
-    }
-
-    private function pernahMengoreksi(CalibrationSession $sesi, User $orang): bool
-    {
-        return AuditLog::query()
-            ->where('entity_type', $sesi->getTable())
-            ->where('entity_id', $sesi->getKey())
-            ->where('changed_by', $orang->getKey())
-            ->where('note', 'like', AuditLog::CATATAN_KOREKSI_PEMBACAAN.'%')
-            ->exists();
     }
 
     private function pernahMengonfirmasiPindai(CalibrationSession $sesi, User $orang): bool

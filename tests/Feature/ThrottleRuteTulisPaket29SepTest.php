@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Organization;
-use App\Models\User;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -31,11 +29,9 @@ class ThrottleRuteTulisPaket29SepTest extends TestCase
         'PATCH api/penugasan/item/{penugasanItem}' => 'penugasan-tulis',
         'POST api/penugasan/{penugasan}/dilihat' => 'penugasan-tulis',
         'POST api/pelacakan/item/{orderItem}/tahap-fisik' => 'pelacakan-tahap',
-        'POST api/calibrations/{calibration}/tarik-pengajuan' => 'pengesahan-balik',
-        'POST api/calibrations/{calibration}/kembalikan-dari-pengesahan' => 'pengesahan-balik',
     ];
 
-    public function test_keenam_rute_tulis_menyebut_limiter_yang_terdaftar(): void
+    public function test_keempat_rute_tulis_menyebut_limiter_yang_terdaftar(): void
     {
         foreach (self::RUTE as $kunci => $limiter) {
             [$metode, $uri] = explode(' ', $kunci);
@@ -56,26 +52,5 @@ class ThrottleRuteTulisPaket29SepTest extends TestCase
                 "Limiter {$limiter} tidak terdaftar di AppServiceProvider.",
             );
         }
-    }
-
-    public function test_jalan_pulang_pengesahan_kena_429_sesudah_dua_puluh_ketukan(): void
-    {
-        $admin = User::factory()->create([
-            'organization_id' => Organization::factory()->create()->id,
-            'role' => User::ROLE_ADMIN,
-            'status' => 'aktif',
-        ]);
-
-        // Id yang tidak ada: throttle jalan sebelum pengikatan model, dan 404
-        // tetap menghitung satu ketukan. Yang diuji embernya, bukan isinya.
-        for ($i = 0; $i < 20; $i++) {
-            $this->actingAs($admin)
-                ->postJson('/api/calibrations/999999/tarik-pengajuan')
-                ->assertNotFound();
-        }
-
-        $this->actingAs($admin)
-            ->postJson('/api/calibrations/999999/tarik-pengajuan')
-            ->assertStatus(429);
     }
 }

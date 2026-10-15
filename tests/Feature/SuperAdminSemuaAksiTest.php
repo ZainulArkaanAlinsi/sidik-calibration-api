@@ -63,7 +63,6 @@ class SuperAdminSemuaAksiTest extends TestCase
         Storage::fake('local');
         Storage::fake('public');
         Storage::fake('arsip');
-        config()->set('kalibrasi.gerbang_pengesahan', false);
 
         $this->org = Organization::factory()->create();
         $this->admin = User::factory()->admin()->create(['organization_id' => $this->org->id]);
@@ -215,7 +214,12 @@ class SuperAdminSemuaAksiTest extends TestCase
         $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $sesi->fresh()->status);
     }
 
-    public function test_super_admin_pengoreksi_tidak_bisa_menyetujui(): void
+    /**
+     * DIBALIK 15 Okt 2026 (K-50-02): dulu super admin yang mengoreksi angka
+     * diblokir menyetujuinya (`penyetuju_mengoreksi_pembacaan`). Cabang itu
+     * dicabut; koreksinya tetap tercatat lama → baru (dicek di bawah).
+     */
+    public function test_super_admin_pengoreksi_boleh_menyetujui_koreksinya(): void
     {
         Queue::fake();
         $sesi = $this->bikinSesiAutoklaf($this->teknisi);
@@ -241,12 +245,7 @@ class SuperAdminSemuaAksiTest extends TestCase
             ->where('note', 'like', AuditLog::CATATAN_KOREKSI_PEMBACAAN.'%')
             ->exists(), 'Koreksi super admin tidak tercatat sebagai koreksi pembacaan.');
 
-        $this->setujui($sesi, $this->super)
-            ->assertStatus(422)
-            ->assertJsonPath('kode', 'pemisahan_wewenang')
-            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_MENGOREKSI);
-
-        $this->setujui($sesi, $this->admin)->assertOk();
+        $this->setujui($sesi, $this->super)->assertOk();
     }
 
     public function test_super_admin_verifikator_pindai_tidak_bisa_menyetujui(): void
@@ -270,44 +269,21 @@ class SuperAdminSemuaAksiTest extends TestCase
         $this->setujui($sesi, $this->admin)->assertOk();
     }
 
-    public function test_super_admin_pengisi_atau_pengoreksi_tidak_bisa_mengesahkan(): void
+    /** Pengesahan dicabut (K-50-07): yang tersisa cuma approve — pengisi tetap diblokir. */
+    public function test_super_admin_pengisi_tidak_bisa_menyetujui_tapi_admin_lain_bisa_menerbitkan(): void
     {
-        config()->set('kalibrasi.gerbang_pengesahan', true);
         Queue::fake();
-        $superLain = $this->superAdmin($this->org);
 
-        // (a) Diisi super admin, diperiksa admin, disahkan super admin yang SAMA.
         $diisi = $this->bikinSesiAutoklaf($this->super, ['nomor_order' => 'ORD/UJI/0006']);
-        $this->setujui($diisi, $this->admin)->assertOk();
-        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $diisi->fresh()->status);
 
-        $this->sahkan($diisi, $this->super)
+        $this->setujui($diisi, $this->super)
             ->assertStatus(422)
             ->assertJsonPath('kode', 'pemisahan_wewenang')
-            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENGESAH_SAMA_DENGAN_TEKNISI);
+            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI);
 
-        // (b) Diisi teknisi, dikoreksi super admin, diperiksa admin.
-        $dikoreksi = $this->bikinSesiAutoklaf($this->teknisi);
-        $this->isiOrderNumber($dikoreksi);
-        $payload = $this->payloadAutoklaf($dikoreksi->equipment_id);
-        $payload['suhu']['disk'][1][0] = 121.29;
-        $this->actingAs($this->super, 'sanctum')
-            ->putJson("/api/calibrations/autoclave/{$dikoreksi->id}", $payload + [
-                'alasan_koreksi' => 'Disk 2 ulangan 1 salah salin dari kertas.',
-            ])
-            ->assertOk();
-        $this->setujui($dikoreksi, $this->admin)->assertOk();
-
-        $this->sahkan($dikoreksi, $this->super)
-            ->assertStatus(422)
-            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENGESAH_MENGOREKSI);
-
-        $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
-
-        // Pengesah lain yang tidak ikut mengisi tetap bisa — penjagaannya per
-        // orang, bukan per peran.
-        $this->sahkan($diisi, $superLain)->assertOk();
+        $this->setujui($diisi, $this->admin)->assertOk();
         $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $diisi->fresh()->status);
+        $this->assertFalse(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -498,12 +474,6 @@ class SuperAdminSemuaAksiTest extends TestCase
     {
         return $this->actingAs($oleh, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true]);
-    }
-
-    private function sahkan(CalibrationSession $sesi, User $oleh): TestResponse
-    {
-        return $this->actingAs($oleh, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/sahkan");
     }
 
     /** Order Number diisi Master Data lewat pintu resminya. */

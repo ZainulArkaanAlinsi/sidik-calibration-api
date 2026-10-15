@@ -51,7 +51,6 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         parent::setUp();
 
         Storage::fake('arsip');
-        config()->set('kalibrasi.gerbang_pengesahan', false);
 
         $this->org = Organization::factory()->create();
         $this->adminA = User::factory()->admin()->create(['organization_id' => $this->org->id]);
@@ -78,13 +77,19 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
-    public function test_admin_yang_mengoreksi_pembacaan_tidak_bisa_menyetujuinya(): void
+    /**
+     * DIBALIK 15 Okt 2026 (K-50-02): dulu admin yang mengoreksi pembacaan
+     * diblokir menyetujui sesinya (`penyetuju_mengoreksi_pembacaan`). Pemilik
+     * proyek mencabut cabang itu — sejak Tolak dicabut, Master Data mengoreksi
+     * lembar sendiri lalu menyetujuinya, dan koreksinya dijaga jejak lama → baru
+     * (`input_asli`, `audit_logs`). Yang MENGISI lembar tetap diblokir (kasus
+     * pertama di atas).
+     */
+    public function test_admin_yang_mengoreksi_pembacaan_boleh_menyetujuinya(): void
     {
         Queue::fake();
         $sesi = $this->bikinSesi($this->teknisi);
 
-        // Bentuk baris persis yang ditulis `catatKoreksiPembacaan()` saat admin
-        // mengganti angka teknisi dengan alasan.
         AuditLog::create([
             'organization_id' => $sesi->organization_id,
             'entity_type' => $sesi->getTable(),
@@ -97,12 +102,6 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         ]);
 
         $this->actingAs($this->adminA, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
-            ->assertStatus(422)
-            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_MENGOREKSI);
-
-        // Admin lain yang tidak ikut mengisi tetap bisa menyetujuinya.
-        $this->actingAs($this->adminB, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
@@ -139,9 +138,8 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
-    public function test_panel_ikut_gerbang_pengesahan(): void
+    public function test_panel_menyetujui_langsung_tanpa_pengesahan(): void
     {
-        config()->set('kalibrasi.gerbang_pengesahan', true);
         Queue::fake();
         $sesi = $this->bikinSesi($this->teknisi);
 
@@ -149,13 +147,8 @@ class PemisahanWewenangPersetujuanTest extends TestCase
             ->test(ListCalibrationSessions::class)
             ->callAction(TestAction::make('approve')->table($sesi), ['abaikan_peringatan' => true]);
 
-        // Gerbang nyala → panel berhenti di antrean pengesah, persis seperti
-        // API. Dulu panel langsung menerbitkan dan gerbangnya hanya menutup HP.
-        $segar = $sesi->fresh();
-        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $segar->status);
-        $this->assertSame($this->adminA->id, (int) $segar->diajukan_oleh);
-        $this->assertNotNull($segar->diajukan_pada);
-        $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
+        $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $sesi->fresh()->status);
+        $this->assertFalse(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
     public function test_verifikasi_mencatat_pelaku_dan_ditolak_sesudah_disetujui(): void

@@ -301,7 +301,6 @@ class SimulasiLabSerentakTest extends TestCase
             'GEMINI_API_KEY' => '',
             'OPENAI_API_KEY' => '',
             'GITHUB_TOKEN' => '',
-            'GERBANG_PENGESAHAN' => 'false',
             // Menyala di simulasi (MATI di produksi, 2 Okt 2026) supaya penomoran
             // permintaan & order pelanggan ikut diuji sebelum sakelarnya dinyalakan.
             'FITUR_PELANGGAN' => 'true',

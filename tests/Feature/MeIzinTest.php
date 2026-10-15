@@ -185,9 +185,7 @@ class MeIzinTest extends TestCase
             // pindah blok bikin tiga menu admin-only nyala buat teknisi.
             'pelanggan.kelola', 'ruangan.kelola', 'metode.kelola',
             'teknisi.kelola', 'impor.excel', 'organisasi.ubah',
-            // Gerbang pengesahan, pelacakan & penugasan (keputusan 26 Sep).
-            'kalibrasi.sahkan', 'kalibrasi.kembalikan-dari-pengesahan',
-            'kalibrasi.tarik-pengajuan', 'pengesahan.antrean',
+            // Pelacakan & penugasan (pengesahan dicabut, K-50-07).
             'pelacakan.lihat', 'pelacakan.serah-terima',
             'penugasan.lihat', 'penugasan.buat', 'penugasan.lapor-progres',
         ];

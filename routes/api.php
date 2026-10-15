@@ -27,7 +27,6 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
-use App\Http\Controllers\Api\PengesahanController;
 use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\PermintaanPelangganController;
 use App\Http\Controllers\Api\ReminderController;
@@ -463,12 +462,7 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/certificates/{certificate}/qr', [CertificateController::class, 'qr'])
         ->name('certificates.qr');
 
-    // Antrean pengesahan (keputusan 26 Sep §1). BACA-saja, jadi cukup di grup
-    // luar: admin melihat punyanya masih mengantre, super admin melihat
-    // pekerjaannya (lolos lewat jalan baca `lolosBacaSuperAdmin`). Yang MENULIS
-    // ada di grup `role:super_admin` di ekor berkas — kepisah karena
-    // wewenangnya beda, bukan karena rapi-rapi.
-    Route::get('/pengesahan/antrean', [PengesahanController::class, 'antrean']);
+    // Antrean pengesahan DICABUT (K-50-07, 15 Okt 2026): tidak ada pengesahan.
 
     // Pelacakan paket (poin 1 & 7). Baca: semua role lab — teknisi juga perlu
     // tahu alat mana yang sudah diambil pelanggan. Tahapnya DITURUNKAN dari
@@ -640,12 +634,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // 2026): Master Data tidak lagi mengembalikan lembar ke teknisi — dia
         // mengoreksinya sendiri lewat `PUT` (alasan wajib, jejak lama → baru)
         // lalu menyetujui. Sesi lama `perlu_revisi` tetap bisa dikirim teknisi.
-        // Tarik pengajuan sendiri, selama pengesah belum mengesahkan. Janji yang
-        // dibeli gerbang pengesahan: "masih bisa dibalik" — ditepati tanpa
-        // urusan ISO 17025 §7.8.8 karena sertifikatnya belum pernah ada. Sesudah
-        // disahkan, rute ini menjawab 422 dan yang tersisa Revisi / Pembatalan.
-        Route::post('/calibrations/{calibration}/tarik-pengajuan', [PengesahanController::class, 'tarikPengajuan'])
-            ->middleware('throttle:pengesahan-balik');
+        // `tarik-pengajuan`, `sahkan`, `kembalikan-dari-pengesahan` DICABUT
+        // (K-50-07, 15 Okt 2026): approve() menerbitkan langsung.
 
         // Hitung ulang & periksa tanpa nyetujuin (spesifikasi poin 11) — buat
         // tombol "Periksa" sebelum admin mutusin.
@@ -849,37 +839,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
 });
 
 /*
-|--------------------------------------------------------------------------
-| Wewenang tulis super admin (keputusan 26 Sep 2026)
-|--------------------------------------------------------------------------
-|
-| Grup SAUDARA, bukan bersarang di grup luar — dan itu perlu dijelaskan sekali
-| supaya tidak ada yang "merapikan"-nya ke dalam.
-|
-| Grup luar dipagari `role:admin,teknisi,viewer`. Rute yang HANYA boleh super
-| admin (`sahkan`, `kembalikan-dari-pengesahan`) tidak bisa duduk di dalamnya:
-| gerbang luar menerima admin, jadi `role:super_admin` di dalam jadi satu-satunya
-| penahan admin — dan rute admin,super_admin di bawah ikut berdiri di sini supaya
-| polanya satu.
-|
-| Sejak K-49-14 (15 Okt 2026) super admin juga lolos SEMUA rute tulis yang
-| menerima admin atau teknisi, lewat `EnsureUserHasRole::lolosTulisSuperAdmin()`
-| — satu aturan di middleware, bukan `super_admin` ditulis di puluhan `role:`.
-| `PemisahanWewenang` tetap memblokirnya dari menyetujui/mengesahkan sesi yang
+| Wewenang tulis super admin: sejak K-49-14 (15 Okt 2026) lewat
+| `EnsureUserHasRole::lolosTulisSuperAdmin()`. Grup `role:super_admin` untuk
+| `sahkan`/`kembalikan-dari-pengesahan` DICABUT bersama pengesahan (K-50-07).
+| `PemisahanWewenang` tetap memblokir super admin dari menyetujui sesi yang
 | ikut dia isi (K-30-03).
-|
-| `RuteInternalMenolakRoleLainTest` & `MeIzinTest` membaca rute-rute ini
-| langsung, jadi tidak ada daftar tulis tangan yang bisa basi.
 */
-Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])->group(function () {
-    // SATU-SATUNYA pintu di seluruh sistem yang melahirkan nomor sertifikat.
-    Route::post('/calibrations/{calibration}/sahkan', [PengesahanController::class, 'sahkan'])
-        ->middleware('throttle:pengesahan');
-    // Kembalikan ke ADMIN, bukan ke teknisi — angkanya tidak dipersoalkan.
-    Route::post('/calibrations/{calibration}/kembalikan-dari-pengesahan', [PengesahanController::class, 'kembalikan'])
-        ->middleware('throttle:pengesahan-balik');
-});
-
 // Dikerjakan admin (meja depan) DAN super admin (pengendali). Grup saudara
 // ini lahir 29 Sep, sebelum K-49-14 membuka tulis lewat middleware; dibiarkan
 // berdiri karena perilakunya sama dan memindahkannya cuma mengubah diff.

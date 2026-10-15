@@ -373,21 +373,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('sertifikat-kirim-email', 20);
         $perMenitPengguna('sertifikat-catat-whatsapp', 20);
         $perMenitPengguna('audit-export', 20);
-        // Pengesahan mengalokasikan NOMOR SERTIFIKAT — sumber daya yang tidak bisa
-        // dikembalikan. Klik beruntun sudah ditahan UPDATE bersyarat di
-        // PengesahanController; ini lapis kedua untuk skrip yang lepas kendali.
-        // Lab tersibuk pun tidak mengesahkan 20 sertifikat per menit dengan tangan.
-        $perMenitPengguna('pengesahan', 20);
-        // Dua jalan PULANG dari gerbang pengesahan: teknisi menarik pengajuannya
-        // sendiri, dan super admin mengembalikan sesi ke admin. Ember TERPISAH
-        // dari `pengesahan` — menarik atau mengembalikan tidak melahirkan nomor
-        // sertifikat, jadi tidak boleh menghabiskan jatah orang yang memang
-        // sedang mengesahkan. Angkanya sama longgarnya: pagar terhadap skrip
-        // yang lepas kendali, bukan terhadap orang yang sedang bekerja.
-        $perMenitPengguna('pengesahan-balik', 20);
+        // Limiter `pengesahan` & `pengesahan-balik` dicabut bersama pengesahan (K-50-07).
         // Tulis alur pekerjaan lapangan (paket 29 Sep): pembagian tugas, laporan
         // progres, tanda "sudah dilihat", dan serah terima fisik alat. Lebih
-        // longgar dari pengesahan karena teknisi melaporkan progres per baris
+        // longgar dari penerbitan karena teknisi melaporkan progres per baris
         // dan membuka banyak tugas berturut-turut; ember dipisah supaya
         // rentetan laporan progres tidak menghabiskan jatah serah terima meja
         // depan.

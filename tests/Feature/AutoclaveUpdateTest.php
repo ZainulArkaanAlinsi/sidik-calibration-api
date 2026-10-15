@@ -331,13 +331,12 @@ class AutoclaveUpdateTest extends TestCase
         $this->assertSame([121.27, 121.26, 121.26, 121.26, 121.28], $jejak->old_data['lembar']['suhu']['disk'][0]);
         $this->assertSame([121.10, 121.40, 121.05, 121.45, 121.20], $jejak->new_data['lembar']['suhu']['disk'][0]);
 
-        // Admin yang mengoreksi tidak boleh menyetujui sesi yang sama.
+        // K-50-02 (15 Okt 2026): dulu admin yang mengoreksi diblokir menyetujui
+        // sesi yang sama. Cabang itu dicabut — koreksi dijaga jejak lama → baru
+        // + `input_asli`, bukan larangan. Yang MENGISI lembar tetap diblokir
+        // (`PemisahanWewenangPersetujuanTest`).
         $periksa = app(PemisahanWewenang::class)->periksaPersetujuan($sesi->fresh(), $this->admin);
-        $this->assertTrue($periksa['memblokir']);
-        $this->assertContains(
-            PemisahanWewenang::KODE_PENYETUJU_MENGOREKSI,
-            array_column($periksa['temuan'], 'kode'),
-        );
+        $this->assertFalse($periksa['memblokir']);
     }
 
     public function test_admin_menyimpan_ulang_lembar_tanpa_ubah_angka_tidak_diminta_alasan(): void

@@ -264,7 +264,7 @@ class SuperAdminAksesTest extends TestCase
             'Ada izin admin/teknisi yang tidak sampai ke super admin.',
         );
 
-        foreach (['metode.kelola', 'kalibrasi.setujui', 'kalibrasi.ubah-field-admin', 'kalibrasi.buat', 'penugasan.lapor-progres', 'kalibrasi.sahkan'] as $izin) {
+        foreach (['metode.kelola', 'kalibrasi.setujui', 'kalibrasi.ubah-field-admin', 'kalibrasi.buat', 'penugasan.lapor-progres', 'kalibrasi.bandingkan'] as $izin) {
             $this->assertContains($izin, $boleh);
         }
     }

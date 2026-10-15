@@ -19,7 +19,6 @@ use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
-use App\Notifications\SesiPerluDisahkan;
 use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
@@ -74,7 +73,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -609,7 +607,7 @@ class CalibrationController extends Controller
             }
 
             if ($catatanKoreksi !== null) {
-                // Penanda yang dibaca `PemisahanWewenang::pernahMengoreksi()`.
+                // Jejak koreksi (lama → baru + alasan), dibaca `bandingkan()`.
                 // Ditulis di transaksi yang sama: koreksi tanpa jejaknya nggak
                 // boleh ada.
                 AuditLog::create([
@@ -1272,26 +1270,9 @@ class CalibrationController extends Controller
                 'after:'.($calibration->tanggal_kalibrasi?->toDateString() ?? 'today'),
                 'before_or_equal:'.now()->addYears(10)->toDateString(),
             ],
-
-            // Dua field di bawah dititipkan admin ke pengesah (gerbang
-            // pengesahan, keputusan 26 Sep) — dipakai `PengesahanController::sahkan()`,
-            // bukan di sini. Opsional: tidak diisi berarti "pakai pengaturan lab".
-            //
-            // Penyaring organisasi & status aktif WAJIB. Tanpa itu id pengguna
-            // lab lain lolos dan namanya tercetak di kotak tanda tangan
-            // sertifikat berlogo akreditasi lab ini — kebocoran yang bentuknya
-            // paling permanen, karena kertasnya sudah keluar.
-            'penandatangan_user_id' => [
-                'sometimes', 'nullable', 'integer',
-                Rule::exists('users', 'id')
-                    ->where('organization_id', $request->user()->organization_id)
-                    ->where('status', User::STATUS_AKTIF),
-            ],
-            'catatan_pengajuan' => ['sometimes', 'nullable', 'string', 'max:500'],
         ], [
             'berlaku_sampai.after' => 'Masa berlaku harus sesudah tanggal kalibrasi.',
             'berlaku_sampai.before_or_equal' => 'Masa berlaku kejauhan — maksimal 10 tahun dari sekarang.',
-            'penandatangan_user_id.exists' => 'Penandatangan yang dipilih nggak ada di lab ini, atau akunnya nggak aktif.',
         ]);
 
         $periksa = $this->validator->periksa($calibration);
@@ -1321,90 +1302,44 @@ class CalibrationController extends Controller
         // sertifikatnya tetap terbit (isinya "tidak laik pakai"). Yang beda cuma
         // keputusannya, bukan boleh/nggaknya terbit.
         //
+        // Pengesahan DICABUT (K-50-07, 15 Okt 2026): approve() menerbitkan
+        // langsung — tidak ada status `menunggu_pengesahan` baru.
+        //
         // Transisinya BERSYARAT (`where status = menunggu_approval`), bukan
-        // `update()` polos. Pemeriksaan status di awal method ini dilakukan
-        // jauh sebelum baris ini — di antaranya ada validasi, pemeriksaan OCR,
-        // dan `CalibrationValidator::periksa()` yang menyentuh database. Dua
-        // klik "Setujui" yang berdekatan sama-sama lolos pemeriksaan awal itu,
-        // lalu sama-sama sampai ke sini.
-        //
-        // Yang kalah balapan mendapat 0 baris terpengaruh dan berhenti di sini,
-        // jadi `GenerateCertificate` di bawah cuma dipanggil sekali. Ini yang
-        // pertama dari dua lapis; lapis keduanya lock di job-nya sendiri, buat
-        // pemanggil yang tidak lewat sini.
-        // Gerbang pengesahan (keputusan 26 Sep): kalau sakelarnya nyala,
-        // approve() TIDAK lagi mendarat di `disetujui` — dia mendarat di
-        // `menunggu_pengesahan`, dan yang memindahkannya ke `disetujui` cuma
-        // PengesahanController::sahkan(). Sakelar mati = perilaku lama persis.
-        //
-        // Kolom pengajuan ditulis di UPDATE YANG SAMA, bukan update kedua: kalau
-        // dipisah, ada jeda di mana sesinya sudah `menunggu_pengesahan` tapi
-        // `diajukan_pada` masih null, dan antrean pengesahan yang menyortir pakai
-        // kolom itu menaruh sesi yang baru diajukan di puncak "paling lama".
-        $gerbangAktif = (bool) config('kalibrasi.gerbang_pengesahan', false);
-
-        $kolomPersetujuan = array_flip(array_merge(
-            ['status', 'reviewed_by', 'reviewed_at', 'catatan_revisi', 'revisi_field'],
-            $gerbangAktif
-                ? ['diajukan_pada', 'diajukan_oleh', 'penandatangan_user_id', 'berlaku_sampai_diminta', 'catatan_pengajuan']
-                : [],
-        ));
+        // `update()` polos: dua klik "Setujui" yang berdekatan sama-sama lolos
+        // pemeriksaan awal. Yang kalah balapan mendapat 0 baris terpengaruh dan
+        // berhenti, jadi `GenerateCertificate` cuma dipanggil sekali.
+        $kolomPersetujuan = array_flip(['status', 'reviewed_by', 'reviewed_at', 'catatan_revisi', 'revisi_field']);
         $sebelumDisetujui = array_intersect_key($calibration->getAttributes(), $kolomPersetujuan);
 
         $berlakuSampaiDiminta = filled($data['berlaku_sampai'] ?? null)
             ? Carbon::parse($data['berlaku_sampai'])->toDateString()
             : null;
 
-        $perubahanPersetujuan = [
-            'status' => $gerbangAktif
-                ? CalibrationSession::STATUS_MENUNGGU_PENGESAHAN
-                : CalibrationSession::STATUS_DISETUJUI,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-            'catatan_revisi' => null,
-            'revisi_field' => null,
-            'updated_at' => now(),
-        ];
-
-        if ($gerbangAktif) {
-            $perubahanPersetujuan += [
-                'diajukan_pada' => now(),
-                'diajukan_oleh' => $request->user()->id,
-                // Dititipkan ke pengesah, bukan dipakai sekarang. Pengesah boleh
-                // menggantinya; yang masuk sertifikat itu yang terakhir.
-                'penandatangan_user_id' => $data['penandatangan_user_id'] ?? null,
-                'berlaku_sampai_diminta' => $berlakuSampaiDiminta,
-                'catatan_pengajuan' => filled($data['catatan_pengajuan'] ?? null)
-                    ? trim($data['catatan_pengajuan'])
-                    : null,
-            ];
-        }
-
         $berhasilDisetujui = CalibrationSession::whereKey($calibration->id)
             ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
-            ->update($perubahanPersetujuan);
+            ->update([
+                'status' => CalibrationSession::STATUS_DISETUJUI,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'catatan_revisi' => null,
+                'revisi_field' => null,
+                'updated_at' => now(),
+            ]);
 
         if ($berhasilDisetujui === 0) {
-            // Dengan gerbang aktif, kalimat "sertifikatnya nggak dibikin dua
-            // kali" bohong — di titik ini tidak ada sertifikat yang dibikin sama
-            // sekali, dan admin yang membacanya akan mencari yang belum ada.
             return response()->json([
-                'message' => $gerbangAktif
-                    ? 'Sesi ini barusan sudah disetujui lewat permintaan lain. Muat ulang halamannya.'
-                    : 'Sesi ini barusan sudah disetujui lewat permintaan lain — '
-                        .'sertifikatnya nggak dibikin dua kali. Muat ulang halamannya.',
+                'message' => 'Sesi ini barusan sudah disetujui lewat permintaan lain — '
+                    .'sertifikatnya nggak dibikin dua kali. Muat ulang halamannya.',
             ], 409);
         }
 
         $calibration->refresh();
 
         // UPDATE bersyarat di atas lewat query builder, dan query builder tidak
-        // memicu event model — `Diaudit` tidak pernah tahu. Persetujuan lewat
-        // panel tercatat, lewat HP dulu tidak; padahal ini keputusan yang
-        // menerbitkan sertifikat berlogo akreditasi, dan `reviewed_by` di baris
-        // sesi tertimpa lagi kalau sesinya dikembalikan lalu disetujui ulang.
-        // Dicatat dengan bentuk yang sama dengan `Diaudit::perubahanAudit()`:
-        // hanya kolom yang berubah. Dijaga `ChaosTerbitSertifikatTest`.
+        // memicu event model — `Diaudit` tidak pernah tahu. Dicatat dengan bentuk
+        // yang sama dengan `Diaudit::perubahanAudit()`: hanya kolom yang berubah.
+        // Dijaga `ChaosTerbitSertifikatTest`.
         $sesudahDisetujui = array_intersect_key($calibration->getAttributes(), $kolomPersetujuan);
         $kolomBerubah = array_keys(array_filter(
             $sesudahDisetujui,
@@ -1417,66 +1352,35 @@ class CalibrationController extends Controller
             array_intersect_key($sesudahDisetujui, array_flip($kolomBerubah)),
         );
 
-        // ─────────────────────────────────────────────────────────────────
-        // Dengan gerbang aktif, penerbitan PINDAH ke PengesahanController::sahkan().
-        //
-        // Jangan mengembalikan dispatch ke sini "biar lebih cepat". Seluruh
-        // gerbang bergantung pada satu fakta: sesudah approve(), BELUM ADA nomor
-        // sertifikat yang terpakai. Itu yang membuat admin boleh menarik &
-        // mengedit tanpa berurusan dengan ISO/IEC 17025 §7.8.8 — bukan karena
-        // ada yang mengizinkan, tapi karena belum ada dokumen yang perlu
-        // diamandemen. Dijaga GerbangPengesahanTest::test_approve_tidak_lagi_menerbitkan_sertifikat.
-        // ─────────────────────────────────────────────────────────────────
-        $job = $gerbangAktif ? null : new GenerateCertificate(
+        $job = new GenerateCertificate(
             $calibration->id,
             $request->user()->id,
             $berlakuSampaiDiminta,
         );
 
         // Status sesi SUDAH di-commit `disetujui` di atas. Antrean yang menolak
-        // job di sini (tabel `jobs` tidak bisa ditulisi) dulu meninggalkan sesi
-        // disetujui tanpa baris sertifikat dan tanpa tombol retry, dengan 500
-        // generik ke admin. Baris `gagal` yang ditinggalkan `tinggalkanJalanPulih`
-        // memunculkan tombol "Terbitkan ulang" lagi. Dijaga
-        // `ChaosTerbitSertifikatTest`.
+        // job di sini dulu meninggalkan sesi disetujui tanpa baris sertifikat dan
+        // tanpa tombol retry. Baris `gagal` yang ditinggalkan `tinggalkanJalanPulih`
+        // memunculkan tombol "Terbitkan ulang" lagi. Dijaga `ChaosTerbitSertifikatTest`.
         $gagalAntre = null;
 
-        if ($job !== null) {
-            try {
-                dispatch($job);
-            } catch (\Throwable $e) {
-                report($e);
-                $gagalAntre = $e;
-                $job->tinggalkanJalanPulih($e);
-            }
+        try {
+            dispatch($job);
+        } catch (\Throwable $e) {
+            report($e);
+            $gagalAntre = $e;
+            $job->tinggalkanJalanPulih($e);
         }
 
         // Render PDF bisa makan puluhan detik di CPU kecil Render. Menjalankannya
         // di request approve membuat mobile melewati batas waktu walau sesi sudah
-        // sah disetujui. Worker produksi ada di entrypoint, dan kontrak mobile
-        // memang menerima `certificate_id: null` sampai job selesai.
+        // sah disetujui. Kontrak mobile menerima `certificate_id: null` sampai
+        // job selesai.
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
 
-        if ($gerbangAktif) {
-            // Pengesah TIDAK sedang menunggu di depan layar. Tanpa satu pesan
-            // yang menyusul ke HP-nya, akibat paling mungkin dari gerbang ini
-            // bukan kontrol yang lebih baik — tapi sertifikat tertahan tiga
-            // hari karena tidak ada yang tahu ada yang mengantre.
-            $this->kirimKabar($segar, fn () => Notification::send(
-                User::query()
-                    ->where('organization_id', $segar->organization_id)
-                    ->where('role', User::ROLE_SUPER_ADMIN)
-                    ->where('status', User::STATUS_AKTIF)
-                    ->get(),
-                SesiPerluDisahkan::dariSesi($segar, (string) $request->user()->name),
-            ));
-        }
-
-        // Nama event mengikuti status yang BENAR-BENAR terjadi. Papan admin
-        // memakainya untuk memindah kartu antar-kolom.
-        $this->siarkan($segar, $gerbangAktif ? 'menunggu_pengesahan' : 'disetujui');
+        $this->siarkan($segar, 'disetujui');
 
         if ($gagalAntre !== null) {
             return response()->json([
@@ -1485,14 +1389,6 @@ class CalibrationController extends Controller
                 'data' => new CalibrationResource($segar),
                 'validasi' => $periksa,
             ], 503);
-        }
-
-        if ($gerbangAktif) {
-            return response()->json([
-                'message' => 'Disetujui & diajukan untuk pengesahan. Sertifikatnya terbit setelah disahkan.',
-                'data' => new CalibrationResource($segar),
-                'validasi' => $periksa,
-            ]);
         }
 
         return response()->json([
