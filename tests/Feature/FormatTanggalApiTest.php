@@ -230,6 +230,6 @@ class FormatTanggalApiTest extends TestCase
             );
         }
 
-        $this->actingAs($this->admin)->getJson('/api/folders')->assertOk();
+        $this->actingAs($this->admin)->getJson('/api/arsip/perusahaan')->assertOk();
     }
 }

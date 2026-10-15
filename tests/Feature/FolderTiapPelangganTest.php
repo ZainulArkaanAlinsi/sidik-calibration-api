@@ -87,7 +87,7 @@ class FolderTiapPelangganTest extends TestCase
         $this->pelanggan('PT Alfa Contoh');
 
         $this->actingAs($this->admin)
-            ->getJson('/api/folders')
+            ->getJson('/api/arsip/perusahaan')
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -98,7 +98,7 @@ class FolderTiapPelangganTest extends TestCase
 
         $this->actingAs($this->admin)->getJson('/api/arsip/perusahaan')->assertOk();
         $this->actingAs($this->admin)->getJson('/api/arsip/perusahaan')->assertOk();
-        $this->actingAs($this->admin)->getJson('/api/folders')->assertOk();
+        $this->actingAs($this->admin)->getJson('/api/arsip/perusahaan')->assertOk();
 
         $this->assertSame(1, Folder::count());
     }
@@ -169,7 +169,7 @@ class FolderTiapPelangganTest extends TestCase
         $induk = Folder::factory()->create(['organization_id' => $this->lab->id, 'parent_id' => null]);
 
         $this->actingAs($this->admin)
-            ->getJson('/api/folders?parent_id='.$induk->id)
+            ->getJson('/api/arsip/perusahaan?parent_id='.$induk->id)
             ->assertOk();
 
         // Cuma folder induk bikinan test ini — PT-nya belum disiapkan, karena
@@ -216,7 +216,7 @@ class FolderTiapPelangganTest extends TestCase
         ]);
 
         $this->actingAs($pengguna)->getJson('/api/arsip/perusahaan')->assertOk();
-        $this->actingAs($pengguna)->getJson('/api/folders')->assertOk();
+        $this->actingAs($pengguna)->getJson('/api/arsip/perusahaan')->assertOk();
 
         $this->assertSame(0, Folder::count());
     }

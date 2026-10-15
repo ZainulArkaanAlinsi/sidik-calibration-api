@@ -83,10 +83,10 @@ class MatriksIzin
         'laporan.export' => ['GET', 'api/laporan/kalibrasi/export'],
 
         // --- arsip / Folder Manager
-        'arsip.lihat' => ['GET', 'api/folders'],
-        'arsip.folder.kelola' => ['POST', 'api/folders'],
-        'arsip.berkas.unduh' => ['GET', 'api/folder-files/{folderFile}/download'],
-        'arsip.berkas.kelola' => ['POST', 'api/folder-files'],
+        'arsip.lihat' => ['GET', 'api/arsip/perusahaan'],
+        'arsip.folder.kelola' => ['POST', 'api/arsip/folders'],
+        'arsip.berkas.unduh' => ['GET', 'api/arsip/berkas/{folderFile}/unduh'],
+        'arsip.berkas.kelola' => ['POST', 'api/arsip/berkas'],
 
         // --- master data
         'pelanggan.dropdown' => ['GET', 'api/customers/lookup'],

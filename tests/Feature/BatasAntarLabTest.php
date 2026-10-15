@@ -145,7 +145,7 @@ class BatasAntarLabTest extends TestCase
             'calibration-method' => ['api/calibration-methods/{calibrationMethod}', 'metode'],
             'formula versions' => ['api/formulas/{formula}/versions', 'rumus'],
             'formula versi-berlaku' => ['api/formulas/{formula}/versi-berlaku', 'rumus'],
-            'folder' => ['api/folders/{folder}', 'folder'],
+            'folder' => ['api/arsip/folders/{folder}', 'folder'],
             'arsip folder' => ['api/arsip/folders/{folder}', 'folder'],
             'arsip perusahaan' => ['api/arsip/perusahaan/{customer}/folder', 'pelanggan'],
             'order' => ['api/orders/{order}', 'order'],
@@ -161,7 +161,6 @@ class BatasAntarLabTest extends TestCase
             'technician' => ['api/technicians/{technician}', 'teknisiB'],
             'worksheet-scan' => ['api/worksheet-scans/{worksheetScan}', 'pindaian'],
             'dokumen bacaan' => ['api/dokumen/bacaan/{dokumenBacaan}', 'bacaanDokumen'],
-            'folder-file download' => ['api/folder-files/{folderFile}/download', 'berkasFolder'],
             'arsip berkas unduh' => ['api/arsip/berkas/{folderFile}/unduh', 'berkasFolder'],
             // Keputusan 26 Sep — pelacakan paket & penugasan membaca milik lab.
             'pelacakan paket' => ['api/pelacakan/{order}', 'order'],

@@ -198,7 +198,7 @@ class FolderFileController extends Controller
         if ($berkas->count() > 1) {
             return response()->json([
                 'message' => 'Sertifikat sesi ini tertaut di '.$berkas->count().' folder, jadi nggak '
-                    .'jelas yang mana yang mau dipindah. Pakai `PUT /api/folder-files/{id}` '
+                    .'jelas yang mana yang mau dipindah. Pakai `PUT /api/arsip/berkas/{id}` '
                     .'dengan id berkasnya langsung.',
                 'data' => FolderFileResource::collection($berkas->load(['certificate', 'uploader'])),
             ], 422);

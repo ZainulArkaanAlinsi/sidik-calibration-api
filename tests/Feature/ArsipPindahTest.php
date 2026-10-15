@@ -335,7 +335,7 @@ class ArsipPindahTest extends TestCase
 
         // Daftar kandidatnya ikut dikirim, biar admin bisa milih tanpa nyari lagi.
         $this->assertCount(2, $res->json('data'));
-        $this->assertStringContainsString('folder-files', (string) $res->json('message'));
+        $this->assertStringContainsString('arsip/berkas', (string) $res->json('message'));
     }
 
     public function test_berkas_udah_ada_di_folder_tujuan_ditolak(): void

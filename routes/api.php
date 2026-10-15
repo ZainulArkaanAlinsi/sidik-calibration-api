@@ -366,8 +366,6 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
 
     // Folder Manager (spesifikasi poin 3 & 7). Bacanya semua role — menunya ada
     // di navbar bawah teknisi; isinya disaring per-role di controller.
-    Route::get('/folders', [FolderController::class, 'index']);
-    Route::get('/folders/{folder}', [FolderController::class, 'show']);
     // Alias `/arsip/*` yang dipanggil mobile (docs/permintaan-backend-2026-07-24.md §2).
     // Folder akar = per-PT, jadi daftar "perusahaan" = index tanpa parent_id.
     Route::get('/arsip/perusahaan', [FolderController::class, 'index']);
@@ -377,15 +375,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // {customer} = id PELANGGAN, bukan id folder — lihat kontrak-api.md §8.
     Route::get('/arsip/perusahaan/{customer}/folder', [FolderController::class, 'folderPelanggan']);
     Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
-    Route::get('/folder-files', [FolderFileController::class, 'index']);
     // Arsip satu pintu (K-50-06): aksi berguna Folder Manager dipindah ke
     // `/arsip/*` — daftar & unduh berkas. `/folders*` & `/folder-files*` lama
-    // TETAP sampai aplikasi lab selesai pindah (lihat perintah-frontend-revisi-1510.md).
+    // sudah DIPENSIUNKAN (K-50-10, revisi 15 Okt); tabelnya tetap.
     Route::get('/arsip/berkas', [FolderFileController::class, 'index']);
     Route::get('/arsip/berkas/{folderFile}/unduh', [FolderFileController::class, 'download'])
         ->name('arsip.berkas.unduh');
-    Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
-        ->name('folder-files.download');
 
     // Metode kalibrasi (IK) — bacanya semua role buat dropdown & tampilan detail.
     Route::get('/calibration-methods', [CalibrationMethodController::class, 'index']);
@@ -767,9 +762,6 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::delete('/calibration-methods/{calibrationMethod}', [CalibrationMethodController::class, 'destroy']);
 
         // Folder Manager: yang nulis admin doang. Bacanya udah didaftarin di atas.
-        Route::post('/folders', [FolderController::class, 'store']);
-        Route::put('/folders/{folder}', [FolderController::class, 'update']);
-        Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
         // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
         //
         // `store` sempat kelewat di sini sementara `update` & `destroy` didaftar.
@@ -788,11 +780,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Pindahin berkas sertifikat, dikunci pakai id SESI KALIBRASI (bukan id
         // folder_files) — itu yang dipegang mobile di layar arsip.
         Route::put('/arsip/berkas/{calibration}/pindah', [FolderFileController::class, 'pindahBerkasSesi']);
-        // Ganti nama berkas lewat pintu Arsip (handler sama dengan `PUT /folder-files/{id}`).
+        // Ganti nama berkas lewat pintu Arsip (rute `/folder-files/*` lama sudah dihapus).
         Route::put('/arsip/berkas/{folderFile}', [FolderFileController::class, 'update']);
-        Route::post('/folder-files', [FolderFileController::class, 'store']);
-        Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
-        Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);
+        Route::post('/arsip/berkas', [FolderFileController::class, 'store']);
+        Route::delete('/arsip/berkas/{folderFile}', [FolderFileController::class, 'destroy']);
 
         // Import Excel buat masa transisi (spesifikasi poin 12C).
         Route::get('/imports/format', [ImportController::class, 'format']);

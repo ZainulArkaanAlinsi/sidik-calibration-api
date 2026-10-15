@@ -122,7 +122,7 @@ class FolderManagerTest extends TestCase
         $this->terbitkanSertifikatUntuk($this->teknisi);
 
         $this->actingAs($this->admin)
-            ->getJson('/api/folders')
+            ->getJson('/api/arsip/perusahaan')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri')
@@ -136,7 +136,7 @@ class FolderManagerTest extends TestCase
         $akar = Folder::whereNull('parent_id')->firstOrFail();
 
         $data = $this->actingAs($this->admin)
-            ->getJson("/api/folders/{$akar->id}")
+            ->getJson("/api/arsip/folders/{$akar->id}")
             ->assertOk()
             ->json('data');
 
@@ -155,7 +155,7 @@ class FolderManagerTest extends TestCase
         $tahun = Folder::whereNotNull('parent_id')->firstOrFail();
 
         $data = $this->actingAs($this->admin)
-            ->getJson("/api/folders/{$tahun->id}")
+            ->getJson("/api/arsip/folders/{$tahun->id}")
             ->assertOk()
             ->json('data');
 
@@ -174,7 +174,7 @@ class FolderManagerTest extends TestCase
         // sertifikat (waktu disetujui). Urutannya dari id, jadi lembar kerja
         // duluan.
         $data = $this->actingAs($this->admin)
-            ->getJson("/api/folders/{$tahun->id}")
+            ->getJson("/api/arsip/folders/{$tahun->id}")
             ->assertOk()
             ->assertJsonCount(2, 'data.file')
             ->json('data.file');
@@ -202,7 +202,7 @@ class FolderManagerTest extends TestCase
         // 404 di sini nyesatin: barisnya ADA dan sah, yang nggak ada cuma
         // berkas buat diunduh. "Nggak ketemu" bikin orang ngira datanya ilang.
         $this->actingAs($this->admin)
-            ->getJson("/api/folder-files/{$lembar->id}/download")
+            ->getJson("/api/arsip/berkas/{$lembar->id}/unduh")
             ->assertStatus(422)
             ->assertJsonPath('message', fn (string $m) => str_contains($m, 'lembar kerja'));
     }
@@ -210,26 +210,26 @@ class FolderManagerTest extends TestCase
     public function test_admin_bisa_bikin_ganti_nama_dan_hapus_folder_manual(): void
     {
         $id = $this->actingAs($this->admin)
-            ->postJson('/api/folders', ['nama' => 'Arsip Surat Jalan'])
+            ->postJson('/api/arsip/folders', ['nama' => 'Arsip Surat Jalan'])
             ->assertCreated()
             ->assertJsonPath('data.tipe', 'manual')
             ->json('data.id');
 
         $this->actingAs($this->admin)
-            ->putJson("/api/folders/{$id}", ['nama' => 'Arsip Surat Jalan 2026'])
+            ->putJson("/api/arsip/folders/{$id}", ['nama' => 'Arsip Surat Jalan 2026'])
             ->assertOk()
             ->assertJsonPath('data.nama', 'Arsip Surat Jalan 2026');
 
-        $this->actingAs($this->admin)->deleteJson("/api/folders/{$id}")->assertNoContent();
+        $this->actingAs($this->admin)->deleteJson("/api/arsip/folders/{$id}")->assertNoContent();
         $this->assertSoftDeleted('folders', ['id' => $id]);
     }
 
     public function test_nama_folder_nggak_boleh_kembar_di_lokasi_yang_sama(): void
     {
-        $this->actingAs($this->admin)->postJson('/api/folders', ['nama' => 'Arsip'])->assertCreated();
+        $this->actingAs($this->admin)->postJson('/api/arsip/folders', ['nama' => 'Arsip'])->assertCreated();
 
         $this->actingAs($this->admin)
-            ->postJson('/api/folders', ['nama' => 'Arsip'])
+            ->postJson('/api/arsip/folders', ['nama' => 'Arsip'])
             ->assertStatus(422);
     }
 
@@ -239,18 +239,18 @@ class FolderManagerTest extends TestCase
         $akar = Folder::whereNull('parent_id')->firstOrFail();
 
         $this->actingAs($this->admin)
-            ->putJson("/api/folders/{$akar->id}", ['nama' => 'Nama Karangan'])
+            ->putJson("/api/arsip/folders/{$akar->id}", ['nama' => 'Nama Karangan'])
             ->assertStatus(422);
 
         $this->actingAs($this->admin)
-            ->deleteJson("/api/folders/{$akar->id}")
+            ->deleteJson("/api/arsip/folders/{$akar->id}")
             ->assertStatus(422);
     }
 
     public function test_teknisi_nggak_bisa_bikin_atau_hapus_folder(): void
     {
         $this->actingAs($this->teknisi)
-            ->postJson('/api/folders', ['nama' => 'Punya Saya'])
+            ->postJson('/api/arsip/folders', ['nama' => 'Punya Saya'])
             ->assertForbidden();
     }
 
@@ -261,14 +261,14 @@ class FolderManagerTest extends TestCase
 
         // Folder PT Lain ada, tapi isinya bukan kerjaan teknisi ini.
         $this->actingAs($this->teknisi)
-            ->getJson('/api/folders')
+            ->getJson('/api/arsip/perusahaan')
             ->assertOk()
             ->assertJsonCount(0, 'data');
 
         $this->terbitkanSertifikatUntuk($this->teknisi);
 
         $this->actingAs($this->teknisi)
-            ->getJson('/api/folders')
+            ->getJson('/api/arsip/perusahaan')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri');
@@ -287,11 +287,11 @@ class FolderManagerTest extends TestCase
         $file = FolderFile::where('sumber', FolderFile::SUMBER_SERTIFIKAT)->firstOrFail();
 
         $this->actingAs($this->teknisi)
-            ->get("/api/folder-files/{$file->id}/download")
+            ->get("/api/arsip/berkas/{$file->id}/unduh")
             ->assertNotFound();
 
         $this->actingAs($teknisiLain)
-            ->get("/api/folder-files/{$file->id}/download")
+            ->get("/api/arsip/berkas/{$file->id}/unduh")
             ->assertOk();
     }
 
@@ -301,7 +301,7 @@ class FolderManagerTest extends TestCase
         $folder = Folder::factory()->create();
 
         $id = $this->actingAs($this->admin)
-            ->postJson('/api/folder-files', [
+            ->postJson('/api/arsip/berkas', [
                 'folder_id' => $folder->id,
                 'file' => UploadedFile::fake()->create('surat-jalan.pdf', 12, 'application/pdf'),
                 'keterangan' => 'Surat jalan pengiriman alat',
@@ -311,7 +311,7 @@ class FolderManagerTest extends TestCase
             ->assertJsonPath('data.nama', 'surat-jalan.pdf')
             ->json('data.id');
 
-        $this->actingAs($this->admin)->get("/api/folder-files/{$id}/download")->assertOk();
+        $this->actingAs($this->admin)->get("/api/arsip/berkas/{$id}/unduh")->assertOk();
     }
 
     public function test_hapus_entri_sertifikat_dari_folder_nggak_ngehapus_sertifikatnya(): void
@@ -319,7 +319,7 @@ class FolderManagerTest extends TestCase
         $sesi = $this->terbitkanSertifikatUntuk($this->teknisi);
         $file = FolderFile::firstOrFail();
 
-        $this->actingAs($this->admin)->deleteJson("/api/folder-files/{$file->id}")->assertNoContent();
+        $this->actingAs($this->admin)->deleteJson("/api/arsip/berkas/{$file->id}")->assertNoContent();
 
         $this->assertSoftDeleted('folder_files', ['id' => $file->id]);
         $this->assertNotNull($sesi->fresh()->certificate);

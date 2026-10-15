@@ -66,7 +66,7 @@ class FolderFileResource extends JsonResource
             // ngasih error waktu dipencet.
             'download_url' => $this->sumber === FolderFile::SUMBER_LEMBAR_KERJA
                 ? null
-                : route('folder-files.download', $this->resource),
+                : route('arsip.berkas.unduh', $this->resource),
             'diunggah_oleh' => $this->uploader?->name,
             'dibuat_pada' => $this->created_at?->toIso8601ZuluString(),
         ];
