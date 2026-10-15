@@ -54,10 +54,11 @@ class StudioGambarWorkbookTest extends TestCase
         $input = $lembar['INPUT DATA']['tata_letak']['gambar'];
         $this->assertCount(2, $input);
         [$png, $jpeg] = $input;
-        $this->assertSame(['id', 'dari', 'lebar', 'tinggi', 'jenis'], array_keys($png));
-        $this->assertSame(['kolom' => 'E', 'baris' => 2, 'dx' => 3, 'dy' => 4], $png['dari']);
+        // Urutan kunci objek tidak dijamin: kolom JSON MySQL mengurutkan ulang kunci (panjang, lalu byte).
+        $this->assertEqualsCanonicalizing(['id', 'dari', 'lebar', 'tinggi', 'jenis'], array_keys($png));
+        $this->assertEquals(['kolom' => 'E', 'baris' => 2, 'dx' => 3, 'dy' => 4], $png['dari']);
         $this->assertSame([8, 4, 'png'], [$png['lebar'], $png['tinggi'], $png['jenis']]);
-        $this->assertSame(['kolom' => 'F', 'baris' => 5, 'dx' => 4, 'dy' => 5], $jpeg['dari']);
+        $this->assertEquals(['kolom' => 'F', 'baris' => 5, 'dx' => 4, 'dy' => 5], $jpeg['dari']);
         $this->assertSame('jpeg', $jpeg['jenis']);
         $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $png['id']);
 

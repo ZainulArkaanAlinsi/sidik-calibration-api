@@ -71,7 +71,8 @@ class StudioProteksiLembarTest extends TestCase
         $this->assertSame(self::TIDAK_TERKUNCI, $input['sel_tidak_terkunci']);
         $this->assertFalse($bebas['dilindungi']);
         $this->assertSame([], $bebas['sel_tidak_terkunci']);
-        $this->assertSame(array_keys(KanonikWorkbook::tataLetakKosong()), array_keys($input));
+        // Urutan kunci tidak dijamin: kolom JSON MySQL mengurutkan ulang kunci objek.
+        $this->assertEqualsCanonicalizing(array_keys(KanonikWorkbook::tataLetakKosong()), array_keys($input));
 
         // API detail: tata letak membawa proteksi; izin melewati kunci dari server.
         $admin = $this->pengguna(User::ROLE_ADMIN);
