@@ -107,4 +107,9 @@ class AlatJatuhTempo extends NotifikasiSistem
     {
         return $this->jumlahOverdue > 0 ? 'danger' : 'warning';
     }
+
+    protected function kanalAndroid(): string
+    {
+        return 'sidik_pengingat';
+    }
 }

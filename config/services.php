@@ -169,9 +169,9 @@ return [
         'project_id' => env('FCM_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
         'timeout' => (int) env('FCM_TIMEOUT', 10),
-        // Tampilan notifikasi Android: nama drawable & warna aksen (primary tema, #043EA1).
+        // Tampilan notifikasi Android: nama drawable & warna aksen (primary tema, #1D4292).
         'ikon_kecil' => env('FCM_IKON_KECIL', 'ic_stat_sidik'),
-        'warna_aksen' => env('FCM_WARNA_AKSEN', '#043EA1'),
+        'warna_aksen' => env('FCM_WARNA_AKSEN', '#1D4292'),
     ],
 
     /*

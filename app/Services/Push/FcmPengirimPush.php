@@ -147,7 +147,7 @@ class FcmPengirimPush implements PengirimPush
             'android' => [
                 'priority' => 'high',
                 'notification' => [
-                    'channel_id' => 'sidik_kerja',
+                    'channel_id' => (string) ($data['android_channel_id'] ?? 'sidik_kerja'),
                     // Ikon status bar (drawable monokrom di app Android) + warna aksen tema.
                     'icon' => (string) config('services.fcm.ikon_kecil', 'ic_stat_sidik'),
                     'color' => (string) config('services.fcm.warna_aksen', '#043EA1'),

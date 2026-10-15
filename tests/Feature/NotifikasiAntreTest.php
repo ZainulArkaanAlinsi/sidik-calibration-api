@@ -5,9 +5,12 @@ namespace Tests\Feature;
 use App\Models\DeviceToken;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\AlatJatuhTempo;
 use App\Notifications\Channels\SaluranPush;
 use App\Notifications\NotifikasiSistem;
+use App\Notifications\Pelanggan\AlatAndaJatuhTempo;
 use App\Notifications\SesiDisetujui;
+use App\Notifications\StandarMauKadaluarsa;
 use App\Services\Push\FcmPengirimPush;
 use App\Services\Push\PengirimPush;
 use App\Services\Push\PengirimPushMati;
@@ -70,8 +73,20 @@ class NotifikasiAntreTest extends TestCase
         $data = (new SesiDisetujui(12, 'CAL/1', 'pH Meter', 'lulus'))
             ->toPush($this->user())['data'];
 
-        $this->assertSame('calibration/12', $data['tujuan']);
+        $this->assertSame('calibration:12', $data['tujuan']);
         $this->assertNotSame('', $data['kategori']);
+        $this->assertSame('sidik_kerja', $data['android_channel_id']);
+        $this->assertArrayHasKey('notification_id', $data);
+        $this->assertSame('calibration', $data['tautan_tipe']);
+        $this->assertSame('12', $data['tautan_id']);
+    }
+
+    public function test_pengingat_jatuh_tempo_memakai_kanal_sidik_pengingat(): void
+    {
+        foreach ([StandarMauKadaluarsa::class, AlatJatuhTempo::class, AlatAndaJatuhTempo::class] as $kelas) {
+            $n = (new \ReflectionClass($kelas))->newInstanceWithoutConstructor();
+            $this->assertSame('sidik_pengingat', (new \ReflectionMethod($n, 'kanalAndroid'))->invoke($n));
+        }
     }
 
     public function test_pesan_fcm_membawa_ikon_dan_warna_android(): void
@@ -88,7 +103,7 @@ class NotifikasiAntreTest extends TestCase
         $http->assertSent(function ($request) {
             $n = $request->data()['message']['android']['notification'];
             $this->assertSame('ic_stat_sidik', $n['icon']);
-            $this->assertSame('#043EA1', $n['color']);
+            $this->assertSame('#1D4292', $n['color']);
 
             return true;
         });

@@ -1544,6 +1544,22 @@ Catatan yang bikin beda dari dugaan:
   abaikan dan pakai ikon sendiri berdasarkan `kategori`.
 - `warna` isinya token Filament (`info`, `warning`, `danger`, `success`).
 
+**Muatan push FCM (G5, K-50-13).** Notifikasi sistem diantre setelah commit; tidak
+ada aksi Kirim/Setujui yang menunggu FCM. Blok `notification` berisi `title`/`body`;
+`data` (semua string):
+
+| Kunci | Isi |
+|---|---|
+| `kategori` | sama dengan kolom `kategori` di atas |
+| `tujuan` | `tipe:id`, mis. `calibration:12`, `certificate:34`; kosong = beranda |
+| `tautan_tipe`, `tautan_id` | bentuk lama, tetap dikirim |
+| `notification_id` | UUID baris notifikasi database (buang toast ganda realtime vs push) |
+| `android_channel_id` | `sidik_kerja` (kejadian kerja) atau `sidik_pengingat` (jatuh tempo alat/standar) |
+
+Android: `notification.icon` = `ic_stat_sidik`, `notification.color` = `#1D4292`,
+`channel_id` = nilai `android_channel_id`. Tanpa kredensial FCM, push dilewati dan
+dicatat di log (tanpa exception).
+
 ### Endpoint notifikasi yang tersedia
 
 ```

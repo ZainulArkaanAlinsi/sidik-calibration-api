@@ -188,4 +188,9 @@ class AlatAndaJatuhTempo extends NotifikasiSistem
     {
         return $this->jumlahLewat > 0 ? 'danger' : 'warning';
     }
+
+    protected function kanalAndroid(): string
+    {
+        return 'sidik_pengingat';
+    }
 }

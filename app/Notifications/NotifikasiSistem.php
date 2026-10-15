@@ -71,9 +71,12 @@ abstract class NotifikasiSistem extends Notification implements ShouldQueueAfter
             'isi' => $this->isi(),
             'data' => [
                 'kategori' => $this->kategori(),
-                // Target deep-link: `tipe/id` (mis. `calibration/12`). Aplikasi
+                // Target deep-link: `tipe/id` (mis. `calibration:12`). Aplikasi
                 // memetakan ke layar; kosong = buka beranda.
                 'tujuan' => $this->tujuan($tautan),
+                // Id baris `notifications` (sama dengan channel database), buat dedup toast.
+                'notification_id' => (string) ($this->id ?? ''),
+                'android_channel_id' => $this->kanalAndroid(),
                 'tautan_tipe' => (string) ($tautan['tipe'] ?? ''),
                 'tautan_id' => (string) ($tautan['id'] ?? ''),
             ],
@@ -86,7 +89,7 @@ abstract class NotifikasiSistem extends Notification implements ShouldQueueAfter
         $tipe = (string) ($tautan['tipe'] ?? '');
         $id = (string) ($tautan['id'] ?? '');
 
-        return $tipe === '' ? '' : ($id === '' ? $tipe : $tipe.'/'.$id);
+        return $tipe === '' ? '' : ($id === '' ? $tipe : $tipe.':'.$id);
     }
 
     /** Payload broadcast = sama persis dengan yang disimpen di database. */
@@ -150,6 +153,12 @@ abstract class NotifikasiSistem extends Notification implements ShouldQueueAfter
     protected function tandaTangan(): ?string
     {
         return null;
+    }
+
+    /** `sidik_kerja` = kejadian kerja; `sidik_pengingat` = pengingat jatuh tempo. */
+    protected function kanalAndroid(): string
+    {
+        return 'sidik_kerja';
     }
 
     protected function ikon(): string

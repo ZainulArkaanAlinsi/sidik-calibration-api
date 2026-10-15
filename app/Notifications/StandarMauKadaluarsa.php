@@ -100,4 +100,9 @@ class StandarMauKadaluarsa extends NotifikasiSistem
     {
         return $this->jumlahKadaluarsa > 0 ? 'danger' : 'warning';
     }
+
+    protected function kanalAndroid(): string
+    {
+        return 'sidik_pengingat';
+    }
 }
