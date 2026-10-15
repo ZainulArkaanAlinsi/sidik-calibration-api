@@ -654,6 +654,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Riwayat persetujuan (tiap penolakan + alasannya, pengajuan ulang,
         // persetujuan) dari audit_logs. Admin & super admin saja — keputusan
         // pemilik proyek 6 Okt 2026; super admin lewat lolosBacaSuperAdmin (GET).
+        // Asli teknisi lawan sekarang, per sel (K-50-01). Admin & super admin.
+        Route::get('/calibrations/{calibration}/bandingkan', [CalibrationController::class, 'bandingkan']);
         Route::get('/calibrations/{calibration}/riwayat-persetujuan', [CalibrationController::class, 'riwayatPersetujuan']);
 
         // Lembar PERHITUNGAN: tampilan admin dari lembar kerja teknisi.

@@ -44,6 +44,7 @@ use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
 use App\Support\AnakTimbanganMentah;
+use App\Support\BandingkanLembar;
 use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GayaMentah;
@@ -467,6 +468,10 @@ class CalibrationController extends Controller
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
             // pembacaan awal/akhir + koreksi sertifikat thermohygro, sama persis
             // kayak alat lain.
+            if ($sesi->submitted_at !== null) {
+                $this->bekukanInputAsli($sesi);
+            }
+
             $this->kondisi->terapkan($sesi);
 
             return $sesi->fresh()->load(self::RELASI);
@@ -581,6 +586,11 @@ class CalibrationController extends Controller
 
             $catatanKoreksi = $this->catatanKoreksiAutoclave($sesi, $request, $lembarLama);
 
+            // Asli teknisi dibekukan sebelum `hasil_autoclave` ditimpa (K-50-01).
+            if ($sesi->submitted_at !== null) {
+                $this->bekukanInputAsli($sesi);
+            }
+
             $sesi->update([
                 ...$this->atributDariRequest($request),
                 ...$status,
@@ -593,6 +603,10 @@ class CalibrationController extends Controller
                 // (keputusan pemilik proyek 15 Okt 2026).
                 ...self::bersihkanCatatanRevisi($status['status']),
             ]);
+
+            if ($status['status'] !== CalibrationSession::STATUS_DRAFT) {
+                $this->bekukanInputAsli($sesi);
+            }
 
             if ($catatanKoreksi !== null) {
                 // Penanda yang dibaca `PemisahanWewenang::pernahMengoreksi()`.
@@ -1704,6 +1718,70 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Bekukan isian teknisi ke `input_asli` — TULIS-SEKALI (`whereNull`), tidak
+     * pernah ditimpa. Dipanggil saat kirim pertama dan sebelum jalur
+     * hapus-tulis-ulang (`isiUlangPengukuran`, `hasil_autoclave`), supaya
+     * koreksi Master Data tidak bisa menghilangkan angka asli teknisi
+     * (ISO/IEC 17025 §7.5.2, AGENTS.md §Peran butir 5).
+     */
+    private function bekukanInputAsli(CalibrationSession $sesi): void
+    {
+        $sudah = DB::table('calibration_sessions')->where('id', $sesi->getKey())->value('input_asli');
+
+        if ($sudah !== null) {
+            return;
+        }
+
+        $payload = $sesi->adalahAutoclave()
+            ? ['jenis' => 'autoclave', 'lembar' => $sesi->hasil_autoclave['lembar'] ?? []]
+            : ['jenis' => 'pembacaan', 'pembacaan' => $this->potretPembacaan($sesi)];
+
+        if (($payload['lembar'] ?? $payload['pembacaan']) === []) {
+            return;
+        }
+
+        $payload['dibekukan_pada'] = now()->toIso8601String();
+        $payload['dibekukan_oleh'] = Auth::id();
+
+        DB::table('calibration_sessions')
+            ->where('id', $sesi->getKey())
+            ->whereNull('input_asli')
+            ->update(['input_asli' => json_encode($payload)]);
+    }
+
+    /**
+     * `GET /calibrations/{c}/bandingkan` — isian asli teknisi lawan keadaan
+     * sekarang, per sel, beserta siapa/kapan/alasan perubahannya (K-50-01).
+     * Admin & super admin (grup `role:admin`).
+     */
+    public function bandingkan(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        $sekarang = $calibration->adalahAutoclave()
+            ? ['jenis' => 'autoclave', 'lembar' => $calibration->hasil_autoclave['lembar'] ?? []]
+            : ['jenis' => 'pembacaan', 'pembacaan' => $this->potretPembacaan($calibration)];
+
+        $jejak = AuditLog::query()
+            ->where('entity_type', $calibration->getTable())
+            ->where('entity_id', $calibration->getKey())
+            ->where('action', AuditLog::ACTION_DIUBAH)
+            ->with('pelaku:id,name')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json([
+            'data' => [
+                'sesi_id' => $calibration->id,
+                'status' => $calibration->status,
+                'asli_dibekukan_pada' => $calibration->input_asli['dibekukan_pada'] ?? null,
+                ...BandingkanLembar::susun($calibration->input_asli, $sekarang, $jejak),
+            ],
+        ]);
+    }
+
+    /**
      * Simpen pembacaan mentah + hasil hitung GUM-nya. Dipakai waktu bikin sesi
      * baru dan waktu revisi — makanya yang lama dihapus dulu, biar nggak numpuk.
      */
@@ -1748,6 +1826,13 @@ class CalibrationController extends Controller
                         .'nggak ada yang dihapus. Muat ulang lembarnya dulu. Kalau cuma mau menyimpan bagian atas '
                         .'lembar, kirim tanpa kunci `measurements`.',
             ]);
+        }
+
+        // Isian ASLI teknisi dibekukan SEBELUM dihapus-tulis-ulang (K-50-01).
+        // Sesi yang sudah pernah dikirim (admin mengoreksi, atau sesi lama
+        // `perlu_revisi`) tidak boleh kehilangan keadaan kirim pertamanya.
+        if ($sesi->submitted_at !== null) {
+            $this->bekukanInputAsli($sesi);
         }
 
         $sesi->rawMeasurements()->delete();
@@ -5313,6 +5398,11 @@ class CalibrationController extends Controller
             'submitted_at' => $draft ? null : now(),
             ...self::bersihkanCatatanRevisi($status->value()),
         ]);
+
+        // Kirim pertama: isian teknisi dibekukan (tulis-sekali, additive).
+        if (! $draft) {
+            $this->bekukanInputAsli($sesi);
+        }
 
         // Kondisi lingkungan yang dicetak di sertifikat dihitung ulang tiap
         // sesi disimpen — biar nggak pernah ketinggalan dari pembacaan

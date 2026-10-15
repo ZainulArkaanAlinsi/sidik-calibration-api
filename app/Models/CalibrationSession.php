@@ -192,6 +192,8 @@ class CalibrationSession extends Model
             'tekanan_ketidakpastian' => 'float',
             // Snapshot hasil olah data Autoklaf (Section A/B/C + budget + input).
             'hasil_autoclave' => 'array',
+            // Isian asli teknisi, tulis-sekali (K-50-01). Tidak fillable.
+            'input_asli' => 'array',
             // Tiga pembacaan uji titik es termometer gelas — yang dipakai
             // rentangnya (Tmax − Tmin), dihitung ulang tiap kali, bukan
             // disimpan jadi.
