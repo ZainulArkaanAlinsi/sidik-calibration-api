@@ -5,6 +5,7 @@ namespace App\Http\Resources\Studio;
 use App\Models\WorkbookMaster;
 use App\Models\WorkbookMasterLembar;
 use App\Services\Studio\Workbook\JenisWorkbook;
+use App\Services\Studio\Workbook\ProteksiLembar;
 use App\Services\Studio\Workbook\VersiXlsmWorkbook;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -96,6 +97,9 @@ class WorkbookMasterResource extends JsonResource
 
         return (new self($workbook, $peta[$workbook->id] ?? null, $riwayat[(string) $workbook->kunci_jenis] ?? 0))->toArray($request) + [
             'catatan' => $workbook->catatan,
+            // K-49-15: pemanggil boleh menyunting sel terkunci lembar yang
+            // dilindungi Excel (super_admin) — aturan yang sama dengan `/hitung`.
+            'boleh_edit_sel_terkunci' => ProteksiLembar::bolehMelewati($request->user()),
             'lembar' => WorkbookMasterLembarResource::collection($lembar)->toArray($request),
         ];
     }

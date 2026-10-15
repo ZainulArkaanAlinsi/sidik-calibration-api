@@ -10,18 +10,23 @@ use RuntimeException;
  * `edit_tidak_valid` 422, `rumus_terlalu_berat` 422 (rumus edit merujuk terlalu
  * banyak sel, memakai rujukan dinamis, atau memadukan teks dengan larik besar —
  * `PagarRumus`), `hitung_terlalu_berat` 422 (memori hitung melewati ambang
- * `PagarMemori` di tengah evaluasi).
+ * `PagarMemori` di tengah evaluasi), `sel_terkunci` 422 (K-49-15: edit ke sel
+ * terkunci lembar yang dilindungi Excel oleh selain super_admin).
+ *
+ * `tambahan` = kunci ekstra di badan respons (mis. `sel_terkunci`).
  */
 final class GagalHitung extends RuntimeException
 {
     /**
      * @param  array<string, list<string>>  $errors
+     * @param  array<string, mixed>  $tambahan
      */
     public function __construct(
         public readonly string $kode,
         string $pesan,
         public readonly int $status,
         public readonly array $errors = [],
+        public readonly array $tambahan = [],
     ) {
         parent::__construct($pesan);
     }
@@ -64,5 +69,14 @@ final class GagalHitung extends RuntimeException
     public static function rumusTerlaluBerat(string $pesan, array $errors): self
     {
         return new self('rumus_terlalu_berat', $pesan, 422, $errors);
+    }
+
+    /**
+     * @param  array<string, list<string>>  $errors
+     * @param  list<array{lembar_id: int, a: string}>  $sel
+     */
+    public static function selTerkunci(string $pesan, array $errors, array $sel): self
+    {
+        return new self('sel_terkunci', $pesan, 422, $errors, ['sel_terkunci' => $sel]);
     }
 }

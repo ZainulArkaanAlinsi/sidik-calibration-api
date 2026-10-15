@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use PhpOffice\PhpSpreadsheet\NamedRange;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Conditional;
+use PhpOffice\PhpSpreadsheet\Style\Protection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -287,6 +288,55 @@ trait WorkbookUji
         }
 
         $w->save($jalur);
+        $ss->disconnectWorksheets();
+
+        return $jalur;
+    }
+
+    /**
+     * `.xlsx` SINTETIS tanpa sandi untuk proteksi lembar (K-49-15).
+     *
+     * `INPUT DATA` DILINDUNGI (`sheetProtection sheet="1"`):
+     *  - A1 judul, C2 `=B2*2`, C3 `=B3+1` → terkunci (bawaan Excel);
+     *  - B2 = 5, B3 = 7 → tidak terkunci (gaya sel);
+     *  - B5:C6 sel kosong bergaya tidak terkunci;
+     *  - kolom E tidak terkunci lewat GAYA KOLOM (`<col style>`), kecuali E4
+     *    yang dikunci di selnya sendiri;
+     *  - baris 8 tidak terkunci lewat GAYA BARIS (`<row s customFormat>`),
+     *    kecuali F8 yang dikunci di selnya sendiri.
+     *
+     * `Bebas` TIDAK dilindungi: A1 = 3, B1 `=A1*2`.
+     */
+    protected function buatXlsxDilindungi(string $nama = 'Lembar Dilindungi Uji.xlsx'): string
+    {
+        $buka = Protection::PROTECTION_UNPROTECTED;
+        $kunci = Protection::PROTECTION_PROTECTED;
+
+        $ss = new Spreadsheet;
+        $a = $ss->getActiveSheet();
+        $a->setTitle('INPUT DATA');
+        $a->setCellValue('A1', 'Judul uji');
+        $a->setCellValue('B2', 5);
+        $a->setCellValue('B3', 7);
+        $a->setCellValue('C2', '=B2*2');
+        $a->setCellValue('C3', '=B3+1');
+        $a->getStyle('B2:B3')->getProtection()->setLocked($buka);
+        $a->getStyle('B5:C6')->getProtection()->setLocked($buka);
+        $a->getStyle('E:E')->getProtection()->setLocked($buka);
+        $a->setCellValue('E4', 1);
+        $a->getStyle('E4')->getProtection()->setLocked($kunci);
+        $a->getStyle('8:8')->getProtection()->setLocked($buka);
+        $a->setCellValue('F8', 'x');
+        $a->getStyle('F8')->getProtection()->setLocked($kunci);
+        $a->getProtection()->setSheet(true);
+
+        $b = $ss->createSheet();
+        $b->setTitle('Bebas');
+        $b->setCellValue('A1', 3);
+        $b->setCellValue('B1', '=A1*2');
+
+        $jalur = $this->folderUji.DIRECTORY_SEPARATOR.$nama;
+        (new Xlsx($ss))->save($jalur);
         $ss->disconnectWorksheets();
 
         return $jalur;

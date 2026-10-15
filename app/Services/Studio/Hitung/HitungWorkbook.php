@@ -6,6 +6,7 @@ use App\Models\WorkbookMaster;
 use App\Models\WorkbookMasterLembar;
 use App\Services\Studio\Workbook\FormatBersyarat;
 use App\Services\Studio\Workbook\PembacaXlsmWorkbook;
+use App\Services\Studio\Workbook\ProteksiLembar;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
@@ -25,6 +26,10 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as SharedDate;
  * number format sel lewat fungsi yang sama dengan impor
  * (`PembacaXlsmWorkbook::teksTampil`). Conditional formatting diterapkan ulang
  * ke `g` dari nilai baru (`FormatBersyarat`).
+ *
+ * Proteksi lembar Excel (K-49-15): edit ke sel terkunci di lembar yang
+ * dilindungi → 422 `sel_terkunci`, kecuali `$bolehSelTerkunci` (super_admin,
+ * `ProteksiLembar::bolehMelewati`). Diperiksa sebelum model hitung dimuat.
  */
 final class HitungWorkbook
 {
@@ -41,7 +46,7 @@ final class HitungWorkbook
      *
      * @throws GagalHitung
      */
-    public function jalankan(WorkbookMaster $wb, array $editMentah, ?string $waktuAcuan): array
+    public function jalankan(WorkbookMaster $wb, array $editMentah, ?string $waktuAcuan, bool $bolehSelTerkunci = false): array
     {
         $mulai = microtime(true);
         $tenggat = $mulai + (float) config('studio.hitung.batas_detik', 20);
@@ -54,6 +59,11 @@ final class HitungWorkbook
         $perId = $lembar->keyBy('id');
         $perNama = $lembar->keyBy('nama');
         [$edit, $isiAsli, $indeks] = $this->validasi($editMentah, $perId);
+
+        if (! $bolehSelTerkunci) {
+            $this->tolakSelTerkunci($edit, $indeks, $perNama);
+        }
+
         $serial = self::serialWaktu($waktuAcuan);
 
         [$model, $graf] = $this->sumber->ambil($wb);
@@ -209,6 +219,57 @@ final class HitungWorkbook
         }
 
         return [array_values($edit), array_values($isiAsli), array_values($indeks)];
+    }
+
+    /**
+     * K-49-15: sel terkunci di lembar yang dilindungi Excel tidak boleh
+     * disunting selain super_admin. Semua sel terkunci di request disebut
+     * sekaligus (`sel_terkunci`), bukan satu per satu.
+     *
+     * @param  list<array{judul: string, alamat: string, isi: IsiSel}>  $edit
+     * @param  list<int>  $indeks  indeks edit di request (kunci `errors`)
+     * @param  Collection<string, WorkbookMasterLembar>  $perNama
+     *
+     * @throws GagalHitung
+     */
+    private function tolakSelTerkunci(array $edit, array $indeks, Collection $perNama): void
+    {
+        $rentang = [];
+        $sel = [];
+        $label = [];
+        $galat = [];
+
+        foreach ($edit as $j => $e) {
+            /** @var WorkbookMasterLembar $baris */
+            $baris = $perNama->get($e['judul']);
+            $id = (int) $baris->id;
+
+            if (! array_key_exists($id, $rentang)) {
+                $rentang[$id] = ProteksiLembar::dariTataLetak(is_array($baris->tata_letak) ? $baris->tata_letak : []);
+            }
+
+            [$kolom, $nomor] = Coordinate::indexesFromString($e['alamat']);
+
+            if (! ProteksiLembar::terkunci($rentang[$id], (int) $kolom, (int) $nomor)) {
+                continue;
+            }
+
+            $sel[] = ['lembar_id' => $id, 'a' => $e['alamat']];
+            $label[] = $e['judul'].'!'.$e['alamat'];
+            $galat['edit.'.($indeks[$j] ?? $j).'.a'] = ["Sel {$e['alamat']} di lembar \"{$e['judul']}\" terkunci (lembar dilindungi di Excel). Hanya super admin yang boleh mengubahnya."];
+        }
+
+        if ($sel === []) {
+            return;
+        }
+
+        $sisa = count($label) > 10 ? ' (+'.(count($label) - 10).' lagi)' : '';
+
+        throw GagalHitung::selTerkunci(
+            count($sel).' sel terkunci di lembar yang dilindungi Excel: '.implode(', ', array_slice($label, 0, 10)).$sisa.'. Hanya super admin yang boleh mengubahnya.',
+            $galat,
+            $sel,
+        );
     }
 
     /**

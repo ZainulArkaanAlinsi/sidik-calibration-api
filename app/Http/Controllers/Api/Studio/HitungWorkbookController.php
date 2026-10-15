@@ -7,6 +7,7 @@ use App\Models\WorkbookMaster;
 use App\Services\Studio\Hitung\GagalHitung;
 use App\Services\Studio\Hitung\HitungWorkbook;
 use App\Services\Studio\Hitung\PagarMemori;
+use App\Services\Studio\Workbook\ProteksiLembar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,8 +21,12 @@ use Illuminate\Http\Request;
  *
  * Rute ini TIDAK menulis apa pun ke DB atau disk data lab: hitung "bagaimana
  * jika" yang stateless (satu-satunya tulis = cache model hitung turunan berkas
- * asli). Karena itu dibuka untuk super admin walau ia belum boleh "aksi tulis"
- * — keputusan yang dicatat untuk dikonfirmasi pemilik (laporan tahap C).
+ * asli). Super admin boleh — dikonfirmasi pemilik K-49-15 (15 Okt 2026):
+ * kendali Studio ada di super_admin.
+ *
+ * Proteksi lembar Excel (K-49-15): sel TERKUNCI di lembar yang dilindungi
+ * hanya boleh disunting super_admin; selain itu 422 `sel_terkunci`
+ * (`ProteksiLembar`). Server yang memutuskan, bukan tombol di klien.
  */
 class HitungWorkbookController extends Controller
 {
@@ -63,13 +68,18 @@ class HitungWorkbookController extends Controller
         }
 
         try {
-            $hasil = $hitung->jalankan($workbook, array_values($data['edit']), $data['waktu_acuan'] ?? null);
+            $hasil = $hitung->jalankan(
+                $workbook,
+                array_values($data['edit']),
+                $data['waktu_acuan'] ?? null,
+                ProteksiLembar::bolehMelewati($request->user()),
+            );
         } catch (GagalHitung $e) {
             return response()->json(array_filter([
                 'message' => $e->getMessage(),
                 'kode' => $e->kode,
                 'errors' => $e->errors !== [] ? $e->errors : null,
-            ], static fn ($v): bool => $v !== null), $e->status);
+            ] + $e->tambahan, static fn ($v): bool => $v !== null), $e->status);
         }
 
         return response()->json(['data' => $hasil], 200, [], JSON_PRESERVE_ZERO_FRACTION);
