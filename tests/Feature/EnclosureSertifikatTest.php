@@ -211,7 +211,8 @@ class EnclosureSertifikatTest extends TestCase
 
         // Format sel master Constant/Yokogawa (B25, F25:S36, U25, C42:O45 `0.0`; P37 `0`).
         $this->assertSame('constant_yokogawa', $enc['varian_master']);
-        $this->assertSame(['indikator' => 1, 'terukur' => 1, 'koreksi' => 1, 'u95' => 1, 'k' => 0, 'setting' => 1, 'indikator_kinerja' => 1, 'kinerja' => 1], $enc['desimal']);
+        // Urutan kunci tidak dijamin: kolom JSON MySQL mengurutkan ulang kunci objek.
+        $this->assertEquals(['indikator' => 1, 'terukur' => 1, 'koreksi' => 1, 'u95' => 1, 'k' => 0, 'setting' => 1, 'indikator_kinerja' => 1, 'kinerja' => 1], $enc['desimal']);
     }
 
     public function test_snapshot_oven_recorder_cocok_sertifikat_master(): void
