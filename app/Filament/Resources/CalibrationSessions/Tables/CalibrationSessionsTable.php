@@ -284,23 +284,50 @@ class CalibrationSessionsTable
                         // UPDATE bersyarat + 409; di sini lewat model supaya
                         // `Diaudit` tetap mencatat persetujuannya. Dijaga
                         // `ChaosTerbitSertifikatTest`.
-                        $disetujui = DB::transaction(function () use ($record, $penyetuju): bool {
-                            $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
+                        // Nomor dipesan di transaksi yang sama (jalur yang sama dengan
+                        // API): nomor bentrok membatalkan seluruh persetujuan.
+                        $galatPesan = null;
 
-                            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
-                                return false;
+                        try {
+                            $disetujui = DB::transaction(function () use ($record, $penyetuju, $nomorSertifikat, &$galatPesan): bool {
+                                $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
+
+                                if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+                                    return false;
+                                }
+
+                                // Lewat model supaya `Diaudit` mencatat.
+                                $terkini->forceFill([
+                                    'status' => CalibrationSession::STATUS_DISETUJUI,
+                                    'reviewed_by' => $penyetuju->id,
+                                    'reviewed_at' => now(),
+                                    'catatan_revisi' => null,
+                                ])->save();
+
+                                if ($nomorSertifikat !== null) {
+                                    $galatPesan = NomorSertifikat::pesan($terkini, $penyetuju->id, null, $nomorSertifikat);
+
+                                    if ($galatPesan !== null) {
+                                        throw new \RuntimeException($galatPesan['kode']);
+                                    }
+                                }
+
+                                return true;
+                            });
+                        } catch (\RuntimeException $e) {
+                            if ($galatPesan === null) {
+                                throw $e;
                             }
 
-                            // Lewat model supaya `Diaudit` mencatat.
-                            $terkini->forceFill([
-                                'status' => CalibrationSession::STATUS_DISETUJUI,
-                                'reviewed_by' => $penyetuju->id,
-                                'reviewed_at' => now(),
-                                'catatan_revisi' => null,
-                            ])->save();
+                            Notification::make()
+                                ->title('No. Sertifikat belum bisa dipakai.')
+                                ->body($galatPesan['pesan'])
+                                ->danger()
+                                ->persistent()
+                                ->send();
 
-                            return true;
-                        });
+                            return;
+                        }
 
                         if (! $disetujui) {
                             Notification::make()

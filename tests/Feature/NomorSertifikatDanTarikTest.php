@@ -214,6 +214,37 @@ class NomorSertifikatDanTarikTest extends TestCase
         $this->assertSame('PANEL/001', Certificate::where('calibration_session_id', $sesi->id)->value('nomor'));
     }
 
+    public function test_panel_balapan_nomor_sama_yang_kalah_tetap_menunggu_approval(): void
+    {
+        $pemenang = $this->sesiAntre();
+        $kalah = $this->sesiAntre();
+        $nomor = 'PANEL/BALAP';
+
+        $siap = true;
+        DB::beforeExecuting(function (string $sql) use (&$siap, $pemenang, $nomor): void {
+            if ($siap && str_starts_with(strtolower($sql), 'update "calibration_sessions"')) {
+                $siap = false;
+                DB::table('certificates')->insert([
+                    'organization_id' => $this->org->id,
+                    'calibration_session_id' => $pemenang->id,
+                    'nomor' => $nomor,
+                    'qr_token' => 'tokenpanel1',
+                    'qr_payload' => 'http://x/verify/tokenpanel1',
+                    'status' => Certificate::STATUS_GAGAL,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        Livewire::actingAs($this->admin)
+            ->test(ListCalibrationSessions::class)
+            ->callAction(TestAction::make('approve')->table($kalah), ['nomor_sertifikat' => $nomor, 'abaikan_peringatan' => true]);
+
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $kalah->fresh()->status);
+        $this->assertFalse(Certificate::where('calibration_session_id', $kalah->id)->exists());
+    }
+
     // ── Tarik sertifikat ───────────────────────────────────────────────────
 
     public function test_tarik_mengembalikan_sesi_dan_tidak_menyentuh_input_mentah(): void
