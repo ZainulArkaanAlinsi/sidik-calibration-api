@@ -586,10 +586,12 @@ class CalibrationController extends Controller
                 ...$status,
                 'keputusan' => null,
                 'hasil_autoclave' => $snapshot,
-                // Sama kayak `update()`: catatan & tanda kolom revisi lama nggak
-                // relevan lagi begitu lembarnya disimpan ulang.
-                'catatan_revisi' => null,
-                'revisi_field' => null,
+                // Sama kayak `update()` (lewat `tutupPengisian()`): catatan &
+                // tanda kolom revisi dibuang HANYA kalau lembarnya dikirim
+                // ulang. Simpan Draf atas lembar `perlu_revisi` membiarkannya —
+                // teknisi yang masih membetulkan butuh teguran itu di layarnya
+                // (keputusan pemilik proyek 15 Okt 2026).
+                ...self::bersihkanCatatanRevisi($status['status']),
             ]);
 
             if ($catatanKoreksi !== null) {
@@ -1004,18 +1006,12 @@ class CalibrationController extends Controller
             // hitungannya ikut berubah, bukan cuma labelnya.
             $this->simpanSatuanAlat($request);
 
-            $calibration->update([
-                ...$this->atributDariRequest($request),
-                // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
-                // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
-                //
-                // `revisi_field` ikut dibuang, dan itu sempat kelewat: catatannya
-                // ilang tapi kolom yang ditandai NGGAK, jadi garis merahnya
-                // nempel terus di lembar yang udah dibetulin — bahkan sesudah
-                // sesinya disetujui.
-                'catatan_revisi' => null,
-                'revisi_field' => null,
-            ]);
+            // `catatan_revisi`/`revisi_field` TIDAK dibuang di sini, tapi di
+            // `tutupPengisian()` — satu-satunya tempat status kiriman diputus.
+            // Dulu dibuang di tiap simpan, termasuk Simpan Draf atas lembar
+            // `perlu_revisi`, jadi teguran admin hilang sebelum teknisi selesai
+            // membetulkannya (keputusan pemilik proyek 15 Okt 2026).
+            $calibration->update($this->atributDariRequest($request));
 
             return $this->isiUlangPengukuran($calibration, $request);
         });
@@ -5334,6 +5330,35 @@ class CalibrationController extends Controller
     }
 
     /**
+     * `catatan_revisi` & `revisi_field` yang dibuang untuk status hasil simpan
+     * [$status] — dipakai `tutupPengisian()` dan `perbaruiAutoclave()`, dua
+     * tempat yang memutus status kiriman, supaya aturannya satu.
+     *
+     * Dibuang HANYA saat lembar masuk antrean approval (`menunggu_approval`):
+     * teguran admin sudah dijawab, dan tanda kolomnya ikut dibuang — dulu cuma
+     * catatannya yang hilang, garis merah `revisi_field` nempel terus di lembar
+     * yang sudah dibetulkan, bahkan sesudah disetujui.
+     *
+     * Simpan Draf atas lembar `perlu_revisi` (hasilnya `draft`) MEMBIARKAN
+     * keduanya: teknisi yang belum selesai membetulkan masih perlu membaca
+     * teguran & melihat kolom yang ditandai. Sebelum 15 Okt 2026 keduanya
+     * dibuang di tiap simpan, termasuk draft (keputusan pemilik proyek).
+     *
+     * Sunting admin atas sesi yang sedang antre juga lewat cabang "dibuang",
+     * tapi tidak ada yang hilang: catatan cuma ditulis `reject()`, yang
+     * sekaligus memindahkan sesinya ke `perlu_revisi`, dan lembar
+     * `perlu_revisi`/`draft` cuma kembali ke antrean lewat cabang ini.
+     *
+     * @return array<string, null>
+     */
+    private static function bersihkanCatatanRevisi(string $status): array
+    {
+        return $status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+            ? ['catatan_revisi' => null, 'revisi_field' => null]
+            : [];
+    }
+
+    /**
      * Tutup pengisian: tentuin keputusan sesi & statusnya.
      *
      * @param  Collection<int, UncertaintyCalculation>  $titik
@@ -5344,11 +5369,13 @@ class CalibrationController extends Controller
         $titik,
     ): CalibrationSession {
         $draft = $request->string('status')->value() === CalibrationSession::STATUS_DRAFT;
+        $status = $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL);
 
         $sesi->update([
             'keputusan' => self::keputusanSesi($titik),
-            'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
+            'status' => $status,
             'submitted_at' => $draft ? null : now(),
+            ...self::bersihkanCatatanRevisi($status->value()),
         ]);
 
         // Kondisi lingkungan yang dicetak di sertifikat dihitung ulang tiap

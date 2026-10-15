@@ -74,6 +74,14 @@ disimpannya. Gampang dicari, rapi.
 > punya id (mobile PR #205, rilis 1.0.695). Gate MySQL penuh untuk `56668b1` sedang berjalan
 > (15 Okt). Handoff: `docs/perintah-frontend-autoclave.md` §8. Celah yang sengaja belum ditutup: sesi lama tanpa `lembar` (koreksi admin
 > tak terdeteksi) dan kabar admin berulang tiap sesi antre disimpan ulang.
+>
+> **15 Okt 2026 — draft revisi menyimpan catatan admin (sisi server, branch
+> `fix/catatan-revisi-draf`, di-merge 15 Okt 2026).** Dulu `PUT /calibrations/{id}` dan
+> `PUT /calibrations/autoclave/{id}` mengosongkan `catatan_revisi` & `revisi_field` di tiap
+> simpan, termasuk Simpan Draf atas lembar `perlu_revisi`. Sekarang (keputusan pemilik proyek)
+> keduanya dikosongkan hanya saat lembar dikirim (`menunggu_approval`); draft yang membawa
+> catatan tetap membawanya. Rincian: `docs/BACA-DULU-BACKEND.md` entri 15 Okt. Sisi mobile
+> (menampilkan catatan di draft): branch mobile `fix/draf-sinkron-saran`.
 
 ## 5. TITS & TIDS satu pintu
 

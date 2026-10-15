@@ -398,7 +398,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### Tambahan di luar kontrak
 > - **`status: "draft"` boleh dikirim di `POST`** — buat "simpan dulu, lanjut nanti". Kalau nggak dikirim, sesi langsung masuk antrean approval (`menunggu_approval`), sesuai contoh kamu.
-> - **`PUT /api/calibrations/{id}`** — teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau nerusin draft. Body-nya sama kayak `POST`. Tanpa ini, tombol "reject" jadi jalan buntu: teknisi dikasih catatan revisi tapi nggak bisa ngapa-ngapain. Sesi yang udah `disetujui` **nggak bisa** diubah (`422`) — angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah diam-diam.
+> - **`PUT /api/calibrations/{id}`** — teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau nerusin draft. Body-nya sama kayak `POST`. Tanpa ini, tombol "reject" jadi jalan buntu: teknisi dikasih catatan revisi tapi nggak bisa ngapa-ngapain. `catatan_revisi` & `revisi_field` cuma dikosongkan kalau kiriman berakhir `menunggu_approval`; `status: "draft"` mempertahankan keduanya (15 Okt 2026 — sebelumnya dikosongkan di tiap simpan, termasuk draft). Sesi yang udah `disetujui` **nggak bisa** diubah (`422`) — angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah diam-diam.
 > - **Tabel kosong untuk sesi yang sudah punya pembacaan → `422` (baru 25 Sep 2026).** `measurements: []`, atau tabel yang tidak menghasilkan satu baris pun (mis. semua sel kosong), ditolak dengan `errors.measurements` — **tidak ada yang dihapus**. Dulu kiriman begitu menghapus seluruh pembacaan secara permanen dengan jawaban `200`. Untuk simpan bagian atas lembar saja, jangan kirim kunci `measurements` sama sekali. Sieve dan alat berblok lain yang datanya di `spesifikasi_alat` tidak terpengaruh: yang diukur hasil susunannya, bukan isi array.
 > - **Kiriman ganda berbarengan dengan `client_request_id` sama → `200` replay (baru 25 Sep 2026).** Dulu yang kalah balapan dijawab `500` padahal datanya sudah tersimpan satu.
 > - **Field bonus di response** (superset, aman diabaikan): `nomor_sesi` (`KAL/2026/07/0001`), `standar_acuan`, `suhu_ruang`, `kelembaban`, `lokasi`, `sertifikat`, dan **`titik`** — rincian tiap titik ukur. Mobile udah nampilin ini di layar Detail Hasil Kalibrasi (`lib/screens/history/calibration_detail_screen.dart`), sinkron sama `CalibrationResource::toArray()`.
@@ -993,7 +993,10 @@ dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.
     dari akun non-admin **dibuang diam-diam** (bukan 422), di `POST` maupun `PUT` —
     sama dengan `POST /calibrations`. Dari admin, dua field ketidakpastian divalidasi
     `numeric|min:0`.
-  - `catatan_revisi` & `revisi_field` dikosongkan, sama dengan `PUT /calibrations/{id}`.
+  - `catatan_revisi` & `revisi_field` dikosongkan **hanya kalau kiriman berakhir
+    `menunggu_approval`**; `status: "draft"` (mis. Simpan Draf revisi lembar
+    `perlu_revisi`) mempertahankan keduanya. Sama dengan `PUT /calibrations/{id}`.
+    Sebelum 15 Okt 2026 keduanya dikosongkan di tiap `PUT` yang berhasil.
   - `meta.belum_dihitung` selalu `[]` (Autoklaf tidak punya titik GUM); kuncinya ada
     supaya bentuknya sama dengan `PUT /calibrations/{id}`. `POST` tidak membawa `meta`.
 
@@ -1311,6 +1314,13 @@ dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 { "catatan_revisi": "Titik ukur 100mm cuma 2 pembacaan, minimal 3." }
 ```
 Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal nampilin catatan ini ke teknisi.
+
+Umur catatannya (15 Okt 2026): `catatan_revisi` & `revisi_field` **bertahan** selama
+teknisi menyimpan revisinya sebagai draft (`PUT … status: "draft"` → sesi `draft` yang
+masih membawa catatan), dan baru dikosongkan saat lembar dikirim ulang
+(`menunggu_approval`) atau disetujui. Berlaku sama di `PUT /calibrations/{id}` dan
+`PUT /calibrations/autoclave/{id}`. Jadi `catatan_revisi` terisi **tidak** berarti
+statusnya `perlu_revisi` — draft juga bisa membawanya.
 
 `409` (baru 1 Okt 2026) = sesi ini barusan sudah diputus lewat permintaan lain (mis. admin lain menyetujuinya). Tidak ada yang berubah; muat ulang detail sesinya.
 

@@ -54,6 +54,32 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 15 Oktober 2026 — Simpan Draf revisi tidak lagi menghapus `catatan_revisi`
+
+**Status: di-merge ke `main` 15 Okt 2026 (branch `fix/catatan-revisi-draf`). Gate MySQL penuh belum dijalankan untuk perubahan ini.**
+Keputusan pemilik proyek 15 Okt 2026.
+
+**Masalahnya:** `PUT /calibrations/{id}` dan `PUT /calibrations/autoclave/{id}`
+mengosongkan `catatan_revisi` & `revisi_field` di TIAP simpan yang berhasil — termasuk
+Simpan Draf pertama atas lembar `perlu_revisi`. Teguran admin dan sorotan kolomnya
+hilang sebelum teknisi selesai membetulkan.
+
+**Sekarang:** keduanya dikosongkan hanya kalau hasil simpannya `menunggu_approval`
+(dikirim). Simpan draft mempertahankannya, jadi sesi `draft` bisa membawa
+`catatan_revisi`. Satu aturan, satu tempat: `CalibrationController::bersihkanCatatanRevisi()`,
+dipanggil dari `tutupPengisian()` (jalur generik) dan `perbaruiAutoclave()` — dua
+tempat yang memutus status kiriman. Approve (API & panel) tetap mengosongkan, tidak
+berubah.
+
+Yang diperiksa tidak bergantung pada pengosongan saat simpan: `PemisahanWewenang`
+(cuma membaca penanda `CATATAN_KOREKSI_PEMBACAAN` di `audit_logs`),
+`RiwayatPersetujuanSesi` (memutar ulang `audit_logs`; alasan dibaca saat status
+menjadi `perlu_revisi`), dan jejak revisi pembacaan di `update()` (membaca
+`catatan_revisi` SEBELUM simpan). Dijaga `CalibrationTest` dan `AutoclaveUpdateTest`.
+Mobile yang menampilkan catatan di draft: branch mobile `fix/draf-sinkron-saran`.
+
+---
+
 ## 15 Oktober 2026 — `PUT /calibrations/autoclave/{id}`: draft Autoklaf tidak lagi dobel (LIVE)
 
 **Status: live di produksi 15 Okt 2026.** `main` `56668b1` = PR #235 (`b8b2ca0` +

@@ -404,10 +404,15 @@ bukan Simpan Draf.
 Tiap kiriman yang berakhir `menunggu_approval` memicu efek yang sama dengan `POST`:
 admin dikabari dan lembar diarsip ke folder PT.
 
-**`catatan_revisi` & `revisi_field` dikosongkan** di tiap `PUT` yang berhasil —
-termasuk Simpan Draf pertama atas lembar `perlu_revisi`. Kalau layar revisi
-menyorot kolom dari `revisi_field`, simpan catatannya di sisi HP sebelum menyimpan;
-sesudah `PUT`, server tidak memulangkannya lagi.
+**`catatan_revisi` & `revisi_field` dikosongkan HANYA saat lembar dikirim**
+(hasilnya `menunggu_approval`). Simpan Draf atas lembar `perlu_revisi` (hasilnya
+`draft`) **mempertahankan keduanya**, begitu juga simpan draft berikutnya — jadi
+sesi `draft` bisa membawa `catatan_revisi` dan `revisi_field`, dan layar revisi
+tetap bisa menyorot kolomnya sesudah `PUT` draft. Keduanya baru hilang di kiriman
+yang masuk antrean approval. (Sebelum 15 Okt 2026 keduanya dikosongkan di tiap
+`PUT` yang berhasil, termasuk Simpan Draf pertama; celah itu sudah ditutup,
+keputusan pemilik proyek 15 Okt 2026. Aturannya sama persis dengan
+`PUT /calibrations/{id}`.)
 
 Sesinya dikunci (`lockForUpdate`) selama simpan, dan status dibaca dari baris yang
 terkunci — approve yang balapan dengan `PUT` tidak bisa membuat sesi `disetujui`
