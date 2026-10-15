@@ -73,7 +73,6 @@ class MatriksIzin
         'penugasan.lihat' => ['GET', 'api/penugasan'],
         'penugasan.buat' => ['POST', 'api/penugasan'],
         'penugasan.lapor-progres' => ['PATCH', 'api/penugasan/item/{penugasanItem}'],
-        'kalibrasi.tolak' => ['POST', 'api/calibrations/{calibration}/reject'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],
 
         // --- permintaan kalibrasi dari pelanggan (admin & super admin, K-49-14)

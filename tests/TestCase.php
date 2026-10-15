@@ -111,6 +111,42 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Sesi yang DIKEMBALIKAN ke teknisi seperti sebelum Tolak dicabut (K-50-01).
+     *
+     * `POST /calibrations/{c}/reject` sudah tidak ada, tapi sesi `perlu_revisi`
+     * lama masih ada di data produksi dan teknisi masih harus bisa mengirimnya
+     * ulang. Test jalur lama itu menanam keadaannya langsung lewat model (jadi
+     * jejak audit status `menunggu_approval` -> `perlu_revisi` tetap tercatat,
+     * persis yang dibaca `RiwayatPersetujuanSesi`), bukan lewat rute yang dicabut.
+     *
+     * @param  array<int, string>|null  $kolom
+     */
+    protected function sesiPerluRevisiLama(
+        CalibrationSession|int|string $sesi,
+        string $catatan,
+        ?array $kolom = null,
+        ?User $oleh = null,
+    ): CalibrationSession {
+        // Selalu dibaca segar: instance milik test bisa basi (status lama), dan
+        // audit mencatat status asal dari instance yang di-update.
+        $model = CalibrationSession::query()->findOrFail($sesi instanceof CalibrationSession ? $sesi->getKey() : $sesi);
+
+        if ($oleh !== null) {
+            $this->actingAs($oleh, 'sanctum');
+        }
+
+        $model->update([
+            'status' => CalibrationSession::STATUS_PERLU_REVISI,
+            'reviewed_by' => $oleh?->id,
+            'reviewed_at' => now(),
+            'catatan_revisi' => $catatan,
+            'revisi_field' => $kolom === null || $kolom === [] ? null : array_values($kolom),
+        ]);
+
+        return $model->fresh();
+    }
+
+    /**
      * Order Number diisi Master Data sebelum sesi disetujui.
      *
      * Sejak K-49-14 (15 Okt 2026) `approve()` menolak sesi tanpa Order Number

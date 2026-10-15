@@ -137,11 +137,7 @@ class CalibrationTest extends TestCase
         // Sesi yang masih `menunggu_approval` NGGAK bisa di-PUT — cuma draft
         // dan `perlu_revisi` yang boleh. Jadi jalur revisinya mesti lewat
         // penolakan admin dulu, dan itu justru skenario yang mau diuji.
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => 'Suhu awalnya di luar rentang IK, ulangi.',
-            ])
-            ->assertOk();
+        $this->sesiPerluRevisiLama($sesi, 'Suhu awalnya di luar rentang IK, ulangi.', null, $this->admin);
 
         // Lembar yang ditolak lalu dikirim ulang manggil penautan lagi. Satu
         // sesi mesti tetap satu entri — kalau nambah tiap revisi, folder PT
@@ -401,23 +397,21 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
+        // K-50-01 (15 Okt 2026): Tolak dicabut. Dulu test ini menegaskan
+        // `catatan_revisi` wajib di reject; sekarang rutenya tidak ada sama
+        // sekali. Penjaga lengkapnya di `TolakDicabutTest`.
         $this->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/reject", [])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('catatan_revisi');
+            ->assertNotFound();
     }
 
     public function test_sesi_yang_ditolak_bisa_direvisi_teknisi_lalu_disubmit_ulang(): void
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => 'Titik ukur 50mm cuma 3 pembacaan, tambahin jadi 5.',
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', CalibrationSession::STATUS_PERLU_REVISI)
-            ->assertJsonPath('data.catatan_revisi', 'Titik ukur 50mm cuma 3 pembacaan, tambahin jadi 5.');
+        // Sesi `perlu_revisi` lama (sebelum Tolak dicabut) tetap bisa dikirim ulang.
+        $lama = $this->sesiPerluRevisiLama($sesi, 'Titik ukur 50mm cuma 3 pembacaan, tambahin jadi 5.', null, $this->admin);
+        $this->assertSame(CalibrationSession::STATUS_PERLU_REVISI, $lama->status);
 
         $this->actingAs($this->teknisi)
             ->putJson("/api/calibrations/{$sesi->id}", $this->payload([
@@ -440,16 +434,7 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => $catatan,
-                'revisi_field' => $kolom,
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', CalibrationSession::STATUS_PERLU_REVISI)
-            ->assertJsonPath('data.revisi_field', $kolom);
-
-        return $sesi->fresh();
+        return $this->sesiPerluRevisiLama($sesi, $catatan, $kolom, $this->admin);
     }
 
     public function test_simpan_draf_revisi_mempertahankan_catatan_dan_kolom_revisi_sampai_dikirim(): void

@@ -164,19 +164,20 @@ class SuperAdminSemuaAksiTest extends TestCase
         $this->assertNotSame($teknisi, $super);
     }
 
-    public function test_super_admin_menolak_sesi_teknisi(): void
+    /**
+     * Dulu test ini "super admin menolak sesi teknisi" (`reject`). K-50-01
+     * (15 Okt 2026) mencabut Tolak: super admin mengoreksi lewat `PUT` seperti
+     * Master Data. Rute reject sendiri dijaga `TolakDicabutTest`.
+     */
+    public function test_super_admin_mengoreksi_sesi_teknisi_lewat_put_bukan_menolak(): void
     {
         $sesi = $this->bikinSesiAutoklaf($this->teknisi);
 
         $this->actingAs($this->super, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => 'Pembacaan disk 2 tidak terbaca jelas, ulangi.',
-            ])
-            ->assertOk();
+            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Ulangi.'])
+            ->assertNotFound();
 
-        $segar = $sesi->fresh();
-        $this->assertSame(CalibrationSession::STATUS_PERLU_REVISI, $segar->status);
-        $this->assertSame($this->super->id, (int) $segar->reviewed_by);
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
     }
 
     public function test_super_admin_menyetujui_sesi_teknisi(): void
@@ -432,9 +433,6 @@ class SuperAdminSemuaAksiTest extends TestCase
             ->patchJson("/api/calibrations/{$sesi->id}/admin", ['nomor_order' => 'ORD/LAIN'])
             ->assertNotFound();
         $this->setujui($sesi, $superLabLain)->assertNotFound();
-        $this->actingAs($superLabLain, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Coba tolak dari lab lain.'])
-            ->assertNotFound();
 
         // Payload-nya sah untuk lab SENDIRI (alatnya milik lab lain itu) —
         // supaya yang menolak penyaring organisasi sesinya, bukan validasi

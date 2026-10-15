@@ -20,7 +20,6 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluDisahkan;
-use App\Notifications\SesiPerluRevisi;
 use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
@@ -539,7 +538,8 @@ class CalibrationController extends Controller
 
             // Sesi yang sedang ANTRE approval nggak mundur jadi draft lewat
             // simpan: dia hilang diam-diam dari antrean admin. Mengembalikan
-            // lembar itu tugas `reject()`, bukan tombol Simpan Draf. (Yang bisa
+            // lembar tidak ada lagi (Tolak dicabut, K-50-01): Master Data
+            // mengoreksi lembarnya sendiri. (Yang bisa
             // sampai sini dengan status itu cuma admin — teknisi sudah ditolak
             // `penolakanStatusUbah`.) `perlu_revisi` → draft TETAP boleh, sama
             // kayak `update()`: teknisi yang merevisi lembar yang dikembalikan
@@ -550,7 +550,7 @@ class CalibrationController extends Controller
             ) {
                 throw new HttpResponseException(response()->json([
                     'message' => 'Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. '
-                        .'Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak.',
+                        .'Simpan tanpa `status: draft` — Master Data mengoreksi lembarnya langsung, tidak lagi mengembalikannya ke teknisi.',
                 ], 422));
             }
 
@@ -932,7 +932,7 @@ class CalibrationController extends Controller
         // teknisi nggak.
         //
         // Sebelum ini status itu ngunci semua orang, jadi admin yang nemu satu
-        // angka keliru waktu review cuma punya satu jalan: `reject()` — lembar
+        // angka keliru waktu review cuma punya satu jalan: Tolak — lembar
         // balik ke teknisi, teknisi benerin, submit ulang, admin review lagi.
         // Buat salah ketik satu digit, itu muter-muter dan bikin lembar bolak-balik
         // cuma buat perbaikan yang admin sendiri udah tahu benernya.
@@ -1573,91 +1573,11 @@ class CalibrationController extends Controller
         ]);
     }
 
-    /** Admin doang (dijaga `role:admin` di routes). */
-    public function reject(Request $request, CalibrationSession $calibration): JsonResponse
-    {
-        $this->pastikanSatuOrganisasi($request, $calibration);
-
-        $data = $request->validate([
-            // `max:2000`: kolomnya `text` (64 KB) — tanpa batas, teks yang lebih
-            // panjang jadi 500 di MySQL strict, bukan 422 yang terbaca.
-            'catatan_revisi' => ['required', 'string', 'min:5', 'max:2000'],
-            // Kode kolom yang diminta dibetulin, mis. `alat_serial_number`.
-            // Opsional: nolak tanpa nunjuk kolom tertentu tetap sah ("hasilnya
-            // nggak masuk akal, ulangi seluruh titik 7").
-            //
-            // Selain kode kolom, daftar ini juga nerima kode SEL —
-            // `sel:sesudah_adjustment:1412:pembacaan:3` — yang nunjuk satu
-            // kotak di tabel pengukuran. Bentuknya di [KodeSelRevisi], dan
-            // `max:64` di bawah itu batas yang dipatuhi pembuatnya.
-            //
-            // Ini yang bikin penolakan berhenti jadi "ulangi tabelnya": admin
-            // nandain angka yang salah, sisanya tetap berdiri di layar teknisi.
-            // Sebelum ini yang bisa dilakuin cuma nulis prosa dan berharap
-            // teknisi nemu kotaknya pakai mata — atau nandai seluruh tabel, yang
-            // ujungnya teknisi ngetik ulang angka yang udah bener dan bikin
-            // salah ketik BARU di sesi revisi.
-            //
-            // Sengaja NGGAK divalidasi terhadap daftar kolom yang ada. Yang
-            // ngirim ini layar admin yang bentuk formulirnya juga dari backend,
-            // jadi kode asing artinya formulirnya berubah — dan kalau itu bikin
-            // 422, admin keblokir nolak gara-gara hal yang bukan urusannya.
-            // Efek terburuk dari kode yang nggak dikenal cuma: nggak ada kolom
-            // yang kesorot, prosa catatannya tetap kebaca.
-            'revisi_field' => ['sometimes', 'nullable', 'array', 'max:40'],
-            'revisi_field.*' => ['required', 'string', 'max:64'],
-        ], [
-            'catatan_revisi.required' => 'Catatan revisi wajib diisi — teknisi perlu tahu apa yang harus dibenerin.',
-        ]);
-
-        if ($calibration->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
-            return response()->json([
-                'message' => 'Cuma sesi yang statusnya `menunggu_approval` yang bisa ditolak.',
-            ], 422);
-        }
-
-        $field = array_values(array_unique($data['revisi_field'] ?? []));
-
-        // Status diperiksa ULANG di bawah lock, bukan cuma di atas (temuan B08,
-        // paket 30 Sep). Admin yang layarnya basi bisa menekan Tolak tepat
-        // sesudah admin lain menyetujui: pemeriksaan di atas membaca model yang
-        // dimuat SEBELUM persetujuan itu, lalu `update()` polos menimpanya jadi
-        // `perlu_revisi` sementara job sertifikat sudah jalan. Penjaga di
-        // `CalibrationSession::booted()` tidak menolong — dia membaca status
-        // asli di memori. Lewat model (bukan query builder) supaya `Diaudit`
-        // tetap mencatat penolakannya; pola yang sama dengan aksi Setujui panel.
-        $ditolak = DB::transaction(function () use ($calibration, $request, $data, $field): bool {
-            $terkini = CalibrationSession::whereKey($calibration->id)->lockForUpdate()->first();
-
-            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
-                return false;
-            }
-
-            $terkini->update([
-                'status' => CalibrationSession::STATUS_PERLU_REVISI,
-                'reviewed_by' => $request->user()->id,
-                'reviewed_at' => now(),
-                'catatan_revisi' => $data['catatan_revisi'],
-                'revisi_field' => $field === [] ? null : $field,
-            ]);
-
-            return true;
-        });
-
-        if (! $ditolak) {
-            return response()->json([
-                'message' => 'Sesi ini barusan sudah diputus lewat permintaan lain. Muat ulang halamannya.',
-            ], 409);
-        }
-
-        $segar = $calibration->fresh()->load(self::RELASI);
-        $this->kabarinTeknisi($segar, SesiPerluRevisi::dariSesi($segar));
-        $this->siarkan($segar, 'ditolak');
-
-        return response()->json([
-            'data' => new CalibrationResource($segar),
-        ]);
-    }
+    // `reject()` DICABUT (K-50-01, 15 Okt 2026). Master Data tidak lagi
+    // mengembalikan lembar ke teknisi: dia mengoreksinya sendiri lewat
+    // `update()` / `perbaruiAutoclave()` (alasan wajib, jejak lama -> baru,
+    // asli teknisi tetap di `input_asli`) lalu menyetujui. Sesi lama yang
+    // sudah `perlu_revisi` tetap bisa dikirim ulang teknisi.
 
     /**
      * Riwayat persetujuan sesi: tiap penolakan (alasan, kolom yang ditandai,

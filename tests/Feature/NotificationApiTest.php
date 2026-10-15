@@ -101,22 +101,6 @@ class NotificationApiTest extends TestCase
         $this->assertContains('sertifikat_terbit', $kategori);
     }
 
-    public function test_teknisi_dikabarin_lengkap_dengan_catatan_waktu_sesinya_ditolak(): void
-    {
-        $sesi = $this->submitSesi();
-
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => 'Titik 50mm tambahin jadi 5 pembacaan.',
-            ])->assertOk();
-
-        $this->actingAs($this->teknisi)
-            ->getJson('/api/notifications?belum_dibaca=1')
-            ->assertOk()
-            ->assertJsonPath('data.0.kategori', 'sesi_perlu_revisi')
-            ->assertJsonFragment(['isi' => $sesi->fresh()->nomor_sesi.' dikembalikan admin. Titik 50mm tambahin jadi 5 pembacaan.']);
-    }
-
     public function test_penghitung_belum_dibaca_dan_tandai_sudah_dibaca(): void
     {
         $this->submitSesi();

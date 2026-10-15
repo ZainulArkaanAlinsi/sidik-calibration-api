@@ -32,7 +32,9 @@ use Tests\TestCase;
  *    Kode yang kepotong masih kelihatan sah tapi nunjuk sel yang beda.
  * 3. Temuan validator yang nunjuk satu pembacaan bawa `kode_sel`-nya sendiri,
  *    supaya layar admin bisa nawarin "tandai yang ini" sekali ketuk.
- * 4. `reject` beneran nyimpen kode sel apa adanya, dan mulanginnya di respons.
+ * 4. (Dicabut 15 Okt 2026, K-50-01: `reject` tidak ada lagi, jadi tidak ada jalur
+ *    yang menulis kode sel baru. Kolom `revisi_field` lama tetap terbaca di
+ *    sesi `perlu_revisi` yang sudah ada.)
  */
 class PenandaSelRevisiTest extends TestCase
 {
@@ -289,29 +291,4 @@ class PenandaSelRevisiTest extends TestCase
         }
     }
 
-    /** `reject` nerima & nyimpen kode sel, lalu mulanginnya utuh. */
-    public function test_reject_nyimpen_kode_sel(): void
-    {
-        $this->seed(DatabaseSeeder::class);
-
-        $sesi = CalibrationSession::where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
-            ->firstOrFail();
-
-        $admin = User::where('organization_id', $sesi->organization_id)
-            ->where('role', User::ROLE_ADMIN)
-            ->firstOrFail();
-
-        $kode = KodeSelRevisi::buat('sesudah_adjustment', 1412.0, 'pembacaan', 3);
-
-        $revisi = $this->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => 'Repeat 3 di titik 1412 komanya kegeser — yang lain udah bener.',
-                'revisi_field' => [$kode, 'alat_serial_number'],
-            ])
-            ->assertOk()
-            ->json('data.revisi_field');
-
-        $this->assertContains($kode, $revisi);
-        $this->assertContains('alat_serial_number', $revisi);
-    }
 }

@@ -636,7 +636,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
         Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
-        Route::post('/calibrations/{calibration}/reject', [CalibrationController::class, 'reject']);
+        // `POST /calibrations/{calibration}/reject` DICABUT (K-50-01, 15 Okt
+        // 2026): Master Data tidak lagi mengembalikan lembar ke teknisi — dia
+        // mengoreksinya sendiri lewat `PUT` (alasan wajib, jejak lama → baru)
+        // lalu menyetujui. Sesi lama `perlu_revisi` tetap bisa dikirim teknisi.
         // Tarik pengajuan sendiri, selama pengesah belum mengesahkan. Janji yang
         // dibeli gerbang pengesahan: "masih bisa dibalik" — ditepati tanpa
         // urusan ISO 17025 §7.8.8 karena sertifikatnya belum pernah ada. Sesudah

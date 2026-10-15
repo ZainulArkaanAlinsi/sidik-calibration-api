@@ -72,26 +72,6 @@ class RealtimeSyncTest extends TestCase
         );
     }
 
-    public function test_reject_menyiarkan_sinyal_ditolak(): void
-    {
-        $sesi = CalibrationSession::factory()->create([
-            'teknisi_id' => $this->teknisi->id,
-            'equipment_id' => $this->alat->id,
-            'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
-        ]);
-
-        Event::fake([PerubahanDataOrganisasi::class]);
-
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Tolong perbaiki.'])
-            ->assertOk();
-
-        Event::assertDispatched(
-            PerubahanDataOrganisasi::class,
-            fn (PerubahanDataOrganisasi $e): bool => $e->aksi === 'ditolak' && $e->id === $sesi->id,
-        );
-    }
-
     public function test_event_broadcast_ke_channel_privat_organisasi(): void
     {
         $event = new PerubahanDataOrganisasi(7, 'sertifikat', 'diterbitkan', 42);

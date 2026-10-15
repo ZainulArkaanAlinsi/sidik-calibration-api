@@ -160,9 +160,8 @@ class AdminFieldSeparationTest extends TestCase
             ->patchJson("/api/calibrations/{$sesi->id}/admin", ['nomor_order' => '2405.13.A'])
             ->assertOk();
 
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Tambahin pembacaan.'])
-            ->assertOk();
+        // Keadaan lama (K-50-01: Tolak dicabut, tapi sesi `perlu_revisi` lama masih ada).
+        $this->sesiPerluRevisiLama($sesi, 'Tambahin pembacaan.', null, $this->admin);
 
         // Teknisi ngerjain ulang — payload-nya nggak pernah bawa nomor order,
         // jadi yang udah diisi admin harus tetap utuh.

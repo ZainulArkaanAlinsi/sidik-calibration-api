@@ -344,58 +344,8 @@ class CalibrationSessionsTable
                         Notification::make()->title('Sesi disetujui. Sertifikat sedang diterbitkan.')->success()->send();
                     }),
 
-                // Reject → perlu_revisi + catatan buat teknisi.
-                Action::make('reject')
-                    ->label('Tolak')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    // `HakTulisPanel` = super admin melihat sesinya, nggak
-                    // memutuskannya. Menyetujui berarti menerbitkan sertifikat
-                    // berlogo akreditasi, dan K4 belum turun.
-                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
-                        && HakTulisPanel::boleh())
-                    ->schema([
-                        Textarea::make('catatan_revisi')
-                            ->label('Catatan revisi')
-                            ->required()
-                            ->minLength(5)
-                            // Sama dengan API (`max:2000`): kolom `text`.
-                            ->maxLength(2000)
-                            ->helperText('Teknisi perlu tahu apa yang harus dibenerin.'),
-                    ])
-                    ->action(function (CalibrationSession $record, array $data): void {
-                        // Diperiksa ulang di bawah lock — kelas bug yang sama
-                        // dengan B08 di API: layar basi menolak sesi yang barusan
-                        // disetujui admin lain dan menurunkannya ke `perlu_revisi`.
-                        $ditolak = DB::transaction(function () use ($record, $data): bool {
-                            $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
-
-                            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
-                                return false;
-                            }
-
-                            $terkini->update([
-                                'status' => CalibrationSession::STATUS_PERLU_REVISI,
-                                'reviewed_by' => User::yangLogin()?->id,
-                                'reviewed_at' => now(),
-                                'catatan_revisi' => $data['catatan_revisi'],
-                            ]);
-
-                            return true;
-                        });
-
-                        if (! $ditolak) {
-                            Notification::make()
-                                ->title('Sesi ini barusan sudah diputus lewat permintaan lain.')
-                                ->body('Muat ulang halamannya.')
-                                ->warning()
-                                ->send();
-
-                            return;
-                        }
-
-                        Notification::make()->title('Sesi dikembalikan ke teknisi buat revisi.')->warning()->send();
-                    }),
+                // Tolak (reject) DICABUT (K-50-01, 15 Okt 2026): Master Data
+                // mengoreksi lembar sendiri di aplikasi lalu menyetujui.
             ]);
     }
 

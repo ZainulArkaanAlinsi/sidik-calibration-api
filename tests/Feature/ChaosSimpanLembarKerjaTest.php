@@ -176,9 +176,7 @@ class ChaosSimpanLembarKerjaTest extends TestCase
         $sesi = $this->buatSesi();
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->status);
 
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Pembacaan kedua janggal, cek ulang.'])
-            ->assertOk();
+        $this->sesiPerluRevisiLama($sesi, 'Pembacaan kedua janggal, cek ulang.', null, $this->admin);
 
         $this->actingAs($this->teknisi)->putJson("/api/calibrations/{$sesi->id}", $this->payload([
             'measurements' => [
@@ -203,9 +201,7 @@ class ChaosSimpanLembarKerjaTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => 'Nomor seri alat salah ketik.'])
-            ->assertOk();
+        $this->sesiPerluRevisiLama($sesi, 'Nomor seri alat salah ketik.', null, $this->admin);
 
         $this->actingAs($this->teknisi)
             ->putJson("/api/calibrations/{$sesi->id}", $this->payload())

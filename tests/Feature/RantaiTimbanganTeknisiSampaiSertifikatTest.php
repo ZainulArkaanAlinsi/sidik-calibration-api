@@ -250,11 +250,7 @@ class RantaiTimbanganTeknisiSampaiSertifikatTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        $this->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesiId}/reject", [
-                'catatan_revisi' => 'Beban eksentrisitas belum dicatat.',
-            ])
-            ->assertOk();
+        $this->sesiPerluRevisiLama($sesiId, 'Beban eksentrisitas belum dicatat.', null, $admin);
 
         $this->assertFalse(
             Certificate::where('calibration_session_id', $sesiId)->exists(),

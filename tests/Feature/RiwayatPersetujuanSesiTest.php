@@ -10,7 +10,6 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
-use App\Support\RiwayatPersetujuanSesi;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -55,12 +54,9 @@ class RiwayatPersetujuanSesiTest extends TestCase
 
     private function tolak(User $admin, CalibrationSession $sesi, string $alasan, ?array $kolom = null): void
     {
-        $this->actingAs($admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/reject", array_filter([
-                'catatan_revisi' => $alasan,
-                'revisi_field' => $kolom,
-            ], fn ($v) => $v !== null))
-            ->assertOk();
+        // Tolak dicabut (K-50-01); riwayat penolakan lama tetap harus terbaca,
+        // jadi keadaannya ditanam lewat model (audit status tetap tercatat).
+        $this->sesiPerluRevisiLama($sesi, $alasan, $kolom, $admin);
     }
 
     /** Teknisi mengirim ulang — lewat model, persis jalur `update()` controller. */
@@ -186,31 +182,6 @@ class RiwayatPersetujuanSesiTest extends TestCase
     }
 
     /**
-     * Kebanyakan penolakan lewat panel, bukan API. Tombol Tolak panel menulis
-     * lewat model juga — kalau suatu saat diganti query builder, baris audit
-     * tidak lahir dan riwayatnya bolong tanpa error.
-     */
-    public function test_penolakan_lewat_panel_masuk_riwayat(): void
-    {
-        [, $admin, , $sesi] = $this->siapkan();
-
-        Livewire::actingAs($admin)
-            ->test(ListCalibrationSessions::class)
-            ->callAction(TestAction::make('reject')->table($sesi), ['catatan_revisi' => 'ALASAN DARI PANEL'])
-            ->assertHasNoFormErrors();
-
-        $this->assertSame(CalibrationSession::STATUS_PERLU_REVISI, $sesi->fresh()->status, 'Prasyarat: panel benar-benar menolak.');
-
-        $tolak = array_values(array_filter(
-            RiwayatPersetujuanSesi::untuk($sesi->fresh()),
-            fn (array $p): bool => $p['jenis'] === 'ditolak',
-        ));
-        $this->assertCount(1, $tolak);
-        $this->assertSame('ALASAN DARI PANEL', $tolak[0]['alasan']);
-        $this->assertSame('Admin Pemeriksa', $tolak[0]['oleh']['nama']);
-    }
-
-    /**
      * Modal panel membaca kunci dari pembaca riwayat — satu nama kunci meleset
      * membuatnya kosong di produksi tanpa error di test rute.
      */
@@ -226,15 +197,5 @@ class RiwayatPersetujuanSesiTest extends TestCase
             ->mountAction(TestAction::make('riwayat')->table($sesi->fresh()))
             ->assertSuccessful()
             ->assertMountedActionModalSee(['ALASAN LAMA YANG DITIMPA', 'ALASAN TERBARU', 'Ditolak 2 kali']);
-    }
-
-    public function test_alasan_lebih_dari_2000_karakter_ditolak_422(): void
-    {
-        [, $admin, , $sesi] = $this->siapkan();
-
-        $this->actingAs($admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/reject", ['catatan_revisi' => str_repeat('a', 2001)])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('catatan_revisi');
     }
 }

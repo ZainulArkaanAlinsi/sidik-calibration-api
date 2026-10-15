@@ -433,20 +433,12 @@ class AutoclaveUpdateTest extends TestCase
         $this->assertSame([121.10, 121.40, 121.05, 121.45, 121.20], $sesi->hasil_autoclave['lembar']['suhu']['disk'][0]);
     }
 
-    /** Lembar terkirim yang dikembalikan admin lewat `reject()` sungguhan, dengan kolom yang ditandai. */
+    /** Lembar terkirim yang dikembalikan admin (keadaan lama; Tolak dicabut K-50-01), dengan kolom yang ditandai. */
     private function ditolakAdmin(string $catatan, array $kolom): CalibrationSession
     {
         $sesi = $this->kirimanTeknisi();
 
-        $this->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/reject", [
-                'catatan_revisi' => $catatan,
-                'revisi_field' => $kolom,
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', CalibrationSession::STATUS_PERLU_REVISI);
-
-        return $sesi->fresh();
+        return $this->sesiPerluRevisiLama($sesi, $catatan, $kolom, $this->admin);
     }
 
     public function test_simpan_draf_revisi_mempertahankan_catatan_dan_kolom_revisi_sampai_dikirim(): void
@@ -516,7 +508,7 @@ class AutoclaveUpdateTest extends TestCase
             ->assertJsonPath(
                 'message',
                 'Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. '
-                    .'Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak.',
+                    .'Simpan tanpa `status: draft` — Master Data mengoreksi lembarnya langsung, tidak lagi mengembalikannya ke teknisi.',
             );
 
         $sesi = $antre->fresh();
