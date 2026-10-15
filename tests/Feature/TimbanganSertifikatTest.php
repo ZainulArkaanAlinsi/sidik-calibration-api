@@ -69,7 +69,7 @@ class TimbanganSertifikatTest extends TestCase
             return $ada;
         }
 
-        $this->sebagaiPemeriksaLain($sesi)
+        $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -129,7 +129,7 @@ class TimbanganSertifikatTest extends TestCase
         // Peringatan `keterulangan_kosong` menahan approve sekali — itu memang
         // maunya. Admin melewatinya secara SADAR, dan di sini test berperan
         // sebagai admin itu.
-        $this->sebagaiPemeriksaLain($sesi)
+        $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

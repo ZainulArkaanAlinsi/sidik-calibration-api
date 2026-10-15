@@ -122,7 +122,7 @@ class AutoclaveCertificateTest extends TestCase
         $this->assertTrue($sesi->uncertaintyCalculations()->doesntExist());
         $this->assertTrue($sesi->adalahAutoclave());
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -137,7 +137,7 @@ class AutoclaveCertificateTest extends TestCase
     {
         $sesi = $this->sesiTersimpan();
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -180,7 +180,7 @@ class AutoclaveCertificateTest extends TestCase
     {
         $sesi = $this->sesiTersimpan();
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -199,7 +199,7 @@ class AutoclaveCertificateTest extends TestCase
     {
         $sesi = $this->sesiTersimpan();
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 

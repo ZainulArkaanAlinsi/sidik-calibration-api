@@ -68,7 +68,7 @@ class CertificateGenerationTest extends TestCase
         Storage::fake('local');
         $sesi = $this->buatSesiMenungguApproval();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk()
             // `certificate_id` udah keisi di respons approve-nya sendiri —
@@ -101,7 +101,7 @@ class CertificateGenerationTest extends TestCase
 
         // Request-nya SENGAJA dari host lain — persis kejadian di lapangan:
         // admin approve dari HP/laptop lewat IP LAN.
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->withServerVariables(['HTTP_HOST' => '192.168.1.8:8000'])
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();

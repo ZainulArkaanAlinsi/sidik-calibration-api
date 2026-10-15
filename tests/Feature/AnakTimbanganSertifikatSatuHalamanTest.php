@@ -130,7 +130,7 @@ class AnakTimbanganSertifikatSatuHalamanTest extends TestCase
         );
 
         $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
-        $this->actingAs($admin)
+        $this->denganOrderNumber($id)->actingAs($admin)
             ->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

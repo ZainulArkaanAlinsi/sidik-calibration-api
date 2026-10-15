@@ -101,7 +101,7 @@ class PenahananKeputusanTmTest extends TestCase
         }
 
         // Tidak ada "setujui tetap" untuk ini.
-        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
+        $this->denganOrderNumber($sesi->id)->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertStatus(422);
         $this->assertNull($sesi->fresh()->certificate()->first());

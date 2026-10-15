@@ -549,7 +549,7 @@ class LembarKerjaTest extends TestCase
             ->assertCreated();
 
         $sesi = CalibrationSession::latest('id')->firstOrFail();
-        $this->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
 
         $nama = array_column($sesi->fresh()->certificate->snapshot['standar_digunakan'], 'name');
 
@@ -582,12 +582,12 @@ class LembarKerjaTest extends TestCase
         $this->assertContains('titik_tidak_terhitung', array_column($temuan, 'kode'));
 
         // Peringatan, bukan error: admin boleh lanjut kalau memang disadari.
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
     }

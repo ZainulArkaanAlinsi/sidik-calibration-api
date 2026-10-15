@@ -444,7 +444,7 @@ class SpectrophotometerApiTest extends TestCase
 
         $this->assertSame('PT. Niaga Contoh', $sesi->lokasi_nama);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
             ->assertOk();
 
@@ -502,7 +502,7 @@ class SpectrophotometerApiTest extends TestCase
     {
         $sesi = $this->simpanSesi();
 
-        $temuan = $this->actingAs($this->admin)
+        $temuan = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson('/api/calibrations/'.$sesi->id.'/approve')
             ->assertOk()
             ->json('validasi.temuan');
@@ -530,7 +530,7 @@ class SpectrophotometerApiTest extends TestCase
     {
         $sesi = $this->simpanSesi();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
             ->assertOk();
 
@@ -803,7 +803,7 @@ class SpectrophotometerApiTest extends TestCase
     {
         $sesi = $this->simpanSesi();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
@@ -836,7 +836,7 @@ class SpectrophotometerApiTest extends TestCase
     {
         $sesi = $this->simpanSesi();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
@@ -927,7 +927,7 @@ class SpectrophotometerApiTest extends TestCase
             ->assertOk()
             ->json('data.titik');
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

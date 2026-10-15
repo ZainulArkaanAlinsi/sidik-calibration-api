@@ -98,7 +98,7 @@ class SertifikatTitikSebagianTest extends TestCase
         $kode = array_column($v['temuan'] ?? [], 'kode');
         $this->assertNotContains('titik_belum_dihitung', $kode);
 
-        $this->actingAs($admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

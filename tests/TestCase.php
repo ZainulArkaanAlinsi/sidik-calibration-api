@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
@@ -107,5 +108,29 @@ abstract class TestCase extends BaseTestCase
             ]);
 
         return $this->actingAs($pemeriksa);
+    }
+
+    /**
+     * Order Number diisi Master Data sebelum sesi disetujui.
+     *
+     * Sejak K-49-14 (15 Okt 2026) `approve()` menolak sesi tanpa Order Number
+     * (`422 nomor_order_wajib`), sementara kiriman teknisi untuk kolom itu
+     * dibuang server — jadi sesi yang dibuat lewat API teknisi atau seeder
+     * contoh selalu kosong. Test yang tidak sedang menguji Order Number
+     * memanggil ini sebelum approve, persis langkah Master Data di lab.
+     *
+     * Cuma mengisi yang KOSONG (nilai yang sengaja disetel test tidak
+     * ditimpa), dan lewat query builder tanpa `updated_at` supaya jejak audit
+     * & stempel waktu yang diuji test tidak bertambah. Yang menguji Order
+     * Number sendiri: `SuperAdminSemuaAksiTest`.
+     */
+    protected function denganOrderNumber(int|string $sesiId): static
+    {
+        DB::table('calibration_sessions')
+            ->where('id', $sesiId)
+            ->where(fn ($q) => $q->whereNull('nomor_order')->orWhere('nomor_order', ''))
+            ->update(['nomor_order' => 'ORD/UJI/'.$sesiId]);
+
+        return $this;
     }
 }

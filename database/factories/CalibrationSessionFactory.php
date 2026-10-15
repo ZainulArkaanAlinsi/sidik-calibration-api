@@ -25,6 +25,10 @@ class CalibrationSessionFactory extends Factory
             'status' => CalibrationSession::STATUS_DISETUJUI,
             'keputusan' => 'PASS',
             'tanggal_kalibrasi' => now()->subDay(),
+            // Sejak K-49-14 approve menolak sesi tanpa Order Number. Sesi
+            // factory mewakili lembar yang sudah dilengkapi Master Data; test
+            // yang justru menguji "belum diisi" menimpanya dengan null.
+            'nomor_order' => fn () => fake()->numerify('ORD/UJI/#####'),
         ];
     }
 }

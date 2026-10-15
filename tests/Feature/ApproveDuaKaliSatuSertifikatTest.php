@@ -126,7 +126,7 @@ class ApproveDuaKaliSatuSertifikatTest extends TestCase
 
     private function setujui(): TestResponse
     {
-        return $this->actingAs($this->admin)->postJson(
+        return $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
             ['abaikan_peringatan' => true],
         );

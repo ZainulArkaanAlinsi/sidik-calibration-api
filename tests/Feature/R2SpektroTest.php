@@ -232,7 +232,7 @@ class R2SpektroTest extends TestCase
         // ke rentang alat yang kesimpen dalam nm (200–700). Itu batasan satu
         // kolom rentang buat alat dua besaran, bukan salah data — `boleh_terbit`
         // tetap true. Lihat catatan `range_min/max` di SpectrophotometerSeeder.
-        $this->actingAs($admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

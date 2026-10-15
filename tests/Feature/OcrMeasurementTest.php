@@ -221,7 +221,7 @@ class OcrMeasurementTest extends TestCase
         Queue::fake();
         $sesi = $this->submitOcr();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422);
 
@@ -241,7 +241,7 @@ class OcrMeasurementTest extends TestCase
         $this->assertSame(0, $sesi->rawMeasurements()->where('is_verified', false)->count());
 
         Queue::fake();
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -269,7 +269,7 @@ class OcrMeasurementTest extends TestCase
 
         // Masih ada 1 yang belum → approve tetap ketahan.
         $this->assertSame(1, $sesi->rawMeasurements()->where('is_verified', false)->count());
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422);
     }

@@ -223,7 +223,7 @@ class CalibrationTest extends TestCase
         $this->assertNull($sesi->keputusan);
 
         // Penjagaannya pindah ke penerbitan: sertifikat nggak bisa terbit.
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
             ->assertJsonPath('validasi.boleh_terbit', false);
@@ -252,7 +252,7 @@ class CalibrationTest extends TestCase
         $sesi = CalibrationSession::latest('id')->firstOrFail();
         $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
 
-        $respons = $this->actingAs($this->admin)
+        $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422);
 
@@ -363,7 +363,7 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI);
@@ -375,7 +375,7 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->teknisi)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->teknisi)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertForbidden();
     }
@@ -390,7 +390,7 @@ class CalibrationTest extends TestCase
 
         // FAIL itu temuan yang sah — sertifikatnya tetap terbit, isinya "tidak
         // laik pakai". Jangan diblokir di backend.
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI)
@@ -529,7 +529,7 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
 
         // Sertifikatnya udah terbit — angka yang dipegang pelanggan nggak boleh
         // berubah diam-diam. Kalau salah, terbitin revisi, bukan edit sesi.
@@ -546,7 +546,7 @@ class CalibrationTest extends TestCase
         $this->assertNull($sesi->submitted_at);
 
         // Draft belum masuk antrean approval, jadi admin nggak bisa nyetujuin.
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422);
 

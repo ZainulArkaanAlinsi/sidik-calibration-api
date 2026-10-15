@@ -287,6 +287,26 @@ class CalibrationSession extends Model
         ];
     }
 
+    /** Kode 422 waktu sesi disetujui tanpa Order Number (K-49-14). Dibaca aplikasi — jaga stabil. */
+    public const KODE_NOMOR_ORDER_WAJIB = 'nomor_order_wajib';
+
+    public const PESAN_NOMOR_ORDER_WAJIB = 'Order Number belum diisi. Master Data (atau super admin) wajib '
+        .'mengisinya di Data administrasi sebelum sesi disetujui — nomor itu tercetak di sertifikat.';
+
+    /**
+     * Order Number kosong atau cuma spasi?
+     *
+     * Satu penjaga untuk dua pintu persetujuan — `CalibrationController::approve()`
+     * dan tombol Setujui panel — supaya tidak ada pintu yang meloloskan sesi
+     * tanpa Order Number sementara pintu lain menahannya. Nilainya diisi Master
+     * Data atau super admin (teknisi dibuang di `prepareForValidation()`), jadi
+     * sesi yang kosong berarti pemeriksa belum melengkapinya, bukan teknisi lalai.
+     */
+    public function nomorOrderKosong(): bool
+    {
+        return trim((string) $this->nomor_order) === '';
+    }
+
     /**
      * Titik ukur yang NENTUIN hasil sesi: yang marginnya paling mepet ke batas
      * toleransi (|error| + U terbesar).

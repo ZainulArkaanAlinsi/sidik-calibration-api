@@ -94,7 +94,7 @@ class CalibrationValidationTest extends TestCase
         // jadi yang nyala `pembacaan_mentah_hilang`, bukan `hitung_ulang_beda`.
         $sesi->rawMeasurements()->delete();
 
-        $respons = $this->actingAs($this->admin)
+        $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true);
@@ -121,7 +121,7 @@ class CalibrationValidationTest extends TestCase
         // alat FAIL kelihatan PASS di sertifikat.
         $sesi->uncertaintyCalculations()->update(['ketidakpastian_diperluas' => 0.0001]);
 
-        $respons = $this->actingAs($this->admin)
+        $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true)
@@ -149,7 +149,7 @@ class CalibrationValidationTest extends TestCase
         $sesi = $this->buatSesi();
         $sesi->uncertaintyCalculations()->update(['ketidakpastian_diperluas' => 0.0001]);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI);
@@ -163,7 +163,7 @@ class CalibrationValidationTest extends TestCase
         // pembulatan. Nggak boleh bisa di-abaikan.
         $sesi->uncertaintyCalculations()->update(['koreksi' => 999]);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertStatus(422)
             ->assertJsonPath('validasi.boleh_terbit', false);
@@ -176,7 +176,7 @@ class CalibrationValidationTest extends TestCase
         // Satu titik FAIL harusnya bikin seluruh sesi FAIL.
         $sesi->uncertaintyCalculations()->update(['keputusan' => 'FAIL']);
 
-        $respons = $this->actingAs($this->admin)
+        $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertStatus(422);
 
@@ -203,7 +203,7 @@ class CalibrationValidationTest extends TestCase
         $this->assertNotEmpty($info);
         $this->assertTrue($respons->json('data.boleh_terbit'));
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
     }
@@ -212,7 +212,7 @@ class CalibrationValidationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
 
         $validasi = $sesi->fresh()->certificate()->firstOrFail()->validasi;
 

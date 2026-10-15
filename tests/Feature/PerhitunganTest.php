@@ -242,7 +242,7 @@ class PerhitunganTest extends TestCase
         // Average 54,5 + koreksi (−2,55) = 51,95 — persis contoh di spesifikasi.
         $this->assertEqualsWithDelta(51.95, $sesi->fresh()->kelembaban, 1e-9);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

@@ -108,7 +108,7 @@ class CertificateSnapshotTest extends TestCase
             'kelembaban_ketidakpastian' => 5.7,
         ])->assertOk();
 
-        $this->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();
     }

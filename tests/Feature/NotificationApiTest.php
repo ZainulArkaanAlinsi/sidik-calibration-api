@@ -89,7 +89,7 @@ class NotificationApiTest extends TestCase
     {
         $sesi = $this->submitSesi();
 
-        $this->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
 
         $kategori = array_column(
             $this->actingAs($this->teknisi)->getJson('/api/notifications')->json('data'),

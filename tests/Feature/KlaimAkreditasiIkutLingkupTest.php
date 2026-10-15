@@ -158,7 +158,7 @@ class KlaimAkreditasiIkutLingkupTest extends TestCase
     {
         $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
 
-        $this->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail()->snapshot;

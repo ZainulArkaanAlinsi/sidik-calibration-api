@@ -176,7 +176,7 @@ class SinkronJadwalAlatTest extends TestCase
         $sesi = $this->sesiAutoklaf($tanggalKalibrasi);
         $pilihanAdmin = now()->addMonths(18)->toDateString();
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => $pilihanAdmin])
             ->assertOk();
 
@@ -192,7 +192,7 @@ class SinkronJadwalAlatTest extends TestCase
         $tanggalKalibrasi = now()->subDays(3)->toDateString();
         $sesi = $this->sesiAutoklaf($tanggalKalibrasi);
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -418,7 +418,7 @@ class SinkronJadwalAlatTest extends TestCase
             }
         });
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => now()->addMonths(18)->toDateString()]);
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
@@ -446,7 +446,7 @@ class SinkronJadwalAlatTest extends TestCase
             }
         });
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$sesi->id}/approve");
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();

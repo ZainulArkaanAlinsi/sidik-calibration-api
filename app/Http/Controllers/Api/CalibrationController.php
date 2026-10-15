@@ -1229,6 +1229,22 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Order Number wajib sebelum disetujui (K-49-14, 15 Okt 2026). Nomor itu
+        // tercetak di sertifikat dan diisi Master Data/super admin, bukan
+        // teknisi — sesi yang sampai di sini tanpa nomor berarti pemeriksa
+        // belum melengkapi Data administrasi. Ditahan di sini, sebelum validator
+        // berat jalan, supaya pesannya menunjuk tindakan yang benar. Panel
+        // memakai penjaga yang sama (`nomorOrderKosong()`).
+        if ($calibration->nomorOrderKosong()) {
+            return response()->json([
+                'message' => CalibrationSession::PESAN_NOMOR_ORDER_WAJIB,
+                'kode' => CalibrationSession::KODE_NOMOR_ORDER_WAJIB,
+                // Bentuk galat validasi Laravel, supaya form yang sudah membaca
+                // `errors.<kolom>` langsung menyorot kotak Order Number.
+                'errors' => ['nomor_order' => [CalibrationSession::PESAN_NOMOR_ORDER_WAJIB]],
+            ], 422);
+        }
+
         // Masa berlaku sertifikat itu keputusan admin, bukan angka mati di kode:
         // interval kalibrasi beda-beda per jenis alat & permintaan pelanggan.
         // Kalau nggak dikirim, dipakai default masa berlaku organisasi.

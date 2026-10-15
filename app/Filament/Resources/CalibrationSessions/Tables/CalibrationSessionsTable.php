@@ -202,6 +202,23 @@ class CalibrationSessionsTable
                             return;
                         }
 
+                        // Order Number wajib — penjaga yang SAMA dengan API
+                        // (K-49-14). Tanpa ini panel jadi pintu yang meloloskan
+                        // sesi yang di HP ditahan.
+                        if ($record->nomorOrderKosong()) {
+                            // Panel tidak punya kotak isiannya (cuma daftar
+                            // sesi), jadi pesannya menunjuk ke aplikasi.
+                            Notification::make()
+                                ->title('Order Number belum diisi.')
+                                ->body(CalibrationSession::PESAN_NOMOR_ORDER_WAJIB
+                                    ."\n\nIsi lewat aplikasi (kartu Data administrasi pada sesi ini), lalu setujui lagi.")
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
                         $hasil = $validator->periksa($record);
 
                         if (! $hasil['boleh_terbit']) {

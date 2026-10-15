@@ -116,7 +116,7 @@ class AlurPenuhWaktuFrekuensiTest extends TestCase
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->status);
 
         // === 2. Admin menyetujui ===========================================
-        $this->actingAs($admin)
+        $this->denganOrderNumber($id)->actingAs($admin)
             ->postJson('/api/calibrations/'.$id.'/approve', ['abaikan_peringatan' => true])
             ->assertOk();
 

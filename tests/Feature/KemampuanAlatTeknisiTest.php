@@ -437,12 +437,12 @@ class KemampuanAlatTeknisiTest extends TestCase
             'Sesi yang pakai nama alat tanpa CMC nggak kelihatan waktu admin meriksa.',
         );
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true);
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

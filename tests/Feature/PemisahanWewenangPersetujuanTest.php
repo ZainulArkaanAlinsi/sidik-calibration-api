@@ -240,6 +240,11 @@ class PemisahanWewenangPersetujuanTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        return CalibrationSession::findOrFail($id);
+        // Order Number diisi Master Data — kiriman teknisi untuk kolom itu
+        // dibuang, dan sejak K-49-14 approve tanpa Order Number = 422.
+        $sesi = CalibrationSession::findOrFail($id);
+        $sesi->forceFill(['nomor_order' => 'ORD/UJI/0001'])->save();
+
+        return $sesi;
     }
 }

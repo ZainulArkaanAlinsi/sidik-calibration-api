@@ -97,6 +97,8 @@ class ChaosTerbitSertifikatTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
+        // Order Number diisi Master Data (K-49-14); kiriman teknisi dibuang.
+        $this->denganOrderNumber($id);
         $this->sesi = CalibrationSession::findOrFail($id);
     }
 
@@ -119,7 +121,7 @@ class ChaosTerbitSertifikatTest extends TestCase
         Queue::fake();
         $berlaku = now()->addMonths(7)->toDateString();
 
-        $this->actingAs($this->admin)->postJson(
+        $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
             ['abaikan_peringatan' => true, 'berlaku_sampai' => $berlaku],
         )->assertOk();
@@ -192,7 +194,7 @@ class ChaosTerbitSertifikatTest extends TestCase
             'queue.default' => 'rusak',
         ]);
 
-        $respons = $this->actingAs($this->admin)->postJson(
+        $respons = $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
             ['abaikan_peringatan' => true],
         );
@@ -225,7 +227,7 @@ class ChaosTerbitSertifikatTest extends TestCase
     {
         Queue::fake();
 
-        $this->actingAs($this->admin)->postJson(
+        $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
             ['abaikan_peringatan' => true],
         )->assertOk();

@@ -335,7 +335,7 @@ class SertifikatSpektroCocokMasterTest extends TestCase
         // `abaikan_peringatan`: titik %T (0–100) diadu ke rentang alat yang
         // kesimpen dalam nm (200–700). Batasan satu kolom rentang buat alat dua
         // besaran, bukan salah data — lihat `SpectrophotometerSeeder`.
-        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
+        $this->denganOrderNumber($sesi->id)->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

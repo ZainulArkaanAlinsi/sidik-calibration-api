@@ -147,7 +147,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $sesi = $this->sesiMenungguApproval('2026-07-20');
         Queue::fake();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => '2028-03-31'])
             ->assertOk()
             ->assertJsonPath('data.certificate_id', null);
@@ -171,7 +171,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $sesi = $this->sesiMenungguApproval('2026-07-20');
         Queue::fake();
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk()
             ->assertJsonPath('data.certificate_id', null);
@@ -187,7 +187,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
         foreach (['2026-07-20', '2026-07-19', '2020-01-01'] as $ditolak) {
-            $this->actingAs($this->admin)
+            $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
                 ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => $ditolak])
                 ->assertStatus(422)
                 ->assertJsonValidationErrors('berlaku_sampai');
@@ -202,7 +202,7 @@ class MasaBerlakuSertifikatTest extends TestCase
     {
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
-        $this->actingAs($this->admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", [
                 'berlaku_sampai' => now()->addYears(11)->toDateString(),
             ])
@@ -215,7 +215,7 @@ class MasaBerlakuSertifikatTest extends TestCase
     {
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
-        $this->actingAs($this->teknisi)
+        $this->denganOrderNumber($sesi->id)->actingAs($this->teknisi)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => '2030-01-01'])
             ->assertForbidden();
     }

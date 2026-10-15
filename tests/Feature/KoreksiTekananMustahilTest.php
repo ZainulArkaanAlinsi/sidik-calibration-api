@@ -138,7 +138,7 @@ class KoreksiTekananMustahilTest extends TestCase
         $this->assertContains('koreksi_tekanan_mustahil', array_column($this->temuanValidasi($id), 'kode'));
 
         // Sebelum ditambal, ini 200 dan sertifikatnya terbit.
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$id}/approve")
             ->assertStatus(422);
 
@@ -153,7 +153,7 @@ class KoreksiTekananMustahilTest extends TestCase
             ->postJson('/api/calibrations/autoclave', $this->payload([0.112, 0.111, 0.112, 0.113, 0.112]))
             ->json('data.id');
 
-        $this->actingAs($this->admin, 'sanctum')
+        $this->denganOrderNumber($id)->actingAs($this->admin, 'sanctum')
             ->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
     }

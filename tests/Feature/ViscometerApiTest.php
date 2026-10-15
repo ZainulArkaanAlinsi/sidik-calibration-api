@@ -451,7 +451,7 @@ class ViscometerApiTest extends TestCase
             'role' => User::ROLE_ADMIN,
         ]);
 
-        $this->actingAs($admin)
+        $this->denganOrderNumber($sesi->id)->actingAs($admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
