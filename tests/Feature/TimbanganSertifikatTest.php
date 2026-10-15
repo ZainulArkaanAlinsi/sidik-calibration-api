@@ -70,7 +70,7 @@ class TimbanganSertifikatTest extends TestCase
         }
 
         $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();
@@ -130,7 +130,7 @@ class TimbanganSertifikatTest extends TestCase
         // maunya. Admin melewatinya secara SADAR, dan di sini test berperan
         // sebagai admin itu.
         $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $sertifikat = $sesi->fresh()->certificate()->firstOrFail();

@@ -123,7 +123,7 @@ class AutoclaveCertificateTest extends TestCase
         $this->assertTrue($sesi->adalahAutoclave());
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
@@ -138,7 +138,7 @@ class AutoclaveCertificateTest extends TestCase
         $sesi = $this->sesiTersimpan();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         $snapshot = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail()->snapshot;
@@ -181,7 +181,7 @@ class AutoclaveCertificateTest extends TestCase
         $sesi = $this->sesiTersimpan();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
@@ -200,7 +200,7 @@ class AutoclaveCertificateTest extends TestCase
         $sesi = $this->sesiTersimpan();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();

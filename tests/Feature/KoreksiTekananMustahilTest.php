@@ -139,7 +139,7 @@ class KoreksiTekananMustahilTest extends TestCase
 
         // Sebelum ditambal, ini 200 dan sertifikatnya terbit.
         $this->denganOrderNumber($id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$id}/approve")
+            ->postJson("/api/calibrations/{$id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
 
         $this->assertDatabaseMissing('certificates', ['calibration_session_id' => $id]);
@@ -154,7 +154,7 @@ class KoreksiTekananMustahilTest extends TestCase
             ->json('data.id');
 
         $this->denganOrderNumber($id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
     }
 }

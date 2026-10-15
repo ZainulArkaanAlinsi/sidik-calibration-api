@@ -68,7 +68,7 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         $sesi = $this->bikinSesi($this->adminA);
 
         $this->actingAs($this->adminA, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertStatus(422)
             ->assertJsonPath('kode', 'pemisahan_wewenang')
             ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI);
@@ -102,7 +102,7 @@ class PemisahanWewenangPersetujuanTest extends TestCase
         ]);
 
         $this->actingAs($this->adminA, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $sesi->fresh()->status);
@@ -120,7 +120,7 @@ class PemisahanWewenangPersetujuanTest extends TestCase
             ->assertJsonPath('meta.diverifikasi', 1);
 
         $this->actingAs($this->adminA, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertStatus(422)
             ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_MEMVERIFIKASI_OCR);
     }

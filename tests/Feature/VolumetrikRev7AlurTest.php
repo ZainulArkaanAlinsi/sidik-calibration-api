@@ -500,7 +500,7 @@ class VolumetrikRev7AlurTest extends TestCase
     private function terbitkan(CalibrationSession $sesi): Certificate
     {
         $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();

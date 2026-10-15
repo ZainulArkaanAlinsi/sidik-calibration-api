@@ -95,7 +95,7 @@ class CalibrationValidationTest extends TestCase
         $sesi->rawMeasurements()->delete();
 
         $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true);
 
@@ -122,7 +122,7 @@ class CalibrationValidationTest extends TestCase
         $sesi->uncertaintyCalculations()->update(['ketidakpastian_diperluas' => 0.0001]);
 
         $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true)
             ->assertJsonPath('validasi.valid', false);
@@ -150,7 +150,7 @@ class CalibrationValidationTest extends TestCase
         $sesi->uncertaintyCalculations()->update(['ketidakpastian_diperluas' => 0.0001]);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI);
     }
@@ -164,7 +164,7 @@ class CalibrationValidationTest extends TestCase
         $sesi->uncertaintyCalculations()->update(['koreksi' => 999]);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertStatus(422)
             ->assertJsonPath('validasi.boleh_terbit', false);
     }
@@ -177,7 +177,7 @@ class CalibrationValidationTest extends TestCase
         $sesi->uncertaintyCalculations()->update(['keputusan' => 'FAIL']);
 
         $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertStatus(422);
 
         $this->assertContains(
@@ -204,7 +204,7 @@ class CalibrationValidationTest extends TestCase
         $this->assertTrue($respons->json('data.boleh_terbit'));
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
     }
 
@@ -212,7 +212,7 @@ class CalibrationValidationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])->assertOk();
 
         $validasi = $sesi->fresh()->certificate()->firstOrFail()->validasi;
 

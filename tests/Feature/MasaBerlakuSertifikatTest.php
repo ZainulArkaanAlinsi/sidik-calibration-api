@@ -148,7 +148,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         Queue::fake();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => '2028-03-31'])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => '2028-03-31'])
             ->assertOk()
             ->assertJsonPath('data.certificate_id', null);
 
@@ -172,7 +172,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         Queue::fake();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk()
             ->assertJsonPath('data.certificate_id', null);
 
@@ -188,7 +188,7 @@ class MasaBerlakuSertifikatTest extends TestCase
 
         foreach (['2026-07-20', '2026-07-19', '2020-01-01'] as $ditolak) {
             $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-                ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => $ditolak])
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => $ditolak])
                 ->assertStatus(422)
                 ->assertJsonValidationErrors('berlaku_sampai');
         }
@@ -203,7 +203,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", [
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(),
                 'berlaku_sampai' => now()->addYears(11)->toDateString(),
             ])
             ->assertStatus(422)
@@ -216,7 +216,7 @@ class MasaBerlakuSertifikatTest extends TestCase
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->teknisi)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => '2030-01-01'])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => '2030-01-01'])
             ->assertForbidden();
     }
 

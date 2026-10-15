@@ -128,7 +128,7 @@ class ApproveDuaKaliSatuSertifikatTest extends TestCase
     {
         return $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
-            ['abaikan_peringatan' => true],
+            ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true],
         );
     }
 

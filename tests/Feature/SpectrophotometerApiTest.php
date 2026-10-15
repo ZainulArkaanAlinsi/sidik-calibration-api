@@ -445,7 +445,7 @@ class SpectrophotometerApiTest extends TestCase
         $this->assertSame('PT. Niaga Contoh', $sesi->lokasi_nama);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $snapshot = Certificate::where('calibration_session_id', $sesi->id)
@@ -503,7 +503,7 @@ class SpectrophotometerApiTest extends TestCase
         $sesi = $this->simpanSesi();
 
         $temuan = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson('/api/calibrations/'.$sesi->id.'/approve')
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk()
             ->json('validasi.temuan');
 
@@ -531,7 +531,7 @@ class SpectrophotometerApiTest extends TestCase
         $sesi = $this->simpanSesi();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $hasil = collect(
@@ -804,7 +804,7 @@ class SpectrophotometerApiTest extends TestCase
         $sesi = $this->simpanSesi();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $snapshot = Certificate::latest('id')->firstOrFail()->snapshot;
@@ -837,7 +837,7 @@ class SpectrophotometerApiTest extends TestCase
         $sesi = $this->simpanSesi();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $snapshot = Certificate::latest('id')->firstOrFail()->snapshot;
@@ -928,7 +928,7 @@ class SpectrophotometerApiTest extends TestCase
             ->json('data.titik');
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $snapshot = Certificate::latest('id')->firstOrFail()->snapshot;

@@ -37,7 +37,7 @@ class BerkasPdfSertifikatTest extends TestCase
         $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
 
         $this->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();

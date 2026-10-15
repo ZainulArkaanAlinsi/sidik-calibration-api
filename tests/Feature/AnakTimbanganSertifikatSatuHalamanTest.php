@@ -131,7 +131,7 @@ class AnakTimbanganSertifikatSatuHalamanTest extends TestCase
 
         $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
         $this->denganOrderNumber($id)->actingAs($admin)
-            ->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $sertifikat = CalibrationSession::findOrFail($id)->certificate()->first();

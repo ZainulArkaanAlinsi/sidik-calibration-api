@@ -222,7 +222,7 @@ class OcrMeasurementTest extends TestCase
         $sesi = $this->submitOcr();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
 
         // Sertifikat nggak boleh kegenerate; sinyal broadcast realtime boleh jalan.
@@ -242,7 +242,7 @@ class OcrMeasurementTest extends TestCase
 
         Queue::fake();
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         // Render PDF berjalan di worker supaya request approve tetap cepat.
@@ -270,7 +270,7 @@ class OcrMeasurementTest extends TestCase
         // Masih ada 1 yang belum → approve tetap ketahan.
         $this->assertSame(1, $sesi->rawMeasurements()->where('is_verified', false)->count());
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
     }
 

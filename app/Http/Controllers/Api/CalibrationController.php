@@ -38,10 +38,12 @@ use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
+use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Services\TarikSertifikat;
 use App\Support\AnakTimbanganMentah;
 use App\Support\BandingkanLembar;
 use App\Support\DialIndicatorMentah;
@@ -1257,6 +1259,30 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // No. Sertifikat diketik Master Data/super admin saat Setujui (K-50-04,
+        // K-50-13) — penomoran otomatis tinggal untuk data lama & seeder. Dicek
+        // SEBELUM validator berat jalan, dan sebelum status berubah: nomor yang
+        // salah/bentrok tidak boleh menghabiskan persetujuan. Pengecualian: sesi
+        // yang sertifikatnya ditarik (K-50-03) terbit ulang otomatis sebagai
+        // `<nomor>-R<n>`, jadi tidak ada nomor yang diketik.
+        $dasarTarikan = TarikSertifikat::yangDitarik($calibration);
+        $nomorSertifikat = null;
+
+        if ($dasarTarikan === null) {
+            $galatNomor = NomorSertifikat::periksa($calibration->organization_id, $request->input('nomor_sertifikat'));
+
+            if ($galatNomor !== null) {
+                return response()->json([
+                    'message' => $galatNomor['pesan'],
+                    'kode' => $galatNomor['kode'],
+                    'errors' => ['nomor_sertifikat' => [$galatNomor['pesan']]],
+                    ...(isset($galatNomor['sertifikat']) ? ['sertifikat' => $galatNomor['sertifikat']] : []),
+                ], 422);
+            }
+
+            $nomorSertifikat = trim((string) $request->input('nomor_sertifikat'));
+        }
+
         // Masa berlaku sertifikat itu keputusan admin, bukan angka mati di kode:
         // interval kalibrasi beda-beda per jenis alat & permintaan pelanggan.
         // Kalau nggak dikirim, dipakai default masa berlaku organisasi.
@@ -1356,6 +1382,8 @@ class CalibrationController extends Controller
             $calibration->id,
             $request->user()->id,
             $berlakuSampaiDiminta,
+            $nomorSertifikat,
+            $dasarTarikan?->id,
         );
 
         // Status sesi SUDAH di-commit `disetujui` di atas. Antrean yang menolak

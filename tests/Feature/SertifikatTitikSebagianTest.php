@@ -99,7 +99,7 @@ class SertifikatTitikSebagianTest extends TestCase
         $this->assertNotContains('titik_belum_dihitung', $kode);
 
         $this->denganOrderNumber($sesi->id)->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         // Inti tes ini: tabel sertifikat ikut apa yang DIISI, bukan bentuk

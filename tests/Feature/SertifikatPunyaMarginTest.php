@@ -239,7 +239,7 @@ class SertifikatPunyaMarginTest extends TestCase
             return $ada;
         }
 
-        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true]);
+        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true]);
 
         return $sesi->fresh()->certificate()->first();
     }

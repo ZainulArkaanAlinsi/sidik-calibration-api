@@ -67,6 +67,7 @@ class CertificatesTable
                     Certificate::STATUS_TERBIT => 'Terbit',
                     Certificate::STATUS_GAGAL => 'Gagal',
                     Certificate::STATUS_DIBATALKAN => 'Dibatalkan',
+                    Certificate::STATUS_DITARIK => 'Ditarik',
                 ]),
                 // Sama kayak filter "Kadaluarsa" di resource Standards — sertifikat
                 // yang masa berlakunya lewat perlu gampang ditemukan biar pelanggan

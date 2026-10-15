@@ -187,7 +187,7 @@ class RantaiTimbanganTeknisiSampaiSertifikatTest extends TestCase
             ->assertJsonPath('data.id', $sesiId);
 
         $this->denganOrderNumber($sesiId)->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesiId}/approve")
+            ->postJson("/api/calibrations/{$sesiId}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         $sertifikat = Certificate::where('calibration_session_id', $sesiId)->firstOrFail();

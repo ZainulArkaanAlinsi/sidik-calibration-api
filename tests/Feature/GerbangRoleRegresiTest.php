@@ -112,12 +112,12 @@ class GerbangRoleRegresiTest extends TestCase
     public function test_approve_tetap_admin_doang(): void
     {
         $this->actingAs($this->orang(User::ROLE_ADMIN), 'sanctum')
-            ->postJson("/api/calibrations/{$this->sesi->id}/approve")
+            ->postJson("/api/calibrations/{$this->sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
 
         foreach ([User::ROLE_TEKNISI, User::ROLE_VIEWER] as $role) {
             $this->actingAs($this->orang($role), 'sanctum')
-                ->postJson("/api/calibrations/{$this->sesi->id}/approve")
+                ->postJson("/api/calibrations/{$this->sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
                 ->assertForbidden();
         }
     }

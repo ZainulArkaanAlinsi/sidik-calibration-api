@@ -233,7 +233,7 @@ class R2SpektroTest extends TestCase
         // kolom rentang buat alat dua besaran, bukan salah data — `boleh_terbit`
         // tetap true. Lihat catatan `range_min/max` di SpectrophotometerSeeder.
         $this->denganOrderNumber($sesi->id)->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();

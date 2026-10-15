@@ -61,7 +61,7 @@ class CertificateResource extends JsonResource
             // Cuma ada kalau PDF-nya emang udah jadi. Kalau `gagal`/`menunggu_generate`,
             // null — mobile munculin tombol retry, bukan tombol unduh. Yang
             // `dibatalkan` tetap punya tautan: arsip lab (D1), bukan dokumen sah.
-            'pdf_url' => in_array($this->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN], true)
+            'pdf_url' => in_array($this->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK], true)
                 ? route('certificates.download', $this->resource)
                 : null,
 

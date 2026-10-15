@@ -224,7 +224,7 @@ class WaktuFrekuensiSertifikatTest extends TestCase
 
         $sertifikat = $sesi->certificate()->first() ?? tap(null, function () use ($sesi) {
             $this->sebagaiPemeriksaLain($sesi)
-                ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
                 ->assertOk();
         }) ?? $sesi->fresh()->certificate()->firstOrFail();
 

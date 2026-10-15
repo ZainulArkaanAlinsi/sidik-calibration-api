@@ -117,7 +117,7 @@ class AlurPenuhWaktuFrekuensiTest extends TestCase
 
         // === 2. Admin menyetujui ===========================================
         $this->denganOrderNumber($id)->actingAs($admin)
-            ->postJson('/api/calibrations/'.$id.'/approve', ['abaikan_peringatan' => true])
+            ->postJson('/api/calibrations/'.$id.'/approve', ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         // === 3. Sertifikatnya terbit =======================================

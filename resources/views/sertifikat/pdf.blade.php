@@ -591,7 +591,27 @@
 @php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
 <body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
 @if ($web ?? false)
-    @if (($pengganti ?? null) !== null)
+    @if ($ditarik ?? false)
+        {{-- K-50-03: sertifikat ditarik ke lembar kerja untuk dikoreksi. Lembar
+             lama tampil sebagai RIWAYAT; penggantinya (`<nomor>-R<n>`) ditunjuk
+             kalau sudah terbit. Tanpa alasan penarikan (internal). --}}
+        <div class="bilah digantikan" role="status">
+            <div class="cap">Sertifikat ini ditarik</div>
+            <div class="ket">
+                @if (($pengganti ?? null) !== null)
+                    Digantikan oleh: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
+                @else
+                    Sertifikat pengganti sedang disiapkan. Hubungi laboratorium untuk informasi lebih lanjut.
+                @endif
+                Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
+            </div>
+            @if (($pengganti ?? null) !== null)
+                <div class="aksi">
+                    <a href="{{ route('verify', $pengganti->qr_token) }}">Buka yang berlaku</a>
+                </div>
+            @endif
+        </div>
+    @elseif (($pengganti ?? null) !== null)
         {{-- §38.2: kertas lama dipindai sesudah direvisi. Lembarnya tetap
              tampil sebagai RIWAYAT; yang berlaku ditunjuk dengan jelas. Tanpa
              alasan revisi apa pun (D4). --}}

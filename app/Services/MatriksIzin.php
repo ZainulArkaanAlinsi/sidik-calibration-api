@@ -78,6 +78,7 @@ class MatriksIzin
         'sertifikat.unduh' => ['GET', 'api/certificates/{certificate}/download'],
         'sertifikat.rekap-excel' => ['GET', 'api/certificates/export/excel'],
         'sertifikat.terbitkan-ulang' => ['POST', 'api/certificates/{certificate}/retry'],
+        'sertifikat.tarik' => ['POST', 'api/certificates/{certificate}/tarik'],
         'sertifikat.kirim' => ['POST', 'api/certificates/{certificate}/kirim-email'],
 
         // --- laporan

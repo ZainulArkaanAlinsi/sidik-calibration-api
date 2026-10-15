@@ -147,6 +147,21 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * No. Sertifikat unik untuk body `approve` (K-50-04, 15 Okt 2026).
+     *
+     * Sejak itu `approve()` menolak body tanpa `nomor_sertifikat` (422), dan
+     * penomoran otomatis tinggal untuk data lama & seeder. Test yang tidak
+     * sedang menguji penomoran menyisipkan nilai unik dari sini; penomoran
+     * sendiri dijaga `NomorSertifikatApproveTest`.
+     */
+    protected function nomorUji(): string
+    {
+        static $urut = 0;
+
+        return 'UJI/'.str_pad((string) ++$urut, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Order Number diisi Master Data sebelum sesi disetujui.
      *
      * Sejak K-49-14 (15 Okt 2026) `approve()` menolak sesi tanpa Order Number

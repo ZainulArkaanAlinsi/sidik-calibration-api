@@ -63,11 +63,18 @@ class GenerateCertificate implements ShouldQueue
     /**
      * @param  string|null  $berlakuSampai  Masa berlaku pilihan admin (`Y-m-d`).
      *                                      Null → pakai default masa berlaku organisasi.
+     * @param  string|null  $nomorSertifikat  No. Sertifikat yang diketik Master Data/super
+     *                                        admin saat Setujui (K-50-04). Null hanya untuk
+     *                                        data lama & seeder: penomoran otomatis.
+     * @param  int|null  $revisiDariId  Sertifikat `ditarik` yang digantikan (K-50-03):
+     *                                  terbit sebagai `<nomor>-R<n>` dengan `revision_of`.
      */
     public function __construct(
         public int $calibrationSessionId,
         public ?int $issuedBy = null,
         public ?string $berlakuSampai = null,
+        public ?string $nomorSertifikat = null,
+        public ?int $revisiDariId = null,
     ) {}
 
     public function handle(): void
@@ -95,11 +102,13 @@ class GenerateCertificate implements ShouldQueue
         // Penjagaan cepat di luar transaksi — nahan retry job yang jelas-jelas
         // sudah selesai tanpa membuka transaksi sama sekali. BUKAN penjagaan
         // yang sebenarnya: lihat lock di dalam transaksi di bawah.
-        if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
+        if ($this->sudahTerbit($sesi)) {
             return;
         }
 
-        $sertifikat = DB::transaction(function () use ($sesi): ?Certificate {
+        $dasar = $this->revisiDariId === null ? null : Certificate::query()->find($this->revisiDariId);
+
+        $sertifikat = DB::transaction(function () use ($sesi, $dasar): ?Certificate {
             // Penjagaan yang sebenarnya, dan sebabnya perlu dua.
             //
             // Penjagaan di atas cuma menahan sertifikat yang SUDAH `terbit` —
@@ -136,7 +145,7 @@ class GenerateCertificate implements ShouldQueue
             // dulu tidak terjadi: tanpa lock, dua transaksi sama-sama tidak
             // melihat baris apa pun di snapshot masing-masing dan sama-sama
             // menyisipkan.
-            if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
+            if ($this->sudahTerbit($sesi)) {
                 return null;
             }
 
@@ -162,14 +171,32 @@ class GenerateCertificate implements ShouldQueue
             // Dengan identitas yang dipakai ulang, dua pemanggil menghasilkan
             // PDF yang identik di jalur yang identik. Yang tersisa cuma
             // pekerjaan ganda, dan itu tidak merusak apa pun.
-            $sudahAda = $sesi->certificate()->first();
+            $sudahAda = $dasar !== null
+                ? Certificate::query()->where('calibration_session_id', $sesi->id)->where('revision_of', $dasar->id)->first()
+                : $sesi->certificate()->first();
 
-            $nomor = $sudahAda?->nomor ?: $this->nomorBerikutnya($sesi->organization_id);
+            $ke = $dasar === null ? 0 : ((int) $dasar->revisi_ke + 1);
+
+            // Urutan sumber nomor: baris yang sudah ada (retry) → nomor revisi
+            // `<dasar>-R<n>` (sertifikat ditarik, K-50-03) → nomor yang diketik
+            // admin (K-50-04) → penomoran otomatis, HANYA data lama & seeder.
+            $nomor = $sudahAda?->nomor
+                ?: ($dasar !== null
+                    ? Certificate::nomorDasar((string) $dasar->nomor).'-R'.$ke
+                    : ($this->nomorSertifikat ?: $this->nomorBerikutnya($sesi->organization_id)));
             $token = $sudahAda?->qr_token ?: $this->tokenUnik();
 
-            return $sesi->certificate()->updateOrCreate(
-                ['calibration_session_id' => $sesi->id],
+            $penulis = $dasar !== null ? Certificate::query() : $sesi->certificate();
+
+            return $penulis->updateOrCreate(
+                $dasar !== null
+                    ? ['calibration_session_id' => $sesi->id, 'revision_of' => $dasar->id]
+                    : ['calibration_session_id' => $sesi->id],
                 [
+                    ...($dasar !== null ? [
+                        'revisi_ke' => $ke,
+                        'alasan_revisi' => 'Sertifikat '.$dasar->nomor.' ditarik: '.$dasar->alasan_ditarik,
+                    ] : []),
                     'organization_id' => $sesi->organization_id,
                     'issued_by' => $this->issuedBy,
                     'nomor' => $nomor,
@@ -214,9 +241,23 @@ class GenerateCertificate implements ShouldQueue
             // Approve udah nahan yang fatal; yang nyampe sini paling banter
             // peringatan yang sengaja dilewatin admin — dan justru itu yang
             // paling penting ketinggalan jejaknya.
+            $snapshot = $snapshotBuilder->bangun($sesi, $sertifikat);
+
+            if ($dasar !== null) {
+                // Sama dengan `RevisiSertifikat::snapshotRevisi()`: lembar terbit ulang
+                // menyebut yang digantikannya. Angkanya dihitung ulang dari sesi yang
+                // sudah dikoreksi (bukan disalin), karena inilah alasan penarikan.
+                $snapshot['header']['catatan_revisi'] = "Revisi ke-{$sertifikat->revisi_ke}, menggantikan {$dasar->nomor}";
+                $snapshot['meta']['revisi'] = [
+                    'ke' => (int) $sertifikat->revisi_ke,
+                    'menggantikan' => $dasar->nomor,
+                    'kunci_berubah' => ['hasil_diterbitkan_ulang'],
+                ];
+            }
+
             $sertifikat->update([
                 'validasi' => $validator->periksa($sesi),
-                'snapshot' => $snapshotBuilder->bangun($sesi, $sertifikat),
+                'snapshot' => $snapshot,
             ]);
 
             // Bahannya dirakit `DataTampilanSertifikat`, bukan di sini — halaman
@@ -372,20 +413,43 @@ class GenerateCertificate implements ShouldQueue
             // kebetulan sedang membuat barisnya ditunggu, bukan ditabrak.
             $sesi = CalibrationSession::whereKey($this->calibrationSessionId)->lockForUpdate()->first();
 
-            if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI || $sesi->certificate()->exists()) {
+            $dasar = $this->revisiDariId === null ? null : Certificate::query()->find($this->revisiDariId);
+
+            $sudahAda = $dasar !== null
+                ? Certificate::query()->where('calibration_session_id', $this->calibrationSessionId)->where('revision_of', $dasar->id)->exists()
+                : $sesi?->certificate()->exists();
+
+            if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI || $sudahAda) {
                 return null;
             }
 
             $token = $this->tokenUnik();
 
-            return $sesi->certificate()->create([
+            $atribut = [
                 'organization_id' => $sesi->organization_id,
                 'issued_by' => $this->issuedBy,
                 'qr_token' => $token,
                 'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
                 'berlaku_sampai' => $this->berlakuSampai,
                 'status' => Certificate::STATUS_GAGAL,
-            ]);
+            ];
+
+            if ($dasar !== null) {
+                // Nomor revisi sudah pasti (`<dasar>-R<n>`) — dipegang barisnya supaya
+                // retry tidak mencari nomor lain.
+                return Certificate::query()->create([
+                    ...$atribut,
+                    'calibration_session_id' => $sesi->id,
+                    'revision_of' => $dasar->id,
+                    'revisi_ke' => (int) $dasar->revisi_ke + 1,
+                    'nomor' => Certificate::nomorDasar((string) $dasar->nomor).'-R'.((int) $dasar->revisi_ke + 1),
+                    'alasan_revisi' => 'Sertifikat '.$dasar->nomor.' ditarik: '.$dasar->alasan_ditarik,
+                ]);
+            }
+
+            // Nomor yang diketik admin (K-50-04) ikut disimpan: nomor manual
+            // sudah dipesan pemiliknya, tidak boleh hilang gara-gara antrean macet.
+            return $sesi->certificate()->create([...$atribut, 'nomor' => $this->nomorSertifikat]);
         });
 
         if ($sertifikat === null) {
@@ -491,6 +555,23 @@ class GenerateCertificate implements ShouldQueue
         $urutan = $terakhir ? ((int) substr($terakhir, -4)) + 1 : 1;
 
         return $prefix.str_pad((string) $urutan, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Sudah ada sertifikat `terbit` untuk penerbitan INI: yang asli, atau —
+     * kalau ini terbit ulang sesudah penarikan (K-50-03) — yang menggantikan
+     * [$revisiDariId].
+     */
+    private function sudahTerbit(CalibrationSession $sesi): bool
+    {
+        if ($this->revisiDariId !== null) {
+            return Certificate::query()
+                ->where('revision_of', $this->revisiDariId)
+                ->where('status', Certificate::STATUS_TERBIT)
+                ->exists();
+        }
+
+        return $sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists();
     }
 
     private function tokenUnik(): string

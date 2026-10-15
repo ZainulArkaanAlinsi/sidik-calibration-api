@@ -123,7 +123,7 @@ class ChaosTerbitSertifikatTest extends TestCase
 
         $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
-            ['abaikan_peringatan' => true, 'berlaku_sampai' => $berlaku],
+            ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true, 'berlaku_sampai' => $berlaku],
         )->assertOk();
 
         /** @var GenerateCertificate $job */
@@ -196,7 +196,7 @@ class ChaosTerbitSertifikatTest extends TestCase
 
         $respons = $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
-            ['abaikan_peringatan' => true],
+            ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true],
         );
 
         $this->sesi->refresh();
@@ -229,7 +229,7 @@ class ChaosTerbitSertifikatTest extends TestCase
 
         $this->denganOrderNumber($this->sesi->id)->actingAs($this->admin)->postJson(
             "/api/calibrations/{$this->sesi->id}/approve",
-            ['abaikan_peringatan' => true],
+            ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true],
         )->assertOk();
 
         $jejak = AuditLog::where('entity_type', 'calibration_sessions')

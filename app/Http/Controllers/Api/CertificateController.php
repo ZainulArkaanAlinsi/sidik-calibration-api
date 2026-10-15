@@ -16,11 +16,13 @@ use App\Services\PembatalanSertifikat;
 use App\Services\PenjagaOrganisasi;
 use App\Services\QrCodeGenerator;
 use App\Services\RevisiSertifikat;
+use App\Services\TarikSertifikat;
 use App\Support\Mailer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -174,6 +176,39 @@ class CertificateController extends Controller
         ]);
     }
 
+    /**
+     * TARIK sertifikat terbit ke lembar kerja (K-50-03). Alasan wajib + konfirmasi
+     * sandi pelaku (aksi ini menurunkan dokumen terakreditasi yang sudah terbit).
+     */
+    public function tarik(Request $request, Certificate $certificate, TarikSertifikat $tarik): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $certificate);
+
+        $data = $request->validate([
+            'alasan' => ['required', 'string', 'min:10', 'max:2000'],
+            'password' => ['required', 'string'],
+        ], [
+            'alasan.required' => 'Alasan menarik sertifikat wajib diisi.',
+            'alasan.min' => 'Alasan terlalu pendek; tulis apa yang salah dan kenapa harus ditarik.',
+        ]);
+
+        if (! Hash::check($data['password'], (string) $request->user()->password)) {
+            return response()->json([
+                'message' => 'Sandi konfirmasi salah.',
+                'kode' => 'konfirmasi_sandi_salah',
+                'errors' => ['password' => ['Sandi konfirmasi salah.']],
+            ], 422);
+        }
+
+        $baris = $tarik->tarik($certificate, $data['alasan'], $request->user());
+
+        return response()->json([
+            'message' => "Sertifikat {$baris->nomor} ditarik. Sesinya kembali ke menunggu approval.",
+            'data' => new CertificateResource($baris->fresh()->load(self::RELASI)),
+            'meta' => ['calibration_session_id' => $baris->calibration_session_id],
+        ]);
+    }
+
     /** Kirim file PDF-nya. Streamed — file bisa gede, jangan ditahan di memori. */
     public function download(
         Request $request,
@@ -186,7 +221,7 @@ class CertificateController extends Controller
         // disimpan (D1). Yang ditutup untuk sertifikat batal adalah pintu
         // pelanggan & QR publik, bukan arsip internal.
         abort_unless(
-            in_array($certificate->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN], true)
+            in_array($certificate->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK], true)
                 && $certificate->pdf_path,
             404,
             'Sertifikat ini belum punya PDF yang bisa diunduh.',
@@ -315,7 +350,19 @@ class CertificateController extends Controller
 
         // Baris REVISI punya job sendiri: `GenerateCertificate` bekerja per
         // sesi dan akan menerbitkan ulang sertifikat ASLI-nya, bukan revisinya.
-        $job = $certificate->revision_of !== null ? new ReviseCertificate($certificate->id) : new GenerateCertificate(
+        // Terbit ulang sesudah penarikan (K-50-03) juga bukan revisi administratif:
+        // angkanya dihitung ulang dari sesi, jadi jobnya `GenerateCertificate` dengan
+        // `revisiDariId` — bukan `ReviseCertificate` yang cuma merender ulang snapshot.
+        $dariPenarikan = $certificate->revision_of !== null
+            && Certificate::query()->whereKey($certificate->revision_of)->value('status') === Certificate::STATUS_DITARIK;
+
+        $job = $dariPenarikan ? new GenerateCertificate(
+            $certificate->calibration_session_id,
+            $request->user()->id,
+            $certificate->berlaku_sampai?->format('Y-m-d'),
+            null,
+            $certificate->revision_of,
+        ) : ($certificate->revision_of !== null ? new ReviseCertificate($certificate->id) : new GenerateCertificate(
             $certificate->calibration_session_id,
             $request->user()->id,
             // Diwariskan dari barisnya, bukan dibiarkan kosong.
@@ -327,7 +374,9 @@ class CertificateController extends Controller
             // dan dikirim ke pelanggan. Tidak ada error yang muncul, dan
             // selisihnya cuma ketahuan kalau ada yang membandingkan dua lembar.
             $certificate->berlaku_sampai?->format('Y-m-d'),
-        );
+            // Nomor yang diketik admin dibawa barisnya (K-50-04).
+            $certificate->nomor,
+        ));
 
         // Status baris sengaja tidak diubah di sini (lihat di atas), jadi
         // antrean yang menolak job tidak menghilangkan tombol retry — yang

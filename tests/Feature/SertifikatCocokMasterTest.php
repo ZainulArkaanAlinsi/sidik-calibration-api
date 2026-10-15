@@ -564,7 +564,7 @@ class SertifikatCocokMasterTest extends TestCase
         $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
 
         $this->denganOrderNumber($sesi->id)->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();

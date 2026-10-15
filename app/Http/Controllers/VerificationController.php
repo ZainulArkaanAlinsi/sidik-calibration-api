@@ -35,7 +35,7 @@ class VerificationController extends Controller
             // Yang DIBATALKAN justru harus menjawab — kertasnya masih beredar,
             // dan halaman ini satu-satunya yang bisa memberi tahu pemindainya
             // (§38.2, alasan utama QR dipertahankan di kertas).
-            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK])
             ->first();
 
         if (! $certificate) {
@@ -92,6 +92,9 @@ class VerificationController extends Controller
 
         return response()->view('sertifikat.pdf', [
             ...app(DataTampilanSertifikat::class)->untuk($certificate, web: true),
+            // K-50-03: sertifikat ditarik — kertas lama yang dipindai harus tahu
+            // dokumennya ditarik dan yang mana penggantinya.
+            'ditarik' => $certificate->status === Certificate::STATUS_DITARIK,
             'pengganti' => $pengganti,
             'pemilikSamar' => $pemilikSamar,
         ]);
@@ -118,8 +121,16 @@ class VerificationController extends Controller
         $certificate = Certificate::query()
             ->with(['session.equipment.customer', 'organization'])
             ->where('qr_token', $qrToken)
-            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK])
             ->firstOr(fn () => abort(404, 'Sertifikat dengan kode QR ini tidak terdaftar.'));
+
+        // Ditarik (K-50-03): dokumennya tidak sah lagi dan sedang diterbitkan
+        // ulang — berkasnya tidak diberikan ke publik, sama seperti yang batal.
+        abort_if(
+            $certificate->status === Certificate::STATUS_DITARIK,
+            410,
+            'Sertifikat ini ditarik untuk dikoreksi, jadi berkasnya tidak bisa diunduh. Pindai QR untuk melihat penggantinya.',
+        );
 
         // 410, bukan 404: barisnya ADA, dan pemegang QR berhak tahu kenapa
         // berkasnya tidak diberikan. PDF batal tidak boleh beredar lagi sebagai

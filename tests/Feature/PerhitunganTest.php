@@ -243,7 +243,7 @@ class PerhitunganTest extends TestCase
         $this->assertEqualsWithDelta(51.95, $sesi->fresh()->kelembaban, 1e-9);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $this->assertSame(

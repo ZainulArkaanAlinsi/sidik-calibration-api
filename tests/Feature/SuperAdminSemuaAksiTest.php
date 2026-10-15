@@ -473,7 +473,7 @@ class SuperAdminSemuaAksiTest extends TestCase
     private function setujui(CalibrationSession $sesi, User $oleh): TestResponse
     {
         return $this->actingAs($oleh, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true]);
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true]);
     }
 
     /** Order Number diisi Master Data lewat pintu resminya. */

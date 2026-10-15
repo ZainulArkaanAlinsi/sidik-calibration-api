@@ -549,7 +549,7 @@ class LembarKerjaTest extends TestCase
             ->assertCreated();
 
         $sesi = CalibrationSession::latest('id')->firstOrFail();
-        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])->assertOk();
 
         $nama = array_column($sesi->fresh()->certificate->snapshot['standar_digunakan'], 'name');
 
@@ -583,12 +583,12 @@ class LembarKerjaTest extends TestCase
 
         // Peringatan, bukan error: admin boleh lanjut kalau memang disadari.
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422)
             ->assertJsonPath('butuh_konfirmasi', true);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
     }
 

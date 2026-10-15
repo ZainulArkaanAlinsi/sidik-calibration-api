@@ -664,6 +664,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
             ->middleware('throttle:sertifikat-ubah');
         Route::post('/certificates/{certificate}/batalkan', [CertificateController::class, 'batalkan'])
             ->middleware('throttle:sertifikat-ubah');
+        // Tarik sertifikat terbit ke lembar kerja (K-50-03): alasan + konfirmasi
+        // sandi. Sesi kembali ke `menunggu_approval`; terbit ulang `<nomor>-R<n>`.
+        Route::post('/certificates/{certificate}/tarik', [CertificateController::class, 'tarik'])
+            ->middleware('throttle:sertifikat-ubah');
         // Kirim sertifikat ke email pelanggan (fase-2 §3d). Di backend, bukan
         // mobile, karena dua hal: alamat pengirim harus domain lab, dan
         // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim

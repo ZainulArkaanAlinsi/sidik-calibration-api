@@ -220,7 +220,7 @@ class CalibrationTest extends TestCase
 
         // Penjagaannya pindah ke penerbitan: sertifikat nggak bisa terbit.
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422)
             ->assertJsonPath('validasi.boleh_terbit', false);
     }
@@ -249,7 +249,7 @@ class CalibrationTest extends TestCase
         $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
 
         $respons = $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
 
         $this->assertContains(
@@ -360,7 +360,7 @@ class CalibrationTest extends TestCase
         $sesi = $this->buatSesi();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI);
 
@@ -372,7 +372,7 @@ class CalibrationTest extends TestCase
         $sesi = $this->buatSesi();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->teknisi)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertForbidden();
     }
 
@@ -387,7 +387,7 @@ class CalibrationTest extends TestCase
         // FAIL itu temuan yang sah — sertifikatnya tetap terbit, isinya "tidak
         // laik pakai". Jangan diblokir di backend.
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_DISETUJUI)
             ->assertJsonPath('data.hasil.keputusan', 'FAIL');
@@ -514,7 +514,7 @@ class CalibrationTest extends TestCase
     {
         $sesi = $this->buatSesi();
 
-        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])->assertOk();
 
         // Sertifikatnya udah terbit — angka yang dipegang pelanggan nggak boleh
         // berubah diam-diam. Kalau salah, terbitin revisi, bukan edit sesi.
@@ -532,7 +532,7 @@ class CalibrationTest extends TestCase
 
         // Draft belum masuk antrean approval, jadi admin nggak bisa nyetujuin.
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertStatus(422);
 
         $this->actingAs($this->admin)

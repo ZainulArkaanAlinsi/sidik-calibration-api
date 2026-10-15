@@ -19,6 +19,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
     'qr_payload', 'snapshot', 'validasi', 'pdf_path', 'xlsx_path', 'diterbitkan_pada',
     'berlaku_sampai', 'status', 'alasan_revisi', 'catatan_pelanggan',
     'dibatalkan_pada', 'dibatalkan_oleh', 'alasan_pembatalan',
+    'ditarik_pada', 'ditarik_oleh', 'alasan_ditarik',
 ])]
 class Certificate extends Model
 {
@@ -32,6 +33,14 @@ class Certificate extends Model
 
     /** Final (K38-3). PDF-nya tetap diarsip untuk lab, tidak untuk pelanggan & QR. */
     public const STATUS_DIBATALKAN = 'dibatalkan';
+
+    /**
+     * Ditarik kembali ke lembar kerja (K-50-03). Bukan final seperti `dibatalkan`:
+     * sesinya kembali ke `menunggu_approval` dan, sesudah disetujui lagi, terbit
+     * ulang sebagai `<nomor>-R<n>` yang menggantikan baris ini. Baris, PDF, dan
+     * QR-nya tetap ada; PDF-nya tidak diberikan lagi ke publik.
+     */
+    public const STATUS_DITARIK = 'ditarik';
 
     /**
      * Status revisi yang MENGGANTIKAN pendahulunya.
@@ -53,6 +62,8 @@ class Certificate extends Model
 
     public const DOKUMEN_BELUM_TERBIT = 'belum_terbit';
 
+    public const DOKUMEN_DITARIK = 'ditarik';
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -60,6 +71,7 @@ class Certificate extends Model
             'diterbitkan_pada' => 'date',
             'berlaku_sampai' => 'date',
             'dibatalkan_pada' => 'datetime',
+            'ditarik_pada' => 'datetime',
             'revisi_ke' => 'integer',
             'snapshot' => 'array',
             'validasi' => 'array',
@@ -117,6 +129,7 @@ class Certificate extends Model
     {
         return match (true) {
             $status === self::STATUS_DIBATALKAN => self::DOKUMEN_DIBATALKAN,
+            $status === self::STATUS_DITARIK => self::DOKUMEN_DITARIK,
             $status !== self::STATUS_TERBIT => self::DOKUMEN_BELUM_TERBIT,
             in_array($statusRevisi, self::STATUS_PENGGANTI, true) => self::DOKUMEN_DIGANTIKAN,
             default => self::DOKUMEN_BERLAKU,
@@ -215,6 +228,12 @@ class Certificate extends Model
     public function revisiTerakhir(): HasOne
     {
         return $this->hasOne(Certificate::class, 'revision_of')->latestOfMany();
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function penarik(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ditarik_oleh');
     }
 
     /** @return BelongsTo<User, $this> */

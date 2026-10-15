@@ -189,7 +189,7 @@ class AdminFieldSeparationTest extends TestCase
         $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload())->assertCreated();
         $sesi = CalibrationSession::latest('id')->firstOrFail();
 
-        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve")->assertOk();
+        $this->denganOrderNumber($sesi->id)->actingAs($this->admin)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])->assertOk();
 
         $this->actingAs($this->admin)
             ->patchJson("/api/calibrations/{$sesi->id}/admin", ['nomor_order' => 'TELAT'])

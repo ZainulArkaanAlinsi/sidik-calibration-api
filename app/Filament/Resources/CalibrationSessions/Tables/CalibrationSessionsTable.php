@@ -7,12 +7,15 @@ use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\User;
 use App\Services\CalibrationValidator;
+use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
 use App\Services\PerhitunganBuilder;
+use App\Services\TarikSertifikat;
 use App\Support\RiwayatPersetujuanSesi;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
@@ -155,6 +158,15 @@ class CalibrationSessionsTable
                     ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
                         && HakTulisPanel::boleh())
                     ->schema([
+                        // No. Sertifikat diketik Master Data saat Setujui (K-50-04).
+                        // Sesi yang sertifikatnya ditarik terbit ulang `<nomor>-R<n>`
+                        // otomatis, jadi kotaknya tidak diminta.
+                        TextInput::make('nomor_sertifikat')
+                            ->label('No. Sertifikat')
+                            ->maxLength(NomorSertifikat::MAKS_PANJANG)
+                            ->required(fn (CalibrationSession $record): bool => TarikSertifikat::yangDitarik($record) === null)
+                            ->visible(fn (CalibrationSession $record): bool => TarikSertifikat::yangDitarik($record) === null)
+                            ->helperText('Nomor tercetak di sertifikat. Huruf, angka, . _ / - saja; tidak boleh berakhiran -R<angka>; harus unik.'),
                         Checkbox::make('abaikan_peringatan')
                             ->label('Saya sudah periksa, lanjutkan walau ada peringatan')
                             ->helperText('Cuma berlaku buat peringatan. Temuan fatal tetap nahan penerbitan.'),
@@ -211,6 +223,27 @@ class CalibrationSessionsTable
                                 ->send();
 
                             return;
+                        }
+
+                        // No. Sertifikat — penjaga yang SAMA dengan API (K-50-04).
+                        $dasarTarikan = TarikSertifikat::yangDitarik($record);
+                        $nomorSertifikat = null;
+
+                        if ($dasarTarikan === null) {
+                            $galatNomor = NomorSertifikat::periksa($record->organization_id, $data['nomor_sertifikat'] ?? null);
+
+                            if ($galatNomor !== null) {
+                                Notification::make()
+                                    ->title('No. Sertifikat belum bisa dipakai.')
+                                    ->body($galatNomor['pesan'])
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $nomorSertifikat = trim((string) $data['nomor_sertifikat']);
                         }
 
                         $hasil = $validator->periksa($record);
@@ -279,7 +312,7 @@ class CalibrationSessionsTable
                             return;
                         }
 
-                        $job = new GenerateCertificate($record->id, $penyetuju->id);
+                        $job = new GenerateCertificate($record->id, $penyetuju->id, null, $nomorSertifikat, $dasarTarikan?->id);
 
                         try {
                             dispatch($job);

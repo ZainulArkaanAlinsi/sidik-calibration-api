@@ -452,7 +452,7 @@ class ViscometerApiTest extends TestCase
         ]);
 
         $this->denganOrderNumber($sesi->id)->actingAs($admin)
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $sertifikat = $sesi->fresh()->certificate()->firstOrFail();

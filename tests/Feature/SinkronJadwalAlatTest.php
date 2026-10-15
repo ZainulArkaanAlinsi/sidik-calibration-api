@@ -177,7 +177,7 @@ class SinkronJadwalAlatTest extends TestCase
         $pilihanAdmin = now()->addMonths(18)->toDateString();
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => $pilihanAdmin])
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => $pilihanAdmin])
             ->assertOk();
 
         $this->alat->refresh();
@@ -193,7 +193,7 @@ class SinkronJadwalAlatTest extends TestCase
         $sesi = $this->sesiAutoklaf($tanggalKalibrasi);
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()])
             ->assertOk();
 
         // Dihitung dari tanggal kalibrasi, bukan tanggal terbit. Sertifikat bisa
@@ -419,7 +419,7 @@ class SinkronJadwalAlatTest extends TestCase
         });
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => now()->addMonths(18)->toDateString()]);
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'berlaku_sampai' => now()->addMonths(18)->toDateString()]);
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
         $this->assertSame(Certificate::STATUS_GAGAL, $sertifikat->status);
@@ -447,7 +447,7 @@ class SinkronJadwalAlatTest extends TestCase
         });
 
         $this->denganOrderNumber($sesi->id)->actingAs($this->admin, 'sanctum')
-            ->postJson("/api/calibrations/{$sesi->id}/approve");
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji()]);
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
 

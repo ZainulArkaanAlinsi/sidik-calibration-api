@@ -187,7 +187,7 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
             return $ada;
         }
 
-        $this->denganOrderNumber($sesi->id)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->denganOrderNumber($sesi->id)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();

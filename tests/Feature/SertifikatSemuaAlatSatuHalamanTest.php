@@ -303,7 +303,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
 
             if ($menungguTm) {
                 // Konfirmasi admin pun tidak boleh menembusnya.
-                $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+                $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
                     ->assertStatus(422);
                 $ditahan[] = $sesi->nomor_sesi;
 
@@ -425,7 +425,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
             return $ada;
         }
 
-        $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $sertifikat = $sesi->fresh()->certificate()->first();

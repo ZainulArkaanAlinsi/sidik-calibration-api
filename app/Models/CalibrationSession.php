@@ -116,10 +116,37 @@ class CalibrationSession extends Model
      *
      * Dijaga `SesiDisetujuiTidakBisaDimundurkanTest`.
      */
+    /**
+     * Dilonggarkan HANYA oleh `TarikSertifikat` (K-50-03): sesi `disetujui`
+     * yang sertifikatnya ditarik boleh kembali ke `menunggu_approval`. Bendera
+     * ini tidak boleh dinyalakan di tempat lain — lihat `tanpaPenjagaMundur()`.
+     */
+    private static bool $izinkanMundur = false;
+
+    /**
+     * Jalankan [$aksi] dengan penjaga penurunan status dimatikan, lalu NYALAKAN
+     * lagi apa pun hasilnya. Satu-satunya pemanggil: `App\Services\TarikSertifikat`.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $aksi
+     * @return T
+     */
+    public static function tanpaPenjagaMundur(callable $aksi): mixed
+    {
+        self::$izinkanMundur = true;
+
+        try {
+            return $aksi();
+        } finally {
+            self::$izinkanMundur = false;
+        }
+    }
+
     protected static function booted(): void
     {
         static::updating(function (self $sesi): void {
-            if (! $sesi->isDirty('status')) {
+            if (self::$izinkanMundur || ! $sesi->isDirty('status')) {
                 return;
             }
 
