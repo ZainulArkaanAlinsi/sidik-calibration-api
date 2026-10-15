@@ -3659,7 +3659,9 @@ tidak boleh kabur.
 
 **3. Peran `super_admin` dihidupkan.** Sudah ada di ENUM `users.role` sejak migrasi modul
 pelanggan, perilakunya belum dibangun. Isinya: semua yang teknisi bisa + semua yang Master Data
-bisa + lintas organisasi + edit sesudah terbit + kirim ke pelanggan.
+bisa + lintas organisasi + edit sesudah terbit + kirim ke pelanggan. — **Dua yang pertama
+DIKERJAKAN 15 Okt 2026 (K-49-14, §51)** untuk suntingan sebelum persetujuan; sesudah terbit
+lewat rute revisi (§38). Lintas organisasi di API belum.
 
 **4. Pencatatan akses lintas-organisasi.** Konsekuensi (a) di atas. — **SEBAGIAN
 SELESAI 23 Sep 2026:** lintas organisasi dibuka di **panel** lewat satu pintu
@@ -5138,6 +5140,123 @@ tiga suhu, pesan `PUT`, peringatan O35, redaksi). Gate MySQL penuh belum dijalan
 Fixture HP `contoh_lembar_kerja_volumetric_glassware.dart` digenerate ulang (ikut membawa drift
 tahap 1 yang belum pernah digenerate).
 
+## §51 — Super admin boleh semua aksi tulis, Order Number wajib sebelum disetujui — 15 Okt 2026
+
+Nomor §50 sudah dipakai branch desimal Anak Timbangan (`feat/olah-data-isian-parsial`), jadi
+§ ini §51. Kode keputusannya melanjutkan deret K-49 milik tabel keputusan Studio (§48 di branch
+`feat/studio-*`, K-49-01..13).
+
+### Keputusan pemilik proyek — jangan ditanya ulang
+
+| Kode | Keputusan | Yang diturunkan |
+|---|---|---|
+| K-49-14 | **Super admin boleh SEMUA aksi tulis yang teknisi dan Master Data (admin) boleh, di organisasinya sendiri, dari aplikasi.** Pemilik, 15 Okt 2026. | Satu gerbang di middleware, bukan `super_admin` ditulis di puluhan `role:`. Tulis lintas organisasi TIDAK ikut dibuka. Panel Filament tetap baca saja — aplikasi jadi satu tempat. |
+| K-30-03 (tetap) | Pemisahan wewenang memblokir tanpa pengecualian. | Sesi yang diisi, dikoreksi, atau dikonfirmasi pindainya oleh super admin wajib disetujui DAN disahkan orang lain. Tidak ada flag, peran, atau env pengecualian. |
+| K-49-14 (Order Number) | **Order Number diisi Master Data atau super admin, tidak pernah teknisi.** Master Data bisa membuka lembar teknisi di form yang sama dan mengedit (koreksi = nilai lama + baru + alasan). | `approve()` menolak sesi tanpa Order Number. |
+
+**Hubungan dengan §35 poin 3.** §35 meminta super admin "semua yang teknisi bisa + semua yang
+Master Data bisa + lintas organisasi + edit sesudah terbit + kirim ke pelanggan". K-49-14
+mengerjakan dua yang pertama untuk **suntingan sebelum persetujuan** (lembar `draft`,
+`perlu_revisi`, `menunggu_approval`) termasuk kirim email/WhatsApp sertifikat. **Suntingan
+sesudah terbit** tetap lewat rute revisi yang sudah ada (`POST /certificates/{c}/revisi`, §38) —
+sekarang terbuka juga untuk super admin — bukan dengan membuka sesi `disetujui`. **Lintas
+organisasi** di API tetap belum (AGENTS.md §Keadaan nyata `super_admin`).
+
+### Yang dibangun
+
+| Bagian | Perubahan | Berkas |
+|---|---|---|
+| Gerbang rute | `EnsureUserHasRole::lolosTulisSuperAdmin()`: super admin lolos tiap `role:` yang menerima `admin` atau `teknisi`, kecuali yang menyebut `pelanggan`. Aturan baca (`lolosBacaSuperAdmin`) tetap; keduanya disatukan `lolosSuperAdmin()` yang juga dipanggil `MatriksIzin`. | `app/Http/Middleware/EnsureUserHasRole.php`, `app/Services/MatriksIzin.php` |
+| Hak admin di dalam controller | `User::punyaHakAdmin()` (admin ∥ super admin) menggantikan `isAdmin()` di cabang yang artinya "boleh aksi admin": ubah lembar orang lain & `menunggu_approval`, cabang koreksi (tercatat `CATATAN_KOREKSI_PEMBACAAN` atas nama super admin → ditangkap `PemisahanWewenang`), konfirmasi pindai, bentuk lembar kerja admin, field admin di `CalibrationRequest`/`AutoclaveStoreRequest`, find-or-create folder PT, `sumber` pelanggan/kemampuan. `isAdmin()` tetap ada dan tetap `false` untuk super admin — dipakai panel (`ImportExcel`). | `app/Models/User.php`, `CalibrationController`, `FolderController`, `CustomerController`, `KemampuanKalibrasiController`, dua FormRequest |
+| Order Number wajib | `approve()` → **422** `kode: nomor_order_wajib` (+ `errors.nomor_order`) kalau `nomor_order` kosong/spasi, diperiksa sesudah pemisahan wewenang dan sebelum validator. Tombol Setujui panel menahan hal yang sama (notifikasi; panel tidak punya kotak isiannya, jadi pesannya menunjuk ke aplikasi). Satu penjaga: `CalibrationSession::nomorOrderKosong()`. | `CalibrationController::approve()`, `CalibrationSessionsTable`, `app/Models/CalibrationSession.php` |
+| Panel | **Tidak berubah** untuk super admin: `HakTulisPanel` tetap menyembunyikan aksi tulis. Docblock-nya menulis alasannya. | `app/Filament/Concerns/HakTulisPanel.php` |
+
+**Tidak ada migrasi, tidak ada kolom baru, `User::roles()` tidak berubah** (super admin tetap
+tidak bisa dicetak lewat `Rule::in`, termasuk oleh super admin sendiri; akun super admin lain
+tetap 404 di `/api/users`).
+
+### Penjaga
+
+- `SuperAdminSemuaAksiTest` (19): buat sesi (autoklaf & jalur umum, tercatat sebagai pengisi,
+  Order Number tersimpan), `PUT` lembar teknisi + isi Order Number, `PATCH …/admin`, bentuk
+  lembar kerja = bentuk admin, tolak, setujui sesi teknisi; super admin pengisi / pengoreksi /
+  verifikator pindai **422 `pemisahan_wewenang`** di approve dan pengisi / pengoreksi di
+  `sahkan`, admin atau super admin lain tetap bisa; approve tanpa Order Number **422
+  `nomor_order_wajib`** (admin & super admin, termasuk spasi), panel menahan; teknisi tidak bisa
+  mengisi Order Number (dibuang di `POST`/`PUT`, `PATCH …/admin` 403); retry & revisi sertifikat;
+  lab lain **404**; rute `/pelanggan/v1` **403**; tidak bisa mencetak super admin.
+- `SuperAdminAksesTest` (14) diperbarui: tiga kasus "tulis ditolak" dibalik (docblock-nya
+  menyebut K-49-14), plus akun super admin lain tetap 404.
+- Test lama yang menegaskan "super admin 403 di tulis" dibalik ke keputusan baru:
+  `GerbangPengesahanTest` (super admin kini boleh menyetujui, tapi yang menyetujui tidak bisa
+  mengesahkan sendiri → `pengesah_sama_dengan_pemeriksa`), `RevisiSertifikatTest`,
+  `RiwayatSembunyikanTest`, `PermintaanKalibrasiLabTest`, `KoreksiFotoResiTest`,
+  `FolderTiapPelangganTest`.
+- Test yang menyetujui sesi kiriman teknisi/seeder kini mengisi Order Number dulu lewat
+  `Tests\TestCase::denganOrderNumber()` (cuma mengisi yang kosong, tanpa jejak audit tambahan);
+  factory sesi mendapat `nomor_order` bawaan. Seeder TIDAK diubah: sebelas seeder contoh yang
+  menanam sesi `menunggu_approval` tanpa Order Number memang harus dilengkapi Master Data dulu.
+
+### Yang sengaja belum
+
+- **Order Number bisa dikosongkan lagi sesudah disetujui ketika gerbang pengesahan nyala.**
+  `PATCH …/admin` menolak sesi `disetujui` saja; sesi `menunggu_pengesahan` masih bisa
+  diubah, termasuk dikosongkan. `sahkan` tidak memeriksa ulang. Gerbang masih mati di
+  produksi; kalau dinyalakan, tambahkan pemeriksaan yang sama di `sahkan`.
+- Super admin yang menyunting `draft` milik teknisi (bukan `menunggu_approval`) tidak tercatat
+  sebagai pengoreksi — perilaku yang sama dengan admin sejak dulu (koreksi baru dicatat untuk
+  angka yang SUDAH dikirim).
+- Kontrak HP: `docs/perintah-frontend-super-admin-order.md`.
+
+**Status:** **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`). Gate MySQL
+penuh belum dijalankan.
+
+## §52 — Revisi pemilik 15 Okt 2026: Tolak & pengesahan dicabut, No. Sertifikat diketik, tarik sertifikat (K-50-01 … K-50-14)
+
+Nomor §50 dipakai branch desimal Anak Timbangan dan §51 dipakai K-49-14, jadi keputusan
+`K-50-xx` pemilik ditulis di § ini (rencana: `_agents_workspace/revisi-1510/02-rencana.md`
+bagian B). Kontrak: `docs/kontrak-api.md` §5. HP: `docs/perintah-frontend-revisi-1510.md`.
+
+### Keputusan pemilik proyek — jangan ditanya ulang
+
+| Kode | Keputusan | Yang diturunkan (API, G1) |
+|---|---|---|
+| K-50-01 | **Tolak dicabut.** Master Data/super admin mengoreksi lembar teknisi sendiri lalu menyetujui. | Rute `POST /calibrations/{c}/reject`, izin `kalibrasi.tolak`, aksi Tolak panel, notifikasi `SesiPerluRevisi` dihapus. Sesi `perlu_revisi` lama tetap bisa dikirim teknisi. Edit lewat `PUT` pada `menunggu_approval` dengan `alasan_koreksi`; `GET /calibrations/{c}/bandingkan`; isian asli teknisi dibekukan di `calibration_sessions.input_asli` (additive, tulis-sekali) sebelum jalur hapus-tulis-ulang `isiUlangPengukuran()`. |
+| K-50-02 | Cabang `pernahMengoreksi` dicabut: admin yang mengoreksi boleh menyetujui. Pengisi lembar tetap tidak boleh menyetujui lembarnya sendiri. | `PemisahanWewenang` hanya `penyetuju_sama_dengan_teknisi` + `penyetuju_mengonfirmasi_pindai`. Melonggarkan independensi review ISO/IEC 17025 — risiko diterima pemilik. |
+| K-50-03 | **Tarik sertifikat** ke lembar kerja: sertifikat `ditarik`, sesi `menunggu_approval`, terbit ulang `<nomor>-R<n>`. | `POST /certificates/{c}/tarik` (alasan + sandi), `App\Services\TarikSertifikat`, migrasi additive (enum `ditarik`, `ditarik_pada/oleh`, `alasan_ditarik`), `GenerateCertificate` dengan `revisiDariId`, QR lama "ditarik, digantikan …-R1". Guard `CalibrationSession::booted()` dilonggarkan hanya lewat `tanpaPenjagaMundur()` di service ini. |
+| K-50-04 | **No. Sertifikat diketik** saat Setujui; unik per organisasi, karakter aman, tidak berakhiran `-R<n>`. | `422 nomor_sertifikat_wajib / _tidak_valid / _dipakai` (menyebut sertifikat pemilik); `App\Services\NomorSertifikat`; `GenerateCertificate::nomorBerikutnya` hanya data lama & seeder. |
+| K-50-07 | **Pengesahan dicabut**; approve menerbitkan langsung. | Rute `sahkan`/`kembalikan-dari-pengesahan`/`tarik-pengajuan`/`pengesahan/antrean`, `PengesahanController`, request/resource/notifikasinya, limiter, izin, dan `kalibrasi.gerbang_pengesahan` dihapus. `php artisan kalibrasi:pindahkan-pengesahan` (dry-run dulu). |
+| K-50-13 | Order Number diisi Master Data/SA saat Setujui bersama No. Sertifikat; teknisi tidak pernah mengisinya. | Sudah dari §51; dialog Setujui HP = dua kotak. |
+| K-50-14 | Hierarki super_admin > admin (Master Data) > teknisi. SA boleh semua aksi admin+teknisi; pengisi tidak menyetujui lembarnya sendiri. | §51 + K-50-02. |
+| K-50-05, 06, 08–12 | (butir G2–G7: telusuri No. Sertifikat, arsip satu pintu, jatuh tempo, pelanggan, notifikasi, OCR, Studio satu akun) | Bukan bagian G1 API; lihat rencana. |
+
+**Dibatalkan & dicatat:** AGENTS.md §Peran butir 4 (kasus koreksi pemeriksa), K-30-03
+sebagian (butir pengesah), keputusan 26 Sep (gerbang pengesahan, super admin satu-satunya
+pengesah), pengecualian rute 29 Sep.
+
+### Penjaga
+
+`TolakDicabutTest`, `PengesahanDicabutTest`, `InputAsliBandingkanTest`,
+`NomorSertifikatDanTarikTest`, `PemisahanWewenangPersetujuanTest` (K-50-02 dibalik),
+`SuperAdminSemuaAksiTest`. Test lama yang menyetujui sesi kini menyisipkan
+`nomor_sertifikat` lewat `Tests\TestCase::nomorUji()`; yang butuh sesi `perlu_revisi` lama
+memakai `sesiPerluRevisiLama()`. `GerbangPengesahanTest` dan
+`TolakSesiTidakMenimpaPersetujuanTest` dihapus (perilakunya dicabut).
+
+### Yang belum / catatan serah terima
+
+- **Env**: `GERBANG_PENGESAHAN` dihapus dari `render.yaml` dan `config/kalibrasi.php`. **`.env.example`
+  tidak bisa disentuh sesi ini (akses ditolak)** — hapus barisnya di sana pada commit pemilik
+  (config tidak lagi membacanya, jadi nilainya tak berpengaruh).
+- Produksi: hitung sesi `menunggu_pengesahan` (BACA, butuh izin) sebelum deploy; jalankan
+  `kalibrasi:pindahkan-pengesahan` dry-run lalu `--jalankan` atas perintah terpisah.
+- Dua `approve` bersamaan dengan nomor yang sama: yang kedua kena unique index
+  `(organization_id, nomor)` waktu job jalan (baris `gagal`, bisa diterbitkan ulang) — pemeriksaan
+  di `approve()` menangkap kasus normal, bukan balapan persis bersamaan.
+- Gate MySQL penuh belum dijalankan (migrasi `ENUM` berubah — wajib sebelum deploy).
+
+**Status:** **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API).
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -5547,3 +5666,5 @@ Supaya tidak dibangun ulang:
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
 | G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3), **LIVE `3eff913`**. **3 Okt** (branch `fix/penomoran-pelanggan-serentak`): deadlock nomor permintaan & order ikut ditutup, **LIVE `f6e3666`**. Batas login jadi per akun + IP (branch `fix/batas-login-per-akun`) |
+| G30 | **Super admin semua aksi tulis + Order Number wajib** (K-49-14) — §51 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`) — super admin lolos tiap rute tulis admin/teknisi lewat `EnsureUserHasRole::lolosTulisSuperAdmin()`, cabang "admin boleh X" pindah ke `User::punyaHakAdmin()`, pemisahan wewenang tetap memblokir (approve & sahkan), `approve()` + panel menolak sesi tanpa Order Number (`422 nomor_order_wajib`). Panel tetap baca saja untuk super admin. **Sebagian dibalik §52 (K-50-01/02/07).** Kontrak HP: `docs/perintah-frontend-super-admin-order.md`. Gate MySQL penuh belum |
+| G31 | **Revisi 15 Okt: Tolak & pengesahan dicabut, No. Sertifikat diketik, tarik sertifikat, edit admin + bandingkan** (K-50-01/02/03/04/07/13) — §52 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API) — migrasi additive (`input_asli`, enum `ditarik`), `PemisahanWewenang` dipersempit, `kalibrasi:pindahkan-pengesahan`. Kontrak HP: `docs/perintah-frontend-revisi-1510.md`. Gate MySQL penuh belum |

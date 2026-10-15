@@ -72,6 +72,7 @@ php artisan kalibrasi:sapu-sesi
 php artisan kemampuan:pastikan         # tegakkan baris CMC dari lampiran akreditasi
 php artisan akun:admin
 php artisan akun:super-admin <email>   # satu-satunya pintu yang melahirkan super_admin
+php artisan kalibrasi:pindahkan-pengesahan   # dry-run; --jalankan memindah menunggu_pengesahan -> menunggu_approval (K-50-07)
 php artisan flowmeter:audit-cmc
 ```
 
@@ -387,18 +388,32 @@ sama, cuma lebih cepat.
    lain. Jejak yang menyebut orang yang tidak melakukannya lebih buruk daripada
    tidak ada jejak sama sekali.
 
-4. **Satu `user_id` yang sama tidak boleh menjadi pengirim lembar kerja DAN
-   pengesah sertifikat pada sesi yang sama.** Berlaku juga untuk `super_admin`.
-   **Tanpa pengecualian** — keputusan K-30-03 pemilik proyek, 1 Okt 2026.
+4. **Satu `user_id` yang sama tidak boleh menjadi PENGISI lembar kerja DAN
+   penyetuju sesi yang sama.** Berlaku juga untuk `super_admin`.
+   **Tanpa pengecualian** — K-30-03 (pemilik proyek, 1 Okt 2026), **DIPERSEMPIT
+   15 Okt 2026 (K-50-02/K-50-07/K-50-14)**:
 
-   Ini R-E08 (kritis) di `docs/pelanggan/06-Risk-Register.md` dan K4 di
-   `docs/pelanggan/00-BACA-DULU.md`. Penjagaannya satu pintu,
-   `App\Services\PemisahanWewenang`, dipanggil `approve()` API, tombol Setujui
-   panel, dan `sahkan`. "Ikut mengisi" = pengisi lembar, admin yang mengoreksi
-   pembacaan, dan yang mengonfirmasi hasil pindai. Tidak ada sakelar env: sakelar
-   lama `PEMISAHAN_WEWENANG_MEMBLOKIR` dicabut karena `render.yaml` memakunya
-   "false". Dijaga `PemisahanWewenangPersetujuanTest` dan `GerbangPengesahanTest`.
-   Rincian: `docs/permintaan-user-7.md` §43.1b.
+   - **Dicabut: kasus koreksi pemeriksa (K-50-02).** Admin/super admin yang
+     MENGOREKSI pembacaan sekarang BOLEH menyetujui sesi itu. Sejak Tolak
+     dicabut (K-50-01) Master Data mengoreksi lembar sendiri lalu menyetujui;
+     independensi review dijaga jejak (lama → baru + alasan + `input_asli` +
+     `GET /calibrations/{c}/bandingkan`), bukan larangan. Ini keputusan pemilik
+     proyek yang melonggarkan independensi review ISO/IEC 17025 §7.8 — jangan
+     dipulihkan tanpa keputusan baru.
+   - **Dicabut: pengesahan (K-50-07).** Tidak ada `sahkan`, gerbang, atau
+     `GERBANG_PENGESAHAN`; `approve()` menerbitkan langsung. Keputusan 26 Sep
+     (gerbang pengesahan, super admin satu-satunya pengesah) dan sebagian K-30-03
+     (butir `pengesah_*`) batal.
+   - **Tetap:** pengisi lembar (`teknisi_id`) dan pengonfirmasi hasil pindai
+     (`raw_measurements.verified_by`) tidak boleh menyetujui (`422
+     pemisahan_wewenang`).
+
+   Ini R-E08 di `docs/pelanggan/06-Risk-Register.md`. Penjagaannya satu pintu,
+   `App\Services\PemisahanWewenang::periksaPersetujuan()`, dipanggil `approve()`
+   API dan tombol Setujui panel. Tidak ada sakelar env (`PEMISAHAN_WEWENANG_
+   MEMBLOKIR` dicabut). Dijaga `PemisahanWewenangPersetujuanTest`,
+   `SuperAdminSemuaAksiTest`, `PengesahanDicabutTest`. Rincian:
+   `docs/permintaan-user-7.md` §43.1b dan §52.
 
    Jangan menambahkan jalur pengecualian (flag, peran, atau env) tanpa keputusan
    baru dari pemilik proyek.
@@ -411,33 +426,43 @@ sama, cuma lebih cepat.
 
 6. Rujukan: `docs/pelanggan/09-Adendum-Olah-Data-Peran.md` §2.3 dan §4.
 
-### Keadaan nyata `super_admin` — DIBUKA 23 Sep 2026, BACA SAJA
+### Keadaan nyata `super_admin` — BACA 23 Sep 2026, TULIS di aplikasi 15 Okt 2026 (K-49-14)
 
 Peran ini sebelumnya **terdaftar tapi macet**: diterima ENUM sejak 16 Sep lalu
 tertolak di tujuh pintu, termasuk kontradiksi yang menyuruhnya "pakai panel admin
 di peramban" sementara `canAccessPanel()` cuma menerima `ROLE_ADMIN`. Nol akun
 kena karena nol super admin pernah dibuat (sensus 19 Sep 2026: 2 admin, 5
-teknisi, 1 viewer, nol pelanggan, nol super admin).
+teknisi, 1 viewer, nol pelanggan, nol super admin). 23 Sep dibuka BACA saja;
+**15 Okt 2026 pemilik proyek memutuskan K-49-14**: super admin boleh SEMUA aksi
+tulis teknisi dan admin (Master Data) di organisasinya sendiri, dari satu tempat —
+aplikasi.
 
 Yang berlaku **sekarang**:
 
 | Pintu | Keadaan | Rujukan |
 |---|---|---|
 | Login aplikasi | **terbuka**, token ability `internal` | `AuthController::login()` |
-| Panel Filament `/admin` | **terbuka** | `User::canAccessPanel()` |
+| Panel Filament `/admin` | **terbuka, BACA saja** | `User::canAccessPanel()` + `HakTulisPanel` |
 | Rute API `GET`/`HEAD` | **terbuka**, walau namanya tidak ditulis di `role:` | `EnsureUserHasRole::lolosBacaSuperAdmin()` |
+| Rute API tulis yang menerima `admin` atau `teknisi` | **terbuka** (15 Okt 2026, K-49-14), walau namanya tidak ditulis di `role:` — organisasi sendiri saja | `EnsureUserHasRole::lolosTulisSuperAdmin()` |
+| Cabang "admin boleh X" di controller — ubah lembar orang lain & lembar `menunggu_approval`, koreksi pembacaan (wajib alasan), isi Order Number & kolom administratif, find-or-create folder PT, `sumber` pelanggan/kemampuan | **ikut admin** | `User::punyaHakAdmin()` (bukan `isAdmin()`) |
+| Rute yang menyebut `pelanggan` & seluruh `/pelanggan/v1` | **tertutup** | dua aturan `lolos*` menolak `role:…pelanggan`; `api_pelanggan.php` dipagari `aplikasi:pelanggan` |
 | Channel `organisasi.{id}` | **terbuka** | `routes/channels.php` lewat `rolesInternal()` |
-| Rute API selain baca | **403** — kecuali empat di bawah | aturan yang sama |
-| `POST /calibrations/{c}/sahkan` & `/kembalikan-dari-pengesahan` | **terbuka** (29 Sep 2026), tapi baru bermakna saat `GERBANG_PENGESAHAN=true` — sakelar mati = tidak ada sesi `menunggu_pengesahan` | grup `role:super_admin` di ekor `routes/api.php` |
+| `POST /calibrations/{c}/sahkan` & `/kembalikan-dari-pengesahan` | **DICABUT** (15 Okt 2026, K-50-07) — `404`; approve menerbitkan langsung | — |
 | `POST /pelacakan/item/{i}/tahap-fisik` & `POST /penugasan` | **terbuka** (29 Sep 2026), bersama admin | grup `role:admin,super_admin` |
+| Menyetujui sesi yang dia ISI atau yang konfirmasi pindainya dia lakukan | **422 `pemisahan_wewenang`**, tanpa pengecualian. Koreksi pembacaan TIDAK lagi memblokir (K-50-02) | `PemisahanWewenang` (K-30-03, dipersempit) |
+| Menyetujui sesi tanpa No. Sertifikat / dengan nomor bentrok | **422 `nomor_sertifikat_wajib` / `_tidak_valid` / `_dipakai`** (K-50-04) | `App\Services\NomorSertifikat` |
+| Tarik sertifikat terbit ke lembar kerja | **terbuka**: admin & super admin, alasan + sandi (K-50-03) | `POST /certificates/{c}/tarik`, `TarikSertifikat` |
+| Menyetujui sesi tanpa Order Number (semua peran) | **422 `nomor_order_wajib`** | `CalibrationSession::nomorOrderKosong()`, API & panel |
 | Create/edit/delete di panel | **403** | `ScopesToOrganization` |
-| Aksi tulis kustom di panel (approve sesi, retry sertifikat, reset sandi, undang/cabut anggota, ubah status ruangan, Pengaturan Organisasi) | **tersembunyi** | `App\Filament\Concerns\HakTulisPanel` |
+| Aksi tulis kustom di panel (approve sesi, retry sertifikat, reset sandi, undang/cabut anggota, ubah status ruangan, Pengaturan Organisasi) | **tersembunyi** — tetap, sesudah K-49-14 | `App\Filament\Concerns\HakTulisPanel` |
 | Baca **lintas organisasi** di panel | **terbuka**, dan tiap layarnya tercatat | `ScopesToOrganization` + `App\Support\JejakLintasOrganisasi` |
-| Baca lintas organisasi lewat **API** | **belum** — masih terkurung ke lab sendiri | ~60 penyaring tulis tangan di controller |
-| `User::roles()` | **tetap tidak memuatnya** | lihat bawah |
-| `/api/users` (daftar & ubah) | **tetap tersaring / 404** | `UserController::pastikanAkunInternal()` |
+| Baca/tulis lintas organisasi lewat **API** | **belum** — masih terkurung ke lab sendiri (404) | ~60 penyaring tulis tangan di controller |
+| `User::roles()` | **tetap tidak memuatnya** — super admin tidak bisa mencetak super admin | lihat bawah |
+| `/api/users` (daftar & ubah) | akun admin/teknisi/viewer lab sendiri: **boleh**, seperti admin. Akun super admin: **tetap tersaring / 404** | `UserController::pastikanAkunInternal()` |
 
-Dijaga `SuperAdminAksesTest` (13 kasus) dan `SuperAdminLintasOrganisasiTest` (5).
+Dijaga `SuperAdminAksesTest` (14 kasus), `SuperAdminSemuaAksiTest` (19) dan
+`SuperAdminLintasOrganisasiTest` (5).
 
 **Bikinnya lewat `php artisan akun:super-admin <email>`, bukan panel.** Dropdown
 role di `/admin` dibangun dari `User::roles()`, jadi `super_admin` memang tidak
@@ -455,23 +480,43 @@ memasukkan `super_admin` ke sana bikin admin biasa bisa mencetak super admin.
 `User::rolesInternal()` menjawab "siapa yang bukan orang luar". Super admin ada
 di yang kedua saja. **Jangan digabung.**
 
-**Kenapa baca saja.** K4 (siapa yang boleh mengesahkan sertifikat) belum dijawab
-manajer teknis, dan panel bukan layar baca: tombol `approve` di tabel sesi
-menerbitkan sertifikat berlogo akreditasi. Menulis dibuka setelah K4 turun,
-bukan sebelum.
+**K-49-14 — tulis dibuka di aplikasi, panel tetap baca saja.** Dulu tulis ditahan
+sampai K4 (siapa yang boleh mengesahkan) turun. Pemilik proyek memutuskan 15 Okt
+2026: super admin boleh semua yang teknisi & Master Data boleh, di organisasinya
+sendiri, dari aplikasi. Tiga hal yang menahan keputusan itu supaya tidak jadi
+lubang, dan ketiganya bukan opsional:
 
-**Pengecualian yang sudah mendarat (29 Sep 2026, keputusan 26 Sep).** Gerbang
-pengesahan menjadikan super admin satu-satunya yang boleh MENGESAHKAN, jadi
-empat rute tulis di tabel atas dibuka lewat grup rute saudara — middleware
-`lolosBacaSuperAdmin` sendiri TIDAK dilonggarkan. `sahkan` baru hidup saat
-`GERBANG_PENGESAHAN=true`, dan sakelar itu **tidak dinyalakan tanpa perintah
-pemilik proyek**. Syarat teknisnya sudah terpenuhi 2 Okt 2026: pemisahan
-wewenang memblokir (K-30-03), panel ikut gerbang (B02), dan satu akun super admin
-sudah ada di produksi sejak 24 Sep 2026 (dicek lewat query 2 Okt; catatan lama
-yang menulis "belum ada" salah). Sebelum menyalakan, pastikan pemegang akun itu
-benar-benar bisa masuk — gerbang tanpa pengesah yang bisa login menahan semua
-sertifikat. Rinciannya
-`docs/permintaan-user-7.md` §40.3 dan §43.1b.
+1. **Satu pintu.** Gerbang rutenya `EnsureUserHasRole::lolosTulisSuperAdmin()`
+   (rute yang menerima `admin`/`teknisi`, bukan `pelanggan`) — bukan
+   `super_admin` ditulis di puluhan `role:`. Cabang "admin boleh X" di
+   controller memakai `User::punyaHakAdmin()`. `isAdmin()` sengaja tetap
+   `false` untuk super admin dan dipakai panel saja. `MatriksIzin` memanggil
+   aturan yang sama, jadi `/me/permissions` tidak bisa berbeda dari penjagaannya.
+2. **Pemisahan wewenang tidak dilonggarkan oleh K-49-14.** Super admin yang
+   mengisi lembar (`teknisi_id` = dia waktu dia yang membuat sesi) atau
+   mengonfirmasi hasil pindai tidak bisa menyetujui sesi itu — orang lain yang
+   harus. (Kasus mengoreksi dicabut 15 Okt 2026, K-50-02 — lihat butir 4.) Tidak
+   ada flag, peran, atau env pengecualian.
+3. **Panel tetap baca saja** (`HakTulisPanel` tidak berubah). Dua pintu tulis
+   berarti dua tempat yang harus kompak menegakkan pemisahan wewenang, Order
+   Number wajib, dan jejak audit; yang satu bisa tertinggal tanpa error.
+
+Order Number (`nomor_order`) diisi Master Data atau super admin, **bukan
+teknisi** (kirimannya dibuang di `prepareForValidation()`), dan sejak K-49-14
+`approve()` API + tombol Setujui panel menolak sesi yang Order Number-nya kosong
+(`422 nomor_order_wajib`). Sejak K-50-04/13 `approve()` juga menuntut
+`nomor_sertifikat` (diketik saat Setujui; unik per organisasi; tidak boleh
+berakhiran `-R<n>`); penomoran otomatis tinggal untuk data lama & seeder.
+Rincian: `docs/permintaan-user-7.md` §51 dan §52.
+
+**Gerbang pengesahan DICABUT (15 Okt 2026, K-50-07).** Pengecualian 29 Sep (rute
+`sahkan` untuk super admin, grup `role:super_admin`), keputusan 26 Sep, sakelar
+`GERBANG_PENGESAHAN`, `PengesahanController`, dan antrean pengesahan batal.
+Sesi yang telanjur `menunggu_pengesahan` dipindah ke `menunggu_approval` oleh
+`php artisan kalibrasi:pindahkan-pengesahan` (dry-run dulu, `--jalankan` terpisah).
+Kolom pengajuan lama dibiarkan sebagai riwayat. Rincian: `docs/permintaan-user-7.md` §52.
+`GERBANG_PENGESAHAN` di `.env.example`/`render.yaml`: lihat catatan serah terima §52
+(berkas itu tidak boleh disentuh sesi ini).
 
 **Aksi panel baru wajib ikut `HakTulisPanel`.** `ScopesToOrganization` sudah
 menutup create/edit/delete bawaan Filament, tapi `Action::make(...)` kustom tidak

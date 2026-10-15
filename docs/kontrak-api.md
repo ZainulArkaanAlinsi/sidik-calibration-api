@@ -203,7 +203,16 @@ Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu ken
 }
 ```
 
-Jumlah izin sekarang: **admin 51 · teknisi 24 · viewer 15.**
+Jumlah izin sekarang (dihitung ulang 15 Okt 2026): **super_admin 63 · admin 61 · teknisi 28 · viewer 18.**
+
+**`super_admin` sejak 15 Okt 2026 (K-49-14):** `boleh`-nya = gabungan admin + teknisi
+(semua izin tulis keduanya, di organisasinya sendiri). `batasan`-nya `semua`. Yang TIDAK
+ikut berubah: dia tetap tidak bisa menyetujui sesi yang dia ISI sendiri atau yang konfirmasi
+pindainya dia lakukan (`422 pemisahan_wewenang`, lihat `approve` di §5) — `boleh` menjawab
+"tombolnya ada", bukan "sesi ini boleh dia putuskan". **Revisi 15 Okt 2026 (K-50-01/02/07):**
+izin `kalibrasi.tolak`, `kalibrasi.sahkan`, `kalibrasi.kembalikan-dari-pengesahan`,
+`kalibrasi.tarik-pengajuan`, `pengesahan.antrean` DICABUT; izin baru `kalibrasi.bandingkan`
+dan `sertifikat.tarik` (admin & super admin).
 
 > Contoh di atas disalin dari keluaran `MatriksIzin::bolehUntuk('teknisi')`.
 > Kalau angkanya berubah, yang berubah middleware rutenya — bukan daftar ini.
@@ -990,7 +999,7 @@ dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.
     mengarang** set point (tak satu pun angka olahan bergantung padanya; dia cuma dicetak
     di sertifikat). Kiriman non-draft tanpa `set_point` tetap **422** `errors.set_point`.
   - Field admin (`nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian`)
-    dari akun non-admin **dibuang diam-diam** (bukan 422), di `POST` maupun `PUT` —
+    dari akun selain admin & super_admin **dibuang diam-diam** (bukan 422), di `POST` maupun `PUT` —
     sama dengan `POST /calibrations`. Dari admin, dua field ketidakpastian divalidasi
     `numeric|min:0`.
   - `catatan_revisi` & `revisi_field` dikosongkan **hanya kalau kiriman berakhir
@@ -1003,7 +1012,8 @@ dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.
 | Keadaan | Jawaban |
 |---|---|
 | Teknisi yang bukan pengisi lembar, atau sesi lab lain | **404** |
-| Viewer, super_admin | **403** (gerbang rute `role:admin,teknisi`) |
+| Viewer | **403** (gerbang rute `role:admin,teknisi`) |
+| super_admin (sejak 15 Okt 2026, K-49-14) | diperlakukan **sama dengan admin** — boleh mengubah lembar orang lain & lembar `menunggu_approval` (koreksi angka wajib `alasan_koreksi`, tercatat sebagai koreksi atas namanya) |
 | Sesi bukan sesi Autoklaf (`hasil_autoclave` kosong) | **422** `message`: "Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf." |
 | Sesi `disetujui` (semua peran) | **422** `message`: "Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit." |
 | Teknisi atas sesi `menunggu_approval` (atau status lain di luar `draft`/`perlu_revisi`) | **422** `message`: "Sesi yang lagi nunggu approval nggak bisa diubah teknisi. …" |
@@ -1230,7 +1240,7 @@ sekali**, dan akun lain (mis. admin) tetap melihat sesinya tanpa tanda.
 - **Idempoten.** POST dua kali / DELETE dua kali tetap `200`, tanpa baris kembar.
 - **Siapa boleh** = siapa yang melihat sesi itu di `GET /api/calibrations`: admin, teknisi, viewer
   seorganisasi; **teknisi cuma sesinya sendiri**. Sesi teknisi lain / lab lain → `404`.
-  Super admin → `403` (rute tulis; jalur baca super admin cuma GET).
+  Super admin → boleh, sama dengan admin (sejak 15 Okt 2026, K-49-14; sebelumnya `403`).
 - Throttle `riwayat-sembunyikan`: 60/menit per akun → `429`.
 
 `GET /api/calibrations` sekarang membawa `"tersembunyi": true|false` di **tiap item**, dihitung untuk
@@ -1245,12 +1255,64 @@ sekali**, dan akun lain (mis. admin) tetap melihat sesinya tanpa tanda.
 
 ## 5. Approval & Sertifikat (dibutuhin Minggu 8)
 
-### `POST /api/calibrations/{id}/approve` — **admin doang**, teknisi/viewer → `403`.
+### `POST /api/calibrations/{id}/approve` — **admin & super admin**, teknisi/viewer → `403`.
 Response: sesi dengan `status: "disetujui"`. Generate sertifikat jalan di **queue** (async), jadi `certificate_id` boleh masih `null` sesaat.
+**Pengesahan dicabut (15 Okt 2026, K-50-07):** approve menerbitkan LANGSUNG — tidak ada status
+`menunggu_pengesahan` baru, rute `sahkan` / `kembalikan-dari-pengesahan` / `tarik-pengajuan` /
+`GET /pengesahan/antrean` tidak ada lagi (`404`), dan `penandatangan_user_id` / `catatan_pengajuan`
+di body tidak dipakai lagi.
+
+**No. Sertifikat WAJIB diketik saat Setujui (15 Okt 2026, K-50-04/13).** Body:
+
+```json
+{ "nomor_sertifikat": "KAL/2026/0123", "berlaku_sampai": "2029-02-28", "abaikan_peringatan": false }
+```
+
+Aturan `nomor_sertifikat`: wajib · maks 100 karakter · hanya huruf, angka, `.` `_` `/` `-` (tanpa
+spasi) · TIDAK boleh berakhiran `-R<angka>` · unik per organisasi di semua status. Semua `422`,
+status sesi tidak berubah, bentuk sama dengan galat Order Number
+(`message`, `kode`, `errors.nomor_sertifikat[]`):
+
+| `kode` | Arti |
+|---|---|
+| `nomor_sertifikat_wajib` | kosong / spasi |
+| `nomor_sertifikat_tidak_valid` | karakter tidak aman, terlalu panjang, atau berakhiran `-R<n>` |
+| `nomor_sertifikat_dipakai` | sudah dipakai; tambahan `sertifikat: { id, nomor, status, nomor_sesi }` menyebut pemiliknya |
+
+Order Number tetap wajib (`nomor_order_wajib`) dan diisi bersamaan (K-50-13): dialog Setujui =
+No. Sertifikat + Order Number. Pengecualian: sesi yang sertifikatnya DITARIK (lihat `POST
+/certificates/{id}/tarik`) terbit ulang otomatis sebagai `<nomor>-R<n>` — `nomor_sertifikat` tidak
+diminta (diabaikan kalau dikirim). Penomoran otomatis `CAL/yyyy/mm/nnnn` tinggal untuk data lama
+& seeder.
+
+Super admin boleh sejak 15 Okt 2026 (K-49-14), di organisasinya sendiri; sesi lab lain → `404`.
+
+**Order Number wajib (15 Okt 2026, K-49-14).** Sesi yang `nomor_order`-nya kosong
+(atau cuma spasi) dijawab `422` dan **statusnya tidak berubah**:
+
+```json
+{
+  "message": "Order Number belum diisi. Master Data (atau super admin) wajib mengisinya di Data administrasi sebelum sesi disetujui — nomor itu tercetak di sertifikat.",
+  "kode": "nomor_order_wajib",
+  "errors": { "nomor_order": ["…pesan yang sama…"] }
+}
+```
+
+- Diisi lewat `PATCH /api/calibrations/{id}/admin` `{ "nomor_order": "…" }` (admin & super
+  admin), atau ikut di body `POST`/`PUT` sesi kalau pengirimnya admin/super admin.
+  Kiriman **teknisi** untuk `nomor_order` tetap dibuang diam-diam (tidak `422`).
+- Diperiksa **sesudah** pemisahan wewenang dan **sebelum** validasi `berlaku_sampai` &
+  hitung ulang. Jadi urutan `422`-nya: status → hasil pindai belum dikonfirmasi →
+  `pemisahan_wewenang` → `nomor_order_wajib` → `nomor_sertifikat_*` → galat validasi body →
+  temuan validator.
+- Tombol Setujui panel `/admin` menahan hal yang sama (notifikasi, bukan `422`).
+- Bacanya dari `kode`, bukan dari teks `message`.
 
 **Pemisahan wewenang (2 Okt 2026, keputusan K-30-03: blokir tanpa pengecualian).**
-Admin yang ikut mengisi data sesi — pengisi lembar (`teknisi_id`), yang mengoreksi
-pembacaannya, atau yang mengonfirmasi hasil pindainya — dijawab `422`:
+Yang MENGISI lembar (`teknisi_id`) atau yang mengonfirmasi hasil pindainya dijawab `422`.
+(Revisi 15 Okt 2026, K-50-02: admin yang MENGOREKSI pembacaan **boleh** menyetujuinya — cabang
+`penyetuju_mengoreksi_pembacaan` dicabut; koreksinya dijaga jejak lama → baru, lihat
+`GET /calibrations/{id}/bandingkan`.)
 
 ```json
 {
@@ -1261,14 +1323,12 @@ pembacaannya, atau yang mengonfirmasi hasil pindainya — dijawab `422`:
 ```
 
 `abaikan_peringatan` **tidak** menembusnya. Tampilkan `wewenang.temuan[].pesan`, jangan
-tawarkan "lanjutkan". Aturan yang sama berlaku di tombol Setujui panel `/admin` dan di
-`POST /calibrations/{id}/sahkan` (kode `pengesah_*`); mode "peringatan lalu boleh
-lanjut" (`butuh_konfirmasi`) di `sahkan` sudah dicabut.
+tawarkan "lanjutkan". Aturan yang sama berlaku di tombol Setujui panel `/admin`.
 
-Body-nya opsional semua:
+Selain `nomor_sertifikat` (wajib), body opsional:
 
 ```json
-{ "berlaku_sampai": "2029-02-28", "abaikan_peringatan": false }
+{ "nomor_sertifikat": "KAL/2026/0123", "berlaku_sampai": "2029-02-28", "abaikan_peringatan": false }
 ```
 
 **`berlaku_sampai` — masa berlaku sertifikat, ditentukan admin (baru 26 Jul).**
@@ -1292,8 +1352,8 @@ Tiga lapis, dari yang paling spesifik:
   `menunggu_approval`.
 - **Sesudah sertifikat terbit, masa berlakunya nggak bisa diubah lagi.** Aturan
   yang sama kayak `PATCH /calibrations/{id}/admin`: sertifikat yang udah terbit
-  itu dokumen terkendali. Kalau salah, jalannya lewat reject → revisi → approve
-  ulang, biar ada jejaknya.
+  itu dokumen terkendali. Kalau salah, jalannya lewat revisi (§38) atau tarik sertifikat →
+  koreksi → setujui ulang (`<nomor>-R<n>`), biar ada jejaknya.
 
 **Buat UI:** taruh date-picker `berlaku_sampai` di dialog "Setujui", **prefilled**
 pakai default organisasi (`tanggal_kalibrasi` + N bulan) supaya admin nggak perlu
@@ -1309,22 +1369,68 @@ dokumen yang tidak pernah terbit tidak menghabiskan nomor. Mobile cukup
 menampilkan `message` dan tombol retry biasa di sertifikatnya. Dulu keadaan ini
 dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 
-### `POST /api/calibrations/{id}/reject`
+### `POST /api/calibrations/{id}/reject` — **DICABUT (15 Okt 2026, K-50-01)**
+
+Rute, izin `kalibrasi.tolak`, tombol Tolak panel, dan notifikasi `sesi_perlu_revisi` sudah tidak
+ada (`404`). Master Data/super admin tidak mengembalikan lembar ke teknisi lagi: dia
+**mengoreksinya sendiri** lewat `PUT` lalu menyetujui. Sesi lama yang sudah `perlu_revisi` di data
+produksi tetap bisa dikirim ulang teknisi (`PUT /calibrations/{id}` seperti biasa), dan
+`catatan_revisi` / `revisi_field` lama tetap terbaca. Jangan tampilkan tombol Tolak.
+
+### Edit Admin — `PUT /api/calibrations/{id}` (dan `PUT /api/calibrations/autoclave/{id}`) pada `menunggu_approval`
+
+Admin & super admin mengirim body penuh yang sama dengan teknisi (semua field). Kalau ANGKA
+pembacaan berubah, **`alasan_koreksi` wajib** (10–500 karakter; satu alasan boleh untuk beberapa
+sel sekaligus), kalau tidak `422` galat validasi `alasan_koreksi`. Hasil: nilai lama dan baru
+tercatat di `audit_logs` (pelaku, waktu, alasan), dan **isian asli teknisi tetap utuh** di kolom
+`input_asli` (dibekukan sekali saat kirim pertama, tidak pernah ditimpa; sesi lama dibekukan tepat
+sebelum koreksi pertama). Sesi `disetujui` tetap terkunci (jalannya: revisi atau tarik sertifikat).
+
+### `GET /api/calibrations/{id}/bandingkan` — **admin & super admin** (15 Okt 2026)
+
+Asli teknisi lawan keadaan sekarang, per sel; teknisi/viewer → `403`, lab lain → `404`.
+
 ```json
-{ "catatan_revisi": "Titik ukur 100mm cuma 2 pembacaan, minimal 3." }
+{
+  "data": {
+    "sesi_id": 88, "status": "menunggu_approval",
+    "asli_dibekukan_pada": "2026-10-15T09:00:00+00:00",
+    "ada_asli": true, "jenis": "pembacaan", "total_sel": 3, "jumlah_berubah": 1,
+    "sel": [
+      { "kunci": "titik_1.-.sesudah_adjustment.sensor_-.pembacaan_1", "asli": 50.02, "sekarang": 50.05,
+        "berubah": true, "diubah_oleh": { "id": 3, "nama": "Admin Pemeriksa" },
+        "diubah_pada": "2026-10-15T10:00:00+00:00",
+        "alasan": "Koreksi pembacaan oleh Master Data: Digit kedua salah salin dari logger." },
+      { "kunci": "titik_1.-.sesudah_adjustment.sensor_-.pembacaan_2", "asli": 50.01, "sekarang": 50.01, "berubah": false }
+    ]
+  }
+}
 ```
-Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal nampilin catatan ini ke teknisi.
 
-Umur catatannya (15 Okt 2026): `catatan_revisi` & `revisi_field` **bertahan** selama
-teknisi menyimpan revisinya sebagai draft (`PUT … status: "draft"` → sesi `draft` yang
-masih membawa catatan), dan baru dikosongkan saat lembar dikirim ulang
-(`menunggu_approval`) atau disetujui. Berlaku sama di `PUT /calibrations/{id}` dan
-`PUT /calibrations/autoclave/{id}`. Jadi `catatan_revisi` terisi **tidak** berarti
-statusnya `perlu_revisi` — draft juga bisa membawanya.
+`jenis`: `pembacaan` (kunci `titik_<titik_ke>.<peran_sensor>.<tahap>.sensor_<n>.pembacaan_<n>`) atau
+`autoclave` (kunci = jalur titik di `lembar`, mis. `lembar.suhu.disk.0.0`). `ada_asli: false` =
+sesi lama yang belum pernah dikoreksi: semua `berubah: false`.
 
-`409` (baru 1 Okt 2026) = sesi ini barusan sudah diputus lewat permintaan lain (mis. admin lain menyetujuinya). Tidak ada yang berubah; muat ulang detail sesinya.
+### `POST /api/certificates/{id}/tarik` — **admin & super admin** (15 Okt 2026, K-50-03)
 
-`catatan_revisi` wajib, 5–2000 karakter (batas atas baru 6 Okt 2026; sebelumnya tanpa batas dan teks sangat panjang jadi 500 di MySQL).
+Tarik sertifikat `terbit` kembali ke lembar kerja untuk dikoreksi. Body:
+
+```json
+{ "alasan": "Angka disk 1 salah salin dari logger.", "password": "sandi akun yang menarik" }
+```
+
+`alasan` wajib 10–2000 karakter; `password` = sandi akun pelaku (konfirmasi). `422`:
+galat validasi, `kode: "konfirmasi_sandi_salah"`, atau `errors.sertifikat` (bukan `terbit`, sudah
+ditarik/dibatalkan, sudah punya revisi, sesi bukan `disetujui`). Teknisi `403`, lab lain `404`.
+Throttle `sertifikat-ubah` (20/menit).
+
+Efek (satu transaksi): sertifikat `status: "ditarik"` (+ `ditarik_pada`, `ditarik_oleh`,
+`alasan_ditarik`; baris & PDF tetap ada, nomor tidak dipakai ulang), sesi kembali
+`menunggu_approval`, input mentah TIDAK disentuh. Lalu koreksi lewat `PUT` dan `POST
+/calibrations/{id}/approve` **tanpa** `nomor_sertifikat` → terbit `<nomor>-R1` (`revision_of` =
+yang ditarik; tarik lagi → `-R2`). QR lama menampilkan "Sertifikat ini ditarik" + penggantinya;
+`GET /api/verify/{token}` → `status_dokumen: "ditarik"`, `digantikan_oleh`; unduh publik `410`.
+`status_dokumen` di resource sertifikat: `berlaku | digantikan | dibatalkan | ditarik | belum_terbit`.
 
 ### `GET /api/calibrations/{id}/riwayat-persetujuan` — **admin & super admin saja** (6 Okt 2026)
 
@@ -1893,7 +1999,8 @@ dan `jumlah_file` = 0.
 | Peran | Membuat folder? | Yang tampil |
 |---|---|---|
 | admin | **ya**, sekali per PT | semua PT |
-| viewer, super_admin | tidak | folder yang sudah ada |
+| super_admin (sejak 15 Okt 2026, K-49-14) | **ya**, sama dengan admin | semua PT |
+| viewer | tidak | folder yang sudah ada |
 | teknisi | tidak | folder yang berisi kerjaannya sendiri (tetap) |
 
 **`?search=` sekarang diterima sebagai alias `?q=`.** Mobile mengirim `search`,
