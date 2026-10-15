@@ -83,7 +83,9 @@ class EnclosureBudgetTest extends TestCase
     {
         $fix = self::fixture()[$workbook];
         $sp = $fix['setpoints'][$index];
-        $hasil = $this->hitung($fix, $sp);
+        // Diadu ke SEL master, jadi barisnya disuapkan seperti FC master
+        // menyalinnya — lihat [hitung()].
+        $hasil = $this->hitung($fix, $sp, isiBarisFcMaster: true);
         $e = $sp['expected'];
 
         // Sebaran suhu — AVG Terkoreksi tiap sensor (yang tercetak di sertifikat).
@@ -199,13 +201,13 @@ class EnclosureBudgetTest extends TestCase
     }
 
     /**
-     * Peta kolom pembacaan termokopel `[1,2,3,3,4]` (buang ke-5, gandakan ke-3).
-     * Sensor dengan pembacaan ke-5 ≠ ke-3 harus rata-rata terkoreksinya ikut
-     * versi master, bukan rata-rata bersih kelima pembacaan.
+     * Peta kolom master `[1,2,3,3,4]` TIDAK lagi ditiru (keputusan pemilik
+     * 15 Okt 2026): rata-rata terkoreksi = rata-rata SELURUH pembacaan + koreksi,
+     * dan versi master tercatat di jejak `peta_kolom_master_rusak`.
      */
-    public function test_peta_kolom_pembacaan_ditiru(): void
+    public function test_peta_kolom_master_tidak_ditiru_tapi_dicatat(): void
     {
-        $this->assertSame([0, 1, 2, 2, 3], EnclosureCalculator::PETA_KOLOM_PEMBACAAN);
+        $this->assertSame([0, 1, 2, 2, 3], EnclosureCalculator::PETA_KOLOM_MASTER);
 
         // Yokogawa SP4 sensor "5" (index 2) punya pembacaan 100.24/100.1/100.1/100.24/100.22
         // — ke-5 (100.22) ≠ ke-3 (100.1). Master pakai [100.24,100.1,100.1,100.1,100.24].
@@ -216,6 +218,42 @@ class EnclosureBudgetTest extends TestCase
         $rataBersih = array_sum($sensor) / count($sensor);
         $rataMaster = ($sensor[0] + $sensor[1] + $sensor[2] + $sensor[2] + $sensor[3]) / 5;
         $this->assertJauhDari($rataBersih, $rataMaster, 1e-6, 'contoh ini harus punya ke-5 ≠ ke-3');
+
+        // Sistem = sel master (`dist_terkoreksi`, dari SERTIFIKAT!J31) + selisih
+        // rata-rata bersih vs rata-rata versi peta master; koreksi tabelnya sama.
+        $master = $fix['setpoints'][3]['dist_terkoreksi'][2];
+        $this->assertEqualsWithDelta($master + $rataBersih - $rataMaster, $hasil['sensor'][2]['rata_rata_terkoreksi'], self::TOLERANSI);
+
+        // Versi master tercatat di jejak, lengkap dengan alamat selnya.
+        $catatan = collect($hasil['catatan_audit'])->firstWhere('kode', 'peta_kolom_master_rusak');
+        $this->assertNotNull($catatan);
+        $this->assertStringContainsString('PERHITUNGAN FC', $catatan['pesan']);
+        $this->assertEqualsWithDelta($master, $catatan['rincian']['versi_master']['terukur'][2], self::TOLERANSI);
+    }
+
+    /**
+     * Catatan SP3 (`PERHITUNGAN U95%!O75` merujuk Tabel_Drift) menghitung versi
+     * master dengan BENAR: disuapi baris FC seperti master, u_c versi master
+     * sama dengan nilai sel master SP3 (0,623430434790, laporan paritas 04
+     * Lampiran A), u_c sistem sama dengan hitungan ber-U kalibrator 0,24.
+     */
+    public function test_catatan_sp3_versi_master_sama_dengan_sel_master(): void
+    {
+        $fix = self::fixture()['yokogawa'];
+        $sensors = array_map(static fn (array $s): array => [
+            'no' => $s['no'],
+            'pembacaan' => array_map(static fn (int $i): float => (float) $s['pembacaan'][$i], EnclosureCalculator::PETA_KOLOM_MASTER),
+        ], $fix['setpoints'][2]['sensors']);
+
+        $hasil = (new EnclosureCalculator)->hitungSetpoint($sensors, $fix['setpoints'][2]['indikator'], 75.0, [
+            'merk' => $fix['merk'], 'tipe_sensor' => $fix['tipe_sensor'], 'cmc' => (float) $fix['cmc'], 'resolusi_alat' => 0.1,
+        ], 3);
+
+        $catatan = collect($hasil['catatan_audit'])->firstWhere('kode', 'master_sp3_sel_kalibrator');
+        $this->assertNotNull($catatan);
+        $this->assertEqualsWithDelta(0.623430434790, $catatan['rincian']['u_c_master'], 1e-9);
+        $this->assertEqualsWithDelta($hasil['ketidakpastian_gabungan'], $catatan['rincian']['u_c_sistem'], 1e-12);
+        $this->assertEqualsWithDelta(0.634633167288, $hasil['ketidakpastian_gabungan'], 1e-9);
     }
 
     /**
@@ -310,7 +348,7 @@ class EnclosureBudgetTest extends TestCase
         // bawah jarak antar-titik tabel), jadi selisih rata-rata TERKOREKSI-nya
         // persis selisih rata-rata mentahnya.
         $mentahA = array_sum($tiga) / 3;
-        $mentahB = array_sum([$tiga[0], $tiga[1], $tiga[2], $tiga[2], $empat[3]]) / 5;
+        $mentahB = array_sum($empat) / 4;
 
         $this->assertEqualsWithDelta(
             $mentahA - $mentahB,
@@ -321,10 +359,11 @@ class EnclosureBudgetTest extends TestCase
     }
 
     /**
-     * Grid 4 pembacaan = grid 5 pembacaan, apa pun isi kolom kelimanya —
-     * karena master memang membuang kolom ke-5 ([PETA_KOLOM_PEMBACAAN]).
+     * 4 pembacaan tetap CUKUP (ambang [MIN_PEMBACAAN] dipertahankan), tapi
+     * sejak peta kolom master dilepas, kolom ke-5 IKUT dihitung — grid 4 dan
+     * grid 5 tidak lagi identik.
      */
-    public function test_empat_pembacaan_sama_hasilnya_dengan_lima(): void
+    public function test_empat_pembacaan_cukup_dan_kolom_kelima_ikut_dihitung(): void
     {
         $fix = self::fixture()['yokogawa'];
         $sp = $fix['setpoints'][0];
@@ -350,9 +389,11 @@ class EnclosureBudgetTest extends TestCase
         $b = (new EnclosureCalculator)->hitungSetpoint($empat, $sp['indikator'], (float) $sp['setpoint'], $spek);
 
         $this->assertSame([], $b['pembacaan_kurang'], '4 pembacaan itu cukup, bukan kurang');
-        $this->assertEqualsWithDelta($a['ketidakpastian_gabungan'], $b['ketidakpastian_gabungan'], 1e-12);
-        $this->assertEqualsWithDelta($a['keseragaman'], $b['keseragaman'], 1e-12);
-        $this->assertEqualsWithDelta($a['kestabilan'], $b['kestabilan'], 1e-12);
+
+        // Sensor no. 4 SP1 (INPUT DATA): 15,2; 15,3; 15,2; 15,3; 15,2 — kolom ke-5
+        // menggeser rata-ratanya: 15,24 (lima) vs 15,25 (empat), koreksi tabel sama.
+        $i = array_search(4, array_column($a['sensor'], 'no'), true);
+        $this->assertEqualsWithDelta(15.24 - 15.25, $a['sensor'][$i]['rata_rata_terkoreksi'] - $b['sensor'][$i]['rata_rata_terkoreksi'], 1e-9);
     }
 
     /** Sensor acuan yang dipakai ikut dipulangkan & dicatat — nggak cuma posisi. */
@@ -464,13 +505,21 @@ class EnclosureBudgetTest extends TestCase
      * @param  array<string, mixed>  $sp
      * @return array<string, mixed>
      */
-    private function hitung(array $fix, array $sp): array
+    /**
+     * `$isiBarisFcMaster`: pembacaan disuapkan PERSIS seperti baris termokopel
+     * `PERHITUNGAN FC` master menyalinnya (`[1,2,3,3,4]`, kerusakan salin-tempel
+     * yang sejak 15 Okt 2026 tidak ditiru kalkulator). Dipakai untuk mengadu
+     * RANTAI HITUNG ke nilai sel master; nilai sistem diadu terpisah.
+     */
+    private function hitung(array $fix, array $sp, bool $isiBarisFcMaster = false): array
     {
         $sensors = array_map(
             static fn (array $s): array => [
                 'no' => $s['no'],
                 'channel' => $s['channel'] ?? null,
-                'pembacaan' => $s['pembacaan'],
+                'pembacaan' => $isiBarisFcMaster
+                    ? array_map(static fn (int $i): float => (float) $s['pembacaan'][$i], EnclosureCalculator::PETA_KOLOM_MASTER)
+                    : $s['pembacaan'],
             ],
             $sp['sensors'],
         );

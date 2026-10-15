@@ -235,6 +235,41 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         return 1;
     }
 
+    /**
+     * Desimal cetak sertifikat Enclosure per VARIAN master — format angka sel
+     * sheet `SERTIFIKAT` (dibaca dari kedua `.xlsm`, 15 Okt 2026). `null` =
+     * format `General` (nol di belakang dibuang).
+     *
+     *   Constant/Yokogawa: B25 `0.0`, F25:S36 `0.0`, U25 `0.0`, P37 `0`,
+     *                      C42 `0.0`, E42 `0.0`, J42/L42/O42 `0.0`
+     *   Recorder:          B25 `0.0`, F25:S29 `0.00`, U25 `0.0`, N47 `0`,
+     *                      C41 `General`, E41 `0.00`, J41/L41/O41 `0.00`
+     *
+     * Keputusan pemilik proyek 15 Okt 2026: cetak persis seperti Excel. Baris
+     * Koreksi Recorder (`F26..`) tidak ikut terbaca waktu itu dan diasumsikan
+     * sama dengan baris Terukur di atasnya (`0.00`) — lihat pertanyaan lab #14.
+     *
+     * @var array<string, array<string, int|null>>
+     */
+    public const FORMAT_CETAK = [
+        'constant_yokogawa' => [
+            'indikator' => 1, 'terukur' => 1, 'koreksi' => 1, 'u95' => 1, 'k' => 0,
+            'setting' => 1, 'indikator_kinerja' => 1, 'kinerja' => 1,
+        ],
+        'recorder' => [
+            'indikator' => 1, 'terukur' => 2, 'koreksi' => 2, 'u95' => 1, 'k' => 0,
+            'setting' => null, 'indikator_kinerja' => 2, 'kinerja' => 2,
+        ],
+    ];
+
+    /** @return array{varian: string, desimal: array<string, int|null>} */
+    public function formatCetakSertifikat(?string $merkKalibrator): array
+    {
+        $varian = $merkKalibrator === TabelKalibratorEnclosure::MERK_BERKANAL ? 'recorder' : 'constant_yokogawa';
+
+        return ['varian' => $varian, 'desimal' => self::FORMAT_CETAK[$varian]];
+    }
+
     /** U95: dua desimal. */
     public function desimalU95(): ?int
     {
@@ -950,6 +985,9 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                 'keterangan' => $catatan['pesan'],
                 'distribusi' => '-',
                 'nilai' => $hasil['ketidakpastian_diperluas'],
+                // Penyimpangan dari master (sel, versi master vs sistem) —
+                // AGENTS.md §Olah data butir 4. Cuma ada di catatan yang punya.
+                ...(isset($catatan['rincian']) ? ['rincian' => $catatan['rincian']] : []),
             ];
         }
 

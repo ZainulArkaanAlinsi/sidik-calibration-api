@@ -110,6 +110,15 @@ menyebut hasil versi `√3`.
 
 ## 4. Baris termokopel di sheet FC membuang pembacaan ke-5 dan menggandakan ke-3
 
+> **DIPUTUSKAN 15 Okt 2026 (pemilik proyek):** kerusakan salin-tempel, jadi TIDAK
+> ditiru lagi. Sistem memakai SELURUH pembacaan (termasuk ke-6 dst. bila ada);
+> versi master (peta `[1,2,3,3,4]`) tercatat di jejak sesi `peta_kolom_master_rusak`
+> beserta sel `PERHITUNGAN FC!G23:I36`. Angka cetak sesi contoh Yokogawa yang
+> berubah (9 sel): SP1 pos 8 Terukur 14,4→14,5 & Koreksi -0,6→-0,5, KS 0,2→0,3,
+> VK 0,4→0,5; SP3 pos 9 Terukur 75,0→75,1 (rata-rata 75,02 masuk indeks tabel 100)
+> & Koreksi 0,0→0,1, VK 0,7→0,8; SP4 pos 6 Terukur 99,6→99,7 & Koreksi -0,4→-0,3.
+> Teks di bawah = riwayat.
+
 Di sheet `PERHITUNGAN FC`, tiap baris termokopel menyalin lima kolom pembacaan
 `INPUT DATA` (D=1, F=2, H=3, I=4, K=5) jadi **`[1, 2, 3, 3, 4]`** — kolom G & H
 sama-sama menunjuk pembacaan ke-3, dan pembacaan ke-5 tidak pernah dibaca:
@@ -204,6 +213,11 @@ master Recorder ini memang menunggu re-kalibrasi standarnya? Kalau menunggu,
 sesi Enclosure mode Recorder sebaiknya tidak jadi acuan sampai VALID lagi.
 
 ## 9. `k` dicetak presisi penuh di sertifikat
+
+> **15 Okt 2026:** format sel `P37`/`N47` terbaca langsung dari workbook: `0`
+> (tampil `2`). Sertifikat kini mencetak `k` dengan format itu (prinsip pemilik:
+> cetak persis Excel). Nilai `k` sendiri = kuantil t eksak (beda ~3e-6 dari
+> master, #6); rumus `k` master belum diverifikasi.
 
 `SERTIFIKAT!P37` (Constant/Yokogawa) = `1,9616120828…` — dicetak apa adanya,
 bukan dibulatkan ke 2 desimal seperti kebiasaan alat lain (TITS `k=2,40`).
@@ -329,6 +343,45 @@ mentah yang sama.
    teknisi, bukan disimpulkan.
 2. **Kalau termokopel acuan tidak terisi**, sekarang nomor berikutnya yang naik
    jadi acuan. Apakah itu benar, atau set point-nya harus ditolak?
+
+## 14. Format cetak sertifikat Enclosure (ditambahkan 15 Okt 2026)
+
+> **DIPUTUSKAN 15 Okt 2026 (pemilik proyek): cetak persis format sel master**
+> per varian (`EnclosureProfileBase::FORMAT_CETAK`) — Yokogawa `0.0` termasuk
+> U95 (`1,4`), Recorder `0.00` (Setting General, U95 & Indikator tabel A `0.0`),
+> `k` `0`. Pembulatan = tampilan Excel (15 angka penting, setengah menjauhi nol).
+> Sisa terbuka: format baris Koreksi Recorder (`F26..`) belum terbaca, diasumsikan
+> `0.00` seperti Terukur. Butir 3 & 4 di bawah masih terbuka.
+
+Sertifikat Enclosure sekarang mencetak dua bagian master (A Sebaran Suhu, B
+Kinerja Enklosur) dari `CertificateSnapshotBuilder::enclosure()`. Susunannya
+diambil dari sheet `SERTIFIKAT` kedua master; desimalnya masih ikut profil
+(`desimalSertifikat` 1, `desimalU95` 2, `desimalFaktorCakupan` 2) karena format
+sel master tidak seragam:
+
+| Sel master | Constant/Yokogawa | Recorder | Dicetak sistem |
+|---|---|---|---|
+| Terukur & Koreksi (`F25:S36`) | `0.0` | `0.00` | 1 desimal |
+| Kinerja KS/SS/VK (`J42:O47` / `J41:O43`) | `0.0` | `0.00` | 1 desimal |
+| Indikator di Kinerja (`E42` / `E41`) | `0.0` | `0.00` | 1 desimal |
+| U95 (`U25:U35`) | `0.0` → `1,4` | `0.0` → `1,5` | 2 desimal → `1,40` |
+| `k` (`P37` / `N47`) | `0` → `2` | `0` → `2` | 2 desimal → `1,96` (lihat #9) |
+
+**Yang ditanyakan:**
+
+1. Desimal Sebaran & Kinerja: 1 untuk semua kalibrator, atau 2 khusus Recorder
+   seperti format sel master Recorder?
+2. U95: master memformat `0.0` (`1,4`), profil mencetak `1,40`. Mana yang benar?
+   Mengubahnya menggeser angka cetak sertifikat yang sudah terbit — perlu
+   keputusan, bukan perbaikan diam-diam.
+3. `Thermocouple Position :` (`SERTIFIKAT!F18`) — master menyediakan tempat untuk
+   gambar posisi termokopel. Sistem tidak mencatat posisi fisik di chamber,
+   jadi kolom 1..N diturunkan dari nomor termokopel terkecil (#13). Apakah gambar
+   posisi wajib ikut tercetak? Kalau wajib, posisinya perlu dicatat teknisi.
+4. Baris standar `Thermocouple Type N / -/Type N / TCN-06,11 / LK-064-IDN`
+   (`SERTIFIKAT!B54`) tercetak di master; tabel Standard Used sistem hanya
+   memuat kalibrator yang dicentang. Termokopel standar perlu jadi baris
+   standar tersendiri?
 
 ---
 
