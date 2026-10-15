@@ -318,4 +318,42 @@ class IsolasiPerusahaanTest extends TestCase
             ->deleteJson("/api/pelanggan/v1/anggota/undangan/{$undanganSendiri->getKey()}")
             ->assertOk();
     }
+
+    /**
+     * K-50-05: pencarian nomor sertifikat (`GET /sertifikat?q=`) hanya melihat
+     * PT sendiri — nomor PT lain dijawab daftar kosong, sama dengan "tidak ada".
+     */
+    public function test_cari_nomor_sertifikat_tidak_menembus_perusahaan_lain(): void
+    {
+        $buat = function (Customer $pt, string $nomor): Certificate {
+            $alat = Equipment::factory()->create([
+                'organization_id' => $pt->organization_id,
+                'customer_id' => $pt->getKey(),
+            ]);
+
+            return Certificate::factory()->create([
+                'organization_id' => $pt->organization_id,
+                'nomor' => $nomor,
+                'status' => Certificate::STATUS_TERBIT,
+                'calibration_session_id' => CalibrationSession::factory()->create([
+                    'organization_id' => $pt->organization_id,
+                    'equipment_id' => $alat->getKey(),
+                ])->getKey(),
+            ]);
+        };
+
+        $buat($this->perusahaanA, 'ISO/A/0001');
+        $buat($this->perusahaanB, 'ISO/B/0002');
+
+        $this->withHeaders($this->bearer($this->picA))
+            ->getJson('/api/pelanggan/v1/sertifikat?q=ISO/B/0002')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 0);
+
+        $this->withHeaders($this->bearer($this->picA))
+            ->getJson('/api/pelanggan/v1/sertifikat?q=ISO/A/0001')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.nomor', 'ISO/A/0001');
+    }
 }

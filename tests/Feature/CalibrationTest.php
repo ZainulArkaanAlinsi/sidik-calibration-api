@@ -11,6 +11,7 @@ use App\Models\FolderFile;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\FolderOrganizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -107,12 +108,15 @@ class CalibrationTest extends TestCase
         $this->assertSame(FolderFile::SUMBER_LEMBAR_KERJA, $berkas->sumber);
         $this->assertNull($berkas->path, 'Yang ditaut mestinya record-nya, bukan berkas hasil render.');
 
-        // Foldernya: PT Maju Jaya / <tahun kalibrasi>
-        $folderTahun = $berkas->folder;
-        $this->assertSame(
-            $sesi->tanggal_kalibrasi->format('Y'),
-            $folderTahun->nama,
-        );
+        // Foldernya: PT Maju Jaya / <tahun> / <bulan> / <jenis alat> (K-50-06).
+        $folderJenis = $berkas->folder;
+        $folderBulan = $folderJenis->parent;
+        $folderTahun = $folderBulan->parent;
+        $tanggal = $sesi->tanggal_kalibrasi;
+
+        $this->assertSame($sesi->equipment->category?->nama ?? 'Lainnya', $folderJenis->nama);
+        $this->assertSame($tanggal->month.'-'.FolderOrganizer::BULAN[$tanggal->month], $folderBulan->nama);
+        $this->assertSame($tanggal->format('Y'), $folderTahun->nama);
         $this->assertSame('PT Maju Jaya', $folderTahun->parent->nama);
     }
 

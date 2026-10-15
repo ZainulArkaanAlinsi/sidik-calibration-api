@@ -12,6 +12,7 @@ use App\Models\FolderFile;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\FolderOrganizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -77,13 +78,19 @@ class FolderManagerTest extends TestCase
         $this->assertSame('PT Tirta Contoh Mandiri', $akar->nama);
         $this->assertSame(Folder::TIPE_SISTEM, $akar->tipe);
 
+        // PT / tahun / bulan (`10-Oktober`) / jenis alat (K-50-06).
         $tahun = $akar->children()->firstOrFail();
         $this->assertSame(now()->format('Y'), $tahun->nama);
 
-        // Disaring per `sumber`, bukan `firstOrFail()`: folder tahun sekarang
-        // juga nampung lembar kerja, dan lembar kerjanya dibikin LEBIH DULU
-        // (waktu dikirim) daripada sertifikatnya (waktu disetujui). Jadi
-        // "berkas pertama" bukan lagi sertifikatnya.
+        $bulan = $tahun->children()->firstOrFail();
+        $this->assertSame(now()->month.'-'.FolderOrganizer::BULAN[now()->month], $bulan->nama);
+
+        $jenis = $bulan->children()->firstOrFail();
+        $this->assertSame(EquipmentCategory::query()->latest('id')->value('nama'), $jenis->nama);
+        $tahun = $jenis;
+
+        // Disaring per `sumber`, bukan `firstOrFail()`: folder ini juga nampung
+        // lembar kerja (tanggal kalibrasi kemarin — sama bulan kecuali tanggal 1).
         $file = $tahun->files()->where('sumber', FolderFile::SUMBER_SERTIFIKAT)->firstOrFail();
         $this->assertStringStartsWith('Sertifikat-CAL-', $file->nama);
 
@@ -160,7 +167,8 @@ class FolderManagerTest extends TestCase
     public function test_buka_folder_nampilin_sub_folder_dan_file_di_dalamnya(): void
     {
         $this->terbitkanSertifikatUntuk($this->teknisi);
-        $tahun = Folder::whereNotNull('parent_id')->firstOrFail();
+        // Folder daun (PT / tahun / bulan / jenis alat) tempat berkasnya mendarat.
+        $tahun = FolderFile::where('sumber', FolderFile::SUMBER_SERTIFIKAT)->firstOrFail()->folder;
 
         // Dua berkas sekarang: lembar kerja (dibikin waktu dikirim) lalu
         // sertifikat (waktu disetujui). Urutannya dari id, jadi lembar kerja

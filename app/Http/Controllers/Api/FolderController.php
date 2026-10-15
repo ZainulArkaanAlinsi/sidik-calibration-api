@@ -475,17 +475,36 @@ class FolderController extends Controller
             ])])
             // Teknisi cuma dikasih lihat folder yang beneran ada isinya buat
             // dia — folder PT yang nggak pernah dia sentuh nggak usah nongol.
-            ->when($this->teknisiBiasa($request), fn (Builder $query) => $query->where(
-                fn (Builder $q) => $q
-                    ->whereIn('id', $this->queryFileYangBolehDilihat($request)->select('folder_id'))
-                    ->orWhereHas(
-                        'children',
-                        fn (Builder $anak) => $anak->whereIn(
-                            'id',
-                            $this->queryFileYangBolehDilihat($request)->select('folder_id'),
-                        ),
-                    ),
+            ->when($this->teknisiBiasa($request), fn (Builder $query) => $query->whereIn(
+                'id',
+                $this->idFolderTerlihat($request),
             ));
+    }
+
+    /**
+     * Folder yang boleh dilihat teknisi: yang berisi berkas miliknya PLUS semua
+     * induknya sampai akar PT. Dulu cuma satu tingkat ke atas (struktur `PT /
+     * tahun`); sejak `PT / tahun / bulan / jenis alat` (K-50-06) induknya bisa
+     * tiga tingkat, jadi ditelusuri sampai habis (dibatasi kedalaman).
+     *
+     * @return list<int>
+     */
+    private function idFolderTerlihat(Request $request): array
+    {
+        $ids = $this->queryFileYangBolehDilihat($request)->distinct()->pluck('folder_id')->all();
+        $semua = array_fill_keys($ids, true);
+        $baru = $ids;
+
+        for ($i = 0; $i < 12 && $baru !== []; $i++) {
+            $induk = Folder::query()->whereIn('id', $baru)->whereNotNull('parent_id')->pluck('parent_id')->all();
+            $baru = array_values(array_filter($induk, fn ($id) => ! isset($semua[$id])));
+
+            foreach ($baru as $id) {
+                $semua[$id] = true;
+            }
+        }
+
+        return array_keys($semua);
     }
 
     private function pastikanBolehLihat(Request $request, Folder $folder): void

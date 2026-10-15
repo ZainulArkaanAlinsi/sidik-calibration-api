@@ -5,18 +5,21 @@ namespace App\Services;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
+use App\Models\Equipment;
 use App\Models\Folder;
 use App\Models\FolderFile;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Yang bikin struktur Folder Manager kebentuk SENDIRI (spesifikasi poin 3 & 7).
+ * Yang bikin struktur Arsip kebentuk SENDIRI (spesifikasi poin 3 & 7, dirombak
+ * K-50-06): `PT › Tahun › Bulan › Jenis alat › file`, mis.
+ * `PT A / 2026 / 10-Oktober / Timbangan / <file>`. Folder dibuat otomatis.
  *
- * Polanya dua tingkat dan sengaja dangkal: `PT A / 2026 / <file sertifikat>`.
- * Lebih dalam dari itu (bulan, jenis alat, nomor order) kelihatannya rapi di
- * awal, tapi begitu datanya banyak, orang malah kesasar nyari satu sertifikat.
- * Pengelompokan per PT itu yang diminta; tahun ditambahin karena tanpa itu satu
- * folder PT lama bisa nampung ratusan file dalam setahun-dua tahun.
+ * Tahun & bulan ikut `diterbitkan_pada` (sertifikat) atau `tanggal_kalibrasi`
+ * (lembar kerja). Revisi `-R<n>` mendarat di folder sertifikat ASLINYA — satu
+ * alat, satu tempat, walau revisinya terbit bulan lain. Menggantikan keputusan
+ * "dua tingkat sengaja" yang dibatalkan pemilik 15 Okt 2026.
  *
  * Dipanggil dari job penerbitan sertifikat, jadi nggak ada yang perlu bikin
  * folder manual.
@@ -38,14 +41,25 @@ class FolderOrganizer
             return null;
         }
 
-        $tahun = ($sertifikat->diterbitkan_pada ?? now())->format('Y');
+        // Sudah tertaut = jangan dipindah lagi: retry job tidak menggandakan
+        // entri, dan berkas yang sengaja dipindah admin tidak ditarik balik.
+        $ada = FolderFile::where('certificate_id', $sertifikat->id)->first();
 
-        return DB::transaction(function () use ($sertifikat, $pelanggan, $tahun): FolderFile {
-            $folderTahun = $this->folderTahun($pelanggan, $tahun);
+        if ($ada !== null) {
+            return $ada;
+        }
+
+        return DB::transaction(function () use ($sertifikat, $pelanggan): FolderFile {
+            $folder = $this->folderAsal($sertifikat)
+                ?? $this->folderTujuan(
+                    $pelanggan,
+                    $sertifikat->diterbitkan_pada ?? now(),
+                    $sertifikat->session?->equipment,
+                );
 
             return FolderFile::firstOrCreate(
                 [
-                    'folder_id' => $folderTahun->id,
+                    'folder_id' => $folder->id,
                     'certificate_id' => $sertifikat->id,
                 ],
                 [
@@ -56,6 +70,29 @@ class FolderOrganizer
                 ],
             );
         });
+    }
+
+    /**
+     * Folder sertifikat ASLI untuk revisi `-R<n>` (menelusuri rantai
+     * `revision_of` ke atas). Null kalau bukan revisi atau aslinya belum
+     * pernah diarsipkan — pemanggil jatuh ke aturan tanggal biasa.
+     */
+    public function folderAsal(Certificate $sertifikat): ?Folder
+    {
+        $induk = $sertifikat->revision_of;
+        $batas = 10;
+
+        while ($induk !== null && $batas-- > 0) {
+            $berkas = FolderFile::where('certificate_id', $induk)->first();
+
+            if ($berkas !== null) {
+                return Folder::find($berkas->folder_id);
+            }
+
+            $induk = Certificate::query()->whereKey($induk)->value('revision_of');
+        }
+
+        return null;
     }
 
     /**
@@ -81,18 +118,26 @@ class FolderOrganizer
             return null;
         }
 
-        // Tahunnya ikut TANGGAL KALIBRASI, bukan tanggal kirim. Kalibrasi 31
-        // Desember yang lembarnya baru dikirim 2 Januari tetap masuk tahun
+        // Tahun & bulan ikut TANGGAL KALIBRASI, bukan tanggal kirim. Kalibrasi
+        // 31 Desember yang lembarnya baru dikirim 2 Januari tetap masuk bulan
         // kerjanya — kalau ikut tanggal kirim, satu pekerjaan kepecah dua
-        // folder tahun dan riwayat alatnya jadi bolong.
-        $tahun = ($sesi->tanggal_kalibrasi ?? $sesi->created_at ?? now())->format('Y');
+        // folder dan riwayat alatnya jadi bolong.
+        $ada = FolderFile::where('calibration_session_id', $sesi->id)->first();
 
-        return DB::transaction(function () use ($sesi, $pelanggan, $tahun): FolderFile {
-            $folderTahun = $this->folderTahun($pelanggan, $tahun);
+        if ($ada !== null) {
+            return $ada;
+        }
+
+        return DB::transaction(function () use ($sesi, $pelanggan): FolderFile {
+            $folder = $this->folderTujuan(
+                $pelanggan,
+                $sesi->tanggal_kalibrasi ?? $sesi->created_at ?? now(),
+                $sesi->equipment,
+            );
 
             return FolderFile::firstOrCreate(
                 [
-                    'folder_id' => $folderTahun->id,
+                    'folder_id' => $folder->id,
                     'calibration_session_id' => $sesi->id,
                 ],
                 [
@@ -146,20 +191,49 @@ class FolderOrganizer
         ];
     }
 
-    private function folderTahun(Customer $pelanggan, string $tahun): Folder
-    {
-        $akar = $this->folderPelanggan($pelanggan);
+    public const BULAN = [
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+        7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+    ];
 
-        return Folder::firstOrCreate(
-            [
-                'organization_id' => $pelanggan->organization_id,
-                'parent_id' => $akar->id,
-                'nama' => $tahun,
-            ],
-            [
-                'customer_id' => $pelanggan->id,
-                'tipe' => Folder::TIPE_SISTEM,
-            ],
-        );
+    /** `10-Oktober` — nomor di depan supaya urut kronologis, bukan alfabetis. */
+    public static function namaBulan(CarbonInterface $tanggal): string
+    {
+        return $tanggal->month.'-'.self::BULAN[$tanggal->month];
+    }
+
+    /**
+     * Nama tiga tingkat di bawah folder PT: tahun, bulan, jenis alat. Murni
+     * (tanpa DB) supaya `arsip:rapikan --dry-run` bisa memperlihatkan tujuan.
+     *
+     * @return list<string>
+     */
+    public static function jalurNama(CarbonInterface $tanggal, ?Equipment $alat): array
+    {
+        $jenis = trim(str_replace(['/', '\\'], '-', (string) ($alat?->category?->nama ?? '')));
+
+        return [$tanggal->format('Y'), self::namaBulan($tanggal), $jenis !== '' ? $jenis : 'Lainnya'];
+    }
+
+    /** PT › Tahun › Bulan › Jenis alat, tiap tingkat dibuat kalau belum ada. */
+    public function folderTujuan(Customer $pelanggan, CarbonInterface $tanggal, ?Equipment $alat): Folder
+    {
+        $folder = $this->folderPelanggan($pelanggan);
+
+        foreach (self::jalurNama($tanggal, $alat) as $nama) {
+            $folder = Folder::firstOrCreate(
+                [
+                    'organization_id' => $pelanggan->organization_id,
+                    'parent_id' => $folder->id,
+                    'nama' => $nama,
+                ],
+                [
+                    'customer_id' => $pelanggan->id,
+                    'tipe' => Folder::TIPE_SISTEM,
+                ],
+            );
+        }
+
+        return $folder;
     }
 }

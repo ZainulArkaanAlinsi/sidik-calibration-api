@@ -164,6 +164,7 @@ class BatasAntarLabTest extends TestCase
             'worksheet-scan' => ['api/worksheet-scans/{worksheetScan}', 'pindaian'],
             'dokumen bacaan' => ['api/dokumen/bacaan/{dokumenBacaan}', 'bacaanDokumen'],
             'folder-file download' => ['api/folder-files/{folderFile}/download', 'berkasFolder'],
+            'arsip berkas unduh' => ['api/arsip/berkas/{folderFile}/unduh', 'berkasFolder'],
             // Keputusan 26 Sep — pelacakan paket & penugasan membaca milik lab.
             'pelacakan paket' => ['api/pelacakan/{order}', 'order'],
             'penugasan' => ['api/penugasan/{penugasan}', 'penugasan'],

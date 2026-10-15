@@ -46,6 +46,7 @@ class MatriksIzin
         'alat.lihat' => ['GET', 'api/equipments'],
         'alat.tambah' => ['POST', 'api/equipments'],
         'alat.ubah' => ['PUT', 'api/equipments/{equipment}'],
+        'alat.ubah-jatuh-tempo' => ['POST', 'api/equipments/{equipment}/jatuh-tempo'],
         'alat.hapus' => ['DELETE', 'api/equipments/{equipment}'],
 
         // --- kalibrasi
@@ -60,6 +61,7 @@ class MatriksIzin
         'kalibrasi.setujui' => ['POST', 'api/calibrations/{calibration}/approve'],
 
         // --- pelacakan & penugasan
+        'sertifikat.telusuri' => ['GET', 'api/sertifikat/telusuri'],
         'pelacakan.lihat' => ['GET', 'api/pelacakan'],
         'pelacakan.serah-terima' => ['POST', 'api/pelacakan/item/{orderItem}/tahap-fisik'],
         'penugasan.lihat' => ['GET', 'api/penugasan'],

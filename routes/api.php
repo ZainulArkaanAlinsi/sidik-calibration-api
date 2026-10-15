@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\FotoPelangganController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\JatuhTempoAlatController;
 use App\Http\Controllers\Api\KemampuanKalibrasiController;
 use App\Http\Controllers\Api\KoreksiPelangganController;
 use App\Http\Controllers\Api\LaporanController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\TechnicianController;
+use App\Http\Controllers\Api\TelusuriSertifikatController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\VersiAplikasiController;
@@ -379,6 +381,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/arsip/perusahaan/{customer}/folder', [FolderController::class, 'folderPelanggan']);
     Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
     Route::get('/folder-files', [FolderFileController::class, 'index']);
+    // Arsip satu pintu (K-50-06): aksi berguna Folder Manager dipindah ke
+    // `/arsip/*` — daftar & unduh berkas. `/folders*` & `/folder-files*` lama
+    // TETAP sampai aplikasi lab selesai pindah (lihat perintah-frontend-revisi-1510.md).
+    Route::get('/arsip/berkas', [FolderFileController::class, 'index']);
+    Route::get('/arsip/berkas/{folderFile}/unduh', [FolderFileController::class, 'download'])
+        ->name('arsip.berkas.unduh');
     Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
         ->name('folder-files.download');
 
@@ -449,6 +457,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // Sertifikat terbit: semua role bisa lihat & unduh — teknisi cuma miliknya
     // sendiri (scope di controller). PDF-nya di disk privat, cuma bisa lewat sini.
     Route::get('/certificates', [CertificateController::class, 'index']);
+    // "Telusuri No. Sertifikat" (K-50-05): cari server-side lewat nomor,
+    // termasuk revisi `-R<n>`. Satu organisasi; teknisi cuma sesinya sendiri.
+    Route::get('/sertifikat/telusuri', [TelusuriSertifikatController::class, 'index'])
+        ->middleware('throttle:sertifikat-telusuri');
     // Rekap banyak sertifikat — didaftarin SEBELUM `/certificates/{certificate}`
     // biar "export" nggak kebaca sebagai id sertifikat.
     Route::get('/certificates/export/excel', [CertificateController::class, 'exportRekap'])
@@ -660,6 +672,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
         // Revisi & pembatalan (§38). Admin & super admin (K-49-14, lewat
         // `lolosTulisSuperAdmin`). Tidak ada hapus permanen.
+        // Ubah jatuh tempo alat (K-50-08): jadwal saja → langsung; tanggal tercetak
+        // di sertifikat → revisi -R<n>. Jawabannya menyebut `jalur`.
+        Route::post('/equipments/{equipment}/jatuh-tempo', [JatuhTempoAlatController::class, 'ubah'])
+            ->middleware('throttle:sertifikat-ubah');
         Route::post('/certificates/{certificate}/revisi', [CertificateController::class, 'revisi'])
             ->middleware('throttle:sertifikat-ubah');
         Route::post('/certificates/{certificate}/batalkan', [CertificateController::class, 'batalkan'])
@@ -803,6 +819,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Pindahin berkas sertifikat, dikunci pakai id SESI KALIBRASI (bukan id
         // folder_files) — itu yang dipegang mobile di layar arsip.
         Route::put('/arsip/berkas/{calibration}/pindah', [FolderFileController::class, 'pindahBerkasSesi']);
+        // Ganti nama berkas lewat pintu Arsip (handler sama dengan `PUT /folder-files/{id}`).
+        Route::put('/arsip/berkas/{folderFile}', [FolderFileController::class, 'update']);
         Route::post('/folder-files', [FolderFileController::class, 'store']);
         Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
         Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);

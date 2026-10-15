@@ -2835,6 +2835,36 @@ yang satu diunggahin gambar TTD.
 
 ---
 
+## 15. Telusuri No. Sertifikat, Arsip satu pintu, jatuh tempo (K-50-05/06/08, 16 Okt 2026)
+
+**Telusuri No. Sertifikat** — `GET /api/sertifikat/telusuri?q=` (semua peran internal; throttle
+`sertifikat-telusuri` 60/menit; izin `sertifikat.telusuri`). `q` wajib 2–100 huruf; `LIKE` pada
+`nomor` (termasuk `-R<n>`), satu organisasi, teknisi hanya sesinya sendiri. `per_page` ≤ 50.
+Tiap baris: `id, nomor, perusahaan, alat, merk, model, serial_number, status` (mentah),
+`status_dokumen` (`berlaku|digantikan|dibatalkan|ditarik|belum_terbit`), `revisi_ke` (null =
+terbitan pertama), `diterbitkan_pada`, `berlaku_sampai`, `tahap_paket` (TahapPaket, null bila
+alat tak berada di paket), `pdf_url` (null bila belum terbit). Pelacakan paket
+(`/pelacakan*`) tetap ada untuk serah terima fisik, tetapi pencarian nomor pindah ke sini.
+
+**Arsip satu pintu** — struktur otomatis `PT › Tahun › Bulan (10-Oktober) › Jenis alat`. Tahun &
+bulan dari `diterbitkan_pada` (sertifikat) atau `tanggal_kalibrasi` (lembar kerja); jenis alat dari
+kategori alat (`Lainnya` bila kosong). Revisi `-R<n>` mendarat di folder sertifikat aslinya.
+Teknisi melihat semua folder induk dari berkasnya sampai akar PT. Pintu `/arsip/*`:
+`GET /arsip/perusahaan`, `GET /arsip/perusahaan/{customer}/folder`, `GET /arsip/folders/{id}`,
+`GET /arsip/berkas?folder_id=`, `GET /arsip/berkas/{id}/unduh`, `PUT /arsip/berkas/{id}` (ganti
+nama, admin), `PUT /arsip/berkas/{calibration}/pindah`, `PUT /arsip/folders/{id}[/pindah]`;
+kirim sertifikat tetap `POST /certificates/{id}/kirim-email`. `/folders*` dan `/folder-files*`
+lama MASIH ada (alias handler sama) sampai aplikasi lab selesai pindah; setelah itu dicabut
+tanpa membuang data. Berkas lama: `php artisan arsip:rapikan --dry-run|--jalankan`.
+
+**Ubah jatuh tempo** — `POST /api/equipments/{id}/jatuh-tempo` (admin & super admin; throttle
+`sertifikat-ubah`; izin `alat.ubah-jatuh-tempo`), body `tanggal_jatuh_tempo` (`Y-m-d`) + `alasan`
+(5–2000). Jawaban memuat `jalur`: `jadwal_alat` (200; hanya jadwal alat, tanpa sertifikat aktif
+bertanggal; audit lama → baru + alasan) atau `revisi_sertifikat` (202; tanggal tercetak berubah
+sehingga dibuat revisi `-R<n>` lewat `RevisiSertifikat`, `sertifikat.{id,nomor}`; jadwal alat ikut
+berubah via `SinkronJadwalAlat` setelah PDF terbit). `422` bila tanggal sama / alasan kosong.
+Layar pelanggan dan pengingat membaca `equipments.tanggal_jatuh_tempo` yang sama.
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

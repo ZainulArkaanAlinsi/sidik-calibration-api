@@ -116,3 +116,21 @@ Tetap admin + teknisi (K-49-14/K-50-14). `User::roles()` tidak memuatnya — tid
 - `menunggu_pengesahan` lama: dipindah server ke `menunggu_approval` (perintah artisan
   `kalibrasi:pindahkan-pengesahan`, dry-run dulu). Klien tidak perlu menangani status itu;
   kalau masih muncul, perlakukan seperti `menunggu_approval`.
+
+## 8. G2 (16 Okt 2026) — Telusuri, Arsip satu pintu, jatuh tempo
+
+- **Telusuri No. Sertifikat** menggantikan layar Pelacakan sebagai pencarian: panggil
+  `GET /api/sertifikat/telusuri?q=` (debounce 300 ms, min 2 huruf), tampilkan nomor, PT, alat, seri,
+  `status_dokumen` + `revisi_ke` (R-n), `tahap_paket`, tombol PDF dari `pdf_url`. Detail di
+  `kontrak-api.md` §15. Izin: `sertifikat.telusuri`.
+- **Arsip**: ganti semua panggilan `/folders*` & `/folder-files*` ke `/arsip/*` (daftar di §15).
+  Struktur kini 4 tingkat; tampilkan breadcrumb dari respons `show`. Tombol "bikin folder"
+  tidak perlu lagi (folder otomatis); pindah/ganti nama/unduh/kirim tetap ada. Setelah HP selesai
+  pindah, beri tahu backend agar `/folders*` dicabut.
+- **Ubah jatuh tempo** (admin/SA): `POST /api/equipments/{id}/jatuh-tempo` dengan alasan. Baca
+  `jalur`: `jadwal_alat` = "jadwal diubah"; `revisi_sertifikat` (202) = "dibuat revisi -R<n>,
+  tanggal tercetak berubah". Jelaskan bedanya di dialog sebelum kirim (ada sertifikat aktif →
+  revisi). Izin: `alat.ubah-jatuh-tempo`.
+- **Pelanggan**: `GET /pelanggan/v1/sertifikat?q=` sudah ada; mencari hanya di PT sendiri, nomor PT
+  lain = daftar kosong.
+

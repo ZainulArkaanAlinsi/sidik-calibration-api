@@ -382,6 +382,8 @@ class AppServiceProvider extends ServiceProvider
         // depan.
         $perMenitPengguna('penugasan-tulis', 60);
         $perMenitPengguna('pelacakan-tahap', 60);
+        // Telusuri No. Sertifikat (baca; diketik per huruf di HP).
+        $perMenitPengguna('sertifikat-telusuri', 60);
         // Sembunyikan/tampilkan sesi di Riwayat (§47). Cuma preferensi tampilan,
         // jadi longgar — orang yang merapikan daftarnya menekan banyak baris
         // berturut-turut. Ember sendiri supaya tidak memakan jatah tulis lain.
