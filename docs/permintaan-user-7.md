@@ -5256,6 +5256,14 @@ memakai `sesiPerluRevisiLama()`. `GerbangPengesahanTest` dan
 - Gate MySQL penuh belum dijalankan (migrasi `ENUM` berubah — wajib sebelum deploy).
 
 **Status:** **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API).
+**Status G2 API (16 Okt 2026):** **DIKERJAKAN** — K-50-05 `GET /sertifikat/telusuri` (+ kasus
+`IsolasiPerusahaanTest`), K-50-06 Arsip `PT › Tahun › Bulan › Jenis alat` + `arsip:rapikan`
+(Folder Manager lama `/folders*` & `/folder-files*` masih ada sampai aplikasi lab pindah ke `/arsip/*`),
+K-50-08 `POST /equipments/{id}/jatuh-tempo` (jalur `jadwal_alat` / `revisi_sertifikat`). Kontrak:
+`kontrak-api.md` §15, HP: `perintah-frontend-revisi-1510.md` §8.
+**Status G3 API (16 Okt 2026):** **DIKERJAKAN** — permintaan/koreksi/foto pelanggan dicabut di sisi lab
+dan pelanggan (K-50-09), tabel tetap; `kontrak-api.md` §16, `kontrak-api-pelanggan.md` §6, HP §9.
+Gate MySQL penuh belum dijalankan.
 
 ## Gelombang & status
 

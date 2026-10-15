@@ -5,12 +5,9 @@ use App\Http\Controllers\Pelanggan\AnggotaController;
 use App\Http\Controllers\Pelanggan\AppStatusController;
 use App\Http\Controllers\Pelanggan\AuthPelangganController;
 use App\Http\Controllers\Pelanggan\BerandaController;
-use App\Http\Controllers\Pelanggan\FotoController;
-use App\Http\Controllers\Pelanggan\KoreksiController;
 use App\Http\Controllers\Pelanggan\NotifikasiController;
 use App\Http\Controllers\Pelanggan\PaketController;
 use App\Http\Controllers\Pelanggan\PerangkatController;
-use App\Http\Controllers\Pelanggan\PermintaanController;
 use App\Http\Controllers\Pelanggan\PreferensiNotifikasiController;
 use App\Http\Controllers\Pelanggan\SayaController;
 use App\Http\Controllers\Pelanggan\SertifikatController;
@@ -190,67 +187,15 @@ Route::middleware('fitur.pelanggan')->group(function () {
         Route::get('/paket/{paket}', [PaketController::class, 'show'])->name('pelanggan.paket.tampil');
 
         /*
-         * --- Permintaan kalibrasi (30 Sep 2026) -----------------------------
+         * Permintaan kalibrasi, koreksi, dan foto DICABUT (K-50-09, 16 Okt 2026):
+         * aplikasi pelanggan hanya membaca (beranda, alat, sertifikat, notifikasi).
+         * Tabelnya tetap ada; rute ini tidak dibangun ulang tanpa keputusan baru.
          *
-         * Pelanggan mengajukan, lab yang memutuskan (tidak pernah otomatis).
-         * Tiap rute ber-ID mencari barisnya DI DALAM `LingkupData::permintaan()`
-         * dan memakai string, bukan route-model binding: milik perusahaan lain
-         * dijawab 404 sebelum validasi body sempat menjawab 422.
-         *
-         * Semua tulis ber-throttle per pengguna. Satu ember bersama untuk
-         * ajuan, batal, dan pesan — tiga aksi itu dilakukan manusia satu per
-         * satu, dan yang dijaga skrip yang lepas kendali.
-         */
-        Route::get('/permintaan', [PermintaanController::class, 'index'])->name('pelanggan.permintaan.index');
-        Route::post('/permintaan', [PermintaanController::class, 'store'])
-            ->middleware('throttle:pelanggan-permintaan-tulis')
-            ->name('pelanggan.permintaan.buat');
-        Route::get('/permintaan/{permintaan}', [PermintaanController::class, 'show'])->name('pelanggan.permintaan.tampil');
-        Route::post('/permintaan/{permintaan}/batal', [PermintaanController::class, 'batal'])
-            ->middleware('throttle:pelanggan-permintaan-tulis')
-            ->name('pelanggan.permintaan.batal');
-        Route::get('/permintaan/{permintaan}/pesan', [PermintaanController::class, 'pesan'])->name('pelanggan.permintaan.pesan');
-        Route::post('/permintaan/{permintaan}/pesan', [PermintaanController::class, 'kirimPesan'])
-            ->middleware('throttle:pelanggan-permintaan-tulis')
-            ->name('pelanggan.permintaan.kirim-pesan');
-        // §42 B5 — nomor resi pengiriman (permintaan diterima, diantar sendiri).
-        Route::post('/permintaan/{permintaan}/resi', [PermintaanController::class, 'resi'])
-            ->middleware('throttle:pelanggan-permintaan-tulis')
-            ->name('pelanggan.permintaan.resi');
-        // §42 B3 — foto pelat nama alat BARU selagi permintaan masih `baru`.
-        Route::post('/permintaan/{permintaan}/item/{item}/foto', [PermintaanController::class, 'unggahFotoItem'])
-            ->middleware('throttle:pelanggan-foto')
-            ->name('pelanggan.permintaan.foto');
-
-        /*
-         * --- Ubah alat, koreksi data, foto (1 Okt 2026, §42) ----------------
-         *
-         * Sama dengan rute data lain: ID dicari DI DALAM perusahaan pemanggil
-         * sebelum validasi body, jadi milik perusahaan lain 404. Identitas alat
-         * yang sudah tercetak di sertifikat tidak diubah langsung — pelanggan
-         * MENGAJUKAN koreksi, lab yang memutuskan (D5 §38).
+         * `PATCH /alat/{alat}` (lokasi & catatan milik pelanggan) tidak disentuh.
          */
         Route::patch('/alat/{alat}', [AlatController::class, 'update'])
             ->middleware('throttle:pelanggan-alat-tulis')
             ->name('pelanggan.alat.ubah');
-        Route::post('/alat/{alat}/minta-koreksi', [KoreksiController::class, 'mintaAlat'])
-            ->middleware('throttle:pelanggan-koreksi')
-            ->name('pelanggan.alat.minta-koreksi');
-        Route::post('/alat/{alat}/foto', [FotoController::class, 'unggahAlat'])
-            ->middleware('throttle:pelanggan-foto')
-            ->name('pelanggan.alat.foto');
-        Route::post('/sertifikat/{sertifikat}/minta-koreksi', [KoreksiController::class, 'mintaSertifikat'])
-            ->middleware('throttle:pelanggan-koreksi')
-            ->name('pelanggan.sertifikat.minta-koreksi');
-        Route::get('/koreksi', [KoreksiController::class, 'index'])->name('pelanggan.koreksi.index');
-        Route::get('/koreksi/{koreksi}', [KoreksiController::class, 'show'])->name('pelanggan.koreksi.tampil');
-        Route::post('/koreksi/{koreksi}/foto', [FotoController::class, 'unggahKoreksi'])
-            ->middleware('throttle:pelanggan-foto')
-            ->name('pelanggan.koreksi.foto');
-        Route::get('/foto/{foto}', [FotoController::class, 'tampil'])->name('pelanggan.foto.tampil');
-        Route::delete('/foto/{foto}', [FotoController::class, 'hapus'])
-            ->middleware('throttle:pelanggan-foto')
-            ->name('pelanggan.foto.hapus');
 
         // Saklar notifikasi PER perusahaan (anggota dari `Konteks`, bukan body).
         Route::get('/preferensi-notifikasi', [PreferensiNotifikasiController::class, 'tampil'])

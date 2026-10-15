@@ -4,10 +4,6 @@ namespace App\Http\Resources\Pelanggan;
 
 use App\Models\Certificate;
 use App\Models\Equipment;
-use App\Models\FotoPelanggan;
-use App\Models\KoreksiPelanggan;
-use App\Services\Pelanggan\AlurKoreksi;
-use App\Services\Pelanggan\FotoPelangganLayanan;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -30,6 +26,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class AlatPelangganResource extends JsonResource
 {
+    /** Kolom identitas yang terkunci begitu sertifikat terbit (label untuk layar). */
+    public const KUNCI_IDENTITAS = [
+        'nama_alat' => 'Nama alat',
+        'merk' => 'Merk',
+        'model' => 'Model',
+        'serial_number' => 'Nomor seri',
+        'no_identifikasi' => 'No. identifikasi',
+        'range_min' => 'Rentang min.',
+        'range_max' => 'Rentang maks.',
+        'satuan' => 'Satuan',
+        'resolusi' => 'Resolusi',
+    ];
+
     public const STATUS_AMAN = 'aman';
 
     public const STATUS_SEGERA = 'segera_jatuh_tempo';
@@ -84,23 +93,21 @@ class AlatPelangganResource extends JsonResource
 
     /**
      * Bagian yang cuma ada di layar DETAIL & ubah alat (PL_Ubah_Alat, §42 B2):
-     * kunci identitas, catatan milik pelanggan, foto pelat, koreksi menunggu.
+     * kunci identitas dan catatan milik pelanggan.
      * Dihitung controller (butuh query) — daftar alat tidak membawanya.
      *
      * `catatan` di sini = `equipments.catatan_pelanggan`, BUKAN `catatan` lab.
      *
      * @return array<string, mixed>
      */
-    public static function rincianUbah(Equipment $alat, bool $terkunci, ?KoreksiPelanggan $koreksiMenunggu): array
+    public static function rincianUbah(Equipment $alat, bool $terkunci): array
     {
         return [
             // Isian awal PL_Ubah_Alat — salah satu dari sembilan kolom identitas.
             'resolusi' => $alat->resolusi,
             'catatan' => $alat->catatan_pelanggan,
             'terkunci' => $terkunci,
-            'field_terkunci' => $terkunci ? array_keys(AlurKoreksi::KUNCI_ALAT) : [],
-            'foto' => $alat->fotoPelat->map(fn (FotoPelanggan $f) => FotoPelangganLayanan::bentukPelanggan($f))->values()->all(),
-            'koreksi_menunggu' => $koreksiMenunggu === null ? null : ['id' => $koreksiMenunggu->id],
+            'field_terkunci' => $terkunci ? array_keys(self::KUNCI_IDENTITAS) : [],
         ];
     }
 

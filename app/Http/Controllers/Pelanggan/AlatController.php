@@ -8,8 +8,6 @@ use App\Http\Resources\Pelanggan\AlatPelangganResource;
 use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
 use App\Models\Certificate;
 use App\Models\Equipment;
-use App\Models\KoreksiPelanggan;
-use App\Services\Pelanggan\AlurKoreksi;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
@@ -95,7 +93,7 @@ class AlatController extends Controller
     /**
      * PL_Ubah_Alat (§42 B2). Lokasi & catatan selalu boleh; identitas cuma
      * selama alat BELUM punya sertifikat terbit — sesudahnya identitas sudah
-     * tercetak di dokumen dan jalannya minta koreksi ke lab.
+     * tercetak di dokumen; perubahannya lewat lab.
      */
     public function update(Request $request, Konteks $konteks, string $alat): JsonResponse
     {
@@ -118,11 +116,11 @@ class AlatController extends Controller
             'resolusi' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ]);
 
-        $identitas = array_values(array_intersect(array_keys($data), array_keys(AlurKoreksi::KUNCI_ALAT)));
+        $identitas = array_values(array_intersect(array_keys($data), array_keys(AlatPelangganResource::KUNCI_IDENTITAS)));
 
         if ($identitas !== [] && self::terkunci($baris)) {
             return response()->json([
-                'message' => 'Identitas alat ini sudah tercetak di sertifikat, jadi tidak bisa diubah langsung. Minta koreksi ke lab.',
+                'message' => 'Identitas alat ini sudah tercetak di sertifikat, jadi tidak bisa diubah langsung. Hubungi lab bila ada yang keliru.',
                 'kode' => 'field_terkunci',
                 'errors' => collect($identitas)->mapWithKeys(fn (string $k) => [$k => ['Terkunci — sudah tercetak di sertifikat.']])->all(),
             ], 422);
@@ -184,21 +182,13 @@ class AlatController extends Controller
             ->limit(50)
             ->get();
 
-        $koreksi = KoreksiPelanggan::query()
-            ->where('equipment_id', $baris->id)
-            ->where('jenis', KoreksiPelanggan::JENIS_ALAT)
-            ->where('status', KoreksiPelanggan::STATUS_MENUNGGU)
-            ->first(['id']);
-
-        $baris->loadMissing('fotoPelat');
-
         return (new AlatPelangganResource($baris))
             // Yang BERLAKU, bukan sekadar yang terbaru: revisi yang
             // dibatalkan atau pendahulu yang digantikan bukan dokumen alat ini.
             ->denganSertifikat($riwayat->first(fn (Certificate $c) => $c->status === Certificate::STATUS_TERBIT
                 && ! in_array($c->revisiTerakhir?->status, Certificate::STATUS_PENGGANTI, true)))
             ->resolve($request)
-            + AlatPelangganResource::rincianUbah($baris, self::terkunci($baris), $koreksi)
+            + AlatPelangganResource::rincianUbah($baris, self::terkunci($baris))
             + [
                 'riwayat_sertifikat' => $riwayat
                     ->map(fn (Certificate $c) => (new SertifikatPelangganResource($c))->resolve($request))

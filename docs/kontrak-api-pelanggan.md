@@ -582,3 +582,24 @@ Ditulis supaya tidak ditunggu:
 |---|---|---|
 | `POST/DELETE /perangkat` (FCM) | Fase 6 | `device_tokens.aplikasi` sudah ada |
 | `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/pesan` | Fase 6 | |
+
+## 6. Keadaan akhir aplikasi pelanggan — hanya baca (K-50-09, 16 Okt 2026)
+
+Permintaan, koreksi, dan foto DICABUT (keputusan pemilik 15 Okt). Rute yang **dihapus** (balasan
+sekarang `404`): `/permintaan*` (daftar, buat, detail, batal, pesan, resi, foto item),
+`/koreksi*`, `/foto*`, `/alat/{id}/foto`, `/alat/{id}/minta-koreksi`,
+`/sertifikat/{id}/minta-koreksi`. Sisi lab: `/permintaan-pelanggan*`, `/koreksi-pelanggan*`,
+`/foto-pelanggan/{id}` dan izin `permintaan.*` ikut hilang. Tabel & kolom TIDAK di-drop.
+
+Rute yang dipakai aplikasi: `auth/{terima-undangan,masuk,keluar,keluar-semua,lupa-sandi,
+atur-ulang-sandi}`, `beranda`, `alat` (daftar, `alat/{id}` termasuk `riwayat_sertifikat`, dan
+status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/
+seri di PT sendiri — nomor PT lain = daftar kosong, `sertifikat/{id}`, `sertifikat/{id}/unduh`),
+`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*`, `/paket*`, dan
+`PATCH /alat/{id}` (lokasi & catatan milik pelanggan) tidak disentuh.
+
+Respons sertifikat tidak lagi memuat `bisa_minta_koreksi`, `koreksi_menunggu`, `data_cetak`; respons
+detail alat tidak lagi memuat `foto` dan `koreksi_menunggu`. Pesan `field_terkunci` kini
+"Hubungi lab bila ada yang keliru". Nomor sertifikat yang `ditarik` tidak terlihat pelanggan sampai
+revisi `-R<n>` terbit.
+

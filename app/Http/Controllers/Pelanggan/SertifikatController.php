@@ -123,6 +123,6 @@ class SertifikatController extends Controller
             ->firstOrFail();
     }
 
-    /** `revisiTerakhir` & `koreksiMenunggu` untuk status dokumen & tombol koreksi. */
-    private const RELASI = ['session:id,equipment_id', 'revisionOf:id,nomor', 'revisiTerakhir', 'koreksiMenunggu'];
+    /** `revisiTerakhir` untuk status dokumen. */
+    private const RELASI = ['session:id,equipment_id', 'revisionOf:id,nomor', 'revisiTerakhir'];
 }

@@ -17,11 +17,9 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\FormulaController;
-use App\Http\Controllers\Api\FotoPelangganController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\JatuhTempoAlatController;
 use App\Http\Controllers\Api\KemampuanKalibrasiController;
-use App\Http\Controllers\Api\KoreksiPelangganController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
@@ -29,7 +27,6 @@ use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
 use App\Http\Controllers\Api\PenugasanController;
-use App\Http\Controllers\Api\PermintaanPelangganController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
@@ -756,36 +753,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // aksinya sering, payload `PUT` lengkap kemahalan buat ini.
         Route::post('/orders/{order}/penugasan', [OrderController::class, 'penugasan']);
 
-        // Permintaan kalibrasi dari pelanggan (30 Sep 2026). Semua di grup
-        // `role:admin`; super admin ikut membaca DAN memutuskan sejak K-49-14
-        // (`lolosSuperAdmin`). Teknisi & viewer 403 untuk semuanya: isi ajuan
-        // memuat data pelanggan.
-        Route::get('/permintaan-pelanggan', [PermintaanPelangganController::class, 'index']);
-        Route::get('/permintaan-pelanggan/{permintaan}', [PermintaanPelangganController::class, 'show']);
-        Route::post('/permintaan-pelanggan/{permintaan}/terima', [PermintaanPelangganController::class, 'terima'])
-            ->middleware('throttle:permintaan-putus');
-        Route::post('/permintaan-pelanggan/{permintaan}/tolak', [PermintaanPelangganController::class, 'tolak'])
-            ->middleware('throttle:permintaan-putus');
-        Route::get('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'pesan']);
-        Route::post('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'kirimPesan'])
-            ->middleware('throttle:permintaan-pesan');
-        // §42 — jadwal teknisi (`diambil_lab`) & tanda alat tiba.
-        Route::post('/permintaan-pelanggan/{permintaan}/jadwal', [PermintaanPelangganController::class, 'jadwal'])
-            ->middleware('throttle:koreksi-putus');
-        Route::post('/permintaan-pelanggan/{permintaan}/alat-tiba', [PermintaanPelangganController::class, 'alatTiba'])
-            ->middleware('throttle:koreksi-putus');
-
-        // Koreksi data dari pelanggan (§42). Sama dengan permintaan: admin &
-        // super admin (K-49-14).
-        Route::get('/koreksi-pelanggan', [KoreksiPelangganController::class, 'index']);
-        Route::get('/koreksi-pelanggan/{koreksi}', [KoreksiPelangganController::class, 'show']);
-        Route::post('/koreksi-pelanggan/{koreksi}/terima', [KoreksiPelangganController::class, 'terima'])
-            ->middleware('throttle:koreksi-putus');
-        Route::post('/koreksi-pelanggan/{koreksi}/tolak', [KoreksiPelangganController::class, 'tolak'])
-            ->middleware('throttle:koreksi-putus');
-        // Foto pelat nama dari pelanggan — baca saja, disk arsip privat.
-        Route::get('/foto-pelanggan/{foto}', [FotoPelangganController::class, 'tampil'])
-            ->name('foto-pelanggan.tampil');
+        // Permintaan, koreksi, dan foto pelanggan DICABUT (K-50-09, 16 Okt 2026):
+        // aplikasi pelanggan hanya membaca. Tabelnya tetap ada (tanpa drop).
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,

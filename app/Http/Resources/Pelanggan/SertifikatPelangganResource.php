@@ -3,8 +3,6 @@
 namespace App\Http\Resources\Pelanggan;
 
 use App\Models\Certificate;
-use App\Services\Pelanggan\AlurKoreksi;
-use App\Services\RevisiSertifikat;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -54,8 +52,6 @@ class SertifikatPelangganResource extends JsonResource
             default => Certificate::DOKUMEN_BERLAKU,
         };
 
-        $koreksi = $c->relationLoaded('koreksiMenunggu') ? $c->koreksiMenunggu : null;
-
         $dasar = [
             'id' => $c->id,
             'nomor' => $c->nomor,
@@ -88,8 +84,6 @@ class SertifikatPelangganResource extends JsonResource
                 : $c->catatan_pelanggan,
             // PDF batal tidak boleh beredar lagi sebagai dokumen sah (§38.2).
             'bisa_diunduh' => filled($c->pdf_path) && $status !== Certificate::DOKUMEN_DIBATALKAN,
-            'bisa_minta_koreksi' => $status === Certificate::DOKUMEN_BERLAKU && $koreksi === null && filled($c->snapshot),
-            'koreksi_menunggu' => $koreksi === null ? null : ['id' => $koreksi->id],
             // Halaman verifikasi PUBLIK yang sama dengan isi QR di PDF. Aman
             // dibuka: halaman itu memang dibuat untuk dibagikan ke auditor.
             'tautan_verifikasi' => is_string($c->qr_payload) && str_starts_with($c->qr_payload, 'http')
@@ -101,8 +95,6 @@ class SertifikatPelangganResource extends JsonResource
             return $dasar;
         }
 
-        $cetak = RevisiSertifikat::dataCetak($c);
-
         return $dasar + [
             'rincian' => [
                 'nomor_order' => $header['order_number'] ?? null,
@@ -113,9 +105,6 @@ class SertifikatPelangganResource extends JsonResource
                 'kondisi_lingkungan' => $header['env_condition'] ?? null,
             ],
             'penanda_tangan' => $c->penandaTangan(),
-            // Isian awal formulir minta koreksi — cuma kunci yang boleh diminta
-            // pelanggan (tanpa masa berlaku).
-            'data_cetak' => $cetak === null ? null : array_intersect_key($cetak, array_flip(AlurKoreksi::KUNCI_SERTIFIKAT)),
         ];
     }
 

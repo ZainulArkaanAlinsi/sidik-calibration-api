@@ -134,3 +134,17 @@ Tetap admin + teknisi (K-49-14/K-50-14). `User::roles()` tidak memuatnya — tid
 - **Pelanggan**: `GET /pelanggan/v1/sertifikat?q=` sudah ada; mencari hanya di PT sendiri, nomor PT
   lain = daftar kosong.
 
+## 9. G3 (16 Okt 2026) — permintaan/koreksi/foto dicabut, aplikasi pelanggan hanya baca
+
+- **Aplikasi lab**: buang menu & layar Permintaan Pelanggan, Koreksi Pelanggan, foto pelat nama, dan
+  izin `permintaan.*` (tidak ada lagi di `/me/permissions`). Rute `/permintaan-pelanggan*`,
+  `/koreksi-pelanggan*`, `/foto-pelanggan/{id}` kini 404; notifikasi lama dengan tipe itu cukup
+  ditampilkan sebagai teks.
+- **Aplikasi pelanggan** hanya memakai: auth (undangan, masuk, keluar, keluar-semua, lupa/atur sandi),
+  beranda, alat (+ riwayat per alat di `GET /alat/{id}`, status jatuh tempo aman/segera/lewat),
+  sertifikat (daftar, `?q=`, detail, `/unduh`), notifikasi, `saya` + `preferensi-notifikasi`,
+  `app/status`. Hapus layar Permintaan, Koreksi, foto, tombol "Minta koreksi", dan field
+  `bisa_minta_koreksi` / `koreksi_menunggu` / `data_cetak` / `foto` dari parser.
+- Rilis: URL produksi lewat `--dart-define`, applicationId final, signing kunci rilis; produksi
+  menyalakan `FITUR_PELANGGAN` saat deploy G3 (render.yaml; bukan bagian commit ini).
+

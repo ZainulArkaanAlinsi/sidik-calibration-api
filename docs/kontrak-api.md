@@ -2865,6 +2865,13 @@ sehingga dibuat revisi `-R<n>` lewat `RevisiSertifikat`, `sertifikat.{id,nomor}`
 berubah via `SinkronJadwalAlat` setelah PDF terbit). `422` bila tanggal sama / alasan kosong.
 Layar pelanggan dan pengingat membaca `equipments.tanggal_jatuh_tempo` yang sama.
 
+## 16. Dicabut: permintaan/koreksi/foto pelanggan (K-50-09, 16 Okt 2026)
+
+Rute lab `/permintaan-pelanggan*`, `/koreksi-pelanggan*`, `/foto-pelanggan/{id}` dihapus (404),
+beserta izin `permintaan.lihat|putuskan|balas` di `/me/permissions`, notifikasi lab & pelanggan
+terkaitnya. Aplikasi lab: hapus menu Permintaan/Koreksi/Pusat Pelanggan. Tabel dibiarkan.
+Sisi pelanggan: `kontrak-api-pelanggan.md` §6.
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

@@ -13,13 +13,11 @@ use App\Models\Folder;
 use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
-use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organization;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
-use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\UndanganPelanggan;
@@ -205,41 +203,10 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'dibuat_oleh' => $admin->id,
         ]);
         $barisPenugasan = $penugasan->item()->create(['jenis_alat' => 'Autoklaf', 'jumlah' => 1]);
-        // Permintaan kalibrasi pelanggan (30 Sep) — harus seorganisasi supaya
-        // gerbang role-nya yang keuji, bukan 404 dari pengecekan organisasi.
-        $permintaan = PermintaanKalibrasi::create([
-            'organization_id' => $org->id,
-            'customer_id' => $pelangganPt->id,
-            'nomor' => 'PMT/2026/10/0001',
-            'status' => 'baru',
-            'metode_pengantaran' => 'diantar_sendiri',
-        ]);
-
-        // Koreksi & foto pelat nama dari pelanggan (1 Okt, §42) — seorganisasi,
-        // sama alasannya dengan permintaan di atas.
-        $koreksi = KoreksiPelanggan::create([
-            'organization_id' => $org->id,
-            'customer_id' => $pelangganPt->id,
-            'jenis' => KoreksiPelanggan::JENIS_ALAT,
-            'equipment_id' => $alat->id,
-            'perubahan' => [['field' => 'merk', 'label' => 'Merk', 'lama' => 'A', 'baru' => 'B']],
-            'status' => KoreksiPelanggan::STATUS_MENUNGGU,
-        ]);
-        $foto = $alat->fotoPelat()->create([
-            'organization_id' => $org->id,
-            'customer_id' => $pelangganPt->id,
-            'path' => 'foto-pelanggan/contoh.jpg',
-            'mime' => 'image/jpeg',
-            'ukuran' => 1,
-        ]);
-
         $this->isiParameter = [
-            'koreksi' => (string) $koreksi->id,
-            'foto' => (string) $foto->id,
             'orderItem' => (string) $barisPaket->id,
             'penugasan' => (string) $penugasan->id,
             'penugasanItem' => (string) $barisPenugasan->id,
-            'permintaan' => (string) $permintaan->id,
             'calibration' => (string) $sesi->id,
             'pengajuan' => (string) $pengajuan->id,
             'undangan' => (string) $undangan->id,

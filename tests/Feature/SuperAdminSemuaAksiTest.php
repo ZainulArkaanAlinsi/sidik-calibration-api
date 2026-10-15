@@ -441,7 +441,7 @@ class SuperAdminSemuaAksiTest extends TestCase
             ->assertJsonPath('kode', 'bukan_aplikasi_ini');
 
         $this->withToken($token)
-            ->postJson('/api/pelanggan/v1/permintaan', [])
+            ->postJson('/api/pelanggan/v1/saya/ganti-sandi', [])
             ->assertForbidden();
     }
 
