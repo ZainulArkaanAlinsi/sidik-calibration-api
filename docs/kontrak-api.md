@@ -398,7 +398,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### Tambahan di luar kontrak
 > - **`status: "draft"` boleh dikirim di `POST`** — buat "simpan dulu, lanjut nanti". Kalau nggak dikirim, sesi langsung masuk antrean approval (`menunggu_approval`), sesuai contoh kamu.
-> - **`PUT /api/calibrations/{id}`** — teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau nerusin draft. Body-nya sama kayak `POST`. Tanpa ini, tombol "reject" jadi jalan buntu: teknisi dikasih catatan revisi tapi nggak bisa ngapa-ngapain. Sesi yang udah `disetujui` **nggak bisa** diubah (`422`) — angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah diam-diam.
+> - **`PUT /api/calibrations/{id}`** — teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau nerusin draft. Body-nya sama kayak `POST`. Tanpa ini, tombol "reject" jadi jalan buntu: teknisi dikasih catatan revisi tapi nggak bisa ngapa-ngapain. `catatan_revisi` & `revisi_field` cuma dikosongkan kalau kiriman berakhir `menunggu_approval`; `status: "draft"` mempertahankan keduanya (15 Okt 2026 — sebelumnya dikosongkan di tiap simpan, termasuk draft). Sesi yang udah `disetujui` **nggak bisa** diubah (`422`) — angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah diam-diam.
 > - **Tabel kosong untuk sesi yang sudah punya pembacaan → `422` (baru 25 Sep 2026).** `measurements: []`, atau tabel yang tidak menghasilkan satu baris pun (mis. semua sel kosong), ditolak dengan `errors.measurements` — **tidak ada yang dihapus**. Dulu kiriman begitu menghapus seluruh pembacaan secara permanen dengan jawaban `200`. Untuk simpan bagian atas lembar saja, jangan kirim kunci `measurements` sama sekali. Sieve dan alat berblok lain yang datanya di `spesifikasi_alat` tidak terpengaruh: yang diukur hasil susunannya, bukan isi array.
 > - **Kiriman ganda berbarengan dengan `client_request_id` sama → `200` replay (baru 25 Sep 2026).** Dulu yang kalah balapan dijawab `500` padahal datanya sudah tersimpan satu.
 > - **Field bonus di response** (superset, aman diabaikan): `nomor_sesi` (`KAL/2026/07/0001`), `standar_acuan`, `suhu_ruang`, `kelembaban`, `lokasi`, `sertifikat`, dan **`titik`** — rincian tiap titik ukur. Mobile udah nampilin ini di layar Detail Hasil Kalibrasi (`lib/screens/history/calibration_detail_screen.dart`), sinkron sama `CalibrationResource::toArray()`.
@@ -805,7 +805,7 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > | 5 Enclosure (grid) | `measurements[].sensor_grid[].ocr` | deret, sejajar `pembacaan` baris itu |
 > | 5 Enclosure (dua baris deret) | `measurements[].indikator_ocr` · `.suhu_ruang_ocr` | deret, sejajar deret angkanya |
 > | Timbangan (blok Repeatability) | `spesifikasi_alat.keterulangan.baris[].<kolom>_ocr` | deret, sejajar `<kolom>` |
-> | Autoklaf (`POST /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
+> | Autoklaf (`POST` · `PUT /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
 >
 > ### Aturan yang MENGIKAT
 >
@@ -953,6 +953,83 @@ Lainnya:
   `volumetric_o35_menggeser_u_cetak` (pola `volumetric_suhu_25_5_menggeser_cetak`).
 
 Rincian untuk HP: `docs/perintah-frontend-volumetric.md` §8.
+
+#### `POST /api/calibrations/autoclave` · `PUT /api/calibrations/autoclave/{id}` — simpan & perbarui sesi Autoklaf (PUT live di produksi 15 Okt 2026, `main` `56668b1`)
+
+Lembar Autoklaf (matriks) tidak lewat `POST`/`PUT /calibrations`: bodynya data ukur
+mentah (`set_point`, `suhu`, `tekanan`, `waktu`, `ocr`) + identitas sesi, dan hasilnya
+dibekukan di `hasil_autoclave`. Rincian body: `docs/perintah-frontend-autoclave.md`.
+
+- **`POST /api/calibrations/autoclave`** → **201** `{data: CalibrationResource}`. Selalu
+  membuat sesi BARU (kecuali `client_request_id` yang sama → **200** replay).
+- **`PUT /api/calibrations/autoclave/{id}`** → **200**
+  `{data: CalibrationResource, meta: {belum_dihitung: []}}`. Memperbarui sesi yang SAMA —
+  dipakai waktu draft Autoklaf dibuka lagi lalu disimpan/dikirim. Dulu HP cuma punya
+  `POST`, jadi tiap simpan ulang melahirkan draft kedua.
+  - **Body sama persis dengan `POST`** (`AutoclaveStoreRequest`). `client_request_id`
+    boleh ikut, tapi diabaikan: sesinya ditunjuk lewat URL, tidak ada replay.
+  - `hasil_autoclave` dihitung ulang dari kiriman lewat jalur yang sama dengan `POST`
+    (termasuk `lembar` mentah & blok `ocr`). `nomor_sesi`, pengisi lembar
+    (`teknisi_id`), dan `client_request_id` tidak berubah.
+  - `lembar` **bukan field body** — server yang menyalin data ukur kiriman ke
+    `hasil_autoclave.lembar`. Data ukur diganti UTUH dari kiriman ini (blok yang tidak
+    dikirim hilang dari snapshot), dan `equipment_id`, `input_method` (→ `manual`),
+    `lokasi` (→ `lab`), `tanggal_kalibrasi` (→ kosong) selalu ditulis ulang. HP wajib
+    mengirim lembar utuh, bukan selisihnya.
+  - `status: "draft"` → jadi/tetap draft, `submitted_at` null. Berlaku untuk sesi
+    `draft` **dan `perlu_revisi`** (Simpan Draf revisi lembar yang dikembalikan, sama
+    dengan `PUT /calibrations/{id}`). Sesi `menunggu_approval` tidak bisa disimpan balik
+    jadi draft (422, tabel di bawah).
+  - Tanpa `status` atau `menunggu_approval` → masuk antrean approval, admin dikabari,
+    lembar diarsip ke folder PT — sama dengan `POST`. `submitted_at`:
+    - dari `draft`/`perlu_revisi` → waktu kirim ini (`now()`), sama dengan `PUT /calibrations/{id}`;
+    - sunting admin atas sesi yang sudah `menunggu_approval` → waktu kirim lama
+      **dipertahankan** (sunting bukan pengiriman baru).
+  - **`set_point` boleh kosong untuk draft** (di `POST` maupun `PUT`). `hasil_autoclave`
+    tetap dihitung dari bacaan yang ada, dengan `set_point: null` — server **tidak
+    mengarang** set point (tak satu pun angka olahan bergantung padanya; dia cuma dicetak
+    di sertifikat). Kiriman non-draft tanpa `set_point` tetap **422** `errors.set_point`.
+  - Field admin (`nomor_order`, `suhu_ketidakpastian`, `kelembaban_ketidakpastian`)
+    dari akun non-admin **dibuang diam-diam** (bukan 422), di `POST` maupun `PUT` —
+    sama dengan `POST /calibrations`. Dari admin, dua field ketidakpastian divalidasi
+    `numeric|min:0`.
+  - `catatan_revisi` & `revisi_field` dikosongkan **hanya kalau kiriman berakhir
+    `menunggu_approval`**; `status: "draft"` (mis. Simpan Draf revisi lembar
+    `perlu_revisi`) mempertahankan keduanya. Sama dengan `PUT /calibrations/{id}`.
+    Sebelum 15 Okt 2026 keduanya dikosongkan di tiap `PUT` yang berhasil.
+  - `meta.belum_dihitung` selalu `[]` (Autoklaf tidak punya titik GUM); kuncinya ada
+    supaya bentuknya sama dengan `PUT /calibrations/{id}`. `POST` tidak membawa `meta`.
+
+| Keadaan | Jawaban |
+|---|---|
+| Teknisi yang bukan pengisi lembar, atau sesi lab lain | **404** |
+| Viewer, super_admin | **403** (gerbang rute `role:admin,teknisi`) |
+| Sesi bukan sesi Autoklaf (`hasil_autoclave` kosong) | **422** `message`: "Sesi ini bukan sesi Autoklaf — simpan lewat PUT /calibrations/{id}, bukan jalur Autoklaf." |
+| Sesi `disetujui` (semua peran) | **422** `message`: "Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit." |
+| Teknisi atas sesi `menunggu_approval` (atau status lain di luar `draft`/`perlu_revisi`) | **422** `message`: "Sesi yang lagi nunggu approval nggak bisa diubah teknisi. …" |
+| `status: "draft"` untuk sesi `menunggu_approval` (praktisnya admin — teknisi sudah ditolak baris di atas) | **422** `message`: "Lembar ini sedang menunggu approval, jadi nggak bisa disimpan balik jadi draft. Simpan tanpa `status: draft`, atau kembalikan lembarnya ke teknisi lewat Tolak." |
+| Kiriman non-draft tanpa `set_point` | **422** `errors.set_point`, sama dengan `POST` |
+| Kiriman tanpa satu bacaan pun (disk, indikator, suhu ruang, Indikator Pressure, pembacaan standar semuanya kosong/absen) padahal lembar tersimpan sudah berisi bacaan | **422** `errors.lembar` — **tidak ada yang dihapus**. HP wajib menyimpan isian lokalnya dan memuat ulang lembar, bukan mengulang kiriman yang sama. Draft yang memang belum berisi bacaan tetap boleh disimpan kosong |
+| Admin mengubah angka lembar sesi `menunggu_approval` tanpa `alasan_koreksi` | **422** `errors.alasan_koreksi` (min 10, maks 500 karakter) — sama dengan `PUT /calibrations/{id}` |
+| Admin mengirim `suhu_ketidakpastian`/`kelembaban_ketidakpastian` bukan angka atau negatif | **422** `errors.<field>` |
+| Body tidak lolos `AutoclaveStoreRequest` | **422** `errors.*`, sama dengan `POST` |
+
+Admin boleh mengubah `draft`, `perlu_revisi`, dan `menunggu_approval`. Koreksi admin atas
+angka yang sudah dikirim tercatat di jejak audit (nilai lama & baru `lembar` + alasan), dan
+admin itu **tidak bisa** menyetujui sesi yang sama (`penyetuju_mengoreksi_pembacaan`).
+Menyimpan ulang tanpa mengubah angka (mis. cuma nomor seri) tidak meminta alasan.
+
+**Batas yang diketahui (belum ditutup, 15 Okt 2026):**
+- Sesi Autoklaf yang tersimpan sebelum `lembar` ikut disimpan (20 Agt 2026, `2b64fec`)
+  tidak terdeteksi sebagai koreksi admin — tanpa `alasan_koreksi`, tanpa penanda untuk
+  `PemisahanWewenang` — dan tidak dilindungi penjaga `errors.lembar`.
+- Tiap `PUT` yang berakhir `menunggu_approval` mengirim ulang kabar ke semua admin aktif,
+  termasuk sunting admin atas sesi yang sudah antre.
+- Tidak ada versi/ETag: simpan terakhir yang menang, tidak ada 409. Nilai lama tetap di
+  `audit_logs` (`Diaudit`), tapi tidak ada yang diperingatkan.
+
+Mobile memakai `PUT` ini sejak rilis 1.0.695 (PR mobile #205). Rincian untuk HP:
+`docs/perintah-frontend-autoclave.md` §8.
 
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
@@ -1237,6 +1314,13 @@ dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 { "catatan_revisi": "Titik ukur 100mm cuma 2 pembacaan, minimal 3." }
 ```
 Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal nampilin catatan ini ke teknisi.
+
+Umur catatannya (15 Okt 2026): `catatan_revisi` & `revisi_field` **bertahan** selama
+teknisi menyimpan revisinya sebagai draft (`PUT … status: "draft"` → sesi `draft` yang
+masih membawa catatan), dan baru dikosongkan saat lembar dikirim ulang
+(`menunggu_approval`) atau disetujui. Berlaku sama di `PUT /calibrations/{id}` dan
+`PUT /calibrations/autoclave/{id}`. Jadi `catatan_revisi` terisi **tidak** berarti
+statusnya `perlu_revisi` — draft juga bisa membawanya.
 
 `409` (baru 1 Okt 2026) = sesi ini barusan sudah diputus lewat permintaan lain (mis. admin lain menyetujuinya). Tidak ada yang berubah; muat ulang detail sesinya.
 

@@ -59,6 +59,30 @@ permintaan 7 akan membangunnya lagi.
 Layar khusus draf, seperti perpustakaan: **dikelompokkan per alat**, ada namanya, ada kapan
 disimpannya. Gampang dicari, rapi.
 
+> **14 Okt 2026 — draft Autoklaf tidak lagi dobel (sisi server).** Lembar Autoklaf cuma punya
+> `POST /calibrations/autoclave`, dan itu selalu membuat sesi baru: draft yang dibuka lagi lalu
+> disimpan muncul dua kali di layar Draf. Sekarang ada `PUT /calibrations/autoclave/{id}`
+> (`CalibrationController::perbaruiAutoclave`) — body sama dengan POST, sesi yang sama yang
+> diperbarui, penjaga identik `PUT /calibrations/{id}` (pemilik/admin, `disetujui` 422, koreksi
+> admin wajib alasan). Tambahan review: sesi `menunggu_approval` tidak bisa balik jadi draft
+> (422; `perlu_revisi` → draft tetap boleh), sunting admin atas sesi antre tidak menggeser
+> `submitted_at`, kiriman tanpa bacaan untuk lembar berisi ditolak (422, tidak ada yang dihapus),
+> field admin dari teknisi dibuang di POST & PUT Autoklaf, dan draft tanpa `set_point` tersimpan
+> (dulu 500 di `AutoclaveInputBuilder`; set point kosong disimpan null, tidak dikarang).
+> Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest` (21 test). **Live 15 Okt 2026**
+> (PR #235, `56668b1`). Sisi mobile sudah: `_kirimMatriks` memanggil PUT kalau draft-nya sudah
+> punya id (mobile PR #205, rilis 1.0.695). Gate MySQL penuh untuk `56668b1` sedang berjalan
+> (15 Okt). Handoff: `docs/perintah-frontend-autoclave.md` §8. Celah yang sengaja belum ditutup: sesi lama tanpa `lembar` (koreksi admin
+> tak terdeteksi) dan kabar admin berulang tiap sesi antre disimpan ulang.
+>
+> **15 Okt 2026 — draft revisi menyimpan catatan admin (sisi server, branch
+> `fix/catatan-revisi-draf`, di-merge 15 Okt 2026).** Dulu `PUT /calibrations/{id}` dan
+> `PUT /calibrations/autoclave/{id}` mengosongkan `catatan_revisi` & `revisi_field` di tiap
+> simpan, termasuk Simpan Draf atas lembar `perlu_revisi`. Sekarang (keputusan pemilik proyek)
+> keduanya dikosongkan hanya saat lembar dikirim (`menunggu_approval`); draft yang membawa
+> catatan tetap membawanya. Rincian: `docs/BACA-DULU-BACKEND.md` entri 15 Okt. Sisi mobile
+> (menampilkan catatan di draft): branch mobile `fix/draf-sinkron-saran`.
+
 ## 5. TITS & TIDS satu pintu
 
 Khusus Temperatur Indikator **tanpa sensor** dan **dengan sensor**: sebelum masuk ke lembarnya,

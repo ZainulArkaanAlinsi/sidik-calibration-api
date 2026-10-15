@@ -24,7 +24,10 @@ class AutoclaveInputBuilder
         $config = config('autoclave');
 
         $input = [
-            'set_point' => (float) $data['set_point'],
+            // Draft boleh belum punya set point (`AutoclaveStoreRequest`: nullable
+            // kalau draft). Yang kosong diteruskan null — TIDAK dikarang jadi 0
+            // atau angka bawaan; kalkulator yang memutuskan apa artinya.
+            'set_point' => isset($data['set_point']) ? (float) $data['set_point'] : null,
             'cmc' => $config['cmc'],
         ];
 

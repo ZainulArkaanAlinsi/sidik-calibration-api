@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
 use App\Models\CalibrationSession;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -24,6 +25,24 @@ class AutoclaveStoreRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Buang field administratif dari kiriman non-admin — padanan
+     * `CalibrationRequest::prepareForValidation()`, berlaku buat POST dan PUT.
+     *
+     * DIBUANG, bukan ditolak 422, dengan alasan yang sama: klien lama yang
+     * masih ngirim `nomor_order` nggak boleh gagal simpan, tapi nilainya juga
+     * nggak boleh nyampe DB. Tanpa ini teknisi yang menyimpan ulang lembar
+     * `perlu_revisi` lewat PUT menimpa nomor order yang sudah diisi admin.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->user()?->isAdmin()) {
+            return;
+        }
+
+        $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
     }
 
     private function draft(): bool
@@ -70,6 +89,11 @@ class AutoclaveStoreRequest extends FormRequest
             'alat_merk' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            // Field admin — kiriman teknisi sudah dibuang di prepareForValidation().
+            // Aturannya sama dengan `CalibrationRequest`; tanpa aturan, isian admin
+            // lolos ke `atributDariRequest()` tanpa diperiksa sama sekali.
+            'suhu_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'kelembaban_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
 
             // ---- Data ukur (identik AutoclaveCalculationRequest) ----
             'set_point' => [$this->draft() ? 'nullable' : 'required', 'numeric', 'min:0'],
