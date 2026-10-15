@@ -330,7 +330,7 @@ abstract class PistonVolumeProfile extends CalibrationProfile
                 'error' => $error,
                 'koreksi' => -$error,
                 'standar_deviasi' => (float) $p['stdev'],
-                'jumlah_pengulangan' => K::PEMINDAHAN,
+                'jumlah_pengulangan' => count($p['m']),
                 'type_a' => $typeA,
                 'type_b_components' => $this->jejakAudit($benar, $master, $i, $mpe, $blok, $temuanSesi, abs($error), $u95, $terpicu),
                 'type_b' => sqrt(max(0.0, $uc ** 2 - $typeA ** 2)),
@@ -454,8 +454,14 @@ abstract class PistonVolumeProfile extends CalibrationProfile
             $suhu = $t['konteks'][M::KONTEKS_SUHU_AIR] ?? [];
             $ke = (int) $t['titik_ke'];
 
-            if (count($kum) !== K::PEMINDAHAN + 1) {
-                return sprintf('Titik %d wajib TEPAT %d massa kumulatif (M0..M10); terisi %d.', $ke, K::PEMINDAHAN + 1, count($kum));
+            $celah = K::celahKumulatif((array) $kum, (string) $ke);
+
+            if ($celah !== null) {
+                return $celah;
+            }
+
+            if (! K::jumlahKumulatifDiterima((string) $blok['keluarga'], count($kum))) {
+                return K::pesanJumlahKumulatif((string) $blok['keluarga'], (string) $ke, count($kum));
             }
 
             if (count($suhu) !== 2) {
@@ -464,7 +470,7 @@ abstract class PistonVolumeProfile extends CalibrationProfile
 
             $retara = $blok['keluarga'] === K::GRADUATED && $blok['satuan'] === 'ml' && (float) end($kum) > 200;
 
-            for ($i = 1; $i <= K::PEMINDAHAN; $i++) {
+            for ($i = 1; $i < count($kum); $i++) {
                 if ((float) $kum[$i] < (float) $kum[$i - 1] && ! ($retara && in_array($i, [4, 7], true))) {
                     return sprintf(
                         'Titik %d: massa kumulatif M%d (%s) lebih kecil dari M%d (%s). Massa air di timbangan tidak '
@@ -515,6 +521,15 @@ abstract class PistonVolumeProfile extends CalibrationProfile
 
         foreach ($h['per_titik'] as $p) {
             $nominalG = (float) $p['nominal_ml'];
+
+            // Isian lapangan tak penuh (keputusan pemilik 14 Okt 2026): dihitung
+            // dari pemindahan yang ada, tapi penyetuju harus melihatnya.
+            if (count($p['m']) < K::PEMINDAHAN) {
+                $temuan[] = sprintf(
+                    'Titik %s hanya %d dari %d pemindahan (M0..M%d) — rata-rata & STDEV dihitung dari yang ada.',
+                    $p['label'], count($p['m']), K::PEMINDAHAN, count($p['m']),
+                );
+            }
 
             foreach ($p['m'] as $i => $mi) {
                 if ($nominalG > 0 && abs($mi - $nominalG) > self::BATAS_SELISIH_RELATIF * $nominalG) {
