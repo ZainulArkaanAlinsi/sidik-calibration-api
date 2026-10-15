@@ -378,6 +378,14 @@ services:
       - key: PELANGGAN_VERSI_TERBARU
         value: "0.0.0"
 
+      # Versi minimum Sidik Studio (ST-T-013). Request ber-header
+      # `X-Klien: sidik-studio` di bawah angka ini dijawab 426
+      # `klien_kedaluwarsa`; tanpa header tidak pernah kena. "0.0.0" = tidak
+      # pernah menolak. Naikkan hanya bila kontrak API berubah dengan cara yang
+      # membuat Studio lama salah membaca, dan sesudah build barunya terpasang.
+      - key: STUDIO_VERSI_MINIMUM
+        value: "0.0.0"
+
       # Maintenance khusus modul pelanggan — TIDAK menyentuh app internal.
       # Dipisah dari `php artisan down` justru karena itu: teknisi di lapangan
       # nggak boleh ikut berhenti waktu sisi pelanggan sedang diperbaiki.
