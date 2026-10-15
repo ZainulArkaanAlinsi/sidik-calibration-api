@@ -76,7 +76,7 @@ class MatriksIzin
         'kalibrasi.tolak' => ['POST', 'api/calibrations/{calibration}/reject'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],
 
-        // --- permintaan kalibrasi dari pelanggan (admin; super admin cuma baca)
+        // --- permintaan kalibrasi dari pelanggan (admin & super admin, K-49-14)
         'permintaan.lihat' => ['GET', 'api/permintaan-pelanggan'],
         'permintaan.putuskan' => ['POST', 'api/permintaan-pelanggan/{permintaan}/terima'],
         'permintaan.balas' => ['POST', 'api/permintaan-pelanggan/{permintaan}/pesan'],
@@ -191,14 +191,15 @@ class MatriksIzin
             $roleYangBoleh = $this->roleYangBoleh($rute);
 
             // null = nggak ada middleware `role:` → semua role yang udah login.
-            // Super admin nggak pernah ditulis di `role:` mana pun — lolosnya
-            // dari aturan baca di `EnsureUserHasRole`. Aturan itu DIPANGGIL di
-            // sini, bukan ditiru: salinan kedua bisa berbeda diam-diam, dan
-            // bedanya baru ketahuan sebagai tombol yang nyala lalu ditolak 403 —
-            // persis kegagalan yang kelas ini ada buat mencegahnya.
+            // Super admin jarang ditulis di `role:` — lolosnya dari aturan baca
+            // (GET/HEAD) dan aturan tulis K-49-14 (rute admin/teknisi) di
+            // `EnsureUserHasRole`. Aturan itu DIPANGGIL di sini, bukan ditiru:
+            // salinan kedua bisa berbeda diam-diam, dan bedanya baru ketahuan
+            // sebagai tombol yang nyala lalu ditolak 403 — persis kegagalan
+            // yang kelas ini ada buat mencegahnya.
             if ($roleYangBoleh === null
                 || in_array($role, $roleYangBoleh, true)
-                || EnsureUserHasRole::lolosBacaSuperAdmin($role, $method, $roleYangBoleh)
+                || EnsureUserHasRole::lolosSuperAdmin($role, $method, $roleYangBoleh)
             ) {
                 $boleh[] = $izin;
             }

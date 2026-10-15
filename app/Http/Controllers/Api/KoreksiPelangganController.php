@@ -14,8 +14,8 @@ use Illuminate\Validation\Rule;
 /**
  * Antrean koreksi data dari pelanggan — sisi LAB (§42 A4).
  *
- * Grup `role:admin`: admin membaca & memutuskan; teknisi/viewer 403; super
- * admin baca saja (tulis 403 lewat `lolosBacaSuperAdmin`, sampai K4).
+ * Grup `role:admin`: admin & super admin membaca & memutuskan (super admin
+ * sejak K-49-14, lewat `EnsureUserHasRole::lolosSuperAdmin`); teknisi/viewer 403.
  *
  * Urutan di aksi tulis sama dengan `PermintaanPelangganController`: binding →
  * cek organisasi (404 untuk lab lain) → baru validasi body.

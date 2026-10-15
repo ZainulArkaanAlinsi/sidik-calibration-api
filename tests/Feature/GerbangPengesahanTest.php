@@ -225,16 +225,29 @@ class GerbangPengesahanTest extends TestCase
         );
     }
 
-    public function test_super_admin_tetap_tidak_bisa_menyetujui_sesi(): void
+    public function test_super_admin_yang_menyetujui_tidak_bisa_mengesahkannya_sendiri(): void
     {
-        // Yang dibuka keputusan 26 Sep cuma PENGESAHAN. Wewenang lain di dokumen
-        // Super Admin §9 tidak berubah: dia tetap tidak menyetujui sesi, tidak
-        // mengedit lembar kerja, tidak mengelola pengguna. Test ini yang menahan
-        // `lolosBacaSuperAdmin` dari dilonggarkan jadi "super admin boleh POST
-        // apa saja" waktu ada yang mengejar 403 yang membingungkan.
+        Queue::fake();
+
+        // Dulu test ini menegaskan super admin 403 di approve (keputusan 26 Sep:
+        // yang dibuka cuma PENGESAHAN). K-49-14 (15 Okt 2026) membuka semua
+        // aksi admin untuknya — termasuk menyetujui. Yang TIDAK boleh ikut
+        // terbuka: dia menyetujui lalu mengesahkan sesi yang sama sendirian.
+        // Pemeriksa dan pengesah wajib dua orang (K-30-03).
         $this->actingAs($this->superAdmin)
             ->postJson("/api/calibrations/{$this->sesi->id}/approve", ['abaikan_peringatan' => true])
-            ->assertForbidden();
+            ->assertOk();
+
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $this->sesi->fresh()->status);
+
+        $this->actingAs($this->superAdmin)
+            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan")
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'pemisahan_wewenang')
+            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENGESAH_SAMA_DENGAN_PEMERIKSA);
+
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $this->sesi->fresh()->status);
+        $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
     public function test_teknisi_tidak_bisa_mengesahkan(): void
@@ -623,6 +636,11 @@ class GerbangPengesahanTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        return CalibrationSession::findOrFail($id);
+        // Order Number diisi Master Data — kiriman teknisi untuk kolom itu
+        // dibuang, dan sejak K-49-14 approve tanpa Order Number = 422.
+        $sesi = CalibrationSession::findOrFail($id);
+        $sesi->forceFill(['nomor_order' => 'ORD/UJI/0001'])->save();
+
+        return $sesi;
     }
 }

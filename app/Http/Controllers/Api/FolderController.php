@@ -39,9 +39,11 @@ class FolderController extends Controller
         // Arsip KOSONG, dan karena PT yang nggak tampil nggak bisa ditekan,
         // find-or-create di `folderPelanggan()` pun nggak pernah terpanggil.
         //
-        // Cuma admin, alasannya sama persis dengan `folderPelanggan()`: GET
-        // dari teknisi, viewer, atau super admin nggak boleh jadi celah nulis.
-        if (! $request->filled('parent_id') && $request->user()->isAdmin()) {
+        // Cuma admin & super admin, alasannya sama persis dengan
+        // `folderPelanggan()`: GET dari teknisi atau viewer nggak boleh jadi
+        // celah nulis. Super admin ikut sejak K-49-14 — dia boleh `POST
+        // /folders`, jadi find-or-create di sini bukan celah buatnya.
+        if (! $request->filled('parent_id') && $request->user()->punyaHakAdmin()) {
             $this->siapkanFolderTiapPelanggan($request->user()->organization_id, $organizer);
         }
 
@@ -152,9 +154,10 @@ class FolderController extends Controller
         // "viewer nggak pernah nulis" berhenti benar — dan itu klaim yang lebih
         // berharga daripada kemudahan satu tap.
         //
-        // Yang beneran butuh find-or-create cuma admin: dia milih PT dari daftar
-        // pelanggan, termasuk PT yang belum pernah punya sertifikat sama sekali.
-        if (! $request->user()->isAdmin()) {
+        // Yang beneran butuh find-or-create cuma admin (dan super admin sejak
+        // K-49-14): dia milih PT dari daftar pelanggan, termasuk PT yang belum
+        // pernah punya sertifikat sama sekali.
+        if (! $request->user()->punyaHakAdmin()) {
             $folder = $organizer->cariFolderPelanggan($customer);
 
             abort_if($folder === null, 404, 'Folder perusahaan ini belum ada.');

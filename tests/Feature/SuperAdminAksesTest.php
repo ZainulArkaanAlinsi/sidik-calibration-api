@@ -10,11 +10,27 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Fase 2: `super_admin` dibuka — MASUK dan MEMBACA, bukan memutuskan.
+ * `super_admin`: masuk, membaca, dan — sejak K-49-14 — MENULIS lewat aplikasi.
+ *
+ * ## K-49-14 (pemilik proyek, 15 Okt 2026) MENGUBAH test ini
+ *
+ * Keputusan itu membuka SEMUA aksi tulis admin & teknisi untuk super admin di
+ * organisasinya sendiri, dari aplikasi (`EnsureUserHasRole::lolosTulisSuperAdmin`
+ * + `User::punyaHakAdmin`). Tiga kasus yang dulu menegaskan "tulis lewat API
+ * ditolak" dibalik jadi "terbuka": ubah akun, setujui akun, dan isi
+ * `/me/permissions`. Yang TIDAK berubah dan tetap dijaga di sini: panel tetap
+ * baca-saja (`HakTulisPanel`), `User::roles()` tetap tanpa `super_admin`, akun
+ * super admin lain tetap 404 lewat `/api/users`, dan dunia pelanggan tetap
+ * tertutup. Pemisahan wewenang & Order Number wajib dijaga
+ * `SuperAdminSemuaAksiTest`.
+ *
+ * Catatan di bawah ini sejarah Fase 2 (23 Sep 2026), dibiarkan supaya alasan
+ * butir 2 & 3 yang masih berlaku tetap terbaca.
  *
  * ## Keadaan sebelum ini
  *
@@ -127,11 +143,12 @@ class SuperAdminAksesTest extends TestCase
 
     /*
     |---------------------------------------------------------------------------
-    | Tulis: tidak, di dua-duanya
+    | Tulis: TERBUKA di aplikasi (K-49-14), tetap tertutup di panel
     |---------------------------------------------------------------------------
     */
 
-    public function test_rute_tulis_ditolak(): void
+    /** Dulu 403 (Fase 2). K-49-14: aksi admin di organisasinya sendiri terbuka. */
+    public function test_rute_tulis_admin_terbuka_sejak_k_49_14(): void
     {
         $teknisi = User::factory()->create([
             'organization_id' => $this->org->id,
@@ -140,14 +157,14 @@ class SuperAdminAksesTest extends TestCase
         ]);
 
         $this->actingAs($this->super, 'sanctum')
-            ->putJson("/api/users/{$teknisi->id}", ['name' => 'Diubah Super Admin'])
-            ->assertForbidden();
+            ->putJson("/api/users/{$teknisi->id}", ['nama' => 'Diubah Super Admin'])
+            ->assertOk();
 
-        $this->assertNotSame('Diubah Super Admin', $teknisi->fresh()->name);
+        $this->assertSame('Diubah Super Admin', $teknisi->fresh()->name);
     }
 
-    /** Termasuk approval akun — jalur tulis yang paling gampang dikira "cuma tombol". */
-    public function test_approve_akun_ditolak(): void
+    /** Approval akun ikut terbuka — tetap cuma role dari `User::roles()`. */
+    public function test_approve_akun_terbuka_sejak_k_49_14(): void
     {
         $pending = User::factory()->create([
             'organization_id' => $this->org->id,
@@ -155,11 +172,33 @@ class SuperAdminAksesTest extends TestCase
             'status' => User::STATUS_PENDING,
         ]);
 
+        // Mencetak super admin lewat approval tetap ditolak: `Rule::in(roles())`.
         $this->actingAs($this->super, 'sanctum')
-            ->postJson("/api/users/{$pending->id}/approve")
-            ->assertForbidden();
-
+            ->postJson("/api/users/{$pending->id}/approve", ['role' => User::ROLE_SUPER_ADMIN])
+            ->assertStatus(422);
         $this->assertSame(User::STATUS_PENDING, $pending->fresh()->status);
+
+        $this->actingAs($this->super, 'sanctum')
+            ->postJson("/api/users/{$pending->id}/approve", ['role' => User::ROLE_TEKNISI])
+            ->assertOk();
+
+        $this->assertSame(User::STATUS_AKTIF, $pending->fresh()->status);
+    }
+
+    /** Akun super admin lain tetap tidak tersentuh `/api/users` — 404, bukan 403. */
+    public function test_akun_super_admin_lain_tetap_404(): void
+    {
+        $superLain = User::factory()->create([
+            'organization_id' => $this->org->id,
+            'role' => User::ROLE_SUPER_ADMIN,
+            'status' => User::STATUS_AKTIF,
+        ]);
+
+        $this->actingAs($this->super, 'sanctum')
+            ->putJson("/api/users/{$superLain->id}", ['nama' => 'Diubah'])
+            ->assertNotFound();
+
+        $this->assertNotSame('Diubah', $superLain->fresh()->name);
     }
 
     public function test_panel_tidak_memberi_jalur_tulis(): void
@@ -203,17 +242,31 @@ class SuperAdminAksesTest extends TestCase
      * Kalau jawabannya beda dari middleware, yang muncul tombol nyala lalu 403 —
      * persis kegagalan yang `MatriksIzin` ada buat mencegahnya.
      */
-    public function test_izin_yang_dijawab_cuma_yang_baca(): void
+    public function test_izin_memuat_semua_izin_admin_dan_teknisi(): void
     {
         $boleh = $this->actingAs($this->super, 'sanctum')
             ->getJson('/api/me/permissions')
             ->assertOk()
             ->assertJsonPath('data.role', User::ROLE_SUPER_ADMIN)
+            ->assertJsonPath('data.batasan.kalibrasi', 'semua')
             ->json('data.boleh');
 
-        $this->assertContains('alat.lihat', $boleh);
-        $this->assertContains('sertifikat.lihat', $boleh);
-        $this->assertNotContains('metode.kelola', $boleh, 'Izin TULIS bocor ke super admin.');
+        $matriks = app(MatriksIzin::class);
+        $gabungan = array_unique([
+            ...$matriks->bolehUntuk(User::ROLE_ADMIN),
+            ...$matriks->bolehUntuk(User::ROLE_TEKNISI),
+        ]);
+
+        // Dulu (Fase 2) `metode.kelola` di sini justru tanda kebocoran.
+        $this->assertSame(
+            [],
+            array_values(array_diff($gabungan, $boleh)),
+            'Ada izin admin/teknisi yang tidak sampai ke super admin.',
+        );
+
+        foreach (['metode.kelola', 'kalibrasi.setujui', 'kalibrasi.ubah-field-admin', 'kalibrasi.buat', 'penugasan.lapor-progres', 'kalibrasi.sahkan'] as $izin) {
+            $this->assertContains($izin, $boleh);
+        }
     }
 
     /*

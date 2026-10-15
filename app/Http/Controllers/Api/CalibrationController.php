@@ -287,7 +287,7 @@ class CalibrationController extends Controller
         ]);
 
         $bentuk = $profil->bentukLembarKerja(
-            untukAdmin: $request->user()->isAdmin(),
+            untukAdmin: $request->user()->punyaHakAdmin(),
             equipment: $konteksAlat,
         );
 
@@ -509,7 +509,7 @@ class CalibrationController extends Controller
         $this->pastikanBolehLihat($request, $calibration);
 
         abort_if(
-            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->punyaHakAdmin(),
             403,
             'Cuma teknisi yang ngerjain sesi ini yang boleh ngubahnya.',
         );
@@ -710,7 +710,7 @@ class CalibrationController extends Controller
      */
     private function catatanKoreksiAutoclave(CalibrationSession $sesi, AutoclaveStoreRequest $request, array $lembarLama): ?string
     {
-        $koreksi = $request->user()->isAdmin()
+        $koreksi = $request->user()->punyaHakAdmin()
             && $sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
             && $lembarLama !== []
             && self::bakukanLembarAutoclave($lembarLama) !== self::bakukanLembarAutoclave($request->dataUkur());
@@ -923,7 +923,7 @@ class CalibrationController extends Controller
         $this->pastikanBolehLihat($request, $calibration);
 
         abort_if(
-            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->punyaHakAdmin(),
             403,
             'Cuma teknisi yang ngerjain sesi ini yang boleh ngubahnya.',
         );
@@ -967,7 +967,7 @@ class CalibrationController extends Controller
         // teknis: sesi yang belum punya satu pun pembacaan berarti tidak ada
         // angka teknisi yang sedang diganti — yang terjadi pengisian pertama,
         // dan menuntut alasan koreksi di situ salah alamat.
-        $koreksiTerkirim = $request->user()->isAdmin()
+        $koreksiTerkirim = $request->user()->punyaHakAdmin()
             && $calibration->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
             && $request->has('measurements')
             && $pembacaanLama !== []
@@ -1041,7 +1041,7 @@ class CalibrationController extends Controller
             CalibrationSession::STATUS_PERLU_REVISI,
         ];
 
-        if ($pengubah->isAdmin()) {
+        if ($pengubah->punyaHakAdmin()) {
             $statusBolehDiubah[] = CalibrationSession::STATUS_MENUNGGU_APPROVAL;
         }
 
@@ -1706,7 +1706,7 @@ class CalibrationController extends Controller
         $this->pastikanBolehLihat($request, $calibration);
 
         abort_if(
-            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->punyaHakAdmin(),
             403,
             'Cuma teknisi yang ngerjain sesi ini yang boleh verifikasi pembacaannya.',
         );

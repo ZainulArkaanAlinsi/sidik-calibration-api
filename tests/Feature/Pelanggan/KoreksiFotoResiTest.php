@@ -238,7 +238,8 @@ class KoreksiFotoResiTest extends TestCase
         $this->lab($admin, 'POST', "koreksi-pelanggan/{$id}/terima")->assertUnprocessable();
     }
 
-    public function test_teknisi_403_super_admin_baca_saja_lab_lain_404(): void
+    /** Super admin dulu baca saja; K-49-14 (15 Okt 2026) membuka keputusannya. */
+    public function test_teknisi_403_super_admin_memutuskan_lab_lain_404(): void
     {
         $alat = $this->alat();
         $id = $this->kirim($this->pic, 'POST', "/alat/{$alat->id}/minta-koreksi", ['perubahan' => ['merk' => 'Baru']])->json('data.id');
@@ -248,7 +249,7 @@ class KoreksiFotoResiTest extends TestCase
 
         $sa = User::factory()->create(['organization_id' => $this->organisasi()->id, 'role' => User::ROLE_SUPER_ADMIN]);
         $this->lab($sa, 'GET', "koreksi-pelanggan/{$id}")->assertOk();
-        $this->lab($sa, 'POST', "koreksi-pelanggan/{$id}/terima")->assertForbidden();
+        $this->lab($sa, 'POST', "koreksi-pelanggan/{$id}/tolak", ['tanggapan' => 'Merk sudah sesuai pelat.'])->assertOk();
 
         $labLain = User::factory()->admin()->create(['organization_id' => Organization::factory()->create()->id]);
         $this->lab($labLain, 'GET', "koreksi-pelanggan/{$id}")->assertNotFound();

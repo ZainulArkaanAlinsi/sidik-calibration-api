@@ -38,7 +38,7 @@ class AutoclaveStoreRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->user()?->isAdmin()) {
+        if ($this->user()?->punyaHakAdmin()) {
             return;
         }
 

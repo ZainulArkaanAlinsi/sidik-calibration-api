@@ -47,6 +47,8 @@ class CalibrationRequest extends FormRequest
 
     /**
      * Buang field administratif dari kiriman non-admin (spesifikasi poin 1).
+     * "Admin" di sini = `punyaHakAdmin()`: admin dan super admin (K-49-14)
+     * sama-sama mengisi Order Number; teknisi & viewer tidak.
      *
      * DIBUANG, bukan ditolak 422: layar teknisi versi lama masih ngirim
      * `nomor_order`, dan bikin mobile lama gagal submit di lapangan itu
@@ -68,7 +70,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanTogglHydrometer();
         $this->bakukanBlokHydrometer();
 
-        if ($this->user()?->isAdmin()) {
+        if ($this->user()?->punyaHakAdmin()) {
             return;
         }
 

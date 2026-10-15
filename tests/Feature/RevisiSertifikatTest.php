@@ -190,12 +190,15 @@ class RevisiSertifikatTest extends TestCase
         $this->assertSame("Revisi ke-2, menggantikan {$r1->nomor}", $r2->snapshot['header']['catatan_revisi']);
     }
 
-    /** §38.5 butir 7. */
-    public function test_teknisi_viewer_dan_super_admin_ditolak(): void
+    /**
+     * §38.5 butir 7. Super admin dulu ikut ditolak di sini; K-49-14 (15 Okt
+     * 2026) membukanya — lihat test di bawah.
+     */
+    public function test_teknisi_dan_viewer_ditolak(): void
     {
         $asal = $this->sertifikatTerbit();
 
-        foreach ([User::ROLE_TEKNISI, User::ROLE_VIEWER, User::ROLE_SUPER_ADMIN] as $role) {
+        foreach ([User::ROLE_TEKNISI, User::ROLE_VIEWER] as $role) {
             $orang = User::factory()->create(['role' => $role]);
 
             $this->revisi($asal, oleh: $orang)->assertForbidden();
@@ -204,6 +207,20 @@ class RevisiSertifikatTest extends TestCase
         }
 
         $this->assertSame(Certificate::STATUS_TERBIT, $asal->fresh()->status);
+    }
+
+    /** K-49-14: suntingan sesudah terbit lewat revisi bernomor, kini juga oleh super admin. */
+    public function test_super_admin_boleh_merevisi_dan_membatalkan(): void
+    {
+        $asal = $this->sertifikatTerbit();
+        $super = User::factory()->create(['organization_id' => $this->org->id, 'role' => User::ROLE_SUPER_ADMIN]);
+
+        $revisi = Certificate::findOrFail($this->revisi($asal, oleh: $super)->assertStatus(202)->json('data.id'));
+        $this->assertSame($asal->nomor.'-R1', $revisi->nomor);
+
+        $this->actingAs($super)
+            ->postJson("/api/certificates/{$revisi->id}/batalkan", ['alasan' => 'Alat ternyata bukan milik pelanggan ini.'])
+            ->assertSuccessful();
     }
 
     public function test_lab_lain_dijawab_404(): void

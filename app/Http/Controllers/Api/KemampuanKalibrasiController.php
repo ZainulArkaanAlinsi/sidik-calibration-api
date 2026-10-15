@@ -80,7 +80,7 @@ class KemampuanKalibrasiController extends Controller
         $kemampuan->organization_id = $user->organization_id;
         $kemampuan->equipment_category_id = $kategori->id;
         $kemampuan->dibuat_oleh_user_id = $user->id;
-        $kemampuan->sumber = $user->isAdmin()
+        $kemampuan->sumber = $user->punyaHakAdmin()
             ? CalibrationCapability::SUMBER_ADMIN
             : CalibrationCapability::SUMBER_TEKNISI;
 

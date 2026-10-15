@@ -31,7 +31,8 @@ use Tests\TestCase;
  *    order yang sama dengan meja penerimaan, dan Equipment untuk alat baru —
  *    semuanya utuh atau tidak sama sekali.
  * 2. Menolak WAJIB beralasan, dan alasannya sampai ke pelanggan.
- * 3. Teknisi & viewer 403; super admin membaca tapi tidak menulis; lab lain 404
+ * 3. Teknisi & viewer 403; super admin membaca DAN memutuskan seperti admin
+ *    (K-49-14, 15 Okt 2026 — sebelumnya baca saja); lab lain 404
  *    SEBELUM validasi (422 untuk id lab lain sudah mengakui barisnya ada).
  */
 class PermintaanKalibrasiLabTest extends TestCase
@@ -129,7 +130,8 @@ class PermintaanKalibrasiLabTest extends TestCase
 
     // ------------------------------------------------------------------ peran
 
-    public function test_admin_membaca_teknisi_dan_viewer_403_super_admin_baca_saja(): void
+    /** Super admin dulu baca saja; K-49-14 (15 Okt 2026) membuka keputusannya juga. */
+    public function test_admin_dan_super_admin_memutuskan_teknisi_dan_viewer_403(): void
     {
         $p = $this->ajuan();
 
@@ -157,11 +159,10 @@ class PermintaanKalibrasiLabTest extends TestCase
         $this->getJson('/api/permintaan-pelanggan')->assertOk();
         $this->getJson("/api/permintaan-pelanggan/{$p->id}")->assertOk();
         $this->getJson("/api/permintaan-pelanggan/{$p->id}/pesan")->assertOk();
-        $this->postJson("/api/permintaan-pelanggan/{$p->id}/terima")->assertForbidden();
-        $this->postJson("/api/permintaan-pelanggan/{$p->id}/tolak", ['alasan' => 'tidak sesuai'])->assertForbidden();
-        $this->postJson("/api/permintaan-pelanggan/{$p->id}/pesan", ['isi' => 'halo'])->assertForbidden();
+        $this->postJson("/api/permintaan-pelanggan/{$p->id}/pesan", ['isi' => 'halo'])->assertSuccessful();
+        $this->postJson("/api/permintaan-pelanggan/{$p->id}/tolak", ['alasan' => 'Tidak sesuai ruang lingkup.'])->assertOk();
 
-        $this->assertSame('baru', $p->fresh()->status);
+        $this->assertSame(PermintaanKalibrasi::STATUS_DITOLAK, $p->fresh()->status);
     }
 
     public function test_token_pelanggan_ditolak_di_rute_lab(): void
@@ -615,7 +616,8 @@ class PermintaanKalibrasiLabTest extends TestCase
         }
     }
 
-    public function test_matriks_izin_memuat_permintaan_untuk_admin_dan_baca_saja_untuk_super_admin(): void
+    /** Super admin dulu baca saja di matriks; K-49-14 menyamakannya dengan admin. */
+    public function test_matriks_izin_memuat_permintaan_untuk_admin_dan_super_admin(): void
     {
         $matriks = app(MatriksIzin::class);
 
@@ -632,7 +634,7 @@ class PermintaanKalibrasiLabTest extends TestCase
 
         $superAdmin = $matriks->bolehUntuk(User::ROLE_SUPER_ADMIN);
         $this->assertContains('permintaan.lihat', $superAdmin);
-        $this->assertNotContains('permintaan.putuskan', $superAdmin);
-        $this->assertNotContains('permintaan.balas', $superAdmin);
+        $this->assertContains('permintaan.putuskan', $superAdmin);
+        $this->assertContains('permintaan.balas', $superAdmin);
     }
 }

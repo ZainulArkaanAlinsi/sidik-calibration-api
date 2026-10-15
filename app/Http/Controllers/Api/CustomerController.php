@@ -228,7 +228,7 @@ class CustomerController extends Controller
         $pelanggan->direktori_ref = $ref;
         $pelanggan->sumber = match (true) {
             $ref !== null => Customer::SUMBER_DIREKTORI,
-            $user->isAdmin() => Customer::SUMBER_ADMIN,
+            $user->punyaHakAdmin() => Customer::SUMBER_ADMIN,
             default => Customer::SUMBER_TEKNISI,
         };
 

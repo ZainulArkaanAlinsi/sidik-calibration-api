@@ -46,11 +46,13 @@ class User extends Authenticatable implements FilamentUser
     public const ROLE_PELANGGAN = 'pelanggan';
 
     /**
-     * Role pengawas lintas-proses. Nilainya sudah ada di ENUM sejak 16 Sep 2026,
-     * tapi PERILAKUNYA belum dibangun: dia menunggu keputusan K4 (siapa yang
-     * boleh mengesahkan sertifikat) dari manajer teknis. Nilai ENUM yang
-     * menganggur nol risikonya; yang berbahaya justru memberi izin sebelum
-     * pemisahan wewenangnya diputuskan.
+     * Role pengawas lintas-proses. Nilainya ada di ENUM sejak 16 Sep 2026.
+     *
+     * Sejak K-49-14 (pemilik proyek, 15 Okt 2026) dia boleh SEMUA aksi tulis
+     * admin dan teknisi di organisasinya sendiri, dari aplikasi — gerbangnya
+     * `EnsureUserHasRole::lolosTulisSuperAdmin()` dan [punyaHakAdmin()].
+     * Pemisahan wewenang K-30-03 tetap: sesi yang dia isi, koreksi, atau
+     * konfirmasi pindainya disetujui & disahkan orang lain.
      */
     public const ROLE_SUPER_ADMIN = 'super_admin';
 
@@ -113,8 +115,8 @@ class User extends Authenticatable implements FilamentUser
      * - [rolesInternal()] menjawab "siapa saja yang bukan orang luar" — dipakai
      *   gerbang channel dan grup luar `routes/api.php`.
      *
-     * Super admin ada di yang kedua saja: dia boleh masuk dan membaca, tapi
-     * tidak boleh dicetak dari dalam.
+     * Super admin ada di yang kedua saja: dia boleh masuk (dan sejak K-49-14
+     * menulis seperti admin & teknisi), tapi tidak boleh dicetak dari dalam.
      *
      * @return array<int, string>
      */
@@ -144,18 +146,44 @@ class User extends Authenticatable implements FilamentUser
         return $user instanceof self ? $user : null;
     }
 
+    /**
+     * "Role-nya persis `admin`?" — pertanyaan IDENTITAS, bukan izin.
+     *
+     * Untuk "boleh melakukan aksi admin?" pakai [punyaHakAdmin()]. Yang masih
+     * sengaja memakai ini: panel Filament (`ImportExcel`), karena panel tetap
+     * baca-saja untuk super admin (K-49-14 membuka aplikasi, bukan panel).
+     */
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
     }
 
     /**
+     * "Boleh melakukan aksi Master Data?" — admin ATAU super admin.
+     *
+     * K-49-14 (pemilik proyek, 15 Okt 2026): super admin boleh semua aksi tulis
+     * admin dan teknisi di organisasinya sendiri. Gerbang rutenya satu tempat
+     * (`EnsureUserHasRole`), tapi controller juga punya cabang "admin boleh X"
+     * (mengubah sesi orang lain, mengoreksi `menunggu_approval`, mengisi kolom
+     * administratif seperti Order Number). Cabang itu memakai ini, bukan
+     * [isAdmin()]: kalau tidak, super admin lolos rute lalu ditolak di dalamnya
+     * dengan pesan "cuma teknisi yang ngerjain sesi ini" — 403 yang
+     * kelihatan seperti hak yang memang tidak pernah diberikan.
+     *
+     * Bukan gerbang organisasi: penyaring `organization_id` tidak berubah.
+     */
+    public function punyaHakAdmin(): bool
+    {
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN], true);
+    }
+
+    /**
      * Sengaja TIDAK memulangkan `true` buat admin, dan sebaliknya juga nggak.
      *
-     * Dua peran yang berbeda, bukan bertingkat: admin menulis, super admin
-     * mengawasi. `isAdmin()` menjaga jalur tulis (mis. `ImportExcel`), jadi
-     * membuatnya ikut `true` buat super admin bakal memberi wewenang tulis
-     * lewat pintu belakang — persis yang ditahan sampai K4 turun.
+     * Dua peran yang berbeda: [isAdmin()] tetap `false` untuk super admin
+     * supaya panel (yang tetap baca-saja untuknya) tidak ikut terbuka lewat
+     * pintu belakang. Hak tulis aplikasi yang dibuka K-49-14 lewat
+     * [punyaHakAdmin()], bukan dengan menggabungkan dua pertanyaan ini.
      */
     public function isSuperAdmin(): bool
     {

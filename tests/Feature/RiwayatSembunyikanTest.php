@@ -191,15 +191,21 @@ class RiwayatSembunyikanTest extends TestCase
         $this->assertSame(false, $this->tersembunyiDiIndex($this->teknisi));
     }
 
-    /** `lolosBacaSuperAdmin` cuma meloloskan GET/HEAD — rute ini tidak dilonggarkan. */
-    public function test_super_admin_ditolak_menulis(): void
+    /**
+     * Dulu 403 (`lolosBacaSuperAdmin` cuma GET/HEAD). K-49-14 (15 Okt 2026):
+     * super admin boleh semua yang admin boleh, termasuk preferensi Riwayat-nya
+     * sendiri.
+     */
+    public function test_super_admin_boleh_menyembunyikan_sejak_k_49_14(): void
     {
         $super = $this->akun($this->org, User::ROLE_SUPER_ADMIN);
 
-        $this->actingAs($super, 'sanctum')->postJson($this->url())->assertForbidden();
-        $this->actingAs($super, 'sanctum')->deleteJson($this->url())->assertForbidden();
+        $this->actingAs($super, 'sanctum')->postJson($this->url())->assertOk();
+        $this->assertSame(true, $this->tersembunyiDiIndex($super));
+        // Preferensi per akun — admin tidak ikut terpengaruh.
+        $this->assertSame(false, $this->tersembunyiDiIndex($this->admin));
 
-        // Membaca daftarnya tetap boleh, dan tandanya tetap terisi (false).
+        $this->actingAs($super, 'sanctum')->deleteJson($this->url())->assertOk();
         $this->assertSame(false, $this->tersembunyiDiIndex($super));
     }
 

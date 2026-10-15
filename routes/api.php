@@ -440,8 +440,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // 2026). Preferensi tampilan per akun — sesi, sertifikat, dan audit tidak
     // berubah. Grupnya SAMA dengan baca daftar di atas, jadi siapa pun yang
     // melihat sesinya di Riwayat boleh menyembunyikannya; teknisi tetap cuma
-    // sesinya sendiri (dijaga di controller). Super admin ditolak 403 —
-    // `lolosBacaSuperAdmin` cuma meloloskan GET/HEAD.
+    // sesinya sendiri (dijaga di controller). Super admin ikut boleh sejak
+    // K-49-14 (`EnsureUserHasRole::lolosTulisSuperAdmin`).
     Route::post('/calibrations/{calibration}/sembunyikan', [CalibrationController::class, 'sembunyikan'])
         ->middleware('throttle:riwayat-sembunyikan');
     Route::delete('/calibrations/{calibration}/sembunyikan', [CalibrationController::class, 'tampilkan'])
@@ -484,7 +484,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::post('/penugasan/{penugasan}/dilihat', [PenugasanController::class, 'tandaiDilihat'])
         ->middleware('throttle:penugasan-tulis');
 
-    // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
+    // Nulis data alat & sesi kalibrasi: admin & teknisi (+ super admin sejak
+    // K-49-14, lewat middleware). Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
         // Teknisi melaporkan jumlah tuntas satu baris penugasan. Viewer tidak.
         Route::patch('/penugasan/item/{penugasanItem}', [PenugasanController::class, 'laporProgres'])
@@ -610,7 +611,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         );
     });
 
-    // Approval kalibrasi & master data: admin doang.
+    // Approval kalibrasi & master data: admin (+ super admin sejak K-49-14,
+    // lewat `EnsureUserHasRole::lolosTulisSuperAdmin`).
     Route::middleware('role:admin')->group(function () {
         /*
          * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------
@@ -661,8 +663,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
-        // Revisi & pembatalan (§38). Admin saja; super admin tetap 403 lewat
-        // `lolosBacaSuperAdmin` (baca saja sampai K4). Tidak ada hapus permanen.
+        // Revisi & pembatalan (§38). Admin & super admin (K-49-14, lewat
+        // `lolosTulisSuperAdmin`). Tidak ada hapus permanen.
         Route::post('/certificates/{certificate}/revisi', [CertificateController::class, 'revisi'])
             ->middleware('throttle:sertifikat-ubah');
         Route::post('/certificates/{certificate}/batalkan', [CertificateController::class, 'batalkan'])
@@ -740,9 +742,9 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::post('/orders/{order}/penugasan', [OrderController::class, 'penugasan']);
 
         // Permintaan kalibrasi dari pelanggan (30 Sep 2026). Semua di grup
-        // `role:admin`: GET lolos untuk super admin lewat `lolosBacaSuperAdmin`
-        // (baca saja), POST tidak — memutuskan permintaan belum dibuka untuknya.
-        // Teknisi & viewer 403 untuk semuanya: isi ajuan memuat data pelanggan.
+        // `role:admin`; super admin ikut membaca DAN memutuskan sejak K-49-14
+        // (`lolosSuperAdmin`). Teknisi & viewer 403 untuk semuanya: isi ajuan
+        // memuat data pelanggan.
         Route::get('/permintaan-pelanggan', [PermintaanPelangganController::class, 'index']);
         Route::get('/permintaan-pelanggan/{permintaan}', [PermintaanPelangganController::class, 'show']);
         Route::post('/permintaan-pelanggan/{permintaan}/terima', [PermintaanPelangganController::class, 'terima'])
@@ -758,8 +760,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::post('/permintaan-pelanggan/{permintaan}/alat-tiba', [PermintaanPelangganController::class, 'alatTiba'])
             ->middleware('throttle:koreksi-putus');
 
-        // Koreksi data dari pelanggan (§42). Sama dengan permintaan: GET lolos
-        // untuk super admin (baca), POST tidak — sampai K4.
+        // Koreksi data dari pelanggan (§42). Sama dengan permintaan: admin &
+        // super admin (K-49-14).
         Route::get('/koreksi-pelanggan', [KoreksiPelangganController::class, 'index']);
         Route::get('/koreksi-pelanggan/{koreksi}', [KoreksiPelangganController::class, 'show']);
         Route::post('/koreksi-pelanggan/{koreksi}/terima', [KoreksiPelangganController::class, 'terima'])
@@ -849,13 +851,17 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
 | Grup SAUDARA, bukan bersarang di grup luar — dan itu perlu dijelaskan sekali
 | supaya tidak ada yang "merapikan"-nya ke dalam.
 |
-| Grup luar dipagari `role:admin,teknisi,viewer`. Super admin lolos ke dalamnya
-| lewat `EnsureUserHasRole::lolosBacaSuperAdmin()`, dan jalan itu CUMA GET/HEAD
-| — disengaja. Rute tulis super admin yang ditaruh di dalam grup luar kena 403
-| di gerbang luar sebelum `role:super_admin`-nya sempat jalan. Middleware
-| `lolosBacaSuperAdmin` sendiri TIDAK disentuh: melonggarkannya memberi super
-| admin wewenang menyetujui sesi & mengelola pengguna, dua hal yang dokumen
-| Super Admin §9 justru tutup.
+| Grup luar dipagari `role:admin,teknisi,viewer`. Rute yang HANYA boleh super
+| admin (`sahkan`, `kembalikan-dari-pengesahan`) tidak bisa duduk di dalamnya:
+| gerbang luar menerima admin, jadi `role:super_admin` di dalam jadi satu-satunya
+| penahan admin — dan rute admin,super_admin di bawah ikut berdiri di sini supaya
+| polanya satu.
+|
+| Sejak K-49-14 (15 Okt 2026) super admin juga lolos SEMUA rute tulis yang
+| menerima admin atau teknisi, lewat `EnsureUserHasRole::lolosTulisSuperAdmin()`
+| — satu aturan di middleware, bukan `super_admin` ditulis di puluhan `role:`.
+| `PemisahanWewenang` tetap memblokirnya dari menyetujui/mengesahkan sesi yang
+| ikut dia isi (K-30-03).
 |
 | `RuteInternalMenolakRoleLainTest` & `MeIzinTest` membaca rute-rute ini
 | langsung, jadi tidak ada daftar tulis tangan yang bisa basi.
@@ -869,8 +875,9 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])->gr
         ->middleware('throttle:pengesahan-balik');
 });
 
-// Dikerjakan admin (meja depan) DAN super admin (pengendali). Tetap grup
-// saudara karena alasan yang sama: super admin tidak bisa POST di grup luar.
+// Dikerjakan admin (meja depan) DAN super admin (pengendali). Grup saudara
+// ini lahir 29 Sep, sebelum K-49-14 membuka tulis lewat middleware; dibiarkan
+// berdiri karena perilakunya sama dan memindahkannya cuma mengubah diff.
 Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,super_admin'])->group(function () {
     // Serah terima alat — peristiwa fisik di meja depan.
     Route::post('/pelacakan/item/{orderItem}/tahap-fisik', [PelacakanController::class, 'tandaiTahapFisik'])

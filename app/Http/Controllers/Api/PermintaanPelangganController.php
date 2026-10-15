@@ -23,9 +23,9 @@ use Illuminate\Validation\Rule;
 /**
  * Permintaan kalibrasi pelanggan — sisi LAB.
  *
- * Semua rutenya di grup `role:admin`: admin membaca dan memutuskan; teknisi &
- * viewer 403; super admin cuma membaca (GET lolos `lolosBacaSuperAdmin`, tulis
- * 403) — K4 belum dijawab, jadi wewenang memutuskan belum dibuka untuknya.
+ * Semua rutenya di grup `role:admin`: admin dan super admin membaca dan
+ * memutuskan (super admin sejak K-49-14, lewat
+ * `EnsureUserHasRole::lolosSuperAdmin`); teknisi & viewer 403.
  *
  * Urutan di tiap aksi tulis SENGAJA: (1) binding model, (2) cek organisasi
  * (404 untuk lab lain), (3) baru validasi body. Kalau validasi jalan duluan,

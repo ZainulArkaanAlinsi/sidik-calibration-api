@@ -23,8 +23,10 @@ use Tests\TestCase;
  * Produksi 26 Sep 2026 — belum ada satu sesi pun disetujui — melihat Arsip
  * kosong total, dan pengguna melaporkannya sebagai "folder perusahaan kosong".
  *
- * Yang dijaga sama ketatnya: yang MEMBUAT folder cuma admin. GET dari teknisi,
- * viewer, dan super admin tetap baca-saja, persis `FolderPelangganTest`.
+ * Yang dijaga sama ketatnya: yang MEMBUAT folder cuma admin dan super admin
+ * (super admin sejak K-49-14, 15 Okt 2026 — dia boleh `POST /folders`, jadi
+ * find-or-create di sini bukan celah buatnya). GET dari teknisi dan viewer tetap
+ * baca-saja, persis `FolderPelangganTest`.
  */
 class FolderTiapPelangganTest extends TestCase
 {
@@ -183,8 +185,25 @@ class FolderTiapPelangganTest extends TestCase
         return [
             'teknisi' => [User::ROLE_TEKNISI],
             'viewer' => [User::ROLE_VIEWER],
-            'super admin' => [User::ROLE_SUPER_ADMIN],
         ];
+    }
+
+    /** K-49-14: super admin ikut admin — dulu dia di daftar baca-saja di atas. */
+    public function test_super_admin_membuat_folder_seperti_admin(): void
+    {
+        $alfa = $this->pelanggan('PT Alfa Contoh');
+        $super = User::factory()->create([
+            'organization_id' => $this->lab->id,
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+
+        $this->actingAs($super)
+            ->getJson('/api/arsip/perusahaan')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.pelanggan.id', $alfa->id);
+
+        $this->assertSame(1, Folder::count());
     }
 
     #[DataProvider('peranBacaSaja')]

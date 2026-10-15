@@ -33,7 +33,7 @@ class EnsureUserHasRole
 
         $boleh = $user && (
             in_array($user->role, $roles, true)
-            || self::lolosBacaSuperAdmin($user->role, $request->getMethod(), $roles)
+            || self::lolosSuperAdmin($user->role, $request->getMethod(), $roles)
         );
 
         if (! $boleh) {
@@ -41,6 +41,21 @@ class EnsureUserHasRole
         }
 
         return $next($request);
+    }
+
+    /**
+     * Super admin lewat gerbang `role:` ini walau namanya tidak ditulis?
+     *
+     * Satu pintu yang dipanggil middleware DAN `MatriksIzin`, supaya jawaban
+     * `/me/permissions` tidak pernah berbeda dari penjagaan yang sebenarnya.
+     * Isinya dua aturan: baca (sejak 23 Sep 2026) dan tulis (sejak K-49-14).
+     *
+     * @param  array<int, string>  $rolesRute  role yang ditulis di `role:` rutenya
+     */
+    public static function lolosSuperAdmin(string $role, string $method, array $rolesRute): bool
+    {
+        return self::lolosBacaSuperAdmin($role, $method, $rolesRute)
+            || self::lolosTulisSuperAdmin($role, $rolesRute);
     }
 
     /**
@@ -53,12 +68,10 @@ class EnsureUserHasRole
      * hak yang memang tidak pernah diberikan. Satu aturan di sini lebih susah
      * meleset daripada 40 daftar yang harus kompak.
      *
-     * Tiga batasnya, dan ketiganya sengaja:
+     * Batasnya:
      *
-     * 1. **Cuma GET/HEAD.** Menulis tetap butuh namanya disebut. Fase 2 membuka
-     *    pintu masuk, bukan wewenang; K4 (siapa yang boleh mengesahkan
-     *    sertifikat) belum dijawab manajer teknis, dan super admin yang bisa
-     *    approve sebelum itu turun persis hal yang ditahan.
+     * 1. **Cuma GET/HEAD.** Menulis punya aturannya sendiri,
+     *    [lolosTulisSuperAdmin()].
      * 2. **Rute yang menyebut `pelanggan` tidak ikut.** Dunia pelanggan disaring
      *    `KonteksPerusahaan`, bukan `organization_id`; super admin yang masuk ke
      *    sana tidak punya `customer_id`, dan hasilnya bukan "semua data" tapi
@@ -70,9 +83,6 @@ class EnsureUserHasRole
      *    Lintas lab slice terpisah — 59 tempat, dan menyelipkannya di sini
      *    berarti mengubah isolasi data tanpa ada yang meninjaunya.
      *
-     * Dipakai `MatriksIzin` juga, supaya jawaban `/me/izin` tidak pernah
-     * berbeda dari penjagaan yang sebenarnya.
-     *
      * @param  array<int, string>  $rolesRute  role yang ditulis di `role:` rutenya
      */
     public static function lolosBacaSuperAdmin(string $role, string $method, array $rolesRute): bool
@@ -80,5 +90,40 @@ class EnsureUserHasRole
         return $role === User::ROLE_SUPER_ADMIN
             && in_array(strtoupper($method), ['GET', 'HEAD'], true)
             && ! in_array(User::ROLE_PELANGGAN, $rolesRute, true);
+    }
+
+    /**
+     * Super admin lewat di rute TULIS yang menerima admin atau teknisi.
+     *
+     * Keputusan K-49-14 (pemilik proyek, 15 Okt 2026): super admin boleh SEMUA
+     * aksi tulis admin dan teknisi di organisasinya sendiri, dari satu tempat
+     * (aplikasi). Ditaruh di sini, bukan dengan menambahkan `super_admin` ke
+     * puluhan `role:` di `routes/api.php`: rute tulis baru yang lupa
+     * menuliskannya tidak memunculkan error, cuma 403 yang kelihatan seperti
+     * hak yang memang tidak pernah diberikan — alasan yang sama dengan aturan
+     * baca di atas.
+     *
+     * Batasnya, dan ketiganya sengaja:
+     *
+     * 1. **Rute harus menerima `admin` atau `teknisi`.** Rute `role:viewer`
+     *    saja (belum ada satu pun) tidak ikut — super admin itu gabungan dua
+     *    peran yang menulis, bukan "semua peran".
+     * 2. **Rute yang menyebut `pelanggan` tidak ikut**, alasan yang sama dengan
+     *    aturan baca: dunia pelanggan disaring `KonteksPerusahaan`.
+     * 3. **Bukan gerbang organisasi dan bukan gerbang pemisahan wewenang.**
+     *    Penyaring `organization_id` di controller tidak berubah (tulis lintas
+     *    lab TIDAK dibuka), dan `PemisahanWewenang` tetap memblokir super admin
+     *    yang ikut mengisi sesi dari menyetujui/mengesahkannya (K-30-03).
+     *
+     * Panel Filament tidak memakai jalur ini dan tetap baca-saja untuk super
+     * admin (`HakTulisPanel`).
+     *
+     * @param  array<int, string>  $rolesRute  role yang ditulis di `role:` rutenya
+     */
+    public static function lolosTulisSuperAdmin(string $role, array $rolesRute): bool
+    {
+        return $role === User::ROLE_SUPER_ADMIN
+            && ! in_array(User::ROLE_PELANGGAN, $rolesRute, true)
+            && array_intersect([User::ROLE_ADMIN, User::ROLE_TEKNISI], $rolesRute) !== [];
     }
 }

@@ -60,11 +60,11 @@ class AuthController extends Controller
         // yang ikut terkunci. Dua-duanya dibuka bareng: panel lewat
         // `canAccessPanel()`, aplikasi lewat sini.
         //
-        // Yang dia dapat cuma BACA: `EnsureUserHasRole::lolosBacaSuperAdmin()`
-        // meloloskan GET/HEAD saja, jadi token ini nggak bisa dipakai mengesahkan
-        // apa pun selama K4 belum dijawab manajer teknis. APK yang sudah
-        // terpasang nggak perlu ikut naik — `lib/models/user.dart` memetakan role
-        // asing ke `viewer`, jadi tampilannya read-only dan nggak ada yang crash.
+        // Sejak K-49-14 (15 Okt 2026) token ini juga MENULIS seperti admin &
+        // teknisi di organisasinya sendiri — `EnsureUserHasRole::lolosSuperAdmin()`.
+        // Pemisahan wewenang (K-30-03) tetap memblokirnya dari menyetujui atau
+        // mengesahkan sesi yang ikut dia isi. APK lama yang memetakan role
+        // asing ke `viewer` tetap tampil read-only dan nggak ada yang crash.
         if ($user->role === User::ROLE_PELANGGAN) {
             return response()->json([
                 'kode' => 'bukan_akun_internal',

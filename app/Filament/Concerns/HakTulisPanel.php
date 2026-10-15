@@ -13,6 +13,13 @@ use App\Models\User;
  * lain. Sampai K4 dijawab manajer teknis (siapa yang boleh mengesahkan), super
  * admin masuk buat melihat — bukan buat memutuskan.
  *
+ * **Tetap berlaku sesudah K-49-14 (15 Okt 2026).** Keputusan itu membuka SEMUA
+ * aksi tulis admin & teknisi untuk super admin di APLIKASI — "dari satu tempat".
+ * Panel sengaja tidak ikut: dua pintu tulis berarti dua tempat yang harus
+ * kompak menegakkan pemisahan wewenang, Order Number wajib, dan jejak audit,
+ * dan yang satu bisa tertinggal tanpa error. Super admin di panel tetap
+ * melihat (lintas lab, tercatat), menulisnya lewat aplikasi.
+ *
  * `ScopesToOrganization` sudah menutup create/edit/delete bawaan Filament. Yang
  * TIDAK ketutup di sana aksi kustom `Action::make(...)`: Filament nggak tahu
  * aksi itu menulis atau nggak, jadi nggak ada policy yang bisa menebaknya.
