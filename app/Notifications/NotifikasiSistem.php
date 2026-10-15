@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Notifications\Channels\SaluranPush;
 use App\Services\PenjagaNotifikasiUlang;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
@@ -21,9 +22,21 @@ use Illuminate\Notifications\Notification;
  * Kalau dipisah jadi dua sistem, admin bakal lihat notifikasi yang nggak muncul
  * di HP-nya — dan itu bikin orang berhenti percaya sama notifikasinya.
  */
-abstract class NotifikasiSistem extends Notification
+abstract class NotifikasiSistem extends Notification implements ShouldQueueAfterCommit
 {
     use Queueable;
+
+    /**
+     * Antre SETELAH transaksi commit (`ShouldQueueAfterCommit`) (G5, K-50-13): Kirim/Setujui tidak pernah
+     * menunggu FCM/Reverb, dan worker tidak membaca baris yang belum commit.
+     */
+    public int $tries = 4;
+
+    /** @return array<int, int> detik antar percobaan ulang */
+    public function backoff(): array
+    {
+        return [10, 60, 300];
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -58,10 +71,22 @@ abstract class NotifikasiSistem extends Notification
             'isi' => $this->isi(),
             'data' => [
                 'kategori' => $this->kategori(),
+                // Target deep-link: `tipe/id` (mis. `calibration/12`). Aplikasi
+                // memetakan ke layar; kosong = buka beranda.
+                'tujuan' => $this->tujuan($tautan),
                 'tautan_tipe' => (string) ($tautan['tipe'] ?? ''),
                 'tautan_id' => (string) ($tautan['id'] ?? ''),
             ],
         ];
+    }
+
+    /** @param  array<string, mixed>|null  $tautan */
+    private function tujuan(?array $tautan): string
+    {
+        $tipe = (string) ($tautan['tipe'] ?? '');
+        $id = (string) ($tautan['id'] ?? '');
+
+        return $tipe === '' ? '' : ($id === '' ? $tipe : $tipe.'/'.$id);
     }
 
     /** Payload broadcast = sama persis dengan yang disimpen di database. */
