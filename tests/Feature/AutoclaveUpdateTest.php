@@ -433,6 +433,79 @@ class AutoclaveUpdateTest extends TestCase
         $this->assertSame([121.10, 121.40, 121.05, 121.45, 121.20], $sesi->hasil_autoclave['lembar']['suhu']['disk'][0]);
     }
 
+    /** Lembar terkirim yang dikembalikan admin lewat `reject()` sungguhan, dengan kolom yang ditandai. */
+    private function ditolakAdmin(string $catatan, array $kolom): CalibrationSession
+    {
+        $sesi = $this->kirimanTeknisi();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/calibrations/{$sesi->id}/reject", [
+                'catatan_revisi' => $catatan,
+                'revisi_field' => $kolom,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_PERLU_REVISI);
+
+        return $sesi->fresh();
+    }
+
+    public function test_simpan_draf_revisi_mempertahankan_catatan_dan_kolom_revisi_sampai_dikirim(): void
+    {
+        // Keputusan pemilik proyek 15 Okt 2026, sama dengan `PUT /calibrations/{id}`.
+        // Dulu tiap PUT yang berhasil mengosongkan keduanya, termasuk Simpan
+        // Draf pertama atas lembar `perlu_revisi`.
+        $catatan = 'Disk 1 kolom 3 nggak kebaca, ulangi bacaannya.';
+        $kolom = ['suhu', 'alat_serial_number'];
+        $sesi = $this->ditolakAdmin($catatan, $kolom);
+
+        // perlu_revisi → draft.
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payloadDiubah(['status' => 'draft']))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT)
+            ->assertJsonPath('data.catatan_revisi', $catatan)
+            ->assertJsonPath('data.revisi_field', $kolom);
+
+        // draft → draft: simpan draf berikutnya juga membiarkannya.
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payload(['status' => 'draft']))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT);
+
+        $draft = $sesi->fresh();
+        $this->assertSame($catatan, $draft->catatan_revisi);
+        $this->assertSame($kolom, $draft->revisi_field);
+        $this->assertNull($draft->submitted_at);
+
+        // Dikirim → teguran sudah dijawab, dua-duanya dibuang.
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payloadDiubah())
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->assertJsonPath('data.catatan_revisi', null)
+            ->assertJsonPath('data.revisi_field', []);
+
+        $terkirim = $sesi->fresh();
+        $this->assertNull($terkirim->catatan_revisi);
+        $this->assertNull($terkirim->revisi_field);
+    }
+
+    public function test_kirim_ulang_langsung_dari_perlu_revisi_mengosongkan_catatan_dan_kolom_revisi(): void
+    {
+        $sesi = $this->ditolakAdmin('Tekanan standar pembacaan ke-5 janggal.', ['tekanan']);
+
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->putJson("/api/calibrations/autoclave/{$sesi->id}", $this->payloadDiubah())
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->assertJsonPath('data.catatan_revisi', null)
+            ->assertJsonPath('data.revisi_field', []);
+
+        $segar = $sesi->fresh();
+        $this->assertNull($segar->catatan_revisi);
+        $this->assertNull($segar->revisi_field);
+    }
+
     public function test_sesi_yang_menunggu_approval_tidak_bisa_disimpan_balik_jadi_draft(): void
     {
         $antre = $this->kirimanTeknisi();

@@ -69,10 +69,19 @@ disimpannya. Gampang dicari, rapi.
 > `submitted_at`, kiriman tanpa bacaan untuk lembar berisi ditolak (422, tidak ada yang dihapus),
 > field admin dari teknisi dibuang di POST & PUT Autoklaf, dan draft tanpa `set_point` tersimpan
 > (dulu 500 di `AutoclaveInputBuilder`; set point kosong disimpan null, tidak dikarang).
-> Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest` (21 test). **Sisi mobile
-> belum** — HP harus memanggil PUT kalau draft-nya sudah punya id. Gate MySQL belum dijalankan
-> untuk perubahan ini. Celah yang sengaja belum ditutup: sesi lama tanpa `lembar` (koreksi admin
+> Kontrak: `docs/kontrak-api.md` §4. Dijaga `AutoclaveUpdateTest` (21 test). **Live 15 Okt 2026**
+> (PR #235, `56668b1`). Sisi mobile sudah: `_kirimMatriks` memanggil PUT kalau draft-nya sudah
+> punya id (mobile PR #205, rilis 1.0.695). Gate MySQL penuh untuk `56668b1` sedang berjalan
+> (15 Okt). Handoff: `docs/perintah-frontend-autoclave.md` §8. Celah yang sengaja belum ditutup: sesi lama tanpa `lembar` (koreksi admin
 > tak terdeteksi) dan kabar admin berulang tiap sesi antre disimpan ulang.
+>
+> **15 Okt 2026 — draft revisi menyimpan catatan admin (sisi server, branch
+> `fix/catatan-revisi-draf`, di-merge 15 Okt 2026).** Dulu `PUT /calibrations/{id}` dan
+> `PUT /calibrations/autoclave/{id}` mengosongkan `catatan_revisi` & `revisi_field` di tiap
+> simpan, termasuk Simpan Draf atas lembar `perlu_revisi`. Sekarang (keputusan pemilik proyek)
+> keduanya dikosongkan hanya saat lembar dikirim (`menunggu_approval`); draft yang membawa
+> catatan tetap membawanya. Rincian: `docs/BACA-DULU-BACKEND.md` entri 15 Okt. Sisi mobile
+> (menampilkan catatan di draft): branch mobile `fix/draf-sinkron-saran`.
 
 ## 5. TITS & TIDS satu pintu
 

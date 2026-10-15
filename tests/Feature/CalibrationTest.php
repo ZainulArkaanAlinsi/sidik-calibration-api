@@ -435,6 +435,96 @@ class CalibrationTest extends TestCase
         $this->assertSame(1, $sesi->fresh()->uncertaintyCalculations()->count());
     }
 
+    /** Sesi terkirim yang dikembalikan admin lewat `reject()`, dengan kolom yang ditandai. */
+    private function sesiDitolak(string $catatan, array $kolom): CalibrationSession
+    {
+        $sesi = $this->buatSesi();
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/reject", [
+                'catatan_revisi' => $catatan,
+                'revisi_field' => $kolom,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_PERLU_REVISI)
+            ->assertJsonPath('data.revisi_field', $kolom);
+
+        return $sesi->fresh();
+    }
+
+    public function test_simpan_draf_revisi_mempertahankan_catatan_dan_kolom_revisi_sampai_dikirim(): void
+    {
+        // Keputusan pemilik proyek 15 Okt 2026. Dulu tiap PUT yang berhasil
+        // mengosongkan keduanya — termasuk Simpan Draf pertama atas lembar
+        // `perlu_revisi` — jadi teguran admin & sorotan kolomnya hilang
+        // sebelum teknisi selesai membetulkan.
+        $catatan = 'Nomor seri salah ketik, dan titik 50mm kurang pembacaan.';
+        $kolom = ['alat_serial_number', 'suhu_ruang'];
+        $sesi = $this->sesiDitolak($catatan, $kolom);
+
+        // perlu_revisi → draft, dengan tabel pembacaan.
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", $this->payload([
+                'status' => CalibrationSession::STATUS_DRAFT,
+                'measurements' => [
+                    ['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03, 50.02]],
+                ],
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT)
+            ->assertJsonPath('data.catatan_revisi', $catatan)
+            ->assertJsonPath('data.revisi_field', $kolom);
+
+        // draft → draft, kepala lembar saja (tanpa kunci `measurements` —
+        // cabang `isiUlangPengukuran` yang lain, ujungnya `tutupPengisian` juga).
+        $kepalaSaja = $this->payload(['status' => CalibrationSession::STATUS_DRAFT]);
+        unset($kepalaSaja['measurements']);
+
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", $kepalaSaja)
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_DRAFT);
+
+        $draft = $sesi->fresh();
+        $this->assertSame($catatan, $draft->catatan_revisi);
+        $this->assertSame($kolom, $draft->revisi_field);
+        $this->assertNull($draft->submitted_at);
+
+        // Begitu dikirim, teguran itu sudah dijawab — dua-duanya dibuang.
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", $this->payload([
+                'measurements' => [
+                    ['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03, 50.02, 50.01]],
+                ],
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->assertJsonPath('data.catatan_revisi', null)
+            ->assertJsonPath('data.revisi_field', []);
+
+        $terkirim = $sesi->fresh();
+        $this->assertNull($terkirim->catatan_revisi);
+        $this->assertNull($terkirim->revisi_field);
+    }
+
+    public function test_kirim_ulang_langsung_dari_perlu_revisi_mengosongkan_catatan_dan_kolom_revisi(): void
+    {
+        $sesi = $this->sesiDitolak('Suhu ruang di luar rentang IK, ulangi.', ['suhu_ruang']);
+
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", $this->payload())
+            ->assertOk()
+            ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->assertJsonPath('data.catatan_revisi', null)
+            ->assertJsonPath('data.revisi_field', []);
+
+        $segar = $sesi->fresh();
+        $this->assertNull($segar->catatan_revisi);
+        // Bukan cuma catatannya: tanda kolom yang tertinggal bikin garis
+        // merahnya nempel di lembar yang sudah dibetulkan.
+        $this->assertNull($segar->revisi_field);
+    }
+
     public function test_sesi_yang_udah_disetujui_nggak_bisa_diubah_lagi(): void
     {
         $sesi = $this->buatSesi();
