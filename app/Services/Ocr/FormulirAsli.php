@@ -234,6 +234,10 @@ class FormulirAsli
             // titik profil; kolom kertas -> baris profil ditebak urutannya).
             // HP menyembunyikan pintu "Foto lembar kerja" dan pemroses menolak
             // pindainya, SAMPAI lab mengonfirmasi dan flag ini dihapus dari peta.
+            // Formulir yang TIDAK mencetak teks "Revise" (0538) menyatakannya
+            // eksplisit di peta; HP hanya melewati syarat baca revisi untuk
+            // yang `false`. Selain itu revisi wajib terbaca.
+            'revisi_tercetak' => ($peta['revisi_tercetak'] ?? true) !== false,
             'perlu_konfirmasi_lab' => ($peta['perlu_konfirmasi_lab'] ?? false) === true,
             // Keputusan pemilik (K1, 9 Okt 2026): sebelum >=20 foto, pindai
             // boleh dipakai dalam mode uji — semua sel maks kuning. Penegakan

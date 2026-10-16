@@ -5,6 +5,7 @@
     "draf": "formulir-0538.draf.json",
     "sumber_sha256": "c12eea2101137675580ae5192a7ed82a4de9910a97dd7628d3465e00aff162e3",
     "terverifikasi": false,
+    "revisi_tercetak": false,
     "koordinat": "ternormal_0_1",
     "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
     "sel": [

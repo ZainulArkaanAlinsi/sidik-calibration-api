@@ -91,7 +91,7 @@ class IdentitasTabelUnikTest extends TestCase
 
     public function test_formulir_dengan_asumsi_posisional_bertanda_perlu_konfirmasi_lab(): void
     {
-        $dibekukan = ['conductivity_meter', 'refractometer', 'chlorine_meter', 'do_meter'];
+        $dibekukan = ['conductivity_meter', 'refractometer', 'chlorine_meter', 'do_meter', 'turbidimeter'];
 
         foreach ($dibekukan as $kode) {
             $template = app(FormulirAsli::class)->untukKode($kode);
@@ -105,6 +105,20 @@ class IdentitasTabelUnikTest extends TestCase
 
             $this->assertNotNull($template, $kode);
             $this->assertFalse($template['perlu_konfirmasi_lab'], $kode);
+        }
+    }
+
+    public function test_hanya_formulir_yang_menyatakan_tanpa_revisi_tercetak_melewati_syarat_revisi(): void
+    {
+        foreach (['flowmeter_flowrate', 'flowmeter_totalizer'] as $kode) {
+            $template = app(FormulirAsli::class)->untukKode($kode, null, null, 'SIDIK-FM-CAL-0538');
+
+            $this->assertIsArray($template, $kode);
+            $this->assertFalse($template['revisi_tercetak'], $kode);
+        }
+
+        foreach (['ph_meter', 'centrifuge', 'tachometer', 'conductivity_meter', 'timer_stopwatch'] as $kode) {
+            $this->assertTrue(app(FormulirAsli::class)->untukKode($kode)['revisi_tercetak'], $kode);
         }
     }
 }
