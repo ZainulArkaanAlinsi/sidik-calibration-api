@@ -367,24 +367,28 @@
         {
             "kode": "suhu_awal",
             "cara": "angka",
+            "tahap": 1,
             "x": 0.6067,
             "y": 0.2894
         },
         {
             "kode": "kelembaban_awal",
             "cara": "angka",
+            "tahap": 1,
             "x": 0.8359,
             "y": 0.29
         },
         {
             "kode": "suhu_akhir",
             "cara": "angka",
+            "tahap": 1,
             "x": 0.6059,
             "y": 0.3049
         },
         {
             "kode": "kelembaban_akhir",
             "cara": "angka",
+            "tahap": 1,
             "x": 0.8351,
             "y": 0.3055
         }

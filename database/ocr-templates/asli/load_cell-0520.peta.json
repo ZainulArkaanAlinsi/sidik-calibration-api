@@ -1,0 +1,1222 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0520.draf.json -> kunci sel profil load_cell. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Cakupan TAHAP 1: sel tabel data, kondisi lingkungan, centang; sisanya `abaikan` beralasan atau `tanpa_kotak` (kunci profil yang tidak punya kotak di kertas). Kunci sel diambil dari template profil bawaan (tanpa alat). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "load_cell",
+    "kode_dokumen": "SIDIK-FM-CAL-0520_Rev.3",
+    "draf": "formulir-0520.draf.json",
+    "sumber_sha256": "63c37a45930fae41fe2f6f441cfcd9f092fbe33ffd19ad63f610c9c075254b4a",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "gaya_pos_0|1|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_0|1|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_0|1|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_90|1|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_90|1|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_90|1|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_180|1|1|pembacaan",
+            "x": 0.602,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_180|1|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_180|1|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_270|1|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_270|1|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_270|1|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.4005
+        },
+        {
+            "kunci": "gaya_pos_0|2|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_0|2|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_0|2|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_90|2|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_90|2|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_90|2|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_180|2|1|pembacaan",
+            "x": 0.602,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_180|2|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_180|2|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_270|2|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_270|2|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_270|2|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.4217
+        },
+        {
+            "kunci": "gaya_pos_0|3|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_0|3|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_0|3|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_90|3|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_90|3|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_90|3|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_180|3|1|pembacaan",
+            "x": 0.602,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_180|3|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_180|3|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_270|3|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_270|3|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_270|3|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.4429
+        },
+        {
+            "kunci": "gaya_pos_0|4|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_0|4|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_0|4|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_90|4|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_90|4|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_90|4|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_180|4|1|pembacaan",
+            "x": 0.602,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_180|4|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_180|4|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_270|4|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_270|4|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_270|4|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.4641
+        },
+        {
+            "kunci": "gaya_pos_0|5|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_0|5|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_0|5|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_90|5|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_90|5|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_90|5|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_180|5|1|pembacaan",
+            "x": 0.602,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_180|5|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_180|5|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_270|5|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_270|5|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_270|5|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.4854
+        },
+        {
+            "kunci": "gaya_pos_0|6|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_0|6|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_0|6|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_90|6|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_90|6|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_90|6|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_180|6|1|pembacaan",
+            "x": 0.602,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_180|6|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_180|6|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_270|6|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_270|6|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_270|6|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.5066
+        },
+        {
+            "kunci": "gaya_pos_0|7|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_0|7|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_0|7|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_90|7|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_90|7|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_90|7|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_180|7|1|pembacaan",
+            "x": 0.602,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_180|7|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_180|7|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_270|7|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_270|7|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_270|7|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.5278
+        },
+        {
+            "kunci": "gaya_pos_0|8|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_0|8|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_0|8|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_90|8|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_90|8|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_90|8|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_180|8|1|pembacaan",
+            "x": 0.602,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_180|8|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_180|8|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_270|8|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_270|8|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_270|8|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.549
+        },
+        {
+            "kunci": "gaya_pos_0|9|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_0|9|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_0|9|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_90|9|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_90|9|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_90|9|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_180|9|1|pembacaan",
+            "x": 0.602,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_180|9|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_180|9|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_270|9|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_270|9|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_270|9|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.5702
+        },
+        {
+            "kunci": "gaya_pos_0|10|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_0|10|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_0|10|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_90|10|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_90|10|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_90|10|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_180|10|1|pembacaan",
+            "x": 0.602,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_180|10|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_180|10|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_270|10|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_270|10|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_270|10|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.5915
+        },
+        {
+            "kunci": "gaya_pos_0|11|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_0|11|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_0|11|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_90|11|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_90|11|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_90|11|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_180|11|1|pembacaan",
+            "x": 0.602,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_180|11|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_180|11|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_270|11|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_270|11|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_270|11|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.6127
+        },
+        {
+            "kunci": "gaya_pos_0|12|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_0|12|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_0|12|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_90|12|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_90|12|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_90|12|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_180|12|1|pembacaan",
+            "x": 0.602,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_180|12|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_180|12|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_270|12|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_270|12|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_270|12|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.6339
+        },
+        {
+            "kunci": "gaya_pos_0|13|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_0|13|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_0|13|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_90|13|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_90|13|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_90|13|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_180|13|1|pembacaan",
+            "x": 0.602,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_180|13|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_180|13|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_270|13|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_270|13|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_270|13|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.6551
+        },
+        {
+            "kunci": "gaya_pos_0|14|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_0|14|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_0|14|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_90|14|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_90|14|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_90|14|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_180|14|1|pembacaan",
+            "x": 0.602,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_180|14|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_180|14|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_270|14|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_270|14|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_270|14|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.6763
+        },
+        {
+            "kunci": "gaya_pos_0|15|1|pembacaan",
+            "x": 0.2034,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_0|15|2|pembacaan",
+            "x": 0.2701,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_0|15|3|pembacaan",
+            "x": 0.3352,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_90|15|1|pembacaan",
+            "x": 0.4019,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_90|15|2|pembacaan",
+            "x": 0.4686,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_90|15|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_180|15|1|pembacaan",
+            "x": 0.602,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_180|15|2|pembacaan",
+            "x": 0.6687,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_180|15|3|pembacaan",
+            "x": 0.7354,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_270|15|1|pembacaan",
+            "x": 0.8021,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_270|15|2|pembacaan",
+            "x": 0.8688,
+            "y": 0.6975
+        },
+        {
+            "kunci": "gaya_pos_270|15|3|pembacaan",
+            "x": 0.9355,
+            "y": 0.6975
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2321,
+            "y": 0.2148
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2321,
+            "y": 0.2295
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2268,
+            "y": 0.2441
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2268,
+            "y": 0.2588
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.2321,
+            "y": 0.2875
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.2321,
+            "y": 0.3022
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.2749,
+            "y": 0.287
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.32,
+            "y": 0.2876
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Load Cell 5 kN",
+            "x": 0.3205,
+            "y": 0.7384
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Load Cell 100 kN",
+            "x": 0.3209,
+            "y": 0.7535
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 3,
+            "label": "Load Cell 3000 kN",
+            "x": 0.3213,
+            "y": 0.7673
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kolom nominal/titik beban per baris (titik_ukur): bukan sel pembacaan dan tidak punya kunci sel; nilai titik datang dari order/penentuan titik, bukan dari OCR.",
+            "titik": [
+                {
+                    "x": 0.0997,
+                    "y": 0.4005
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.4217
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.4429
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.4641
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.5066
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.5278
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.549
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.5702
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.5915
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.6127
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.6339
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.6551
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.6763
+                },
+                {
+                    "x": 0.0997,
+                    "y": 0.6975
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik/tanggal/nomor order/lokasi: bukan sel data, kondisi lingkungan, atau centang (cakupan tahap 1). Nilainya datang dari order & master alat atau diketik teknisi.",
+            "titik": [
+                {
+                    "x": 0.5709,
+                    "y": 0.1029
+                },
+                {
+                    "x": 0.5709,
+                    "y": 0.1296
+                },
+                {
+                    "x": 0.5709,
+                    "y": 0.1483
+                },
+                {
+                    "x": 0.5709,
+                    "y": 0.1647
+                },
+                {
+                    "x": 0.3388,
+                    "y": 0.2002
+                },
+                {
+                    "x": 0.8043,
+                    "y": 0.2002
+                },
+                {
+                    "x": 0.8043,
+                    "y": 0.2148
+                },
+                {
+                    "x": 0.8043,
+                    "y": 0.2295
+                },
+                {
+                    "x": 0.8043,
+                    "y": 0.2441
+                },
+                {
+                    "x": 0.3388,
+                    "y": 0.2741
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (gaya.kapasitas, gaya.resolusi_uut).",
+            "titik": [
+                {
+                    "x": 0.739,
+                    "y": 0.2588
+                },
+                {
+                    "x": 0.739,
+                    "y": 0.2734
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak di label 'Thermohygro used / Insitu:': salinan nama TH yang dicentang; pilihan dibaca dari kotak centang TH-n.",
+            "titik": [
+                {
+                    "x": 0.1988,
+                    "y": 0.2891
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan / paraf / nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama pengesah datang dari akun (`teknisi.nama`, `reviewer.nama`).",
+            "titik": [
+                {
+                    "x": 0.5992,
+                    "y": 0.726
+                },
+                {
+                    "x": 0.7989,
+                    "y": 0.726
+                },
+                {
+                    "x": 0.5488,
+                    "y": 0.7418
+                },
+                {
+                    "x": 0.7489,
+                    "y": 0.7418
+                },
+                {
+                    "x": 0.5454,
+                    "y": 0.7559
+                },
+                {
+                    "x": 0.7455,
+                    "y": 0.7559
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak nilai 'Standard Used': salinan nama standar yang dicentang di bawahnya; pilihan dibaca dari kotak centang.",
+            "titik": [
+                {
+                    "x": 0.2311,
+                    "y": 0.7268
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR; teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.1173,
+                    "y": 0.7887
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak nomor revisi di kaki lembar: tercetak, bukan isian.",
+            "titik": [
+                {
+                    "x": 0.6999,
+                    "y": 0.9821
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Kotak Tipe Beban = centang spesifikasi_alat.gaya.tipe_beban, pilihan Push (0.6825, 0.287) lalu Pull (0.6826, 0.3022). DITAHAN (12 Okt 2026, G0): kode 32 karakter, sedangkan pindai menyimpan centang sebagai baris worksheet_scan_cells dengan field_id = kode, kolom varchar(30) — MySQL strict menolak. Kembalikan ke `centang` kalau penyimpanannya diputuskan.",
+            "titik": [
+                {
+                    "x": 0.6825,
+                    "y": 0.287
+                },
+                {
+                    "x": 0.6826,
+                    "y": 0.3022
+                }
+            ]
+        }
+    ],
+    "tanpa_kotak": [
+        {
+            "jenis": "sel",
+            "alasan": "Preload Test (preload|1..2|1..3): kertas tidak mencetak blok Pre Loading di formulir ini.",
+            "kunci": [
+                "preload|1|1|pembacaan",
+                "preload|1|2|pembacaan",
+                "preload|1|3|pembacaan",
+                "preload|2|1|pembacaan",
+                "preload|2|2|pembacaan",
+                "preload|2|3|pembacaan"
+            ]
+        }
+    ]
+}

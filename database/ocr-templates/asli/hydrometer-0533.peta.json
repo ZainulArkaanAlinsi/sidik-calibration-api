@@ -1,0 +1,510 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0533.draf.json -> kunci sel profil hydrometer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Cakupan TAHAP 1: sel tabel data, kondisi lingkungan, centang; sisanya `abaikan` beralasan atau `tanpa_kotak` (kunci profil yang tidak punya kotak di kertas). Kunci sel diambil dari template profil bawaan (tanpa alat). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "hydrometer",
+    "kode_dokumen": "SIDIK-FM-CAL-0533_Rev.2",
+    "draf": "formulir-0533.draf.json",
+    "sumber_sha256": "2498f8c7f297856610eff2c5d7dad78f8faea65ee7900c617e4523b7ab7136a8",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "hydro_diameter|1|1|pembacaan",
+            "x": 0.6718,
+            "y": 0.3813
+        },
+        {
+            "kunci": "hydro_diameter|1|2|pembacaan",
+            "x": 0.7509,
+            "y": 0.3813
+        },
+        {
+            "kunci": "hydro_diameter|1|3|pembacaan",
+            "x": 0.8285,
+            "y": 0.3813
+        },
+        {
+            "kunci": "hydro_massa|1|1|pembacaan",
+            "x": 0.6287,
+            "y": 0.5144
+        },
+        {
+            "kunci": "hydro_massa|2|1|pembacaan",
+            "x": 0.7024,
+            "y": 0.5144
+        },
+        {
+            "kunci": "hydro_massa|3|1|pembacaan",
+            "x": 0.7793,
+            "y": 0.5144
+        },
+        {
+            "kunci": "hydro_massa|4|1|pembacaan",
+            "x": 0.8593,
+            "y": 0.5144
+        },
+        {
+            "kunci": "hydro_massa|5|1|pembacaan",
+            "x": 0.9368,
+            "y": 0.5144
+        },
+        {
+            "kunci": "hydro_massa|1|2|pembacaan",
+            "x": 0.6287,
+            "y": 0.5549
+        },
+        {
+            "kunci": "hydro_massa|2|2|pembacaan",
+            "x": 0.7024,
+            "y": 0.5549
+        },
+        {
+            "kunci": "hydro_massa|3|2|pembacaan",
+            "x": 0.7793,
+            "y": 0.5549
+        },
+        {
+            "kunci": "hydro_massa|4|2|pembacaan",
+            "x": 0.8593,
+            "y": 0.5549
+        },
+        {
+            "kunci": "hydro_massa|5|2|pembacaan",
+            "x": 0.9368,
+            "y": 0.5549
+        },
+        {
+            "kunci": "hydro_massa|1|3|pembacaan",
+            "x": 0.6287,
+            "y": 0.5984
+        },
+        {
+            "kunci": "hydro_massa|2|3|pembacaan",
+            "x": 0.7024,
+            "y": 0.5984
+        },
+        {
+            "kunci": "hydro_massa|3|3|pembacaan",
+            "x": 0.7793,
+            "y": 0.5984
+        },
+        {
+            "kunci": "hydro_massa|4|3|pembacaan",
+            "x": 0.8593,
+            "y": 0.5984
+        },
+        {
+            "kunci": "hydro_massa|5|3|pembacaan",
+            "x": 0.9368,
+            "y": 0.5984
+        },
+        {
+            "kunci": "hydro_suhu|1|1|pembacaan",
+            "x": 0.6287,
+            "y": 0.7315
+        },
+        {
+            "kunci": "hydro_suhu|2|1|pembacaan",
+            "x": 0.7024,
+            "y": 0.7315
+        },
+        {
+            "kunci": "hydro_suhu|3|1|pembacaan",
+            "x": 0.7793,
+            "y": 0.7315
+        },
+        {
+            "kunci": "hydro_suhu|4|1|pembacaan",
+            "x": 0.8593,
+            "y": 0.7315
+        },
+        {
+            "kunci": "hydro_suhu|5|1|pembacaan",
+            "x": 0.9368,
+            "y": 0.7315
+        },
+        {
+            "kunci": "hydro_suhu|1|2|pembacaan",
+            "x": 0.6287,
+            "y": 0.7764
+        },
+        {
+            "kunci": "hydro_suhu|2|2|pembacaan",
+            "x": 0.7024,
+            "y": 0.7764
+        },
+        {
+            "kunci": "hydro_suhu|3|2|pembacaan",
+            "x": 0.7793,
+            "y": 0.7764
+        },
+        {
+            "kunci": "hydro_suhu|4|2|pembacaan",
+            "x": 0.8593,
+            "y": 0.7764
+        },
+        {
+            "kunci": "hydro_suhu|5|2|pembacaan",
+            "x": 0.9368,
+            "y": 0.7764
+        },
+        {
+            "kunci": "hydro_suhu|1|3|pembacaan",
+            "x": 0.6287,
+            "y": 0.8197
+        },
+        {
+            "kunci": "hydro_suhu|2|3|pembacaan",
+            "x": 0.7024,
+            "y": 0.8197
+        },
+        {
+            "kunci": "hydro_suhu|3|3|pembacaan",
+            "x": 0.7793,
+            "y": 0.8197
+        },
+        {
+            "kunci": "hydro_suhu|4|3|pembacaan",
+            "x": 0.8593,
+            "y": 0.8197
+        },
+        {
+            "kunci": "hydro_suhu|5|3|pembacaan",
+            "x": 0.9368,
+            "y": 0.8197
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6937,
+            "y": 0.1719
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.693,
+            "y": 0.1899
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8702,
+            "y": 0.1729
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8694,
+            "y": 0.1908
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Analytical Balance Fujitsu FS-AR210",
+            "x": 0.1897,
+            "y": 0.5467
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Digital Caliper Tesa",
+            "x": 0.1897,
+            "y": 0.6063
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala 'Point of Calibration' dan '( )' (nilai titik kalibrasi per kolom): titik_ukur tidak punya kunci sel; nilai titik datang dari order/penentuan titik.",
+            "titik": [
+                {
+                    "x": 0.6287,
+                    "y": 0.4643
+                },
+                {
+                    "x": 0.7024,
+                    "y": 0.4643
+                },
+                {
+                    "x": 0.7793,
+                    "y": 0.4643
+                },
+                {
+                    "x": 0.8593,
+                    "y": 0.4643
+                },
+                {
+                    "x": 0.9368,
+                    "y": 0.4643
+                },
+                {
+                    "x": 0.6287,
+                    "y": 0.485
+                },
+                {
+                    "x": 0.7024,
+                    "y": 0.485
+                },
+                {
+                    "x": 0.7793,
+                    "y": 0.485
+                },
+                {
+                    "x": 0.8593,
+                    "y": 0.485
+                },
+                {
+                    "x": 0.9368,
+                    "y": 0.485
+                },
+                {
+                    "x": 0.6287,
+                    "y": 0.6761
+                },
+                {
+                    "x": 0.7024,
+                    "y": 0.6761
+                },
+                {
+                    "x": 0.7793,
+                    "y": 0.6761
+                },
+                {
+                    "x": 0.8593,
+                    "y": 0.6761
+                },
+                {
+                    "x": 0.9368,
+                    "y": 0.6761
+                },
+                {
+                    "x": 0.6287,
+                    "y": 0.6982
+                },
+                {
+                    "x": 0.7024,
+                    "y": 0.6982
+                },
+                {
+                    "x": 0.7793,
+                    "y": 0.6982
+                },
+                {
+                    "x": 0.8593,
+                    "y": 0.6982
+                },
+                {
+                    "x": 0.9368,
+                    "y": 0.6982
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak di sebelah label 'Env. Condition': nilainya ditulis di empat kotak First/End × °C/%RH yang sudah dipetakan; kotak ini tidak menampung angka.",
+            "titik": [
+                {
+                    "x": 0.5881,
+                    "y": 0.1733
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik/tanggal/nomor order/lokasi: bukan sel data, kondisi lingkungan, atau centang (cakupan tahap 1). Nilainya datang dari order & master alat atau diketik teknisi.",
+            "titik": [
+                {
+                    "x": 0.3031,
+                    "y": 0.1932
+                },
+                {
+                    "x": 0.3031,
+                    "y": 0.2786
+                },
+                {
+                    "x": 0.3031,
+                    "y": 0.2995
+                },
+                {
+                    "x": 0.3031,
+                    "y": 0.3204
+                },
+                {
+                    "x": 0.3031,
+                    "y": 0.3413
+                },
+                {
+                    "x": 0.3031,
+                    "y": 0.3633
+                },
+                {
+                    "x": 0.3028,
+                    "y": 0.4437
+                },
+                {
+                    "x": 0.3028,
+                    "y": 0.4672
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (hydrometer.resolusi, hydrometer.suhu_acuan_faktor, rentang_ukur).",
+            "titik": [
+                {
+                    "x": 0.2002,
+                    "y": 0.2179
+                },
+                {
+                    "x": 0.1915,
+                    "y": 0.2567
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 1. Pre Condition: Sl/Ma/γx/tr → hydrometer.beban_tambahan, massa_udara, tegangan_permukaan, suhu_acuan_alat).",
+            "titik": [
+                {
+                    "x": 0.5772,
+                    "y": 0.2352
+                },
+                {
+                    "x": 0.5772,
+                    "y": 0.2555
+                },
+                {
+                    "x": 0.5772,
+                    "y": 0.2764
+                },
+                {
+                    "x": 0.5772,
+                    "y": 0.2975
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel label abu-abu 'Weight of Hydrometer (gram)' / 'Temperature (°C)' di kolom kiri tabel: teks tercetaknya terpotong garis antar-sel sehingga terbaca calon isian (utang skrip draf, PANDUAN §8). Bukan isian.",
+            "titik": [
+                {
+                    "x": 0.5291,
+                    "y": 0.5046
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.5242
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.5438
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.587
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.6095
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.7205
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.7427
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.7906
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.809
+                },
+                {
+                    "x": 0.5291,
+                    "y": 0.8295
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak nilai 'Standard Used': salinan nama standar yang dicentang; pilihan dibaca dari kotak centang.",
+            "titik": [
+                {
+                    "x": 0.2696,
+                    "y": 0.5254
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Centang 'Temp. Kalibrator Victor' / 'RTD Sensor/SH1/20': tidak dipetakan, lihat tanpa_kotak (label tidak sama dengan baris profil).",
+            "titik": [
+                {
+                    "x": 0.1897,
+                    "y": 0.5639
+                },
+                {
+                    "x": 0.1897,
+                    "y": 0.5834
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan / paraf / nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama pengesah datang dari akun (`teknisi.nama`, `reviewer.nama`).",
+            "titik": [
+                {
+                    "x": 0.2049,
+                    "y": 0.7426
+                },
+                {
+                    "x": 0.4176,
+                    "y": 0.7426
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR; teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.0996,
+                    "y": 0.8704
+                }
+            ]
+        }
+    ],
+    "tanpa_kotak": [
+        {
+            "jenis": "isian",
+            "alasan": "Tekanan udara awal/akhir tidak tercetak di kertas Hydrometer 0533 (profil memintanya untuk koreksi apung).",
+            "kode": [
+                "tekanan_awal",
+                "tekanan_akhir"
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Kotak 'Temp. Kalibrator Victor' dan 'RTD Sensor/SH1/20' ada di kertas tetapi TIDAK dipetakan: label tercetak tidak sama dengan baris profil (Temperature Calibrator Yokogawa CA 150 / PRT Pt-100); kesetaraan alatnya tidak terbukti, jadi tidak ditebak. Perlu keputusan lab.",
+            "kode": "standar_dicek.*.dipakai",
+            "baris_ke": [
+                3,
+                4
+            ]
+        }
+    ]
+}

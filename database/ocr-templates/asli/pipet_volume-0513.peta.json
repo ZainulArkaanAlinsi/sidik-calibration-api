@@ -1,0 +1,255 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0513.draf.json -> kunci sel profil pipet_volume. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Kertas Rev.4: Weight of Liquid dan suhu Awal/Akhir tidak dipetakan (alasan di `abaikan`). Kondisi lingkungan First/End ada di sel tabel (`sumber_kotak: \"sel\"`), bukan isian berlabel.",
+    "template_id": "pipet_volume",
+    "kode_dokumen": "SIDIK-FM-CAL-0513_Rev.4",
+    "draf": "formulir-0513.draf.json",
+    "sumber_sha256": "a70d904cc22800be391adc96e0b936ff3f810b5195ca99e6c7f422e9c5b24388",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "vol_kosong|1|1|pembacaan",
+            "x": 0.6794,
+            "y": 0.3666
+        },
+        {
+            "kunci": "vol_kosong|1|2|pembacaan",
+            "x": 0.7387,
+            "y": 0.3666
+        },
+        {
+            "kunci": "vol_kosong|1|3|pembacaan",
+            "x": 0.798,
+            "y": 0.3666
+        },
+        {
+            "kunci": "vol_isi|1|1|pembacaan",
+            "x": 0.6794,
+            "y": 0.4116
+        },
+        {
+            "kunci": "vol_isi|1|2|pembacaan",
+            "x": 0.7387,
+            "y": 0.4116
+        },
+        {
+            "kunci": "vol_isi|1|3|pembacaan",
+            "x": 0.798,
+            "y": 0.4116
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6203,
+            "y": 0.2428
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.7387,
+            "y": 0.2428
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6203,
+            "y": 0.2655
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.7387,
+            "y": 0.2655
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Balance Excellent",
+            "label_kertas": "Excellent",
+            "x": 0.3103,
+            "y": 0.5796
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Balance Mettler Toledo",
+            "label_kertas": "Mettler Toledo",
+            "x": 0.3099,
+            "y": 0.6005
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-3",
+            "x": 0.8508,
+            "y": 0.2191
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Weight of Liquid (g): hasil hitung (isi dikurangi kosong), tidak punya kunci pembacaan.",
+            "titik": [
+                {
+                    "x": 0.6794,
+                    "y": 0.4569
+                },
+                {
+                    "x": 0.7387,
+                    "y": 0.4569
+                },
+                {
+                    "x": 0.798,
+                    "y": 0.4569
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Suhu air: kertas Rev.4 memuat dua kotak (Awal, Akhir) sedangkan profil Rev.7 meminta enam suhu (X1/X2/X3 x Awal/Akhir). Dua kotak itu tidak bisa dipasangkan ke ulangan tanpa menebak.",
+            "titik": [
+                {
+                    "x": 0.6794,
+                    "y": 0.5925
+                },
+                {
+                    "x": 0.7387,
+                    "y": 0.5925
+                },
+                {
+                    "x": 0.7387,
+                    "y": 0.6257
+                },
+                {
+                    "x": 0.7387,
+                    "y": 0.648
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Logo/judul (sel kosong di pojok kiri atas).",
+            "titik": [
+                {
+                    "x": 0.124,
+                    "y": 0.0638
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Strip kosong di atas tanda tangan: tidak ada tempat tulis angka di kertas.",
+            "titik": [
+                {
+                    "x": 0.623,
+                    "y": 0.7824
+                },
+                {
+                    "x": 0.623,
+                    "y": 0.8038
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.8192,
+                    "y": 0.8921
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.7687,
+                    "y": 0.1098
+                },
+                {
+                    "x": 0.7687,
+                    "y": 0.1335
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.3359,
+                    "y": 0.222
+                },
+                {
+                    "x": 0.3359,
+                    "y": 0.4701
+                },
+                {
+                    "x": 0.5845,
+                    "y": 0.4938
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.2479,
+                    "y": 0.2451
+                },
+                {
+                    "x": 0.2205,
+                    "y": 0.2676
+                },
+                {
+                    "x": 0.2636,
+                    "y": 0.29
+                },
+                {
+                    "x": 0.2479,
+                    "y": 0.3126
+                },
+                {
+                    "x": 0.3359,
+                    "y": 0.3352
+                },
+                {
+                    "x": 0.3359,
+                    "y": 0.3578
+                },
+                {
+                    "x": 0.3359,
+                    "y": 0.3809
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Baris \"RTD Sensor\" di kertas tidak sama dengan baris profil (profil memuat Fujitsu dan Yokogawa, bukan RTD SH1/20) jadi tidak dipetakan ke `baris_ke` mana pun.",
+            "titik": [
+                {
+                    "x": 0.3104,
+                    "y": 0.6248
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,637 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0524.draf.json -> kunci sel profil viscometer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliSemuaTest). Belum diadu ke foto nyata, jadi terverifikasi=false; dibuka lewat mode uji (sel maks kuning).",
+    "template_id": "viscometer",
+    "kode_dokumen": "SIDIK-FM-CAL-0524_Rev.3",
+    "draf": "formulir-0524.draf.json",
+    "sumber_sha256": "8a5ce22369b87e4d7d09f1526298aa875ee74f4a4ca3e3b0a1d71cea3777c1e6",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: Before dan After Adjustment, tiap tabel tiga blok (Standard, baris cP dan baris oC) x X1-X5. Baris cP -> `pembacaan`, baris oC -> `suhu`; kolom n -> ulangan n.",
+        "ASUMSI POSISIONAL, perlu dikonfirmasi lab: blok atas/tengah/bawah -> baris profil 1/2/3 (profil punya 5 titik, kertas mencetak 3 blok per tabel). Nilai Standard yang ditulis tangan tidak dibaca (tahap 2).",
+        "Env: T awal/akhir (oC) dan RH awal/akhir (%RH) -> suhu_awal/suhu_akhir/kelembaban_awal/kelembaban_akhir (tahap 1, kotak isian berlabel).",
+        "Centang: Thermohygro TH-2, TH-6, TH-7 (Insitu; label cetak kotak ke-3 terbaca TH-6 oleh skrip, diasumsikan TH-7 karena profil menandai TH-7 di kertas, dicatat label_draf) dan TH-4 (Inlab); 12 kotak tipe visco -> spesifikasi_alat.model_visco berurutan atas-bawah (DV2TLV..2.5DV2THB). Usage Check larutan standar tidak dipetakan (label kertas tidak sejajar profil)."
+    ],
+    "sel": [
+        {
+            "kunci": "sebelum_adjustment|1|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.2601
+        },
+        {
+            "kunci": "sebelum_adjustment|1|1|suhu",
+            "x": 0.2424,
+            "y": 0.277
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.2601
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|suhu",
+            "x": 0.3091,
+            "y": 0.277
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.2601
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|suhu",
+            "x": 0.3756,
+            "y": 0.277
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.2601
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|suhu",
+            "x": 0.4423,
+            "y": 0.277
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.2601
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|suhu",
+            "x": 0.5091,
+            "y": 0.277
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.3506
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|suhu",
+            "x": 0.2424,
+            "y": 0.3674
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.3506
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|suhu",
+            "x": 0.3091,
+            "y": 0.3674
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.3506
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|suhu",
+            "x": 0.3756,
+            "y": 0.3674
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.3506
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|suhu",
+            "x": 0.4423,
+            "y": 0.3674
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.3506
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|suhu",
+            "x": 0.5091,
+            "y": 0.3674
+        },
+        {
+            "kunci": "sebelum_adjustment|3|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.4436
+        },
+        {
+            "kunci": "sebelum_adjustment|3|1|suhu",
+            "x": 0.2424,
+            "y": 0.4604
+        },
+        {
+            "kunci": "sebelum_adjustment|3|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.4436
+        },
+        {
+            "kunci": "sebelum_adjustment|3|2|suhu",
+            "x": 0.3091,
+            "y": 0.4604
+        },
+        {
+            "kunci": "sebelum_adjustment|3|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.4436
+        },
+        {
+            "kunci": "sebelum_adjustment|3|3|suhu",
+            "x": 0.3756,
+            "y": 0.4604
+        },
+        {
+            "kunci": "sebelum_adjustment|3|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.4436
+        },
+        {
+            "kunci": "sebelum_adjustment|3|4|suhu",
+            "x": 0.4423,
+            "y": 0.4604
+        },
+        {
+            "kunci": "sebelum_adjustment|3|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.4436
+        },
+        {
+            "kunci": "sebelum_adjustment|3|5|suhu",
+            "x": 0.5091,
+            "y": 0.4604
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.5472
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|suhu",
+            "x": 0.2424,
+            "y": 0.5642
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.5472
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|suhu",
+            "x": 0.3091,
+            "y": 0.5642
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.5472
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|suhu",
+            "x": 0.3756,
+            "y": 0.5642
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.5472
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|suhu",
+            "x": 0.4423,
+            "y": 0.5642
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.5472
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|suhu",
+            "x": 0.5091,
+            "y": 0.5642
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.6383
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|suhu",
+            "x": 0.2424,
+            "y": 0.6574
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.6383
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|suhu",
+            "x": 0.3091,
+            "y": 0.6574
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.6383
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|suhu",
+            "x": 0.3756,
+            "y": 0.6574
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.6383
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|suhu",
+            "x": 0.4423,
+            "y": 0.6574
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.6383
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|suhu",
+            "x": 0.5091,
+            "y": 0.6574
+        },
+        {
+            "kunci": "sesudah_adjustment|3|1|pembacaan",
+            "x": 0.2424,
+            "y": 0.7329
+        },
+        {
+            "kunci": "sesudah_adjustment|3|1|suhu",
+            "x": 0.2424,
+            "y": 0.752
+        },
+        {
+            "kunci": "sesudah_adjustment|3|2|pembacaan",
+            "x": 0.3091,
+            "y": 0.7329
+        },
+        {
+            "kunci": "sesudah_adjustment|3|2|suhu",
+            "x": 0.3091,
+            "y": 0.752
+        },
+        {
+            "kunci": "sesudah_adjustment|3|3|pembacaan",
+            "x": 0.3756,
+            "y": 0.7329
+        },
+        {
+            "kunci": "sesudah_adjustment|3|3|suhu",
+            "x": 0.3756,
+            "y": 0.752
+        },
+        {
+            "kunci": "sesudah_adjustment|3|4|pembacaan",
+            "x": 0.4423,
+            "y": 0.7329
+        },
+        {
+            "kunci": "sesudah_adjustment|3|4|suhu",
+            "x": 0.4423,
+            "y": 0.752
+        },
+        {
+            "kunci": "sesudah_adjustment|3|5|pembacaan",
+            "x": 0.5091,
+            "y": 0.7329
+        },
+        {
+            "kunci": "sesudah_adjustment|3|5|suhu",
+            "x": 0.5091,
+            "y": 0.752
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2134,
+            "y": 0.1226
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2134,
+            "y": 0.1342
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2092,
+            "y": 0.1458
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2092,
+            "y": 0.1574
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.1936,
+            "y": 0.1692
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.2307,
+            "y": 0.1693
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "label_draf": "TH-6",
+            "x": 0.284,
+            "y": 0.1693
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.1938,
+            "y": 0.1802
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "DV2TLV",
+            "x": 0.7517,
+            "y": 0.245
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "2.5DV2TLV",
+            "x": 0.7514,
+            "y": 0.2586
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "5DV2TLV",
+            "x": 0.7518,
+            "y": 0.2754
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "1/4DV2TRV",
+            "x": 0.7516,
+            "y": 0.2906
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "1/2DV2TRV",
+            "x": 0.7512,
+            "y": 0.3144
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "DV2TRV",
+            "x": 0.7512,
+            "y": 0.3303
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "DV2THA",
+            "x": 0.751,
+            "y": 0.348
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "2DV2THA",
+            "x": 0.7517,
+            "y": 0.3644
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "2.5DV2THA",
+            "x": 0.7514,
+            "y": 0.3811
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "DV2THB",
+            "x": 0.7511,
+            "y": 0.4059
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "2DV2THB",
+            "x": 0.7509,
+            "y": 0.4231
+        },
+        {
+            "kode": "spesifikasi_alat.model_visco",
+            "cara": "centang",
+            "pilihan": "2.5DV2THB",
+            "x": 0.752,
+            "y": 0.4409
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kotak nilai Standard (viskositas larutan standar) di kepala tiap blok: ditulis tangan, titik ukurnya urutan baris profil (tahap 2: teknisi mencocokkan nilai titik di aplikasi); tidak dibaca.",
+            "titik": [
+                {
+                    "x": 0.0859,
+                    "y": 0.2683
+                },
+                {
+                    "x": 0.0859,
+                    "y": 0.359
+                },
+                {
+                    "x": 0.0859,
+                    "y": 0.4521
+                },
+                {
+                    "x": 0.0859,
+                    "y": 0.5557
+                },
+                {
+                    "x": 0.0859,
+                    "y": 0.6468
+                },
+                {
+                    "x": 0.0859,
+                    "y": 0.7435
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Customer, alamat, tanggal kalibrasi: identitas sesi/pemilik, tahap 2 dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.5585,
+                    "y": 0.0718
+                },
+                {
+                    "x": 0.5585,
+                    "y": 0.0817
+                },
+                {
+                    "x": 0.5585,
+                    "y": 0.0916
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat, lokasi, range/metode kalibrasi (nama, merk, tipe, SN, range): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.3192,
+                    "y": 0.111
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.111
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.1226
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.1342
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.1458
+                },
+                {
+                    "x": 0.7069,
+                    "y": 0.1574
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.1818
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak instruksi 'pilih tipe visco/spindle' (spindle dilingkari, bukan kotak centang): tidak dibaca; tipe visco dipetakan lewat kotak centang model.",
+            "titik": [
+                {
+                    "x": 0.87,
+                    "y": 0.2197
+                },
+                {
+                    "x": 0.8739,
+                    "y": 0.4959
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Daftar standar dipakai dan catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1368,
+                    "y": 0.7985
+                },
+                {
+                    "x": 0.6437,
+                    "y": 0.7977
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama dan tanda tangan pembuat/pemeriksa: bukan data hitung, tidak dibaca mesin.",
+            "titik": [
+                {
+                    "x": 0.3867,
+                    "y": 0.7977
+                },
+                {
+                    "x": 0.5198,
+                    "y": 0.7977
+                },
+                {
+                    "x": 0.3531,
+                    "y": 0.8094
+                },
+                {
+                    "x": 0.4864,
+                    "y": 0.8094
+                },
+                {
+                    "x": 0.3505,
+                    "y": 0.8207
+                },
+                {
+                    "x": 0.4838,
+                    "y": 0.8207
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak revisi tercetak di kaki halaman: revisi sudah tercatat di kode_dokumen peta (Rev.3).",
+            "titik": [
+                {
+                    "x": 0.7065,
+                    "y": 0.9831
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Centang Usage Check larutan standar: label tercetak (100, 100, 30000, 60000 cP) tidak sejajar dengan baris Usage Check profil (100, 1000, 3000, 60000, 100000 cP + termometer), sehingga tidak dipetakan; teknisi mencentang manual.",
+            "titik": [
+                {
+                    "x": 0.1619,
+                    "y": 0.807
+                },
+                {
+                    "x": 0.1617,
+                    "y": 0.8178
+                },
+                {
+                    "x": 0.1617,
+                    "y": 0.8401
+                },
+                {
+                    "x": 0.1617,
+                    "y": 0.8292
+                }
+            ]
+        }
+    ]
+}

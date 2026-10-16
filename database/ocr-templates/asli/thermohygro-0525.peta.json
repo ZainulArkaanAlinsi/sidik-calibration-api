@@ -1,0 +1,708 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0525.draf.json -> kunci sel profil thermohygro. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya (byte-identik, TIDAK PERNAH disunting tangan); yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya. Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja. Cakupan tahap 1: sel tabel data, kondisi lingkungan (tahap 1), centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Thermohygro: blok atas (Standard) = suhu_standar (kiri) & kelembaban_standar (kanan); blok bawah (UUT) = suhu_uut & kelembaban_uut; kolom STD1-5/UUT1-5 = pengulangan 1-5. Kertas TIDAK punya kotak centang: `Standar : Temp. Humidity Meter` dan `Thermohygro used : TH-4` tercetak sebagai teks tetap, jadi `standar_dicek.*.dipakai` dan `thermohygro_standard_id` tidak punya kotak. Nama berkas PDF menulis Rev.3, tetapi kertasnya mencetak `Revise : 2` (draf: revisi_tercetak 2) dan itu sama dengan ThermohygroProfile::KODE_DOKUMEN (Rev.2); kode dokumen peta mengikuti yang tercetak.",
+    "template_id": "thermohygro",
+    "kode_dokumen": "SIDIK-FM-CAL-0525_Rev.2",
+    "draf": "formulir-0525.draf.json",
+    "sumber_sha256": "e2142cbee2ae589e83877a3d04a9845d42364fbf900393f49162eb77bbac867f",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "suhu_standar|1|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.412
+        },
+        {
+            "kunci": "suhu_standar|1|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.412
+        },
+        {
+            "kunci": "suhu_standar|1|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.412
+        },
+        {
+            "kunci": "suhu_standar|1|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.412
+        },
+        {
+            "kunci": "suhu_standar|1|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.412
+        },
+        {
+            "kunci": "suhu_standar|2|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.4413
+        },
+        {
+            "kunci": "suhu_standar|2|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.4413
+        },
+        {
+            "kunci": "suhu_standar|2|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.4413
+        },
+        {
+            "kunci": "suhu_standar|2|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.4413
+        },
+        {
+            "kunci": "suhu_standar|2|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.4413
+        },
+        {
+            "kunci": "suhu_standar|3|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.4706
+        },
+        {
+            "kunci": "suhu_standar|3|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.4706
+        },
+        {
+            "kunci": "suhu_standar|3|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.4706
+        },
+        {
+            "kunci": "suhu_standar|3|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.4706
+        },
+        {
+            "kunci": "suhu_standar|3|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.4706
+        },
+        {
+            "kunci": "suhu_standar|4|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.4999
+        },
+        {
+            "kunci": "suhu_standar|4|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.4999
+        },
+        {
+            "kunci": "suhu_standar|4|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.4999
+        },
+        {
+            "kunci": "suhu_standar|4|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.4999
+        },
+        {
+            "kunci": "suhu_standar|4|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.4999
+        },
+        {
+            "kunci": "suhu_standar|5|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.5292
+        },
+        {
+            "kunci": "suhu_standar|5|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.5292
+        },
+        {
+            "kunci": "suhu_standar|5|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.5292
+        },
+        {
+            "kunci": "suhu_standar|5|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.5292
+        },
+        {
+            "kunci": "suhu_standar|5|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.5292
+        },
+        {
+            "kunci": "kelembaban_standar|1|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.412
+        },
+        {
+            "kunci": "kelembaban_standar|1|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.412
+        },
+        {
+            "kunci": "kelembaban_standar|1|3|pembacaan",
+            "x": 0.778,
+            "y": 0.412
+        },
+        {
+            "kunci": "kelembaban_standar|1|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.412
+        },
+        {
+            "kunci": "kelembaban_standar|1|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.412
+        },
+        {
+            "kunci": "kelembaban_standar|2|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.4413
+        },
+        {
+            "kunci": "kelembaban_standar|2|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.4413
+        },
+        {
+            "kunci": "kelembaban_standar|2|3|pembacaan",
+            "x": 0.778,
+            "y": 0.4413
+        },
+        {
+            "kunci": "kelembaban_standar|2|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.4413
+        },
+        {
+            "kunci": "kelembaban_standar|2|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.4413
+        },
+        {
+            "kunci": "kelembaban_standar|3|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.4706
+        },
+        {
+            "kunci": "kelembaban_standar|3|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.4706
+        },
+        {
+            "kunci": "kelembaban_standar|3|3|pembacaan",
+            "x": 0.778,
+            "y": 0.4706
+        },
+        {
+            "kunci": "kelembaban_standar|3|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.4706
+        },
+        {
+            "kunci": "kelembaban_standar|3|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.4706
+        },
+        {
+            "kunci": "kelembaban_standar|4|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.4999
+        },
+        {
+            "kunci": "kelembaban_standar|4|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.4999
+        },
+        {
+            "kunci": "kelembaban_standar|4|3|pembacaan",
+            "x": 0.778,
+            "y": 0.4999
+        },
+        {
+            "kunci": "kelembaban_standar|4|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.4999
+        },
+        {
+            "kunci": "kelembaban_standar|4|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.4999
+        },
+        {
+            "kunci": "kelembaban_standar|5|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.5292
+        },
+        {
+            "kunci": "kelembaban_standar|5|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.5292
+        },
+        {
+            "kunci": "kelembaban_standar|5|3|pembacaan",
+            "x": 0.778,
+            "y": 0.5292
+        },
+        {
+            "kunci": "kelembaban_standar|5|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.5292
+        },
+        {
+            "kunci": "kelembaban_standar|5|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.5292
+        },
+        {
+            "kunci": "suhu_uut|1|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.6603
+        },
+        {
+            "kunci": "suhu_uut|1|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.6603
+        },
+        {
+            "kunci": "suhu_uut|1|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.6603
+        },
+        {
+            "kunci": "suhu_uut|1|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.6603
+        },
+        {
+            "kunci": "suhu_uut|1|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.6603
+        },
+        {
+            "kunci": "suhu_uut|2|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.6906
+        },
+        {
+            "kunci": "suhu_uut|2|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.6906
+        },
+        {
+            "kunci": "suhu_uut|2|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.6906
+        },
+        {
+            "kunci": "suhu_uut|2|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.6906
+        },
+        {
+            "kunci": "suhu_uut|2|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.6906
+        },
+        {
+            "kunci": "suhu_uut|3|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.7209
+        },
+        {
+            "kunci": "suhu_uut|3|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.7209
+        },
+        {
+            "kunci": "suhu_uut|3|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.7209
+        },
+        {
+            "kunci": "suhu_uut|3|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.7209
+        },
+        {
+            "kunci": "suhu_uut|3|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.7209
+        },
+        {
+            "kunci": "suhu_uut|4|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.7512
+        },
+        {
+            "kunci": "suhu_uut|4|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.7512
+        },
+        {
+            "kunci": "suhu_uut|4|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.7512
+        },
+        {
+            "kunci": "suhu_uut|4|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.7512
+        },
+        {
+            "kunci": "suhu_uut|4|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.7512
+        },
+        {
+            "kunci": "suhu_uut|5|1|pembacaan",
+            "x": 0.1767,
+            "y": 0.7815
+        },
+        {
+            "kunci": "suhu_uut|5|2|pembacaan",
+            "x": 0.2522,
+            "y": 0.7815
+        },
+        {
+            "kunci": "suhu_uut|5|3|pembacaan",
+            "x": 0.3251,
+            "y": 0.7815
+        },
+        {
+            "kunci": "suhu_uut|5|4|pembacaan",
+            "x": 0.3931,
+            "y": 0.7815
+        },
+        {
+            "kunci": "suhu_uut|5|5|pembacaan",
+            "x": 0.4594,
+            "y": 0.7815
+        },
+        {
+            "kunci": "kelembaban_uut|1|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.6603
+        },
+        {
+            "kunci": "kelembaban_uut|1|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.6603
+        },
+        {
+            "kunci": "kelembaban_uut|1|3|pembacaan",
+            "x": 0.778,
+            "y": 0.6603
+        },
+        {
+            "kunci": "kelembaban_uut|1|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.6603
+        },
+        {
+            "kunci": "kelembaban_uut|1|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.6603
+        },
+        {
+            "kunci": "kelembaban_uut|2|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.6906
+        },
+        {
+            "kunci": "kelembaban_uut|2|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.6906
+        },
+        {
+            "kunci": "kelembaban_uut|2|3|pembacaan",
+            "x": 0.778,
+            "y": 0.6906
+        },
+        {
+            "kunci": "kelembaban_uut|2|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.6906
+        },
+        {
+            "kunci": "kelembaban_uut|2|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.6906
+        },
+        {
+            "kunci": "kelembaban_uut|3|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.7209
+        },
+        {
+            "kunci": "kelembaban_uut|3|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.7209
+        },
+        {
+            "kunci": "kelembaban_uut|3|3|pembacaan",
+            "x": 0.778,
+            "y": 0.7209
+        },
+        {
+            "kunci": "kelembaban_uut|3|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.7209
+        },
+        {
+            "kunci": "kelembaban_uut|3|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.7209
+        },
+        {
+            "kunci": "kelembaban_uut|4|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.7512
+        },
+        {
+            "kunci": "kelembaban_uut|4|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.7512
+        },
+        {
+            "kunci": "kelembaban_uut|4|3|pembacaan",
+            "x": 0.778,
+            "y": 0.7512
+        },
+        {
+            "kunci": "kelembaban_uut|4|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.7512
+        },
+        {
+            "kunci": "kelembaban_uut|4|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.7512
+        },
+        {
+            "kunci": "kelembaban_uut|5|1|pembacaan",
+            "x": 0.6249,
+            "y": 0.7815
+        },
+        {
+            "kunci": "kelembaban_uut|5|2|pembacaan",
+            "x": 0.7009,
+            "y": 0.7815
+        },
+        {
+            "kunci": "kelembaban_uut|5|3|pembacaan",
+            "x": 0.778,
+            "y": 0.7815
+        },
+        {
+            "kunci": "kelembaban_uut|5|4|pembacaan",
+            "x": 0.8585,
+            "y": 0.7815
+        },
+        {
+            "kunci": "kelembaban_uut|5|5|pembacaan",
+            "x": 0.9428,
+            "y": 0.7815
+        }
+    ],
+    "isian": [],
+    "centang": [],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kolom Setpoint/Alat di sisi kiri tabel: nilai titik ukur, bukan sel data. Profil menyimpannya sebagai `titik_ukur` baris (bukan kunci sel), jadi tidak ada kunci yang bisa dipetakan; titik ukur datang dari sesi/profil.",
+            "titik": [
+                {
+                    "x": 0.0786,
+                    "y": 0.412
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.4413
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.4706
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.4999
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.5292
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.412
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.4413
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.4706
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.4999
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.5292
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.6603
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.6906
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.7209
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.7512
+                },
+                {
+                    "x": 0.0786,
+                    "y": 0.7815
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.6603
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.6906
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.7209
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.7512
+                },
+                {
+                    "x": 0.5461,
+                    "y": 0.7815
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Catatan bebas (PANDUAN §4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.7745,
+                    "y": 0.9079
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pelanggan/lokasi/nomor seri/spesifikasi: bukan cakupan tahap 1. Datang dari order atau alat terdaftar (cara `banding`) atau diketik teknisi; belum ada pembaca yang dibuktikan di foto nyata.",
+            "titik": [
+                {
+                    "x": 0.2488,
+                    "y": 0.1238
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1238
+                },
+                {
+                    "x": 0.2488,
+                    "y": 0.1385
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1385
+                },
+                {
+                    "x": 0.2488,
+                    "y": 0.154
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1529
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1673
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1817
+                },
+                {
+                    "x": 0.5463,
+                    "y": 0.1961
+                },
+                {
+                    "x": 0.7423,
+                    "y": 0.2105
+                },
+                {
+                    "x": 0.5584,
+                    "y": 0.2249
+                },
+                {
+                    "x": 0.5584,
+                    "y": 0.2678
+                },
+                {
+                    "x": 0.5584,
+                    "y": 0.281
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: bukan cakupan tahap 1; diisi dari order/jadwal, dan pembaca tanggal baru dibuktikan di foto nyata (PANDUAN §4).",
+            "titik": [
+                {
+                    "x": 0.9031,
+                    "y": 0.1238
+                },
+                {
+                    "x": 0.9031,
+                    "y": 0.1396
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak `Rata2` suhu/kelembapan ruang. Profil menyimpan suhu_awal/suhu_akhir/kelembaban_awal/kelembaban_akhir, tidak ada kolom rata-rata; kotak `awal`/`akhir`-nya bergaris bawah dan TIDAK ditangkap draf (utang skrip PANDUAN §8), jadi kondisi lingkungan formulir ini tidak terpetakan di tahap 1.",
+            "titik": [
+                {
+                    "x": 0.5258,
+                    "y": 0.2378
+                },
+                {
+                    "x": 0.5225,
+                    "y": 0.252
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi tercetak di kaki halaman (mis. `Revise : 2`), bukan isian teknisi. Kode dokumen dicek dari draf & profil di test, bukan di-OCR.",
+            "titik": [
+                {
+                    "x": 0.6998,
+                    "y": 0.9788
+                }
+            ]
+        }
+    ]
+}

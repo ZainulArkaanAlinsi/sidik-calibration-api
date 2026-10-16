@@ -2,6 +2,7 @@
 
 namespace App\Services\Ocr;
 
+use App\Http\Requests\CalibrationRequest;
 use App\Services\CalibrationValidator;
 
 /**
@@ -608,6 +609,17 @@ class PemrosesScanLembarKerja
         // Satu baris tabel pH ~22 pt; geser sebaris jauh di atas ambang itu.
 
         // ---- 5. Pemetaan: kotak template, sel, isian, centang ---------------
+        // `sel` template asli = irisan peta & lembar alat ini. Kosong = kertas
+        // ini tidak memuat satu pun sel tabel alat ini; mode uji tidak boleh
+        // jadi jalan membaca lembar yang tabelnya tidak dipetakan.
+        if (($template['sel'] ?? []) === []) {
+            return $this->gagalAsli(
+                self::MAPPING_GAGAL,
+                'Formulir ini belum punya satu pun sel tabel yang dipetakan untuk alat ini — lembar ini nggak dibaca. Isi manual dulu.',
+                $modeUji,
+            );
+        }
+
         $kotakHilang = $this->kotakTemplateHilang($template);
 
         if ($kotakHilang !== null) {
@@ -695,6 +707,15 @@ class PemrosesScanLembarKerja
     {
         $kode = (string) ($template['kode_dokumen'] ?? '');
         $terbaca = (string) ($payload['kode_dokumen_terbaca'] ?? '');
+
+        // Asumsi posisional belum dikonfirmasi lab: kolom kertas dipasangkan ke
+        // baris profil dengan menebak urutan, jadi angka bisa mendarat di titik
+        // yang salah. Mode uji TIDAK membuka ini — mode uji cuma melonggarkan
+        // vonis, bukan membenarkan pemasangan sel.
+        if (($template['perlu_konfirmasi_lab'] ?? false) === true) {
+            return 'Formulir '.($kode === '' ? 'ini' : $kode).' belum dikonfirmasi lab (pemetaan kolom ke titik masih asumsi) '
+                .'— foto lembar kerja belum dibuka. Isi manual dulu.';
+        }
 
         // Kode FM di kaki formulir = satu-satunya cara sistem tahu formulir
         // mana yang difoto (pengganti QR). Normalisasinya cuma spasi & huruf
@@ -922,9 +943,10 @@ class PemrosesScanLembarKerja
         foreach ($isianHp as $i) {
             $kode = (string) ($i['kode'] ?? '');
 
-            // Dua pagar: yang ada di template, DAN yang dibuka tahap 1 (K2).
-            // Identitas & tanggal tidak boleh masuk lewat jalur ini.
-            if (! in_array($kode, $dikenal, true) || ! in_array($kode, FormulirAsli::ISIAN_TAHAP_1, true)) {
+            // Yang dikenal = isian template, dan template formulir asli cuma
+            // memuat isian peta ber-`tahap` yang dibuka (K2) — identitas &
+            // tanggal tidak pernah sampai ke daftar itu.
+            if (! in_array($kode, $dikenal, true)) {
                 return ['isian' => [], 'pesan' => 'Isian `'.mb_substr($kode, 0, 40).'` nggak dibuka buat pindai formulir ini.'];
             }
 
@@ -980,31 +1002,58 @@ class PemrosesScanLembarKerja
     }
 
     /**
+     * Keluarga kode isian kondisi lingkungan — penentu satuan & rentang wajar.
+     *
+     * Dibaca dari SEGMEN TERAKHIR kode (`spesifikasi_alat.x.suhu_awal` →
+     * `suhu_awal`) lalu awalannya. Kode di luar ketiga keluarga → null, dan
+     * isiannya divonis tanpa satuan & tanpa rentang (bukan rentang karangan).
+     * Peta yang membuka isian seperti itu ditolak
+     * `GeometriFormulirAsliSemuaTest` — tahap 1 cuma kondisi lingkungan.
+     *
+     * @return 'suhu'|'kelembaban'|'tekanan'|null
+     */
+    public static function keluargaIsian(string $kode): ?string
+    {
+        $ujung = str_contains($kode, '.') ? substr($kode, (int) strrpos($kode, '.') + 1) : $kode;
+
+        return match (true) {
+            str_starts_with($ujung, 'suhu_') => 'suhu',
+            str_starts_with($ujung, 'kelembaban_') => 'kelembaban',
+            str_starts_with($ujung, 'tekanan_') => 'tekanan',
+            default => null,
+        };
+    }
+
+    /**
      * Aturan angka isian Env. — definisi MINIMAL, tanpa angka karangan.
      *
-     * Rentangnya yang sudah dipegang kode: suhu = batas ruang kerja
-     * `ocr.suhu.min/maks` (5–45 °C), kelembaban = batas ruang lab
-     * `CalibrationValidator::KELEMBABAN_MIN/MAKS` (20–90 %RH; di luar itu sesi
-     * diblokir saat approve). Resolusi & jumlah desimal thermohygro tidak
+     * Rentangnya yang sudah dipegang kode, per keluarga ([keluargaIsian]):
+     * suhu = batas ruang kerja `ocr.suhu.min/maks` (5–45 °C); kelembaban =
+     * batas ruang lab `CalibrationValidator::KELEMBABAN_MIN/MAKS` (20–90 %RH;
+     * di luar itu sesi diblokir saat approve); tekanan udara = pita hPa
+     * `CalibrationRequest::TEKANAN_MIN_HPA/MAKS_HPA` (300–1100, penangkap salah
+     * satuan kPa/Pa). Resolusi & jumlah desimal thermohygro/barometer tidak
      * tercatat di mana pun, jadi dibiarkan null — bukan ditebak.
      *
      * @return array<string, mixed>
      */
     private function aturanIsian(string $kode): array
     {
-        $kelembaban = match ($kode) {
-            'suhu_awal', 'suhu_akhir' => false,
-            'kelembaban_awal', 'kelembaban_akhir' => true,
+        [$satuan, $min, $maks] = match (self::keluargaIsian($kode)) {
+            'suhu' => ['°C', (float) config('ocr.suhu.min', 5), (float) config('ocr.suhu.maks', 45)],
+            'kelembaban' => ['%RH', CalibrationValidator::KELEMBABAN_MIN, CalibrationValidator::KELEMBABAN_MAKS],
+            'tekanan' => ['hPa', (float) CalibrationRequest::TEKANAN_MIN_HPA, (float) CalibrationRequest::TEKANAN_MAKS_HPA],
+            default => [null, null, null],
         };
 
         return [
             'tipe' => 'desimal',
-            'satuan' => $kelembaban ? '%RH' : '°C',
+            'satuan' => $satuan,
             'nominal' => null,
             'resolusi' => null,
             'desimal' => null,
-            'min' => $kelembaban ? CalibrationValidator::KELEMBABAN_MIN : (float) config('ocr.suhu.min', 5),
-            'maks' => $kelembaban ? CalibrationValidator::KELEMBABAN_MAKS : (float) config('ocr.suhu.maks', 45),
+            'min' => $min,
+            'maks' => $maks,
             'rasio_min' => null,
             'rasio_maks' => null,
             'izinkan_minus' => false,

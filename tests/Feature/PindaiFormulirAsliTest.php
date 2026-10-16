@@ -236,6 +236,30 @@ class PindaiFormulirAsliTest extends TestCase
         $this->assertSame(0, $scan->cells()->count());
     }
 
+    /**
+     * Peta berbendera `perlu_konfirmasi_lab` (asumsi posisional) tidak dibuka
+     * oleh mode uji: mode uji cuma melonggarkan vonis, bukan membenarkan
+     * pemasangan kolom kertas ke baris profil. Tidak ada satu sel pun tersimpan.
+     */
+    public function test_perlu_konfirmasi_lab_ditolak_walau_mode_uji_nyala(): void
+    {
+        $this->fixtureAsli(terverifikasi: true, ubahPeta: function (array $peta): array {
+            $peta['perlu_konfirmasi_lab'] = true;
+
+            return $peta;
+        });
+        Config::set('ocr.formulir_asli.mode_uji', true);
+
+        $this->kirim()
+            ->assertStatus(422)
+            ->assertJsonPath('status', 'template_tidak_dikenali')
+            ->assertJsonPath('fallback_manual', true);
+
+        $scan = WorksheetScan::firstOrFail();
+        $this->assertStringContainsString('belum dikonfirmasi lab', $scan->pesan);
+        $this->assertSame(0, $scan->cells()->count());
+    }
+
     public function test_kode_formulir_lain_ditolak(): void
     {
         $this->kirim(['kode_dokumen_terbaca' => 'SIDIK-FM-CAL-0510'])

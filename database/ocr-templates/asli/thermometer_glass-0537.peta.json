@@ -1,0 +1,488 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0537.draf.json -> kunci sel profil thermometer_glass. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya (byte-identik, TIDAK PERNAH disunting tangan); yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya. Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja. Cakupan tahap 1: sel tabel data, kondisi lingkungan (tahap 1), centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Termometer gelas: atas = standar, bawah = uut; kolom X1-X5 = pengulangan 1-5. Kertas TIDAK punya kotak centang yang dikenali draf (pencelupan, standar used, TH tercetak `TH-4` tanpa kotak); semuanya sel kosong berbingkai.",
+    "template_id": "thermometer_glass",
+    "kode_dokumen": "SIDIK-FM-CAL-0537_Rev.2",
+    "draf": "formulir-0537.draf.json",
+    "sumber_sha256": "e96e44bf67788245ad4d59241a610669872b685d37145f841b9a5a3d18bc679b",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "standar|1|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.346
+        },
+        {
+            "kunci": "standar|1|2|pembacaan",
+            "x": 0.238,
+            "y": 0.346
+        },
+        {
+            "kunci": "standar|1|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.346
+        },
+        {
+            "kunci": "standar|1|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.346
+        },
+        {
+            "kunci": "standar|1|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.346
+        },
+        {
+            "kunci": "standar|2|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.3732
+        },
+        {
+            "kunci": "standar|2|2|pembacaan",
+            "x": 0.238,
+            "y": 0.3732
+        },
+        {
+            "kunci": "standar|2|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.3732
+        },
+        {
+            "kunci": "standar|2|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.3732
+        },
+        {
+            "kunci": "standar|2|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.3732
+        },
+        {
+            "kunci": "standar|3|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.4005
+        },
+        {
+            "kunci": "standar|3|2|pembacaan",
+            "x": 0.238,
+            "y": 0.4005
+        },
+        {
+            "kunci": "standar|3|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.4005
+        },
+        {
+            "kunci": "standar|3|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.4005
+        },
+        {
+            "kunci": "standar|3|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.4005
+        },
+        {
+            "kunci": "standar|4|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.4278
+        },
+        {
+            "kunci": "standar|4|2|pembacaan",
+            "x": 0.238,
+            "y": 0.4278
+        },
+        {
+            "kunci": "standar|4|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.4278
+        },
+        {
+            "kunci": "standar|4|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.4278
+        },
+        {
+            "kunci": "standar|4|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.4278
+        },
+        {
+            "kunci": "standar|5|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.455
+        },
+        {
+            "kunci": "standar|5|2|pembacaan",
+            "x": 0.238,
+            "y": 0.455
+        },
+        {
+            "kunci": "standar|5|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.455
+        },
+        {
+            "kunci": "standar|5|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.455
+        },
+        {
+            "kunci": "standar|5|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.455
+        },
+        {
+            "kunci": "uut|1|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.5775
+        },
+        {
+            "kunci": "uut|1|2|pembacaan",
+            "x": 0.238,
+            "y": 0.5775
+        },
+        {
+            "kunci": "uut|1|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.5775
+        },
+        {
+            "kunci": "uut|1|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.5775
+        },
+        {
+            "kunci": "uut|1|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.5775
+        },
+        {
+            "kunci": "uut|2|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.6055
+        },
+        {
+            "kunci": "uut|2|2|pembacaan",
+            "x": 0.238,
+            "y": 0.6055
+        },
+        {
+            "kunci": "uut|2|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.6055
+        },
+        {
+            "kunci": "uut|2|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.6055
+        },
+        {
+            "kunci": "uut|2|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.6055
+        },
+        {
+            "kunci": "uut|3|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.6335
+        },
+        {
+            "kunci": "uut|3|2|pembacaan",
+            "x": 0.238,
+            "y": 0.6335
+        },
+        {
+            "kunci": "uut|3|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.6335
+        },
+        {
+            "kunci": "uut|3|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.6335
+        },
+        {
+            "kunci": "uut|3|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.6335
+        },
+        {
+            "kunci": "uut|4|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.6615
+        },
+        {
+            "kunci": "uut|4|2|pembacaan",
+            "x": 0.238,
+            "y": 0.6615
+        },
+        {
+            "kunci": "uut|4|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.6615
+        },
+        {
+            "kunci": "uut|4|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.6615
+        },
+        {
+            "kunci": "uut|4|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.6615
+        },
+        {
+            "kunci": "uut|5|1|pembacaan",
+            "x": 0.1678,
+            "y": 0.6896
+        },
+        {
+            "kunci": "uut|5|2|pembacaan",
+            "x": 0.238,
+            "y": 0.6896
+        },
+        {
+            "kunci": "uut|5|3|pembacaan",
+            "x": 0.3057,
+            "y": 0.6896
+        },
+        {
+            "kunci": "uut|5|4|pembacaan",
+            "x": 0.3688,
+            "y": 0.6896
+        },
+        {
+            "kunci": "uut|5|5|pembacaan",
+            "x": 0.4302,
+            "y": 0.6896
+        }
+    ],
+    "isian": [],
+    "centang": [],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Tabel Ice Point X1-X3: padanannya `titik_es_1..3` adalah FIELD lembar, bukan sel tabel; skema peta hanya memetakan kotak berjenis `sel` ke kunci tabel. Dilewati, dilaporkan (juga: profil menaruhnya di bagian `Pre-Evaluation (UUT)`, kertas di blok `Pembacaan Standard`).",
+            "titik": [
+                {
+                    "x": 0.5943,
+                    "y": 0.346
+                },
+                {
+                    "x": 0.6835,
+                    "y": 0.346
+                },
+                {
+                    "x": 0.7719,
+                    "y": 0.346
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom Setpoint/Alat di sisi kiri tabel: nilai titik ukur, bukan sel data. Profil menyimpannya sebagai `titik_ukur` baris (bukan kunci sel), jadi tidak ada kunci yang bisa dipetakan; titik ukur datang dari sesi/profil.",
+            "titik": [
+                {
+                    "x": 0.0767,
+                    "y": 0.346
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.3732
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.4005
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.4278
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.455
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.5775
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.6055
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.6335
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.6615
+                },
+                {
+                    "x": 0.0767,
+                    "y": 0.6896
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Bilah judul/kepala bagian yang berbingkai hijau dibaca skrip sebagai sel kosong; di kertas tidak ada yang ditulis teknisi di situ.",
+            "titik": [
+                {
+                    "x": 0.4968,
+                    "y": 0.4919
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak centang yang digambar sebagai SEL kosong berbingkai (bukan raster/vektor centang), jadi draf menjenisinya `calon_isian`, bukan `kotak_centang`. Peta tidak boleh menunjuk centang ke kotak berjenis sel; menunggu skrip draf mengenalinya sebagai centang (utang skrip, dilaporkan). Isinya: Tipe pencelupan Total/Partial/Complete (`tipe_pencelupan`).",
+            "titik": [
+                {
+                    "x": 0.7851,
+                    "y": 0.1575
+                },
+                {
+                    "x": 0.7851,
+                    "y": 0.1699
+                },
+                {
+                    "x": 0.7851,
+                    "y": 0.1832
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak centang yang digambar sebagai SEL kosong berbingkai (bukan raster/vektor centang), jadi draf menjenisinya `calon_isian`, bukan `kotak_centang`. Peta tidak boleh menunjuk centang ke kotak berjenis sel; menunggu skrip draf mengenalinya sebagai centang (utang skrip, dilaporkan). Isinya: lima baris Standar Used (`standar_dicek.*.dipakai`).",
+            "titik": [
+                {
+                    "x": 0.2499,
+                    "y": 0.7397
+                },
+                {
+                    "x": 0.2499,
+                    "y": 0.7542
+                },
+                {
+                    "x": 0.2499,
+                    "y": 0.7694
+                },
+                {
+                    "x": 0.2499,
+                    "y": 0.7844
+                },
+                {
+                    "x": 0.2499,
+                    "y": 0.7985
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Catatan bebas (PANDUAN §4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.7498,
+                    "y": 0.895
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pelanggan/lokasi/nomor seri/spesifikasi: bukan cakupan tahap 1. Datang dari order atau alat terdaftar (cara `banding`) atau diketik teknisi; belum ada pembaca yang dibuktikan di foto nyata.",
+            "titik": [
+                {
+                    "x": 0.2348,
+                    "y": 0.1179
+                },
+                {
+                    "x": 0.511,
+                    "y": 0.1179
+                },
+                {
+                    "x": 0.2348,
+                    "y": 0.1315
+                },
+                {
+                    "x": 0.511,
+                    "y": 0.1315
+                },
+                {
+                    "x": 0.2348,
+                    "y": 0.1449
+                },
+                {
+                    "x": 0.511,
+                    "y": 0.1459
+                },
+                {
+                    "x": 0.8964,
+                    "y": 0.1459
+                },
+                {
+                    "x": 0.2348,
+                    "y": 0.1593
+                },
+                {
+                    "x": 0.5493,
+                    "y": 0.2116
+                },
+                {
+                    "x": 0.5493,
+                    "y": 0.224
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: bukan cakupan tahap 1; diisi dari order/jadwal, dan pembaca tanggal baru dibuktikan di foto nyata (PANDUAN §4).",
+            "titik": [
+                {
+                    "x": 0.8964,
+                    "y": 0.1179
+                },
+                {
+                    "x": 0.8964,
+                    "y": 0.1315
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Standar used` di atas daftar standar: standar dipilih lewat centang per baris (`standar_dicek.*.dipakai`), bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.5398,
+                    "y": 0.7251
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi tercetak di kaki halaman (mis. `Revise : 2`), bukan isian teknisi. Kode dokumen dicek dari draf & profil di test, bukan di-OCR.",
+            "titik": [
+                {
+                    "x": 0.735,
+                    "y": 0.9689
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak `Rata2` suhu/kelembapan ruang. Profil menyimpan suhu_awal/suhu_akhir/kelembaban_awal/kelembaban_akhir, tidak ada kolom rata-rata; kotak `awal`/`akhir`-nya bergaris bawah dan TIDAK ditangkap draf (utang skrip PANDUAN §8), jadi kondisi lingkungan formulir ini tidak terpetakan di tahap 1.",
+            "titik": [
+                {
+                    "x": 0.4918,
+                    "y": 0.1829
+                },
+                {
+                    "x": 0.4889,
+                    "y": 0.197
+                }
+            ]
+        }
+    ]
+}

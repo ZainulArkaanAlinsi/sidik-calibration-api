@@ -1,0 +1,469 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0515.draf.json -> kunci sel profil tachometer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliSemuaTest). Belum diadu ke foto nyata, jadi terverifikasi=false; dibuka lewat mode uji (sel maks kuning).",
+    "template_id": "tachometer",
+    "kode_dokumen": "SIDIK-FM-CAL-0515_Rev.4",
+    "draf": "formulir-0515.draf.json",
+    "sumber_sha256": "9f4d1b5fbf2e00bcb273a583a4c1468193ed5eabf068834ccbed923cc86ebe4e",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: dua blok bertumpuk, Before dan After adjustment Reading, tiap blok Set Point 1-5 (baris) x Repeat 1-3 (kolom). Hanya AFTER adjustment yang dipetakan: kunci sel profil (`pembacaan_standar_sesudah_adjustment|baris|ulangan|pembacaan`) kini memuat tahap (tabel Before = `pembacaan_standar_sebelum_adjustment`). Tabel Before sengaja belum dipetakan: kotaknya tidak punya kunci peta, jadi nilainya tidak pernah dibaca dan tetap kosong.",
+        "ASUMSI POSISIONAL, perlu dikonfirmasi lab: Set Point n di kertas -> baris profil n (baris profil 6-18 tidak tercetak). Nilai set point yang ditulis tangan tidak dibaca (tahap 2): teknisi mencocokkan nilai titik baris 1-5 di aplikasi. Repeat 4-5 profil tidak tercetak.",
+        "Env: First/End (oC) -> suhu_awal/suhu_akhir, First/End (%RH) -> kelembaban_awal/kelembaban_akhir (tahap 1, kotak isian berlabel).",
+        "Centang Thermohygro TH-2, TH-6, TH-7 (Insitu) dan TH-4 (Inlab) -> thermohygro_standard_id. Blok Standard (Tachometer) tercetak tanpa kotak centang -> tidak ada Usage Check."
+    ],
+    "sel": [
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|1|pembacaan",
+            "x": 0.6478,
+            "y": 0.6425
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|2|pembacaan",
+            "x": 0.7482,
+            "y": 0.6425
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|3|pembacaan",
+            "x": 0.8487,
+            "y": 0.6425
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|1|pembacaan",
+            "x": 0.6478,
+            "y": 0.6844
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|2|pembacaan",
+            "x": 0.7482,
+            "y": 0.6844
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|3|pembacaan",
+            "x": 0.8487,
+            "y": 0.6844
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|1|pembacaan",
+            "x": 0.6478,
+            "y": 0.7263
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|2|pembacaan",
+            "x": 0.7482,
+            "y": 0.7263
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|3|pembacaan",
+            "x": 0.8487,
+            "y": 0.7263
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|1|pembacaan",
+            "x": 0.6478,
+            "y": 0.7681
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|2|pembacaan",
+            "x": 0.7482,
+            "y": 0.7681
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|3|pembacaan",
+            "x": 0.8487,
+            "y": 0.7681
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|1|pembacaan",
+            "x": 0.6478,
+            "y": 0.811
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|2|pembacaan",
+            "x": 0.7482,
+            "y": 0.811
+        },
+        {
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|3|pembacaan",
+            "x": 0.8487,
+            "y": 0.811
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6789,
+            "y": 0.2386
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6782,
+            "y": 0.2559
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8487,
+            "y": 0.2393
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8479,
+            "y": 0.2566
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.2202,
+            "y": 0.3887
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.2686,
+            "y": 0.3887
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.3123,
+            "y": 0.3887
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.2202,
+            "y": 0.4087
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Judul/satuan kolom tabel hasil dan kotak pembeda Env. Condition: teks tercetak/ditulis tangan, bukan data hitung; satuan dari profil.",
+            "titik": [
+                {
+                    "x": 0.5387,
+                    "y": 0.2791
+                },
+                {
+                    "x": 0.5387,
+                    "y": 0.2994
+                },
+                {
+                    "x": 0.5387,
+                    "y": 0.5665
+                },
+                {
+                    "x": 0.5387,
+                    "y": 0.5855
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tabel BEFORE adjustment. Kunci sel profil Centrifuge/Tachometer tidak membedakan tahap (dua tabel berbagi `grup` pembacaan_standar sehingga kunci sama), jadi yang dipetakan hanya tabel AFTER adjustment (tahap yang dihitung ulang); Before diisi manual sampai profil memberi kunci terpisah.",
+            "titik": [
+                {
+                    "x": 0.7483,
+                    "y": 0.2791
+                },
+                {
+                    "x": 0.7483,
+                    "y": 0.2994
+                },
+                {
+                    "x": 0.6478,
+                    "y": 0.3585
+                },
+                {
+                    "x": 0.6478,
+                    "y": 0.3983
+                },
+                {
+                    "x": 0.6478,
+                    "y": 0.4382
+                },
+                {
+                    "x": 0.6478,
+                    "y": 0.4781
+                },
+                {
+                    "x": 0.6478,
+                    "y": 0.5182
+                },
+                {
+                    "x": 0.7482,
+                    "y": 0.3585
+                },
+                {
+                    "x": 0.7482,
+                    "y": 0.3983
+                },
+                {
+                    "x": 0.7482,
+                    "y": 0.4382
+                },
+                {
+                    "x": 0.7482,
+                    "y": 0.4781
+                },
+                {
+                    "x": 0.7482,
+                    "y": 0.5182
+                },
+                {
+                    "x": 0.7828,
+                    "y": 0.2474
+                },
+                {
+                    "x": 0.8487,
+                    "y": 0.3585
+                },
+                {
+                    "x": 0.8487,
+                    "y": 0.3983
+                },
+                {
+                    "x": 0.8487,
+                    "y": 0.4382
+                },
+                {
+                    "x": 0.8487,
+                    "y": 0.4781
+                },
+                {
+                    "x": 0.8487,
+                    "y": 0.5182
+                },
+                {
+                    "x": 0.7483,
+                    "y": 0.5665
+                },
+                {
+                    "x": 0.7483,
+                    "y": 0.5855
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom sempit di tepi kanan tabel tanpa judul kolom di kertas dan tanpa padanan di lembar profil (kolom profil cuma `pembacaan`): tidak dipetakan, tidak dibaca.",
+            "titik": [
+                {
+                    "x": 0.924,
+                    "y": 0.2791
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.2994
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.3238
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.3485
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.3684
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.3884
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.4083
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.4282
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.4482
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.4681
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.4881
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.5077
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.5278
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.5665
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.5855
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.6083
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.6321
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.653
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.6739
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.6949
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.7158
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.7367
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.7578
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.7787
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.8026
+                },
+                {
+                    "x": 0.924,
+                    "y": 0.8246
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.7175,
+                    "y": 0.1468
+                },
+                {
+                    "x": 0.7175,
+                    "y": 0.1722
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Label judul blok Env. Condition (kotak kecil di sebelah label), bukan isian angka; angkanya diambil dari kotak First/End.",
+            "titik": [
+                {
+                    "x": 0.583,
+                    "y": 0.2473
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, range/resolusi, tipe, nomor seri, merk) dan lokasi kalibrasi: tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.3202,
+                    "y": 0.2573
+                },
+                {
+                    "x": 0.2213,
+                    "y": 0.2798
+                },
+                {
+                    "x": 0.2213,
+                    "y": 0.2997
+                },
+                {
+                    "x": 0.3202,
+                    "y": 0.3195
+                },
+                {
+                    "x": 0.3202,
+                    "y": 0.3483
+                },
+                {
+                    "x": 0.3202,
+                    "y": 0.3703
+                },
+                {
+                    "x": 0.3202,
+                    "y": 0.6089
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.3195,
+                    "y": 0.449
+                },
+                {
+                    "x": 0.3195,
+                    "y": 0.471
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pembuat dan pemeriksa (tanda tangan/nama): bukan data hitung, tidak dibaca mesin.",
+            "titik": [
+                {
+                    "x": 0.2266,
+                    "y": 0.7785
+                },
+                {
+                    "x": 0.4324,
+                    "y": 0.7785
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.5595,
+                    "y": 0.8619
+                }
+            ]
+        }
+    ]
+}

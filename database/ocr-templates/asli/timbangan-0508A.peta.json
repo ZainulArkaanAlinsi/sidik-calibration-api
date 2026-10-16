@@ -1,0 +1,1002 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0508A.draf.json -> kunci sel profil timbangan. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Cakupan TAHAP 1: sel tabel data, kondisi lingkungan, centang; sisanya `abaikan` beralasan atau `tanpa_kotak` (kunci profil yang tidak punya kotak di kertas). Kunci sel diambil dari template profil bawaan (tanpa alat). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "timbangan",
+    "kode_dokumen": "SIDIK-FM-CAL-0508.A_Rev.4",
+    "draf": "formulir-0508A.draf.json",
+    "sumber_sha256": "a54e3997862e8ef1911db104a9546a2b2bb4ae687a7d65817dedc6b568768677",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "akurasi|1|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3214
+        },
+        {
+            "kunci": "akurasi|1|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3359
+        },
+        {
+            "kunci": "akurasi|1|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3505
+        },
+        {
+            "kunci": "akurasi|1|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3634
+        },
+        {
+            "kunci": "akurasi|2|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3785
+        },
+        {
+            "kunci": "akurasi|2|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.3931
+        },
+        {
+            "kunci": "akurasi|2|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4072
+        },
+        {
+            "kunci": "akurasi|2|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4198
+        },
+        {
+            "kunci": "akurasi|3|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4338
+        },
+        {
+            "kunci": "akurasi|3|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4465
+        },
+        {
+            "kunci": "akurasi|3|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4587
+        },
+        {
+            "kunci": "akurasi|3|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4702
+        },
+        {
+            "kunci": "akurasi|4|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4834
+        },
+        {
+            "kunci": "akurasi|4|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.4952
+        },
+        {
+            "kunci": "akurasi|4|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5067
+        },
+        {
+            "kunci": "akurasi|4|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.517
+        },
+        {
+            "kunci": "akurasi|5|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5297
+        },
+        {
+            "kunci": "akurasi|5|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5423
+        },
+        {
+            "kunci": "akurasi|5|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5548
+        },
+        {
+            "kunci": "akurasi|5|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5663
+        },
+        {
+            "kunci": "akurasi|6|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5797
+        },
+        {
+            "kunci": "akurasi|6|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.5924
+        },
+        {
+            "kunci": "akurasi|6|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6049
+        },
+        {
+            "kunci": "akurasi|6|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6163
+        },
+        {
+            "kunci": "akurasi|7|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6297
+        },
+        {
+            "kunci": "akurasi|7|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6424
+        },
+        {
+            "kunci": "akurasi|7|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6545
+        },
+        {
+            "kunci": "akurasi|7|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6652
+        },
+        {
+            "kunci": "akurasi|8|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6781
+        },
+        {
+            "kunci": "akurasi|8|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.6915
+        },
+        {
+            "kunci": "akurasi|8|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7048
+        },
+        {
+            "kunci": "akurasi|8|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7158
+        },
+        {
+            "kunci": "akurasi|9|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7273
+        },
+        {
+            "kunci": "akurasi|9|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7386
+        },
+        {
+            "kunci": "akurasi|9|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7515
+        },
+        {
+            "kunci": "akurasi|9|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7634
+        },
+        {
+            "kunci": "akurasi|10|1|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7772
+        },
+        {
+            "kunci": "akurasi|10|2|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.7904
+        },
+        {
+            "kunci": "akurasi|10|3|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.8033
+        },
+        {
+            "kunci": "akurasi|10|4|pembacaan",
+            "sumber_kotak": "isian",
+            "x": 0.887,
+            "y": 0.815
+        },
+        {
+            "kunci": "keterulangan|1|1|zero",
+            "x": 0.1165,
+            "y": 0.5411
+        },
+        {
+            "kunci": "keterulangan|1|1|pembacaan",
+            "x": 0.213,
+            "y": 0.5411
+        },
+        {
+            "kunci": "keterulangan|2|1|zero",
+            "x": 0.3138,
+            "y": 0.5411
+        },
+        {
+            "kunci": "keterulangan|2|1|pembacaan",
+            "x": 0.3959,
+            "y": 0.5411
+        },
+        {
+            "kunci": "keterulangan|1|2|zero",
+            "x": 0.1165,
+            "y": 0.5536
+        },
+        {
+            "kunci": "keterulangan|1|2|pembacaan",
+            "x": 0.213,
+            "y": 0.5536
+        },
+        {
+            "kunci": "keterulangan|2|2|zero",
+            "x": 0.3138,
+            "y": 0.5536
+        },
+        {
+            "kunci": "keterulangan|2|2|pembacaan",
+            "x": 0.3959,
+            "y": 0.5536
+        },
+        {
+            "kunci": "keterulangan|1|3|zero",
+            "x": 0.1165,
+            "y": 0.5661
+        },
+        {
+            "kunci": "keterulangan|1|3|pembacaan",
+            "x": 0.213,
+            "y": 0.5661
+        },
+        {
+            "kunci": "keterulangan|2|3|zero",
+            "x": 0.3138,
+            "y": 0.5661
+        },
+        {
+            "kunci": "keterulangan|2|3|pembacaan",
+            "x": 0.3959,
+            "y": 0.5661
+        },
+        {
+            "kunci": "keterulangan|1|4|zero",
+            "x": 0.1165,
+            "y": 0.5786
+        },
+        {
+            "kunci": "keterulangan|1|4|pembacaan",
+            "x": 0.213,
+            "y": 0.5786
+        },
+        {
+            "kunci": "keterulangan|2|4|zero",
+            "x": 0.3138,
+            "y": 0.5786
+        },
+        {
+            "kunci": "keterulangan|2|4|pembacaan",
+            "x": 0.3959,
+            "y": 0.5786
+        },
+        {
+            "kunci": "keterulangan|1|5|zero",
+            "x": 0.1165,
+            "y": 0.5911
+        },
+        {
+            "kunci": "keterulangan|1|5|pembacaan",
+            "x": 0.213,
+            "y": 0.5911
+        },
+        {
+            "kunci": "keterulangan|2|5|zero",
+            "x": 0.3138,
+            "y": 0.5911
+        },
+        {
+            "kunci": "keterulangan|2|5|pembacaan",
+            "x": 0.3959,
+            "y": 0.5911
+        },
+        {
+            "kunci": "keterulangan|1|6|zero",
+            "x": 0.1165,
+            "y": 0.6036
+        },
+        {
+            "kunci": "keterulangan|1|6|pembacaan",
+            "x": 0.213,
+            "y": 0.6036
+        },
+        {
+            "kunci": "keterulangan|2|6|zero",
+            "x": 0.3138,
+            "y": 0.6036
+        },
+        {
+            "kunci": "keterulangan|2|6|pembacaan",
+            "x": 0.3959,
+            "y": 0.6036
+        },
+        {
+            "kunci": "keterulangan|1|7|zero",
+            "x": 0.1165,
+            "y": 0.6161
+        },
+        {
+            "kunci": "keterulangan|1|7|pembacaan",
+            "x": 0.213,
+            "y": 0.6161
+        },
+        {
+            "kunci": "keterulangan|2|7|zero",
+            "x": 0.3138,
+            "y": 0.6161
+        },
+        {
+            "kunci": "keterulangan|2|7|pembacaan",
+            "x": 0.3959,
+            "y": 0.6161
+        },
+        {
+            "kunci": "keterulangan|1|8|zero",
+            "x": 0.1165,
+            "y": 0.6286
+        },
+        {
+            "kunci": "keterulangan|1|8|pembacaan",
+            "x": 0.213,
+            "y": 0.6286
+        },
+        {
+            "kunci": "keterulangan|2|8|zero",
+            "x": 0.3138,
+            "y": 0.6286
+        },
+        {
+            "kunci": "keterulangan|2|8|pembacaan",
+            "x": 0.3959,
+            "y": 0.6286
+        },
+        {
+            "kunci": "keterulangan|1|9|zero",
+            "x": 0.1165,
+            "y": 0.6411
+        },
+        {
+            "kunci": "keterulangan|1|9|pembacaan",
+            "x": 0.213,
+            "y": 0.6411
+        },
+        {
+            "kunci": "keterulangan|2|9|zero",
+            "x": 0.3138,
+            "y": 0.6411
+        },
+        {
+            "kunci": "keterulangan|2|9|pembacaan",
+            "x": 0.3959,
+            "y": 0.6411
+        },
+        {
+            "kunci": "keterulangan|1|10|zero",
+            "x": 0.1165,
+            "y": 0.6536
+        },
+        {
+            "kunci": "keterulangan|1|10|pembacaan",
+            "x": 0.213,
+            "y": 0.6536
+        },
+        {
+            "kunci": "keterulangan|2|10|zero",
+            "x": 0.3138,
+            "y": 0.6536
+        },
+        {
+            "kunci": "keterulangan|2|10|pembacaan",
+            "x": 0.3959,
+            "y": 0.6536
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5647,
+            "y": 0.2373
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6461,
+            "y": 0.2373
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5647,
+            "y": 0.2548
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6461,
+            "y": 0.2548
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.822,
+            "y": 0.2226
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.8223,
+            "y": 0.2382
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.8225,
+            "y": 0.252
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Anak Timbangan E2",
+            "x": 0.8308,
+            "y": 0.1116
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Anak Timbangan F1",
+            "x": 0.8307,
+            "y": 0.1245
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 3,
+            "label": "Anak Timbangan F21",
+            "x": 0.7555,
+            "y": 0.1362
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 4,
+            "label": "Anak Timbangan F22",
+            "x": 0.8376,
+            "y": 0.1368
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 5,
+            "label": "Anak Timbangan F25",
+            "x": 0.911,
+            "y": 0.1385
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 6,
+            "label": "Anak Timbangan M2",
+            "x": 0.7555,
+            "y": 0.149
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 7,
+            "label": "Anak Timbangan F1-10",
+            "x": 0.9109,
+            "y": 0.1237
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik/tanggal/nomor order/lokasi: bukan sel data, kondisi lingkungan, atau centang (cakupan tahap 1). Nilainya datang dari order & master alat atau diketik teknisi.",
+            "titik": [
+                {
+                    "x": 0.3476,
+                    "y": 0.0842
+                },
+                {
+                    "x": 0.7581,
+                    "y": 0.0842
+                },
+                {
+                    "x": 0.3711,
+                    "y": 0.1125
+                },
+                {
+                    "x": 0.2758,
+                    "y": 0.1258
+                },
+                {
+                    "x": 0.2758,
+                    "y": 0.1391
+                },
+                {
+                    "x": 0.3731,
+                    "y": 0.1628
+                },
+                {
+                    "x": 0.8154,
+                    "y": 0.174
+                },
+                {
+                    "x": 0.3731,
+                    "y": 0.175
+                },
+                {
+                    "x": 0.5737,
+                    "y": 0.1882
+                },
+                {
+                    "x": 0.3711,
+                    "y": 0.2401
+                },
+                {
+                    "x": 0.3711,
+                    "y": 0.2546
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 2. EFFECT OF TARE: standar, m1, m2).",
+            "titik": [
+                {
+                    "x": 0.6587,
+                    "y": 0.3205
+                },
+                {
+                    "x": 0.6587,
+                    "y": 0.3347
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Mref (massa acuan titik): kunci belum ada di profil (W2/W3); nominal titik datang dari penentuan titik.",
+            "titik": [
+                {
+                    "x": 0.7814,
+                    "y": 0.3205
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.377
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.4327
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.4826
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.5287
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.5786
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.6286
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.6773
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.7265
+                },
+                {
+                    "x": 0.7814,
+                    "y": 0.776
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 2. EFFECT OF TARE: standar, m1, m2).",
+            "titik": [
+                {
+                    "x": 0.5183,
+                    "y": 0.3277
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 1. SCALE OBSERVATION: standar/z1/m1/m2/z2 sebelum & sesudah adjustment).",
+            "titik": [
+                {
+                    "x": 0.0924,
+                    "y": 0.3347
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.3347
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.3488
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.3629
+                },
+                {
+                    "x": 0.0924,
+                    "y": 0.377
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.377
+                },
+                {
+                    "x": 0.0924,
+                    "y": 0.3911
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.3911
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.4051
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.4192
+                },
+                {
+                    "x": 0.0924,
+                    "y": 0.4327
+                },
+                {
+                    "x": 0.2163,
+                    "y": 0.4327
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 1. SCALE OBSERVATION: standar/z1/m1/m2/z2 sebelum & sesudah adjustment).",
+            "titik": [
+                {
+                    "x": 0.3906,
+                    "y": 0.3347
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.3488
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.3629
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.377
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.3911
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.4052
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.4193
+                },
+                {
+                    "x": 0.3906,
+                    "y": 0.4327
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom nominal/titik beban per baris (titik_ukur): bukan sel pembacaan dan tidak punya kunci sel; nilai titik datang dari order/penentuan titik, bukan dari OCR.",
+            "titik": [
+                {
+                    "x": 0.7641,
+                    "y": 0.3488
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.4051
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.4578
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.5057
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.5536
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.6036
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.6529
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.7025
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.7507
+                },
+                {
+                    "x": 0.7641,
+                    "y": 0.8018
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (sd_tahun_lalu).",
+            "titik": [
+                {
+                    "x": 0.3456,
+                    "y": 0.4453
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 5. LOADING INFLUENCE: eksentrisitas.baca.center/front/back/left/right).",
+            "titik": [
+                {
+                    "x": 0.2023,
+                    "y": 0.7162
+                },
+                {
+                    "x": 0.2926,
+                    "y": 0.7162
+                },
+                {
+                    "x": 0.3747,
+                    "y": 0.7162
+                },
+                {
+                    "x": 0.4719,
+                    "y": 0.7162
+                },
+                {
+                    "x": 0.5737,
+                    "y": 0.7162
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 6. HYSTERISIS: histeresis.m, m_aksen, baca1.*, baca2.*).",
+            "titik": [
+                {
+                    "x": 0.3425,
+                    "y": 0.7631
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.7631
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.776
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.776
+                },
+                {
+                    "x": 0.15,
+                    "y": 0.7762
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.7889
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.7889
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.8018
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.8018
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.8147
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.8147
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.8276
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.8276
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.8405
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.8405
+                },
+                {
+                    "x": 0.5496,
+                    "y": 0.8534
+                },
+                {
+                    "x": 0.3425,
+                    "y": 0.8536
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tahap 2: kodenya (`spesifikasi_alat.*`) ada di profil, tetapi bukan sel tabel data, kondisi lingkungan, atau centang — dipetakan setelah tahap 1 lulus uji foto (cakupan tugas). (blok 6. HYSTERISIS: histeresis.m, m_aksen, baca1.*, baca2.*).",
+            "titik": [
+                {
+                    "x": 0.1313,
+                    "y": 0.8212
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak di sekitar label '7. DRIFT' (sel nilai drift d dan sel pembungkusnya): kunci belum ada di profil (W2/W3).",
+            "titik": [
+                {
+                    "x": 0.2038,
+                    "y": 0.8651
+                },
+                {
+                    "x": 0.3853,
+                    "y": 0.8651
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "7. DRIFT (massa standar d): kunci belum ada di profil (W2/W3).",
+            "titik": [
+                {
+                    "x": 0.385,
+                    "y": 0.8753
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR; teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.3425,
+                    "y": 0.9011
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan / paraf / nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama pengesah datang dari akun (`teknisi.nama`, `reviewer.nama`).",
+            "titik": [
+                {
+                    "x": 0.7443,
+                    "y": 0.9471
+                },
+                {
+                    "x": 0.8854,
+                    "y": 0.9471
+                },
+                {
+                    "x": 0.7443,
+                    "y": 0.9607
+                },
+                {
+                    "x": 0.8854,
+                    "y": 0.9607
+                }
+            ]
+        }
+    ],
+    "tanpa_kotak": []
+}

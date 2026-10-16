@@ -1,0 +1,543 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0538A.draf.json -> kunci sel profil flowmeter_flowrate. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Gravimetri Flowrate (Rev.3): \"Standard Reading\" = berat isi (`flow_berat_isi`, peran varian gravimetri). Berat wadah kosong tidak ada di kertas Rev.3 (pertanyaan lab §11). Kotak centang standar/TH tidak terdeteksi di draf.",
+    "template_id": "flowmeter_flowrate",
+    "kode_dokumen": "SIDIK-FM-CAL-0538.A_Rev.3",
+    "draf": "formulir-0538A.draf.json",
+    "sumber_sha256": "6e269a7a4cc358f70ecfda95205f57ef4cf3e8f10f4a1099cc0461e7b3bd8cd0",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "flow_uut_pembacaan|1|1|durasi_1",
+            "x": 0.4164,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|1|durasi_2",
+            "x": 0.4876,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|1|durasi_3",
+            "x": 0.5486,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|1|durasi_1",
+            "x": 0.6066,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|1|durasi_2",
+            "x": 0.6654,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|1|durasi_3",
+            "x": 0.7214,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|1|durasi_1",
+            "x": 0.7747,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|1|durasi_2",
+            "x": 0.8305,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|1|durasi_3",
+            "x": 0.8865,
+            "y": 0.3228
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|2|durasi_1",
+            "x": 0.4164,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|2|durasi_2",
+            "x": 0.4876,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|2|durasi_3",
+            "x": 0.5486,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|2|durasi_1",
+            "x": 0.6066,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|2|durasi_2",
+            "x": 0.6654,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|2|durasi_3",
+            "x": 0.7214,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|2|durasi_1",
+            "x": 0.7747,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|2|durasi_2",
+            "x": 0.8305,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|2|durasi_3",
+            "x": 0.8865,
+            "y": 0.3568
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|3|durasi_1",
+            "x": 0.4164,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|3|durasi_2",
+            "x": 0.4876,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|1|3|durasi_3",
+            "x": 0.5486,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|3|durasi_1",
+            "x": 0.6066,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|3|durasi_2",
+            "x": 0.6654,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|2|3|durasi_3",
+            "x": 0.7214,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|3|durasi_1",
+            "x": 0.7747,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|3|durasi_2",
+            "x": 0.8305,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_uut_pembacaan|3|3|durasi_3",
+            "x": 0.8865,
+            "y": 0.3908
+        },
+        {
+            "kunci": "flow_berat_isi|1|1|pembacaan",
+            "x": 0.4774,
+            "y": 0.5157
+        },
+        {
+            "kunci": "flow_berat_isi|2|1|pembacaan",
+            "x": 0.6626,
+            "y": 0.5157
+        },
+        {
+            "kunci": "flow_berat_isi|3|1|pembacaan",
+            "x": 0.8306,
+            "y": 0.5157
+        },
+        {
+            "kunci": "flow_berat_isi|1|2|pembacaan",
+            "x": 0.4774,
+            "y": 0.5536
+        },
+        {
+            "kunci": "flow_berat_isi|2|2|pembacaan",
+            "x": 0.6626,
+            "y": 0.5536
+        },
+        {
+            "kunci": "flow_berat_isi|3|2|pembacaan",
+            "x": 0.8306,
+            "y": 0.5536
+        },
+        {
+            "kunci": "flow_berat_isi|1|3|pembacaan",
+            "x": 0.4774,
+            "y": 0.5916
+        },
+        {
+            "kunci": "flow_berat_isi|2|3|pembacaan",
+            "x": 0.6626,
+            "y": 0.5916
+        },
+        {
+            "kunci": "flow_berat_isi|3|3|pembacaan",
+            "x": 0.8306,
+            "y": 0.5916
+        },
+        {
+            "kunci": "flow_suhu_awal|1|1|pembacaan",
+            "x": 0.4164,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_akhir|1|1|pembacaan",
+            "x": 0.5163,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_awal|2|1|pembacaan",
+            "x": 0.6066,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_akhir|2|1|pembacaan",
+            "x": 0.6919,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_awal|3|1|pembacaan",
+            "x": 0.7935,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_akhir|3|1|pembacaan",
+            "x": 0.8763,
+            "y": 0.7158
+        },
+        {
+            "kunci": "flow_suhu_awal|1|2|pembacaan",
+            "x": 0.4164,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_akhir|1|2|pembacaan",
+            "x": 0.5163,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_awal|2|2|pembacaan",
+            "x": 0.6066,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_akhir|2|2|pembacaan",
+            "x": 0.6919,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_awal|3|2|pembacaan",
+            "x": 0.7935,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_akhir|3|2|pembacaan",
+            "x": 0.8763,
+            "y": 0.7445
+        },
+        {
+            "kunci": "flow_suhu_awal|1|3|pembacaan",
+            "x": 0.4164,
+            "y": 0.7734
+        },
+        {
+            "kunci": "flow_suhu_akhir|1|3|pembacaan",
+            "x": 0.5163,
+            "y": 0.7734
+        },
+        {
+            "kunci": "flow_suhu_awal|2|3|pembacaan",
+            "x": 0.6066,
+            "y": 0.7734
+        },
+        {
+            "kunci": "flow_suhu_akhir|2|3|pembacaan",
+            "x": 0.6919,
+            "y": 0.7734
+        },
+        {
+            "kunci": "flow_suhu_awal|3|3|pembacaan",
+            "x": 0.7935,
+            "y": 0.7734
+        },
+        {
+            "kunci": "flow_suhu_akhir|3|3|pembacaan",
+            "x": 0.8763,
+            "y": 0.7734
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.4398,
+            "y": 0.1537
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5941,
+            "y": 0.1537
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.4398,
+            "y": 0.1769
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5941,
+            "y": 0.1769
+        }
+    ],
+    "centang": [],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Baris \"Time ( )\": kertas memuat SATU kotak per set point, sedangkan profil (`flow_waktu_menit`) meminta satu durasi per ulangan. Pemasangan tidak bisa dipastikan tanpa menebak.",
+            "titik": [
+                {
+                    "x": 0.4774,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.6626,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.8306,
+                    "y": 0.6217
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak tepi/pembungkus tanpa teks di luar tabel data (kolom tipis di kanan tabel, kepala kolom kosong, strip pemisah, area catatan/tanda tangan): di kertas tidak ada angka pembacaan yang ditulis di situ, dan profil tidak punya kunci untuknya.",
+            "titik": [
+                {
+                    "x": 0.1653,
+                    "y": 0.5157
+                },
+                {
+                    "x": 0.4993,
+                    "y": 0.8017
+                },
+                {
+                    "x": 0.4993,
+                    "y": 0.8954
+                },
+                {
+                    "x": 0.361,
+                    "y": 0.8623
+                },
+                {
+                    "x": 0.3123,
+                    "y": 0.5536
+                },
+                {
+                    "x": 0.3477,
+                    "y": 0.69
+                },
+                {
+                    "x": 0.5486,
+                    "y": 0.8258
+                },
+                {
+                    "x": 0.7529,
+                    "y": 0.8623
+                },
+                {
+                    "x": 0.7747,
+                    "y": 0.127
+                },
+                {
+                    "x": 0.8937,
+                    "y": 0.8258
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.2587
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.3569
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.464
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.5157
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.5536
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.5916
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.6785
+                },
+                {
+                    "x": 0.9497,
+                    "y": 0.7446
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.2472,
+                    "y": 0.1596
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.4492
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.4883
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Thermohygro used: kotak teks bebas; profil memilih `thermohygro_standard_id` dari master (pilihan), jadi menebak teks bebas ke pilihan itu dilarang. Pilihan dikonfirmasi manusia.",
+            "titik": [
+                {
+                    "x": 0.7569,
+                    "y": 0.1596
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.188,
+                    "y": 0.1828
+                },
+                {
+                    "x": 0.9297,
+                    "y": 0.1828
+                },
+                {
+                    "x": 0.188,
+                    "y": 0.2027
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.2292
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.2537
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.2769
+                },
+                {
+                    "x": 0.7211,
+                    "y": 0.8265
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.2144,
+                    "y": 0.3237
+                },
+                {
+                    "x": 0.2144,
+                    "y": 0.3576
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan/paraf/nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama datang dari akun (`teknisi.nama`, `reviewer.nama`, sumber otomatis).",
+            "titik": [
+                {
+                    "x": 0.0961,
+                    "y": 0.8258
+                },
+                {
+                    "x": 0.0781,
+                    "y": 0.8809
+                },
+                {
+                    "x": 0.1727,
+                    "y": 0.8809
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.3909,
+                    "y": 0.8258
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi tercetak di kaki formulir (`Revise`/`Rev`): bukan data kalibrasi.",
+            "titik": [
+                {
+                    "x": 0.7121,
+                    "y": 0.9779
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Kotak pilih mode di kertas: mode datang dari `spesifikasi_alat.flowmeter.mode`, bukan dari centang.",
+            "titik": [
+                {
+                    "x": 0.3123,
+                    "y": 0.127
+                }
+            ]
+        }
+    ]
+}

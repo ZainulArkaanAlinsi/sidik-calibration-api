@@ -1,0 +1,352 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0539.draf.json -> kunci sel profil autoclave. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya (byte-identik, TIDAK PERNAH disunting tangan); yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya. Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja. Cakupan tahap 1: sel tabel data, kondisi lingkungan (tahap 1), centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Autoklaf: 8 baris profil (Time, Temp Disk 1-3, Indikator Suhu, Indikator Pressure, Tekanan atm awal, Suhu Ruang) x 5 titik waktu. Draf hanya mengenali kotak untuk Temp Disk 1-3, Indikator Suhu, dan Suhu Ruang (baris 2,3,4,5,8). Baris Time (waktu `__:__:__` tercetak), Indikator Pressure dan Tekanan atm awal (`|.....|` tercetak) bukan kotak di draf, jadi kunci baris 1, 6, 7 TIDAK terpetakan.",
+    "template_id": "autoclave",
+    "kode_dokumen": "SIDIK-FM-CAL-0539_Rev.4",
+    "draf": "formulir-0539.draf.json",
+    "sumber_sha256": "9ce71a8785349a5a2ffd70d0ae2132b3a5d18df2c5844b3a51ad702d1c5c10b1",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "sesudah_adjustment|2|1|pembacaan",
+            "x": 0.3195,
+            "y": 0.392
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|pembacaan",
+            "x": 0.4513,
+            "y": 0.392
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|pembacaan",
+            "x": 0.583,
+            "y": 0.392
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|pembacaan",
+            "x": 0.7148,
+            "y": 0.392
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|pembacaan",
+            "x": 0.8466,
+            "y": 0.392
+        },
+        {
+            "kunci": "sesudah_adjustment|3|1|pembacaan",
+            "x": 0.3195,
+            "y": 0.42
+        },
+        {
+            "kunci": "sesudah_adjustment|3|2|pembacaan",
+            "x": 0.4513,
+            "y": 0.42
+        },
+        {
+            "kunci": "sesudah_adjustment|3|3|pembacaan",
+            "x": 0.583,
+            "y": 0.42
+        },
+        {
+            "kunci": "sesudah_adjustment|3|4|pembacaan",
+            "x": 0.7148,
+            "y": 0.42
+        },
+        {
+            "kunci": "sesudah_adjustment|3|5|pembacaan",
+            "x": 0.8466,
+            "y": 0.42
+        },
+        {
+            "kunci": "sesudah_adjustment|4|1|pembacaan",
+            "x": 0.3195,
+            "y": 0.448
+        },
+        {
+            "kunci": "sesudah_adjustment|4|2|pembacaan",
+            "x": 0.4513,
+            "y": 0.448
+        },
+        {
+            "kunci": "sesudah_adjustment|4|3|pembacaan",
+            "x": 0.583,
+            "y": 0.448
+        },
+        {
+            "kunci": "sesudah_adjustment|4|4|pembacaan",
+            "x": 0.7148,
+            "y": 0.448
+        },
+        {
+            "kunci": "sesudah_adjustment|4|5|pembacaan",
+            "x": 0.8466,
+            "y": 0.448
+        },
+        {
+            "kunci": "sesudah_adjustment|5|1|pembacaan",
+            "x": 0.3195,
+            "y": 0.4739
+        },
+        {
+            "kunci": "sesudah_adjustment|5|2|pembacaan",
+            "x": 0.4513,
+            "y": 0.4739
+        },
+        {
+            "kunci": "sesudah_adjustment|5|3|pembacaan",
+            "x": 0.583,
+            "y": 0.4739
+        },
+        {
+            "kunci": "sesudah_adjustment|5|4|pembacaan",
+            "x": 0.7148,
+            "y": 0.4739
+        },
+        {
+            "kunci": "sesudah_adjustment|5|5|pembacaan",
+            "x": 0.8466,
+            "y": 0.4739
+        },
+        {
+            "kunci": "sesudah_adjustment|8|1|pembacaan",
+            "x": 0.3195,
+            "y": 0.5453
+        },
+        {
+            "kunci": "sesudah_adjustment|8|2|pembacaan",
+            "x": 0.4513,
+            "y": 0.5453
+        },
+        {
+            "kunci": "sesudah_adjustment|8|3|pembacaan",
+            "x": 0.583,
+            "y": 0.5453
+        },
+        {
+            "kunci": "sesudah_adjustment|8|4|pembacaan",
+            "x": 0.7148,
+            "y": 0.5453
+        },
+        {
+            "kunci": "sesudah_adjustment|8|5|pembacaan",
+            "x": 0.8466,
+            "y": 0.5453
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2439,
+            "y": 0.1935
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2439,
+            "y": 0.2069
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2389,
+            "y": 0.2202
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2389,
+            "y": 0.2335
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.2395,
+            "y": 0.2585
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.2396,
+            "y": 0.2718
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.2389,
+            "y": 0.2843
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Temperature Calibrator -Technosoft (Disk 1,2,3)",
+            "x": 0.3379,
+            "y": 0.6021
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Pressure Disk Logger-Technosoft",
+            "x": 0.3382,
+            "y": 0.6157
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kotak `Set Point (C)`: profil menyimpannya sebagai FIELD `set_point` (lembar), bukan sel tabel; skema peta tidak memetakan sel ke field. Dilewati, dilaporkan.",
+            "titik": [
+                {
+                    "x": 0.2143,
+                    "y": 0.3491
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pelanggan/lokasi/nomor seri/spesifikasi: bukan cakupan tahap 1. Datang dari order atau alat terdaftar (cara `banding`) atau diketik teknisi; belum ada pembaca yang dibuktikan di foto nyata.",
+            "titik": [
+                {
+                    "x": 0.5688,
+                    "y": 0.0926
+                },
+                {
+                    "x": 0.5688,
+                    "y": 0.1167
+                },
+                {
+                    "x": 0.5688,
+                    "y": 0.1336
+                },
+                {
+                    "x": 0.5688,
+                    "y": 0.1481
+                },
+                {
+                    "x": 0.3497,
+                    "y": 0.1802
+                },
+                {
+                    "x": 0.8058,
+                    "y": 0.1802
+                },
+                {
+                    "x": 0.8058,
+                    "y": 0.1935
+                },
+                {
+                    "x": 0.8058,
+                    "y": 0.2069
+                },
+                {
+                    "x": 0.8058,
+                    "y": 0.2202
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Rentang & resolusi suhu/tekanan (`range_suhu`, `resolusi_suhu`, `range_tekanan`, `resolusi_tekanan`): spesifikasi alat, di luar cakupan tahap 1.",
+            "titik": [
+                {
+                    "x": 0.7514,
+                    "y": 0.2335
+                },
+                {
+                    "x": 0.7514,
+                    "y": 0.2468
+                },
+                {
+                    "x": 0.7514,
+                    "y": 0.2601
+                },
+                {
+                    "x": 0.7514,
+                    "y": 0.2734
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Thermohygro used`: unit dipilih lewat centang TH-n, bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.2065,
+                    "y": 0.2607
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Standar used` di atas daftar standar: standar dipilih lewat centang per baris (`standar_dicek.*.dipakai`), bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.2428,
+                    "y": 0.5916
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (PANDUAN §4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.1248,
+                    "y": 0.639
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan / paraf / nama pengesah (PANDUAN §4, larangan §6 butir 7): tidak dibaca dan tidak pernah dibuat. Nama pengesah datang dari akun (`teknisi.nama`, `reviewer.nama`).",
+            "titik": [
+                {
+                    "x": 0.6132,
+                    "y": 0.7063
+                },
+                {
+                    "x": 0.8104,
+                    "y": 0.7063
+                },
+                {
+                    "x": 0.5634,
+                    "y": 0.7158
+                },
+                {
+                    "x": 0.7611,
+                    "y": 0.7158
+                },
+                {
+                    "x": 0.5601,
+                    "y": 0.7255
+                },
+                {
+                    "x": 0.7577,
+                    "y": 0.7255
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi tercetak di kaki halaman (mis. `Revise : 2`), bukan isian teknisi. Kode dokumen dicek dari draf & profil di test, bukan di-OCR.",
+            "titik": [
+                {
+                    "x": 0.7011,
+                    "y": 0.9666
+                }
+            ]
+        }
+    ]
+}

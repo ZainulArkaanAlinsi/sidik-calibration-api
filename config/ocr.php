@@ -284,7 +284,10 @@ return [
      * Tidak pernah menyalakan `siap_pindai`.
      */
     'formulir_asli' => [
-        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', false),
+        // K-50-11 (16 Okt 2026): SEMUA formulir yang dipetakan dibuka dalam mode
+        // uji (sel maks kuning, peta terverifikasi=false) sampai >=20 foto
+        // nyata per formulir. OCR_FORMULIR_ASLI_UJI=false = saklar mati.
+        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', true),
         // Versi ambang KHUSUS formulir asli (`geometri.jangkar_teks`,
         // `centang`). Yang dicatat tiap pindai asli adalah gabungannya dengan
         // `aturan_versi` di atas (`FormulirAsli::aturanVersi()`), karena jalur

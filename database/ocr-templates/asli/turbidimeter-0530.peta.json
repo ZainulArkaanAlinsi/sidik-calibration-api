@@ -1,0 +1,798 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0530.draf.json -> kunci sel profil turbidimeter. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN, karena id bergeser begitu skripnya diperbaiki. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliKimiaTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "turbidimeter",
+    "kode_dokumen": "SIDIK-FM-CAL-0530_Rev.2",
+    "draf": "formulir-0530.draf.json",
+    "sumber_sha256": "38a63f0b1d76e15b9fd15381043c093ea6bd66fe99cd9021c6dd4268e9733ab2",
+    "terverifikasi": false,
+    "perlu_konfirmasi_lab": true,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: 5 kolom larutan di kertas (0.04, 15, 100, 750, 2000 NTU) x 5 repeat KE BAWAH, tiap repeat dua sub-baris (NTU = pembacaan, °C = suhu), Before dan After.",
+        "Profil titiknya 1 / 100 / 1000 NTU (TurbidimeterProfile docblock: kertas mencetak 5 kolom, master hanya punya 3 standar fisik). HANYA kolom 100 NTU yang nilainya sama di kertas dan profil -> baris 2. Kolom 0.04/15/750/2000 tidak punya baris profil; baris 1 (1 NTU) dan baris 3 (1000 NTU) tidak punya kolom kertas -> 40 kunci tak tercetak. Tidak ditebak secara posisional: 1 NTU bukan 0.04 dan 1000 bukan 750.",
+        "Kotak 'Resolusi' per kolom (spesifikasi_alat.resolusi_titik_N) diabaikan: bukan data tabel tahap 1, dan hanya kolom 100 yang punya padanan.",
+        "Env: First/End x (oC, %RH) -> suhu_awal/akhir, kelembaban_awal/akhir (tahap 1). Centang TH-2/6/7 Insitu, TH-4 Inlab.",
+        "Kotak centang Usage Check (Turbidity Std 0.04..2000, RTD, Victor) TIDAK terdeteksi draf (kotak tercetak kecil di tabel STANDARD bukan gambar centang): utang skrip draf, tidak dipetakan."
+    ],
+    "sel": [
+        {
+            "kunci": "sebelum_adjustment|2|1|pembacaan",
+            "x": 0.6982,
+            "y": 0.3489
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|suhu",
+            "x": 0.6982,
+            "y": 0.367
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|pembacaan",
+            "x": 0.6982,
+            "y": 0.3852
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|suhu",
+            "x": 0.6982,
+            "y": 0.4038
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|pembacaan",
+            "x": 0.6982,
+            "y": 0.4221
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|suhu",
+            "x": 0.6982,
+            "y": 0.4404
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|pembacaan",
+            "x": 0.6982,
+            "y": 0.4587
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|suhu",
+            "x": 0.6982,
+            "y": 0.477
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|pembacaan",
+            "x": 0.6982,
+            "y": 0.4947
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|suhu",
+            "x": 0.6982,
+            "y": 0.5128
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|pembacaan",
+            "x": 0.6982,
+            "y": 0.6024
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|suhu",
+            "x": 0.6982,
+            "y": 0.6217
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|pembacaan",
+            "x": 0.6982,
+            "y": 0.641
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|suhu",
+            "x": 0.6982,
+            "y": 0.6602
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|pembacaan",
+            "x": 0.6982,
+            "y": 0.6796
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|suhu",
+            "x": 0.6982,
+            "y": 0.6989
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|pembacaan",
+            "x": 0.6982,
+            "y": 0.7181
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|suhu",
+            "x": 0.6982,
+            "y": 0.7374
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|pembacaan",
+            "x": 0.6982,
+            "y": 0.7595
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|suhu",
+            "x": 0.6982,
+            "y": 0.7794
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6384,
+            "y": 0.2582
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8654,
+            "y": 0.259
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6392,
+            "y": 0.2737
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8648,
+            "y": 0.2745
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "label_draf": "TH-2",
+            "x": 0.9182,
+            "y": 0.3101
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "label_draf": "TH-6",
+            "x": 0.9187,
+            "y": 0.3299
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "label_draf": "TH-7",
+            "x": 0.9187,
+            "y": 0.349
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "label_draf": "TH-4",
+            "x": 0.9187,
+            "y": 0.3673
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.4793,
+                    "y": 0.8135
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, tipe, nomor seri, merk, range/resolusi): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.2667,
+                    "y": 0.2767
+                },
+                {
+                    "x": 0.1772,
+                    "y": 0.2982
+                },
+                {
+                    "x": 0.2667,
+                    "y": 0.3319
+                },
+                {
+                    "x": 0.2667,
+                    "y": 0.351
+                },
+                {
+                    "x": 0.2667,
+                    "y": 0.3702
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.2665,
+                    "y": 0.4414
+                },
+                {
+                    "x": 0.2665,
+                    "y": 0.4614
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak kecil sesudah label 'Env. Condition :' di luar blok First/End; nilai lingkungan ditulis di empat kotak First/End yang sudah dipetakan.",
+            "titik": [
+                {
+                    "x": 0.516,
+                    "y": 0.2677
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Standard Used' (nama/serial standar): dicocokkan ke master standar, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1901,
+                    "y": 0.5151
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Thermohygro used': pilihannya dicentang di TH-n; kotak teks ini tidak punya kunci profil.",
+            "titik": [
+                {
+                    "x": 0.9559,
+                    "y": 0.296
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Lokasi kalibrasi: identitas sesi, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.2667,
+                    "y": 0.7012
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pelaksana/pemeriksa di kotak tanda tangan: tahap 2. Tanda tangan sendiri tidak pernah dibaca atau ditiru (PANDUAN §6.7).",
+            "titik": [
+                {
+                    "x": 0.1813,
+                    "y": 0.7793
+                },
+                {
+                    "x": 0.3662,
+                    "y": 0.7793
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Resolusi UUT per kolom larutan (spesifikasi_alat.resolusi_titik_N): tahap 2; hanya kolom 100 NTU yang punya padanan titik profil.",
+            "titik": [
+                {
+                    "x": 0.571,
+                    "y": 0.3305
+                },
+                {
+                    "x": 0.6438,
+                    "y": 0.3305
+                },
+                {
+                    "x": 0.7165,
+                    "y": 0.3305
+                },
+                {
+                    "x": 0.7893,
+                    "y": 0.3305
+                },
+                {
+                    "x": 0.862,
+                    "y": 0.3305
+                },
+                {
+                    "x": 0.571,
+                    "y": 0.5831
+                },
+                {
+                    "x": 0.6438,
+                    "y": 0.5831
+                },
+                {
+                    "x": 0.7165,
+                    "y": 0.5831
+                },
+                {
+                    "x": 0.7893,
+                    "y": 0.5831
+                },
+                {
+                    "x": 0.862,
+                    "y": 0.5831
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.6964,
+                    "y": 0.1756
+                },
+                {
+                    "x": 0.6964,
+                    "y": 0.1986
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom kosong di tepi kanan tabel (di luar kolom 2000 NTU, bertumpuk dengan kotak TH): tidak ada kepala dan tidak ada yang ditulis. Utang skrip draf.",
+            "titik": [
+                {
+                    "x": 0.9481,
+                    "y": 0.3852
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.4038
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.4221
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.4404
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.4587
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.477
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.4947
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.5128
+                },
+                {
+                    "x": 0.9256,
+                    "y": 0.5479
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.565
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.5832
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.6024
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.641
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.6602
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.6796
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.6989
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.7181
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.7374
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.7595
+                },
+                {
+                    "x": 0.9481,
+                    "y": 0.7794
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom larutan 0.04 / 15 / 750 / 2000 NTU: profil turbidimeter tidak punya baris titik ini (hanya 1 / 100 / 1000 NTU; hanya 100 NTU yang cocok dengan kertas).",
+            "titik": [
+                {
+                    "x": 0.5527,
+                    "y": 0.3489
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.367
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.3852
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.4038
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.4221
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.4404
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.4587
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.477
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.4947
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.5128
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.3489
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.367
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.3852
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.4038
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.4221
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.4404
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.4587
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.477
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.4947
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.5128
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.3489
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.367
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.3852
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.4038
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.4221
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.4404
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.4587
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.477
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.4947
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.5128
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.3489
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.367
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.3852
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.4038
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.4221
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.4404
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.4587
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.477
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.4947
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.5128
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.6024
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.641
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.6602
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.6796
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.6989
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.7181
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.7374
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.7595
+                },
+                {
+                    "x": 0.5527,
+                    "y": 0.7794
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.6024
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.641
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.6602
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.6796
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.6989
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.7181
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.7374
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.7595
+                },
+                {
+                    "x": 0.6254,
+                    "y": 0.7794
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.6024
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.641
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.6602
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.6796
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.6989
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.7181
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.7374
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.7595
+                },
+                {
+                    "x": 0.7709,
+                    "y": 0.7794
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.6024
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.6217
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.641
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.6602
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.6796
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.6989
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.7181
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.7374
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.7595
+                },
+                {
+                    "x": 0.8436,
+                    "y": 0.7794
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak hijau kosong di tengah blok Env. Condition (di antara kotak oC dan %RH): tidak ada yang ditulis.",
+            "titik": [
+                {
+                    "x": 0.7891,
+                    "y": 0.2657
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala kosong di kiri header 'Solution Standard' atau kotak hijau kosong di dekat label: bukan pembacaan.",
+            "titik": [
+                {
+                    "x": 0.4628,
+                    "y": 0.2946
+                },
+                {
+                    "x": 0.4628,
+                    "y": 0.3126
+                },
+                {
+                    "x": 0.4628,
+                    "y": 0.5479
+                },
+                {
+                    "x": 0.4628,
+                    "y": 0.565
+                }
+            ]
+        }
+    ]
+}

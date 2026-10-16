@@ -9,6 +9,7 @@ use App\Services\Ocr\FormulirAsli;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Tests\Concerns\FormulirAsliSintetis;
 use Tests\TestCase;
 
 /**
@@ -28,6 +29,7 @@ use Tests\TestCase;
  */
 class TemplateFormulirAsliTest extends TestCase
 {
+    use FormulirAsliSintetis;
     use RefreshDatabase;
 
     private const URL = '/api/worksheet-templates/ph_meter';
@@ -56,6 +58,8 @@ class TemplateFormulirAsliTest extends TestCase
             @rmdir($this->folderFixture.'/asli');
             @rmdir($this->folderFixture);
         }
+
+        $this->hapusFormulirSintetis();
 
         parent::tearDown();
     }
@@ -251,11 +255,14 @@ class TemplateFormulirAsliTest extends TestCase
 
     public function test_mode_uji_ikut_config(): void
     {
-        $this->assertFalse($this->asli()['mode_uji']);
-
-        Config::set('ocr.formulir_asli.mode_uji', true);
-
+        // Bawaan = mode uji nyala (K-50-11): semua formulir yang dipetakan
+        // dibuka sampai >=20 foto nyata; env OCR_FORMULIR_ASLI_UJI=false mematikan.
+        $this->assertTrue(config('ocr.formulir_asli.mode_uji'));
         $this->assertTrue($this->asli()['mode_uji']);
+
+        Config::set('ocr.formulir_asli.mode_uji', false);
+
+        $this->assertFalse($this->asli()['mode_uji']);
     }
 
     /**
@@ -287,6 +294,10 @@ class TemplateFormulirAsliTest extends TestCase
 
     public function test_alat_tanpa_formulir_asli_404(): void
     {
+        // Folder asli yang cuma memuat peta pH — tidak bergantung pada alat
+        // mana yang SUDAH dipetakan sungguhan (conductivity kini punya peta).
+        $this->tulisFormulirSintetis('ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4', ['sebelum_adjustment|1|1|pembacaan']);
+
         $this->actingAs($this->teknisi)
             ->getJson('/api/worksheet-templates/conductivity_meter?kertas=asli')
             ->assertNotFound()
@@ -332,20 +343,262 @@ class TemplateFormulirAsliTest extends TestCase
         $this->getJson(self::URL.'?kertas=asli')->assertUnauthorized();
     }
 
+    // ------------------------------------------------------------------
+    // Generik (G0): irisan kunci, isian ber-`tahap`, peta ganda per template
+    // ------------------------------------------------------------------
+
     /**
-     * @return array<string, mixed>
+     * Kertas yang cuma memuat SEBAGIAN kunci lembar: yang tidak tercetak tidak
+     * dikirim (teknisi mengisinya manual) — bukan `kotak: null` — dan kunci
+     * peta yang tidak dikenal konfigurasi alat ini dibuang.
      */
-    private function asli(): array
+    public function test_sel_asli_irisan_kunci_peta_dan_lembar_profil(): void
     {
-        return $this->actingAs($this->teknisi)->getJson(self::URL.'?kertas=asli')->assertOk()->json('data');
+        $sebagian = array_slice(array_keys($this->cetak()['sel']), 0, 7);
+
+        $this->tulisFormulirSintetis(
+            'ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4',
+            [...$sebagian, 'tabel_ngawur|1|1|pembacaan', 'sebelum_adjustment|1|9|pembacaan'],
+            terverifikasi: true,
+        );
+
+        $data = $this->asli();
+
+        $this->assertSame($sebagian, array_keys($data['sel']));
+        $this->assertNotContains(null, array_column($data['sel'], 'kotak'));
+        // Bentuk tabel tetap milik profil: sel yang tidak tercetak tetap ada
+        // di `tabel`, cuma tidak punya kotak untuk dipindai.
+        $this->assertSame($this->cetak()['tabel'], $data['tabel']);
+        $this->assertTrue($data['siap_pindai']);
+        $this->assertNull($data['alasan_belum_siap']);
+    }
+
+    /**
+     * Sel tabel yang kotaknya kotak BERLABEL di draf (Accuracy Timbangan:
+     * z1, m1, m1', z1') dirujuk lewat `sumber_kotak: "isian"` — kotaknya dari
+     * `isian_berlabel`, bukan dicari di sel draf (di sana tidak ada → null).
+     */
+    public function test_sel_berkotak_berlabel_lewat_sumber_kotak_isian(): void
+    {
+        [$biasa, $berlabel] = array_chunk(array_slice(array_keys($this->cetak()['sel']), 0, 4), 2);
+
+        $this->tulisFormulirSintetis(
+            'ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4', $biasa,
+            terverifikasi: true, kunciSelBerlabel: $berlabel,
+        );
+
+        $draf = json_decode((string) file_get_contents(config('ocr.folder_template').'/asli/ph_meter-0509.draf.json'), true);
+        $kotakBerlabel = array_map(
+            static fn (array $k): array => ['x' => (float) $k['x'], 'y' => (float) $k['y'], 'w' => (float) $k['w'], 'h' => (float) $k['h']],
+            array_values(array_filter($draf['isian_berlabel'], static fn (array $k): bool => str_starts_with($k['id'], 'b'))),
+        );
+
+        $data = $this->asli();
+
+        $this->assertSame([...$biasa, ...$berlabel], array_keys($data['sel']));
+        $this->assertSame($kotakBerlabel, [$data['sel'][$berlabel[0]]['kotak'], $data['sel'][$berlabel[1]]['kotak']]);
+        $this->assertTrue($data['siap_pindai']);
+    }
+
+    /**
+     * Repeat yang dikecilkan memotong irisan dari sisi profil — kunci Repeat
+     * 4–5 di peta tidak ikut, tanpa kotak null.
+     */
+    public function test_jumlah_pengulangan_memotong_irisan(): void
+    {
+        $data = $this->actingAs($this->teknisi)->getJson(self::URL.'?kertas=asli&jumlah_pengulangan=3')->assertOk()->json('data');
+
+        $this->assertCount(36, $data['sel']);
+        $this->assertSame([1, 2, 3], array_values(array_unique(array_column($data['sel'], 'repeat_no'))));
+        $this->assertNotContains(null, array_column($data['sel'], 'kotak'));
+    }
+
+    public function test_irisan_kosong_tidak_siap(): void
+    {
+        $this->tulisFormulirSintetis('ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4', ['tabel_ngawur|1|1|pembacaan'], terverifikasi: true);
+
+        $data = $this->asli();
+
+        $this->assertSame([], $data['sel']);
+        $this->assertFalse($data['siap_pindai']);
+        $this->assertSame('geometri_tanpa_sel', $data['alasan_belum_siap']);
+    }
+
+    /**
+     * Isian yang dikirim = isian peta ber-`tahap: 1`, kode apa pun — bukan
+     * daftar tetap. Tanpa `tahap` (identitas, tanggal) tetap tidak dikirim.
+     */
+    public function test_isian_dari_tahap_peta_bukan_daftar_tetap(): void
+    {
+        $this->tulisFormulirSintetis(
+            'ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4',
+            array_slice(array_keys($this->cetak()['sel']), 0, 2),
+            isian: [
+                ['kode' => 'suhu_awal', 'tahap' => 1],
+                ['kode' => 'tekanan_awal', 'tahap' => 1],
+                ['kode' => 'tanggal_kalibrasi', 'cara' => 'tanggal'],
+                ['kode' => 'kelembaban_akhir'],
+            ],
+        );
+
+        $isian = $this->asli()['isian'];
+
+        $this->assertSame(['suhu_awal', 'tekanan_awal'], array_column($isian, 'kode'));
+        $this->assertSame(['kode', 'cara', 'kotak'], array_keys($isian[0]));
+    }
+
+    /**
+     * Satu template, dua formulir (Timbangan normal 0508 & substitusi 0508.A):
+     * yang dipakai peta yang kode dokumennya sama dengan formulir ALAT itu.
+     */
+    public function test_peta_ganda_dipilih_lewat_kode_dokumen_alat(): void
+    {
+        $normal = $this->alatTimbangan(50);
+        $substitusi = $this->alatTimbangan(500);
+        $kunciNormal = array_slice(array_keys($this->cetak('timbangan', $normal)['sel']), 0, 5);
+        $kunciSubstitusi = array_slice(array_keys($this->cetak('timbangan', $substitusi)['sel']), 0, 3);
+
+        $this->assertSame('SIDIK-FM-CAL-0508_Rev.6', $this->cetak('timbangan', $normal)['kode_dokumen']);
+        $this->assertSame('SIDIK-FM-CAL-0508.A_Rev.4', $this->cetak('timbangan', $substitusi)['kode_dokumen']);
+
+        $this->tulisFormulirSintetis('timbangan-0508.peta.json', 'timbangan', 'SIDIK-FM-CAL-0508_Rev.6', $kunciNormal, kodeTercetak: 'SIDIK-FM-CAL-0508', revisi: '6');
+        $this->tulisFormulirSintetis('timbangan-0508.A.peta.json', 'timbangan', 'SIDIK-FM-CAL-0508.A_Rev.4', $kunciSubstitusi, kodeTercetak: 'SIDIK-FM-CAL-0508.A', revisi: '4');
+
+        $a = $this->asli('timbangan', $normal);
+        $this->assertSame('SIDIK-FM-CAL-0508', $a['kode_dokumen']);
+        $this->assertSame('6', $a['revisi']);
+        $this->assertSame($kunciNormal, array_keys($a['sel']));
+
+        $b = $this->asli('timbangan', $substitusi);
+        $this->assertSame('SIDIK-FM-CAL-0508.A', $b['kode_dokumen']);
+        $this->assertSame('4', $b['revisi']);
+        $this->assertSame($kunciSubstitusi, array_keys($b['sel']));
+    }
+
+    /**
+     * Peta cuma ada untuk varian LAIN: tidak dipakai, walau satu-satunya. Kunci
+     * selnya bisa kebetulan sama dengan lembar alat ini tapi menunjuk kotak
+     * berisi angka lain.
+     */
+    public function test_peta_varian_lain_saja_404_berpesan(): void
+    {
+        $substitusi = $this->alatTimbangan(500);
+
+        $this->tulisFormulirSintetis(
+            'timbangan-0508.peta.json', 'timbangan', 'SIDIK-FM-CAL-0508_Rev.6',
+            array_slice(array_keys($this->cetak('timbangan', $substitusi)['sel']), 0, 3),
+            kodeTercetak: 'SIDIK-FM-CAL-0508', revisi: '6',
+        );
+
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/worksheet-templates/timbangan?kertas=asli&equipment_id='.$substitusi->id)
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Formulir asli lab buat SIDIK-FM-CAL-0508.A_Rev.4 belum dipetakan '
+                .'(yang sudah: SIDIK-FM-CAL-0508_Rev.6). Pakai lembar cetak atau isi manual dulu.');
+
+        $this->assertNull(app(FormulirAsli::class)->untukKode('timbangan', $substitusi));
+    }
+
+    public function test_peta_kembar_untuk_formulir_yang_sama_tidak_dipilih(): void
+    {
+        $kunci = array_slice(array_keys($this->cetak()['sel']), 0, 2);
+
+        $this->tulisFormulirSintetis('ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4', $kunci);
+        $this->tulisFormulirSintetis('ph_meter-0509-salinan.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4', $kunci);
+
+        $pesan = $this->actingAs($this->teknisi)->getJson(self::URL.'?kertas=asli')->assertNotFound()->json('message');
+
+        $this->assertStringContainsString('dipetakan lebih dari sekali', $pesan);
+    }
+
+    /**
+     * Peta ASLI pH berdampingan dengan peta revisi lain: tetap yang Rev.4
+     * (kode profil sekarang) yang tersaji — bukan "yang terbesar" urutan nama.
+     */
+    public function test_revisi_lain_berdampingan_tidak_menggeser_peta_ph(): void
+    {
+        $this->salinFormulirAsliPh();
+        $this->tulisFormulirSintetis('ph_meter-0509z.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.9', ['sebelum_adjustment|1|1|pembacaan'], revisi: '9');
+
+        $data = $this->asli();
+
+        $this->assertSame('4', $data['revisi']);
+        $this->assertCount(60, $data['sel']);
+    }
+
+    /**
+     * Profil yang belum bisa menyebut formulirnya untuk alat ini (Micrometer
+     * tanpa kapasitas: varian 0522.A–D belum tentu): satu peta → dipakai; dua
+     * atau lebih → tidak ditebak.
+     */
+    public function test_formulir_alat_belum_dikenal_tunggal_dipakai_ganda_tidak_ditebak(): void
+    {
+        $this->assertNull($this->cetak('micrometer')['kode_dokumen']);
+
+        $this->tulisFormulirSintetis('micrometer-0522.A.peta.json', 'micrometer', 'SIDIK-FM-CAL-0522.A_Rev.1', ['tabel_ngawur|1|1|pembacaan'], kodeTercetak: 'SIDIK-FM-CAL-0522.A');
+
+        $this->assertSame('SIDIK-FM-CAL-0522.A', $this->asli('micrometer')['kode_dokumen']);
+
+        $this->tulisFormulirSintetis('micrometer-0522.B.peta.json', 'micrometer', 'SIDIK-FM-CAL-0522.B_Rev.1', ['tabel_ngawur|1|1|pembacaan'], kodeTercetak: 'SIDIK-FM-CAL-0522.B');
+
+        $pesan = $this->actingAs($this->teknisi)->getJson('/api/worksheet-templates/micrometer?kertas=asli')->assertNotFound()->json('message');
+
+        $this->assertStringContainsString('belum cukup dikenal', $pesan);
+        $this->assertStringContainsString('SIDIK-FM-CAL-0522.A_Rev.1, SIDIK-FM-CAL-0522.B_Rev.1', $pesan);
+    }
+
+    /**
+     * Pesan pemilihan muat di `worksheet_scans.pesan` (varchar 255): empat
+     * peta Micrometer + kode diminta 40 karakter = 278 karakter. Awalan
+     * `SIDIK-FM-CAL-` dibuang dulu — kode varian tetap terbaca.
+     */
+    public function test_pesan_pilih_peta_muat_di_kolom_pesan(): void
+    {
+        foreach (['A', 'B', 'C', 'D'] as $v) {
+            $this->tulisFormulirSintetis("micrometer-0522.{$v}.peta.json", 'micrometer', "SIDIK-FM-CAL-0522.{$v}_Rev.3", ['tabel_ngawur|1|1|pembacaan'], kodeTercetak: "SIDIK-FM-CAL-0522.{$v}");
+        }
+
+        $pesan = $this->actingAs($this->teknisi)
+            ->getJson('/api/worksheet-templates/micrometer?kertas=asli&kode_dokumen='.str_repeat('X', 40))
+            ->assertNotFound()
+            ->json('message');
+
+        $this->assertLessThanOrEqual(FormulirAsli::PANJANG_PESAN, mb_strlen($pesan));
+        $this->assertStringContainsString('0522.A_Rev.3, 0522.B_Rev.3, 0522.C_Rev.3, 0522.D_Rev.3', $pesan);
+        $this->assertStringContainsString('isi manual', $pesan);
+    }
+
+    private function alatTimbangan(float $kapasitasKg): Equipment
+    {
+        return Equipment::factory()->create([
+            'organization_id' => $this->teknisi->organization_id,
+            'nama_alat' => 'Timbangan',
+            'range_max' => $kapasitasKg,
+            'satuan' => 'kg',
+        ]);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function cetak(): array
+    private function asli(string $kode = 'ph_meter', ?Equipment $alat = null): array
     {
-        return $this->actingAs($this->teknisi)->getJson(self::URL)->assertOk()->json('data');
+        return $this->actingAs($this->teknisi)->getJson($this->url($kode, $alat, asli: true))->assertOk()->json('data');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function cetak(string $kode = 'ph_meter', ?Equipment $alat = null): array
+    {
+        return $this->actingAs($this->teknisi)->getJson($this->url($kode, $alat, asli: false))->assertOk()->json('data');
+    }
+
+    private function url(string $kode, ?Equipment $alat, bool $asli): string
+    {
+        $query = http_build_query(array_filter(['kertas' => $asli ? 'asli' : null, 'equipment_id' => $alat?->id]));
+
+        return '/api/worksheet-templates/'.$kode.($query === '' ? '' : '?'.$query);
     }
 
     /**

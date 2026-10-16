@@ -24,6 +24,23 @@ use App\Services\Calibration\CalibrationProfileRegistry;
  * Bagian yang diturunkan dari profil (tabel, aturan angka per sel) dipinjam
  * utuh dari [TemplateLembarKerja] — satu sumber kebenaran. Jalur cetak
  * bermarker (`{kode}-v{n}.json`) tidak disentuh sama sekali.
+ *
+ * ## Generik untuk formulir mana pun (G0)
+ *
+ * Tidak ada daftar alat atau kode isian di kelas ini — semuanya dari peta:
+ *
+ * - `sel` = IRISAN kunci peta dan kunci template profil untuk alat ini. Kunci
+ *   profil yang tidak tercetak di kertas tidak ikut (teknisi mengisinya
+ *   manual); kunci peta yang tidak ada di konfigurasi alat ini dibuang.
+ * - `isian` = isian peta ber-`"tahap": 1` (kondisi lingkungan); kotaknya dari
+ *   `isian_berlabel` draf, atau dari sel draf kalau `"sumber_kotak": "sel"`.
+ *   Kebalikannya juga ada: sel tabel yang kotaknya `isian_berlabel` draf
+ *   (`"sumber_kotak": "isian"` di entri `sel`).
+ * - Satu template bisa punya beberapa peta (Timbangan 0508/0508.A, Micrometer
+ *   0522.A–D, piston 0528/0529, flowmeter 0538 + .A/.B): yang dipakai peta
+ *   yang `kode_dokumen`-nya sama dengan kode FM yang dibaca dari kertas, atau
+ *   — tanpa itu — dengan kode dokumen template profil untuk alat itu. Lihat
+ *   [pilihPeta].
  */
 class FormulirAsli
 {
@@ -31,12 +48,18 @@ class FormulirAsli
     public const FOLDER = 'asli';
 
     /**
-     * Isian di luar tabel yang DIBUKA untuk pindai, tahap 1 (keputusan pemilik
+     * Nilai `tahap` isian peta yang DIBUKA untuk pindai (keputusan pemilik
      * 9 Okt 2026: tabel + kondisi lingkungan + centang). Identitas & tanggal
      * sengaja belum: identitas diisi dari order (§4 "banding"), tanggal butuh
-     * parser ketat yang belum ada. Kodenya kolom sesi, sama untuk semua alat.
+     * parser ketat yang belum ada. Isian peta tanpa `tahap` tetap tercatat di
+     * peta (supaya kotaknya punya nasib) tapi tidak dikirim ke HP.
+     *
+     * Bukan `tahap` tabel (`sebelum_adjustment`/…): ini tahap PEMBUKAAN pindai.
      */
-    public const ISIAN_TAHAP_1 = ['suhu_awal', 'kelembaban_awal', 'suhu_akhir', 'kelembaban_akhir'];
+    public const TAHAP_DIBUKA = 1;
+
+    /** Panjang kolom `worksheet_scans.pesan` — lihat [batasiPesan]. */
+    public const PANJANG_PESAN = 255;
 
     public function __construct(
         private readonly CalibrationProfileRegistry $registry,
@@ -44,11 +67,38 @@ class FormulirAsli
     ) {}
 
     /**
-     * @return array<string, mixed>|null null = kode tidak dikenal, atau alat ini
-     *                                   belum punya formulir asli yang dipetakan
+     * @return array<string, mixed>|null null = kode tidak dikenal, alat ini
+     *                                   belum punya formulir asli yang dipetakan,
+     *                                   atau petanya tidak bisa dipilih ([cari])
      */
-    public function untukKode(string $kode, ?Equipment $alat = null, ?int $jumlahPengulangan = null): ?array
-    {
+    public function untukKode(
+        string $kode,
+        ?Equipment $alat = null,
+        ?int $jumlahPengulangan = null,
+        ?string $kodeDokumen = null,
+    ): ?array {
+        $hasil = $this->cari($kode, $alat, $jumlahPengulangan, $kodeDokumen);
+
+        return is_array($hasil) ? $hasil : null;
+    }
+
+    /**
+     * Template formulir asli, atau alasan kenapa tidak ada.
+     *
+     * @param  string|null  $kodeDokumen  formulir yang DIMINTA — kode FM yang
+     *                                    dibaca HP dari kaki kertas, dengan atau tanpa `_Rev.n`. Inilah
+     *                                    pemilih varian yang ditentukan per sesi (piston 0528/0529,
+     *                                    flowmeter UFM/gravimetri). Kosong = formulir bawaan alat ini.
+     * @return array<string, mixed>|string|null array = template; string = alat
+     *                                          ini PUNYA peta tapi tidak ada yang bisa dipilih untuknya (pesan
+     *                                          siap tampil); null = kode tidak dikenal / belum dipetakan sama sekali
+     */
+    public function cari(
+        string $kode,
+        ?Equipment $alat = null,
+        ?int $jumlahPengulangan = null,
+        ?string $kodeDokumen = null,
+    ): array|string|null {
         // Profil dulu, baru glob. Kode dari URL masuk pola glob, jadi `*` atau
         // `ph_*` yang lolos ke sini akan menangkap berkas alat lain.
         $profil = $this->registry->untukKode($kode);
@@ -57,14 +107,24 @@ class FormulirAsli
             return null;
         }
 
-        $berkas = $this->muat($profil->kode());
+        $semuaPeta = $this->semuaPeta($profil->kode());
 
-        if ($berkas === null) {
+        if ($semuaPeta === []) {
             return null;
         }
 
-        [$draf, $peta] = $berkas;
         $cetak = $this->template->dariProfil($profil, $alat, $jumlahPengulangan);
+        $peta = $this->pilihPeta($semuaPeta, $cetak['kode_dokumen'] ?? null, $kodeDokumen);
+
+        if (is_string($peta)) {
+            return self::batasiPesan($peta);
+        }
+
+        $draf = $this->muatDraf($peta);
+
+        if ($draf === null) {
+            return null;
+        }
 
         $calonIsian = array_values(array_filter(
             $draf['sel'] ?? [],
@@ -76,25 +136,48 @@ class FormulirAsli
             $titikSel[(string) $e['kunci']] = $e;
         }
 
+        // Irisan, urut profil. Kunci profil tanpa titik peta = tidak tercetak
+        // di kertas ini → tidak dikirim (bukan `kotak: null`); titik peta yang
+        // kuncinya tidak ada di konfigurasi alat ini (mis. Repeat 4–5 waktu
+        // `jumlah_pengulangan` 3) → dibuang.
         $sel = [];
 
         foreach ($cetak['sel'] as $kunci => $satu) {
-            $e = $titikSel[$kunci] ?? null;
-            $satu['kotak'] = $e === null ? null : $this->kotakTunggal($calonIsian, $e);
+            if (! isset($titikSel[$kunci])) {
+                continue;
+            }
+
+            // Sel tabel yang di draf terbaca sebagai kotak BERLABEL (Accuracy
+            // Timbangan 0508/0508.A: kotak z1, m1, m1', z1') dirujuk peta lewat
+            // `sumber_kotak: "isian"`. Nilai lain = tidak dicari → kotak null
+            // → formulir tidak siap.
+            $satu['kotak'] = $this->kotakTunggal(match ($titikSel[$kunci]['sumber_kotak'] ?? 'sel') {
+                'sel' => $calonIsian,
+                'isian' => $draf['isian_berlabel'] ?? [],
+                default => [],
+            }, $titikSel[$kunci]);
             $sel[$kunci] = $satu;
         }
 
         $isian = [];
 
         foreach ($peta['isian'] ?? [] as $e) {
-            if (! in_array($e['kode'] ?? null, self::ISIAN_TAHAP_1, true)) {
+            if (($e['tahap'] ?? null) !== self::TAHAP_DIBUKA) {
                 continue;
             }
 
             $isian[] = [
                 'kode' => (string) $e['kode'],
                 'cara' => $e['cara'] ?? null,
-                'kotak' => $this->kotakTunggal($draf['isian_berlabel'] ?? [], $e),
+                // Kotak Env. yang di draf terbaca sebagai SEL tabel (0513, 0514,
+                // 0538…) dirujuk peta lewat `sumber_kotak: "sel"`. Nilai lain
+                // yang tak dikenal = tidak dicari di mana pun → kotak null →
+                // formulir tidak siap, lembar tidak dibaca.
+                'kotak' => $this->kotakTunggal(match ($e['sumber_kotak'] ?? 'isian') {
+                    'isian' => $draf['isian_berlabel'] ?? [],
+                    'sel' => $calonIsian,
+                    default => [],
+                }, $e),
             ];
         }
 
@@ -117,13 +200,13 @@ class FormulirAsli
             ...array_column($sel, 'kotak'),
             ...array_column($isian, 'kotak'),
             ...array_column($centang, 'kotak'),
-        ], count($sel) + count($isian) + count($centang));
+        ], count($sel) + count($isian) + count($centang), count($sel));
 
         return [
             'template_id' => $profil->kode(),
             'kertas' => 'asli',
             'kode_dokumen' => $draf['kode_dokumen'] ?? null,
-            'revisi' => isset($draf['revisi_tercetak']) ? (string) $draf['revisi_tercetak'] : null,
+            'revisi' => $this->revisi($draf, $peta),
             'sumber_sha256' => $peta['sumber_sha256'] ?? null,
             'judul' => $cetak['judul'],
             'satuan' => $cetak['satuan'],
@@ -147,6 +230,15 @@ class FormulirAsli
             'centang' => $centang,
             'siap_pindai' => $siap,
             'alasan_belum_siap' => $alasan,
+            // Peta yang masih berisi ASUMSI POSISIONAL (nominal kertas beda dari
+            // titik profil; kolom kertas -> baris profil ditebak urutannya).
+            // HP menyembunyikan pintu "Foto lembar kerja" dan pemroses menolak
+            // pindainya, SAMPAI lab mengonfirmasi dan flag ini dihapus dari peta.
+            // Formulir yang TIDAK mencetak teks "Revise" (0538) menyatakannya
+            // eksplisit di peta; HP hanya melewati syarat baca revisi untuk
+            // yang `false`. Selain itu revisi wajib terbaca.
+            'revisi_tercetak' => ($peta['revisi_tercetak'] ?? true) !== false,
+            'perlu_konfirmasi_lab' => ($peta['perlu_konfirmasi_lab'] ?? false) === true,
             // Keputusan pemilik (K1, 9 Okt 2026): sebelum >=20 foto, pindai
             // boleh dipakai dalam mode uji — semua sel maks kuning. Penegakan
             // vonisnya di server pemroses pindai, bukan di sini.
@@ -170,33 +262,132 @@ class FormulirAsli
     }
 
     /**
-     * Pasangan `[draf, peta]` untuk satu template, atau null.
+     * Semua peta milik satu template: `{template}-*.peta.json` yang
+     * `template_id`-nya memang template itu dan menyebut berkas drafnya.
      *
-     * Lebih dari satu peta (revisi formulir berikutnya) → yang terbesar secara
-     * urutan alami, sama seperti `TemplateLembarKerja::geometri()`.
+     * `template_id` diperiksa lagi karena glob cuma mencocokkan awalan nama
+     * berkas — nama berkas bukan bukti isi.
      *
-     * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null
+     * @return list<array<string, mixed>>
      */
-    private function muat(string $templateId): ?array
+    private function semuaPeta(string $templateId): array
     {
-        $folder = TemplateLembarKerja::folderTemplate().'/'.self::FOLDER;
-        $berkas = glob($folder.'/'.$templateId.'-*.peta.json') ?: [];
+        $berkas = glob(self::folder().'/'.$templateId.'-*.peta.json') ?: [];
+        sort($berkas, SORT_NATURAL);
+        $hasil = [];
 
-        if ($berkas === []) {
-            return null;
+        foreach ($berkas as $jalur) {
+            $peta = json_decode((string) file_get_contents($jalur), true);
+
+            if (is_array($peta) && ($peta['template_id'] ?? null) === $templateId && is_string($peta['draf'] ?? null)) {
+                $hasil[] = $peta;
+            }
         }
 
-        rsort($berkas, SORT_NATURAL);
+        return $hasil;
+    }
 
-        $peta = json_decode((string) file_get_contents($berkas[0]), true);
+    /**
+     * Peta untuk alat ini.
+     *
+     * Formulir DIMINTA (kode FM yang dibaca dari kertas) menang: kertas yang
+     * difoto itulah yang diisi, dan varian per sesi (piston One Mark lawan
+     * Graduated, flowmeter UFM lawan gravimetri) tidak bisa diturunkan dari
+     * alat. Dicocokkan ke `kode_dokumen` peta dengan atau tanpa `_Rev.n`; nol
+     * yang cocok → tidak dipilih (bukan jatuh ke bawaan), karena yang difoto
+     * memang bukan formulir yang dipetakan untuk alat ini.
+     *
+     * Tanpa permintaan, bawaan alat ini — `kode_dokumen` template profil untuk
+     * alat/varian itu (`SIDIK-FM-CAL-0508.A_Rev.4`, …):
+     *
+     * - Tepat satu yang cocok → itu.
+     * - Profil tidak menyebut kode untuk alat ini (`null`) dan petanya cuma
+     *   satu → yang satu itu. Dua atau lebih → tidak dipilih: memilih salah
+     *   satunya sama dengan menebak formulir.
+     * - Profil menyebut kode, tapi tidak ada peta yang cocok → tidak dipilih,
+     *   WALAU petanya cuma satu. Peta itu milik varian lain; tanpa kode yang
+     *   dibaca dari kertas, tidak ada bukti kertas itu yang dipakai.
+     *
+     * @param  non-empty-list<array<string, mixed>>  $semua
+     * @return array<string, mixed>|string peta, atau pesan siap tampil
+     */
+    private function pilihPeta(array $semua, ?string $kodeDokumen, ?string $diminta = null): array|string
+    {
+        $kode = $kodeDokumen === null || trim($kodeDokumen) === '' ? null : self::bakukanKode($kodeDokumen);
+        $daftar = implode(', ', array_map(static fn (array $p): string => (string) ($p['kode_dokumen'] ?? '?'), $semua));
 
-        if (! is_array($peta) || ($peta['template_id'] ?? null) !== $templateId || ! is_string($peta['draf'] ?? null)) {
-            return null;
+        if ($diminta !== null && trim($diminta) !== '') {
+            $minta = self::bakukanKode($diminta);
+            $cocok = array_values(array_filter(
+                $semua,
+                static fn (array $p): bool => in_array($minta, [
+                    self::bakukanKode((string) ($p['kode_dokumen'] ?? '')),
+                    self::tanpaRevisi((string) ($p['kode_dokumen'] ?? '')),
+                ], true),
+            ));
+
+            return match (count($cocok)) {
+                1 => $cocok[0],
+                0 => 'Formulir "'.mb_substr($diminta, 0, 40).'" belum dipetakan untuk alat ini (yang sudah: '.$daftar.'). '
+                    .'Foto formulir lembar kerja alat ini, pakai lembar cetak, atau isi manual.',
+                default => 'Formulir "'.mb_substr($diminta, 0, 40).'" dipetakan lebih dari sekali — sistem tidak memilih salah satunya. '
+                    .'Isi manual dulu.',
+            };
         }
 
+        if ($kode === null) {
+            return count($semua) === 1
+                ? $semua[0]
+                : 'Formulir asli alat ini ada beberapa ('.$daftar.') dan alatnya belum cukup dikenal untuk memilih '
+                    .'salah satunya. Pilih alatnya dulu, atau isi manual.';
+        }
+
+        $cocok = array_values(array_filter(
+            $semua,
+            static fn (array $p): bool => self::bakukanKode((string) ($p['kode_dokumen'] ?? '')) === $kode,
+        ));
+
+        return match (count($cocok)) {
+            1 => $cocok[0],
+            0 => 'Formulir asli lab buat '.$kodeDokumen.' belum dipetakan (yang sudah: '.$daftar.'). '
+                .'Pakai lembar cetak atau isi manual dulu.',
+            default => 'Formulir asli '.$kodeDokumen.' dipetakan lebih dari sekali — sistem tidak memilih salah satunya. '
+                .'Isi manual dulu.',
+        };
+    }
+
+    /**
+     * Pesan pemilihan peta muat di `worksheet_scans.pesan` (varchar 255) —
+     * MySQL strict menolak yang lebih panjang, dan pindainya jadi 500 alih-alih
+     * 422 berpesan. Micrometer (empat peta) + kode diminta 40 karakter = 278.
+     * Pertama awalan `SIDIK-FM-CAL-` dibuang (kodenya tetap terbaca), baru
+     * dipotong kalau masih kepanjangan.
+     */
+    private static function batasiPesan(string $pesan): string
+    {
+        if (mb_strlen($pesan) <= self::PANJANG_PESAN) {
+            return $pesan;
+        }
+
+        $pendek = (string) preg_replace('/SIDIK-FM-CAL-/i', '', $pesan);
+
+        return mb_strlen($pendek) <= self::PANJANG_PESAN
+            ? $pendek
+            : mb_substr($pendek, 0, self::PANJANG_PESAN - 1).'…';
+    }
+
+    /**
+     * Draf yang dirujuk peta, atau null.
+     *
+     * @param  array<string, mixed>  $peta
+     * @return array<string, mixed>|null
+     */
+    private function muatDraf(array $peta): ?array
+    {
         // `basename` — nama draf datang dari berkas, tapi tetap tidak boleh
-        // menunjuk keluar folder `asli/`.
-        $jalurDraf = $folder.'/'.basename($peta['draf']);
+        // menunjuk keluar folder `asli/`. Satu draf boleh dipakai banyak peta
+        // (lima Enclosure di satu kertas 0504).
+        $jalurDraf = self::folder().'/'.basename((string) $peta['draf']);
 
         if (! is_file($jalurDraf)) {
             return null;
@@ -204,7 +395,48 @@ class FormulirAsli
 
         $draf = json_decode((string) file_get_contents($jalurDraf), true);
 
-        return is_array($draf) ? [$draf, $peta] : null;
+        return is_array($draf) ? $draf : null;
+    }
+
+    /**
+     * Revisi formulir: yang tercetak di draf; kalau skrip draf belum bisa
+     * membacanya (kaki halaman 0513, 0514, 0538… — utang skrip), revisi di
+     * `kode_dokumen` peta, yang diadu manusia ke profil & nama PDF
+     * (`GeometriFormulirAsliSemuaTest`). Tidak ada keduanya → null, dan pindai
+     * formulir itu ditolak pemroses ("revisi belum tercatat").
+     *
+     * @param  array<string, mixed>  $draf
+     * @param  array<string, mixed>  $peta
+     */
+    private function revisi(array $draf, array $peta): ?string
+    {
+        $tercetak = $draf['revisi_tercetak'] ?? null;
+
+        if ($tercetak !== null && $tercetak !== '') {
+            return (string) $tercetak;
+        }
+
+        return preg_match('/_Rev\.(\d+)$/i', trim((string) ($peta['kode_dokumen'] ?? '')), $angka) === 1 ? $angka[1] : null;
+    }
+
+    private static function folder(): string
+    {
+        return TemplateLembarKerja::folderTemplate().'/'.self::FOLDER;
+    }
+
+    /**
+     * Spasi dibuang & huruf besar — sama dengan pembanding kode FM terbaca di
+     * pemroses pindai. Bukan pencocokan longgar: `0508` dan `0508.A` tetap beda.
+     */
+    private static function bakukanKode(string $kode): string
+    {
+        return mb_strtoupper((string) preg_replace('/\s+/u', '', $kode));
+    }
+
+    /** `SIDIK-FM-CAL-0538.A_Rev.3` → `SIDIK-FM-CAL-0538.A` (dibakukan) — bentuk yang tercetak di kaki kertas. */
+    private static function tanpaRevisi(string $kode): string
+    {
+        return (string) preg_replace('/_REV\..*$/u', '', self::bakukanKode($kode));
     }
 
     /**
@@ -252,21 +484,29 @@ class FormulirAsli
      * Kosakatanya sama dengan jalur cetak (`TemplateLembarKerja::kesiapan()`).
      *
      * Siap = peta DAN draf terverifikasi ke foto nyata (§5 langkah 5), peta
-     * ditulis untuk PDF yang sama dengan drafnya, dan tiap titik punya tepat
-     * satu kotak.
+     * ditulis untuk PDF yang sama dengan drafnya, ada minimal satu sel tabel
+     * yang tercetak di kertas untuk alat ini, dan tiap titik punya tepat satu
+     * kotak.
      *
      * @param  array<string, mixed>  $draf
      * @param  array<string, mixed>  $peta
      * @param  list<array<string, float>|null>  $kotak
      * @return array{0: bool, 1: string|null}
      */
-    private function kesiapan(array $draf, array $peta, array $kotak, int $jumlah): array
+    private function kesiapan(array $draf, array $peta, array $kotak, int $jumlah, int $jumlahSel): array
     {
         $shaSama = is_string($peta['sumber_sha256'] ?? null)
             && $peta['sumber_sha256'] === ($draf['sumber']['sha256'] ?? null);
 
         if (($peta['terverifikasi'] ?? false) !== true || ($draf['terverifikasi'] ?? false) !== true || ! $shaSama) {
             return [false, 'geometri_belum_diverifikasi'];
+        }
+
+        // Irisan kosong: kertasnya tidak memuat satu pun sel tabel lembar alat
+        // ini (konfigurasi alat beda dari yang dipetakan). Isian & centang saja
+        // bukan alasan menyalakan kamera.
+        if ($jumlahSel === 0) {
+            return [false, 'geometri_tanpa_sel'];
         }
 
         $kurang = $jumlah - count(array_filter($kotak, static fn (?array $k): bool => $k !== null));
