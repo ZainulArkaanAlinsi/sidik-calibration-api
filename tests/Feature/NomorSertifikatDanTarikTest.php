@@ -113,7 +113,7 @@ class NomorSertifikatDanTarikTest extends TestCase
         // pemegang nomor muncul ketika UPDATE status sesi yang kalah berjalan.
         $siap = true;
         DB::beforeExecuting(function (string $sql) use (&$siap, $pemenang, $nomor): void {
-            if ($siap && str_starts_with(strtolower($sql), 'update "calibration_sessions"')) {
+            if ($siap && preg_match('/^update ["`]calibration_sessions["`]/i', $sql) === 1) {
                 $siap = false;
                 DB::table('certificates')->insert([
                     'organization_id' => $this->org->id,
@@ -222,7 +222,7 @@ class NomorSertifikatDanTarikTest extends TestCase
 
         $siap = true;
         DB::beforeExecuting(function (string $sql) use (&$siap, $pemenang, $nomor): void {
-            if ($siap && str_starts_with(strtolower($sql), 'update "calibration_sessions"')) {
+            if ($siap && preg_match('/^update ["`]calibration_sessions["`]/i', $sql) === 1) {
                 $siap = false;
                 DB::table('certificates')->insert([
                     'organization_id' => $this->org->id,
