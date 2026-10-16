@@ -708,6 +708,15 @@ class PemrosesScanLembarKerja
         $kode = (string) ($template['kode_dokumen'] ?? '');
         $terbaca = (string) ($payload['kode_dokumen_terbaca'] ?? '');
 
+        // Asumsi posisional belum dikonfirmasi lab: kolom kertas dipasangkan ke
+        // baris profil dengan menebak urutan, jadi angka bisa mendarat di titik
+        // yang salah. Mode uji TIDAK membuka ini — mode uji cuma melonggarkan
+        // vonis, bukan membenarkan pemasangan sel.
+        if (($template['perlu_konfirmasi_lab'] ?? false) === true) {
+            return 'Formulir '.($kode === '' ? 'ini' : $kode).' belum dikonfirmasi lab (pemetaan kolom ke titik masih asumsi) '
+                .'— foto lembar kerja belum dibuka. Isi manual dulu.';
+        }
+
         // Kode FM di kaki formulir = satu-satunya cara sistem tahu formulir
         // mana yang difoto (pengganti QR). Normalisasinya cuma spasi & huruf
         // besar — bukan pencocokan longgar: 0509 dan 0510 harus tetap beda.

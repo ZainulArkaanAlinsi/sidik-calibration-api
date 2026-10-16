@@ -5,6 +5,7 @@
     "draf": "formulir-0523.draf.json",
     "sumber_sha256": "c1fa3e3a78da4cb8b47e829b77eb8466844281050ee49368a2b4836a187bdd83",
     "terverifikasi": false,
+    "perlu_konfirmasi_lab": true,
     "koordinat": "ternormal_0_1",
     "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
     "_pemetaan": [

@@ -230,6 +230,11 @@ class FormulirAsli
             'centang' => $centang,
             'siap_pindai' => $siap,
             'alasan_belum_siap' => $alasan,
+            // Peta yang masih berisi ASUMSI POSISIONAL (nominal kertas beda dari
+            // titik profil; kolom kertas -> baris profil ditebak urutannya).
+            // HP menyembunyikan pintu "Foto lembar kerja" dan pemroses menolak
+            // pindainya, SAMPAI lab mengonfirmasi dan flag ini dihapus dari peta.
+            'perlu_konfirmasi_lab' => ($peta['perlu_konfirmasi_lab'] ?? false) === true,
             // Keputusan pemilik (K1, 9 Okt 2026): sebelum >=20 foto, pindai
             // boleh dipakai dalam mode uji — semua sel maks kuning. Penegakan
             // vonisnya di server pemroses pindai, bukan di sini.

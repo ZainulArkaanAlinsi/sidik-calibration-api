@@ -8,84 +8,84 @@
     "koordinat": "ternormal_0_1",
     "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR.",
     "_pemetaan": [
-        "Tabel: dua blok bertumpuk, Before dan After adjustment Reading, tiap blok Set Point 1-5 (baris) x Repeat 1-3 (kolom). Hanya AFTER adjustment yang dipetakan: kunci sel profil (`pembacaan_standar|baris|ulangan|pembacaan`) tidak memuat tahap, sehingga tabel Before tidak punya kunci sendiri (temuan, perlu keputusan profil).",
+        "Tabel: dua blok bertumpuk, Before dan After adjustment Reading, tiap blok Set Point 1-5 (baris) x Repeat 1-3 (kolom). Hanya AFTER adjustment yang dipetakan: kunci sel profil (`pembacaan_standar_sesudah_adjustment|baris|ulangan|pembacaan`) kini memuat tahap (tabel Before = `pembacaan_standar_sebelum_adjustment`). Tabel Before sengaja belum dipetakan: kotaknya tidak punya kunci peta, jadi nilainya tidak pernah dibaca dan tetap kosong.",
         "ASUMSI POSISIONAL, perlu dikonfirmasi lab: Set Point n di kertas -> baris profil n (baris profil 6-18 tidak tercetak). Nilai set point yang ditulis tangan tidak dibaca (tahap 2): teknisi mencocokkan nilai titik baris 1-5 di aplikasi. Repeat 4-5 profil tidak tercetak.",
         "Env: First/End (oC) -> suhu_awal/suhu_akhir, First/End (%RH) -> kelembaban_awal/kelembaban_akhir (tahap 1, kotak isian berlabel).",
         "Centang Thermohygro TH-2, TH-6, TH-7 (Insitu) dan TH-4 (Inlab) -> thermohygro_standard_id. Blok Standard (Tachometer) tercetak tanpa kotak centang -> tidak ada Usage Check."
     ],
     "sel": [
         {
-            "kunci": "pembacaan_standar|1|1|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|1|pembacaan",
             "x": 0.6478,
             "y": 0.6425
         },
         {
-            "kunci": "pembacaan_standar|1|2|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|2|pembacaan",
             "x": 0.7482,
             "y": 0.6425
         },
         {
-            "kunci": "pembacaan_standar|1|3|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|1|3|pembacaan",
             "x": 0.8487,
             "y": 0.6425
         },
         {
-            "kunci": "pembacaan_standar|2|1|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|1|pembacaan",
             "x": 0.6478,
             "y": 0.6844
         },
         {
-            "kunci": "pembacaan_standar|2|2|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|2|pembacaan",
             "x": 0.7482,
             "y": 0.6844
         },
         {
-            "kunci": "pembacaan_standar|2|3|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|2|3|pembacaan",
             "x": 0.8487,
             "y": 0.6844
         },
         {
-            "kunci": "pembacaan_standar|3|1|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|1|pembacaan",
             "x": 0.6478,
             "y": 0.7263
         },
         {
-            "kunci": "pembacaan_standar|3|2|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|2|pembacaan",
             "x": 0.7482,
             "y": 0.7263
         },
         {
-            "kunci": "pembacaan_standar|3|3|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|3|3|pembacaan",
             "x": 0.8487,
             "y": 0.7263
         },
         {
-            "kunci": "pembacaan_standar|4|1|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|1|pembacaan",
             "x": 0.6478,
             "y": 0.7681
         },
         {
-            "kunci": "pembacaan_standar|4|2|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|2|pembacaan",
             "x": 0.7482,
             "y": 0.7681
         },
         {
-            "kunci": "pembacaan_standar|4|3|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|4|3|pembacaan",
             "x": 0.8487,
             "y": 0.7681
         },
         {
-            "kunci": "pembacaan_standar|5|1|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|1|pembacaan",
             "x": 0.6478,
             "y": 0.811
         },
         {
-            "kunci": "pembacaan_standar|5|2|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|2|pembacaan",
             "x": 0.7482,
             "y": 0.811
         },
         {
-            "kunci": "pembacaan_standar|5|3|pembacaan",
+            "kunci": "pembacaan_standar_sesudah_adjustment|5|3|pembacaan",
             "x": 0.8487,
             "y": 0.811
         }

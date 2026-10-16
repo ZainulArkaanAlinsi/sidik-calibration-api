@@ -134,12 +134,27 @@ class TemplateLembarKerja
         $tabel = [];
         $sel = [];
 
+        $definisiSemua = [];
+
         foreach ($bentuk['bagian'] ?? [] as $bagian) {
             foreach ($bagian['tabel'] ?? [] as $definisiTabel) {
-                $satu = $this->tabel($profil, $alat, $definisiTabel);
-                $tabel[] = $satu['tabel'];
-                $sel = [...$sel, ...$satu['sel']];
+                $definisiSemua[] = $definisiTabel;
             }
+        }
+
+        if (is_array($bentuk['grid_sensor'] ?? null)) {
+            $definisiSemua[] = $this->gridJadiTabel($bentuk, $alat);
+        }
+
+        // Identitas tabel dihitung dari SELURUH tabel lembar: dua tabel yang
+        // `grup`-nya sama (Before/After adjustment 0515) hanya bisa dibedakan
+        // kalau semuanya dilihat bersama.
+        $idTabel = $this->idTabelUnik($definisiSemua);
+
+        foreach ($definisiSemua as $i => $definisiTabel) {
+            $satu = $this->tabel($profil, $alat, $definisiTabel, $idTabel[$i]);
+            $tabel[] = $satu['tabel'];
+            $sel = [...$sel, ...$satu['sel']];
         }
 
         // Lembar berbentuk GRID sensor (kelima lembar Enclosure) nggak punya
@@ -147,12 +162,6 @@ class TemplateLembarKerja
         // dan nol sel artinya `ocr:rangka-geometri` bikin berkas kosong yang
         // kelihatan sah. Ini yang bikin lembar Enclosure diam-diam nggak pernah
         // bisa dipindai padahal berkasnya ada.
-        if (is_array($bentuk['grid_sensor'] ?? null)) {
-            $satu = $this->tabel($profil, $alat, $this->gridJadiTabel($bentuk, $alat));
-            $tabel[] = $satu['tabel'];
-            $sel = [...$sel, ...$satu['sel']];
-        }
-
         [$siap, $alasanBelumSiap] = $this->kesiapan($geometri, array_keys($sel));
 
         return [
@@ -177,20 +186,52 @@ class TemplateLembarKerja
     }
 
     /**
+     * Identitas tiap tabel lembar, DIJAMIN unik. Dasarnya `grup`, lalu `tahap`.
+     * Dua tabel yang dasarnya sama (Before/After 0515: `grup` sama,
+     * `tahap` beda) diberi akhiran `_{tahap}` — tanpa itu kunci selnya
+     * kembar, nilai tahap After mendarat di tabel Before. Tabel yang dasarnya
+     * sudah unik tidak berubah, jadi kunci peta formulir lain tetap sah.
+     *
+     * @param  list<array<string, mixed>>  $definisiSemua
+     * @return list<string>
+     */
+    private function idTabelUnik(array $definisiSemua): array
+    {
+        $dasar = array_map(
+            static fn (array $d): string => (string) ($d['grup'] ?? $d['tahap'] ?? 'hasil'),
+            $definisiSemua,
+        );
+        $hitung = array_count_values($dasar);
+        $id = [];
+
+        foreach ($definisiSemua as $i => $d) {
+            $id[$i] = $hitung[$dasar[$i]] > 1
+                ? $dasar[$i].'_'.($d['tahap'] ?? 'sesudah_adjustment')
+                : $dasar[$i];
+        }
+
+        if (count(array_unique($id)) !== count($id)) {
+            // Masih kembar (grup & tahap sama): tidak ada dasar membedakannya.
+            // Berhenti keras — sel yang saling menimpa adalah angka di kolom salah.
+            throw new \LogicException('Identitas tabel lembar kerja kembar: '.implode(', ', $id));
+        }
+
+        return $id;
+    }
+
+    /**
      * Satu tabel hasil (Before/After adjustment, atau satu kelompok filter buat
      * Spectrophotometer) → daftar sel berkunci.
      *
      * @param  array<string, mixed>  $definisi
      * @return array{tabel: array<string, mixed>, sel: array<string, array<string, mixed>>}
      */
-    private function tabel(CalibrationProfile $profil, ?Equipment $alat, array $definisi): array
+    private function tabel(CalibrationProfile $profil, ?Equipment $alat, array $definisi, string $tabelId): array
     {
         // IDENTITAS tabel bukan `tahap` doang. Spectrophotometer punya tiga
         // tabel yang `tahap`-nya SAMA (`sesudah_adjustment`) dan cuma dibedain
         // `grup` — kalau `tahap` yang dipakai sebagai kunci, tiga tabel itu
         // saling nimpa dan angka blok %T mendarat di blok absorbansi.
-        $tabelId = (string) ($definisi['grup'] ?? $definisi['tahap'] ?? 'hasil');
-
         $baris = $this->barisTabel($definisi);
         $pengulangan = array_values($definisi['pengulangan'] ?? []);
         $sel = [];
