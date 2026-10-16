@@ -1,0 +1,4588 @@
+{
+ "_catatan": "DRAF otomatis dari vektor PDF formulir asli (docs/skrip/draf-geometri-dari-pdf.py). Jangan disunting tangan: salah di sini dibetulkan di skripnya lalu dijalankan ulang. Kotak -> kunci profil dipetakan manusia di berkas .peta.json terpisah; adu ke >=20 foto nyata sebelum terverifikasi=true.",
+ "sumber": {
+  "pdf": "SIDIK-FM-CAL-0508.A_Rev.4 - LEMBAR KERJA TIMBANGAN (Metode Subtitusi).pdf",
+  "sha256": "a54e3997862e8ef1911db104a9546a2b2bb4ae687a7d65817dedc6b568768677",
+  "halaman": 1,
+  "ukuran_pt": {
+   "w": 612.0,
+   "h": 1008.0
+  },
+  "orientasi": "potret"
+ },
+ "kode_dokumen": "SIDIK-FM-CAL-0508.A",
+ "revisi_tercetak": "4",
+ "terverifikasi": false,
+ "koordinat": "ternormal_0_1",
+ "sel": [
+  {
+   "id": "s000",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "PT. SIDIK",
+   "x": 0.05425,
+   "y": 0.02859,
+   "w": 0.17753,
+   "h": 0.02685
+  },
+  {
+   "id": "s001",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "Calibration Work Sheet - Timbangan (Metode Subtitusi)",
+   "x": 0.23178,
+   "y": 0.02859,
+   "w": 0.56002,
+   "h": 0.02685
+  },
+  {
+   "id": "s002",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "LK-285-IDN",
+   "x": 0.7918,
+   "y": 0.02859,
+   "w": 0.14001,
+   "h": 0.02685
+  },
+  {
+   "id": "s003",
+   "tabel_ke": 1,
+   "jenis": "tercetak",
+   "teks_tercetak": "EQUIPMENT IDENTITY AND CUSTOMER DATA",
+   "x": 0.05425,
+   "y": 0.06113,
+   "w": 0.87756,
+   "h": 0.01528
+  },
+  {
+   "id": "s004",
+   "tabel_ke": 1,
+   "jenis": "tercetak",
+   "teks_tercetak": "Received Date : Calibration Date : EQUIPMENT STANDARD 1. Name : Weight Set E2 100 mf- 200g 2. Capacity : (….) Weight Set F1 100 mg-500g 10 kg STANDARD 3. Resolution : (….) Weight F2 1kg 2 kg 5 kg 4. Nilai e dan kelas : e = ….....( …...) Kelas = ….... (…..) Weight M2 20kg 5. Type/Model : Calibration Metode : SIDIK-IK-CAL-0505 6. Serial Number : Calibration Location : 7. Merk/Manufacturing : ENVIRONMENT COND. THERMOHYGRO: OWNER First End Units TH-2 1. Name : °C TH-6 2. Address : %RH TH-7",
+   "x": 0.05425,
+   "y": 0.07642,
+   "w": 0.87756,
+   "h": 0.18633
+  },
+  {
+   "id": "s005",
+   "tabel_ke": 2,
+   "jenis": "tercetak",
+   "teks_tercetak": "STANDARD",
+   "x": 0.52663,
+   "y": 0.10675,
+   "w": 0.0942,
+   "h": 0.04765
+  },
+  {
+   "id": "s006",
+   "tabel_ke": 2,
+   "jenis": "tercetak",
+   "teks_tercetak": "Weight Set E2 100 mf- 200g Weight Set F1 100 mg-500g 10 kg Weight F2 1kg 2 kg 5 kg Weight M2 20kg",
+   "x": 0.62083,
+   "y": 0.10675,
+   "w": 0.30007,
+   "h": 0.04765
+  },
+  {
+   "id": "s007",
+   "tabel_ke": 3,
+   "jenis": "wadah",
+   "teks_tercetak": null,
+   "x": 0.74836,
+   "y": 0.13286,
+   "w": 0.01604,
+   "h": 0.00945
+  },
+  {
+   "id": "s008",
+   "tabel_ke": 3,
+   "jenis": "wadah",
+   "teks_tercetak": null,
+   "x": 0.74836,
+   "y": 0.14231,
+   "w": 0.01604,
+   "h": 0.0121
+  },
+  {
+   "id": "s009",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "First",
+   "x": 0.52663,
+   "y": 0.2172,
+   "w": 0.07618,
+   "h": 0.01056
+  },
+  {
+   "id": "s010",
+   "tabel_ke": 4,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.52663,
+   "y": 0.22776,
+   "w": 0.07618,
+   "h": 0.01917
+  },
+  {
+   "id": "s011",
+   "tabel_ke": 4,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.52663,
+   "y": 0.24693,
+   "w": 0.07618,
+   "h": 0.01582
+  },
+  {
+   "id": "s012",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "End",
+   "x": 0.60281,
+   "y": 0.2172,
+   "w": 0.08665,
+   "h": 0.01056
+  },
+  {
+   "id": "s013",
+   "tabel_ke": 4,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.60281,
+   "y": 0.22776,
+   "w": 0.08665,
+   "h": 0.01917
+  },
+  {
+   "id": "s014",
+   "tabel_ke": 4,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.60281,
+   "y": 0.24693,
+   "w": 0.08665,
+   "h": 0.01582
+  },
+  {
+   "id": "s015",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "Units",
+   "x": 0.68946,
+   "y": 0.2172,
+   "w": 0.07493,
+   "h": 0.01056
+  },
+  {
+   "id": "s016",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "°C",
+   "x": 0.68946,
+   "y": 0.22776,
+   "w": 0.07493,
+   "h": 0.01917
+  },
+  {
+   "id": "s017",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "%RH",
+   "x": 0.68946,
+   "y": 0.24693,
+   "w": 0.07493,
+   "h": 0.01582
+  },
+  {
+   "id": "s018",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "CALIBRATION RESULT",
+   "x": 0.05425,
+   "y": 0.2693,
+   "w": 0.87756,
+   "h": 0.01706
+  },
+  {
+   "id": "s019",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "1. SCALL OBSERVATION 2. EFFECT OF TARE 3. ACCURACY Position Standard Weight ( ) The Reading ( ) Standard Weight ( ) The Reading ( ) Nominal ( ) The Reading ( ) 1 2 3 m 1 = Mref= z1 = z 1 = m 2 = m1 = Before m 1 = m1' = Adjustment m 2 = Bentuk Pan : … z1' = z 2 = Diameter Pan : … ( ) Mref= z2 = z' 1 = m2 = After m' 1 = M = rata-rata (m1:m2) m2' = Adjustment m' 2 = z= Rata-rata (z1:z20 z2' = z' = C= Ms-(M-z) Mref= z3 = 2 Standar deviasi yang lalu (SD) = ( ) Jika C>5*resolusi, maka timbangan m3 = harus dilakukan adjustment m3' = 4. REPEATABILITY (Ref: Tabel Kinerja LOP Timbangan) z3' = Middle Capacity Miximum Capacity Mref= z4 = … (…) … (…) m4 = No. Zero Reading Zero Reading m4' = (zi) (mi) (zi) (mi) z4' = 1 2 1 2 Mref= z5 = 1 m5 = 2 m5' = 3 z5' = 4 Mref= z6 = 5 m6 = 6 m6' = 7 z6' = 8 Mref= z7 = 9 m7 = 10 m7' = z7' = 5. LOADING INFLUENCE ON EACH POSITION ….. ( ) Mref= z8 = Untuk keamanan loadcell timbangan, Gunakan beban uji 1/3 ~ 1/2 dari kapasitas maksimal alat, atau dapat disesuaikan dengan spek. manufaktur m8 = Position Center Front Back Left Right m8' = Reading z8' = Mref= z9 = 6. HYSTERISIS m9 = Standar Weight ( ) Reading 1 ( ) Reading 2 ( ) m9' = M = M (p1) = M (p3) = z9' = M' = M+M' = M+M' = Mref= z10 = M (q1) = M (q3) = m10 = Zero = Zero = m10' = M+M' = M+M' = z10' = M (q2) = M (q4) = Zero = Zero = M (p2) = M (p4) = 7. DRIFT Drift Massa Standar (d) = (…) Catatan: Calibrated By Checked By Name : Name : Sign : Sign :",
+   "x": 0.05425,
+   "y": 0.28636,
+   "w": 0.87756,
+   "h": 0.68961
+  },
+  {
+   "id": "s020",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Position",
+   "x": 0.05425,
+   "y": 0.29988,
+   "w": 0.07629,
+   "h": 0.01376
+  },
+  {
+   "id": "s021",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.05425,
+   "y": 0.31364,
+   "w": 0.07629,
+   "h": 0.01402
+  },
+  {
+   "id": "s022",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.32766,
+   "w": 0.07629,
+   "h": 0.01408
+  },
+  {
+   "id": "s023",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Before",
+   "x": 0.05425,
+   "y": 0.34174,
+   "w": 0.07629,
+   "h": 0.0141
+  },
+  {
+   "id": "s024",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Adjustment",
+   "x": 0.05425,
+   "y": 0.35583,
+   "w": 0.07629,
+   "h": 0.01408
+  },
+  {
+   "id": "s025",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.36991,
+   "w": 0.07629,
+   "h": 0.0141
+  },
+  {
+   "id": "s026",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.38401,
+   "w": 0.07629,
+   "h": 0.01409
+  },
+  {
+   "id": "s027",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "After",
+   "x": 0.05425,
+   "y": 0.3981,
+   "w": 0.07629,
+   "h": 0.01408
+  },
+  {
+   "id": "s028",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Adjustment",
+   "x": 0.05425,
+   "y": 0.41217,
+   "w": 0.07629,
+   "h": 0.0141
+  },
+  {
+   "id": "s029",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.42627,
+   "w": 0.07629,
+   "h": 0.01292
+  },
+  {
+   "id": "s030",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Standar deviasi yang lalu (SD) = ( )",
+   "x": 0.05425,
+   "y": 0.43919,
+   "w": 0.38423,
+   "h": 0.0123
+  },
+  {
+   "id": "s031",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Standard Weight ( )",
+   "x": 0.13054,
+   "y": 0.29988,
+   "w": 0.1715,
+   "h": 0.01376
+  },
+  {
+   "id": "s032",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.13054,
+   "y": 0.31364,
+   "w": 0.1715,
+   "h": 0.01402
+  },
+  {
+   "id": "s033",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.32766,
+   "w": 0.1715,
+   "h": 0.01408
+  },
+  {
+   "id": "s034",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.34174,
+   "w": 0.1715,
+   "h": 0.0141
+  },
+  {
+   "id": "s035",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.35583,
+   "w": 0.1715,
+   "h": 0.01408
+  },
+  {
+   "id": "s036",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.36991,
+   "w": 0.1715,
+   "h": 0.0141
+  },
+  {
+   "id": "s037",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.38401,
+   "w": 0.1715,
+   "h": 0.01409
+  },
+  {
+   "id": "s038",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.3981,
+   "w": 0.1715,
+   "h": 0.01408
+  },
+  {
+   "id": "s039",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.41217,
+   "w": 0.1715,
+   "h": 0.0141
+  },
+  {
+   "id": "s040",
+   "tabel_ke": 6,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.13054,
+   "y": 0.42627,
+   "w": 0.1715,
+   "h": 0.01292
+  },
+  {
+   "id": "s041",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "The Reading ( )",
+   "x": 0.30204,
+   "y": 0.29988,
+   "w": 0.13643,
+   "h": 0.01376
+  },
+  {
+   "id": "s042",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "3",
+   "x": 0.30204,
+   "y": 0.31364,
+   "w": 0.13643,
+   "h": 0.01402
+  },
+  {
+   "id": "s043",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "z 1 =",
+   "x": 0.30204,
+   "y": 0.32766,
+   "w": 0.13643,
+   "h": 0.01408
+  },
+  {
+   "id": "s044",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "m 1 =",
+   "x": 0.30204,
+   "y": 0.34174,
+   "w": 0.13643,
+   "h": 0.0141
+  },
+  {
+   "id": "s045",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "m 2 =",
+   "x": 0.30204,
+   "y": 0.35583,
+   "w": 0.13643,
+   "h": 0.01408
+  },
+  {
+   "id": "s046",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "z 2 =",
+   "x": 0.30204,
+   "y": 0.36991,
+   "w": 0.13643,
+   "h": 0.0141
+  },
+  {
+   "id": "s047",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "z' 1 =",
+   "x": 0.30204,
+   "y": 0.38401,
+   "w": 0.13643,
+   "h": 0.01409
+  },
+  {
+   "id": "s048",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "m' 1 =",
+   "x": 0.30204,
+   "y": 0.3981,
+   "w": 0.13643,
+   "h": 0.01408
+  },
+  {
+   "id": "s049",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "m' 2 =",
+   "x": 0.30204,
+   "y": 0.41217,
+   "w": 0.13643,
+   "h": 0.0141
+  },
+  {
+   "id": "s050",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "z' = 2",
+   "x": 0.30204,
+   "y": 0.42627,
+   "w": 0.13643,
+   "h": 0.01292
+  },
+  {
+   "id": "s051",
+   "tabel_ke": 7,
+   "jenis": "tercetak",
+   "teks_tercetak": "Standard Weight ( )",
+   "x": 0.45964,
+   "y": 0.29988,
+   "w": 0.11737,
+   "h": 0.01376
+  },
+  {
+   "id": "s052",
+   "tabel_ke": 7,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.45964,
+   "y": 0.31364,
+   "w": 0.11737,
+   "h": 0.0281
+  },
+  {
+   "id": "s053",
+   "tabel_ke": 7,
+   "jenis": "tercetak",
+   "teks_tercetak": "The Reading ( )",
+   "x": 0.57701,
+   "y": 0.29988,
+   "w": 0.12694,
+   "h": 0.01376
+  },
+  {
+   "id": "s054",
+   "tabel_ke": 7,
+   "jenis": "tercetak",
+   "teks_tercetak": "m 1 =",
+   "x": 0.57701,
+   "y": 0.31364,
+   "w": 0.12694,
+   "h": 0.01402
+  },
+  {
+   "id": "s055",
+   "tabel_ke": 7,
+   "jenis": "tercetak",
+   "teks_tercetak": "m 2 =",
+   "x": 0.57701,
+   "y": 0.32766,
+   "w": 0.12694,
+   "h": 0.01408
+  },
+  {
+   "id": "s056",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Nominal ( )",
+   "x": 0.71397,
+   "y": 0.29988,
+   "w": 0.10026,
+   "h": 0.01376
+  },
+  {
+   "id": "s057",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.31364,
+   "w": 0.10026,
+   "h": 0.01402
+  },
+  {
+   "id": "s058",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.32766,
+   "w": 0.10026,
+   "h": 0.04225
+  },
+  {
+   "id": "s059",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.36991,
+   "w": 0.10026,
+   "h": 0.0141
+  },
+  {
+   "id": "s060",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.38401,
+   "w": 0.10026,
+   "h": 0.04226
+  },
+  {
+   "id": "s061",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.42627,
+   "w": 0.10026,
+   "h": 0.01292
+  },
+  {
+   "id": "s062",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.43919,
+   "w": 0.10026,
+   "h": 0.0373
+  },
+  {
+   "id": "s063",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.47649,
+   "w": 0.10026,
+   "h": 0.0123
+  },
+  {
+   "id": "s064",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.48879,
+   "w": 0.10026,
+   "h": 0.03373
+  },
+  {
+   "id": "s065",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.52252,
+   "w": 0.10026,
+   "h": 0.01234
+  },
+  {
+   "id": "s066",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.53486,
+   "w": 0.10026,
+   "h": 0.03746
+  },
+  {
+   "id": "s067",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.57232,
+   "w": 0.10026,
+   "h": 0.01252
+  },
+  {
+   "id": "s068",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.58484,
+   "w": 0.10026,
+   "h": 0.03751
+  },
+  {
+   "id": "s069",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.62235,
+   "w": 0.10026,
+   "h": 0.0125
+  },
+  {
+   "id": "s070",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.63485,
+   "w": 0.10026,
+   "h": 0.03611
+  },
+  {
+   "id": "s071",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.67096,
+   "w": 0.10026,
+   "h": 0.0127
+  },
+  {
+   "id": "s072",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.68366,
+   "w": 0.10026,
+   "h": 0.03772
+  },
+  {
+   "id": "s073",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.72138,
+   "w": 0.10026,
+   "h": 0.01032
+  },
+  {
+   "id": "s074",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.7317,
+   "w": 0.10026,
+   "h": 0.0379
+  },
+  {
+   "id": "s075",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mref=",
+   "x": 0.71397,
+   "y": 0.76959,
+   "w": 0.10026,
+   "h": 0.0129
+  },
+  {
+   "id": "s076",
+   "tabel_ke": 8,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71397,
+   "y": 0.78249,
+   "w": 0.10026,
+   "h": 0.03869
+  },
+  {
+   "id": "s077",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "The Reading ( )",
+   "x": 0.81423,
+   "y": 0.29988,
+   "w": 0.10667,
+   "h": 0.01376
+  },
+  {
+   "id": "s078",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z1 = m1 = m1' = z1' =",
+   "x": 0.81423,
+   "y": 0.31364,
+   "w": 0.10667,
+   "h": 0.05627
+  },
+  {
+   "id": "s079",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z2 = m2 = m2' = z2' =",
+   "x": 0.81423,
+   "y": 0.36991,
+   "w": 0.10667,
+   "h": 0.05636
+  },
+  {
+   "id": "s080",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z3 = m3 = m3' = z3' =",
+   "x": 0.81423,
+   "y": 0.42627,
+   "w": 0.10667,
+   "h": 0.05022
+  },
+  {
+   "id": "s081",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z4 = m4 = m4' = z4' =",
+   "x": 0.81423,
+   "y": 0.47649,
+   "w": 0.10667,
+   "h": 0.04603
+  },
+  {
+   "id": "s082",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z5 = m5 = m5' = z5' =",
+   "x": 0.81423,
+   "y": 0.52252,
+   "w": 0.10667,
+   "h": 0.0498
+  },
+  {
+   "id": "s083",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z6 = m6 = m6' = z6' =",
+   "x": 0.81423,
+   "y": 0.57232,
+   "w": 0.10667,
+   "h": 0.05003
+  },
+  {
+   "id": "s084",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z7 = m7 = m7' = z7' =",
+   "x": 0.81423,
+   "y": 0.62235,
+   "w": 0.10667,
+   "h": 0.04861
+  },
+  {
+   "id": "s085",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z8 = m8 = m8' = z8' =",
+   "x": 0.81423,
+   "y": 0.67096,
+   "w": 0.10667,
+   "h": 0.05042
+  },
+  {
+   "id": "s086",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z9 = m9 = m9' = z9' =",
+   "x": 0.81423,
+   "y": 0.72138,
+   "w": 0.10667,
+   "h": 0.04821
+  },
+  {
+   "id": "s087",
+   "tabel_ke": 8,
+   "jenis": "tercetak",
+   "teks_tercetak": "z10 = m10 = m10' = z10' =",
+   "x": 0.81423,
+   "y": 0.76959,
+   "w": 0.10667,
+   "h": 0.05159
+  },
+  {
+   "id": "s088",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "No.",
+   "x": 0.05425,
+   "y": 0.47649,
+   "w": 0.02712,
+   "h": 0.05837
+  },
+  {
+   "id": "s089",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.05425,
+   "y": 0.53486,
+   "w": 0.02712,
+   "h": 0.01246
+  },
+  {
+   "id": "s090",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.05425,
+   "y": 0.54732,
+   "w": 0.02712,
+   "h": 0.0125
+  },
+  {
+   "id": "s091",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "3",
+   "x": 0.05425,
+   "y": 0.55982,
+   "w": 0.02712,
+   "h": 0.0125
+  },
+  {
+   "id": "s092",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "4",
+   "x": 0.05425,
+   "y": 0.57232,
+   "w": 0.02712,
+   "h": 0.01252
+  },
+  {
+   "id": "s093",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "5",
+   "x": 0.05425,
+   "y": 0.58484,
+   "w": 0.02712,
+   "h": 0.01251
+  },
+  {
+   "id": "s094",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "6",
+   "x": 0.05425,
+   "y": 0.59735,
+   "w": 0.02712,
+   "h": 0.01249
+  },
+  {
+   "id": "s095",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "7",
+   "x": 0.05425,
+   "y": 0.60984,
+   "w": 0.02712,
+   "h": 0.01251
+  },
+  {
+   "id": "s096",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "8",
+   "x": 0.05425,
+   "y": 0.62235,
+   "w": 0.02712,
+   "h": 0.0125
+  },
+  {
+   "id": "s097",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "9",
+   "x": 0.05425,
+   "y": 0.63485,
+   "w": 0.02712,
+   "h": 0.01249
+  },
+  {
+   "id": "s098",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "10",
+   "x": 0.05425,
+   "y": 0.64734,
+   "w": 0.02712,
+   "h": 0.01251
+  },
+  {
+   "id": "s099",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Middle Capacity",
+   "x": 0.08137,
+   "y": 0.47649,
+   "w": 0.19289,
+   "h": 0.0123
+  },
+  {
+   "id": "s100",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "… (…)",
+   "x": 0.08137,
+   "y": 0.48879,
+   "w": 0.19289,
+   "h": 0.01111
+  },
+  {
+   "id": "s101",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero",
+   "x": 0.08137,
+   "y": 0.4999,
+   "w": 0.0703,
+   "h": 0.0123
+  },
+  {
+   "id": "s102",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "(zi)",
+   "x": 0.08137,
+   "y": 0.5122,
+   "w": 0.0703,
+   "h": 0.01032
+  },
+  {
+   "id": "s103",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.08137,
+   "y": 0.52252,
+   "w": 0.0703,
+   "h": 0.01234
+  },
+  {
+   "id": "s104",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.53486,
+   "w": 0.0703,
+   "h": 0.01246
+  },
+  {
+   "id": "s105",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.54732,
+   "w": 0.0703,
+   "h": 0.0125
+  },
+  {
+   "id": "s106",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.55982,
+   "w": 0.0703,
+   "h": 0.0125
+  },
+  {
+   "id": "s107",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.57232,
+   "w": 0.0703,
+   "h": 0.01252
+  },
+  {
+   "id": "s108",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.58484,
+   "w": 0.0703,
+   "h": 0.01251
+  },
+  {
+   "id": "s109",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.59735,
+   "w": 0.0703,
+   "h": 0.01249
+  },
+  {
+   "id": "s110",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.60984,
+   "w": 0.0703,
+   "h": 0.01251
+  },
+  {
+   "id": "s111",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.62235,
+   "w": 0.0703,
+   "h": 0.0125
+  },
+  {
+   "id": "s112",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.63485,
+   "w": 0.0703,
+   "h": 0.01249
+  },
+  {
+   "id": "s113",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.08137,
+   "y": 0.64734,
+   "w": 0.0703,
+   "h": 0.01251
+  },
+  {
+   "id": "s114",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Reading",
+   "x": 0.15167,
+   "y": 0.4999,
+   "w": 0.12259,
+   "h": 0.0123
+  },
+  {
+   "id": "s115",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "(mi)",
+   "x": 0.15167,
+   "y": 0.5122,
+   "w": 0.12259,
+   "h": 0.01032
+  },
+  {
+   "id": "s116",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.15167,
+   "y": 0.52252,
+   "w": 0.12259,
+   "h": 0.01234
+  },
+  {
+   "id": "s117",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.53486,
+   "w": 0.12259,
+   "h": 0.01246
+  },
+  {
+   "id": "s118",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.54732,
+   "w": 0.12259,
+   "h": 0.0125
+  },
+  {
+   "id": "s119",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.55982,
+   "w": 0.12259,
+   "h": 0.0125
+  },
+  {
+   "id": "s120",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.57232,
+   "w": 0.12259,
+   "h": 0.01252
+  },
+  {
+   "id": "s121",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.58484,
+   "w": 0.12259,
+   "h": 0.01251
+  },
+  {
+   "id": "s122",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.59735,
+   "w": 0.12259,
+   "h": 0.01249
+  },
+  {
+   "id": "s123",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.60984,
+   "w": 0.12259,
+   "h": 0.01251
+  },
+  {
+   "id": "s124",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.62235,
+   "w": 0.12259,
+   "h": 0.0125
+  },
+  {
+   "id": "s125",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.63485,
+   "w": 0.12259,
+   "h": 0.01249
+  },
+  {
+   "id": "s126",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.64734,
+   "w": 0.12259,
+   "h": 0.01251
+  },
+  {
+   "id": "s127",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Miximum Capacity",
+   "x": 0.27426,
+   "y": 0.47649,
+   "w": 0.16421,
+   "h": 0.0123
+  },
+  {
+   "id": "s128",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "… (…)",
+   "x": 0.27426,
+   "y": 0.48879,
+   "w": 0.16421,
+   "h": 0.01111
+  },
+  {
+   "id": "s129",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero",
+   "x": 0.27426,
+   "y": 0.4999,
+   "w": 0.07913,
+   "h": 0.0123
+  },
+  {
+   "id": "s130",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "(zi)",
+   "x": 0.27426,
+   "y": 0.5122,
+   "w": 0.07913,
+   "h": 0.01032
+  },
+  {
+   "id": "s131",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.27426,
+   "y": 0.52252,
+   "w": 0.07913,
+   "h": 0.01234
+  },
+  {
+   "id": "s132",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.53486,
+   "w": 0.07913,
+   "h": 0.01246
+  },
+  {
+   "id": "s133",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.54732,
+   "w": 0.07913,
+   "h": 0.0125
+  },
+  {
+   "id": "s134",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.55982,
+   "w": 0.07913,
+   "h": 0.0125
+  },
+  {
+   "id": "s135",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.57232,
+   "w": 0.07913,
+   "h": 0.01252
+  },
+  {
+   "id": "s136",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.58484,
+   "w": 0.07913,
+   "h": 0.01251
+  },
+  {
+   "id": "s137",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.59735,
+   "w": 0.07913,
+   "h": 0.01249
+  },
+  {
+   "id": "s138",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.60984,
+   "w": 0.07913,
+   "h": 0.01251
+  },
+  {
+   "id": "s139",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.62235,
+   "w": 0.07913,
+   "h": 0.0125
+  },
+  {
+   "id": "s140",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.63485,
+   "w": 0.07913,
+   "h": 0.01249
+  },
+  {
+   "id": "s141",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.27426,
+   "y": 0.64734,
+   "w": 0.07913,
+   "h": 0.01251
+  },
+  {
+   "id": "s142",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "Reading",
+   "x": 0.3534,
+   "y": 0.4999,
+   "w": 0.08508,
+   "h": 0.0123
+  },
+  {
+   "id": "s143",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "(mi)",
+   "x": 0.3534,
+   "y": 0.5122,
+   "w": 0.08508,
+   "h": 0.01032
+  },
+  {
+   "id": "s144",
+   "tabel_ke": 9,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.3534,
+   "y": 0.52252,
+   "w": 0.08508,
+   "h": 0.01234
+  },
+  {
+   "id": "s145",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.53486,
+   "w": 0.08508,
+   "h": 0.01246
+  },
+  {
+   "id": "s146",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.54732,
+   "w": 0.08508,
+   "h": 0.0125
+  },
+  {
+   "id": "s147",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.55982,
+   "w": 0.08508,
+   "h": 0.0125
+  },
+  {
+   "id": "s148",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.57232,
+   "w": 0.08508,
+   "h": 0.01252
+  },
+  {
+   "id": "s149",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.58484,
+   "w": 0.08508,
+   "h": 0.01251
+  },
+  {
+   "id": "s150",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.59735,
+   "w": 0.08508,
+   "h": 0.01249
+  },
+  {
+   "id": "s151",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.60984,
+   "w": 0.08508,
+   "h": 0.01251
+  },
+  {
+   "id": "s152",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.62235,
+   "w": 0.08508,
+   "h": 0.0125
+  },
+  {
+   "id": "s153",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.63485,
+   "w": 0.08508,
+   "h": 0.01249
+  },
+  {
+   "id": "s154",
+   "tabel_ke": 9,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.64734,
+   "w": 0.08508,
+   "h": 0.01251
+  },
+  {
+   "id": "s155",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Position",
+   "x": 0.05425,
+   "y": 0.69595,
+   "w": 0.09743,
+   "h": 0.01515
+  },
+  {
+   "id": "s156",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Reading",
+   "x": 0.05425,
+   "y": 0.7111,
+   "w": 0.09743,
+   "h": 0.01028
+  },
+  {
+   "id": "s157",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Center",
+   "x": 0.15167,
+   "y": 0.69595,
+   "w": 0.10135,
+   "h": 0.01515
+  },
+  {
+   "id": "s158",
+   "tabel_ke": 10,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.15167,
+   "y": 0.7111,
+   "w": 0.10135,
+   "h": 0.01028
+  },
+  {
+   "id": "s159",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Front",
+   "x": 0.25302,
+   "y": 0.69595,
+   "w": 0.07908,
+   "h": 0.01515
+  },
+  {
+   "id": "s160",
+   "tabel_ke": 10,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.25302,
+   "y": 0.7111,
+   "w": 0.07908,
+   "h": 0.01028
+  },
+  {
+   "id": "s161",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Back",
+   "x": 0.33211,
+   "y": 0.69595,
+   "w": 0.08513,
+   "h": 0.01515
+  },
+  {
+   "id": "s162",
+   "tabel_ke": 10,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.33211,
+   "y": 0.7111,
+   "w": 0.08513,
+   "h": 0.01028
+  },
+  {
+   "id": "s163",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Left",
+   "x": 0.41723,
+   "y": 0.69595,
+   "w": 0.1094,
+   "h": 0.01515
+  },
+  {
+   "id": "s164",
+   "tabel_ke": 10,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.41723,
+   "y": 0.7111,
+   "w": 0.1094,
+   "h": 0.01028
+  },
+  {
+   "id": "s165",
+   "tabel_ke": 10,
+   "jenis": "tercetak",
+   "teks_tercetak": "Right",
+   "x": 0.52663,
+   "y": 0.69595,
+   "w": 0.0942,
+   "h": 0.01515
+  },
+  {
+   "id": "s166",
+   "tabel_ke": 10,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.52663,
+   "y": 0.7111,
+   "w": 0.0942,
+   "h": 0.01028
+  },
+  {
+   "id": "s167",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Standar Weight ( )",
+   "x": 0.05425,
+   "y": 0.7438,
+   "w": 0.15407,
+   "h": 0.0129
+  },
+  {
+   "id": "s168",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M =",
+   "x": 0.05425,
+   "y": 0.7567,
+   "w": 0.15407,
+   "h": 0.0129
+  },
+  {
+   "id": "s169",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M' =",
+   "x": 0.05425,
+   "y": 0.76959,
+   "w": 0.15407,
+   "h": 0.0129
+  },
+  {
+   "id": "s170",
+   "tabel_ke": 11,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.78249,
+   "w": 0.15407,
+   "h": 0.07745
+  },
+  {
+   "id": "s171",
+   "tabel_ke": 11,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.05425,
+   "y": 0.85994,
+   "w": 0.29915,
+   "h": 0.01033
+  },
+  {
+   "id": "s172",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "7. DRIFT Drift Massa Standar (d) =",
+   "x": 0.05425,
+   "y": 0.87027,
+   "w": 0.29915,
+   "h": 0.01034
+  },
+  {
+   "id": "s173",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Reading 1 ( )",
+   "x": 0.20831,
+   "y": 0.7438,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s174",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (p1) =",
+   "x": 0.20831,
+   "y": 0.7567,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s175",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M+M' =",
+   "x": 0.20831,
+   "y": 0.76959,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s176",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (q1) =",
+   "x": 0.20831,
+   "y": 0.78249,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s177",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero =",
+   "x": 0.20831,
+   "y": 0.79539,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s178",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M+M' =",
+   "x": 0.20831,
+   "y": 0.80828,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s179",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (q2) =",
+   "x": 0.20831,
+   "y": 0.82118,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s180",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero =",
+   "x": 0.20831,
+   "y": 0.83408,
+   "w": 0.20892,
+   "h": 0.0129
+  },
+  {
+   "id": "s181",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (p2) =",
+   "x": 0.20831,
+   "y": 0.84697,
+   "w": 0.20892,
+   "h": 0.01296
+  },
+  {
+   "id": "s182",
+   "tabel_ke": 11,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.85994,
+   "w": 0.06383,
+   "h": 0.01033
+  },
+  {
+   "id": "s183",
+   "tabel_ke": 11,
+   "jenis": "wadah",
+   "teks_tercetak": null,
+   "x": 0.3534,
+   "y": 0.87027,
+   "w": 0.06383,
+   "h": 0.01034
+  },
+  {
+   "id": "s184",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Reading 2 ( )",
+   "x": 0.41723,
+   "y": 0.7438,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s185",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (p3) =",
+   "x": 0.41723,
+   "y": 0.7567,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s186",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M+M' =",
+   "x": 0.41723,
+   "y": 0.76959,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s187",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (q3) =",
+   "x": 0.41723,
+   "y": 0.78249,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s188",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero =",
+   "x": 0.41723,
+   "y": 0.79539,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s189",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M+M' =",
+   "x": 0.41723,
+   "y": 0.80828,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s190",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (q4) =",
+   "x": 0.41723,
+   "y": 0.82118,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s191",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "Zero =",
+   "x": 0.41723,
+   "y": 0.83408,
+   "w": 0.2036,
+   "h": 0.0129
+  },
+  {
+   "id": "s192",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "M (p4) =",
+   "x": 0.41723,
+   "y": 0.84697,
+   "w": 0.2036,
+   "h": 0.01296
+  },
+  {
+   "id": "s193",
+   "tabel_ke": 11,
+   "jenis": "tercetak",
+   "teks_tercetak": "(…)",
+   "x": 0.41723,
+   "y": 0.87027,
+   "w": 0.04241,
+   "h": 0.01034
+  },
+  {
+   "id": "s194",
+   "tabel_ke": 12,
+   "jenis": "tercetak",
+   "teks_tercetak": "Calibrated By",
+   "x": 0.64008,
+   "y": 0.89263,
+   "w": 0.15172,
+   "h": 0.0129
+  },
+  {
+   "id": "s195",
+   "tabel_ke": 12,
+   "jenis": "tercetak",
+   "teks_tercetak": "Name : Sign :",
+   "x": 0.64008,
+   "y": 0.90553,
+   "w": 0.15172,
+   "h": 0.0619
+  },
+  {
+   "id": "s196",
+   "tabel_ke": 12,
+   "jenis": "tercetak",
+   "teks_tercetak": "Checked By",
+   "x": 0.7918,
+   "y": 0.89263,
+   "w": 0.1291,
+   "h": 0.0129
+  },
+  {
+   "id": "s197",
+   "tabel_ke": 12,
+   "jenis": "tercetak",
+   "teks_tercetak": "Name : Sign :",
+   "x": 0.7918,
+   "y": 0.90553,
+   "w": 0.1291,
+   "h": 0.0619
+  }
+ ],
+ "kotak_centang": [
+  {
+   "id": "c00",
+   "label_dekat": "200g",
+   "asal": "vektor",
+   "x": 0.82348,
+   "y": 0.10733,
+   "w": 0.01459,
+   "h": 0.00857
+  },
+  {
+   "id": "c01",
+   "label_dekat": "10",
+   "asal": "vektor",
+   "x": 0.82343,
+   "y": 0.12048,
+   "w": 0.01459,
+   "h": 0.00799
+  },
+  {
+   "id": "c02",
+   "label_dekat": "2",
+   "asal": "vektor",
+   "x": 0.74838,
+   "y": 0.13188,
+   "w": 0.01431,
+   "h": 0.00857
+  },
+  {
+   "id": "c03",
+   "label_dekat": "20kg",
+   "asal": "vektor",
+   "x": 0.74833,
+   "y": 0.14502,
+   "w": 0.01431,
+   "h": 0.00799
+  },
+  {
+   "id": "c04",
+   "label_dekat": "5",
+   "asal": "vektor",
+   "x": 0.83144,
+   "y": 0.13272,
+   "w": 0.01236,
+   "h": 0.00807
+  },
+  {
+   "id": "c05",
+   "label_dekat": "kg",
+   "asal": "vektor",
+   "x": 0.90454,
+   "y": 0.13398,
+   "w": 0.01293,
+   "h": 0.00899
+  },
+  {
+   "id": "c06",
+   "label_dekat": "kg",
+   "asal": "vektor",
+   "x": 0.90448,
+   "y": 0.11968,
+   "w": 0.01293,
+   "h": 0.00807
+  },
+  {
+   "id": "c07",
+   "label_dekat": "TH-2",
+   "asal": "vektor",
+   "x": 0.81444,
+   "y": 0.2179,
+   "w": 0.01513,
+   "h": 0.00939
+  },
+  {
+   "id": "c08",
+   "label_dekat": "TH-6",
+   "asal": "vektor",
+   "x": 0.81467,
+   "y": 0.23411,
+   "w": 0.01528,
+   "h": 0.00816
+  },
+  {
+   "id": "c09",
+   "label_dekat": "TH-7",
+   "asal": "vektor",
+   "x": 0.81475,
+   "y": 0.24797,
+   "w": 0.01549,
+   "h": 0.00807
+  }
+ ],
+ "isian_berlabel": [
+  {
+   "id": "f00",
+   "label": "Received Date",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.07691,
+   "w": 0.25611,
+   "h": 0.01452
+  },
+  {
+   "id": "f01",
+   "label": "Calibration Date",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.58834,
+   "y": 0.07691,
+   "w": 0.33944,
+   "h": 0.01452
+  },
+  {
+   "id": "f02",
+   "label": "1. Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.10537,
+   "w": 0.30317,
+   "h": 0.01426
+  },
+  {
+   "id": "f03",
+   "label": "2. Capacity",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.11964,
+   "w": 0.11259,
+   "h": 0.0123
+  },
+  {
+   "id": "f04",
+   "label": "3. Resolution",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.13194,
+   "w": 0.11259,
+   "h": 0.01425
+  },
+  {
+   "id": "f05",
+   "label": "5. Type/Model",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.1567,
+   "w": 0.30709,
+   "h": 0.01227
+  },
+  {
+   "id": "f06",
+   "label": "6. Serial Number",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.16897,
+   "w": 0.30709,
+   "h": 0.0121
+  },
+  {
+   "id": "f07",
+   "label": "Calibration Location",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.70308,
+   "y": 0.16691,
+   "w": 0.2247,
+   "h": 0.01416
+  },
+  {
+   "id": "f08",
+   "label": "7. Merk/Manufacturing",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.18107,
+   "w": 0.70823,
+   "h": 0.01416
+  },
+  {
+   "id": "f09",
+   "label": "1. Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.23279,
+   "w": 0.30317,
+   "h": 0.01455
+  },
+  {
+   "id": "f10",
+   "label": "2. Address",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.21955,
+   "y": 0.24734,
+   "w": 0.30317,
+   "h": 0.01455
+  },
+  {
+   "id": "f11",
+   "label": "m 1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.6174,
+   "y": 0.31427,
+   "w": 0.08252,
+   "h": 0.0125
+  },
+  {
+   "id": "f12",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.31427,
+   "w": 0.05545,
+   "h": 0.0125
+  },
+  {
+   "id": "f13",
+   "label": "z1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.31427,
+   "w": 0.06324,
+   "h": 0.01425
+  },
+  {
+   "id": "f14",
+   "label": "z 1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.32855,
+   "w": 0.08773,
+   "h": 0.01229
+  },
+  {
+   "id": "f15",
+   "label": "m 2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.6174,
+   "y": 0.32855,
+   "w": 0.08252,
+   "h": 0.01229
+  },
+  {
+   "id": "f16",
+   "label": "m1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.32852,
+   "w": 0.06324,
+   "h": 0.01468
+  },
+  {
+   "id": "f17",
+   "label": "m 1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.34273,
+   "w": 0.08773,
+   "h": 0.01221
+  },
+  {
+   "id": "f18",
+   "label": "m1'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.3432,
+   "w": 0.06324,
+   "h": 0.01468
+  },
+  {
+   "id": "f19",
+   "label": "m 2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.35681,
+   "w": 0.08773,
+   "h": 0.0122
+  },
+  {
+   "id": "f20",
+   "label": "z1'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.35787,
+   "w": 0.06324,
+   "h": 0.01114
+  },
+  {
+   "id": "f21",
+   "label": "z 2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.37091,
+   "w": 0.08773,
+   "h": 0.0122
+  },
+  {
+   "id": "f22",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.37091,
+   "w": 0.05545,
+   "h": 0.0122
+  },
+  {
+   "id": "f23",
+   "label": "z2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.37091,
+   "w": 0.06324,
+   "h": 0.01515
+  },
+  {
+   "id": "f24",
+   "label": "z' 1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.385,
+   "w": 0.08773,
+   "h": 0.0122
+  },
+  {
+   "id": "f25",
+   "label": "m2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.38606,
+   "w": 0.06324,
+   "h": 0.01408
+  },
+  {
+   "id": "f26",
+   "label": "m' 1",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.39908,
+   "w": 0.08773,
+   "h": 0.0122
+  },
+  {
+   "id": "f27",
+   "label": "m2'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.40014,
+   "w": 0.06324,
+   "h": 0.01408
+  },
+  {
+   "id": "f28",
+   "label": "m' 2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.41316,
+   "w": 0.08773,
+   "h": 0.01221
+  },
+  {
+   "id": "f29",
+   "label": "z2'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.41422,
+   "w": 0.06324,
+   "h": 0.01115
+  },
+  {
+   "id": "f30",
+   "label": "z' 2",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34671,
+   "y": 0.42716,
+   "w": 0.08773,
+   "h": 0.01113
+  },
+  {
+   "id": "f31",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.42716,
+   "w": 0.05545,
+   "h": 0.01113
+  },
+  {
+   "id": "f32",
+   "label": "z3",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.42716,
+   "w": 0.06324,
+   "h": 0.01318
+  },
+  {
+   "id": "f33",
+   "label": "Standar deviasi yang lalu (SD)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.31662,
+   "y": 0.44008,
+   "w": 0.05796,
+   "h": 0.01052
+  },
+  {
+   "id": "f34",
+   "label": "m3",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.44035,
+   "w": 0.06324,
+   "h": 0.0123
+  },
+  {
+   "id": "f35",
+   "label": "m3'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.45265,
+   "w": 0.06324,
+   "h": 0.0121
+  },
+  {
+   "id": "f36",
+   "label": "z3'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.46475,
+   "w": 0.06324,
+   "h": 0.01085
+  },
+  {
+   "id": "f37",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.47738,
+   "w": 0.05545,
+   "h": 0.01052
+  },
+  {
+   "id": "f38",
+   "label": "z4",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.47738,
+   "w": 0.06324,
+   "h": 0.01197
+  },
+  {
+   "id": "f39",
+   "label": "m4",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.48935,
+   "w": 0.06324,
+   "h": 0.01171
+  },
+  {
+   "id": "f40",
+   "label": "m4'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.50106,
+   "w": 0.06324,
+   "h": 0.01131
+  },
+  {
+   "id": "f41",
+   "label": "z4'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.51237,
+   "w": 0.06324,
+   "h": 0.00926
+  },
+  {
+   "id": "f42",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.52341,
+   "w": 0.05545,
+   "h": 0.01052
+  },
+  {
+   "id": "f43",
+   "label": "z5",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.52341,
+   "w": 0.06324,
+   "h": 0.01267
+  },
+  {
+   "id": "f44",
+   "label": "m5",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.53608,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f45",
+   "label": "m5'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.54858,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f46",
+   "label": "z5'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.56108,
+   "w": 0.06324,
+   "h": 0.01035
+  },
+  {
+   "id": "f47",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.57321,
+   "w": 0.05545,
+   "h": 0.01073
+  },
+  {
+   "id": "f48",
+   "label": "z6",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.57321,
+   "w": 0.06324,
+   "h": 0.01289
+  },
+  {
+   "id": "f49",
+   "label": "m6",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.5861,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f50",
+   "label": "m6'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.5986,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f51",
+   "label": "z6'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.6111,
+   "w": 0.06324,
+   "h": 0.01036
+  },
+  {
+   "id": "f52",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.62324,
+   "w": 0.05545,
+   "h": 0.01071
+  },
+  {
+   "id": "f53",
+   "label": "z7",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.62324,
+   "w": 0.06324,
+   "h": 0.01286
+  },
+  {
+   "id": "f54",
+   "label": "m7",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.6361,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f55",
+   "label": "m7'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.6486,
+   "w": 0.06324,
+   "h": 0.0118
+  },
+  {
+   "id": "f56",
+   "label": "z7'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.6604,
+   "w": 0.06324,
+   "h": 0.00966
+  },
+  {
+   "id": "f57",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.67186,
+   "w": 0.05545,
+   "h": 0.01091
+  },
+  {
+   "id": "f58",
+   "label": "z8",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.67186,
+   "w": 0.06324,
+   "h": 0.01257
+  },
+  {
+   "id": "f59",
+   "label": "m8",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.68442,
+   "w": 0.06324,
+   "h": 0.01408
+  },
+  {
+   "id": "f60",
+   "label": "m8'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.6985,
+   "w": 0.06324,
+   "h": 0.01269
+  },
+  {
+   "id": "f61",
+   "label": "z8'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.7112,
+   "w": 0.06324,
+   "h": 0.00929
+  },
+  {
+   "id": "f62",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.72227,
+   "w": 0.05545,
+   "h": 0.00853
+  },
+  {
+   "id": "f63",
+   "label": "z9",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.72227,
+   "w": 0.06324,
+   "h": 0.01009
+  },
+  {
+   "id": "f64",
+   "label": "m9",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.73236,
+   "w": 0.06324,
+   "h": 0.0125
+  },
+  {
+   "id": "f65",
+   "label": "m9'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.74486,
+   "w": 0.06324,
+   "h": 0.01329
+  },
+  {
+   "id": "f66",
+   "label": "M (p1)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.75759,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f67",
+   "label": "M (p3)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.75759,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f68",
+   "label": "z9'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.75815,
+   "w": 0.06324,
+   "h": 0.01055
+  },
+  {
+   "id": "f69",
+   "label": "M'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.09579,
+   "y": 0.77049,
+   "w": 0.10849,
+   "h": 0.01151
+  },
+  {
+   "id": "f70",
+   "label": "M+M'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.77049,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f71",
+   "label": "M+M'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.77049,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f72",
+   "label": "Mref",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.75367,
+   "y": 0.77049,
+   "w": 0.05545,
+   "h": 0.01111
+  },
+  {
+   "id": "f73",
+   "label": "z10",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.77049,
+   "w": 0.06324,
+   "h": 0.01346
+  },
+  {
+   "id": "f74",
+   "label": "M (q1)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.78338,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f75",
+   "label": "M (q3)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.78338,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f76",
+   "label": "m10",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.78395,
+   "w": 0.06324,
+   "h": 0.0129
+  },
+  {
+   "id": "f77",
+   "label": "Zero",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.79628,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f78",
+   "label": "Zero",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.79628,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f79",
+   "label": "m10'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.79684,
+   "w": 0.06324,
+   "h": 0.0129
+  },
+  {
+   "id": "f80",
+   "label": "M+M'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.80918,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f81",
+   "label": "M+M'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.80918,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f82",
+   "label": "z10'",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85539,
+   "y": 0.80974,
+   "w": 0.06324,
+   "h": 0.01055
+  },
+  {
+   "id": "f83",
+   "label": "M (q2)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.82207,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f84",
+   "label": "M (q4)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.82207,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f85",
+   "label": "Zero",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.83497,
+   "w": 0.14136,
+   "h": 0.01111
+  },
+  {
+   "id": "f86",
+   "label": "Zero",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.83497,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f87",
+   "label": "M (p2)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.27185,
+   "y": 0.84787,
+   "w": 0.14136,
+   "h": 0.01153
+  },
+  {
+   "id": "f88",
+   "label": "M (p4)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.48238,
+   "y": 0.84787,
+   "w": 0.13448,
+   "h": 0.01111
+  },
+  {
+   "id": "f89",
+   "label": "Drift Massa Standar (d)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.35585,
+   "y": 0.8709,
+   "w": 0.05833,
+   "h": 0.00874
+  },
+  {
+   "id": "f90",
+   "label": "Catatan",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.13321,
+   "y": 0.89352,
+   "w": 0.41859,
+   "h": 0.01512
+  },
+  {
+   "id": "f91",
+   "label": "Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.70079,
+   "y": 0.93926,
+   "w": 0.08709,
+   "h": 0.01564
+  },
+  {
+   "id": "f92",
+   "label": "Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85214,
+   "y": 0.93926,
+   "w": 0.06648,
+   "h": 0.01564
+  },
+  {
+   "id": "f93",
+   "label": "Sign",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.70079,
+   "y": 0.9549,
+   "w": 0.08709,
+   "h": 0.01164
+  },
+  {
+   "id": "f94",
+   "label": "Sign",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.85214,
+   "y": 0.9549,
+   "w": 0.06648,
+   "h": 0.01164
+  }
+ ],
+ "jangkar_teks": [
+  {
+   "teks": "PT.",
+   "x": 0.10196,
+   "y": 0.03768,
+   "w": 0.02886,
+   "h": 0.0119
+  },
+  {
+   "teks": "SIDIK",
+   "x": 0.1369,
+   "y": 0.03768,
+   "w": 0.0488,
+   "h": 0.0119
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.27917,
+   "y": 0.03768,
+   "w": 0.09024,
+   "h": 0.0119
+  },
+  {
+   "teks": "Work",
+   "x": 0.37552,
+   "y": 0.03768,
+   "w": 0.04324,
+   "h": 0.0119
+  },
+  {
+   "teks": "Sheet",
+   "x": 0.42487,
+   "y": 0.03768,
+   "w": 0.04782,
+   "h": 0.0119
+  },
+  {
+   "teks": "Timbangan",
+   "x": 0.49709,
+   "y": 0.03768,
+   "w": 0.09188,
+   "h": 0.0119
+  },
+  {
+   "teks": "(Metode",
+   "x": 0.59507,
+   "y": 0.03768,
+   "w": 0.06676,
+   "h": 0.0119
+  },
+  {
+   "teks": "Subtitusi)",
+   "x": 0.66795,
+   "y": 0.03768,
+   "w": 0.07778,
+   "h": 0.0119
+  },
+  {
+   "teks": "LK-285-IDN",
+   "x": 0.80845,
+   "y": 0.03768,
+   "w": 0.10829,
+   "h": 0.0119
+  },
+  {
+   "teks": "EQUIPMENT",
+   "x": 0.31642,
+   "y": 0.06506,
+   "w": 0.09384,
+   "h": 0.01032
+  },
+  {
+   "teks": "IDENTITY",
+   "x": 0.41544,
+   "y": 0.06506,
+   "w": 0.07319,
+   "h": 0.01032
+  },
+  {
+   "teks": "AND",
+   "x": 0.49385,
+   "y": 0.06506,
+   "w": 0.03358,
+   "h": 0.01032
+  },
+  {
+   "teks": "CUSTOMER",
+   "x": 0.53271,
+   "y": 0.06506,
+   "w": 0.09025,
+   "h": 0.01032
+  },
+  {
+   "teks": "DATA",
+   "x": 0.62813,
+   "y": 0.06506,
+   "w": 0.0427,
+   "h": 0.01032
+  },
+  {
+   "teks": "Received",
+   "x": 0.05752,
+   "y": 0.07907,
+   "w": 0.05208,
+   "h": 0.00853
+  },
+  {
+   "teks": "Date",
+   "x": 0.11791,
+   "y": 0.07907,
+   "w": 0.0266,
+   "h": 0.00853
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.47892,
+   "y": 0.07907,
+   "w": 0.06017,
+   "h": 0.00853
+  },
+  {
+   "teks": "Date",
+   "x": 0.54741,
+   "y": 0.07907,
+   "w": 0.0266,
+   "h": 0.00853
+  },
+  {
+   "teks": "EQUIPMENT",
+   "x": 0.05719,
+   "y": 0.09612,
+   "w": 0.07831,
+   "h": 0.00853
+  },
+  {
+   "teks": "STANDARD",
+   "x": 0.52958,
+   "y": 0.09612,
+   "w": 0.07244,
+   "h": 0.00853
+  },
+  {
+   "teks": "Name",
+   "x": 0.08464,
+   "y": 0.10921,
+   "w": 0.03347,
+   "h": 0.00853
+  },
+  {
+   "teks": "Weight",
+   "x": 0.62405,
+   "y": 0.10921,
+   "w": 0.03877,
+   "h": 0.00853
+  },
+  {
+   "teks": "Set",
+   "x": 0.67138,
+   "y": 0.10921,
+   "w": 0.01886,
+   "h": 0.00853
+  },
+  {
+   "teks": "100",
+   "x": 0.72361,
+   "y": 0.10921,
+   "w": 0.02182,
+   "h": 0.00853
+  },
+  {
+   "teks": "mf-",
+   "x": 0.75395,
+   "y": 0.10921,
+   "w": 0.02257,
+   "h": 0.00853
+  },
+  {
+   "teks": "200g",
+   "x": 0.78497,
+   "y": 0.10921,
+   "w": 0.03118,
+   "h": 0.00853
+  },
+  {
+   "teks": "Capacity",
+   "x": 0.08464,
+   "y": 0.12153,
+   "w": 0.04873,
+   "h": 0.00853
+  },
+  {
+   "teks": "(….)",
+   "x": 0.33541,
+   "y": 0.12153,
+   "w": 0.03641,
+   "h": 0.00853
+  },
+  {
+   "teks": "Weight",
+   "x": 0.62405,
+   "y": 0.12153,
+   "w": 0.03877,
+   "h": 0.00853
+  },
+  {
+   "teks": "Set",
+   "x": 0.67138,
+   "y": 0.12153,
+   "w": 0.01886,
+   "h": 0.00853
+  },
+  {
+   "teks": "100",
+   "x": 0.72066,
+   "y": 0.12153,
+   "w": 0.02182,
+   "h": 0.00853
+  },
+  {
+   "teks": "mg-500g",
+   "x": 0.751,
+   "y": 0.12153,
+   "w": 0.05701,
+   "h": 0.00853
+  },
+  {
+   "teks": "STANDARD",
+   "x": 0.5384,
+   "y": 0.12768,
+   "w": 0.07244,
+   "h": 0.00853
+  },
+  {
+   "teks": "Resolution",
+   "x": 0.08464,
+   "y": 0.13382,
+   "w": 0.05923,
+   "h": 0.00853
+  },
+  {
+   "teks": "(….)",
+   "x": 0.33541,
+   "y": 0.13382,
+   "w": 0.03641,
+   "h": 0.00853
+  },
+  {
+   "teks": "Weight",
+   "x": 0.62405,
+   "y": 0.13382,
+   "w": 0.03877,
+   "h": 0.00853
+  },
+  {
+   "teks": "1kg",
+   "x": 0.69554,
+   "y": 0.13382,
+   "w": 0.01879,
+   "h": 0.00853
+  },
+  {
+   "teks": "Nilai",
+   "x": 0.08464,
+   "y": 0.14615,
+   "w": 0.02472,
+   "h": 0.00853
+  },
+  {
+   "teks": "dan",
+   "x": 0.13599,
+   "y": 0.14615,
+   "w": 0.02074,
+   "h": 0.00853
+  },
+  {
+   "teks": "kelas",
+   "x": 0.16505,
+   "y": 0.14615,
+   "w": 0.02916,
+   "h": 0.00853
+  },
+  {
+   "teks": "….....(",
+   "x": 0.26965,
+   "y": 0.14615,
+   "w": 0.0453,
+   "h": 0.00893
+  },
+  {
+   "teks": "…...)",
+   "x": 0.3151,
+   "y": 0.14655,
+   "w": 0.0364,
+   "h": 0.00853
+  },
+  {
+   "teks": "Kelas",
+   "x": 0.35665,
+   "y": 0.14655,
+   "w": 0.03143,
+   "h": 0.00853
+  },
+  {
+   "teks": "…....",
+   "x": 0.41311,
+   "y": 0.14655,
+   "w": 0.03155,
+   "h": 0.00853
+  },
+  {
+   "teks": "(…..)",
+   "x": 0.45325,
+   "y": 0.14655,
+   "w": 0.0413,
+   "h": 0.00853
+  },
+  {
+   "teks": "Weight",
+   "x": 0.62405,
+   "y": 0.14655,
+   "w": 0.03877,
+   "h": 0.00853
+  },
+  {
+   "teks": "20kg",
+   "x": 0.69816,
+   "y": 0.14655,
+   "w": 0.02924,
+   "h": 0.00853
+  },
+  {
+   "teks": "Type/Model",
+   "x": 0.08464,
+   "y": 0.15865,
+   "w": 0.06983,
+   "h": 0.00853
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.5299,
+   "y": 0.15865,
+   "w": 0.06017,
+   "h": 0.00853
+  },
+  {
+   "teks": "Metode",
+   "x": 0.59839,
+   "y": 0.15865,
+   "w": 0.04164,
+   "h": 0.00853
+  },
+  {
+   "teks": "SIDIK-IK-CAL-0505",
+   "x": 0.70711,
+   "y": 0.15865,
+   "w": 0.12731,
+   "h": 0.00853
+  },
+  {
+   "teks": "Serial",
+   "x": 0.08464,
+   "y": 0.17075,
+   "w": 0.03224,
+   "h": 0.00853
+  },
+  {
+   "teks": "Number",
+   "x": 0.12541,
+   "y": 0.17075,
+   "w": 0.04436,
+   "h": 0.00853
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.5299,
+   "y": 0.17075,
+   "w": 0.06017,
+   "h": 0.00853
+  },
+  {
+   "teks": "Location",
+   "x": 0.59839,
+   "y": 0.17075,
+   "w": 0.04717,
+   "h": 0.00853
+  },
+  {
+   "teks": "Merk/Manufacturing",
+   "x": 0.08464,
+   "y": 0.18286,
+   "w": 0.11507,
+   "h": 0.00853
+  },
+  {
+   "teks": "ENVIRONMENT",
+   "x": 0.52958,
+   "y": 0.20686,
+   "w": 0.0973,
+   "h": 0.00853
+  },
+  {
+   "teks": "COND.",
+   "x": 0.63116,
+   "y": 0.20686,
+   "w": 0.04234,
+   "h": 0.00853
+  },
+  {
+   "teks": "THERMOHYGRO:",
+   "x": 0.79474,
+   "y": 0.20686,
+   "w": 0.10899,
+   "h": 0.00853
+  },
+  {
+   "teks": "OWNER",
+   "x": 0.05719,
+   "y": 0.21956,
+   "w": 0.05034,
+   "h": 0.00853
+  },
+  {
+   "teks": "First",
+   "x": 0.5531,
+   "y": 0.21956,
+   "w": 0.0247,
+   "h": 0.00853
+  },
+  {
+   "teks": "End",
+   "x": 0.63583,
+   "y": 0.21956,
+   "w": 0.02237,
+   "h": 0.00853
+  },
+  {
+   "teks": "Units",
+   "x": 0.71462,
+   "y": 0.21956,
+   "w": 0.02881,
+   "h": 0.00853
+  },
+  {
+   "teks": "TH-2",
+   "x": 0.84408,
+   "y": 0.22055,
+   "w": 0.03332,
+   "h": 0.00853
+  },
+  {
+   "teks": "Name",
+   "x": 0.08464,
+   "y": 0.23663,
+   "w": 0.03347,
+   "h": 0.00853
+  },
+  {
+   "teks": "TH-6",
+   "x": 0.84408,
+   "y": 0.23504,
+   "w": 0.03332,
+   "h": 0.00853
+  },
+  {
+   "teks": "Address",
+   "x": 0.08464,
+   "y": 0.24952,
+   "w": 0.04581,
+   "h": 0.00853
+  },
+  {
+   "teks": "%RH",
+   "x": 0.69273,
+   "y": 0.24952,
+   "w": 0.02836,
+   "h": 0.00853
+  },
+  {
+   "teks": "TH-7",
+   "x": 0.84408,
+   "y": 0.2517,
+   "w": 0.03332,
+   "h": 0.00853
+  },
+  {
+   "teks": "CALIBRATION",
+   "x": 0.40667,
+   "y": 0.27401,
+   "w": 0.10646,
+   "h": 0.01032
+  },
+  {
+   "teks": "RESULT",
+   "x": 0.51836,
+   "y": 0.27401,
+   "w": 0.06277,
+   "h": 0.01032
+  },
+  {
+   "teks": "SCALL",
+   "x": 0.07252,
+   "y": 0.28982,
+   "w": 0.0421,
+   "h": 0.00853
+  },
+  {
+   "teks": "OBSERVATION",
+   "x": 0.11889,
+   "y": 0.28982,
+   "w": 0.09534,
+   "h": 0.00853
+  },
+  {
+   "teks": "EFFECT",
+   "x": 0.47791,
+   "y": 0.28982,
+   "w": 0.05153,
+   "h": 0.00853
+  },
+  {
+   "teks": "TARE",
+   "x": 0.55624,
+   "y": 0.28982,
+   "w": 0.03519,
+   "h": 0.00853
+  },
+  {
+   "teks": "ACCURACY",
+   "x": 0.73224,
+   "y": 0.28982,
+   "w": 0.07418,
+   "h": 0.00853
+  },
+  {
+   "teks": "Position",
+   "x": 0.07288,
+   "y": 0.30381,
+   "w": 0.04067,
+   "h": 0.00774
+  },
+  {
+   "teks": "Standard",
+   "x": 0.15266,
+   "y": 0.30381,
+   "w": 0.04588,
+   "h": 0.00774
+  },
+  {
+   "teks": "Weight",
+   "x": 0.20589,
+   "y": 0.30381,
+   "w": 0.0352,
+   "h": 0.00774
+  },
+  {
+   "teks": "The",
+   "x": 0.31675,
+   "y": 0.30381,
+   "w": 0.01944,
+   "h": 0.00774
+  },
+  {
+   "teks": "Reading",
+   "x": 0.34354,
+   "y": 0.30381,
+   "w": 0.04198,
+   "h": 0.00774
+  },
+  {
+   "teks": "Standard",
+   "x": 0.46912,
+   "y": 0.30451,
+   "w": 0.03561,
+   "h": 0.00595
+  },
+  {
+   "teks": "Weight",
+   "x": 0.51061,
+   "y": 0.30451,
+   "w": 0.02728,
+   "h": 0.00595
+  },
+  {
+   "teks": "The",
+   "x": 0.59889,
+   "y": 0.30451,
+   "w": 0.01503,
+   "h": 0.00595
+  },
+  {
+   "teks": "Reading",
+   "x": 0.61978,
+   "y": 0.30451,
+   "w": 0.0327,
+   "h": 0.00595
+  },
+  {
+   "teks": "Nominal",
+   "x": 0.7277,
+   "y": 0.3039,
+   "w": 0.03731,
+   "h": 0.00694
+  },
+  {
+   "teks": "The",
+   "x": 0.81958,
+   "y": 0.3039,
+   "w": 0.01749,
+   "h": 0.00694
+  },
+  {
+   "teks": "Reading",
+   "x": 0.84374,
+   "y": 0.3039,
+   "w": 0.03777,
+   "h": 0.00694
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.31721,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "Before",
+   "x": 0.05752,
+   "y": 0.34657,
+   "w": 0.03704,
+   "h": 0.00853
+  },
+  {
+   "teks": "m1'",
+   "x": 0.81631,
+   "y": 0.34618,
+   "w": 0.01891,
+   "h": 0.00853
+  },
+  {
+   "teks": "Adjustment",
+   "x": 0.05752,
+   "y": 0.36065,
+   "w": 0.0626,
+   "h": 0.00853
+  },
+  {
+   "teks": "Bentuk",
+   "x": 0.46291,
+   "y": 0.36065,
+   "w": 0.03895,
+   "h": 0.00853
+  },
+  {
+   "teks": "Pan",
+   "x": 0.51025,
+   "y": 0.36065,
+   "w": 0.02237,
+   "h": 0.00853
+  },
+  {
+   "teks": "z1'",
+   "x": 0.81631,
+   "y": 0.36026,
+   "w": 0.01467,
+   "h": 0.00853
+  },
+  {
+   "teks": "Diameter",
+   "x": 0.46291,
+   "y": 0.37475,
+   "w": 0.05087,
+   "h": 0.00853
+  },
+  {
+   "teks": "Pan",
+   "x": 0.52229,
+   "y": 0.37475,
+   "w": 0.02237,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.37475,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "After",
+   "x": 0.05752,
+   "y": 0.40291,
+   "w": 0.02671,
+   "h": 0.00853
+  },
+  {
+   "teks": "rata-rata",
+   "x": 0.49849,
+   "y": 0.40291,
+   "w": 0.05174,
+   "h": 0.00853
+  },
+  {
+   "teks": "(m1:m2)",
+   "x": 0.55855,
+   "y": 0.40291,
+   "w": 0.05861,
+   "h": 0.00853
+  },
+  {
+   "teks": "m2'",
+   "x": 0.81631,
+   "y": 0.40252,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "Adjustment",
+   "x": 0.05752,
+   "y": 0.417,
+   "w": 0.0626,
+   "h": 0.00853
+  },
+  {
+   "teks": "Rata-rata",
+   "x": 0.48576,
+   "y": 0.417,
+   "w": 0.05664,
+   "h": 0.00853
+  },
+  {
+   "teks": "(z1:z20",
+   "x": 0.55072,
+   "y": 0.417,
+   "w": 0.04861,
+   "h": 0.00853
+  },
+  {
+   "teks": "z2'",
+   "x": 0.81631,
+   "y": 0.41662,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Ms-(M-z)",
+   "x": 0.48868,
+   "y": 0.42993,
+   "w": 0.06976,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.42993,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "Standar",
+   "x": 0.05752,
+   "y": 0.44223,
+   "w": 0.0437,
+   "h": 0.00853
+  },
+  {
+   "teks": "deviasi",
+   "x": 0.10973,
+   "y": 0.44223,
+   "w": 0.0388,
+   "h": 0.00853
+  },
+  {
+   "teks": "yang",
+   "x": 0.15706,
+   "y": 0.44223,
+   "w": 0.02695,
+   "h": 0.00853
+  },
+  {
+   "teks": "lalu",
+   "x": 0.19233,
+   "y": 0.44223,
+   "w": 0.01973,
+   "h": 0.00853
+  },
+  {
+   "teks": "(SD)",
+   "x": 0.22038,
+   "y": 0.44223,
+   "w": 0.03706,
+   "h": 0.00853
+  },
+  {
+   "teks": "Jika",
+   "x": 0.46291,
+   "y": 0.44283,
+   "w": 0.02237,
+   "h": 0.00853
+  },
+  {
+   "teks": "C>5*resolusi,",
+   "x": 0.4936,
+   "y": 0.44283,
+   "w": 0.08444,
+   "h": 0.00853
+  },
+  {
+   "teks": "maka",
+   "x": 0.58662,
+   "y": 0.44283,
+   "w": 0.03055,
+   "h": 0.00853
+  },
+  {
+   "teks": "timbangan",
+   "x": 0.62549,
+   "y": 0.44283,
+   "w": 0.05827,
+   "h": 0.00853
+  },
+  {
+   "teks": "harus",
+   "x": 0.46291,
+   "y": 0.45533,
+   "w": 0.03111,
+   "h": 0.00853
+  },
+  {
+   "teks": "dilakukan",
+   "x": 0.50241,
+   "y": 0.45533,
+   "w": 0.05272,
+   "h": 0.00853
+  },
+  {
+   "teks": "adjustment",
+   "x": 0.56345,
+   "y": 0.45533,
+   "w": 0.06097,
+   "h": 0.00853
+  },
+  {
+   "teks": "m3'",
+   "x": 0.81631,
+   "y": 0.45493,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "REPEATABILITY",
+   "x": 0.07252,
+   "y": 0.46644,
+   "w": 0.10321,
+   "h": 0.00853
+  },
+  {
+   "teks": "(Ref:",
+   "x": 0.46291,
+   "y": 0.46722,
+   "w": 0.02774,
+   "h": 0.00694
+  },
+  {
+   "teks": "Tabel",
+   "x": 0.49752,
+   "y": 0.46722,
+   "w": 0.02523,
+   "h": 0.00694
+  },
+  {
+   "teks": "Kinerja",
+   "x": 0.52953,
+   "y": 0.46722,
+   "w": 0.03157,
+   "h": 0.00694
+  },
+  {
+   "teks": "LOP",
+   "x": 0.56778,
+   "y": 0.46722,
+   "w": 0.02028,
+   "h": 0.00694
+  },
+  {
+   "teks": "Timbangan)",
+   "x": 0.5949,
+   "y": 0.46722,
+   "w": 0.05823,
+   "h": 0.00694
+  },
+  {
+   "teks": "z3'",
+   "x": 0.81631,
+   "y": 0.46743,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Middle",
+   "x": 0.13174,
+   "y": 0.47953,
+   "w": 0.03704,
+   "h": 0.00853
+  },
+  {
+   "teks": "Capacity",
+   "x": 0.1771,
+   "y": 0.47953,
+   "w": 0.04873,
+   "h": 0.00853
+  },
+  {
+   "teks": "Miximum",
+   "x": 0.30335,
+   "y": 0.47953,
+   "w": 0.05035,
+   "h": 0.00853
+  },
+  {
+   "teks": "Capacity",
+   "x": 0.36212,
+   "y": 0.47953,
+   "w": 0.04873,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.47953,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "(…)",
+   "x": 0.21149,
+   "y": 0.49163,
+   "w": 0.03149,
+   "h": 0.00853
+  },
+  {
+   "teks": "(…)",
+   "x": 0.38085,
+   "y": 0.49124,
+   "w": 0.03149,
+   "h": 0.00853
+  },
+  {
+   "teks": "No.",
+   "x": 0.05817,
+   "y": 0.50255,
+   "w": 0.02078,
+   "h": 0.00853
+  },
+  {
+   "teks": "Zero",
+   "x": 0.10458,
+   "y": 0.50294,
+   "w": 0.02594,
+   "h": 0.00853
+  },
+  {
+   "teks": "Reading",
+   "x": 0.19056,
+   "y": 0.50294,
+   "w": 0.04651,
+   "h": 0.00853
+  },
+  {
+   "teks": "Zero",
+   "x": 0.30172,
+   "y": 0.50294,
+   "w": 0.02594,
+   "h": 0.00853
+  },
+  {
+   "teks": "Reading",
+   "x": 0.37364,
+   "y": 0.50294,
+   "w": 0.04651,
+   "h": 0.00853
+  },
+  {
+   "teks": "m4'",
+   "x": 0.81631,
+   "y": 0.50334,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "(zi)",
+   "x": 0.10294,
+   "y": 0.51326,
+   "w": 0.02857,
+   "h": 0.00853
+  },
+  {
+   "teks": "(mi)",
+   "x": 0.19743,
+   "y": 0.51326,
+   "w": 0.03281,
+   "h": 0.00853
+  },
+  {
+   "teks": "(zi)",
+   "x": 0.30041,
+   "y": 0.51326,
+   "w": 0.02857,
+   "h": 0.00853
+  },
+  {
+   "teks": "(mi)",
+   "x": 0.3802,
+   "y": 0.51326,
+   "w": 0.03281,
+   "h": 0.00853
+  },
+  {
+   "teks": "z4'",
+   "x": 0.81631,
+   "y": 0.51465,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.52556,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "m5'",
+   "x": 0.81631,
+   "y": 0.55096,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "z5'",
+   "x": 0.81631,
+   "y": 0.56346,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.57559,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "m6'",
+   "x": 0.81631,
+   "y": 0.60098,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "z6'",
+   "x": 0.81631,
+   "y": 0.61349,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.62558,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "m7'",
+   "x": 0.81631,
+   "y": 0.65099,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "z7'",
+   "x": 0.81631,
+   "y": 0.6627,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "LOADING",
+   "x": 0.07252,
+   "y": 0.67361,
+   "w": 0.05944,
+   "h": 0.00853
+  },
+  {
+   "teks": "INFLUENCE",
+   "x": 0.13621,
+   "y": 0.67361,
+   "w": 0.07498,
+   "h": 0.00853
+  },
+  {
+   "teks": "EACH",
+   "x": 0.23936,
+   "y": 0.67361,
+   "w": 0.03655,
+   "h": 0.00853
+  },
+  {
+   "teks": "POSITION",
+   "x": 0.28019,
+   "y": 0.67361,
+   "w": 0.06328,
+   "h": 0.00853
+  },
+  {
+   "teks": "…..",
+   "x": 0.39948,
+   "y": 0.67401,
+   "w": 0.01591,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.67361,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "Untuk",
+   "x": 0.05538,
+   "y": 0.68855,
+   "w": 0.02448,
+   "h": 0.00556
+  },
+  {
+   "teks": "keamanan",
+   "x": 0.08248,
+   "y": 0.68855,
+   "w": 0.04159,
+   "h": 0.00556
+  },
+  {
+   "teks": "loadcell",
+   "x": 0.12658,
+   "y": 0.68855,
+   "w": 0.03136,
+   "h": 0.00556
+  },
+  {
+   "teks": "timbangan,",
+   "x": 0.16051,
+   "y": 0.68855,
+   "w": 0.04471,
+   "h": 0.00556
+  },
+  {
+   "teks": "Gunakan",
+   "x": 0.20786,
+   "y": 0.68855,
+   "w": 0.03669,
+   "h": 0.00556
+  },
+  {
+   "teks": "beban",
+   "x": 0.24704,
+   "y": 0.68855,
+   "w": 0.02593,
+   "h": 0.00556
+  },
+  {
+   "teks": "uji",
+   "x": 0.27546,
+   "y": 0.68855,
+   "w": 0.01145,
+   "h": 0.00556
+  },
+  {
+   "teks": "1/3",
+   "x": 0.28948,
+   "y": 0.68855,
+   "w": 0.01697,
+   "h": 0.00556
+  },
+  {
+   "teks": "1/2",
+   "x": 0.32113,
+   "y": 0.68855,
+   "w": 0.01697,
+   "h": 0.00556
+  },
+  {
+   "teks": "dari",
+   "x": 0.34071,
+   "y": 0.68855,
+   "w": 0.01669,
+   "h": 0.00556
+  },
+  {
+   "teks": "kapasitas",
+   "x": 0.35997,
+   "y": 0.68855,
+   "w": 0.03817,
+   "h": 0.00556
+  },
+  {
+   "teks": "maksimal",
+   "x": 0.40077,
+   "y": 0.68855,
+   "w": 0.03821,
+   "h": 0.00556
+  },
+  {
+   "teks": "alat,",
+   "x": 0.44156,
+   "y": 0.68855,
+   "w": 0.01956,
+   "h": 0.00556
+  },
+  {
+   "teks": "atau",
+   "x": 0.46375,
+   "y": 0.68855,
+   "w": 0.01906,
+   "h": 0.00556
+  },
+  {
+   "teks": "dapat",
+   "x": 0.48531,
+   "y": 0.68855,
+   "w": 0.02364,
+   "h": 0.00556
+  },
+  {
+   "teks": "disesuaikan",
+   "x": 0.51144,
+   "y": 0.68855,
+   "w": 0.04711,
+   "h": 0.00556
+  },
+  {
+   "teks": "dengan",
+   "x": 0.56104,
+   "y": 0.68855,
+   "w": 0.0305,
+   "h": 0.00556
+  },
+  {
+   "teks": "spek.",
+   "x": 0.59404,
+   "y": 0.68855,
+   "w": 0.02379,
+   "h": 0.00556
+  },
+  {
+   "teks": "manufaktur",
+   "x": 0.62046,
+   "y": 0.68855,
+   "w": 0.04434,
+   "h": 0.00556
+  },
+  {
+   "teks": "Position",
+   "x": 0.08137,
+   "y": 0.70039,
+   "w": 0.04487,
+   "h": 0.00853
+  },
+  {
+   "teks": "Center",
+   "x": 0.18435,
+   "y": 0.70177,
+   "w": 0.03749,
+   "h": 0.00853
+  },
+  {
+   "teks": "Front",
+   "x": 0.27884,
+   "y": 0.70177,
+   "w": 0.02928,
+   "h": 0.00853
+  },
+  {
+   "teks": "Back",
+   "x": 0.36155,
+   "y": 0.70177,
+   "w": 0.02787,
+   "h": 0.00853
+  },
+  {
+   "teks": "Left",
+   "x": 0.46225,
+   "y": 0.70177,
+   "w": 0.02081,
+   "h": 0.00853
+  },
+  {
+   "teks": "Right",
+   "x": 0.55997,
+   "y": 0.70177,
+   "w": 0.02928,
+   "h": 0.00853
+  },
+  {
+   "teks": "m8'",
+   "x": 0.81631,
+   "y": 0.70079,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "Reading",
+   "x": 0.08072,
+   "y": 0.71311,
+   "w": 0.04651,
+   "h": 0.00853
+  },
+  {
+   "teks": "z8'",
+   "x": 0.81631,
+   "y": 0.71351,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.72244,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "HYSTERISIS",
+   "x": 0.07252,
+   "y": 0.73375,
+   "w": 0.07924,
+   "h": 0.00853
+  },
+  {
+   "teks": "Standar",
+   "x": 0.0598,
+   "y": 0.74744,
+   "w": 0.0437,
+   "h": 0.00853
+  },
+  {
+   "teks": "Weight",
+   "x": 0.11202,
+   "y": 0.74744,
+   "w": 0.03877,
+   "h": 0.00853
+  },
+  {
+   "teks": "Reading",
+   "x": 0.24812,
+   "y": 0.74744,
+   "w": 0.04651,
+   "h": 0.00853
+  },
+  {
+   "teks": "Reading",
+   "x": 0.4531,
+   "y": 0.74744,
+   "w": 0.04651,
+   "h": 0.00853
+  },
+  {
+   "teks": "m9'",
+   "x": 0.81631,
+   "y": 0.74764,
+   "w": 0.02119,
+   "h": 0.00853
+  },
+  {
+   "teks": "(p1)",
+   "x": 0.22884,
+   "y": 0.76267,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "(p3)",
+   "x": 0.43639,
+   "y": 0.76267,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "z9'",
+   "x": 0.81631,
+   "y": 0.76053,
+   "w": 0.01695,
+   "h": 0.00853
+  },
+  {
+   "teks": "M+M'",
+   "x": 0.21475,
+   "y": 0.77178,
+   "w": 0.03373,
+   "h": 0.00853
+  },
+  {
+   "teks": "M+M'",
+   "x": 0.42235,
+   "y": 0.77178,
+   "w": 0.03373,
+   "h": 0.00853
+  },
+  {
+   "teks": "Mref=",
+   "x": 0.71724,
+   "y": 0.77323,
+   "w": 0.03316,
+   "h": 0.00853
+  },
+  {
+   "teks": "z10",
+   "x": 0.81631,
+   "y": 0.77343,
+   "w": 0.01988,
+   "h": 0.00853
+  },
+  {
+   "teks": "(q1)",
+   "x": 0.22884,
+   "y": 0.78846,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "(q3)",
+   "x": 0.43639,
+   "y": 0.78846,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "m10",
+   "x": 0.81598,
+   "y": 0.78655,
+   "w": 0.02124,
+   "h": 0.00754
+  },
+  {
+   "teks": "Zero",
+   "x": 0.21704,
+   "y": 0.79758,
+   "w": 0.02874,
+   "h": 0.00853
+  },
+  {
+   "teks": "Zero",
+   "x": 0.42497,
+   "y": 0.79758,
+   "w": 0.02874,
+   "h": 0.00853
+  },
+  {
+   "teks": "m10'",
+   "x": 0.81565,
+   "y": 0.79974,
+   "w": 0.02156,
+   "h": 0.00675
+  },
+  {
+   "teks": "M+M'",
+   "x": 0.21475,
+   "y": 0.81047,
+   "w": 0.03373,
+   "h": 0.00853
+  },
+  {
+   "teks": "M+M'",
+   "x": 0.42235,
+   "y": 0.81047,
+   "w": 0.03373,
+   "h": 0.00853
+  },
+  {
+   "teks": "z10'",
+   "x": 0.81598,
+   "y": 0.81217,
+   "w": 0.02203,
+   "h": 0.00813
+  },
+  {
+   "teks": "(q2)",
+   "x": 0.22884,
+   "y": 0.82715,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "(q4)",
+   "x": 0.43639,
+   "y": 0.82715,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "Zero",
+   "x": 0.21704,
+   "y": 0.83627,
+   "w": 0.02874,
+   "h": 0.00853
+  },
+  {
+   "teks": "Zero",
+   "x": 0.42497,
+   "y": 0.83627,
+   "w": 0.02874,
+   "h": 0.00853
+  },
+  {
+   "teks": "(p2)",
+   "x": 0.22884,
+   "y": 0.85294,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "(p4)",
+   "x": 0.43639,
+   "y": 0.85294,
+   "w": 0.01688,
+   "h": 0.00575
+  },
+  {
+   "teks": "DRIFT",
+   "x": 0.07252,
+   "y": 0.87267,
+   "w": 0.03916,
+   "h": 0.00853
+  },
+  {
+   "teks": "Drift",
+   "x": 0.15494,
+   "y": 0.87267,
+   "w": 0.02338,
+   "h": 0.00853
+  },
+  {
+   "teks": "Massa",
+   "x": 0.18688,
+   "y": 0.87267,
+   "w": 0.03676,
+   "h": 0.00853
+  },
+  {
+   "teks": "Standar",
+   "x": 0.23196,
+   "y": 0.87267,
+   "w": 0.0437,
+   "h": 0.00853
+  },
+  {
+   "teks": "(d)",
+   "x": 0.28418,
+   "y": 0.87267,
+   "w": 0.02629,
+   "h": 0.00853
+  },
+  {
+   "teks": "(…)",
+   "x": 0.42333,
+   "y": 0.87227,
+   "w": 0.03149,
+   "h": 0.00853
+  },
+  {
+   "teks": "Catatan:",
+   "x": 0.05719,
+   "y": 0.89627,
+   "w": 0.04989,
+   "h": 0.00853
+  },
+  {
+   "teks": "Calibrated",
+   "x": 0.67672,
+   "y": 0.89607,
+   "w": 0.05725,
+   "h": 0.00853
+  },
+  {
+   "teks": "Checked",
+   "x": 0.82186,
+   "y": 0.89607,
+   "w": 0.04915,
+   "h": 0.00853
+  },
+  {
+   "teks": "Name",
+   "x": 0.64335,
+   "y": 0.9431,
+   "w": 0.03347,
+   "h": 0.00853
+  },
+  {
+   "teks": "Name",
+   "x": 0.79507,
+   "y": 0.9431,
+   "w": 0.03347,
+   "h": 0.00853
+  },
+  {
+   "teks": "Sign",
+   "x": 0.64335,
+   "y": 0.95818,
+   "w": 0.02529,
+   "h": 0.00853
+  },
+  {
+   "teks": "Sign",
+   "x": 0.79507,
+   "y": 0.95818,
+   "w": 0.02529,
+   "h": 0.00853
+  },
+  {
+   "teks": "Page",
+   "x": 0.03856,
+   "y": 0.98108,
+   "w": 0.02798,
+   "h": 0.00853
+  },
+  {
+   "teks": "Revise",
+   "x": 0.47631,
+   "y": 0.98108,
+   "w": 0.03776,
+   "h": 0.00853
+  },
+  {
+   "teks": "SIDIK-FM-CAL-0508.A",
+   "x": 0.84605,
+   "y": 0.98108,
+   "w": 0.12476,
+   "h": 0.00853
+  }
+ ]
+}

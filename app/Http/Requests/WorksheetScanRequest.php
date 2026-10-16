@@ -23,16 +23,20 @@ class WorksheetScanRequest extends FormRequest
      * 3 titik × 5 Repeat × 2 kolom × 2 tabel = 60. Dikasih kelonggaran besar
      * buat lembar alat baru, tapi tetap ada langitnya.
      */
-    private const MAKS_SEL = 600;
+    public const MAKS_SEL = 600;
 
     /**
      * Langit array formulir ASLI. Pilot pH: 93 jangkar teks, 4 isian, 9 centang.
+     * Draf 41 formulir (9 Okt 2026) paling padat: 256 jangkar teks (0524
+     * Viscometer) dan 40 kotak centang (0524) — langitnya dinaikkan supaya
+     * peta mana pun muat, tetap berlangit. Publik karena
+     * `GeometriFormulirAsliSemuaTest` mengadu tiap peta ke sini.
      */
-    private const MAKS_JANGKAR = 200;
+    public const MAKS_JANGKAR = 400;
 
-    private const MAKS_ISIAN = 20;
+    public const MAKS_ISIAN = 20;
 
-    private const MAKS_CENTANG = 30;
+    public const MAKS_CENTANG = 60;
 
     public function authorize(): bool
     {

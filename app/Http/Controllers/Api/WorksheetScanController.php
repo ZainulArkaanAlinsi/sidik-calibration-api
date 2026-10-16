@@ -82,13 +82,30 @@ class WorksheetScanController extends Controller
             // `cetak` (bawaan) = lembar cetak bermarker+QR, kontrak lama.
             // `asli` = formulir SIDIK-FM-CAL asli lab, lihat [FormulirAsli].
             'kertas' => ['sometimes', 'nullable', 'string', 'in:cetak,asli'],
+            // Formulir asli yang DIMINTA — kode FM yang dibaca HP dari kaki
+            // kertas. Pemilih varian per sesi (piston 0528/0529, flowmeter
+            // UFM/gravimetri); kosong = formulir bawaan alat. Jalur cetak
+            // mengabaikannya.
+            'kode_dokumen' => ['sometimes', 'nullable', 'string', 'max:40'],
         ]);
 
         $alat = $this->alat($request, $data['equipment_id'] ?? null)
             ?? $this->konteksOrganisasi($request);
 
         if (($data['kertas'] ?? 'cetak') === 'asli') {
-            $template = $this->formulirAsli->untukKode($kode, $alat, $data['jumlah_pengulangan'] ?? null);
+            $template = $this->formulirAsli->cari(
+                $kode,
+                $alat,
+                $data['jumlah_pengulangan'] ?? null,
+                $data['kode_dokumen'] ?? null,
+            );
+
+            // Alat ini punya peta, tapi tidak ada yang bisa dipilih untuknya
+            // (varian lain, alat belum dikenal, peta kembar) — pesannya dari
+            // `FormulirAsli::pilihPeta()`.
+            if (is_string($template)) {
+                abort(404, $template);
+            }
 
             abort_if(
                 $template === null,

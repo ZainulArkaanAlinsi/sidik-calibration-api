@@ -1,0 +1,742 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0536.draf.json -> kunci sel profil sieve. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Tabel kertas dibagi dua blok berdampingan (kiri 1..15, kanan 16..30); kunci `opening|baris|1|warp/weft/kawat` dengan baris kanan = 15 + baris kertas.",
+    "template_id": "sieve",
+    "kode_dokumen": "SIDIK-FM-CAL-0536_Rev.2",
+    "draf": "formulir-0536.draf.json",
+    "sumber_sha256": "20dc60432e4baeaf0b80cf100c7326d7d281fbfa5288fa9936be42dea065d61c",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "opening|1|1|warp",
+            "x": 0.6084,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|1|1|weft",
+            "x": 0.6773,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|1|1|kawat",
+            "x": 0.7479,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|16|1|warp",
+            "x": 0.8119,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|16|1|weft",
+            "x": 0.8757,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|16|1|kawat",
+            "x": 0.9396,
+            "y": 0.3412
+        },
+        {
+            "kunci": "opening|2|1|warp",
+            "x": 0.6084,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|2|1|weft",
+            "x": 0.6773,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|2|1|kawat",
+            "x": 0.7479,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|17|1|warp",
+            "x": 0.8119,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|17|1|weft",
+            "x": 0.8757,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|17|1|kawat",
+            "x": 0.9396,
+            "y": 0.362
+        },
+        {
+            "kunci": "opening|3|1|warp",
+            "x": 0.6084,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|3|1|weft",
+            "x": 0.6773,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|3|1|kawat",
+            "x": 0.7479,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|18|1|warp",
+            "x": 0.8119,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|18|1|weft",
+            "x": 0.8757,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|18|1|kawat",
+            "x": 0.9396,
+            "y": 0.383
+        },
+        {
+            "kunci": "opening|4|1|warp",
+            "x": 0.6084,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|4|1|weft",
+            "x": 0.6773,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|4|1|kawat",
+            "x": 0.7479,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|19|1|warp",
+            "x": 0.8119,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|19|1|weft",
+            "x": 0.8757,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|19|1|kawat",
+            "x": 0.9396,
+            "y": 0.4039
+        },
+        {
+            "kunci": "opening|5|1|warp",
+            "x": 0.6084,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|5|1|weft",
+            "x": 0.6773,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|5|1|kawat",
+            "x": 0.7479,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|20|1|warp",
+            "x": 0.8119,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|20|1|weft",
+            "x": 0.8757,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|20|1|kawat",
+            "x": 0.9396,
+            "y": 0.4248
+        },
+        {
+            "kunci": "opening|6|1|warp",
+            "x": 0.6084,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|6|1|weft",
+            "x": 0.6773,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|6|1|kawat",
+            "x": 0.7479,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|21|1|warp",
+            "x": 0.8119,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|21|1|weft",
+            "x": 0.8757,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|21|1|kawat",
+            "x": 0.9396,
+            "y": 0.4457
+        },
+        {
+            "kunci": "opening|7|1|warp",
+            "x": 0.6084,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|7|1|weft",
+            "x": 0.6773,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|7|1|kawat",
+            "x": 0.7479,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|22|1|warp",
+            "x": 0.8119,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|22|1|weft",
+            "x": 0.8757,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|22|1|kawat",
+            "x": 0.9396,
+            "y": 0.4667
+        },
+        {
+            "kunci": "opening|8|1|warp",
+            "x": 0.6084,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|8|1|weft",
+            "x": 0.6773,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|8|1|kawat",
+            "x": 0.7479,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|23|1|warp",
+            "x": 0.8119,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|23|1|weft",
+            "x": 0.8757,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|23|1|kawat",
+            "x": 0.9396,
+            "y": 0.4876
+        },
+        {
+            "kunci": "opening|9|1|warp",
+            "x": 0.6084,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|9|1|weft",
+            "x": 0.6773,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|9|1|kawat",
+            "x": 0.7479,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|24|1|warp",
+            "x": 0.8119,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|24|1|weft",
+            "x": 0.8757,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|24|1|kawat",
+            "x": 0.9396,
+            "y": 0.508
+        },
+        {
+            "kunci": "opening|10|1|warp",
+            "x": 0.6084,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|10|1|weft",
+            "x": 0.6773,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|10|1|kawat",
+            "x": 0.7479,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|25|1|warp",
+            "x": 0.8119,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|25|1|weft",
+            "x": 0.8757,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|25|1|kawat",
+            "x": 0.9396,
+            "y": 0.5289
+        },
+        {
+            "kunci": "opening|11|1|warp",
+            "x": 0.6084,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|11|1|weft",
+            "x": 0.6773,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|11|1|kawat",
+            "x": 0.7479,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|26|1|warp",
+            "x": 0.8119,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|26|1|weft",
+            "x": 0.8757,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|26|1|kawat",
+            "x": 0.9396,
+            "y": 0.5497
+        },
+        {
+            "kunci": "opening|12|1|warp",
+            "x": 0.6084,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|12|1|weft",
+            "x": 0.6773,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|12|1|kawat",
+            "x": 0.7479,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|27|1|warp",
+            "x": 0.8119,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|27|1|weft",
+            "x": 0.8757,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|27|1|kawat",
+            "x": 0.9396,
+            "y": 0.5695
+        },
+        {
+            "kunci": "opening|13|1|warp",
+            "x": 0.6084,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|13|1|weft",
+            "x": 0.6773,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|13|1|kawat",
+            "x": 0.7479,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|28|1|warp",
+            "x": 0.8119,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|28|1|weft",
+            "x": 0.8757,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|28|1|kawat",
+            "x": 0.9396,
+            "y": 0.5891
+        },
+        {
+            "kunci": "opening|14|1|warp",
+            "x": 0.6084,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|14|1|weft",
+            "x": 0.6773,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|14|1|kawat",
+            "x": 0.7479,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|29|1|warp",
+            "x": 0.8119,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|29|1|weft",
+            "x": 0.8757,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|29|1|kawat",
+            "x": 0.9396,
+            "y": 0.6098
+        },
+        {
+            "kunci": "opening|15|1|warp",
+            "x": 0.6084,
+            "y": 0.6324
+        },
+        {
+            "kunci": "opening|15|1|weft",
+            "x": 0.6773,
+            "y": 0.6324
+        },
+        {
+            "kunci": "opening|15|1|kawat",
+            "x": 0.7479,
+            "y": 0.6324
+        },
+        {
+            "kunci": "opening|30|1|warp",
+            "x": 0.8119,
+            "y": 0.6324
+        },
+        {
+            "kunci": "opening|30|1|weft",
+            "x": 0.8757,
+            "y": 0.6324
+        },
+        {
+            "kunci": "opening|30|1|kawat",
+            "x": 0.9396,
+            "y": 0.6324
+        },
+        {
+            "kunci": "frame|1|1|diameter",
+            "x": 0.6789,
+            "y": 0.7477
+        },
+        {
+            "kunci": "frame|1|1|tinggi",
+            "x": 0.8758,
+            "y": 0.7477
+        },
+        {
+            "kunci": "frame|2|1|diameter",
+            "x": 0.6789,
+            "y": 0.7789
+        },
+        {
+            "kunci": "frame|2|1|tinggi",
+            "x": 0.8758,
+            "y": 0.7789
+        },
+        {
+            "kunci": "frame|3|1|diameter",
+            "x": 0.6789,
+            "y": 0.8101
+        },
+        {
+            "kunci": "frame|3|1|tinggi",
+            "x": 0.8758,
+            "y": 0.8101
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.642,
+            "y": 0.2367
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8365,
+            "y": 0.2376
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.6411,
+            "y": 0.2547
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8356,
+            "y": 0.2556
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Digital Microscope/Dino-Lite",
+            "label_kertas": "Digital Microscope/Dino-Lite",
+            "x": 0.1911,
+            "y": 0.5499
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Digital Caliper Tesa",
+            "label_kertas": "Digital Caiper Tesa",
+            "x": 0.1911,
+            "y": 0.5697
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala kolom \"No\" tanpa teks terbaca (abu-abu): bukan tempat angka.",
+            "titik": [
+                {
+                    "x": 0.482,
+                    "y": 0.3003
+                },
+                {
+                    "x": 0.482,
+                    "y": 0.3204
+                },
+                {
+                    "x": 0.482,
+                    "y": 0.6991
+                },
+                {
+                    "x": 0.482,
+                    "y": 0.7211
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom \"Nominal Sieve Mesh\": nilai nominal mesh ditulis tangan; profil mengambil nominal dari `spesifikasi_alat.sieve.nominal`, bukan dari sel.",
+            "titik": [
+                {
+                    "x": 0.5374,
+                    "y": 0.3412
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.362
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.383
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.4039
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.4248
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.4457
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.4667
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.4876
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.508
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.5289
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.5497
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.5695
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.5891
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.6098
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.6324
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom \"Nominal Sieve Mesh\" tabel rangka: nominal datang dari `spesifikasi_alat.sieve.nominal`.",
+            "titik": [
+                {
+                    "x": 0.5374,
+                    "y": 0.7477
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.7789
+                },
+                {
+                    "x": 0.5374,
+                    "y": 0.8101
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.7216,
+                    "y": 0.1421
+                },
+                {
+                    "x": 0.7216,
+                    "y": 0.1685
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak kosong di samping label \"Env. Condition\": nilainya ditulis di empat kotak First/End atau Sebelum/Sesudah, yang sudah dipetakan.",
+            "titik": [
+                {
+                    "x": 0.5604,
+                    "y": 0.2388
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.2249,
+                    "y": 0.258
+                },
+                {
+                    "x": 0.3033,
+                    "y": 0.4468
+                },
+                {
+                    "x": 0.3033,
+                    "y": 0.4694
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.4001,
+                    "y": 0.2571
+                },
+                {
+                    "x": 0.2014,
+                    "y": 0.2814
+                },
+                {
+                    "x": 0.3036,
+                    "y": 0.3023
+                },
+                {
+                    "x": 0.3034,
+                    "y": 0.3226
+                },
+                {
+                    "x": 0.3034,
+                    "y": 0.3442
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan/paraf/nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama datang dari akun (`teknisi.nama`, `reviewer.nama`, sumber otomatis).",
+            "titik": [
+                {
+                    "x": 0.2057,
+                    "y": 0.8112
+                },
+                {
+                    "x": 0.4165,
+                    "y": 0.8112
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.5325,
+                    "y": 0.8663
+                }
+            ]
+        }
+    ]
+}

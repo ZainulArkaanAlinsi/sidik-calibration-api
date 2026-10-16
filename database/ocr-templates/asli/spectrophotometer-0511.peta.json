@@ -1,0 +1,634 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0511.draf.json -> kunci sel profil spectrophotometer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN, karena id bergeser begitu skripnya diperbaiki. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliKimiaTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "spectrophotometer",
+    "kode_dokumen": "SIDIK-FM-CAL-0511_Rev.5",
+    "draf": "formulir-0511.draf.json",
+    "sumber_sha256": "c770a0a037c847bfaa545106192e06c61eb5024501921f7b509568b8559ba92b",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: tiga blok, repeat X1..X3 berjajar KE KANAN, nilai standar ke BAWAH (sumbu kolom, sama dengan profil). Holmium 9 baris kertas (287.4 ... 637.2 nm) -> baris 2..10 profil (287.7 ... 637.9) dicocokkan berurutan dan berdekatan nilainya (selisih <= 0,9 nm); baris 1 profil (279.6 nm) tidak tercetak di kertas Rev.5 (3 kunci pembacaan tak tercetak).",
+        "Didymium 9 baris kertas (478 ... 806.3) -> baris 1..9 profil (475.2 ... 806.1), berurutan. Baris pertama paling jauh (478 vs 475.2); pertanyaan lab: apakah kertas atau master yang benar.",
+        "Akurasi transmitan: 5 nilai standar (0.0, 10.0, 20.2, 30.5, 100.0 %T) -> baris 1..5 profil (0; 9,9; 20,0; 30,1; 100); kertas hanya punya X1..X3, profil repeat 1..6 -> repeat 4..6 tak tercetak (15 kunci).",
+        "Env: kotak hijau Temperature/Humidity First/End (empat sel tabel Environment Condition) -> suhu_awal, suhu_akhir, kelembaban_awal, kelembaban_akhir (tahap 1), dirujuk sebagai kotak jenis `sel` (`sumber_kotak`:`sel`). Kolom Time (waktu_awal/waktu_akhir) tidak punya kotak isian di draf.",
+        "Centang: tiga baris Standar (Holmium, Didymium, Linearity/Neutral filter) sejajar bagian usage_check profil; TH-2/6/7 Insitu, TH-4 Inlab."
+    ],
+    "sel": [
+        {
+            "kunci": "holmium|2|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.2941
+        },
+        {
+            "kunci": "holmium|2|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.2941
+        },
+        {
+            "kunci": "holmium|2|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.2941
+        },
+        {
+            "kunci": "holmium|3|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.3235
+        },
+        {
+            "kunci": "holmium|3|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.3235
+        },
+        {
+            "kunci": "holmium|3|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.3235
+        },
+        {
+            "kunci": "holmium|4|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.3523
+        },
+        {
+            "kunci": "holmium|4|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.3523
+        },
+        {
+            "kunci": "holmium|4|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.3523
+        },
+        {
+            "kunci": "holmium|5|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.381
+        },
+        {
+            "kunci": "holmium|5|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.381
+        },
+        {
+            "kunci": "holmium|5|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.381
+        },
+        {
+            "kunci": "holmium|6|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.4097
+        },
+        {
+            "kunci": "holmium|6|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.4097
+        },
+        {
+            "kunci": "holmium|6|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.4097
+        },
+        {
+            "kunci": "holmium|7|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.4385
+        },
+        {
+            "kunci": "holmium|7|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.4385
+        },
+        {
+            "kunci": "holmium|7|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.4385
+        },
+        {
+            "kunci": "holmium|8|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.467
+        },
+        {
+            "kunci": "holmium|8|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.467
+        },
+        {
+            "kunci": "holmium|8|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.467
+        },
+        {
+            "kunci": "holmium|9|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.4958
+        },
+        {
+            "kunci": "holmium|9|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.4958
+        },
+        {
+            "kunci": "holmium|9|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.4958
+        },
+        {
+            "kunci": "holmium|10|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.5291
+        },
+        {
+            "kunci": "holmium|10|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.5291
+        },
+        {
+            "kunci": "holmium|10|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.5291
+        },
+        {
+            "kunci": "didynium|1|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.6334
+        },
+        {
+            "kunci": "didynium|1|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.6334
+        },
+        {
+            "kunci": "didynium|1|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.6334
+        },
+        {
+            "kunci": "didynium|2|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.6635
+        },
+        {
+            "kunci": "didynium|2|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.6635
+        },
+        {
+            "kunci": "didynium|2|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.6635
+        },
+        {
+            "kunci": "didynium|3|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.6935
+        },
+        {
+            "kunci": "didynium|3|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.6935
+        },
+        {
+            "kunci": "didynium|3|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.6935
+        },
+        {
+            "kunci": "didynium|4|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.7236
+        },
+        {
+            "kunci": "didynium|4|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.7236
+        },
+        {
+            "kunci": "didynium|4|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.7236
+        },
+        {
+            "kunci": "didynium|5|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.7537
+        },
+        {
+            "kunci": "didynium|5|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.7537
+        },
+        {
+            "kunci": "didynium|5|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.7537
+        },
+        {
+            "kunci": "didynium|6|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.7838
+        },
+        {
+            "kunci": "didynium|6|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.7838
+        },
+        {
+            "kunci": "didynium|6|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.7838
+        },
+        {
+            "kunci": "didynium|7|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.8139
+        },
+        {
+            "kunci": "didynium|7|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.8139
+        },
+        {
+            "kunci": "didynium|7|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.8139
+        },
+        {
+            "kunci": "didynium|8|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.8439
+        },
+        {
+            "kunci": "didynium|8|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.8439
+        },
+        {
+            "kunci": "didynium|8|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.8439
+        },
+        {
+            "kunci": "didynium|9|1|pembacaan",
+            "x": 0.6741,
+            "y": 0.874
+        },
+        {
+            "kunci": "didynium|9|2|pembacaan",
+            "x": 0.7835,
+            "y": 0.874
+        },
+        {
+            "kunci": "didynium|9|3|pembacaan",
+            "x": 0.8937,
+            "y": 0.874
+        },
+        {
+            "kunci": "akurasi_transmitan|1|1|pembacaan",
+            "x": 0.2667,
+            "y": 0.6635
+        },
+        {
+            "kunci": "akurasi_transmitan|1|2|pembacaan",
+            "x": 0.3414,
+            "y": 0.6635
+        },
+        {
+            "kunci": "akurasi_transmitan|1|3|pembacaan",
+            "x": 0.422,
+            "y": 0.6635
+        },
+        {
+            "kunci": "akurasi_transmitan|2|1|pembacaan",
+            "x": 0.2667,
+            "y": 0.6935
+        },
+        {
+            "kunci": "akurasi_transmitan|2|2|pembacaan",
+            "x": 0.3414,
+            "y": 0.6935
+        },
+        {
+            "kunci": "akurasi_transmitan|2|3|pembacaan",
+            "x": 0.422,
+            "y": 0.6935
+        },
+        {
+            "kunci": "akurasi_transmitan|3|1|pembacaan",
+            "x": 0.2667,
+            "y": 0.7236
+        },
+        {
+            "kunci": "akurasi_transmitan|3|2|pembacaan",
+            "x": 0.3414,
+            "y": 0.7236
+        },
+        {
+            "kunci": "akurasi_transmitan|3|3|pembacaan",
+            "x": 0.422,
+            "y": 0.7236
+        },
+        {
+            "kunci": "akurasi_transmitan|4|1|pembacaan",
+            "x": 0.2667,
+            "y": 0.7537
+        },
+        {
+            "kunci": "akurasi_transmitan|4|2|pembacaan",
+            "x": 0.3414,
+            "y": 0.7537
+        },
+        {
+            "kunci": "akurasi_transmitan|4|3|pembacaan",
+            "x": 0.422,
+            "y": 0.7537
+        },
+        {
+            "kunci": "akurasi_transmitan|5|1|pembacaan",
+            "x": 0.2667,
+            "y": 0.7838
+        },
+        {
+            "kunci": "akurasi_transmitan|5|2|pembacaan",
+            "x": 0.3414,
+            "y": 0.7838
+        },
+        {
+            "kunci": "akurasi_transmitan|5|3|pembacaan",
+            "x": 0.422,
+            "y": 0.7838
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5976,
+            "y": 0.1507
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5976,
+            "y": 0.1641
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.697,
+            "y": 0.1507
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.697,
+            "y": 0.1641
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Filter Standard 1 (Holmium Oxide)",
+            "label_kertas": "Holmium/PG.Instruments/SPG080982.A",
+            "label_draf": "Holmium/PG.Instruments/SPG080982.A",
+            "x": 0.2749,
+            "y": 0.4145
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Filter Standard 2 (Didynium)",
+            "label_kertas": "Didynium/PG.Instruments/SPG080982.B",
+            "label_draf": "Didynium/PG.Instruments/SPG080982.B",
+            "x": 0.2749,
+            "y": 0.4297
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 3,
+            "label": "Filter Standard 3 (Neutral Gas Filter 1,2,3)",
+            "label_kertas": "Linearity/PG.Instruments/SPG080982.C",
+            "label_draf": "Linearity/PG.Instruments/SPG080982.C",
+            "x": 0.2748,
+            "y": 0.4432
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "label_draf": "TH-2",
+            "x": 0.8263,
+            "y": 0.1364
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "label_draf": "TH-6",
+            "x": 0.8261,
+            "y": 0.1487
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "label_draf": "TH-7",
+            "x": 0.8261,
+            "y": 0.1631
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "label_draf": "TH-4",
+            "x": 0.8977,
+            "y": 0.1363
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1061,
+                    "y": 0.8814
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, tipe, nomor seri, merk, range/resolusi): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.3137,
+                    "y": 0.2281
+                },
+                {
+                    "x": 0.1919,
+                    "y": 0.2427
+                },
+                {
+                    "x": 0.1919,
+                    "y": 0.2576
+                },
+                {
+                    "x": 0.3137,
+                    "y": 0.2733
+                },
+                {
+                    "x": 0.3137,
+                    "y": 0.2886
+                },
+                {
+                    "x": 0.3137,
+                    "y": 0.304
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.3137,
+                    "y": 0.3601
+                },
+                {
+                    "x": 0.3137,
+                    "y": 0.376
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Thermohygro used': pilihannya dicentang di TH-n; kotak teks ini tidak punya kunci profil.",
+            "titik": [
+                {
+                    "x": 0.8962,
+                    "y": 0.1231
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Lokasi kalibrasi: identitas sesi, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.3137,
+                    "y": 0.4903
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pelaksana/pemeriksa di kotak tanda tangan: tahap 2. Tanda tangan sendiri tidak pernah dibaca atau ditiru (PANDUAN §6.7).",
+            "titik": [
+                {
+                    "x": 0.1959,
+                    "y": 0.8214
+                },
+                {
+                    "x": 0.4287,
+                    "y": 0.8214
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi formulir yang TERCETAK di kaki halaman (dibaca dari QR/jangkar, bukan diisi teknisi).",
+            "titik": [
+                {
+                    "x": 0.6972,
+                    "y": 0.977
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.4094,
+                    "y": 0.1238
+                },
+                {
+                    "x": 0.4084,
+                    "y": 0.1392
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak hijau kosong di kanan judul CALIBRATION RESULT/header: tidak ada label, tidak ada yang ditulis.",
+            "titik": [
+                {
+                    "x": 0.499,
+                    "y": 0.1944
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel header kosong di atas/di sebelah kolom 'No' dan 'Std. Value' (nilai standar sudah tercetak dan datang dari profil): bukan pembacaan.",
+            "titik": [
+                {
+                    "x": 0.5397,
+                    "y": 0.243
+                },
+                {
+                    "x": 0.5397,
+                    "y": 0.2719
+                },
+                {
+                    "x": 0.5921,
+                    "y": 0.2575
+                },
+                {
+                    "x": 0.5921,
+                    "y": 0.2719
+                },
+                {
+                    "x": 0.5397,
+                    "y": 0.5791
+                },
+                {
+                    "x": 0.5397,
+                    "y": 0.6105
+                },
+                {
+                    "x": 0.5921,
+                    "y": 0.5948
+                },
+                {
+                    "x": 0.5921,
+                    "y": 0.6105
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala kosong di kolom 'λ (nm)' tabel Absorbans/Transmitan (nilai 560 nm tercetak): bukan pembacaan.",
+            "titik": [
+                {
+                    "x": 0.0911,
+                    "y": 0.6105
+                }
+            ]
+        }
+    ]
+}

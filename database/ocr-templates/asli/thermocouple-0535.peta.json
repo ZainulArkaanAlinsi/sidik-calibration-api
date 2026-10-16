@@ -1,0 +1,751 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0535.draf.json -> kunci sel profil thermocouple. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya (byte-identik, TIDAK PERNAH disunting tangan); yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya. Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja. Cakupan tahap 1: sel tabel data, kondisi lingkungan (tahap 1), centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Thermocouple: tabel atas = standar, bawah = uut; kolom X1-X5 = pengulangan 1-5. Baris standar Yokogawa (baris 2 profil) tidak ada di kertas. Kode dokumen & revisi cocok profil.",
+    "template_id": "thermocouple",
+    "kode_dokumen": "SIDIK-FM-CAL-0535_Rev.2",
+    "draf": "formulir-0535.draf.json",
+    "sumber_sha256": "20b45a403f075faefca4043f6e6048c2f4a197765980d0b2f555b9bb5b0801f0",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "standar|1|1|pembacaan",
+            "x": 0.251,
+            "y": 0.3591
+        },
+        {
+            "kunci": "standar|1|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.3591
+        },
+        {
+            "kunci": "standar|1|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.3591
+        },
+        {
+            "kunci": "standar|1|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.3591
+        },
+        {
+            "kunci": "standar|1|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.3591
+        },
+        {
+            "kunci": "standar|2|1|pembacaan",
+            "x": 0.251,
+            "y": 0.3778
+        },
+        {
+            "kunci": "standar|2|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.3778
+        },
+        {
+            "kunci": "standar|2|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.3778
+        },
+        {
+            "kunci": "standar|2|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.3778
+        },
+        {
+            "kunci": "standar|2|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.3778
+        },
+        {
+            "kunci": "standar|3|1|pembacaan",
+            "x": 0.251,
+            "y": 0.3964
+        },
+        {
+            "kunci": "standar|3|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.3964
+        },
+        {
+            "kunci": "standar|3|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.3964
+        },
+        {
+            "kunci": "standar|3|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.3964
+        },
+        {
+            "kunci": "standar|3|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.3964
+        },
+        {
+            "kunci": "standar|4|1|pembacaan",
+            "x": 0.251,
+            "y": 0.4151
+        },
+        {
+            "kunci": "standar|4|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.4151
+        },
+        {
+            "kunci": "standar|4|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.4151
+        },
+        {
+            "kunci": "standar|4|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.4151
+        },
+        {
+            "kunci": "standar|4|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.4151
+        },
+        {
+            "kunci": "standar|5|1|pembacaan",
+            "x": 0.251,
+            "y": 0.4338
+        },
+        {
+            "kunci": "standar|5|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.4338
+        },
+        {
+            "kunci": "standar|5|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.4338
+        },
+        {
+            "kunci": "standar|5|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.4338
+        },
+        {
+            "kunci": "standar|5|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.4338
+        },
+        {
+            "kunci": "standar|6|1|pembacaan",
+            "x": 0.251,
+            "y": 0.4525
+        },
+        {
+            "kunci": "standar|6|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.4525
+        },
+        {
+            "kunci": "standar|6|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.4525
+        },
+        {
+            "kunci": "standar|6|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.4525
+        },
+        {
+            "kunci": "standar|6|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.4525
+        },
+        {
+            "kunci": "uut|1|1|pembacaan",
+            "x": 0.251,
+            "y": 0.6131
+        },
+        {
+            "kunci": "uut|1|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.6131
+        },
+        {
+            "kunci": "uut|1|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.6131
+        },
+        {
+            "kunci": "uut|1|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.6131
+        },
+        {
+            "kunci": "uut|1|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.6131
+        },
+        {
+            "kunci": "uut|2|1|pembacaan",
+            "x": 0.251,
+            "y": 0.631
+        },
+        {
+            "kunci": "uut|2|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.631
+        },
+        {
+            "kunci": "uut|2|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.631
+        },
+        {
+            "kunci": "uut|2|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.631
+        },
+        {
+            "kunci": "uut|2|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.631
+        },
+        {
+            "kunci": "uut|3|1|pembacaan",
+            "x": 0.251,
+            "y": 0.6489
+        },
+        {
+            "kunci": "uut|3|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.6489
+        },
+        {
+            "kunci": "uut|3|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.6489
+        },
+        {
+            "kunci": "uut|3|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.6489
+        },
+        {
+            "kunci": "uut|3|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.6489
+        },
+        {
+            "kunci": "uut|4|1|pembacaan",
+            "x": 0.251,
+            "y": 0.6668
+        },
+        {
+            "kunci": "uut|4|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.6668
+        },
+        {
+            "kunci": "uut|4|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.6668
+        },
+        {
+            "kunci": "uut|4|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.6668
+        },
+        {
+            "kunci": "uut|4|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.6668
+        },
+        {
+            "kunci": "uut|5|1|pembacaan",
+            "x": 0.251,
+            "y": 0.6848
+        },
+        {
+            "kunci": "uut|5|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.6848
+        },
+        {
+            "kunci": "uut|5|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.6848
+        },
+        {
+            "kunci": "uut|5|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.6848
+        },
+        {
+            "kunci": "uut|5|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.6848
+        },
+        {
+            "kunci": "uut|6|1|pembacaan",
+            "x": 0.251,
+            "y": 0.7027
+        },
+        {
+            "kunci": "uut|6|2|pembacaan",
+            "x": 0.3912,
+            "y": 0.7027
+        },
+        {
+            "kunci": "uut|6|3|pembacaan",
+            "x": 0.5455,
+            "y": 0.7027
+        },
+        {
+            "kunci": "uut|6|4|pembacaan",
+            "x": 0.7018,
+            "y": 0.7027
+        },
+        {
+            "kunci": "uut|6|5|pembacaan",
+            "x": 0.8416,
+            "y": 0.7027
+        }
+    ],
+    "isian": [],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.6705,
+            "y": 0.2582
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.7826,
+            "y": 0.2587
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.841,
+            "y": 0.2582
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.897,
+            "y": 0.2582
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Temperature Calibrator Constant 40T",
+            "x": 0.4704,
+            "y": 0.8194
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 3,
+            "label": "PRT Pt-100",
+            "x": 0.4704,
+            "y": 0.8335
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 4,
+            "label": "Thermocouple Type K",
+            "x": 0.4704,
+            "y": 0.8626
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 5,
+            "label": "Thermocouple Type N",
+            "x": 0.4704,
+            "y": 0.8484
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Baris set point ke-7 dan ke-8 (standar): kertas punya 8 baris, profil Thermocouple hanya 6 titik (50/100/150/200/400/600 C), jadi tidak ada kunci; pertanyaan ke lab apakah 8 baris dipakai.",
+            "titik": [
+                {
+                    "x": 0.251,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.3912,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.5455,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.7018,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.8416,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.251,
+                    "y": 0.4901
+                },
+                {
+                    "x": 0.3912,
+                    "y": 0.4901
+                },
+                {
+                    "x": 0.5455,
+                    "y": 0.4901
+                },
+                {
+                    "x": 0.7018,
+                    "y": 0.4901
+                },
+                {
+                    "x": 0.8416,
+                    "y": 0.4901
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Baris set point ke-7 dan ke-8 (uut): kertas punya 8 baris, profil Thermocouple hanya 6 titik (50/100/150/200/400/600 C), jadi tidak ada kunci; pertanyaan ke lab apakah 8 baris dipakai.",
+            "titik": [
+                {
+                    "x": 0.251,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.3912,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.5455,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.7018,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.8416,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.251,
+                    "y": 0.7388
+                },
+                {
+                    "x": 0.3912,
+                    "y": 0.7388
+                },
+                {
+                    "x": 0.5455,
+                    "y": 0.7388
+                },
+                {
+                    "x": 0.7018,
+                    "y": 0.7388
+                },
+                {
+                    "x": 0.8416,
+                    "y": 0.7388
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom Setpoint/Alat di sisi kiri tabel: nilai titik ukur, bukan sel data. Profil menyimpannya sebagai `titik_ukur` baris (bukan kunci sel), jadi tidak ada kunci yang bisa dipetakan; titik ukur datang dari sesi/profil.",
+            "titik": [
+                {
+                    "x": 0.1055,
+                    "y": 0.3591
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.3778
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.3964
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.4151
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.4338
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.4525
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.4712
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.4901
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.6131
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.631
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.6489
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.6668
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.6848
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.7027
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.7206
+                },
+                {
+                    "x": 0.1055,
+                    "y": 0.7388
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Bilah judul/kepala bagian yang berbingkai hijau dibaca skrip sebagai sel kosong; di kertas tidak ada yang ditulis teknisi di situ.",
+            "titik": [
+                {
+                    "x": 0.5016,
+                    "y": 0.0951
+                },
+                {
+                    "x": 0.5016,
+                    "y": 0.5505
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak kosong berbingkai di sekitar `Standard Used:` dan daftar centang: tanpa label dan tanpa kunci (`standar_dicek.*.keterangan` tidak punya kotak tersendiri di kertas).",
+            "titik": [
+                {
+                    "x": 0.3903,
+                    "y": 0.7889
+                },
+                {
+                    "x": 0.5642,
+                    "y": 0.7889
+                },
+                {
+                    "x": 0.5039,
+                    "y": 0.8414
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Catatan bebas (PANDUAN §4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.7862,
+                    "y": 0.9259
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pelanggan/lokasi/nomor seri/spesifikasi: bukan cakupan tahap 1. Datang dari order atau alat terdaftar (cara `banding`) atau diketik teknisi; belum ada pembaca yang dibuktikan di foto nyata.",
+            "titik": [
+                {
+                    "x": 0.2842,
+                    "y": 0.1132
+                },
+                {
+                    "x": 0.5701,
+                    "y": 0.1132
+                },
+                {
+                    "x": 0.2842,
+                    "y": 0.1326
+                },
+                {
+                    "x": 0.5701,
+                    "y": 0.1326
+                },
+                {
+                    "x": 0.2842,
+                    "y": 0.1513
+                },
+                {
+                    "x": 0.5701,
+                    "y": 0.1513
+                },
+                {
+                    "x": 0.2842,
+                    "y": 0.1713
+                },
+                {
+                    "x": 0.5853,
+                    "y": 0.1699
+                },
+                {
+                    "x": 0.5739,
+                    "y": 0.2299
+                },
+                {
+                    "x": 0.4037,
+                    "y": 0.2457
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: bukan cakupan tahap 1; diisi dari order/jadwal, dan pembaca tanggal baru dibuktikan di foto nyata (PANDUAN §4).",
+            "titik": [
+                {
+                    "x": 0.8668,
+                    "y": 0.1132
+                },
+                {
+                    "x": 0.8668,
+                    "y": 0.1339
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Tipe Thermocouple`: tipenya dipilih lewat centang K/J/T/N/B/R/S/E/RTD/Others, bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.8775,
+                    "y": 0.1699
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Thermohygro used`: unit dipilih lewat centang TH-n, bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.8698,
+                    "y": 0.2441
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks `Standar used` di atas daftar standar: standar dipilih lewat centang per baris (`standar_dicek.*.dipakai`), bukan teks bebas.",
+            "titik": [
+                {
+                    "x": 0.1996,
+                    "y": 0.7918
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak `Rata2` suhu/kelembapan ruang. Profil menyimpan suhu_awal/suhu_akhir/kelembaban_awal/kelembaban_akhir, tidak ada kolom rata-rata; kotak `awal`/`akhir`-nya bergaris bawah dan TIDAK ditangkap draf (utang skrip PANDUAN §8), jadi kondisi lingkungan formulir ini tidak terpetakan di tahap 1.",
+            "titik": [
+                {
+                    "x": 0.5642,
+                    "y": 0.1869
+                },
+                {
+                    "x": 0.56,
+                    "y": 0.2052
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Baris `Victor 14+/992613877` di kertas tidak ada di standar_dicek profil Thermocouple; tidak ditebak ke baris lain.",
+            "titik": [
+                {
+                    "x": 0.4704,
+                    "y": 0.806
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Baris `Multimeter Texio/DL` di kertas tidak ada di standar_dicek profil Thermocouple.",
+            "titik": [
+                {
+                    "x": 0.4704,
+                    "y": 0.8768
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Kotak tipe thermocouple UUT = centang spesifikasi_alat.tipe_thermocouple, pilihan berurutan titik: Type K (0.7016, 0.1849); Type J (0.7017, 0.2031); Type T (0.7017, 0.2191); Type N (0.7607, 0.1845); Type B (0.7601, 0.2043); Type R (0.7601, 0.2207); Type S (0.8153, 0.1845); Type E (0.8153, 0.2043); RTD/PT100 (0.8153, 0.2207); Lainnya (0.8759, 0.1853). DITAHAN (12 Okt 2026, G0): kode 34 karakter, sedangkan pindai menyimpan centang sebagai baris worksheet_scan_cells dengan field_id = kode, kolom varchar(30) — MySQL strict menolak. Kembalikan ke `centang` kalau penyimpanannya diputuskan.",
+            "titik": [
+                {
+                    "x": 0.7016,
+                    "y": 0.1849
+                },
+                {
+                    "x": 0.7017,
+                    "y": 0.2031
+                },
+                {
+                    "x": 0.7017,
+                    "y": 0.2191
+                },
+                {
+                    "x": 0.7607,
+                    "y": 0.1845
+                },
+                {
+                    "x": 0.7601,
+                    "y": 0.2043
+                },
+                {
+                    "x": 0.7601,
+                    "y": 0.2207
+                },
+                {
+                    "x": 0.8153,
+                    "y": 0.1845
+                },
+                {
+                    "x": 0.8153,
+                    "y": 0.2043
+                },
+                {
+                    "x": 0.8153,
+                    "y": 0.2207
+                },
+                {
+                    "x": 0.8759,
+                    "y": 0.1853
+                }
+            ]
+        }
+    ]
+}

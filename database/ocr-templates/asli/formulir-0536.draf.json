@@ -1,0 +1,2644 @@
+{
+ "_catatan": "DRAF otomatis dari vektor PDF formulir asli (docs/skrip/draf-geometri-dari-pdf.py). Jangan disunting tangan: salah di sini dibetulkan di skripnya lalu dijalankan ulang. Kotak -> kunci profil dipetakan manusia di berkas .peta.json terpisah; adu ke >=20 foto nyata sebelum terverifikasi=true.",
+ "sumber": {
+  "pdf": "SIDIK-FM-CAL-0536_Rev.2 - LEMBAR KERJA SIEVE MESH.pdf",
+  "sha256": "20dc60432e4baeaf0b80cf100c7326d7d281fbfa5288fa9936be42dea065d61c",
+  "halaman": 1,
+  "ukuran_pt": {
+   "w": 792.0,
+   "h": 612.0
+  },
+  "orientasi": "lanskap"
+ },
+ "kode_dokumen": "SIDIK-FM-CAL-0536",
+ "revisi_tercetak": "2",
+ "terverifikasi": false,
+ "koordinat": "ternormal_0_1",
+ "sel": [
+  {
+   "id": "s000",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "PT. SIDIK",
+   "x": 0.01629,
+   "y": 0.07031,
+   "w": 0.13917,
+   "h": 0.04431
+  },
+  {
+   "id": "s001",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "Received Date : Calibration Date : EQUIPMENT IDENTITY AND CUSTOMER DATA CALIBRATION RESULT Env. Condition : Fi rs t (oC) First (%RH) 1. Name : Sieve No. : Thermohygro Used: TH-1 End (oC) End (%RH) 2. Range/Nominal Sieve : ( ) 1. Kalibrasi Dimensi Lubang dan Diameter Kawat 3. Type/Model : Nominal Sieve Measurement Result No 4. Serial Number : Mesh ( ) Wrap (x') Weft (y') Ø Kawat Wrap (x') Weft (y') Ø Kawat 5. Merk/Manufacture : 1 2 3 4 OWNER 5 1. Name : 6 2. Address : 7 8 STANDARD 9 Standard Name Usage Check 10 Digital Microscope/Dino-Lite 11 Digital Caiper Tesa 12 13 14 15 2. Kalibrasi Diameter dan Ketinggian Rangka CALIBRATION DATA Nominal Sieve Measurement Result No 1. Location :Lab Dimensi PT SIDIK Mesh ( ) Ø Rangka (mm) Ketinggian Ranga (mm) 2. Calibration Methode :SIDIK-IK-CAL-0526 1 2 Calibrated by : Checked by : 3 Catatan: Sign Sign Name Name",
+   "x": 0.01629,
+   "y": 0.11461,
+   "w": 0.96538,
+   "h": 0.82354
+  },
+  {
+   "id": "s002",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "Calibration Worksheet - Sieve Mesh",
+   "x": 0.15545,
+   "y": 0.07031,
+   "w": 0.68783,
+   "h": 0.04431
+  },
+  {
+   "id": "s003",
+   "tabel_ke": 0,
+   "jenis": "tercetak",
+   "teks_tercetak": "LK-285-IDN",
+   "x": 0.84328,
+   "y": 0.07031,
+   "w": 0.13839,
+   "h": 0.04431
+  },
+  {
+   "id": "s004",
+   "tabel_ke": 1,
+   "jenis": "tercetak",
+   "teks_tercetak": "EQUIPMENT IDENTITY AND CUSTOMER DATA",
+   "x": 0.01629,
+   "y": 0.19073,
+   "w": 0.43838,
+   "h": 0.03359
+  },
+  {
+   "id": "s005",
+   "tabel_ke": 1,
+   "jenis": "tercetak",
+   "teks_tercetak": "1. Name : Sieve No. : 2. Range/Nominal Sieve : ( ) 3. Type/Model : 4. Serial Number : 5. Merk/Manufacture : OWNER 1. Name : 2. Address : STANDARD Standard Name Usage Check Digital Microscope/Dino-Lite Digital Caiper Tesa CALIBRATION DATA 1. Location :Lab Dimensi PT SIDIK 2. Calibration Methode :SIDIK-IK-CAL-0526",
+   "x": 0.01629,
+   "y": 0.22432,
+   "w": 0.43838,
+   "h": 0.539
+  },
+  {
+   "id": "s006",
+   "tabel_ke": 2,
+   "jenis": "tercetak",
+   "teks_tercetak": "CALIBRATION RESULT",
+   "x": 0.46662,
+   "y": 0.19073,
+   "w": 0.51505,
+   "h": 0.03359
+  },
+  {
+   "id": "s007",
+   "tabel_ke": 2,
+   "jenis": "tercetak",
+   "teks_tercetak": "Env. Condition : Fi rs t (oC) First (%RH) Thermohygro Used: TH-1 End (oC) End (%RH) 1. Kalibrasi Dimensi Lubang dan Diameter Kawat Nominal Sieve Measurement Result No Mesh ( ) Wrap (x') Weft (y') Ø Kawat Wrap (x') Weft (y') Ø Kawat 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15",
+   "x": 0.46662,
+   "y": 0.22432,
+   "w": 0.51505,
+   "h": 0.44109
+  },
+  {
+   "id": "s008",
+   "tabel_ke": 2,
+   "jenis": "tercetak",
+   "teks_tercetak": "2. Kalibrasi Diameter dan Ketinggian Rangka Nominal Sieve Measurement Result No Mesh ( ) Ø Rangka (mm) Ketinggian Ranga (mm) 1 2 3",
+   "x": 0.46662,
+   "y": 0.66541,
+   "w": 0.51505,
+   "h": 0.17388
+  },
+  {
+   "id": "s009",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.46662,
+   "y": 0.29049,
+   "w": 0.03085,
+   "h": 0.01968
+  },
+  {
+   "id": "s010",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.46662,
+   "y": 0.31017,
+   "w": 0.03085,
+   "h": 0.02055
+  },
+  {
+   "id": "s011",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.46662,
+   "y": 0.33072,
+   "w": 0.03085,
+   "h": 0.02087
+  },
+  {
+   "id": "s012",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.46662,
+   "y": 0.35158,
+   "w": 0.03085,
+   "h": 0.02093
+  },
+  {
+   "id": "s013",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "3",
+   "x": 0.46662,
+   "y": 0.37252,
+   "w": 0.03085,
+   "h": 0.02092
+  },
+  {
+   "id": "s014",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "4",
+   "x": 0.46662,
+   "y": 0.39343,
+   "w": 0.03085,
+   "h": 0.02092
+  },
+  {
+   "id": "s015",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "5",
+   "x": 0.46662,
+   "y": 0.41435,
+   "w": 0.03085,
+   "h": 0.0209
+  },
+  {
+   "id": "s016",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "6",
+   "x": 0.46662,
+   "y": 0.43525,
+   "w": 0.03085,
+   "h": 0.02096
+  },
+  {
+   "id": "s017",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "7",
+   "x": 0.46662,
+   "y": 0.45621,
+   "w": 0.03085,
+   "h": 0.02092
+  },
+  {
+   "id": "s018",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "8",
+   "x": 0.46662,
+   "y": 0.47712,
+   "w": 0.03085,
+   "h": 0.02092
+  },
+  {
+   "id": "s019",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "9",
+   "x": 0.46662,
+   "y": 0.49804,
+   "w": 0.03085,
+   "h": 0.01988
+  },
+  {
+   "id": "s020",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "10",
+   "x": 0.46662,
+   "y": 0.51792,
+   "w": 0.03085,
+   "h": 0.02195
+  },
+  {
+   "id": "s021",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "11",
+   "x": 0.46662,
+   "y": 0.53987,
+   "w": 0.03085,
+   "h": 0.01966
+  },
+  {
+   "id": "s022",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "12",
+   "x": 0.46662,
+   "y": 0.55953,
+   "w": 0.03085,
+   "h": 0.01988
+  },
+  {
+   "id": "s023",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "13",
+   "x": 0.46662,
+   "y": 0.57941,
+   "w": 0.03085,
+   "h": 0.01934
+  },
+  {
+   "id": "s024",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "14",
+   "x": 0.46662,
+   "y": 0.59874,
+   "w": 0.03085,
+   "h": 0.02221
+  },
+  {
+   "id": "s025",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "15",
+   "x": 0.46662,
+   "y": 0.62095,
+   "w": 0.03085,
+   "h": 0.02288
+  },
+  {
+   "id": "s026",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Nominal Sieve",
+   "x": 0.49747,
+   "y": 0.29049,
+   "w": 0.07982,
+   "h": 0.01968
+  },
+  {
+   "id": "s027",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mesh ( )",
+   "x": 0.49747,
+   "y": 0.31017,
+   "w": 0.07982,
+   "h": 0.02055
+  },
+  {
+   "id": "s028",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.33072,
+   "w": 0.07982,
+   "h": 0.02087
+  },
+  {
+   "id": "s029",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.35158,
+   "w": 0.07982,
+   "h": 0.02093
+  },
+  {
+   "id": "s030",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.37252,
+   "w": 0.07982,
+   "h": 0.02092
+  },
+  {
+   "id": "s031",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.39343,
+   "w": 0.07982,
+   "h": 0.02092
+  },
+  {
+   "id": "s032",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.41435,
+   "w": 0.07982,
+   "h": 0.0209
+  },
+  {
+   "id": "s033",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.43525,
+   "w": 0.07982,
+   "h": 0.02096
+  },
+  {
+   "id": "s034",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.45621,
+   "w": 0.07982,
+   "h": 0.02092
+  },
+  {
+   "id": "s035",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.47712,
+   "w": 0.07982,
+   "h": 0.02092
+  },
+  {
+   "id": "s036",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.49804,
+   "w": 0.07982,
+   "h": 0.01988
+  },
+  {
+   "id": "s037",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.51792,
+   "w": 0.07982,
+   "h": 0.02195
+  },
+  {
+   "id": "s038",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.53987,
+   "w": 0.07982,
+   "h": 0.01966
+  },
+  {
+   "id": "s039",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.55953,
+   "w": 0.07982,
+   "h": 0.01988
+  },
+  {
+   "id": "s040",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.57941,
+   "w": 0.07982,
+   "h": 0.01934
+  },
+  {
+   "id": "s041",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.59874,
+   "w": 0.07982,
+   "h": 0.02221
+  },
+  {
+   "id": "s042",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.62095,
+   "w": 0.07982,
+   "h": 0.02288
+  },
+  {
+   "id": "s043",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Measurement Result",
+   "x": 0.5773,
+   "y": 0.29049,
+   "w": 0.39375,
+   "h": 0.01968
+  },
+  {
+   "id": "s044",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Wrap (x')",
+   "x": 0.5773,
+   "y": 0.31017,
+   "w": 0.06213,
+   "h": 0.02055
+  },
+  {
+   "id": "s045",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.33072,
+   "w": 0.06213,
+   "h": 0.02087
+  },
+  {
+   "id": "s046",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.35158,
+   "w": 0.06213,
+   "h": 0.02093
+  },
+  {
+   "id": "s047",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.37252,
+   "w": 0.06213,
+   "h": 0.02092
+  },
+  {
+   "id": "s048",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.39343,
+   "w": 0.06213,
+   "h": 0.02092
+  },
+  {
+   "id": "s049",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.41435,
+   "w": 0.06213,
+   "h": 0.0209
+  },
+  {
+   "id": "s050",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.43525,
+   "w": 0.06213,
+   "h": 0.02096
+  },
+  {
+   "id": "s051",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.45621,
+   "w": 0.06213,
+   "h": 0.02092
+  },
+  {
+   "id": "s052",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.47712,
+   "w": 0.06213,
+   "h": 0.02092
+  },
+  {
+   "id": "s053",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.49804,
+   "w": 0.06213,
+   "h": 0.01988
+  },
+  {
+   "id": "s054",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.51792,
+   "w": 0.06213,
+   "h": 0.02195
+  },
+  {
+   "id": "s055",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.53987,
+   "w": 0.06213,
+   "h": 0.01966
+  },
+  {
+   "id": "s056",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.55953,
+   "w": 0.06213,
+   "h": 0.01988
+  },
+  {
+   "id": "s057",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.57941,
+   "w": 0.06213,
+   "h": 0.01934
+  },
+  {
+   "id": "s058",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.59874,
+   "w": 0.06213,
+   "h": 0.02221
+  },
+  {
+   "id": "s059",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.62095,
+   "w": 0.06213,
+   "h": 0.02288
+  },
+  {
+   "id": "s060",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Weft (y')",
+   "x": 0.63943,
+   "y": 0.31017,
+   "w": 0.07578,
+   "h": 0.02055
+  },
+  {
+   "id": "s061",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.33072,
+   "w": 0.07578,
+   "h": 0.02087
+  },
+  {
+   "id": "s062",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.35158,
+   "w": 0.07578,
+   "h": 0.02093
+  },
+  {
+   "id": "s063",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.37252,
+   "w": 0.07578,
+   "h": 0.02092
+  },
+  {
+   "id": "s064",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.39343,
+   "w": 0.07578,
+   "h": 0.02092
+  },
+  {
+   "id": "s065",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.41435,
+   "w": 0.07578,
+   "h": 0.0209
+  },
+  {
+   "id": "s066",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.43525,
+   "w": 0.07578,
+   "h": 0.02096
+  },
+  {
+   "id": "s067",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.45621,
+   "w": 0.07578,
+   "h": 0.02092
+  },
+  {
+   "id": "s068",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.47712,
+   "w": 0.07578,
+   "h": 0.02092
+  },
+  {
+   "id": "s069",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.49804,
+   "w": 0.07578,
+   "h": 0.01988
+  },
+  {
+   "id": "s070",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.51792,
+   "w": 0.07578,
+   "h": 0.02195
+  },
+  {
+   "id": "s071",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.53987,
+   "w": 0.07578,
+   "h": 0.01966
+  },
+  {
+   "id": "s072",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.55953,
+   "w": 0.07578,
+   "h": 0.01988
+  },
+  {
+   "id": "s073",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.57941,
+   "w": 0.07578,
+   "h": 0.01934
+  },
+  {
+   "id": "s074",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.59874,
+   "w": 0.07578,
+   "h": 0.02221
+  },
+  {
+   "id": "s075",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.63943,
+   "y": 0.62095,
+   "w": 0.07578,
+   "h": 0.02288
+  },
+  {
+   "id": "s076",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Ø Kawat",
+   "x": 0.71521,
+   "y": 0.31017,
+   "w": 0.06531,
+   "h": 0.02055
+  },
+  {
+   "id": "s077",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.33072,
+   "w": 0.06531,
+   "h": 0.02087
+  },
+  {
+   "id": "s078",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.35158,
+   "w": 0.06531,
+   "h": 0.02093
+  },
+  {
+   "id": "s079",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.37252,
+   "w": 0.06531,
+   "h": 0.02092
+  },
+  {
+   "id": "s080",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.39343,
+   "w": 0.06531,
+   "h": 0.02092
+  },
+  {
+   "id": "s081",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.41435,
+   "w": 0.06531,
+   "h": 0.0209
+  },
+  {
+   "id": "s082",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.43525,
+   "w": 0.06531,
+   "h": 0.02096
+  },
+  {
+   "id": "s083",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.45621,
+   "w": 0.06531,
+   "h": 0.02092
+  },
+  {
+   "id": "s084",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.47712,
+   "w": 0.06531,
+   "h": 0.02092
+  },
+  {
+   "id": "s085",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.49804,
+   "w": 0.06531,
+   "h": 0.01988
+  },
+  {
+   "id": "s086",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.51792,
+   "w": 0.06531,
+   "h": 0.02195
+  },
+  {
+   "id": "s087",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.53987,
+   "w": 0.06531,
+   "h": 0.01966
+  },
+  {
+   "id": "s088",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.55953,
+   "w": 0.06531,
+   "h": 0.01988
+  },
+  {
+   "id": "s089",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.57941,
+   "w": 0.06531,
+   "h": 0.01934
+  },
+  {
+   "id": "s090",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.59874,
+   "w": 0.06531,
+   "h": 0.02221
+  },
+  {
+   "id": "s091",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.71521,
+   "y": 0.62095,
+   "w": 0.06531,
+   "h": 0.02288
+  },
+  {
+   "id": "s092",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Wrap (x')",
+   "x": 0.78052,
+   "y": 0.31017,
+   "w": 0.06276,
+   "h": 0.02055
+  },
+  {
+   "id": "s093",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.33072,
+   "w": 0.06276,
+   "h": 0.02087
+  },
+  {
+   "id": "s094",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.35158,
+   "w": 0.06276,
+   "h": 0.02093
+  },
+  {
+   "id": "s095",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.37252,
+   "w": 0.06276,
+   "h": 0.02092
+  },
+  {
+   "id": "s096",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.39343,
+   "w": 0.06276,
+   "h": 0.02092
+  },
+  {
+   "id": "s097",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.41435,
+   "w": 0.06276,
+   "h": 0.0209
+  },
+  {
+   "id": "s098",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.43525,
+   "w": 0.06276,
+   "h": 0.02096
+  },
+  {
+   "id": "s099",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.45621,
+   "w": 0.06276,
+   "h": 0.02092
+  },
+  {
+   "id": "s100",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.47712,
+   "w": 0.06276,
+   "h": 0.02092
+  },
+  {
+   "id": "s101",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.49804,
+   "w": 0.06276,
+   "h": 0.01988
+  },
+  {
+   "id": "s102",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.51792,
+   "w": 0.06276,
+   "h": 0.02195
+  },
+  {
+   "id": "s103",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.53987,
+   "w": 0.06276,
+   "h": 0.01966
+  },
+  {
+   "id": "s104",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.55953,
+   "w": 0.06276,
+   "h": 0.01988
+  },
+  {
+   "id": "s105",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.57941,
+   "w": 0.06276,
+   "h": 0.01934
+  },
+  {
+   "id": "s106",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.59874,
+   "w": 0.06276,
+   "h": 0.02221
+  },
+  {
+   "id": "s107",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.62095,
+   "w": 0.06276,
+   "h": 0.02288
+  },
+  {
+   "id": "s108",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Weft (y')",
+   "x": 0.84328,
+   "y": 0.31017,
+   "w": 0.0649,
+   "h": 0.02055
+  },
+  {
+   "id": "s109",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.33072,
+   "w": 0.0649,
+   "h": 0.02087
+  },
+  {
+   "id": "s110",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.35158,
+   "w": 0.0649,
+   "h": 0.02093
+  },
+  {
+   "id": "s111",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.37252,
+   "w": 0.0649,
+   "h": 0.02092
+  },
+  {
+   "id": "s112",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.39343,
+   "w": 0.0649,
+   "h": 0.02092
+  },
+  {
+   "id": "s113",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.41435,
+   "w": 0.0649,
+   "h": 0.0209
+  },
+  {
+   "id": "s114",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.43525,
+   "w": 0.0649,
+   "h": 0.02096
+  },
+  {
+   "id": "s115",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.45621,
+   "w": 0.0649,
+   "h": 0.02092
+  },
+  {
+   "id": "s116",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.47712,
+   "w": 0.0649,
+   "h": 0.02092
+  },
+  {
+   "id": "s117",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.49804,
+   "w": 0.0649,
+   "h": 0.01988
+  },
+  {
+   "id": "s118",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.51792,
+   "w": 0.0649,
+   "h": 0.02195
+  },
+  {
+   "id": "s119",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.53987,
+   "w": 0.0649,
+   "h": 0.01966
+  },
+  {
+   "id": "s120",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.55953,
+   "w": 0.0649,
+   "h": 0.01988
+  },
+  {
+   "id": "s121",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.57941,
+   "w": 0.0649,
+   "h": 0.01934
+  },
+  {
+   "id": "s122",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.59874,
+   "w": 0.0649,
+   "h": 0.02221
+  },
+  {
+   "id": "s123",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.84328,
+   "y": 0.62095,
+   "w": 0.0649,
+   "h": 0.02288
+  },
+  {
+   "id": "s124",
+   "tabel_ke": 3,
+   "jenis": "tercetak",
+   "teks_tercetak": "Ø Kawat",
+   "x": 0.90818,
+   "y": 0.31017,
+   "w": 0.06287,
+   "h": 0.02055
+  },
+  {
+   "id": "s125",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.33072,
+   "w": 0.06287,
+   "h": 0.02087
+  },
+  {
+   "id": "s126",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.35158,
+   "w": 0.06287,
+   "h": 0.02093
+  },
+  {
+   "id": "s127",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.37252,
+   "w": 0.06287,
+   "h": 0.02092
+  },
+  {
+   "id": "s128",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.39343,
+   "w": 0.06287,
+   "h": 0.02092
+  },
+  {
+   "id": "s129",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.41435,
+   "w": 0.06287,
+   "h": 0.0209
+  },
+  {
+   "id": "s130",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.43525,
+   "w": 0.06287,
+   "h": 0.02096
+  },
+  {
+   "id": "s131",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.45621,
+   "w": 0.06287,
+   "h": 0.02092
+  },
+  {
+   "id": "s132",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.47712,
+   "w": 0.06287,
+   "h": 0.02092
+  },
+  {
+   "id": "s133",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.49804,
+   "w": 0.06287,
+   "h": 0.01988
+  },
+  {
+   "id": "s134",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.51792,
+   "w": 0.06287,
+   "h": 0.02195
+  },
+  {
+   "id": "s135",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.53987,
+   "w": 0.06287,
+   "h": 0.01966
+  },
+  {
+   "id": "s136",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.55953,
+   "w": 0.06287,
+   "h": 0.01988
+  },
+  {
+   "id": "s137",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.57941,
+   "w": 0.06287,
+   "h": 0.01934
+  },
+  {
+   "id": "s138",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.59874,
+   "w": 0.06287,
+   "h": 0.02221
+  },
+  {
+   "id": "s139",
+   "tabel_ke": 3,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.90818,
+   "y": 0.62095,
+   "w": 0.06287,
+   "h": 0.02288
+  },
+  {
+   "id": "s140",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "Standard Name",
+   "x": 0.01629,
+   "y": 0.51792,
+   "w": 0.13109,
+   "h": 0.02195
+  },
+  {
+   "id": "s141",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "Digital Microscope/Dino-Lite",
+   "x": 0.01629,
+   "y": 0.53987,
+   "w": 0.13109,
+   "h": 0.01966
+  },
+  {
+   "id": "s142",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "Digital Caiper Tesa",
+   "x": 0.01629,
+   "y": 0.55953,
+   "w": 0.13109,
+   "h": 0.01988
+  },
+  {
+   "id": "s143",
+   "tabel_ke": 4,
+   "jenis": "tercetak",
+   "teks_tercetak": "Usage Check",
+   "x": 0.14737,
+   "y": 0.51792,
+   "w": 0.10162,
+   "h": 0.02195
+  },
+  {
+   "id": "s144",
+   "tabel_ke": 4,
+   "jenis": "wadah",
+   "teks_tercetak": null,
+   "x": 0.14737,
+   "y": 0.53987,
+   "w": 0.10162,
+   "h": 0.01966
+  },
+  {
+   "id": "s145",
+   "tabel_ke": 4,
+   "jenis": "wadah",
+   "teks_tercetak": null,
+   "x": 0.14737,
+   "y": 0.55953,
+   "w": 0.10162,
+   "h": 0.01988
+  },
+  {
+   "id": "s146",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.46662,
+   "y": 0.68805,
+   "w": 0.03085,
+   "h": 0.022
+  },
+  {
+   "id": "s147",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.46662,
+   "y": 0.71005,
+   "w": 0.03085,
+   "h": 0.02211
+  },
+  {
+   "id": "s148",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "1",
+   "x": 0.46662,
+   "y": 0.73216,
+   "w": 0.03085,
+   "h": 0.03115
+  },
+  {
+   "id": "s149",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "2",
+   "x": 0.46662,
+   "y": 0.76332,
+   "w": 0.03085,
+   "h": 0.0312
+  },
+  {
+   "id": "s150",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "3",
+   "x": 0.46662,
+   "y": 0.79452,
+   "w": 0.03085,
+   "h": 0.03118
+  },
+  {
+   "id": "s151",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "Nominal Sieve",
+   "x": 0.49747,
+   "y": 0.68805,
+   "w": 0.07982,
+   "h": 0.022
+  },
+  {
+   "id": "s152",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "Mesh ( )",
+   "x": 0.49747,
+   "y": 0.71005,
+   "w": 0.07982,
+   "h": 0.02211
+  },
+  {
+   "id": "s153",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.73216,
+   "w": 0.07982,
+   "h": 0.03115
+  },
+  {
+   "id": "s154",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.76332,
+   "w": 0.07982,
+   "h": 0.0312
+  },
+  {
+   "id": "s155",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.49747,
+   "y": 0.79452,
+   "w": 0.07982,
+   "h": 0.03118
+  },
+  {
+   "id": "s156",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "Measurement Result",
+   "x": 0.5773,
+   "y": 0.68805,
+   "w": 0.39375,
+   "h": 0.022
+  },
+  {
+   "id": "s157",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "Ø Rangka (mm)",
+   "x": 0.5773,
+   "y": 0.71005,
+   "w": 0.20323,
+   "h": 0.02211
+  },
+  {
+   "id": "s158",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.73216,
+   "w": 0.20323,
+   "h": 0.03115
+  },
+  {
+   "id": "s159",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.76332,
+   "w": 0.20323,
+   "h": 0.0312
+  },
+  {
+   "id": "s160",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.5773,
+   "y": 0.79452,
+   "w": 0.20323,
+   "h": 0.03118
+  },
+  {
+   "id": "s161",
+   "tabel_ke": 5,
+   "jenis": "tercetak",
+   "teks_tercetak": "Ketinggian Ranga (mm)",
+   "x": 0.78052,
+   "y": 0.71005,
+   "w": 0.19053,
+   "h": 0.02211
+  },
+  {
+   "id": "s162",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.73216,
+   "w": 0.19053,
+   "h": 0.03115
+  },
+  {
+   "id": "s163",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.76332,
+   "w": 0.19053,
+   "h": 0.0312
+  },
+  {
+   "id": "s164",
+   "tabel_ke": 5,
+   "jenis": "calon_isian",
+   "teks_tercetak": null,
+   "x": 0.78052,
+   "y": 0.79452,
+   "w": 0.19053,
+   "h": 0.03118
+  },
+  {
+   "id": "s165",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Calibrated by :",
+   "x": 0.01629,
+   "y": 0.79452,
+   "w": 0.2327,
+   "h": 0.03118
+  },
+  {
+   "id": "s166",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Sign Name",
+   "x": 0.01629,
+   "y": 0.8257,
+   "w": 0.2327,
+   "h": 0.09115
+  },
+  {
+   "id": "s167",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Checked by :",
+   "x": 0.24899,
+   "y": 0.79452,
+   "w": 0.20568,
+   "h": 0.03118
+  },
+  {
+   "id": "s168",
+   "tabel_ke": 6,
+   "jenis": "tercetak",
+   "teks_tercetak": "Sign Name",
+   "x": 0.24899,
+   "y": 0.8257,
+   "w": 0.20568,
+   "h": 0.09115
+  }
+ ],
+ "kotak_centang": [
+  {
+   "id": "c00",
+   "label_dekat": "Microscope/Dino-Lite",
+   "asal": "gambar",
+   "x": 0.18696,
+   "y": 0.54484,
+   "w": 0.00825,
+   "h": 0.01007
+  },
+  {
+   "id": "c01",
+   "label_dekat": "Tesa",
+   "asal": "gambar",
+   "x": 0.18696,
+   "y": 0.56431,
+   "w": 0.00825,
+   "h": 0.01074
+  }
+ ],
+ "isian_berlabel": [
+  {
+   "id": "f00",
+   "label": "Received Date",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.46512,
+   "y": 0.12898,
+   "w": 0.51291,
+   "h": 0.02632
+  },
+  {
+   "id": "f01",
+   "label": "Calibration Date",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.46512,
+   "y": 0.1553,
+   "w": 0.51291,
+   "h": 0.02632
+  },
+  {
+   "id": "f02",
+   "label": "Env. Condition",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.5469,
+   "y": 0.22664,
+   "w": 0.02699,
+   "h": 0.02422
+  },
+  {
+   "id": "f03",
+   "label": "1. Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15574,
+   "y": 0.24592,
+   "w": 0.13831,
+   "h": 0.02422
+  },
+  {
+   "id": "f04",
+   "label": "Sieve No.",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.34899,
+   "y": 0.24494,
+   "w": 0.10214,
+   "h": 0.02422
+  },
+  {
+   "id": "f05",
+   "label": "2. Range/Nominal Sieve",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15574,
+   "y": 0.27043,
+   "w": 0.0913,
+   "h": 0.02191
+  },
+  {
+   "id": "f06",
+   "label": "3. Type/Model",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15616,
+   "y": 0.29234,
+   "w": 0.29497,
+   "h": 0.01993
+  },
+  {
+   "id": "f07",
+   "label": "4. Serial Number",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15574,
+   "y": 0.31228,
+   "w": 0.29539,
+   "h": 0.02061
+  },
+  {
+   "id": "f08",
+   "label": "5. Merk/Manufacture",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15574,
+   "y": 0.33289,
+   "w": 0.29539,
+   "h": 0.02259
+  },
+  {
+   "id": "f09",
+   "label": "1. Name",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15542,
+   "y": 0.43555,
+   "w": 0.29572,
+   "h": 0.02257
+  },
+  {
+   "id": "f10",
+   "label": "2. Address",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.15542,
+   "y": 0.45811,
+   "w": 0.29572,
+   "h": 0.02257
+  },
+  {
+   "id": "f11",
+   "label": "Calibrated by",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.16582,
+   "y": 0.79908,
+   "w": 0.07969,
+   "h": 0.02422
+  },
+  {
+   "id": "f12",
+   "label": "Checked by",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.38183,
+   "y": 0.79908,
+   "w": 0.06931,
+   "h": 0.02422
+  },
+  {
+   "id": "f13",
+   "label": "Catatan",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.50557,
+   "y": 0.85764,
+   "w": 0.05393,
+   "h": 0.01732
+  },
+  {
+   "id": "f14",
+   "label": "Fi rs t … (oC)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.59907,
+   "y": 0.22802,
+   "w": 0.08594,
+   "h": 0.01743
+  },
+  {
+   "id": "f15",
+   "label": "First … (%RH)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.80238,
+   "y": 0.22802,
+   "w": 0.0683,
+   "h": 0.01922
+  },
+  {
+   "id": "f16",
+   "label": "End … (oC)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.59726,
+   "y": 0.24546,
+   "w": 0.08775,
+   "h": 0.01851
+  },
+  {
+   "id": "f17",
+   "label": "End … (%RH)",
+   "tercetak_sesudah_titik_dua": null,
+   "x": 0.80057,
+   "y": 0.24725,
+   "w": 0.07011,
+   "h": 0.01673
+  }
+ ],
+ "jangkar_teks": [
+  {
+   "teks": "PT.",
+   "x": 0.04902,
+   "y": 0.08406,
+   "w": 0.02572,
+   "h": 0.02255
+  },
+  {
+   "teks": "SIDIK",
+   "x": 0.08032,
+   "y": 0.08406,
+   "w": 0.04326,
+   "h": 0.02255
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.36298,
+   "y": 0.08406,
+   "w": 0.08047,
+   "h": 0.02255
+  },
+  {
+   "teks": "Worksheet",
+   "x": 0.44902,
+   "y": 0.08406,
+   "w": 0.0789,
+   "h": 0.02255
+  },
+  {
+   "teks": "Sieve",
+   "x": 0.54972,
+   "y": 0.08406,
+   "w": 0.04163,
+   "h": 0.02255
+  },
+  {
+   "teks": "Mesh",
+   "x": 0.5969,
+   "y": 0.08406,
+   "w": 0.03987,
+   "h": 0.02255
+  },
+  {
+   "teks": "LK-285-IDN",
+   "x": 0.86462,
+   "y": 0.08406,
+   "w": 0.09625,
+   "h": 0.02255
+  },
+  {
+   "teks": "Received",
+   "x": 0.391,
+   "y": 0.13757,
+   "w": 0.03893,
+   "h": 0.01275
+  },
+  {
+   "teks": "Date",
+   "x": 0.43289,
+   "y": 0.13757,
+   "w": 0.01951,
+   "h": 0.01275
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.38444,
+   "y": 0.15978,
+   "w": 0.04548,
+   "h": 0.01275
+  },
+  {
+   "teks": "Date",
+   "x": 0.43288,
+   "y": 0.15978,
+   "w": 0.01951,
+   "h": 0.01275
+  },
+  {
+   "teks": "EQUIPMENT",
+   "x": 0.10584,
+   "y": 0.19927,
+   "w": 0.06875,
+   "h": 0.01601
+  },
+  {
+   "teks": "IDENTITY",
+   "x": 0.17828,
+   "y": 0.19927,
+   "w": 0.05352,
+   "h": 0.01601
+  },
+  {
+   "teks": "AND",
+   "x": 0.23555,
+   "y": 0.19927,
+   "w": 0.02443,
+   "h": 0.01601
+  },
+  {
+   "teks": "CUSTOMER",
+   "x": 0.2638,
+   "y": 0.19927,
+   "w": 0.06567,
+   "h": 0.01601
+  },
+  {
+   "teks": "DATA",
+   "x": 0.33321,
+   "y": 0.19927,
+   "w": 0.03101,
+   "h": 0.01601
+  },
+  {
+   "teks": "CALIBRATION",
+   "x": 0.66077,
+   "y": 0.19927,
+   "w": 0.07772,
+   "h": 0.01601
+  },
+  {
+   "teks": "RESULT",
+   "x": 0.74229,
+   "y": 0.19927,
+   "w": 0.04557,
+   "h": 0.01601
+  },
+  {
+   "teks": "Env.",
+   "x": 0.46831,
+   "y": 0.23238,
+   "w": 0.01851,
+   "h": 0.01275
+  },
+  {
+   "teks": "Condition",
+   "x": 0.49255,
+   "y": 0.23238,
+   "w": 0.03698,
+   "h": 0.01275
+  },
+  {
+   "teks": "(oC)",
+   "x": 0.68754,
+   "y": 0.22749,
+   "w": 0.0232,
+   "h": 0.01632
+  },
+  {
+   "teks": "First",
+   "x": 0.78251,
+   "y": 0.23107,
+   "w": 0.01734,
+   "h": 0.01275
+  },
+  {
+   "teks": "(%RH)",
+   "x": 0.87321,
+   "y": 0.23107,
+   "w": 0.03325,
+   "h": 0.01275
+  },
+  {
+   "teks": "Name",
+   "x": 0.03842,
+   "y": 0.25068,
+   "w": 0.02408,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sieve",
+   "x": 0.29658,
+   "y": 0.25068,
+   "w": 0.02682,
+   "h": 0.01275
+  },
+  {
+   "teks": "No.",
+   "x": 0.32307,
+   "y": 0.25068,
+   "w": 0.01759,
+   "h": 0.01275
+  },
+  {
+   "teks": "Thermohygro",
+   "x": 0.46831,
+   "y": 0.25071,
+   "w": 0.04569,
+   "h": 0.01111
+  },
+  {
+   "teks": "Used:",
+   "x": 0.51905,
+   "y": 0.25071,
+   "w": 0.02086,
+   "h": 0.01111
+  },
+  {
+   "teks": "TH-1",
+   "x": 0.54505,
+   "y": 0.25071,
+   "w": 0.01912,
+   "h": 0.01111
+  },
+  {
+   "teks": "End",
+   "x": 0.5792,
+   "y": 0.25068,
+   "w": 0.01553,
+   "h": 0.01275
+  },
+  {
+   "teks": "(oC)",
+   "x": 0.68754,
+   "y": 0.2471,
+   "w": 0.0232,
+   "h": 0.01632
+  },
+  {
+   "teks": "End",
+   "x": 0.78251,
+   "y": 0.25068,
+   "w": 0.01553,
+   "h": 0.01275
+  },
+  {
+   "teks": "(%RH)",
+   "x": 0.87321,
+   "y": 0.25068,
+   "w": 0.03325,
+   "h": 0.01275
+  },
+  {
+   "teks": "Range/Nominal",
+   "x": 0.03842,
+   "y": 0.27519,
+   "w": 0.06328,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sieve",
+   "x": 0.10481,
+   "y": 0.27519,
+   "w": 0.02354,
+   "h": 0.01275
+  },
+  {
+   "teks": "Kalibrasi",
+   "x": 0.4789,
+   "y": 0.27617,
+   "w": 0.03674,
+   "h": 0.01275
+  },
+  {
+   "teks": "Dimensi",
+   "x": 0.51877,
+   "y": 0.27617,
+   "w": 0.03348,
+   "h": 0.01275
+  },
+  {
+   "teks": "Lubang",
+   "x": 0.55537,
+   "y": 0.27617,
+   "w": 0.03062,
+   "h": 0.01275
+  },
+  {
+   "teks": "dan",
+   "x": 0.58896,
+   "y": 0.27617,
+   "w": 0.01524,
+   "h": 0.01275
+  },
+  {
+   "teks": "Diameter",
+   "x": 0.60715,
+   "y": 0.27617,
+   "w": 0.03763,
+   "h": 0.01275
+  },
+  {
+   "teks": "Kawat",
+   "x": 0.64779,
+   "y": 0.27617,
+   "w": 0.02566,
+   "h": 0.01275
+  },
+  {
+   "teks": "Type/Model",
+   "x": 0.03842,
+   "y": 0.29479,
+   "w": 0.04812,
+   "h": 0.01275
+  },
+  {
+   "teks": "Nominal",
+   "x": 0.5072,
+   "y": 0.29577,
+   "w": 0.03399,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sieve",
+   "x": 0.54431,
+   "y": 0.29577,
+   "w": 0.02354,
+   "h": 0.01275
+  },
+  {
+   "teks": "Measurement",
+   "x": 0.73125,
+   "y": 0.29512,
+   "w": 0.05571,
+   "h": 0.01275
+  },
+  {
+   "teks": "Result",
+   "x": 0.79009,
+   "y": 0.29512,
+   "w": 0.0264,
+   "h": 0.01275
+  },
+  {
+   "teks": "Serial",
+   "x": 0.03842,
+   "y": 0.31571,
+   "w": 0.02438,
+   "h": 0.01275
+  },
+  {
+   "teks": "Number",
+   "x": 0.06592,
+   "y": 0.31571,
+   "w": 0.03235,
+   "h": 0.01275
+  },
+  {
+   "teks": "Mesh",
+   "x": 0.50669,
+   "y": 0.31473,
+   "w": 0.02231,
+   "h": 0.01275
+  },
+  {
+   "teks": "Wrap",
+   "x": 0.58955,
+   "y": 0.31506,
+   "w": 0.02204,
+   "h": 0.01275
+  },
+  {
+   "teks": "(x')",
+   "x": 0.61455,
+   "y": 0.31506,
+   "w": 0.01253,
+   "h": 0.01275
+  },
+  {
+   "teks": "Weft",
+   "x": 0.66025,
+   "y": 0.31506,
+   "w": 0.01911,
+   "h": 0.01275
+  },
+  {
+   "teks": "(y')",
+   "x": 0.68247,
+   "y": 0.31506,
+   "w": 0.01228,
+   "h": 0.01275
+  },
+  {
+   "teks": "Kawat",
+   "x": 0.74009,
+   "y": 0.31506,
+   "w": 0.02566,
+   "h": 0.01275
+  },
+  {
+   "teks": "Wrap",
+   "x": 0.79312,
+   "y": 0.31506,
+   "w": 0.02204,
+   "h": 0.01275
+  },
+  {
+   "teks": "(x')",
+   "x": 0.81812,
+   "y": 0.31506,
+   "w": 0.01253,
+   "h": 0.01275
+  },
+  {
+   "teks": "Weft",
+   "x": 0.85856,
+   "y": 0.31506,
+   "w": 0.01911,
+   "h": 0.01275
+  },
+  {
+   "teks": "(y')",
+   "x": 0.88078,
+   "y": 0.31506,
+   "w": 0.01228,
+   "h": 0.01275
+  },
+  {
+   "teks": "Kawat",
+   "x": 0.93178,
+   "y": 0.31604,
+   "w": 0.02566,
+   "h": 0.01275
+  },
+  {
+   "teks": "Merk/Manufacture",
+   "x": 0.03842,
+   "y": 0.33666,
+   "w": 0.07482,
+   "h": 0.01275
+  },
+  {
+   "teks": "OWNER",
+   "x": 0.01768,
+   "y": 0.42032,
+   "w": 0.03494,
+   "h": 0.01275
+  },
+  {
+   "teks": "Name",
+   "x": 0.03842,
+   "y": 0.44128,
+   "w": 0.02408,
+   "h": 0.01275
+  },
+  {
+   "teks": "Address",
+   "x": 0.03842,
+   "y": 0.4622,
+   "w": 0.03396,
+   "h": 0.01275
+  },
+  {
+   "teks": "STANDARD",
+   "x": 0.01768,
+   "y": 0.50272,
+   "w": 0.05076,
+   "h": 0.01275
+  },
+  {
+   "teks": "Standard",
+   "x": 0.05003,
+   "y": 0.52494,
+   "w": 0.03745,
+   "h": 0.01275
+  },
+  {
+   "teks": "Name",
+   "x": 0.09043,
+   "y": 0.52494,
+   "w": 0.02408,
+   "h": 0.01275
+  },
+  {
+   "teks": "Usage",
+   "x": 0.17077,
+   "y": 0.52396,
+   "w": 0.02635,
+   "h": 0.01275
+  },
+  {
+   "teks": "Check",
+   "x": 0.20008,
+   "y": 0.52396,
+   "w": 0.02624,
+   "h": 0.01275
+  },
+  {
+   "teks": "Digital",
+   "x": 0.02247,
+   "y": 0.54455,
+   "w": 0.02448,
+   "h": 0.01275
+  },
+  {
+   "teks": "Microscope/Dino-Lite",
+   "x": 0.05277,
+   "y": 0.54455,
+   "w": 0.08922,
+   "h": 0.01275
+  },
+  {
+   "teks": "Digital",
+   "x": 0.04145,
+   "y": 0.56419,
+   "w": 0.02448,
+   "h": 0.01275
+  },
+  {
+   "teks": "Caiper",
+   "x": 0.07174,
+   "y": 0.56419,
+   "w": 0.02567,
+   "h": 0.01275
+  },
+  {
+   "teks": "Tesa",
+   "x": 0.10329,
+   "y": 0.56419,
+   "w": 0.01956,
+   "h": 0.01275
+  },
+  {
+   "teks": "Kalibrasi",
+   "x": 0.4789,
+   "y": 0.67241,
+   "w": 0.03674,
+   "h": 0.01275
+  },
+  {
+   "teks": "Diameter",
+   "x": 0.51877,
+   "y": 0.67241,
+   "w": 0.03763,
+   "h": 0.01275
+  },
+  {
+   "teks": "dan",
+   "x": 0.55941,
+   "y": 0.67241,
+   "w": 0.01524,
+   "h": 0.01275
+  },
+  {
+   "teks": "Ketinggian",
+   "x": 0.5776,
+   "y": 0.67241,
+   "w": 0.0445,
+   "h": 0.01275
+  },
+  {
+   "teks": "Rangka",
+   "x": 0.62505,
+   "y": 0.67241,
+   "w": 0.0316,
+   "h": 0.01275
+  },
+  {
+   "teks": "CALIBRATION",
+   "x": 0.01768,
+   "y": 0.69496,
+   "w": 0.06212,
+   "h": 0.01275
+  },
+  {
+   "teks": "DATA",
+   "x": 0.08278,
+   "y": 0.69496,
+   "w": 0.02488,
+   "h": 0.01275
+  },
+  {
+   "teks": "Nominal",
+   "x": 0.5072,
+   "y": 0.69528,
+   "w": 0.03399,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sieve",
+   "x": 0.54431,
+   "y": 0.69528,
+   "w": 0.02354,
+   "h": 0.01275
+  },
+  {
+   "teks": "Measurement",
+   "x": 0.73125,
+   "y": 0.69365,
+   "w": 0.05571,
+   "h": 0.01275
+  },
+  {
+   "teks": "Result",
+   "x": 0.79009,
+   "y": 0.69365,
+   "w": 0.0264,
+   "h": 0.01275
+  },
+  {
+   "teks": "Location",
+   "x": 0.03842,
+   "y": 0.71718,
+   "w": 0.03564,
+   "h": 0.01275
+  },
+  {
+   "teks": ":Lab",
+   "x": 0.15053,
+   "y": 0.71685,
+   "w": 0.02364,
+   "h": 0.01307
+  },
+  {
+   "teks": "Dimensi",
+   "x": 0.17657,
+   "y": 0.71718,
+   "w": 0.03509,
+   "h": 0.01275
+  },
+  {
+   "teks": "SIDIK",
+   "x": 0.23111,
+   "y": 0.71718,
+   "w": 0.02633,
+   "h": 0.01275
+  },
+  {
+   "teks": "Mesh",
+   "x": 0.50669,
+   "y": 0.71424,
+   "w": 0.02231,
+   "h": 0.01275
+  },
+  {
+   "teks": "Rangka",
+   "x": 0.65623,
+   "y": 0.71587,
+   "w": 0.0316,
+   "h": 0.01275
+  },
+  {
+   "teks": "(mm)",
+   "x": 0.69084,
+   "y": 0.71587,
+   "w": 0.02063,
+   "h": 0.01275
+  },
+  {
+   "teks": "Ketinggian",
+   "x": 0.82674,
+   "y": 0.71587,
+   "w": 0.0445,
+   "h": 0.01275
+  },
+  {
+   "teks": "Ranga",
+   "x": 0.87419,
+   "y": 0.71587,
+   "w": 0.02682,
+   "h": 0.01275
+  },
+  {
+   "teks": "(mm)",
+   "x": 0.904,
+   "y": 0.71587,
+   "w": 0.02063,
+   "h": 0.01275
+  },
+  {
+   "teks": "Calibration",
+   "x": 0.03842,
+   "y": 0.73777,
+   "w": 0.04548,
+   "h": 0.01275
+  },
+  {
+   "teks": "Methode",
+   "x": 0.08685,
+   "y": 0.73777,
+   "w": 0.03568,
+   "h": 0.01275
+  },
+  {
+   "teks": ":SIDIK-IK-CAL-0526",
+   "x": 0.15053,
+   "y": 0.73744,
+   "w": 0.09783,
+   "h": 0.01307
+  },
+  {
+   "teks": "Calibrated",
+   "x": 0.10205,
+   "y": 0.80481,
+   "w": 0.04296,
+   "h": 0.01275
+  },
+  {
+   "teks": "Checked",
+   "x": 0.3246,
+   "y": 0.80481,
+   "w": 0.03642,
+   "h": 0.01275
+  },
+  {
+   "teks": "Catatan:",
+   "x": 0.46806,
+   "y": 0.86068,
+   "w": 0.03499,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sign",
+   "x": 0.01793,
+   "y": 0.87964,
+   "w": 0.01755,
+   "h": 0.01275
+  },
+  {
+   "teks": "Sign",
+   "x": 0.25082,
+   "y": 0.87964,
+   "w": 0.01755,
+   "h": 0.01275
+  },
+  {
+   "teks": "Name",
+   "x": 0.01793,
+   "y": 0.90092,
+   "w": 0.02336,
+   "h": 0.01275
+  },
+  {
+   "teks": "Name",
+   "x": 0.25082,
+   "y": 0.90092,
+   "w": 0.02336,
+   "h": 0.01275
+  },
+  {
+   "teks": "Page",
+   "x": 0.01212,
+   "y": 0.96708,
+   "w": 0.02465,
+   "h": 0.01601
+  },
+  {
+   "teks": "Revise",
+   "x": 0.47361,
+   "y": 0.96708,
+   "w": 0.03345,
+   "h": 0.01601
+  },
+  {
+   "teks": "SIDIK-FM-CAL-0536",
+   "x": 0.88582,
+   "y": 0.96708,
+   "w": 0.09936,
+   "h": 0.01601
+  }
+ ]
+}

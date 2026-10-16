@@ -1,0 +1,445 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0532.draf.json -> kunci sel profil do_meter. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN, karena id bergeser begitu skripnya diperbaiki. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliKimiaTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "do_meter",
+    "kode_dokumen": "SIDIK-FM-CAL-0532_Rev.2",
+    "draf": "formulir-0532.draf.json",
+    "sumber_sha256": "58ec59ec8a6b278d9c6cd0fad8b14a45d1718deae9991bcae83484afec8c567e",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: SATU slot larutan (header kertas 0.00 mg/l) x 2 kolom (mg/l, °C) x 5 repeat ke bawah, Before dan After -> baris 1 profil.",
+        "ASUMSI POSISIONAL, perlu dikonfirmasi lab: header kertas 0.00 mg/l BUKAN titik profil (8,77 mg/L). DoMeterProfile docblock: form cetak Rev.2 menulis 'Zero Oxygen Std. 0.0' (larutan pengenol alat), titik terakreditasi satu-satunya 8,77, dan sesi asli 0566-CAL-624 mencatat standar 8,77 di form ini. Satu slot = satu baris profil. Kalau lab menyatakan slot 0.00 dipakai untuk pembacaan larutan nol, seluruh pemetaan tabel ini salah.",
+        "Env: draf hanya menemukan tiga dari empat kotak (First oC, First %RH, End %RH). Kotak 'End (oC)' tidak ada di draf (label 'E n d' bertulisan renggang tidak tertangkap skrip), jadi suhu_akhir TIDAK terpetakan; utang skrip draf, draf tidak disunting.",
+        "Centang TH-2/6/7 Insitu dan TH-4 Inlab. Kotak centang Usage Check (Zero Oxygen Std, RTD, Victor) TIDAK terdeteksi draf: utang skrip."
+    ],
+    "sel": [
+        {
+            "kunci": "sebelum_adjustment|1|1|pembacaan",
+            "x": 0.5353,
+            "y": 0.3639
+        },
+        {
+            "kunci": "sebelum_adjustment|1|1|suhu",
+            "x": 0.6236,
+            "y": 0.3639
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|pembacaan",
+            "x": 0.5353,
+            "y": 0.3989
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|suhu",
+            "x": 0.6236,
+            "y": 0.3989
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.4336
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|suhu",
+            "x": 0.6236,
+            "y": 0.4336
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|pembacaan",
+            "x": 0.5353,
+            "y": 0.4682
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|suhu",
+            "x": 0.6236,
+            "y": 0.4682
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|pembacaan",
+            "x": 0.5353,
+            "y": 0.503
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|suhu",
+            "x": 0.6236,
+            "y": 0.503
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|pembacaan",
+            "x": 0.5353,
+            "y": 0.6068
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|suhu",
+            "x": 0.6236,
+            "y": 0.6068
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|pembacaan",
+            "x": 0.5353,
+            "y": 0.6441
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|suhu",
+            "x": 0.6236,
+            "y": 0.6441
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|pembacaan",
+            "x": 0.5353,
+            "y": 0.6813
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|suhu",
+            "x": 0.6236,
+            "y": 0.6813
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|pembacaan",
+            "x": 0.5353,
+            "y": 0.7186
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|suhu",
+            "x": 0.6236,
+            "y": 0.7186
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|pembacaan",
+            "x": 0.5353,
+            "y": 0.756
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|suhu",
+            "x": 0.6236,
+            "y": 0.756
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.7214,
+            "y": 0.267
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8862,
+            "y": 0.2698
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8855,
+            "y": 0.2846
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "label_draf": "TH-2",
+            "x": 0.8786,
+            "y": 0.3213
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "label_draf": "TH-6",
+            "x": 0.8792,
+            "y": 0.3363
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "label_draf": "TH-7",
+            "x": 0.8792,
+            "y": 0.3531
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "label_draf": "TH-4",
+            "x": 0.8798,
+            "y": 0.3688
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.4561,
+                    "y": 0.8003
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, tipe, nomor seri, merk, range/resolusi): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.2534,
+                    "y": 0.2866
+                },
+                {
+                    "x": 0.1681,
+                    "y": 0.307
+                },
+                {
+                    "x": 0.2534,
+                    "y": 0.3392
+                },
+                {
+                    "x": 0.2534,
+                    "y": 0.3573
+                },
+                {
+                    "x": 0.2534,
+                    "y": 0.3754
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.2531,
+                    "y": 0.4432
+                },
+                {
+                    "x": 0.2531,
+                    "y": 0.4621
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak kecil sesudah label 'Env. Condition :' di luar blok First/End; nilai lingkungan ditulis di kotak First/End yang sudah dipetakan.",
+            "titik": [
+                {
+                    "x": 0.713,
+                    "y": 0.2802
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Standard Used' (nama/serial standar): dicocokkan ke master standar, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1393,
+                    "y": 0.5136
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Thermohygro used': pilihannya dicentang di TH-n; kotak teks ini tidak punya kunci profil.",
+            "titik": [
+                {
+                    "x": 0.9219,
+                    "y": 0.3051
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Lokasi kalibrasi: identitas sesi, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.2534,
+                    "y": 0.6738
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pelaksana/pemeriksa di kotak tanda tangan: tahap 2. Tanda tangan sendiri tidak pernah dibaca atau ditiru (PANDUAN §6.7).",
+            "titik": [
+                {
+                    "x": 0.1716,
+                    "y": 0.7279
+                },
+                {
+                    "x": 0.3481,
+                    "y": 0.7279
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi formulir yang TERCETAK di kaki halaman (dibaca dari QR/jangkar, bukan diisi teknisi).",
+            "titik": [
+                {
+                    "x": 0.7084,
+                    "y": 0.9764
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.6867,
+                    "y": 0.1899
+                },
+                {
+                    "x": 0.6867,
+                    "y": 0.2119
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kolom kosong di tepi kanan tabel (di luar kolom °C, bertumpuk dengan area kotak TH): tidak ada kepala dan tidak ada yang ditulis. Utang skrip draf.",
+            "titik": [
+                {
+                    "x": 0.9512,
+                    "y": 0.3377
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.3544
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.3721
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.3903
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4076
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4249
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4423
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4596
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4769
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.4937
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.5112
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.5789
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.5975
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.6162
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.6348
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.6534
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.6721
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.6907
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.7093
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.7279
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.7491
+                },
+                {
+                    "x": 0.9512,
+                    "y": 0.7679
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak hijau kosong di sebelah kanan header tabel After: tidak ada label, tidak ada yang ditulis.",
+            "titik": [
+                {
+                    "x": 0.8205,
+                    "y": 0.545
+                },
+                {
+                    "x": 0.8205,
+                    "y": 0.5614
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak hijau kosong di tengah blok Env. Condition (di antara kotak oC dan %RH): tidak ada yang ditulis.",
+            "titik": [
+                {
+                    "x": 0.8226,
+                    "y": 0.2761
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala kosong di kiri header 'Solution Standard': bukan pembacaan.",
+            "titik": [
+                {
+                    "x": 0.4402,
+                    "y": 0.3041
+                },
+                {
+                    "x": 0.4402,
+                    "y": 0.3215
+                },
+                {
+                    "x": 0.4402,
+                    "y": 0.545
+                },
+                {
+                    "x": 0.4402,
+                    "y": 0.5614
+                }
+            ]
+        }
+    ]
+}

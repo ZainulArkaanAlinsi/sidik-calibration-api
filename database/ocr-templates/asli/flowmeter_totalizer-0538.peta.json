@@ -1,0 +1,707 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0538.draf.json -> kunci sel profil flowmeter_totalizer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Kertas UFM Rev.0 dipakai bersama untuk Totalizer dan Flowrate. Kondisi lingkungan \"Sebelum/Sesudah\" dipetakan ke awal/akhir (sel tabel, `sumber_kotak: \"sel\"`). Kotak centang Usage Check/TH tidak terdeteksi di draf, jadi tidak ada centang.",
+    "template_id": "flowmeter_totalizer",
+    "kode_dokumen": "SIDIK-FM-CAL-0538_Rev.0",
+    "draf": "formulir-0538.draf.json",
+    "sumber_sha256": "c12eea2101137675580ae5192a7ed82a4de9910a97dd7628d3465e00aff162e3",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "pipa_diameter|1|1|pembacaan",
+            "x": 0.3418,
+            "y": 0.2104
+        },
+        {
+            "kunci": "pipa_diameter|1|2|pembacaan",
+            "x": 0.389,
+            "y": 0.2104
+        },
+        {
+            "kunci": "pipa_diameter|1|3|pembacaan",
+            "x": 0.4319,
+            "y": 0.2104
+        },
+        {
+            "kunci": "pipa_ketebalan|1|1|pembacaan",
+            "x": 0.3418,
+            "y": 0.3015
+        },
+        {
+            "kunci": "pipa_ketebalan|1|2|pembacaan",
+            "x": 0.389,
+            "y": 0.3015
+        },
+        {
+            "kunci": "pipa_ketebalan|1|3|pembacaan",
+            "x": 0.4319,
+            "y": 0.3015
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.4288,
+            "y": 0.1192
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5465,
+            "y": 0.1192
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.4288,
+            "y": 0.142
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5465,
+            "y": 0.142
+        }
+    ],
+    "centang": [],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Pembacaan UUT totalizer: kertas UFM memuat tiga kolom durasi per set point, profil totalizer memuat SATU pembacaan per titik dan ulangan. Kolom mana yang dibaca belum diputuskan, jadi tidak ditebak.",
+            "titik": [
+                {
+                    "x": 0.4933,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.4092
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.4472
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.4854
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.4854
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Standard Reading UFM: kertas memuat tiga kolom (20\"/40\"/60\") per set point, sedangkan profil memuat SATU pembacaan standar per titik dan ulangan. Kolom mana yang dibaca profil belum diputuskan lab, jadi tidak ditebak.",
+            "titik": [
+                {
+                    "x": 0.4933,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.5465,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.5923,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.639,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.7448,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.6378
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Tabel Temperature kertas UFM: tabel suhu per set point (`flow_suhu_awal`/`flow_suhu_akhir`) hanya dipakai varian gravimetri; varian UFM tidak punya kunci suhu air.",
+            "titik": [
+                {
+                    "x": 0.4933,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.5592,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.6289,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.6955,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.7523,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.7913
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.5592,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.6289,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.6955,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.7523,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.8132
+                },
+                {
+                    "x": 0.4933,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.5592,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.6289,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.6955,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.7523,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.8056,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.8626,
+                    "y": 0.8354
+                },
+                {
+                    "x": 0.9157,
+                    "y": 0.8354
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Baris \"Set Point UUT\"/\"Time (s)\": nominal set point ditulis tangan; profil tidak punya kunci sel untuknya (titik ukur datang dari konfigurasi titik).",
+            "titik": [
+                {
+                    "x": 0.1808,
+                    "y": 0.3471
+                },
+                {
+                    "x": 0.3106,
+                    "y": 0.3743
+                },
+                {
+                    "x": 0.3106,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.3893,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.539,
+                    "y": 0.3471
+                },
+                {
+                    "x": 0.5289,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.6614,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.6959,
+                    "y": 0.3471
+                },
+                {
+                    "x": 0.7813,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.8587,
+                    "y": 0.3471
+                },
+                {
+                    "x": 0.8876,
+                    "y": 0.7277
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.3471
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.3743
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.7277
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak tepi/pembungkus tanpa teks di luar tabel data (kolom tipis di kanan tabel, kepala kolom kosong, strip pemisah, area catatan/tanda tangan): di kertas tidak ada angka pembacaan yang ditulis di situ, dan profil tidak punya kunci untuknya.",
+            "titik": [
+                {
+                    "x": 0.1808,
+                    "y": 0.5235
+                },
+                {
+                    "x": 0.1808,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.1808,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.1808,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.1808,
+                    "y": 0.666
+                },
+                {
+                    "x": 0.3461,
+                    "y": 0.9285
+                },
+                {
+                    "x": 0.575,
+                    "y": 0.5235
+                },
+                {
+                    "x": 0.3627,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.3627,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.575,
+                    "y": 0.666
+                },
+                {
+                    "x": 0.3893,
+                    "y": 0.8576
+                },
+                {
+                    "x": 0.4665,
+                    "y": 0.1876
+                },
+                {
+                    "x": 0.4665,
+                    "y": 0.2104
+                },
+                {
+                    "x": 0.5909,
+                    "y": 0.2788
+                },
+                {
+                    "x": 0.7264,
+                    "y": 0.8919
+                },
+                {
+                    "x": 0.7264,
+                    "y": 0.9285
+                },
+                {
+                    "x": 0.6879,
+                    "y": 0.0933
+                },
+                {
+                    "x": 0.7523,
+                    "y": 0.2788
+                },
+                {
+                    "x": 0.8752,
+                    "y": 0.2788
+                },
+                {
+                    "x": 0.9041,
+                    "y": 0.5235
+                },
+                {
+                    "x": 0.9041,
+                    "y": 0.666
+                },
+                {
+                    "x": 0.9322,
+                    "y": 0.0933
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.256
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.4473
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.5616
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.5997
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.6378
+                },
+                {
+                    "x": 0.9571,
+                    "y": 0.7619
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.254,
+                    "y": 0.1249
+                },
+                {
+                    "x": 0.2241,
+                    "y": 0.4224
+                },
+                {
+                    "x": 0.2241,
+                    "y": 0.496
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Thermohygro used: kotak teks bebas; profil memilih `thermohygro_standard_id` dari master (pilihan), jadi menebak teks bebas ke pilihan itu dilarang. Pilihan dikonfirmasi manusia.",
+            "titik": [
+                {
+                    "x": 0.6868,
+                    "y": 0.1249
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.8797,
+                    "y": 0.1249
+                },
+                {
+                    "x": 0.2006,
+                    "y": 0.1477
+                },
+                {
+                    "x": 0.2006,
+                    "y": 0.1678
+                },
+                {
+                    "x": 0.2241,
+                    "y": 0.1887
+                },
+                {
+                    "x": 0.6159,
+                    "y": 0.1885
+                },
+                {
+                    "x": 0.2241,
+                    "y": 0.2115
+                },
+                {
+                    "x": 0.6159,
+                    "y": 0.2113
+                },
+                {
+                    "x": 0.5531,
+                    "y": 0.2342
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.2249,
+                    "y": 0.257
+                },
+                {
+                    "x": 0.2241,
+                    "y": 0.2798
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan/paraf/nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama datang dari akun (`teknisi.nama`, `reviewer.nama`, sumber otomatis).",
+            "titik": [
+                {
+                    "x": 0.1194,
+                    "y": 0.892
+                },
+                {
+                    "x": 0.1031,
+                    "y": 0.9474
+                },
+                {
+                    "x": 0.1866,
+                    "y": 0.9474
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.3726,
+                    "y": 0.892
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Kotak pilih mode (Totalizer/Flowrate) di kertas UFM: mode datang dari `spesifikasi_alat.flowmeter.mode`, bukan dari centang.",
+            "titik": [
+                {
+                    "x": 0.3106,
+                    "y": 0.0933
+                }
+            ]
+        }
+    ]
+}

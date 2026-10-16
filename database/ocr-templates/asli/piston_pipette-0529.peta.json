@@ -1,0 +1,522 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0529.draf.json -> kunci sel profil piston_pipette. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Graduated: kolom kertas = titik (MIN/MID/MAX = baris profil 1..3), baris kertas = M0..M10 (ulangan 1..11). Transpos dibanding aplikasi, kunci tetap `piston_kumulatif|titik|M|pembacaan`.",
+    "template_id": "piston_pipette",
+    "kode_dokumen": "SIDIK-FM-CAL-0529_Rev.3",
+    "draf": "formulir-0529.draf.json",
+    "sumber_sha256": "dd6c714f85905d8b33e084fe9853b0f724cef892601b43c0055c4de1f9f965b0",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "piston_kumulatif|1|1|pembacaan",
+            "x": 0.6816,
+            "y": 0.3333
+        },
+        {
+            "kunci": "piston_kumulatif|2|1|pembacaan",
+            "x": 0.7784,
+            "y": 0.3333
+        },
+        {
+            "kunci": "piston_kumulatif|3|1|pembacaan",
+            "x": 0.8749,
+            "y": 0.3333
+        },
+        {
+            "kunci": "piston_kumulatif|1|2|pembacaan",
+            "x": 0.6816,
+            "y": 0.3535
+        },
+        {
+            "kunci": "piston_kumulatif|2|2|pembacaan",
+            "x": 0.7784,
+            "y": 0.3535
+        },
+        {
+            "kunci": "piston_kumulatif|3|2|pembacaan",
+            "x": 0.8749,
+            "y": 0.3535
+        },
+        {
+            "kunci": "piston_kumulatif|1|3|pembacaan",
+            "x": 0.6816,
+            "y": 0.3736
+        },
+        {
+            "kunci": "piston_kumulatif|2|3|pembacaan",
+            "x": 0.7784,
+            "y": 0.3736
+        },
+        {
+            "kunci": "piston_kumulatif|3|3|pembacaan",
+            "x": 0.8749,
+            "y": 0.3736
+        },
+        {
+            "kunci": "piston_kumulatif|1|4|pembacaan",
+            "x": 0.6816,
+            "y": 0.3938
+        },
+        {
+            "kunci": "piston_kumulatif|2|4|pembacaan",
+            "x": 0.7784,
+            "y": 0.3938
+        },
+        {
+            "kunci": "piston_kumulatif|3|4|pembacaan",
+            "x": 0.8749,
+            "y": 0.3938
+        },
+        {
+            "kunci": "piston_kumulatif|1|5|pembacaan",
+            "x": 0.6816,
+            "y": 0.4139
+        },
+        {
+            "kunci": "piston_kumulatif|2|5|pembacaan",
+            "x": 0.7784,
+            "y": 0.4139
+        },
+        {
+            "kunci": "piston_kumulatif|3|5|pembacaan",
+            "x": 0.8749,
+            "y": 0.4139
+        },
+        {
+            "kunci": "piston_kumulatif|1|6|pembacaan",
+            "x": 0.6816,
+            "y": 0.4341
+        },
+        {
+            "kunci": "piston_kumulatif|2|6|pembacaan",
+            "x": 0.7784,
+            "y": 0.4341
+        },
+        {
+            "kunci": "piston_kumulatif|3|6|pembacaan",
+            "x": 0.8749,
+            "y": 0.4341
+        },
+        {
+            "kunci": "piston_kumulatif|1|7|pembacaan",
+            "x": 0.6816,
+            "y": 0.4543
+        },
+        {
+            "kunci": "piston_kumulatif|2|7|pembacaan",
+            "x": 0.7784,
+            "y": 0.4543
+        },
+        {
+            "kunci": "piston_kumulatif|3|7|pembacaan",
+            "x": 0.8749,
+            "y": 0.4543
+        },
+        {
+            "kunci": "piston_kumulatif|1|8|pembacaan",
+            "x": 0.6816,
+            "y": 0.4745
+        },
+        {
+            "kunci": "piston_kumulatif|2|8|pembacaan",
+            "x": 0.7784,
+            "y": 0.4745
+        },
+        {
+            "kunci": "piston_kumulatif|3|8|pembacaan",
+            "x": 0.8749,
+            "y": 0.4745
+        },
+        {
+            "kunci": "piston_kumulatif|1|9|pembacaan",
+            "x": 0.6816,
+            "y": 0.4946
+        },
+        {
+            "kunci": "piston_kumulatif|2|9|pembacaan",
+            "x": 0.7784,
+            "y": 0.4946
+        },
+        {
+            "kunci": "piston_kumulatif|3|9|pembacaan",
+            "x": 0.8749,
+            "y": 0.4946
+        },
+        {
+            "kunci": "piston_kumulatif|1|10|pembacaan",
+            "x": 0.6816,
+            "y": 0.5148
+        },
+        {
+            "kunci": "piston_kumulatif|2|10|pembacaan",
+            "x": 0.7784,
+            "y": 0.5148
+        },
+        {
+            "kunci": "piston_kumulatif|3|10|pembacaan",
+            "x": 0.8749,
+            "y": 0.5148
+        },
+        {
+            "kunci": "piston_kumulatif|1|11|pembacaan",
+            "x": 0.6816,
+            "y": 0.5349
+        },
+        {
+            "kunci": "piston_kumulatif|2|11|pembacaan",
+            "x": 0.7784,
+            "y": 0.5349
+        },
+        {
+            "kunci": "piston_kumulatif|3|11|pembacaan",
+            "x": 0.8749,
+            "y": 0.5349
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.7093,
+            "y": 0.191
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8735,
+            "y": 0.1919
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.7085,
+            "y": 0.2095
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.8727,
+            "y": 0.2104
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "Timbangan Excellent/HSEX1403752",
+            "label_kertas": "Excellent/HSEX1403752",
+            "x": 0.3149,
+            "y": 0.577
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "Timbangan Mettler Toledo/1129063525",
+            "label_kertas": "Toledo/1129063525",
+            "x": 0.3149,
+            "y": 0.5945
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 4,
+            "label": "RTD Sensor/SH1/20",
+            "label_kertas": "Sensor/SH1/20",
+            "x": 0.3149,
+            "y": 0.6152
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 5,
+            "label": "Temp. Calibrator Constant",
+            "label_kertas": "Constant",
+            "x": 0.3151,
+            "y": 0.6391
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 6,
+            "label": "Temp. Calibrator Yokogawa",
+            "label_kertas": "Yokogawa",
+            "x": 0.3149,
+            "y": 0.6642
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Nominal UUT: nilai nominal titik ditulis tangan; profil tidak punya kunci sel untuknya (titik ukur datang dari konfigurasi titik).",
+            "titik": [
+                {
+                    "x": 0.6816,
+                    "y": 0.2805
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.2805
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.2805
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "M11 (\"Jika UUT < 50 µl\"): profil memuat M0..M10 saja; M11 belum punya kunci.",
+            "titik": [
+                {
+                    "x": 0.6816,
+                    "y": 0.5554
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.5554
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.5554
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala \"Suhu Air Destilasi\" tanpa teks (abu-abu): bukan tempat angka.",
+            "titik": [
+                {
+                    "x": 0.6816,
+                    "y": 0.6199
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.6199
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.6199
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Suhu air: kertas memuat DUA baris isian untuk Awal dan DUA untuk Akhir per titik, sedangkan profil memuat satu nilai Awal dan satu Akhir. Baris mana yang dibaca profil belum diputuskan lab, jadi tidak ditebak.",
+            "titik": [
+                {
+                    "x": 0.6816,
+                    "y": 0.6425
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.6425
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.6425
+                },
+                {
+                    "x": 0.6816,
+                    "y": 0.6654
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.6654
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.6654
+                },
+                {
+                    "x": 0.6816,
+                    "y": 0.6882
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.6882
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.6882
+                },
+                {
+                    "x": 0.6816,
+                    "y": 0.7113
+                },
+                {
+                    "x": 0.7784,
+                    "y": 0.7113
+                },
+                {
+                    "x": 0.8749,
+                    "y": 0.7113
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kosong di bawah tabel (baris \"Time (s)\", strip pembungkus, kotak di area tanda tangan): tidak ada kunci profil, waktu tidak dibaca.",
+            "titik": [
+                {
+                    "x": 0.5242,
+                    "y": 0.7798
+                },
+                {
+                    "x": 0.629,
+                    "y": 0.7685
+                },
+                {
+                    "x": 0.8147,
+                    "y": 0.7569
+                },
+                {
+                    "x": 0.8147,
+                    "y": 0.7798
+                },
+                {
+                    "x": 0.9543,
+                    "y": 0.8142
+                },
+                {
+                    "x": 0.5242,
+                    "y": 0.7569
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.7343
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.8027
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.8255
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.8484
+                },
+                {
+                    "x": 0.7782,
+                    "y": 0.8711
+                },
+                {
+                    "x": 0.5656,
+                    "y": 0.7343
+                },
+                {
+                    "x": 0.71,
+                    "y": 0.5969
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.7394,
+                    "y": 0.1159
+                },
+                {
+                    "x": 0.7394,
+                    "y": 0.1403
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak kosong di samping label \"Env. Condition\": nilainya ditulis di empat kotak First/End atau Sebelum/Sesudah, yang sudah dipetakan.",
+            "titik": [
+                {
+                    "x": 0.6091,
+                    "y": 0.2017
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.3191,
+                    "y": 0.2129
+                },
+                {
+                    "x": 0.3189,
+                    "y": 0.4746
+                },
+                {
+                    "x": 0.3189,
+                    "y": 0.4971
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.1983,
+                    "y": 0.2499
+                },
+                {
+                    "x": 0.1985,
+                    "y": 0.2781
+                },
+                {
+                    "x": 0.2133,
+                    "y": 0.3068
+                },
+                {
+                    "x": 0.1985,
+                    "y": 0.3344
+                },
+                {
+                    "x": 0.3191,
+                    "y": 0.3557
+                },
+                {
+                    "x": 0.3191,
+                    "y": 0.3759
+                },
+                {
+                    "x": 0.3191,
+                    "y": 0.3972
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan/paraf/nama pengesah (§4): tidak dibaca dan tidak pernah dibuat. Nama datang dari akun (`teknisi.nama`, `reviewer.nama`, sumber otomatis).",
+            "titik": [
+                {
+                    "x": 0.1149,
+                    "y": 0.848
+                },
+                {
+                    "x": 0.2437,
+                    "y": 0.848
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.4837,
+                    "y": 0.8505
+                }
+            ]
+        }
+    ]
+}

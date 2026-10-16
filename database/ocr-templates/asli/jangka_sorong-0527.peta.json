@@ -1,0 +1,1065 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0527.draf.json -> kunci sel profil jangka_sorong. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliDimensiTest). Cakupan tahap 1 (keputusan pemilik 9 Okt 2026): sel tabel data, kondisi lingkungan, centang; identitas/tanggal/tanda tangan/catatan diabaikan beralasan. Kunci diambil dari template profil bawaan (alat tanpa konfigurasi). Belum diadu ke foto nyata, jadi terverifikasi=false. Kertas: Outside 9 baris (profil bawaan 11, baris 10-11 tak tercetak), Inside 9 baris, Depth 5 baris; baris Evaluasi hanya untuk Outside (`pra_pembacaan_inside` dan tabel `kesejajaran` tidak tercetak di kertas).",
+    "template_id": "jangka_sorong",
+    "kode_dokumen": "SIDIK-FM-CAL-0527_Rev.2",
+    "draf": "formulir-0527.draf.json",
+    "sumber_sha256": "aca658a7dbe7fa436423c13f8906095490ec829f28f6c7a4f183dfde49d5ccf9",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR. `sumber_kotak: \"sel\"` pada isian berarti kotaknya sel tabel (calon_isian), bukan isian berlabel.",
+    "sel": [
+        {
+            "kunci": "outside|1|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|1|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3038
+        },
+        {
+            "kunci": "outside|2|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|2|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3199
+        },
+        {
+            "kunci": "outside|3|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|3|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3361
+        },
+        {
+            "kunci": "outside|4|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|4|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3522
+        },
+        {
+            "kunci": "outside|5|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|5|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3684
+        },
+        {
+            "kunci": "outside|6|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|6|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.3846
+        },
+        {
+            "kunci": "outside|7|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|7|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.4007
+        },
+        {
+            "kunci": "outside|8|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|8|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.4169
+        },
+        {
+            "kunci": "outside|9|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.433
+        },
+        {
+            "kunci": "outside|9|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.433
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|6|pembacaan",
+            "x": 0.4482,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|7|pembacaan",
+            "x": 0.5092,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|8|pembacaan",
+            "x": 0.5659,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|9|pembacaan",
+            "x": 0.6241,
+            "y": 0.4749
+        },
+        {
+            "kunci": "pra_pembacaan_outside|1|10|pembacaan",
+            "x": 0.6888,
+            "y": 0.4749
+        },
+        {
+            "kunci": "inside|1|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.5472
+        },
+        {
+            "kunci": "inside|1|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.5472
+        },
+        {
+            "kunci": "inside|1|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.5472
+        },
+        {
+            "kunci": "inside|1|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.5472
+        },
+        {
+            "kunci": "inside|1|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.5472
+        },
+        {
+            "kunci": "inside|2|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.5669
+        },
+        {
+            "kunci": "inside|2|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.5669
+        },
+        {
+            "kunci": "inside|2|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.5669
+        },
+        {
+            "kunci": "inside|2|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.5669
+        },
+        {
+            "kunci": "inside|2|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.5669
+        },
+        {
+            "kunci": "inside|3|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.5866
+        },
+        {
+            "kunci": "inside|3|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.5866
+        },
+        {
+            "kunci": "inside|3|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.5866
+        },
+        {
+            "kunci": "inside|3|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.5866
+        },
+        {
+            "kunci": "inside|3|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.5866
+        },
+        {
+            "kunci": "inside|4|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.6064
+        },
+        {
+            "kunci": "inside|4|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.6064
+        },
+        {
+            "kunci": "inside|4|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.6064
+        },
+        {
+            "kunci": "inside|4|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.6064
+        },
+        {
+            "kunci": "inside|4|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.6064
+        },
+        {
+            "kunci": "inside|5|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.6261
+        },
+        {
+            "kunci": "inside|5|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.6261
+        },
+        {
+            "kunci": "inside|5|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.6261
+        },
+        {
+            "kunci": "inside|5|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.6261
+        },
+        {
+            "kunci": "inside|5|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.6261
+        },
+        {
+            "kunci": "inside|6|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.6458
+        },
+        {
+            "kunci": "inside|6|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.6458
+        },
+        {
+            "kunci": "inside|6|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.6458
+        },
+        {
+            "kunci": "inside|6|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.6458
+        },
+        {
+            "kunci": "inside|6|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.6458
+        },
+        {
+            "kunci": "inside|7|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.6654
+        },
+        {
+            "kunci": "inside|7|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.6654
+        },
+        {
+            "kunci": "inside|7|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.6654
+        },
+        {
+            "kunci": "inside|7|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.6654
+        },
+        {
+            "kunci": "inside|7|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.6654
+        },
+        {
+            "kunci": "inside|8|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.6851
+        },
+        {
+            "kunci": "inside|8|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.6851
+        },
+        {
+            "kunci": "inside|8|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.6851
+        },
+        {
+            "kunci": "inside|8|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.6851
+        },
+        {
+            "kunci": "inside|8|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.6851
+        },
+        {
+            "kunci": "inside|9|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.7049
+        },
+        {
+            "kunci": "inside|9|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.7049
+        },
+        {
+            "kunci": "inside|9|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.7049
+        },
+        {
+            "kunci": "inside|9|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.7049
+        },
+        {
+            "kunci": "inside|9|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.7049
+        },
+        {
+            "kunci": "depth|1|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.7778
+        },
+        {
+            "kunci": "depth|1|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.7778
+        },
+        {
+            "kunci": "depth|1|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.7778
+        },
+        {
+            "kunci": "depth|1|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.7778
+        },
+        {
+            "kunci": "depth|1|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.7778
+        },
+        {
+            "kunci": "depth|2|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.7945
+        },
+        {
+            "kunci": "depth|2|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.7945
+        },
+        {
+            "kunci": "depth|2|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.7945
+        },
+        {
+            "kunci": "depth|2|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.7945
+        },
+        {
+            "kunci": "depth|2|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.7945
+        },
+        {
+            "kunci": "depth|3|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.8112
+        },
+        {
+            "kunci": "depth|3|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.8112
+        },
+        {
+            "kunci": "depth|3|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.8112
+        },
+        {
+            "kunci": "depth|3|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.8112
+        },
+        {
+            "kunci": "depth|3|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.8112
+        },
+        {
+            "kunci": "depth|4|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.8279
+        },
+        {
+            "kunci": "depth|4|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.8279
+        },
+        {
+            "kunci": "depth|4|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.8279
+        },
+        {
+            "kunci": "depth|4|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.8279
+        },
+        {
+            "kunci": "depth|4|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.8279
+        },
+        {
+            "kunci": "depth|5|1|pembacaan",
+            "x": 0.1551,
+            "y": 0.8446
+        },
+        {
+            "kunci": "depth|5|2|pembacaan",
+            "x": 0.2176,
+            "y": 0.8446
+        },
+        {
+            "kunci": "depth|5|3|pembacaan",
+            "x": 0.2777,
+            "y": 0.8446
+        },
+        {
+            "kunci": "depth|5|4|pembacaan",
+            "x": 0.3339,
+            "y": 0.8446
+        },
+        {
+            "kunci": "depth|5|5|pembacaan",
+            "x": 0.3889,
+            "y": 0.8446
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.3271,
+            "y": 0.1531
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.3271,
+            "y": 0.1687
+        }
+    ],
+    "centang": [],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kolom nominal titik: nilai nominal ditulis tangan di kertas, tetapi profil tidak punya kunci sel untuknya (titik ukur datang dari konfigurasi titik, bukan dari pembacaan).",
+            "titik": [
+                {
+                    "x": 0.0695,
+                    "y": 0.2601
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3038
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3199
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3361
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3522
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3684
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.3846
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.4007
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.4169
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.433
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.4749
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.5472
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.5669
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.5866
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.6064
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.6261
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.6458
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.6654
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.6851
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.7049
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.7778
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.7945
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.8112
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.8279
+                },
+                {
+                    "x": 0.0695,
+                    "y": 0.8446
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.7551,
+                    "y": 0.92
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: tahap 1 belum memakai parser tanggal ketat; tanggal datang dari order/sesi.",
+            "titik": [
+                {
+                    "x": 0.331,
+                    "y": 0.098
+                },
+                {
+                    "x": 0.8161,
+                    "y": 0.1862
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat/pemilik: tahap 1 tidak membaca identitas (keputusan pemilik 9 Okt 2026); nilainya datang dari order/data alat (§4 \"banding\").",
+            "titik": [
+                {
+                    "x": 0.8161,
+                    "y": 0.098
+                },
+                {
+                    "x": 0.331,
+                    "y": 0.1129
+                },
+                {
+                    "x": 0.331,
+                    "y": 0.1287
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Spesifikasi alat (kapasitas, resolusi, kelas/toleransi, suhu alat, tipe, material, fluida, metode, lokasi, volume pipa): bukan pembacaan; diisi dari data alat/order dan tidak punya kunci sel.",
+            "titik": [
+                {
+                    "x": 0.8161,
+                    "y": 0.1129
+                },
+                {
+                    "x": 0.8161,
+                    "y": 0.1273
+                },
+                {
+                    "x": 0.8161,
+                    "y": 0.1417
+                },
+                {
+                    "x": 0.7599,
+                    "y": 0.1561
+                },
+                {
+                    "x": 0.7599,
+                    "y": 0.1705
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi tercetak di kaki formulir (`Revise`/`Rev`): bukan data kalibrasi.",
+            "titik": [
+                {
+                    "x": 0.7062,
+                    "y": 0.9795
+                }
+            ]
+        }
+    ]
+}

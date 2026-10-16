@@ -46,6 +46,16 @@ class CalibrationRequest extends FormRequest
     public const MAKS_SEL_GRID = 3000;
 
     /**
+     * Pita wajar tekanan udara ruangan `tekanan_awal`/`tekanan_akhir`, hPa —
+     * alasannya di aturan kedua kolom itu di [rules]. Publik karena pindai
+     * formulir asli memakai pita yang sama untuk isian tekanan
+     * (`PemrosesScanLembarKerja::aturanIsian()`), bukan salinan angkanya.
+     */
+    public const TEKANAN_MIN_HPA = 300;
+
+    public const TEKANAN_MAKS_HPA = 1100;
+
+    /**
      * Buang field administratif dari kiriman non-admin (spesifikasi poin 1).
      * "Admin" di sini = `punyaHakAdmin()`: admin dan super admin (K-49-14)
      * sama-sama mengisi Order Number; teknisi & viewer tidak.
@@ -1284,8 +1294,8 @@ class CalibrationRequest extends FormRequest
             // dijaga salah satuan — kPa (93,3) dan Pa (93315) dua-duanya jatuh
             // di luar pita dan keduanya menggeser densitas udara ~10× tanpa
             // gejala.
-            'tekanan_awal' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
-            'tekanan_akhir' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
+            'tekanan_awal' => ['sometimes', 'nullable', 'numeric', 'between:'.self::TEKANAN_MIN_HPA.','.self::TEKANAN_MAKS_HPA],
+            'tekanan_akhir' => ['sometimes', 'nullable', 'numeric', 'between:'.self::TEKANAN_MIN_HPA.','.self::TEKANAN_MAKS_HPA],
             // Kolom `Time` di tabel yang sama (lembar Spectrophotometer
             // SIDIK-FM-CAL-0511_Rev.5). `H:i:s` ikut diterima karena itu bentuk
             // yang dipulangkan kolom `time` MySQL — draft yang dibuka lagi lalu

@@ -1,0 +1,427 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0512.draf.json -> kunci sel profil timer_stopwatch. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliSemuaTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan formulir ini belum siap pindai.",
+    "template_id": "timer_stopwatch",
+    "kode_dokumen": "SIDIK-FM-CAL-0512_Rev.4",
+    "draf": "formulir-0512.draf.json",
+    "sumber_sha256": "e1c5a3d8257985e221d8be5b9d45cccd275692e4efd831acd29e1d082860137d",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: dua blok \"Set Point\" bertumpuk, tiap blok Standard (J M S 0.01 S) dan UUT (J M S 0.01 S) x Repeatability 1-3 ke bawah. Kolom Standard -> waktu_standar, kolom UUT -> waktu_uut; Repeatability n -> ulangan n.",
+        "ASUMSI POSISIONAL, perlu dikonfirmasi lab: blok atas -> baris profil 1 (\"Set point 1\"), blok bawah -> baris 2. Baris profil berurutan dan titiknya bisa diubah (`titik_bisa_diubah`), jadi identitas baris = urutan, bukan nilai. Nilai SET POINT yang ditulis tangan di kepala blok TIDAK dibaca (tahap 2): teknisi wajib mengisi/mencocokkan nilai titik baris 1 dan 2 di aplikasi. Baris profil 3-10 tidak tercetak di kertas ini.",
+        "Kolom keempat dicetak \"0.01 S\" -> kunci `sentidetik`. Kunci itu hanya ada di template alat beresolusi >= 0,01 s (`TimerStopwatchProfile::kolomPecahanDetik`); untuk alat milidetik irisan FormulirAsli membuangnya, jadi kotak 0.01 S tidak pernah mendarat di kolom milidetik (meleset 10x, jawaban lab 16 Sep 2026 §3.1). Teknisi mengisi milidetiknya manual.",
+        "Env: T First/End dan RH First/End (tahap 1) adalah sel tabel di draf -> `sumber_kotak: \"sel\"`.",
+        "Centang Thermohygro: TH-2, TH-6, TH-7 (Insitu) dan TH-4 (Inlab) -> thermohygro_standard_id. Tabel STANDARD (Stopwatch SW-1 Casio) tercetak tanpa kotak centang -> tidak ada centang Usage Check."
+    ],
+    "sel": [
+        {
+            "kunci": "waktu_standar|1|1|jam",
+            "x": 0.5581,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_standar|1|1|menit",
+            "x": 0.6064,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_standar|1|1|detik",
+            "x": 0.6549,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_standar|1|1|sentidetik",
+            "x": 0.7034,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_uut|1|1|jam",
+            "x": 0.7518,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_uut|1|1|menit",
+            "x": 0.8003,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_uut|1|1|detik",
+            "x": 0.8488,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_uut|1|1|sentidetik",
+            "x": 0.8976,
+            "y": 0.3454
+        },
+        {
+            "kunci": "waktu_standar|1|2|jam",
+            "x": 0.5581,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_standar|1|2|menit",
+            "x": 0.6064,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_standar|1|2|detik",
+            "x": 0.6549,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_standar|1|2|sentidetik",
+            "x": 0.7034,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_uut|1|2|jam",
+            "x": 0.7518,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_uut|1|2|menit",
+            "x": 0.8003,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_uut|1|2|detik",
+            "x": 0.8488,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_uut|1|2|sentidetik",
+            "x": 0.8976,
+            "y": 0.3813
+        },
+        {
+            "kunci": "waktu_standar|1|3|jam",
+            "x": 0.5581,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_standar|1|3|menit",
+            "x": 0.6064,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_standar|1|3|detik",
+            "x": 0.6549,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_standar|1|3|sentidetik",
+            "x": 0.7034,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_uut|1|3|jam",
+            "x": 0.7518,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_uut|1|3|menit",
+            "x": 0.8003,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_uut|1|3|detik",
+            "x": 0.8488,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_uut|1|3|sentidetik",
+            "x": 0.8976,
+            "y": 0.4176
+        },
+        {
+            "kunci": "waktu_standar|2|1|jam",
+            "x": 0.5581,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_standar|2|1|menit",
+            "x": 0.6064,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_standar|2|1|detik",
+            "x": 0.6549,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_standar|2|1|sentidetik",
+            "x": 0.7034,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_uut|2|1|jam",
+            "x": 0.7518,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_uut|2|1|menit",
+            "x": 0.8003,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_uut|2|1|detik",
+            "x": 0.8488,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_uut|2|1|sentidetik",
+            "x": 0.8976,
+            "y": 0.5726
+        },
+        {
+            "kunci": "waktu_standar|2|2|jam",
+            "x": 0.5581,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_standar|2|2|menit",
+            "x": 0.6064,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_standar|2|2|detik",
+            "x": 0.6549,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_standar|2|2|sentidetik",
+            "x": 0.7034,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_uut|2|2|jam",
+            "x": 0.7518,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_uut|2|2|menit",
+            "x": 0.8003,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_uut|2|2|detik",
+            "x": 0.8488,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_uut|2|2|sentidetik",
+            "x": 0.8976,
+            "y": 0.6085
+        },
+        {
+            "kunci": "waktu_standar|2|3|jam",
+            "x": 0.5581,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_standar|2|3|menit",
+            "x": 0.6064,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_standar|2|3|detik",
+            "x": 0.6549,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_standar|2|3|sentidetik",
+            "x": 0.7034,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_uut|2|3|jam",
+            "x": 0.7518,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_uut|2|3|menit",
+            "x": 0.8003,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_uut|2|3|detik",
+            "x": 0.8488,
+            "y": 0.6448
+        },
+        {
+            "kunci": "waktu_uut|2|3|sentidetik",
+            "x": 0.8976,
+            "y": 0.6448
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.4566,
+            "y": 0.2369
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.5086,
+            "y": 0.2369
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6064,
+            "y": 0.2369
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "sumber_kotak": "sel",
+            "x": 0.6549,
+            "y": 0.2369
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.7652,
+            "y": 0.2145
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.7652,
+            "y": 0.2337
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.7652,
+            "y": 0.2518
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.8333,
+            "y": 0.2145
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.6892,
+                    "y": 0.1211
+                },
+                {
+                    "x": 0.6892,
+                    "y": 0.145
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, range/resolusi, tipe, nomor seri, merk): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.2964,
+                    "y": 0.2374
+                },
+                {
+                    "x": 0.1957,
+                    "y": 0.2789
+                },
+                {
+                    "x": 0.2964,
+                    "y": 0.3001
+                },
+                {
+                    "x": 0.2964,
+                    "y": 0.3191
+                },
+                {
+                    "x": 0.2964,
+                    "y": 0.3383
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.2959,
+                    "y": 0.4081
+                },
+                {
+                    "x": 0.2959,
+                    "y": 0.4285
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Lokasi kalibrasi: identitas sesi, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.2964,
+                    "y": 0.5823
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1252,
+                    "y": 0.654
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pelaksana/pemeriksa di kotak tanda tangan: tahap 2. Tanda tangan sendiri tidak pernah dibaca atau ditiru (PANDUAN §6.7).",
+            "titik": [
+                {
+                    "x": 0.6329,
+                    "y": 0.7297
+                },
+                {
+                    "x": 0.8755,
+                    "y": 0.7297
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Baris lebar kosong di bawah tiap blok Repeatability (tanpa kepala): tidak ada kunci profil untuknya, tidak ada angka pembacaan yang ditulis di situ.",
+            "titik": [
+                {
+                    "x": 0.676,
+                    "y": 0.4533
+                },
+                {
+                    "x": 0.676,
+                    "y": 0.6805
+                }
+            ]
+        }
+    ]
+}

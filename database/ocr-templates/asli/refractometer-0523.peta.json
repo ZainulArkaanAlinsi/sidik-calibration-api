@@ -1,0 +1,753 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di formulir-0523.draf.json -> kunci sel profil refractometer. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN, karena id bergeser begitu skripnya diperbaiki. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliKimiaTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "refractometer",
+    "kode_dokumen": "SIDIK-FM-CAL-0523_Rev.2",
+    "draf": "formulir-0523.draf.json",
+    "sumber_sha256": "c1fa3e3a78da4cb8b47e829b77eb8466844281050ee49368a2b4836a187bdd83",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "_pemetaan": [
+        "Tabel: 5 slot standar di kertas (kolom 'Standard' KOSONG, ditulis teknisi) x 2 sub-baris (°Brix/nD20 = pembacaan, °C = suhu) x 5 repeat berjajar ke kanan, Before dan After.",
+        "Profil hanya punya 2 baris (1,33659 dan 1,39986 nD). Slot 1 -> baris 1 dan slot 2 -> baris 2 DENGAN ASUMSI teknisi menulis larutan menurut urutan daftar 'Standard Used' di kaki kertas (2,5 °Brix lalu 40 °Brix). Asumsi ini perlu dikonfirmasi lab; adu foto (§5 langkah 5) yang membuktikan. Slot 3..5 tidak punya baris profil -> diabaikan.",
+        "Sel 'Standard' (nilai larutan yang ditulis tangan) tidak punya kunci profil (titik_ukur datang dari profil) -> diabaikan.",
+        "Env: T awal/T akhir/RH awal/RH akhir (tahap 1). Centang TH-2/6/7 Insitu dan TH-4 Inlab; kotak TH-7 di draf berlabel keliru 'TH-6' (label_dekat), ditandai `label_draf`.",
+        "Centang 'Larutan Std Refracto 2.5 °Brix / 40 °Brix' diabaikan: profil punya DUA pasang baris usage_check (berlabel nD dan berlabel °Brix) untuk larutan yang sama, jadi baris mana yang dimaksud kotak itu tidak pasti."
+    ],
+    "sel": [
+        {
+            "kunci": "sebelum_adjustment|1|1|pembacaan",
+            "x": 0.2919,
+            "y": 0.3515
+        },
+        {
+            "kunci": "sebelum_adjustment|1|1|suhu",
+            "x": 0.2919,
+            "y": 0.3732
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|pembacaan",
+            "x": 0.4278,
+            "y": 0.3515
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|suhu",
+            "x": 0.4278,
+            "y": 0.3732
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|pembacaan",
+            "x": 0.5631,
+            "y": 0.3515
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|suhu",
+            "x": 0.5631,
+            "y": 0.3732
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|pembacaan",
+            "x": 0.6984,
+            "y": 0.3515
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|suhu",
+            "x": 0.6984,
+            "y": 0.3732
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|pembacaan",
+            "x": 0.8338,
+            "y": 0.3515
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|suhu",
+            "x": 0.8338,
+            "y": 0.3732
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|pembacaan",
+            "x": 0.2919,
+            "y": 0.3949
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|suhu",
+            "x": 0.2919,
+            "y": 0.4166
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|pembacaan",
+            "x": 0.4278,
+            "y": 0.3949
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|suhu",
+            "x": 0.4278,
+            "y": 0.4166
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|pembacaan",
+            "x": 0.5631,
+            "y": 0.3949
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|suhu",
+            "x": 0.5631,
+            "y": 0.4166
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|pembacaan",
+            "x": 0.6984,
+            "y": 0.3949
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|suhu",
+            "x": 0.6984,
+            "y": 0.4166
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|pembacaan",
+            "x": 0.8338,
+            "y": 0.3949
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|suhu",
+            "x": 0.8338,
+            "y": 0.4166
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|pembacaan",
+            "x": 0.2919,
+            "y": 0.6298
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|suhu",
+            "x": 0.2919,
+            "y": 0.6515
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|pembacaan",
+            "x": 0.4278,
+            "y": 0.6298
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|suhu",
+            "x": 0.4278,
+            "y": 0.6515
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|pembacaan",
+            "x": 0.5631,
+            "y": 0.6298
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|suhu",
+            "x": 0.5631,
+            "y": 0.6515
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|pembacaan",
+            "x": 0.6984,
+            "y": 0.6298
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|suhu",
+            "x": 0.6984,
+            "y": 0.6515
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|pembacaan",
+            "x": 0.8338,
+            "y": 0.6298
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|suhu",
+            "x": 0.8338,
+            "y": 0.6515
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|pembacaan",
+            "x": 0.2919,
+            "y": 0.6733
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|suhu",
+            "x": 0.2919,
+            "y": 0.695
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|pembacaan",
+            "x": 0.4278,
+            "y": 0.6733
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|suhu",
+            "x": 0.4278,
+            "y": 0.695
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|pembacaan",
+            "x": 0.5631,
+            "y": 0.6733
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|suhu",
+            "x": 0.5631,
+            "y": 0.695
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|pembacaan",
+            "x": 0.6984,
+            "y": 0.6733
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|suhu",
+            "x": 0.6984,
+            "y": 0.695
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|pembacaan",
+            "x": 0.8338,
+            "y": 0.6733
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|suhu",
+            "x": 0.8338,
+            "y": 0.695
+        }
+    ],
+    "isian": [
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2213,
+            "y": 0.1713
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2213,
+            "y": 0.1862
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2159,
+            "y": 0.2011
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "tahap": 1,
+            "x": 0.2159,
+            "y": 0.216
+        }
+    ],
+    "centang": [
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "label_draf": "TH-2",
+            "x": 0.2294,
+            "y": 0.2306
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "label_draf": "TH-6",
+            "x": 0.2824,
+            "y": 0.2295
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "label_draf": "TH-6",
+            "x": 0.3366,
+            "y": 0.2294
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "label_draf": "TH-4",
+            "x": 0.2294,
+            "y": 0.2455
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "centang",
+            "alasan": "Usage Check 'Larutan Std Refracto' (2,5 °Brix / 40 °Brix): profil punya dua pasang baris usage_check (berlabel nD dan berlabel °Brix) untuk larutan yang sama, baris mana yang dimaksud tidak pasti. Tahap 2 setelah lab memutuskan.",
+            "titik": [
+                {
+                    "x": 0.3114,
+                    "y": 0.8638
+                },
+                {
+                    "x": 0.3118,
+                    "y": 0.8791
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan teknisi bebas (teks panjang): tahap 2.",
+            "titik": [
+                {
+                    "x": 0.1053,
+                    "y": 0.8967
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas alat (nama, tipe, nomor seri, merk, range/resolusi): tahap 2, dicocokkan ke data alat/order.",
+            "titik": [
+                {
+                    "x": 0.8024,
+                    "y": 0.1563
+                },
+                {
+                    "x": 0.8024,
+                    "y": 0.1713
+                },
+                {
+                    "x": 0.8024,
+                    "y": 0.1862
+                },
+                {
+                    "x": 0.8024,
+                    "y": 0.2011
+                },
+                {
+                    "x": 0.736,
+                    "y": 0.216
+                },
+                {
+                    "x": 0.736,
+                    "y": 0.2309
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Identitas pemilik (nama/alamat pelanggan): tahap 2, dan tidak boleh ikut tersimpan sebagai crop data latih (PANDUAN §6.6).",
+            "titik": [
+                {
+                    "x": 0.5656,
+                    "y": 0.0843
+                },
+                {
+                    "x": 0.5656,
+                    "y": 0.1032
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Standard Used' (nama/serial standar): dicocokkan ke master standar, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.2205,
+                    "y": 0.852
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Kotak teks 'Thermohygro used': pilihannya dicentang di TH-n; kotak teks ini tidak punya kunci profil.",
+            "titik": [
+                {
+                    "x": 0.1919,
+                    "y": 0.2318
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Lokasi kalibrasi: identitas sesi, tahap 2.",
+            "titik": [
+                {
+                    "x": 0.3302,
+                    "y": 0.1563
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nama pelaksana/pemeriksa di kotak tanda tangan: tahap 2. Tanda tangan sendiri tidak pernah dibaca atau ditiru (PANDUAN §6.7).",
+            "titik": [
+                {
+                    "x": 0.5943,
+                    "y": 0.8512
+                },
+                {
+                    "x": 0.7968,
+                    "y": 0.8512
+                },
+                {
+                    "x": 0.5431,
+                    "y": 0.8673
+                },
+                {
+                    "x": 0.7461,
+                    "y": 0.8673
+                },
+                {
+                    "x": 0.5397,
+                    "y": 0.881
+                },
+                {
+                    "x": 0.7427,
+                    "y": 0.881
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor metode tercetak (SIDIK-IK-CAL-0516): dari profil, bukan isian.",
+            "titik": [
+                {
+                    "x": 0.8024,
+                    "y": 0.2467
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Nomor revisi formulir yang TERCETAK di kaki halaman (dibaca dari QR/jangkar, bukan diisi teknisi).",
+            "titik": [
+                {
+                    "x": 0.6983,
+                    "y": 0.9657
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanggal terima/kalibrasi: identitas sesi, bukan data hitung. Tahap 2 (parser tanggal ketat).",
+            "titik": [
+                {
+                    "x": 0.2963,
+                    "y": 0.1201
+                },
+                {
+                    "x": 0.7343,
+                    "y": 0.1201
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Kotak hijau kosong di kanan tabel (di luar kolom Repeat 1..5): tidak ada label, tidak ada yang ditulis.",
+            "titik": [
+                {
+                    "x": 0.9353,
+                    "y": 0.3126
+                },
+                {
+                    "x": 0.9353,
+                    "y": 0.5909
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel 'Standard' yang ditulis tangan per slot (nilai larutan): tidak punya kunci profil, titik_ukur datang dari profil.",
+            "titik": [
+                {
+                    "x": 0.0869,
+                    "y": 0.3624
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.4058
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.4492
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.4927
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.5361
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.6407
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.6841
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.7276
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.771
+                },
+                {
+                    "x": 0.0869,
+                    "y": 0.8145
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Slot 3..5 di kertas: profil refractometer hanya punya 2 baris titik (1,33659 dan 1,39986), jadi slot ini tidak punya kunci.",
+            "titik": [
+                {
+                    "x": 0.2919,
+                    "y": 0.4384
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.4601
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.4818
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.5035
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.5252
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.547
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.4384
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.4601
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.4818
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.5035
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.5252
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.547
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.4384
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.4601
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.4818
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.5035
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.5252
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.547
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.4384
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.4601
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.4818
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.5035
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.5252
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.547
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.4384
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.4601
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.4818
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.5035
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.5252
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.547
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.7167
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.7384
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.7602
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.7819
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.8036
+                },
+                {
+                    "x": 0.2919,
+                    "y": 0.8253
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.7167
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.7384
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.7602
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.7819
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.8036
+                },
+                {
+                    "x": 0.4278,
+                    "y": 0.8253
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.7167
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.7384
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.7602
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.7819
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.8036
+                },
+                {
+                    "x": 0.5631,
+                    "y": 0.8253
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.7167
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.7384
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.7602
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.7819
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.8036
+                },
+                {
+                    "x": 0.6984,
+                    "y": 0.8253
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.7167
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.7384
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.7602
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.7819
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.8036
+                },
+                {
+                    "x": 0.8338,
+                    "y": 0.8253
+                }
+            ]
+        }
+    ]
+}
