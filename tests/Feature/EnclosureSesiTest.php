@@ -91,7 +91,22 @@ class EnclosureSesiTest extends TestCase
      * ini, bukan CMC-nya. Bukan bug: ILAC-P14 melaporkan MAX(hitung, CMC),
      * dan grid ini kebetulan sedikit lebih berisik dari CMC Bath yang ketat.
      */
-    private const U_HITUNG_SP1 = 1.223690240614575;
+    // Sejak 15 Okt 2026 (peta kolom FC master tidak ditiru) = 1,224734443604:
+    // u_c baru (lihat UC_SISTEM) × t(0,975; v_eff 1442,83). Master 1,22368831.
+    private const U_HITUNG_SP1 = 1.224734443603675;
+
+    /**
+     * u_c SISTEM sejak peta kolom FC master tidak ditiru. Sumber, terpisah dari
+     * kalkulator: u_c sel master (laporan paritas 04 Lampiran A; SP3 versi
+     * U kalibrator 0,24; Recorder versi pembagi √3) dengan DUA komponen yang
+     * bergantung pada sebaran diganti — Pengulangan Standar = SS/√3 dan
+     * Efek Pembebanan = 0,2·KS/√3 (Recorder: konstan) — memakai SS/KS dari
+     * kelima pembacaan (`EnclosureSertifikatTest::SISTEM_*`).
+     */
+    private const UC_SISTEM = [
+        'yokogawa' => [0 => 0.624351802823, 1 => 0.625098797809, 2 => 0.634633167288, 3 => 0.626500737181],
+        'recorder' => 0.595416012910,
+    ];
 
     /**
      * Kelima jenis enclosure ketemu profilnya lewat registry DAN ketemu CMC-nya
@@ -105,7 +120,7 @@ class EnclosureSesiTest extends TestCase
      * Grid & standar yang dipakai SAMA PERSIS dengan Yokogawa SP1 (15 °C) yang
      * sudah diadu ke master di `test_sesi_yokogawa_cocok_master` — jenis
      * enclosure nggak mengubah tabel koreksi meter/sensor, cuma baris CMC-nya.
-     * Jadi Uc yang keluar wajib identik (0,62381769) di kelima jenis. U95
+     * Jadi Uc yang keluar wajib identik (0,62435180) di kelima jenis. U95
      * dilaporkan = MAX(U hitung, CMC) per ILAC-P14 — lantai CMC menang buat
      * empat jenis, tapi BUKAN buat Bath (lihat [U_HITUNG_SP1]).
      */
@@ -166,7 +181,7 @@ class EnclosureSesiTest extends TestCase
         );
         $this->assertCount(1, $hasil['hitungan']);
         $this->assertEqualsWithDelta(
-            0.62381769,
+            self::UC_SISTEM['yokogawa'][0],
             (float) $hasil['hitungan'][0]['ketidakpastian_gabungan'],
             self::TOLERANSI,
             "{$namaAlatKemampuan}: Uc mestinya identik lintas jenis enclosure — cuma CMC yang beda",
@@ -199,7 +214,7 @@ class EnclosureSesiTest extends TestCase
         $this->assertCount(4, $baris);
 
         // Set point (titik_ukur) dan U95 dilaporkan.
-        $harapUc = [0 => 0.62381769, 1 => 0.62309591, 3 => 0.62650074];
+        $harapUc = self::UC_SISTEM['yokogawa'];
         $setpoints = [15.0, 35.0, 75.0, 100.0];
 
         foreach ($baris as $i => $b) {
@@ -215,7 +230,7 @@ class EnclosureSesiTest extends TestCase
 
         // SP3 (index 2): kalkulator menghitung Uc BENAR (0,6346), bukan bug sel
         // master (0,6234). Yang tercetak tetap 1,4.
-        $this->assertEqualsWithDelta(0.63463317, (float) $baris[2]->ketidakpastian_gabungan, self::TOLERANSI);
+        $this->assertEqualsWithDelta(self::UC_SISTEM['yokogawa'][2], (float) $baris[2]->ketidakpastian_gabungan, self::TOLERANSI);
 
         // Jejak audit membawa konteks enclosure + lantai CMC.
         $konteks = collect($baris[0]->type_b_components)->firstWhere('sumber', 'konteks_sesi');
@@ -245,7 +260,7 @@ class EnclosureSesiTest extends TestCase
         foreach ($baris as $b) {
             $this->assertEqualsWithDelta(67.0, (float) $b->titik_ukur, self::TOLERANSI);
             $this->assertEqualsWithDelta(1.5, (float) $b->ketidakpastian_diperluas, self::TOLERANSI);
-            $this->assertEqualsWithDelta(0.59535303, (float) $b->ketidakpastian_gabungan, self::TOLERANSI);
+            $this->assertEqualsWithDelta(self::UC_SISTEM['recorder'], (float) $b->ketidakpastian_gabungan, self::TOLERANSI);
             $this->assertNull($b->keputusan);
         }
 
@@ -504,7 +519,7 @@ class EnclosureSesiTest extends TestCase
      * sini: grid Recorder yang datang dari REQUEST (bukan array PHP yang
      * disusun seeder) nyimpen `channel` per termokopel ke `raw_measurements`,
      * dan hasil hitungnya identik dengan jalur seeder untuk angka yang sama
-     * (`test_sesi_recorder_cocok_master`: Uc 0,59535303 sejak butir A-1, U95 dilaporkan 1,5).
+     * (`test_sesi_recorder_cocok_master`: Uc 0,59541601 sejak 15 Okt 2026, U95 dilaporkan 1,5).
      */
     public function test_recorder_tersimpan_lewat_api_dan_cocok_jalur_seeder(): void
     {
@@ -552,7 +567,7 @@ class EnclosureSesiTest extends TestCase
         $baris = $sesi->uncertaintyCalculations()->firstOrFail();
         $this->assertEqualsWithDelta(67.0, (float) $baris->titik_ukur, self::TOLERANSI);
         $this->assertEqualsWithDelta(
-            0.59535303,
+            self::UC_SISTEM['recorder'],
             (float) $baris->ketidakpastian_gabungan,
             self::TOLERANSI,
             'Uc lewat API harus sama dengan jalur seeder buat angka yang sama',

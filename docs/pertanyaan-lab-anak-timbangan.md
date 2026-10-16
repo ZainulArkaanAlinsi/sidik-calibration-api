@@ -758,6 +758,36 @@ koreksi apung. Jadi U95 dan massa konvensional ikut bergeser kalau kelasnya diga
 2. Kalau E2: workbook hal 1–3 perlu diperbaiki. Sesudah workbook direvisi, sistem ikut dan sertifikat
    diterbitkan ulang lewat sesi baru.
 
+## Keputusan pemilik 14 Okt 2026 — desimal cetak ikut workbook, per neraca
+
+Mengganti keputusan 7 Okt 2026 ("lima desimal tetap"). Aturan umum: desimal HASIL = desimal resolusi
+pembacaan (bukan jumlah digit yang diketik); Anak Timbangan ikut master.
+
+| Kolom | Master | Sistem sejak 14 Okt |
+|---|---|---|
+| Nominal, Conventional Mass, koreksi | format kolom pembacaan `INPUT DATA` = resolusi neraca (`X27:X31`): Semi Micro `0.00000`, Analytical `0.0000`, Fujitsu `0.000` | desimal resolusi neraca yang MENIMBANG keping itu (`pilihNeraca()`, sumber resolusi `TabelStandarAnakTimbangan`, digenerate dari sheet `DATABASE` yang sama) |
+| U95 | `SERTIFIKAT!L` dalam mg, `0.00` di 51/51 baris (0,0092 → 0,01; 1,065 → 1,07) | 0,01 mg: dicetak 5 desimal di kolom gram (8 di sesi kg) — angka yang sama, satuan kolomnya |
+| k | `N38` format `0` (1,9766 → 2) | 0 desimal |
+
+Bukti (dibaca dari keempat workbook tanpa sandi, PhpSpreadsheet): format `SERTIFIKAT!I` = format kolom
+pembacaannya di 51/51 baris; = desimal resolusi neraca `INPUT DATA!AB20` di **27/27 baris berdata
+nyata** (F1 15, F2 hal 1 delapan, hal 2 tiga, hal 3 satu). Bukan digit yang diketik: F1 `I28` diketik
+`0.5` tercetak `0,4975`; F2 hal 3 `I17` diketik `500` tercetak `500,001`. Sertifikat yang sudah terbit
+tidak berubah — desimal dibekukan di snapshot (`AnakTimbanganDesimalPerBlokTest`).
+
+## §30 — Desimal per neraca: dua hal yang perlu dipastikan
+
+1. **Blok 4–5 F2 hal 1–3 berisi data yang sama persis di ketiga halaman** (`E64` = 1; `K64` = 2,0002;
+   `V72` = 50,0003 …), berformat `0.0000`, padahal neraca `AB20` halaman 1 Semi Micro (`0.00000`) dan
+   halaman 3 Fujitsu (`0.000`). Tampaknya sisa sesi lain yang ditimbang di Analytical Balance.
+   Benarkah sisa salinan? Kalau bukan: keping itu ditimbang di neraca mana? (Sistem mencetak desimal
+   neraca yang menimbang keping, jadi 16 sel ini tidak dipakai sebagai acuan.)
+2. **Kolom U95 dicetak gram, bukan miligram.** Master menulis `Uncertainty ± (mg)` dengan dua desimal;
+   sistem menulis gram lima desimal (`0,00107 g` = `1,07 mg`) supaya satu tabel memakai satu satuan.
+   Angkanya identik. Perlu kolom mg seperti master?
+
+Desimal tiap keping mengikuti neraca yang dipilih §28; kalau aturan §28 berubah, desimalnya ikut.
+
 ## Yang TIDAK bisa saya nilai dari berkas ini
 
 Berkas `_imp` cuma menyimpan nilai. Hal-hal berikut **tidak** saya klaim, dan
@@ -799,5 +829,6 @@ pasti cuma **di mana** memperbaikinya di master.
 | 26 | Kolom tabel sertifikat AT; set besar: 8 px atau dua kolom | | | |
 | 27 | Densitas kelas M3 (dan M2 < 100 g): sumber nilai, atau M3 tidak dilayani | | | |
 | 28 | Beberapa neraca per sesi: aturan neraca per keping | | | |
+| 30 | Blok 4–5 F2 hal 1–3 sisa salinan?; kolom U95 g atau mg | | | |
 
 Manajer Teknis: ______________________  Tanggal: ____________

@@ -203,7 +203,7 @@ class FlowmeterMentah
      * yang menengok relasi sesi cuma jalan di salah satunya.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat  isi `calibration_sessions.spesifikasi_alat`
-     * @return array{mode: string, varian_metode: string|null, kode_timbangan: int, volume_pipa_l: float|null, satuan: string, kapasitas: float, resolusi: float, diameter_pipa_mm: list<float>, ketebalan_pipa_mm: list<float>, material_pipa: string|null, jenis_fluida: string|null, path_configuration: string|null, liner_material: string|null, liner_ketebalan_mm: float|null}|null
+     * @return array{mode: string, varian_metode: string|null, kode_timbangan: int, volume_pipa_l: float|null, satuan: string, satuan_standar: string|null, kapasitas: float, resolusi: float, diameter_pipa_mm: list<float>, ketebalan_pipa_mm: list<float>, material_pipa: string|null, jenis_fluida: string|null, path_configuration: string|null, liner_material: string|null, liner_ketebalan_mm: float|null}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -239,6 +239,12 @@ class FlowmeterMentah
                 ? (float) $blok['volume_pipa_l']
                 : null,
             'satuan' => (string) ($blok['satuan'] ?? ($mode === self::MODE_FLOWRATE ? 'LPM' : 'L')),
+            // Satuan bacaan STANDAR, kalau beda dari satuan UUT — kalibrasi di
+            // LOKASI pelanggan: UFM clamp-on dipasang di pipa proses dan membaca
+            // VOLUME fluida yang sama (mis. L/h), sementara UUT Coriolis membaca
+            // MASSA (kg/h). `null` = standar sesatuan dengan UUT (perilaku master,
+            // nol pergeseran). Lihat `FlowmeterCalculator::hitungTitik()`.
+            'satuan_standar' => self::teks($blok['satuan_standar'] ?? null),
             'kapasitas' => self::angka($blok['kapasitas'] ?? null),
             'resolusi' => self::angka($blok['resolusi'] ?? null),
             // Geometri pipa SELALU mm — caliper dan thickness gauge standarnya

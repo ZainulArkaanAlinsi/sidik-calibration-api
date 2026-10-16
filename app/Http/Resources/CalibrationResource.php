@@ -331,6 +331,7 @@ class CalibrationResource extends JsonResource
                         $titik,
                         $this->equipment,
                         $this->organization ?? $request->user()?->organization,
+                        $this->resource,
                     )),
             ),
 
@@ -470,10 +471,29 @@ class CalibrationResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public static function petakanTitik(UncertaintyCalculation $titik, ?Equipment $alat = null, ?Organization $organisasi = null): array
-    {
+    public static function petakanTitik(
+        UncertaintyCalculation $titik,
+        ?Equipment $alat = null,
+        ?Organization $organisasi = null,
+        ?CalibrationSession $sesi = null,
+    ): array {
         $profil = $alat !== null ? self::profil($alat) : null;
         $titikUkur = (float) $titik->titik_ukur;
+        // Satuan angka yang DITULIS layar — label `satuan` di bawah. Layar
+        // menulis angka hitungan apa adanya (tanpa `cetakDalamSatuanAlat()`),
+        // jadi desimal ber-sesi ditanyakan dalam satuan ini: sesi Anak
+        // Timbangan kg dicetak kg di sertifikat tapi tampil gram di sini, dan
+        // resolusi 0,01 g = 5 desimal kg = 2 desimal g.
+        $satuan = $profil?->satuanTitik($titikUkur, $alat);
+        // Hook per baris lewat varian ber-SESI — rantai yang sama dengan
+        // `CertificateSnapshotBuilder`. Tanpa sesi (pemanggil lama) jatuh ke
+        // hook per titik biasa; bawaan varian ber-sesi pun memanggil itu.
+        $desimalTitik = $sesi !== null && $profil !== null
+            ? $profil->desimalSertifikatTitikSesi($sesi, $titikUkur, $satuan)
+            : $profil?->desimalSertifikatTitik($titikUkur);
+        $desimalU95Titik = $sesi !== null && $profil !== null
+            ? $profil->desimalU95TitikSesi($sesi, $titikUkur, $satuan)
+            : $profil?->desimalU95Titik($titikUkur);
 
         return [
             'titik_ke' => $titik->titik_ke,
@@ -508,7 +528,7 @@ class CalibrationResource extends JsonResource
             // tapi tampil `2709,80` di layar — satu angka penting yang alatnya
             // nggak punya. Persis kebalikan dari yang dijanjikan catatan
             // `desimal_u95` & `tanda_nol` di bawah.
-            'desimal' => $profil?->desimalSertifikatTitik($titikUkur)
+            'desimal' => $desimalTitik
                 ?? ($alat?->resolusi_rentang
                     ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada($titikUkur))
                     : $profil?->desimalSertifikat()),
@@ -528,7 +548,7 @@ class CalibrationResource extends JsonResource
             // Per baris dulu juga: master Gas Detector memformat U95 keempat
             // gasnya `0.0` · `0.0` · `0.0` · `0.00`, dan `U95` oksigen 0,887
             // runtuh jadi `0,9` kalau dipukul rata satu desimal.
-            'desimal_u95' => $profil?->desimalU95Titik($titikUkur) ?? $profil?->desimalU95(),
+            'desimal_u95' => $desimalU95Titik ?? $profil?->desimalU95(),
             // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam satu
             // lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
             //
@@ -541,7 +561,7 @@ class CalibrationResource extends JsonResource
             // `null` buat alat bersatuan seragam — mobile jatuh ke
             // `equipment.satuan` kayak biasa, jadi pH/Turbidimeter/Chlorine/
             // Refractometer nggak berubah perilakunya.
-            'satuan' => $profil?->satuanTitik($titikUkur, $alat),
+            'satuan' => $satuan,
             // Koreksi negatif yang membulat ke nol dicetak `-0,0` atau `0,0` —
             // beda per alat, dibaca dari master masing-masing (lihat
             // `CalibrationProfile::tandaNolDicetak()`).

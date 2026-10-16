@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\AnakTimbanganCalculator;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Support\AnakTimbanganMentah;
+use App\Support\Angka;
 use Illuminate\Support\Carbon;
 
 /**
@@ -253,27 +254,141 @@ class AnakTimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * LIMA desimal — keputusan pemilik proyek 7 Okt 2026, atas masukan Pak
-     * Rohman bahwa delapan desimal "kebanyakan".
+     * Desimal U95 dalam MILIGRAM — `SERTIFIKAT!L` master diformat `0.00` di
+     * 51 dari 51 baris keempat workbook (0,0092 → `0,01`; 1,065 → `1,07`).
+     */
+    public const DESIMAL_U95_MG = 2;
+
+    /**
+     * Presisi simpan angka hasil dalam gram — `uncertainty_calculations`
+     * `decimal(20,8)`, dibulatkan `CalibrationController::bulatkanHitungan()`.
+     */
+    private const DESIMAL_SIMPAN_G = 8;
+
+    /**
+     * Desimal cetak — keputusan pemilik 14 Okt 2026, MENGGANTI keputusan 7 Okt
+     * 2026 ("lima desimal tetap", atas masukan Pak Rohman bahwa delapan
+     * desimal kebanyakan).
      *
-     * Dulu delapan, meniru sertifikat master (`0,09884965` g). Lima desimal
-     * gram = resolusi 0,01 mg, setara keterulangan neraca terhalus lab (Semi
-     * Micro PX85, U95 keping kecil ±0,00001 g), jadi U95 tidak pernah runtuh
-     * jadi `0,00000`. Batasnya: keping kelas E1/E2 di bawah 1 g dengan neraca
-     * lebih halus dari yang dimiliki lab sekarang akan butuh desimal lebih.
+     * Aturan umumnya: desimal HASIL = desimal resolusi pembacaan, bukan jumlah
+     * digit yang diketik teknisi. Untuk lembar ini resolusinya milik NERACA,
+     * dan neraca dipilih per keping, jadi desimalnya per keping juga:
      *
-     * Berlaku untuk sertifikat yang terbit SESUDAH perubahan ini; jumlah
-     * desimal dibekukan ke snapshot, jadi sertifikat lama tidak berubah sampai
-     * direvisi. Sesi bersatuan kg dicetak lima desimal kg (resolusi 0,01 g).
+     * | Kolom | Master | Di sini |
+     * |---|---|---|
+     * | Conventional Mass, koreksi | format kolom pembacaan `INPUT DATA` = resolusi neraca (`X27:X31`) | [desimalSertifikatTitikSesi]: Semi Micro 5, Analytical 4, Fujitsu 3, Excellent/Mettler 2 |
+     * | U95 | `SERTIFIKAT!L` mg, `0.00` | 0,01 mg: 5 desimal g, 8 desimal kg ([desimalU95TitikSesi]) |
+     * | k | `N38` format `0` | 0 ([desimalFaktorCakupan]) |
+     *
+     * Buktinya dibaca dari keempat workbook tanpa sandi (F1 `1.1 Anak
+     * Timbangan … imp.xlsx`, F2 `IMTE-LQ-197` hal 1–3): format `SERTIFIKAT!I`
+     * sama dengan format kolom pembacaannya di 51/51 baris, dan sama dengan
+     * desimal resolusi neraca `INPUT DATA!AB20` di 27/27 baris berdata nyata.
+     * Bukan digit yang diketik: F1 `I28` diketik `0.5` tercetak `0,4975`.
+     * Enam belas sel sisanya blok 4–5 F2 yang datanya sama di ketiga halaman
+     * (pertanyaan lab §30).
+     *
+     * U95 dicetak di kolom GRAM (satuan kolom tabel), bukan mg seperti master —
+     * angkanya identik (`0,00107 g` = `1,07 mg`), dan satu tabel tetap satu
+     * satuan. Lihat `docs/perintah-frontend-anak-timbangan.md` §3.
+     *
+     * Dua angka di bawah cuma CADANGAN tingkat-sesi (snapshot `desimal`, HP
+     * versi lama) dan untuk keping yang neracanya tidak bisa ditentukan —
+     * keping seperti itu memang tidak pernah terhitung. Jumlah desimal tiap
+     * baris dibekukan ke snapshot waktu terbit, jadi sertifikat yang sudah
+     * terbit (lima desimal) tidak berubah sampai direvisi
+     * (`AnakTimbanganDesimalPerBlokTest`).
      */
     public function desimalSertifikat(): ?int
     {
         return 5;
     }
 
+    /** 0,01 mg dalam gram — lihat [desimalSertifikat]. */
     public function desimalU95(): ?int
     {
-        return 5;
+        return self::DESIMAL_U95_MG + 3;
+    }
+
+    /** `SERTIFIKAT!N38` format `0`: k 1,9766 tercetak `2`. */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return 0;
+    }
+
+    /**
+     * Desimal resolusi neraca yang menimbang keping ini, dalam satuan yang
+     * ditulis. `$titikUkur` = nominal GRAM (`uncertainty_calculations`).
+     */
+    public function desimalSertifikatTitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        $resolusi = $this->resolusiNeracaKeping($sesi, $titikUkur);
+        $pangkat = $this->pangkatSatuan($sesi, $satuan);
+
+        if ($resolusi === null || $pangkat === null) {
+            return null;
+        }
+
+        return Angka::desimalDariResolusi($resolusi) + $pangkat;
+    }
+
+    /** 0,01 mg dalam satuan yang ditulis: g → 5, kg → 8. */
+    public function desimalU95TitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        $pangkat = $this->pangkatSatuan($sesi, $satuan);
+
+        return $pangkat === null ? null : self::DESIMAL_U95_MG + 3 + $pangkat;
+    }
+
+    /**
+     * Desimal PEMBACAAN di lembar perhitungan — sama dengan format kolom
+     * pembacaan master (= resolusi neraca). `$titikUkur` mentah, satuan ketik.
+     */
+    public function desimalTitikSesi(CalibrationSession $sesi, float $titikUkur): ?int
+    {
+        $blok = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat);
+
+        return $blok === null
+            ? null
+            : $this->desimalSertifikatTitikSesi($sesi, AnakTimbanganMentah::keGram($titikUkur, $blok['satuan']));
+    }
+
+    /**
+     * Resolusi (gram) neraca tempat keping bernominal [nominalG] ditimbang di
+     * sesi ini, atau `null` kalau tidak ada neraca yang sanggup.
+     *
+     * Lewat `neracaTercentang()` + `pilihNeraca()` — fungsi yang SAMA yang
+     * dipakai menghitung keping itu, bukan tiruannya. Resolusinya dari
+     * `TabelStandarAnakTimbangan`, digenerate dari sheet `DATABASE` master,
+     * sumber yang sama dengan kolom `Res. Balance` (`INPUT DATA!X27:X31`).
+     */
+    private function resolusiNeracaKeping(CalibrationSession $sesi, float $nominalG): ?float
+    {
+        $blok = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null) {
+            return null;
+        }
+
+        $neraca = AnakTimbanganCalculator::pilihNeraca(
+            AnakTimbanganCalculator::neracaTercentang($blok)['neraca'],
+            $nominalG,
+        );
+        $resolusi = $neraca === null ? 0.0 : (float) $neraca['resolusi_g'];
+
+        return $resolusi > 0 ? $resolusi : null;
+    }
+
+    /**
+     * Pangkat sepuluh dari gram ke satuan yang ditulis: g → 0, kg → 3.
+     * `null` = satuan tidak dikenal (pemanggil jatuh ke cadangan).
+     */
+    private function pangkatSatuan(CalibrationSession $sesi, ?string $satuan): ?int
+    {
+        $satuan ??= AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['satuan'] ?? self::SATUAN;
+        $faktor = AnakTimbanganMentah::FAKTOR_KE_G[strtolower(trim($satuan))] ?? null;
+
+        return $faktor === null ? null : (int) round(log10($faktor));
     }
 
     /**
@@ -295,9 +410,18 @@ class AnakTimbanganProfile extends CalibrationProfile
             return null;
         }
 
+        // Dibulatkan ke presisi simpan gram (8 desimal, `decimal(20,8)`) yang
+        // digeser ke kg — LOSSLESS, angka gramnya memang cuma 8 desimal. Yang
+        // dibuang cuma derau pembagian biner: 3,5e-5 g / 1000 memberi
+        // 3,4999999999999996e-8, dan U95 0,035 mg tercetak `0,00000003` kg
+        // (8 desimal = 0,01 mg) — bukan `0,00000004` seperti ROUND Excel
+        // (`0,04` mg). Sejak 14 Okt U95 sesi kg dicetak 8 desimal, jadi kasus
+        // setengah-tepat ini muncul sekitar sekali per seribu keping.
+        $desimal = self::DESIMAL_SIMPAN_G + (int) round(log10($faktor));
+
         return [
             'satuan' => $blok['satuan'],
-            'ubah' => static fn (float $nilai, int $titikKe): float => $nilai / $faktor,
+            'ubah' => static fn (float $nilai, int $titikKe): float => round($nilai / $faktor, $desimal),
         ];
     }
 

@@ -227,6 +227,57 @@ Backend menaruh semua ini di `uncertainty_calculations.type_b_components`
 `variasi_keseluruhan`, dan array `sensor[]` dengan `no`, `channel`,
 `rata_rata_terkoreksi`, `koreksi_vs_indikator`). `k` dicetak **2 desimal**.
 
+### Snapshot sertifikat (`GET /api/certificates/{id}` → `snapshot`) — sejak 15 Okt 2026
+
+- `snapshot.hasil` untuk Enclosure **`[]`** (sama seperti Autoklaf). Tabel
+  `Standard | UUT | Correction` TIDAK berlaku: kolom `koreksi` baris
+  `uncertainty_calculations` enclosure berisi Keseragaman, bukan koreksi.
+  Sertifikat lama (terbit sebelum perbaikan) masih punya baris itu — layar
+  jangan mencetak kolom `correction` untuk alat enclosure.
+- Isinya di **`snapshot.enclosure`**:
+
+```json
+{
+  "satuan": "°C", "varian_master": "constant_yokogawa",
+  "desimal": { "indikator": 1, "terukur": 1, "koreksi": 1, "u95": 1, "k": 0,
+               "setting": 1, "indikator_kinerja": 1, "kinerja": 1 },
+  "tanda_nol": true,
+  "posisi": [{ "posisi": 1, "no": 3 }, { "posisi": 2, "no": 4 }],
+  "set_point": [{
+    "titik_ke": 1, "set_point": 25.5, "indikator": 25.5,
+    "sensor_acuan": 3, "posisi_acuan": 1,
+    "sensor": [{ "posisi": 1, "no": 3, "channel": null, "terukur": 24.60625, "koreksi": -0.89375 }, null],
+    "keseragaman": 0.8, "kestabilan": 0.15, "variasi_keseluruhan": 1.3,
+    "u95": 1.4, "faktor_cakupan_k": 1.9615165
+  }]
+}
+```
+
+- `sensor[i]` sejajar dengan `posisi[i]`; `null` = termokopel itu kosong di
+  set point ini (jangan geser kolom). Kepala kolom master: `Sensor No. (No. 1
+  Sensor Acuan)` — kalau `posisi_acuan` tidak sama di semua set point, tampilkan
+  per set point.
+- Angka presisi penuh; bulatkan di layar per KOLOM dengan `desimal.<kolom>`
+  (format sel `SERTIFIKAT` varian masternya). `null` = format **General**:
+  tulis apa adanya, nol di belakang dibuang (Recorder `setting` → `67`).
+  - `constant_yokogawa`: semua `0.0`, `k` `0` (tercetak `2`).
+  - `recorder`: `terukur`/`koreksi`/`indikator_kinerja`/`kinerja` `0.00`,
+    `indikator` (tabel A) & `u95` `0.0`, `setting` General, `k` `0`.
+  Pembulatan = tampilan Excel: bulatkan ke 15 angka penting dulu, baru ke
+  desimal kolom, setengah menjauhi nol (`0,1499999999999996` → `0,2`).
+- **Boleh `null`** — tampilkan `—`, jangan diganti 0: `u95` (baris hitung tanpa
+  U tersimpan), `faktor_cakupan_k` (tanpa `v_eff`), `sensor_acuan` &
+  `posisi_acuan` (jejak lama), dan elemen `sensor[i]`.
+- `tanda_nol` (`true` di kelima enclosure): nilai negatif yang membulat ke nol
+  tetap bertanda — `-0,04` tercetak `-0,0`. `false` = tanda dibuang (`0,0`).
+- Pola tampilannya ikut PDF: tabel A (Indikator · Terukur/Koreksi per posisi ·
+  U95) lalu kalimat `k` (set point pertama; `≈` kalau `k` cetak antar set point
+  beda) lalu tabel B (Suhu Setting · Indikator · Keseragaman · Kestabilan ·
+  Variasi Keseluruhan).
+- Sejak 15 Okt 2026 Terukur/Keseragaman/Kestabilan/Variasi dihitung dari
+  SELURUH pembacaan termokopel (peta kolom FC master yang rusak tidak ditiru);
+  versi master ada di `type_b_components` `sumber: peta_kolom_master_rusak`.
+
 ## 7. Yang TIDAK ada di alat ini
 
 - **Tidak ada vonis PASS/FAIL** (`punyaToleransi: false`, `keputusan: null`) —

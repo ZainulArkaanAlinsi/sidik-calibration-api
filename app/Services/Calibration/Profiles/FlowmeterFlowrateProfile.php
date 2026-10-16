@@ -2,7 +2,10 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
 use App\Services\Calibration\TabelStandarFlowmeter;
+use App\Support\Angka;
+use App\Support\FlowmeterMentah;
 
 /**
  * **Flow Meter Cairan (Flowrate)** — alat ke-28, lampiran akreditasi
@@ -90,5 +93,48 @@ class FlowmeterFlowrateProfile extends FlowmeterProfile
     public function desimalU95(): ?int
     {
         return 3;
+    }
+
+    /**
+     * Desimal per baris = desimal RESOLUSI alat (keputusan pemilik 14 Okt
+     * 2026: desimal hasil ikut resolusi, override profil cuma kalau master
+     * beda). Angka 3 di [desimalSertifikat] lahir dari sesi contoh Lpm
+     * resolusi 0,001 — bukan format master — jadi dia tinggal sebagai bawaan
+     * untuk sesi TANPA resolusi. Sesi Lpm resolusi 0,001 tetap 3.
+     *
+     * Resolusinya `spesifikasi_alat.flowmeter.resolusi`, dalam satuan alat
+     * (`satuan` blok sesi) — satuan yang juga dicetak sertifikat sejak
+     * [cetakDalamSatuanAlat]. Pemanggil yang menulis dalam satuan LAIN (layar
+     * HP menulis angka hitungan Lpm untuk sesi kg/h) mendapat `null`, jadi
+     * jatuh ke bawaan lama: resolusi kg/h tidak berarti apa-apa untuk Lpm.
+     */
+    public function desimalSertifikatTitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        return $this->desimalDariResolusiSesi($sesi, $satuan);
+    }
+
+    /**
+     * U95 ikut desimal barisnya — bawaan `CalibrationProfile` (`null` = ikut
+     * desimal titik). Dijawab eksplisit karena [desimalU95] profil ini 3 dan
+     * akan menang kalau di sini pulang `null`.
+     */
+    public function desimalU95TitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        return $this->desimalDariResolusiSesi($sesi, $satuan);
+    }
+
+    private function desimalDariResolusiSesi(CalibrationSession $sesi, ?string $satuan): ?int
+    {
+        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null || $blok['mode'] !== $this->mode() || $blok['resolusi'] <= 0.0) {
+            return null;
+        }
+
+        if ($satuan !== null && strcasecmp(trim($satuan), trim($blok['satuan'])) !== 0) {
+            return null;
+        }
+
+        return Angka::desimalDariResolusi($blok['resolusi']);
     }
 }

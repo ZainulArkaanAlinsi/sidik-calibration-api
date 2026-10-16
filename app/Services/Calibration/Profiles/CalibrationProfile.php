@@ -1744,6 +1744,53 @@ abstract class CalibrationProfile
     }
 
     /**
+     * [desimalSertifikatTitik] untuk alat yang desimal barisnya baru bisa
+     * dijawab dengan konteks SESI. Bawaannya meneruskan ke hook per titik, jadi
+     * profil yang tidak menimpanya tidak bergeser satu digit pun.
+     *
+     * Ada karena Anak Timbangan (keputusan pemilik 14 Okt 2026): master
+     * mencetak tiap keping sebanyak desimal resolusi NERACA yang menimbangnya
+     * (Semi Micro 5, Analytical 4, Fujitsu 3), dan neraca itu dipilih dari
+     * daftar centang sesi + nominal keping — bukan dari nominal saja. Dua sesi
+     * dengan keping 50 g yang sama bisa mencetak 4 atau 5 desimal.
+     *
+     * `$titikUkur` dalam satuan `uncertainty_calculations`. `$satuan` = satuan
+     * angka yang akan DITULIS (label kolomnya); `null` = satuan cetak
+     * sertifikat. Pemanggil yang menulis dalam satuan lain (layar HP menulis
+     * angka hitungan apa adanya) wajib menyebutnya, supaya resolusi yang sama
+     * menghasilkan desimal yang benar di kedua satuan.
+     *
+     * Pemanggilnya tiga dan wajib sepakat: `CertificateSnapshotBuilder`
+     * (dibekukan ke snapshot; PDF & Excel membaca snapshot),
+     * `CalibrationResource::petakanTitik()` (detail & pratinjau di HP), dan —
+     * lewat [desimalTitikSesi] — `PerhitunganBuilder`.
+     */
+    public function desimalSertifikatTitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        return $this->desimalSertifikatTitik($titikUkur);
+    }
+
+    /**
+     * Pasangan [desimalSertifikatTitikSesi] untuk kolom U95. Bawaannya
+     * meneruskan ke [desimalU95Titik] — perilaku lama.
+     */
+    public function desimalU95TitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        return $this->desimalU95Titik($titikUkur);
+    }
+
+    /**
+     * [desimalTitik] (desimal PEMBACAAN di lembar perhitungan) dengan konteks
+     * sesi. `$titikUkur` di sini nilai MENTAH (`raw_measurements.titik_ukur`,
+     * satuan yang diketik), sama seperti yang diterima [desimalTitik].
+     * Bawaannya meneruskan ke [desimalTitik].
+     */
+    public function desimalTitikSesi(CalibrationSession $sesi, float $titikUkur): ?int
+    {
+        return $this->desimalTitik($titikUkur);
+    }
+
+    /**
      * Desimal angka `k` di kalimat `… Coverage Factor ( k ) = …`.
      * `null` = perilaku lama, yaitu 2 desimal dengan nol di belakang dibuang
      * (`1,97`, `2`).

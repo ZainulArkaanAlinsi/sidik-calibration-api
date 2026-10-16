@@ -857,6 +857,11 @@ class CalibrationController extends Controller
                         $t,
                         $sesi->equipment,
                         $sesi->organization,
+                        // Sesi TIRUAN ini membawa `spesifikasi_alat` dari
+                        // request — desimal per keping Anak Timbangan (neraca
+                        // dari centang) lahir dari situ, sama dengan sesi
+                        // tersimpan.
+                        $sesi,
                     ))
                     ->all(),
                 // Dua tabel lembar kerja (Before/After adjustment) lengkap sama
@@ -3517,7 +3522,14 @@ class CalibrationController extends Controller
                         'is_verified' => ! $sesiKamera,
                     ];
 
-                    $deret[$peran][] = (float) $nilai;
+                    // Kumulatif berkunci indeks M, sama dengan `sensor_ke` di
+                    // atas dan dengan `PistonVolumeMentah::dari()`: kotak kosong
+                    // harus tetap kelihatan sebagai celah, bukan dirapatkan.
+                    if ($peran === PistonVolumeMentah::PERAN_KUMULATIF) {
+                        $deret[$peran][$urutan] = (float) $nilai;
+                    } else {
+                        $deret[$peran][] = (float) $nilai;
+                    }
                 }
             }
 

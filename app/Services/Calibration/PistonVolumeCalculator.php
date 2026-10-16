@@ -56,7 +56,80 @@ class PistonVolumeCalculator
 
     public const PEMINDAHAN = 10;
 
+    /** Pemindahan paling sedikit untuk keluarga Fixed — STDEV butuh dua. */
+    public const PEMINDAHAN_MIN_FIXED = 2;
+
     private ?GumCalculator $gum = null;
+
+    /**
+     * Jumlah massa kumulatif (M0..Mn) yang bisa dihitung.
+     *
+     * Graduated: tepat sebelas — cabang tara-ulang `selisih()` membaca M4, M7,
+     * dan M10 di posisi tetap. Fixed: M0 ditambah 2..10 pemindahan. Kertas
+     * FM-0528 punya sepuluh kotak, tapi isian lapangan yang tidak penuh tetap
+     * diolah (keputusan pemilik 14 Okt 2026): rata-rata dan STDEV master
+     * (`AVERAGE`/`STDEV` atas kolom m) dihitung atas pemindahan yang ada, dan
+     * tidak ada suku lain di rantai Fixed yang bergantung pada jumlahnya.
+     */
+    public static function jumlahKumulatifDiterima(string $keluarga, int $jumlah): bool
+    {
+        return $keluarga === self::FIXED
+            ? $jumlah >= self::PEMINDAHAN_MIN_FIXED + 1 && $jumlah <= self::PEMINDAHAN + 1
+            : $jumlah === self::PEMINDAHAN + 1;
+    }
+
+    /**
+     * Kotak massa kumulatif yang terisi wajib BERURUTAN dari M0.
+     *
+     * `m_i = M_i − M_(i−1)` hanya sah untuk dua kotak bersebelahan. Kotak kosong
+     * di tengah (M0..M4, M6..M10) yang dirapatkan dengan `array_values()` membuat
+     * `M6 − M4` terhitung SATU pemindahan padahal dua, dan M0 yang kosong
+     * menjadikan M1 sebagai tara — dua-duanya angka yang kelihatan wajar. Jadi
+     * titiknya ditolak dengan alasan yang menyebut kotaknya, bukan ditambal.
+     *
+     * Kunci array = indeks M (`sensor_ke` baris mentah), jadi pemanggil wajib
+     * meneruskan kuncinya apa adanya.
+     *
+     * @param  array<int|string, mixed>  $kumulatif
+     */
+    public static function celahKumulatif(array $kumulatif, string $label): ?string
+    {
+        if ($kumulatif === []) {
+            return null;
+        }
+
+        $indeks = array_map('intval', array_keys($kumulatif));
+        sort($indeks);
+
+        if ($indeks === range(0, count($indeks) - 1)) {
+            return null;
+        }
+
+        $kosong = array_values(array_diff(range(0, max($indeks)), $indeks));
+
+        return sprintf(
+            'Titik %s: kotak massa kumulatif %s kosong padahal M%d terisi. Selisih M(n) − M(n−1) hanya sah '
+            .'untuk dua kotak berurutan — kotak yang dilewati akan terhitung sebagai satu pemindahan%s. '
+            .'Isi kotak yang kosong, atau kosongkan kotak sesudahnya.',
+            $label,
+            implode(', ', array_map(static fn (int $i): string => 'M'.$i, $kosong)),
+            max($indeks),
+            in_array(0, $kosong, true) ? ', dan tanpa M0 kotak M1 terbaca sebagai massa awal' : '',
+        );
+    }
+
+    public static function pesanJumlahKumulatif(string $keluarga, string $label, int $jumlah): string
+    {
+        return $keluarga === self::FIXED
+            ? sprintf(
+                'Titik %s butuh M0 dan %d sampai %d massa kumulatif (M0..M%d), terisi %d.',
+                $label, self::PEMINDAHAN_MIN_FIXED, self::PEMINDAHAN, self::PEMINDAHAN, $jumlah,
+            )
+            : sprintf(
+                'Titik %s wajib TEPAT %d massa kumulatif (M0..M10), terisi %d.',
+                $label, self::PEMINDAHAN + 1, $jumlah,
+            );
+    }
 
     /**
      * @param  array<string, mixed>  $m
@@ -93,15 +166,16 @@ class PistonVolumeCalculator
         $per = [];
 
         foreach ($m['titik'] as $t) {
+            $celah = self::celahKumulatif((array) $t['kumulatif'], (string) $t['label']);
+
+            if ($celah !== null) {
+                throw new InvalidArgumentException($celah);
+            }
+
             $kum = array_map('floatval', array_values($t['kumulatif']));
 
-            if (count($kum) !== self::PEMINDAHAN + 1) {
-                throw new InvalidArgumentException(sprintf(
-                    'Titik %s wajib TEPAT %d massa kumulatif (M0..M10), terisi %d.',
-                    $t['label'],
-                    self::PEMINDAHAN + 1,
-                    count($kum),
-                ));
+            if (! self::jumlahKumulatifDiterima($kel, count($kum))) {
+                throw new InvalidArgumentException(self::pesanJumlahKumulatif($kel, (string) $t['label'], count($kum)));
             }
 
             $mi = $this->selisih($kum, $mode, $kel, (string) $t['label'], (string) $m['satuan']);
@@ -273,7 +347,9 @@ class PistonVolumeCalculator
     {
         $m = [];
 
-        for ($i = 1; $i <= self::PEMINDAHAN; $i++) {
+        // Fixed boleh kurang dari sepuluh pemindahan (`jumlahKumulatifDiterima()`);
+        // Graduated selalu tepat sebelas kotak, jadi batasnya tetap M10.
+        for ($i = 1; $i < count($kum); $i++) {
             $m[] = $kum[$i] - $kum[$i - 1];
         }
 

@@ -65,9 +65,13 @@ class PistonVolumeMentah
             $deret[(string) $b->peran_sensor][(int) $b->sensor_ke] = (float) $b->pembacaan;
         }
 
+        // Kumulatif TETAP berkunci indeks M (= `sensor_ke`), tidak dirapatkan:
+        // kotak kosong di tengah atau M0 yang kosong harus tetap kelihatan
+        // supaya `PistonVolumeCalculator::celahKumulatif()` bisa menolaknya.
+        // Dirapatkan, M6 − M4 terhitung satu pemindahan tanpa jejak.
         foreach ($deret as $peran => $nilai) {
             ksort($nilai);
-            $deret[$peran] = array_values($nilai);
+            $deret[$peran] = $peran === self::PERAN_KUMULATIF ? $nilai : array_values($nilai);
         }
 
         return [

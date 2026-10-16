@@ -50,9 +50,9 @@ use App\Services\StudentTDistribution;
  *  3. **Pengulangan Standar Recorder dibagi √(√3)**, bukan √3 — sel
  *     `U29 = N29/SQRT(Q29)` dengan `Q29 = SQRT(3)`, akar diambil dua kali. Sama
  *     kelas bug dengan AC Pick Up di TITS. Lihat [PEMBAGI_PENGULANGAN_RECORDER].
- *  4. **Baris termokopel FC salin kolom**: pembacaan ke-5 DIBUANG dan pembacaan
- *     ke-3 DIGANDAKAN (`G←H, H←H, I←I`) — baris Indikator justru baca kelimanya
- *     benar. Lihat [PETA_KOLOM_PEMBACAAN].
+ *  4. ~~Baris termokopel FC salin kolom~~ — TIDAK lagi ditiru sejak 15 Okt
+ *     2026: dihitung dengan seluruh pembacaan, versi master dicatat di jejak.
+ *     Lihat [PETA_KOLOM_MASTER].
  *
  * Semua penyimpangan mencetak `catatan_audit` yang menyebut hasil versi
  * dibetulkannya, biar manajer teknis lab yang memutuskan — bukan diam-diam kode.
@@ -79,29 +79,30 @@ use App\Services\StudentTDistribution;
 class EnclosureCalculator
 {
     /**
-     * Peta kolom pembacaan termokopel di sheet `PERHITUNGAN FC` master.
+     * Peta kolom pembacaan termokopel di sheet `PERHITUNGAN FC` master — RUSAK,
+     * dan sejak 15 Okt 2026 TIDAK lagi ditiru.
      *
      * INPUT punya 5 kolom pembacaan (1–5). Baris termokopel FC menyalinnya jadi
      * `[1,2,3,3,4]` — kolom G & H sama-sama menunjuk pembacaan ke-3, dan
-     * pembacaan ke-5 tidak pernah dibaca (`G23=H23='INPUT'!H##`, `I23='INPUT'!I##`).
-     * Baris Indikator (`D37:I37`) justru menyalin kelima kolom dengan benar.
+     * pembacaan ke-5 tidak pernah dibaca (`G23=H23='INPUT DATA'!H##`,
+     * `I23='INPUT DATA'!I##`). Baris Indikator (`D37:I37`) justru menyalin
+     * kelima kolom dengan benar — jadi ini kerusakan salin-tempel, bukan metode.
      *
-     * Ditiru supaya `AVG Terkoreksi`, `ΔT`, dan deviasi antar-sensor sama persis
-     * dengan yang tercetak di sertifikat 0123-CAL-524. Berpengaruh cuma waktu
-     * pembacaan ke-5 ≠ ke-3; U95 yang dilaporkan tetap sama (lantai CMC menang).
+     * Keputusan pemilik proyek 15 Okt 2026 (AGENTS.md §Olah data butir 4):
+     * hitung dengan SELURUH pembacaan yang ada, lalu tulis versi master di jejak
+     * sesi (`peta_kolom_master_rusak`). Konstanta ini dipakai HANYA untuk
+     * menghitung versi master di catatan itu.
      *
-     * @var list<int> index 0-based ke daftar 5 pembacaan mentah
+     * @var list<int> index 0-based ke daftar pembacaan mentah
      */
-    public const PETA_KOLOM_PEMBACAAN = [0, 1, 2, 2, 3];
+    public const PETA_KOLOM_MASTER = [0, 1, 2, 2, 3];
 
     /**
-     * Pembacaan minimum per termokopel supaya [PETA_KOLOM_PEMBACAAN] bisa
-     * dijalankan tanpa menebak: indeks tertinggi yang dibacanya `3`, jadi 4.
-     *
-     * Master sendiri selalu 5 kolom, dan kolom ke-5 memang dibuang — jadi grid
-     * 4 pembacaan menghasilkan angka yang PERSIS SAMA dengan grid 5 pembacaan
-     * yang kolom kelimanya berapa pun. Yang di bawah 4 tidak bisa: tidak ada
-     * nilai buat kolom yang hilang selain menebaknya.
+     * Pembacaan minimum per termokopel. Ambang ini lahir waktu peta kolom
+     * master masih ditiru (indeks tertingginya `3`) dan sengaja DIPERTAHANKAN
+     * sesudah peta itu dilepas: master selalu 5 kolom, dan menurunkan batas
+     * isian parsial itu keputusan lab (`docs/pertanyaan-lab-enclosure.md` #12),
+     * bukan efek samping perbaikan peta kolom.
      */
     public const MIN_PEMBACAAN = 4;
 
@@ -309,6 +310,20 @@ class EnclosureCalculator
         $cmc = (float) $spek['cmc'];
         $uHitung = $agg['ketidakpastian_diperluas'];
 
+        $catatan = $this->catatanAudit(
+            $budget, $dipakai, $uHitung, $cmc, $merk, $koreksiHilang, count($hasilSensor), $noAcuan,
+        );
+
+        $petaMaster = $this->catatanPetaKolomMaster($sensors, $merk, $tipe, $berkanal, $hasilSensor);
+
+        if ($petaMaster !== null) {
+            $catatan[] = $petaMaster;
+        }
+
+        if ($titikKe === 3 && $merk !== TabelKalibratorEnclosure::MERK_BERKANAL) {
+            $catatan[] = $this->catatanSelKalibratorSp3($budget, $dipakai, $agg, $merk, $tipe);
+        }
+
         return [
             'titik_ke' => $titikKe,
             'setpoint' => $setpoint,
@@ -347,9 +362,124 @@ class EnclosureCalculator
             // semua sensor cukup. Alasan & kewajiban pemanggilnya sama dengan
             // `koreksi_hilang` di atas.
             'pembacaan_kurang' => $pembacaanKurang,
-            'catatan_audit' => $this->catatanAudit(
-                $budget, $dipakai, $uHitung, $cmc, $merk, $koreksiHilang, count($hasilSensor), $noAcuan,
+            'catatan_audit' => $catatan,
+        ];
+    }
+
+    /**
+     * Catatan penyimpangan: peta kolom `PERHITUNGAN FC` master yang rusak.
+     *
+     * Sistem memakai seluruh pembacaan; catatan ini menulis berapa angka yang
+     * akan keluar kalau peta master (`[1,2,3,3,4]`) dipakai, supaya penyetuju
+     * sesi tahu angka cetak berbeda dari workbook dan atas dasar apa — tanpa
+     * membuka kode. `null` kalau versi master tidak bisa dihitung (pembacaan <
+     * [MIN_PEMBACAAN] atau koreksi hilang; set point itu memang tidak terbit).
+     *
+     * @param  list<array<string, mixed>>  $sensors  urut nomor
+     * @param  list<array<string, mixed>>  $hasilSensor
+     * @return array<string, mixed>|null
+     */
+    private function catatanPetaKolomMaster(array $sensors, string $merk, string $tipe, bool $berkanal, array $hasilSensor): ?array
+    {
+        $master = [];
+
+        foreach ($sensors as $s) {
+            $h = $this->hitungSensor($s, $merk, $tipe, $berkanal, versiMaster: true);
+
+            if ($h['pembacaan_kurang'] !== null || $h['koreksi_hilang'] !== []) {
+                return null;
+            }
+
+            $master[] = $h;
+        }
+
+        $versi = static fn (array $hs, self $c): array => [
+            'terukur' => array_map(static fn (array $h): float => $h['rata_rata'], $hs),
+            'keseragaman' => $c->keseragaman($hs, $hs[0]['terkoreksi']),
+            'kestabilan' => 0.5 * max(array_map(static fn (array $h): float => $h['spread'], $hs)),
+            'variasi_keseluruhan' => $c->variasi($hs),
+        ];
+
+        $sistem = $versi($hasilSensor, $this);
+        $versiMaster = $versi($master, $this);
+        $jumlah = array_map(static fn (array $s): int => count($s['pembacaan']), $sensors);
+
+        return [
+            'kode' => 'peta_kolom_master_rusak',
+            'pesan' => sprintf(
+                'Master PERHITUNGAN FC!E23:I36 (pola sama di tiap blok set point) menyalin pembacaan termokopel '
+                ."sebagai [1,2,3,3,4]: G23 dan H23 sama-sama ='INPUT DATA'!H## (pembacaan ke-3), I23 ='INPUT "
+                ."DATA'!I##, pembacaan ke-5 (kolom K) tidak pernah dibaca; baris Indikator D37:I37 benar. "
+                .'Kerusakan salin-tempel, jadi sistem menghitung dengan SELURUH pembacaan (%s per termokopel). '
+                .'Versi master: Keseragaman %s, Kestabilan %s, Variasi %s °C; sistem: %s, %s, %s °C. '
+                .'Selisih Terukur terbesar %s °C.',
+                implode('/', array_values(array_unique($jumlah))),
+                $this->angka($versiMaster['keseragaman']),
+                $this->angka($versiMaster['kestabilan']),
+                $this->angka($versiMaster['variasi_keseluruhan']),
+                $this->angka($sistem['keseragaman']),
+                $this->angka($sistem['kestabilan']),
+                $this->angka($sistem['variasi_keseluruhan']),
+                $this->angka(max(array_map(
+                    static fn (float $a, float $b): float => abs($a - $b),
+                    $sistem['terukur'],
+                    $versiMaster['terukur'],
+                ))),
             ),
+            'rincian' => [
+                'sel_master' => "PERHITUNGAN FC!G23:I36 (='INPUT DATA'!H##, H##, I##)",
+                'sumber_keputusan' => 'Keputusan pemilik proyek 15 Okt 2026; AGENTS.md §Olah data butir 4',
+                'versi_master' => $versiMaster,
+                'versi_sistem' => $sistem,
+            ],
+        ];
+    }
+
+    /**
+     * Catatan penyimpangan: blok SET POINT 3 master Constant/Yokogawa merujuk
+     * sel yang salah untuk ketidakpastian kalibrator (`docs/pertanyaan-lab-enclosure.md`
+     * #5a). Sistem memakai U95 kalibrator dari tabel seperti SP1/SP2/SP4.
+     *
+     * @param  list<array<string, mixed>>  $budget
+     * @param  list<array<string, mixed>>  $dipakai
+     * @param  array<string, mixed>  $agg
+     * @return array<string, mixed>
+     */
+    private function catatanSelKalibratorSp3(array $budget, array $dipakai, array $agg, string $merk, string $tipe): array
+    {
+        $kalibrator = collect($budget)->firstWhere('sumber', 'ketidakpastian_kalibrator');
+        $driftMeter = $this->tabel->driftMeter($merk, $tipe);
+        $uSistem = (float) ($kalibrator['u'] ?? 0.0) * self::K_STANDAR;
+
+        $versiMaster = $driftMeter === null ? null : $this->agregasi(array_map(
+            static fn (array $k): array => $k['sumber'] === 'ketidakpastian_kalibrator'
+                ? [...$k, 'u' => $driftMeter / self::K_STANDAR]
+                : $k,
+            $dipakai,
+        ));
+
+        return [
+            'kode' => 'master_sp3_sel_kalibrator',
+            'pesan' => sprintf(
+                'Master PERHITUNGAN U95%%!O75 (blok SET POINT 3, workbook Constant/Yokogawa) berisi '
+                .'VLOOKUP Tabel_Drift (%s °C) di tempat U95 kalibrator — rujukan sel meleset; SP1/SP2/SP4 '
+                .'memakai U95 kalibrator. Sistem memakai U95 kalibrator %s °C. Versi master: u_c %s, U hitung %s °C; '
+                .'sistem: u_c %s, U hitung %s °C.',
+                $driftMeter === null ? '—' : $this->angka($driftMeter),
+                $this->angka($uSistem),
+                $versiMaster === null ? '—' : $this->angka($versiMaster['ketidakpastian_gabungan']),
+                $versiMaster === null ? '—' : $this->angka($versiMaster['ketidakpastian_diperluas']),
+                $this->angka($agg['ketidakpastian_gabungan']),
+                $this->angka($agg['ketidakpastian_diperluas']),
+            ),
+            'rincian' => [
+                'sel_master' => 'PERHITUNGAN U95%!O75',
+                'sumber_keputusan' => 'docs/pertanyaan-lab-enclosure.md #5a; AGENTS.md §Olah data butir 4',
+                'u95_kalibrator_master' => $driftMeter,
+                'u95_kalibrator_sistem' => $uSistem,
+                'u_c_master' => $versiMaster['ketidakpastian_gabungan'] ?? null,
+                'u_c_sistem' => $agg['ketidakpastian_gabungan'],
+            ],
         ];
     }
 
@@ -360,30 +490,23 @@ class EnclosureCalculator
      * @param  array{no: int, channel?: int, pembacaan: list<float>}  $s
      * @return array<string, mixed>
      */
-    private function hitungSensor(array $s, string $merk, string $tipe, bool $berkanal): array
+    private function hitungSensor(array $s, string $merk, string $tipe, bool $berkanal, bool $versiMaster = false): array
     {
         $no = (int) $s['no'];
         $kanal = isset($s['channel']) ? (int) $s['channel'] : null;
         $mentah = array_values(array_map('floatval', $s['pembacaan']));
 
-        // Peta kolom master menyalin `[1,2,3,3,4]`, jadi indeks tertinggi yang
-        // pernah dibaca `3` — butuh MINIMAL 4 pembacaan.
-        //
-        // Yang kurang dari itu dulu ditambal diam-diam dengan mengulang
-        // pembacaan terakhir. Tambalan itu bukan cuma menggeser U95: dia masuk
-        // ke `AVG Terkoreksi` yang TERCETAK di kolom Sebaran Suhu sertifikat,
-        // ke Keseragaman, dan ke Kestabilan — angka yang dibaca pelanggan
-        // sebagai hasil pengukuran. Pada grid 3 pembacaan pergeserannya di
-        // orde 0,06 °C, cukup buat mengubah kolom satu desimal.
-        //
-        // Sekarang: pembacaan dipakai apa adanya (nggak ditambal), dan
-        // sensornya ditandai `pembacaan_kurang` supaya pemanggil memindahkan
-        // set point-nya ke `belum_dihitung`. Teknisi mengisi kolom yang kurang,
-        // bukan sistem menebak isinya.
+        // Pembacaan di bawah [MIN_PEMBACAAN] tidak ditambal (dulu diulang dari
+        // pembacaan terakhir, dan tambalannya mendarat di kolom Sebaran Suhu
+        // yang tercetak); sensornya ditandai `pembacaan_kurang` supaya pemanggil
+        // memindahkan set point-nya ke `belum_dihitung`.
         $cukup = count($mentah) >= self::MIN_PEMBACAAN;
 
-        $dipetakan = $cukup
-            ? array_map(fn (int $i): float => $mentah[$i], self::PETA_KOLOM_PEMBACAAN)
+        // SELURUH pembacaan dipakai — termasuk ke-6 dst. kalau lembar lapangan
+        // mengisi lebih dari 5. `$versiMaster` cuma untuk catatan jejak
+        // `peta_kolom_master_rusak` (lihat [PETA_KOLOM_MASTER]).
+        $dipetakan = $versiMaster && $cukup
+            ? array_map(fn (int $i): float => $mentah[$i], self::PETA_KOLOM_MASTER)
             : $mentah;
 
         $rataMentah = $this->rataRata($dipetakan);
@@ -716,7 +839,9 @@ class EnclosureCalculator
         $catatan[] = [
             'kode' => 'v_eff_tidak_dipotong',
             'pesan' => sprintf(
-                'v_eff dipakai apa adanya mengikuti master (k=%s); dipotong ke bawah sesuai GUM G.4.1 k=%s, U=%s °C.',
+                'v_eff dipakai apa adanya (tidak dipotong) dan k = kuantil t-Student EKSAK t(0,975; v_eff) = %s. '
+                .'Bukan salinan rumus master: k master berbeda ~3e-6 (rumusnya belum diverifikasi, '
+                .'docs/pertanyaan-lab-enclosure.md #6). Bila v_eff dipotong ke bawah sesuai GUM G.4.1: k=%s, U=%s °C.',
                 $this->angka($this->agregasi($dipakai)['faktor_cakupan_k']),
                 $this->angka($dipotong['faktor_cakupan_k']),
                 $this->angka($dipotong['ketidakpastian_diperluas']),
@@ -744,13 +869,8 @@ class EnclosureCalculator
             ];
         }
 
-        // 4. Peta kolom pembacaan termokopel.
-        $catatan[] = [
-            'kode' => 'peta_kolom_pembacaan',
-            'pesan' => 'Baris termokopel FC master menyalin pembacaan ke-3 dua kali dan membuang pembacaan ke-5 '
-                .'(G←H, H←H, I←I); baris Indikator menyalin kelimanya benar. Ditiru supaya sebaran sensor sama '
-                .'dengan sertifikat yang terbit.',
-        ];
+        // 4. Peta kolom pembacaan termokopel: tidak lagi ditiru — catatannya
+        // (`peta_kolom_master_rusak`) disusun di [catatanPetaKolomMaster].
 
         // 5. Koreksi sensor/meter yang nggak ketemu di tabel — set point ini
         // TIDAK boleh diterbitkan; pemanggil memindahkannya ke `belum_dihitung`.

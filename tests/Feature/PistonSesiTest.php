@@ -195,10 +195,52 @@ class PistonSesiTest extends TestCase
         $this->assertStringContainsString('tekanan_awal', $belum[0]['alasan']);
     }
 
-    public function test_kurang_dari_sebelas_kumulatif_diblokir(): void
+    /**
+     * Isian lapangan tak penuh (keputusan pemilik 14 Okt 2026): volume tetap
+     * dihitung dari pemindahan yang ada. Selain rata-rata & STDEV, tidak ada
+     * suku rantai Fixed yang bergantung pada jumlah pemindahan — jadi
+     * V20 / m-rata harus sama persis dengan sesi sepuluh pemindahan.
+     */
+    public function test_fixed_enam_pemindahan_dihitung_dari_yang_ada(): void
     {
         [$alat, $teknisi, $sesi] = $this->siapkan();
-        $kum = array_slice($sesi['masukan']['titik'][0]['kumulatif'], 0, 10);
+        $kumPenuh = $sesi['masukan']['titik'][0]['kumulatif'];
+        $kum = array_slice($kumPenuh, 0, 7);
+        $suhu = $sesi['masukan']['titik'][0]['suhu_air'];
+
+        $penuh = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations/preview', $this->payload($alat, $sesi))
+            ->assertOk()->json('data');
+        $parsial = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations/preview', $this->payload($alat, $sesi, titik: [[
+                'titik_ukur' => '10', M::PERAN_KUMULATIF => $kum, M::PERAN_SUHU_AIR => $suhu,
+            ]]))
+            ->assertOk()->json('data');
+
+        $this->assertSame([], $parsial['belum_dihitung']);
+        $this->assertSame(6, $parsial['titik'][0]['jumlah_pengulangan']);
+
+        $massa = [];
+        for ($i = 1; $i < 7; $i++) {
+            $massa[] = $kum[$i] - $kum[$i - 1];
+        }
+        $rata = array_sum($massa) / 6;
+        $stdev = sqrt(array_sum(array_map(static fn (float $m): float => ($m - $rata) ** 2, $massa)) / 5);
+        $rataPenuh = ($kumPenuh[10] - $kumPenuh[0]) / 10;
+
+        // Respons pratinjau menyajikan STDEV enam desimal.
+        $this->assertEqualsWithDelta($stdev, $parsial['titik'][0]['standar_deviasi'], 1e-6);
+        $this->assertEqualsWithDelta(
+            $penuh['titik'][0]['rata_rata'] / $rataPenuh,
+            $parsial['titik'][0]['rata_rata'] / $rata,
+            1e-9,
+        );
+    }
+
+    public function test_fixed_cuma_satu_pemindahan_diblokir(): void
+    {
+        [$alat, $teknisi, $sesi] = $this->siapkan();
+        $kum = array_slice($sesi['masukan']['titik'][0]['kumulatif'], 0, 2);
 
         $belum = $this->actingAs($teknisi)
             ->postJson('/api/calibrations/preview', $this->payload($alat, $sesi, titik: [[
@@ -208,7 +250,7 @@ class PistonSesiTest extends TestCase
             ->json('data.belum_dihitung');
 
         $this->assertNotEmpty($belum);
-        $this->assertStringContainsString('TEPAT 11', $belum[0]['alasan']);
+        $this->assertStringContainsString('M0 dan 2 sampai 10', $belum[0]['alasan']);
     }
 
     /**

@@ -5140,6 +5140,49 @@ tiga suhu, pesan `PUT`, peringatan O35, redaksi). Gate MySQL penuh belum dijalan
 Fixture HP `contoh_lembar_kerja_volumetric_glassware.dart` digenerate ulang (ikut membawa drift
 tahap 1 yang belum pernah digenerate).
 
+## §50 — Desimal hasil = desimal resolusi pembacaan; Anak Timbangan ikut master per neraca — 14 Okt 2026
+
+**Asal.** Pak Rohman (lewat pemilik): desimal hasil olah data = desimal input teknisi. Bukti workbook
+(`_agents_workspace/studio-data-acuan/04-paritas-desimal.md`): "digit yang diketik" tidak didukung
+master mana pun; yang terbukti = format kolom pembacaan, yaitu resolusi alat/neraca.
+
+**Keputusan pemilik (14 Okt 2026)** — mengganti keputusan 7 Okt "lima desimal tetap":
+1. Aturan umum: desimal HASIL = desimal resolusi alat/pembacaan, bukan digit yang diketik. Timpaan
+   profil tetap berlaku di alat yang masternya memang beda (Spektro, Hydrometer, Volumetrik, dst.).
+   Ini sudah perilaku `Organization::desimalSertifikat()` / `Angka::desimalDariResolusi()`; tidak ada
+   kode alat lain yang diubah.
+2. Anak Timbangan ikut master: Conventional Mass/koreksi = desimal resolusi neraca yang menimbang
+   keping itu (Semi Micro 5, Analytical 4, Fujitsu 3, Excellent/Mettler 2; +3 di sesi kg); U95 =
+   0,01 mg (5 desimal g / 8 kg); `k` 0 desimal. Sertifikat lama tidak berubah (desimal dibekukan di
+   snapshot).
+
+**Yang dibangun:**
+- Hook bersama ber-konteks sesi: `CalibrationProfile::desimalSertifikatTitikSesi()`,
+  `desimalU95TitikSesi()`, `desimalTitikSesi()`. Bawaannya memanggil hook per titik lama, jadi profil
+  lain nol bergeser. Dipanggil `CertificateSnapshotBuilder` (dibekukan; PDF & Excel membaca snapshot),
+  `CalibrationResource::petakanTitik()` (detail sesi + pratinjau), dan `PerhitunganBuilder`.
+- `AnakTimbanganProfile` menurunkan neraca keping lewat `AnakTimbanganCalculator::pilihNeraca()` dan
+  daftar neraca `neracaTercentang()` — fungsi yang sama yang dipakai menghitung, jadi neraca yang
+  menentukan desimal pasti neraca yang menimbang. `desimalFaktorCakupan()` = 0.
+- Nol kolom baru; nilai antara tetap presisi penuh.
+
+**Bukti master:** format `SERTIFIKAT!I` = desimal resolusi neraca `INPUT DATA!AB20` di 27/27 baris
+berdata nyata keempat workbook tanpa sandi (51/51 = format kolom pembacaan). U95 `0.00` mg 51/51,
+`k` format `0`. Blok 4–5 F2 hal 1–3 (data sama di ketiga halaman) ditanyakan di
+`pertanyaan-lab-anak-timbangan.md` §30, berikut pilihan kolom U95 g atau mg.
+
+**Dijaga:** `AnakTimbanganDesimalPerBlokTest` (21 test: per blok 5/4/3, sesi kg, U95 mg dua desimal
+termasuk setengah-tepat, k, alur HP → pratinjau → simpan → detail → perhitungan → snapshot → PDF →
+Excel, snapshot lama tetap lima desimal).
+
+**Ikut berubah:** konversi cetak sesi kg (`cetakDalamSatuanAlat`) membulatkan hasil bagi ke presisi
+simpan gram (11 desimal kg) — tanpa itu U95 setengah-tepat (0,035 mg) tercetak `0,03` mg di sesi kg.
+
+**Status:** DIKERJAKAN (branch `fix/desimal-anak-timbangan`). SQLite: `--filter=AnakTimbangan` 86/86,
+24 kelas sertifikat/jalur bersama 234/234. MySQL `--filter=AnakTimbangan|Certificate|Sertifikat|Perhitungan|Snapshot`
+529 test: 528 lulus + 1 gagal lama di main (`VolumetrikRev7AlurTest`, urutan kunci JSON MySQL — test
+diperbaiki, MySQL 19/19). Paritas independen (penjaga-angka): COCOK 47 titik, 4 workbook.
+
 ## §51 — Super admin boleh semua aksi tulis, Order Number wajib sebelum disetujui — 15 Okt 2026
 
 Nomor §50 sudah dipakai branch desimal Anak Timbangan (`feat/olah-data-isian-parsial`), jadi

@@ -150,8 +150,9 @@ butir 6, termasuk kenapa `kolom_baris` TIDAK bisa dipakai untuk membawanya.
 | `ketidakpastian_diperluas` | U95 (g) |
 | `keputusan` | **null** — sesi ini tidak divonis PASS/FAIL |
 
-`judulKolomUut()` = `Conventional Mass`. Desimal sertifikat dan U95 dua-duanya
-**8**.
+`judulKolomUut()` = `Conventional Mass`. Desimal per KEPING, dikirim server di
+`titik[].desimal` / `titik[].desimal_u95` (keputusan 14 Okt 2026, lihat §5a baris
+Sertifikat) — jangan dipukul rata.
 
 > **Satuan U95 beda dari sertifikat master, angkanya sama.** Master mencetak
 > massa dalam gram dan ketidakpastian dalam **miligram** di baris yang sama
@@ -248,7 +249,7 @@ Dari tiga lembar kertas lapangan 5 Okt 2026.
 | **Satuan g / kg** | field pilihan `spesifikasi_alat.anak_timbangan.satuan`; angka tersimpan apa adanya, diubah ke gram di `AnakTimbanganProfile::hitungPerGrup()`; sertifikat sesi kg dicetak kg (`cetakDalamSatuanAlat`) | bentuk membawa `satuan_dari` (tingkat lembar & kotak kapasitas); label kartu, tabel, dan kotak ikut pilihan (`LembarKerjaState.satuanTampil`). Satuan masuk daftar penentu angka yang ditanya sebelum kirim |
 | **Beberapa neraca** | centang lebih dari satu neraca diterima; tersimpan di `timbangan_daftar`; tiap keping memakai neraca tercentang terkecil yang sanggup (`AnakTimbanganCalculator::pilihNeraca()`), tercatat di jejak audit | tidak ada perubahan — centang sudah ada |
 | **Satu pembacaan per baris** | `jumlah_pengulangan` = 1 | ikut bentuk server |
-| **Sertifikat** | U95 jadi kolom PER KEPING (`u95PerTitik`); massa, koreksi, dan U95 dicetak **5 desimal** (dulu 8) — angka tersimpan tetap 8 desimal | layar hasil ikut `desimal`/`desimal_u95` dari server |
+| **Sertifikat** | U95 jadi kolom PER KEPING (`u95PerTitik`). Sejak 14 Okt 2026 (ganti "5 desimal" 7 Okt): massa & koreksi = desimal resolusi neraca yang menimbang keping itu (Semi Micro 5, Analytical 4, Fujitsu 3, Excellent/Mettler 2 — dalam satuan yang ditulis: sesi kg +3); U95 = 0,01 mg (5 desimal g, 8 desimal kg); `k` 0 desimal. Angka tersimpan tetap 8 desimal — pembulatan cuma di cetak | layar hasil ikut `titik[].desimal`/`desimal_u95` dari server (sudah per titik); lembar perhitungan ikut `hasil[].titik[].desimal` |
 
 Sesi lama (tanpa `satuan`, dengan satu `timbangan`) dibaca gram dan satu neraca,
 jadi angkanya tidak bergeser. Pertanyaan lab §28 (aturan neraca per keping).
