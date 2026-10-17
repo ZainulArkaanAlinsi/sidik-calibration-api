@@ -183,7 +183,7 @@ class StudioSatuAkunTest extends TestCase
     {
         $token = $this->pemilik->createToken('studio', ['studio'])->plainTextToken;
 
-        foreach (['/api/me', '/api/me/permissions', '/api/equipments', '/api/calibrations', '/api/certificates', '/api/data-acuan/paket'] as $uri) {
+        foreach (['/api/me', '/api/me/permissions', '/api/equipments', '/api/calibrations', '/api/certificates'] as $uri) {
             $this->app['auth']->forgetGuards();
             $this->withToken($token)->getJson($uri)
                 ->assertForbidden()
@@ -192,6 +192,44 @@ class StudioSatuAkunTest extends TestCase
 
         $this->app['auth']->forgetGuards();
         $this->withToken($token)->postJson('/api/logout')->assertForbidden();
+    }
+
+    public function test_token_studio_boleh_membaca_data_acuan_tapi_hanya_akun_studio(): void
+    {
+        $token = $this->pemilik->createToken('studio', ['studio'])->plainTextToken;
+
+        foreach (['/api/data-acuan/paket', '/api/data-acuan/paket/tidak-ada', '/api/data-acuan/versi/999999'] as $uri) {
+            $this->app['auth']->forgetGuards();
+            $status = $this->withToken($token)->getJson($uri)->status();
+            $this->assertContains($status, [200, 404], "{$uri} -> {$status}");
+        }
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/data-acuan/paket')->assertOk();
+
+        // Token berability studio milik akun lain: ditolak walau abilitynya benar.
+        $lain = $this->akun(User::ROLE_ADMIN, 'lain@lab.test')->createToken('studio', ['studio'])->plainTextToken;
+        $this->app['auth']->forgetGuards();
+        $this->withToken($lain)->getJson('/api/data-acuan/paket')
+            ->assertForbidden()->assertJsonPath('kode', 'bukan_akun_studio');
+
+        // STUDIO_AKUN diganti: token lama mati juga di rute baca lab ini.
+        config(['studio.akun' => 'lain@lab.test']);
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->getJson('/api/data-acuan/paket')->assertForbidden();
+    }
+
+    public function test_token_studio_tetap_ditolak_di_rute_lab_non_data_acuan_dan_semua_rute_tulis_lab(): void
+    {
+        $token = $this->pemilik->createToken('studio', ['studio'])->plainTextToken;
+
+        foreach (['/api/standards', '/api/rooms', '/api/customers/lookup', '/api/laporan/kalibrasi'] as $uri) {
+            $this->app['auth']->forgetGuards();
+            $this->withToken($token)->getJson($uri)->assertForbidden()->assertJsonPath('kode', 'bukan_aplikasi_ini');
+        }
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($token)->postJson('/api/standards', [])->assertForbidden()->assertJsonPath('kode', 'bukan_aplikasi_ini');
     }
 
     public function test_akun_studio_nonaktif_401_dan_semua_tokennya_dicabut(): void
@@ -213,7 +251,7 @@ class StudioSatuAkunTest extends TestCase
         $me = $this->withToken($token)->getJson('/api/studio/me')->assertOk();
         $me->assertJsonPath('data.user.email', 'pemilik@sidik.test')->assertJsonPath('data.izin.role', 'studio');
         $this->assertEqualsCanonicalizing(
-            ['workbook.lihat', 'workbook.hitung', 'workbook.impor', 'workbook.sel-terkunci.sunting'],
+            ['workbook.lihat', 'workbook.hitung', 'workbook.impor', 'workbook.sel-terkunci.sunting', 'data-acuan.lihat'],
             $me->json('data.izin.boleh'),
         );
 

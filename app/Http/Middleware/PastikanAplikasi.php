@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Studio\AkunStudio;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
@@ -69,11 +70,29 @@ class PastikanAplikasi
      */
     private const IDLE_HARI_PELANGGAN = 30;
 
-    public function handle(Request $request, Closure $next, string $aplikasi): Response
+    /**
+     * `aplikasi:internal,studio` = rute BACA lab yang juga dibutuhkan Sidik Studio
+     * (mis. `GET /data-acuan/*`). Token `studio` hanya lolos kalau ditulis
+     * eksplisit di rute dan akunnya masih `STUDIO_AKUN`; rute tanpa kata `studio`
+     * tetap menolaknya (`bukan_aplikasi_ini`). Hanya untuk rute baca.
+     */
+    public function handle(Request $request, Closure $next, string $aplikasi, string ...$tambahan): Response
     {
         $token = $request->user()?->currentAccessToken();
 
         if ($token === null || $token instanceof TransientToken) {
+            return $next($request);
+        }
+
+        if (in_array(AkunStudio::ABILITY, $tambahan, true) && AkunStudio::tokenStudio($token)) {
+            if (! AkunStudio::cocok($request->user())) {
+                return $this->tolak(
+                    'bukan_akun_studio',
+                    'Sidik Studio hanya untuk akun Studio. Masuk lewat aplikasi Sidik Studio dengan akun itu.',
+                    403,
+                );
+            }
+
             return $next($request);
         }
 

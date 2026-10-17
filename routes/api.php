@@ -341,6 +341,29 @@ Route::middleware(['auth:sanctum', 'studio'])->prefix('studio')->group(function 
 });
 
 /*
+| Studio Data Acuan (CR-48) — BACA saja di P1 (izin `data-acuan.lihat`).
+| Semua role lab; teknisi cuma melihat versi `aktif` (draf, banding, dan
+| riwayat sel → 404), dan itu disaring di controller, bukan dengan
+| menyembunyikan tombol. Paket dicari per organisasi pemanggil + kode
+| profil; versi lab lain → 404. Rute tulis lahir di P2 bersama izinnya.
+|
+| `aplikasi:internal,studio`: layar Data Acuan juga dipakai Sidik Studio, jadi
+| token `studio` (akun `STUDIO_AKUN` saja, diperiksa tiap request) boleh MEMBACA
+| di sini, organisasi sendiri. Grup ini cuma GET; rute tulis data-acuan nanti
+| tetap di grup `aplikasi:internal` biasa (token Studio ditolak).
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal,studio', 'role:admin,teknisi,viewer'])
+    ->prefix('data-acuan')->group(function () {
+        Route::get('/paket', [DataAcuanController::class, 'daftarPaket']);
+        Route::get('/paket/{kode}', [DataAcuanController::class, 'paket']);
+        Route::get('/paket/{kode}/berlaku', [DataAcuanController::class, 'berlaku']);
+        Route::get('/paket/{kode}/versi', [DataAcuanController::class, 'garisWaktu']);
+        Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
+        Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
+        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+    });
+
+/*
 |--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
@@ -465,21 +488,6 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
-
-    // Studio Data Acuan (CR-48) — BACA saja di P1 (izin `data-acuan.lihat`).
-    // Semua role lab; teknisi cuma melihat versi `aktif` (draf, banding, dan
-    // riwayat sel → 404), dan itu disaring di controller, bukan dengan
-    // menyembunyikan tombol. Paket dicari per organisasi pemanggil + kode
-    // profil; versi lab lain → 404. Rute tulis lahir di P2 bersama izinnya.
-    Route::prefix('data-acuan')->group(function () {
-        Route::get('/paket', [DataAcuanController::class, 'daftarPaket']);
-        Route::get('/paket/{kode}', [DataAcuanController::class, 'paket']);
-        Route::get('/paket/{kode}/berlaku', [DataAcuanController::class, 'berlaku']);
-        Route::get('/paket/{kode}/versi', [DataAcuanController::class, 'garisWaktu']);
-        Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
-        Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
-        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
-    });
 
     // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
     // Semua role boleh; teknisi cuma dapat pekerjaannya sendiri (di service).

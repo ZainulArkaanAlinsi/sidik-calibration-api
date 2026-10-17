@@ -155,6 +155,9 @@ class MatriksIzin
         // Bukan rute: aturan di server (`ProteksiLembar::bolehMelewati`) — sel
         // terkunci di lembar terproteksi boleh disunting di simulasi /hitung.
         'workbook.sel-terkunci.sunting' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
+        // Layar Data Acuan di Studio: rute BACA lab yang membuka diri untuk token
+        // `studio` lewat `aplikasi:internal,studio`.
+        'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
     ];
 
     /**
@@ -197,7 +200,9 @@ class MatriksIzin
         foreach (self::PETA_STUDIO as $izin => [$method, $uri]) {
             $rute = $this->cariRute($method, $uri);
 
-            if ($rute !== null && in_array('studio', $rute->gatherMiddleware(), true)) {
+            $mw = $rute?->gatherMiddleware() ?? [];
+
+            if ($rute !== null && (in_array('studio', $mw, true) || in_array('aplikasi:internal,studio', $mw, true))) {
                 $boleh[] = $izin;
             }
         }
