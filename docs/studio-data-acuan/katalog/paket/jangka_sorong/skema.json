@@ -1,0 +1,553 @@
+{
+ "kode": "jangka_sorong",
+ "nama": "Jangka Sorong (Caliper)",
+ "kelompok": "Panjang",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-jangka-sorong.json"
+ ],
+ "kelas": [
+  "TabelStandarJangkaSorong"
+ ],
+ "kalkulator": [
+  "JangkaSorongCalculator"
+ ],
+ "profil": [
+  "JangkaSorongProfile"
+ ],
+ "formulir": [
+  "0527"
+ ],
+ "master": [
+  "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_"
+ ],
+ "generator": [
+  "gen-tabel-standar-jangka-sorong.py"
+ ],
+ "fixture": [
+  "sesi-master-jangka-sorong.json"
+ ],
+ "kata": [
+  "jangka-sorong"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0527_Rev.2 - LEMBAR KERJA JANGKA SORONG.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 182,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 359,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 61,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 352,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "SERTIFIKAT (2)",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2024-01-24T00:00:00",
+    "No Seri | 160006 | LK-410-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_",
+   "sheet": "Std_CaliperCek",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 32,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Nama Alat | : | Caliper Checker | Tanggal Kalibrasi | 2026-01-09T00:00:00",
+    "No Seri | : | 800035 | Tertelusur | LK-404-IDN",
+    "Merk | : | Metrology",
+    "Tipe | : | CMG-9060C",
+    "Rentang Ukur | : | 0-600 mm"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-jangka-sorong.json": "12e85b5c7491281959461f00c858cb9bbe40773c09c0ed10d804a03cc9f3bb4e"
+ },
+ "lembar": [
+  {
+   "jalur": "balok_ukur",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "traceability",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nama": "Gauge Block Standard",
+    "merk_tipe": "Metrology/GB-9122-0",
+    "seri": "160006"
+   },
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "balok_ukur/keping",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "nilai_terkoreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 32,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31"
+   ],
+   "contoh": {
+    "nominal_mm": 1.0,
+    "nilai_terkoreksi_mm": 1.00011,
+    "u95_mm": 0.00011999999999999999
+   },
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 96,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kapasitas_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "label": "CMC 0-300mm",
+    "kapasitas_maks_mm": 300.0,
+    "u95_mm": 0.015
+   },
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "tumpukan_depth_mm/0",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": [
+    7.5,
+    2.5
+   ],
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "tumpukan_depth_mm/1",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": [
+    11.0,
+    9.0
+   ],
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "tumpukan_depth_mm/2",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": [
+    21.0,
+    9.0
+   ],
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "tumpukan_depth_mm/3",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": [
+    40.0
+   ],
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "tumpukan_depth_mm/4",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": [
+    50.0
+   ],
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu_acuan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "u_alpha_caliper_checker_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "u_alpha_balok_ukur_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "pembagi_muai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift_a_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "drift_b_um_per_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm/mm"
+    },
+    {
+     "kunci": "drift_pembagi_umur",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "wringing_um_per_keping",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "geometri_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "efek_mekanik_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "meja_granit_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "vi_type_b",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pengulangan_pembagi_n",
+     "tipe": "desimal",
+     "satuan_tebakan": "N"
+    },
+    {
+     "kunci": "depth_ci_suhu_panjang_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "depth_ci_suhu_cte_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "depth_ci_muai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "contoh": {
+    "suhu_acuan_c": 20.0,
+    "alpha_per_c": 1.2e-06,
+    "u_alpha_caliper_checker_per_c": 2e-06
+   },
+   "sumber_json": "tabel-standar-jangka-sorong.json",
+   "jumlah_sel_data": 18,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-jangka-sorong.json:_sumber": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (sheet Std_CaliperCek, Standar_GB, DATABASE, Perhitungan koef. Sensitivitas), ber-password. Caliper Checker dibaca dari tabel-standar-height-gauge.json — keping fisik yang sama, sudah diadu skrip ini.",
+  "tabel-standar-jangka-sorong.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-jangka-sorong.py"
+ },
+ "cakupan": {
+  "tabel-standar-jangka-sorong.json": {
+   "daun": 127,
+   "tercakup": 127,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!T5",
+  "PERHITUNGAN U95%!K7",
+  "PERHITUNGAN!AD121",
+  "PERHITUNGAN!AH37",
+  "PERHITUNGAN!F72",
+  "PERHITUNGAN!H126:H128",
+  "PERHITUNGAN!V37",
+  "PERHITUNGAN!X37",
+  "PERHITUNGAN!Y37",
+  "PERHITUNGAN!Z24",
+  "PERHITUNGAN!Z28",
+  "Standar_GB!Q10:S132",
+  "Std_CaliperCek!J19",
+  "U95!K10",
+  "U95!K11",
+  "U95!K12",
+  "U95!K13",
+  "U95!K53",
+  "U95!N5",
+  "U95!N9",
+  "U95!Q6",
+  "U95!Q7:Q14",
+  "ci muai DIKETIK 50 (U95!V48",
+  "dari sesi master (INPUT DATA!C111:C123",
+  "punya angkanya (DATABASE!T5"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarJangkaSorong.php",
+  "app/Services/Calibration/JangkaSorongCalculator.php",
+  "app/Services/Calibration/Profiles/JangkaSorongProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarJangkaSorong": [
+   "JangkaSorongCalculator",
+   "JangkaSorongProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/CalibrationTest.php",
+  "tests/Feature/JangkaSorongSieveSesiTest.php",
+  "tests/Unit/JangkaSorongMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-jangka-sorong.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-jangka-sorong.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-jangka-sorong.json"
+ ]
+}

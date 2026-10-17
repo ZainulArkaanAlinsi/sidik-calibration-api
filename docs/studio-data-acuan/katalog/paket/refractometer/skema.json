@@ -1,0 +1,293 @@
+{
+ "kode": "refractometer",
+ "nama": "Refractometer",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "RefractometerProfile"
+ ],
+ "formulir": [
+  "0523"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Refractometer"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0523_Rev.2 - LEMBAR KERJA REFRACTOMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 178,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 151,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 172,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Refractometer",
+   "sheet": "Tab Konversi Temperatur",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 117,
+   "cuplikan_atas": [
+    "T | Observed Value | Corrected Value | Deviation | Observed Value | Corrected Value | Deviation",
+    "oC | oBrix | oBrix | oBrix | n20D | n20D | n20D",
+    "19 | 20 | 19.93 | 0.07000000000000028 | 1.33299 | 1.3325399999999998 | 0.00045000000000006146",
+    "19.1 | 20 | 19.937 | 0.06299999999999883 | 1.33299 | 1.332585 | 0.0004049999999999887",
+    "19.2 | 20 | 19.944 | 0.05600000000000094 | 1.33299 | 1.33263 | 0.00035999999999991594",
+    "19.3 | 20 | 19.951 | 0.04899999999999949 | 1.33299 | 1.3326749999999998 | 0.00031500000000006523"
+   ]
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/RefractometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/ConductivityBudgetTest.php",
+  "tests/Feature/LembarKerjaTest.php",
+  "tests/Feature/SertifikatCocokMasterTest.php",
+  "tests/Unit/AngkaTandaNolTest.php",
+  "tests/Unit/RefractometerBudgetTest.php"
+ ],
+ "pertanyaan_lab": [],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 106,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0516_Rev.4';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 108,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0523_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 110,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 112,
+   "nama": "SATUAN_N20D",
+   "nilai_awal": "'n20D';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 114,
+   "nama": "SATUAN_BRIX",
+   "nilai_awal": "'°Brix';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 120,
+   "nama": "SUHU_ACUAN",
+   "nilai_awal": "20.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 126,
+   "nama": "KOEF_SUHU",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 132,
+   "nama": "SUHU_TABEL_MIN",
+   "nilai_awal": "19.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 134,
+   "nama": "SUHU_TABEL_MAKS",
+   "nilai_awal": "30.2;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 140,
+   "nama": "RESOLUSI",
+   "nilai_awal": "0.0001;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 150,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 171,
+   "nama": "TITIK_BRIX",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 177,
+   "nama": "TITIK_PER_SATUAN",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 196,
+   "nama": "titik",
+   "nilai_awal": "1.33659",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 197,
+   "nama": "titik",
+   "nilai_awal": "1.39986",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 198,
+   "nama": "titik",
+   "nilai_awal": "2.5",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 199,
+   "nama": "titik",
+   "nilai_awal": "40.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 214,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 243,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 392,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 393,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 400,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 401,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 412,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 413,
+   "nama": "vi",
+   "nilai_awal": "50",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 427,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  },
+  {
+   "baris": 434,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/RefractometerProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

@@ -14,10 +14,14 @@ use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\PaketAcuan;
+use App\Models\PaketAcuanVersi;
 use App\Models\Penugasan;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -112,6 +116,13 @@ class BatasAntarLabTest extends TestCase
         // 404-nya soal sel, bukan soal lab.
         'api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop' => 'butuh sel & citra crop nyata',
 
+        // Studio tahap C (14 Okt): id gambar = 32 hex sha256 gambar + byte
+        // terenkripsi di disk — sapuan mengisi parameter dengan id angka, jadi
+        // pemiliknya pun 404. `PenjagaOrganisasi::pastikanSatu()` di baris
+        // pertama; lab lain → 404 diuji dengan gambar nyata di
+        // `StudioGambarWorkbookTest::test_izin_gambar_sama_dengan_baca_workbook`.
+        'api/studio/workbook/{workbook}/gambar/{gambar}' => 'butuh gambar nyata (id sha256); isolasi diuji StudioGambarWorkbookTest',
+
         // Rute APLIKASI PELANGGAN (slice F). Batasnya PERUSAHAAN, bukan lab:
         // token internal (admin lab mana pun) sudah ditolak `aplikasi:pelanggan`
         // sebelum organisasi sempat ditanya, jadi sapuan di sini hijau karena
@@ -128,6 +139,12 @@ class BatasAntarLabTest extends TestCase
         // Koreksi & foto pelat nama (1 Okt, §42) — batasnya perusahaan, bukan lab.
         'api/pelanggan/v1/koreksi/{koreksi}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
         'api/pelanggan/v1/foto/{foto}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+
+        // Studio Data Acuan (8 Okt). Sapuan ini mengisi SEMUA `{param}` dengan
+        // id yang sama, jadi `{lembar}/{kunci}/{kolom}` ikut jadi angka dan
+        // pemiliknya sendiri dapat 404 (lembar di luar skema). Isolasinya
+        // disapu `IzinDataAcuanTest` dengan lembar/kolom yang nyata.
+        'api/data-acuan/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat' => 'butuh lembar/kolom skema nyata — disapu IzinDataAcuanTest',
     ];
 
     /**
@@ -165,6 +182,20 @@ class BatasAntarLabTest extends TestCase
             // Keputusan 26 Sep — pelacakan paket & penugasan membaca milik lab.
             'pelacakan paket' => ['api/pelacakan/{order}', 'order'],
             'penugasan' => ['api/penugasan/{penugasan}', 'penugasan'],
+            // Studio Data Acuan (8 Okt) — paket dicari per lab + kode profil,
+            // versi lewat id. `berlaku` tanpa `tanggal` → 422 buat pemiliknya
+            // (bukan 404), jadi kontrol pemiliknya tetap bermakna.
+            'data-acuan paket' => ['api/data-acuan/paket/{kode}', 'kodeAcuan'],
+            'data-acuan berlaku' => ['api/data-acuan/paket/{kode}/berlaku', 'kodeAcuan'],
+            'data-acuan garis waktu' => ['api/data-acuan/paket/{kode}/versi', 'kodeAcuan'],
+            'data-acuan versi' => ['api/data-acuan/versi/{versi}', 'versiAcuan'],
+            'data-acuan banding' => ['api/data-acuan/versi/{versi}/banding/{pembanding}', 'versiAcuan'],
+            // Sidik Studio S1b (13 Okt) — Workbook Alat. Sapuan mengisi SEMUA
+            // parameter dengan id yang sama, jadi lembarnya ditanam dengan id
+            // = id workbook (lihat `punyaLabB`) supaya kontrol pemiliknya 200.
+            'studio workbook' => ['api/studio/workbook/{workbook}', 'workbookStudio'],
+            'studio workbook riwayat' => ['api/studio/workbook/{workbook}/riwayat', 'workbookStudio'],
+            'studio workbook lembar' => ['api/studio/workbook/{workbook}/lembar/{lembarWorkbook}', 'workbookStudio'],
         ];
     }
 
@@ -206,16 +237,21 @@ class BatasAntarLabTest extends TestCase
             'status' => 'aktif',
         ]);
 
+        // Rute Studio (K-50-12) hanya menerima token `studio`: pemilik dan
+        // penyerang masing-masing dijadikan akun Studio lab-nya, supaya yang
+        // diuji batas LAB, bukan gerbang akunnya (403).
+        $sebagai = fn (User $u) => str_starts_with($uri, 'api/studio/') ? $this->sebagaiStudio($u) : $this->actingAs($u);
+
         $this->assertNotSame(
             self::STATUS_TOLAK,
-            $this->actingAs($pemilik)->getJson($jalan)->getStatusCode(),
+            $sebagai($pemilik)->getJson($jalan)->getStatusCode(),
             'Pemiliknya sendiri dapat '.self::STATUS_TOLAK." di `{$jalan}`. Berarti kasus ini "
             .'nggak menguji batas antar-lab sama sekali — 404 buat penyerang bakal keluar '
             .'walau penjaganya dicabut. Betulkan cara sumber dayanya dibikin, bukan '
             .'assertion-nya.',
         );
 
-        $respons = $this->actingAs($penyerang)->getJson($jalan);
+        $respons = $sebagai($penyerang)->getJson($jalan);
 
         $this->assertSame(
             self::STATUS_TOLAK,
@@ -391,6 +427,55 @@ class BatasAntarLabTest extends TestCase
                 'tipe' => Penugasan::TIPE_PERSONAL,
                 'status' => Penugasan::STATUS_AKTIF,
             ])->id,
+            // Paket micrometer lab B + satu versi aktif. Lab A tidak punya
+            // paket, jadi `paket/micrometer` yang bocor akan memulangkan
+            // milik lab B.
+            'versiAcuan' => PaketAcuanVersi::create([
+                'paket_acuan_id' => PaketAcuan::create([
+                    'organization_id' => $labB->id,
+                    'kode_profil' => 'micrometer',
+                    'nama' => 'Micrometer',
+                    'skema_versi' => 1,
+                ])->id,
+                'organization_id' => $labB->id,
+                'jenis' => PaketAcuanVersi::JENIS_DATA,
+                'nomor_versi' => 1,
+                'status' => PaketAcuanVersi::STATUS_AKTIF,
+                'isi' => '{}',
+                'skema_versi' => 1,
+                'berlaku_mulai' => '2024-01-01',
+            ])->id,
+            'kodeAcuan' => 'micrometer',
+            'workbookStudio' => $this->workbookLabB($labB),
         ];
+    }
+
+    /**
+     * Workbook Studio milik lab B + satu lembar ber-id SAMA dengan workbook-nya
+     * (sapuan mengisi `{workbook}` dan `{lembarWorkbook}` dengan id yang sama).
+     * Tabel lembar kosong di awal tiap test (RefreshDatabase), jadi id itu
+     * belum terpakai — di SQLite maupun MySQL.
+     */
+    private function workbookLabB(Organization $labB): int
+    {
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $labB->id,
+            'nama' => 'Workbook lab B',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('c', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+
+        (new WorkbookMasterLembar)->forceFill([
+            'id' => $workbook->id,
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'INPUT DATA',
+            'tata_letak' => [],
+            'sel' => '[]',
+        ])->save();
+
+        return $workbook->id;
     }
 }

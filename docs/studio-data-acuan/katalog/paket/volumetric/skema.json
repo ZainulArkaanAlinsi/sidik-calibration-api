@@ -1,0 +1,892 @@
+{
+ "kode": "volumetric",
+ "nama": "Volumetric Glassware (fixed & graduated)",
+ "kelompok": "Volume",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-volumetric.json"
+ ],
+ "kelas": [
+  "TabelStandarVolumetric"
+ ],
+ "kalkulator": [
+  "VolumetricGlasswareCalculator"
+ ],
+ "profil": [
+  "VolumetricGlasswareProfile",
+  "FixedVolumetricGlasswareProfile",
+  "GraduatedVolumetricGlasswareProfile",
+  "LabuUkurProfile",
+  "PipetVolumeProfile",
+  "PipetUkurProfile",
+  "GelasUkurProfile",
+  "BuretProfile",
+  "PicnometerProfile"
+ ],
+ "formulir": [
+  "0513",
+  "0514"
+ ],
+ "master": [
+  "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+  "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026"
+ ],
+ "generator": [
+  "gen-tabel-standar-volumetric.py"
+ ],
+ "fixture": [],
+ "kata": [
+  "volumetric"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0513_Rev.4 - LEMBAR KERJA VOLUMETRIK TUNGGAL.pdf",
+  "SIDIK-FM-CAL-0514_Rev.4 - LEMBAR KERJA VOLUMETRIK MAJEMUK.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 80,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "FC_Prt_Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14 00:00:00 | Link calculator : https://www.fluke.com/en-us/learn/tools-calculators/pt100-calculator?srsltid=AfmBOoqPe_j-N87lgotXxrFrPdjOLAJ5b_2mxDXIuBjJ08Xi",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15 00:00:00 [=J2+[6]DATABASE!AF2+1]",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0 [=D14-1]",
+    "Lama: | Terbaru :"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "FORM_VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 74,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "INPUT_DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 52,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "PERHITUNGAN_U95pct",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 48,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "SENSOR_PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 12,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14 00:00:00 [='[4]FC Prt Pt100'!J2]",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15 00:00:00 [=J2+[6]DATABASE!AF2+1]",
+    "S/N | : | SH1/20 [=[6]DATABASE!T22] | Tertelusur | : | LK-070-IDN [='[6]FC Prt Pt100'!J4]",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.003969163676529774 [='[4]FC Prt Pt100'!M59] | 0.08 [='[4]FC Prt Pt100'!$B$65]"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 30,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 160,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12 00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12 00:00:00 [=J2+[6]DATABASE!AF3]",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100 [=[6]DATABASE!R22]"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "STANDARD_KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 46,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12 00:00:00 [='STANDAR-YOKOGAWA'!J2]",
+    "Merek | : | Yokogawa [='STANDAR-YOKOGAWA'!D3] | Due Date Kalibrasi | : | 2026-08-12 00:00:00 [='STANDAR-YOKOGAWA'!J3]",
+    "Type | : | CA 150 Handy Cal [='STANDAR-YOKOGAWA'!D4] | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005 [='STANDAR-YOKOGAWA'!D5]",
+    "TABEL KOREKSI TEMPERATURE KALIBRATOR",
+    "Titik Kalibrasi (oC) | Correction oC"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "sheet": "Tabel_Maximum_Internal_Diameter",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 46,
+   "cuplikan_atas": [
+    "Limit of Volumetric Error, ±µL | Maximum Internal Diameter of Tube at theGraduation Line, mm",
+    "0.0001 [=0.1/1000] | 0.56",
+    "0.0002 [=0.2/1000] | 0.78",
+    "0.0003 [=0.3/1000] | 0.96",
+    "0.0004 [=0.4/1000] | 1.1",
+    "0.0005 [=0.5/1000] | 1.2"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 80,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "FC_Prt_Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14 00:00:00 | Link calculator : https://www.fluke.com/en-us/learn/tools-calculators/pt100-calculator?srsltid=AfmBOoqPe_j-N87lgotXxrFrPdjOLAJ5b_2mxDXIuBjJ08Xi",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15 00:00:00 [=J2+[6]DATABASE!AF2+1]",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0 [=D14-1]",
+    "Lama: | Terbaru :"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "FORM_VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 79,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "INPUT_DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 42,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 71,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "PERHITUNGAN_U95pct",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 44,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "SENSOR_PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 12,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14 00:00:00 [='[4]FC Prt Pt100'!J2]",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15 00:00:00 [=J2+[6]DATABASE!AF2+1]",
+    "S/N | : | SH1/20 [=[6]DATABASE!T22] | Tertelusur | : | LK-070-IDN [='[6]FC Prt Pt100'!J4]",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.003969163676529774 [='[4]FC Prt Pt100'!M59] | 0.08 [='[4]FC Prt Pt100'!$B$65]"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 34,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 160,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12 00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12 00:00:00 [=J2+[6]DATABASE!AF3]",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100 [=[6]DATABASE!R22]"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "STANDARD_KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 46,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12 00:00:00 [='STANDAR-YOKOGAWA'!J2]",
+    "Merek | : | Yokogawa [='STANDAR-YOKOGAWA'!D3] | Due Date Kalibrasi | : | 2026-08-12 00:00:00 [='STANDAR-YOKOGAWA'!J3]",
+    "Type | : | CA 150 Handy Cal [='STANDAR-YOKOGAWA'!D4] | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005 [='STANDAR-YOKOGAWA'!D5]",
+    "TABEL KOREKSI TEMPERATURE KALIBRATOR",
+    "Titik Kalibrasi (oC) | Correction oC"
+   ]
+  },
+  {
+   "master": "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026",
+   "sheet": "Tabel_Koefisien_Muai_Bahan",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 16,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-volumetric.json": "bbd1898d93582321a61c731e6d4dcc37853112111a64a2f637ccfb14aaf37316"
+ },
+ "lembar": [
+  {
+   "jalur": "cmc/Gelas Ukur",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 8,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+   ],
+   "contoh": {
+    "nominal_ml": 10.0,
+    "cmc_ml": 0.067
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 16,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/Labu Ukur",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 11,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ],
+   "contoh": {
+    "nominal_ml": 5.0,
+    "cmc_ml": 0.0067
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 22,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/Buret",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "0",
+    "1"
+   ],
+   "contoh": {
+    "nominal_ml": 25.0,
+    "cmc_ml": 0.019
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/Picnometer",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nominal_ml": 25.0,
+    "cmc_ml": 0.018
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/Pipet Volume",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 10,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "contoh": {
+    "nominal_ml": 0.5,
+    "cmc_ml": 0.002
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 20,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/Pipet Ukur",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "cmc_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    }
+   ],
+   "jumlah_baris": 5,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "contoh": {
+    "nominal_ml": 1.0,
+    "cmc_ml": 0.0033
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 10,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "diameter_iso4787",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "batas_galat_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "diameter_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 45,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44"
+   ],
+   "contoh": {
+    "batas_galat_ml": 0.0001,
+    "diameter_maks_mm": 0.56
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 90,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koefisien_muai",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "material",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "gamma_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    }
+   ],
+   "jumlah_baris": 14,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13"
+   ],
+   "contoh": {
+    "material": "Borosilicate glass 3.3",
+    "gamma_per_c": 9.9e-06
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 28,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi_suhu/kalibrator",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "koreksi_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "u95_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 13,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "contoh": {
+    "titik_c": -100.0,
+    "koreksi_c": 0.14000000000000057,
+    "u95_c": 0.04
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 39,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi_suhu/sensor_prt",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "koreksi_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 49,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48"
+   ],
+   "contoh": {
+    "titik_c": -40.0,
+    "koreksi_c": 0.00342684530068027
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 98,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi_suhu/u95",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "termometer_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "sensor_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "termometer_c": 0.72,
+    "sensor_c": 0.08
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "neraca/fixed",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_type",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "serial",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "resolusi_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "stdev_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nama": "Analytical Balance",
+    "merk_type": "Mettler Toledo/XS204",
+    "serial": "1129063525",
+    "u95_g": 0.0011,
+    "resolusi_g": 0.0001,
+    "stdev_g": 0.0
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 18,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "neraca/graduated",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_type",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "serial",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "resolusi_g",
+     "tipe": "kosong",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "stdev_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nama": "Analytical Balance",
+    "merk_type": "Mettler Toledo/XS204",
+    "serial": "1129063525",
+    "u95_g": 0.0011,
+    "resolusi_g": null,
+    "stdev_g": 0.0
+   },
+   "sumber_json": "tabel-standar-volumetric.json",
+   "jumlah_sel_data": 18,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-volumetric.json:_sumber": "Project-PT-Sidik/alat-alat-Pt-Sidik/Volumetric_Glassware_2026 - DIGENERATE, jangan diketik",
+  "tabel-standar-volumetric.json:_generator": "docs/skrip/gen-tabel-standar-volumetric.py"
+ },
+ "cakupan": {
+  "tabel-standar-volumetric.json": {
+   "daun": 371,
+   "tercakup": 371,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!AB22",
+  "PERHITUNGAN!G16",
+  "PERHITUNGAN!H45",
+  "PERHITUNGAN!H57",
+  "PERHITUNGAN!H58",
+  "PERHITUNGAN!H60",
+  "PERHITUNGAN_U95%!C16",
+  "PERHITUNGAN_U95%!H25"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarVolumetric.php",
+  "app/Services/Calibration/VolumetricGlasswareCalculator.php",
+  "app/Services/Calibration/Profiles/VolumetricGlasswareProfile.php",
+  "app/Services/Calibration/Profiles/FixedVolumetricGlasswareProfile.php",
+  "app/Services/Calibration/Profiles/GraduatedVolumetricGlasswareProfile.php",
+  "app/Services/Calibration/Profiles/LabuUkurProfile.php",
+  "app/Services/Calibration/Profiles/PipetVolumeProfile.php",
+  "app/Services/Calibration/Profiles/PipetUkurProfile.php",
+  "app/Services/Calibration/Profiles/GelasUkurProfile.php",
+  "app/Services/Calibration/Profiles/BuretProfile.php",
+  "app/Services/Calibration/Profiles/PicnometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarVolumetric": [
+   "VolumetricGlasswareCalculator",
+   "VolumetricGlasswareProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/KategoriProfilLembarKerjaTest.php",
+  "tests/Feature/VolumetricGlasswareSesiTest.php",
+  "tests/Unit/ProfilDariNamaAlatTest.php",
+  "tests/Unit/TabelStandarVolumetricTest.php",
+  "tests/Unit/VolumetricGlasswareBudgetTest.php",
+  "tests/Unit/VolumetricGlasswareMasterTest.php",
+  "tests/Unit/VolumetricGlasswareMentahTest.php",
+  "tests/Unit/VolumetricGlasswareSesiTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-volumetric.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-volumetric.md"
+ ],
+ "fixture_ada": []
+}

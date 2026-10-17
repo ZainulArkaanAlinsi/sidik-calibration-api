@@ -1,0 +1,358 @@
+{
+ "kode": "viscometer",
+ "nama": "Viscometer",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "ViscometerProfile"
+ ],
+ "formulir": [
+  "0524"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Viscometer",
+  "instrument-analiitk/5__Viscometer_86068360_terbaru_"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "viscometer"
+ ],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0524_Rev.3 - LEMBAR KERJA VISCOMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 191,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 62,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "MPE Visco",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 84,
+   "cuplikan_atas": [
+    "Based on Viscometer Operating Instruction No. M13-167-B0614",
+    "Table D-2 for finding the TK (Torque Constant) value",
+    "No. | MODEL (on body) | MODEL (on screen display) | TK",
+    "1 | DV2TLV | LV | 0.09373",
+    "2 | 2.5DV2TLV | L3 | 0.2343",
+    "3 | 5DV2TLV | L5 | 0.4686"
+   ]
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 89,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 53,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "sheet": "Tabel Pengaruh Temperature",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 84,
+   "cuplikan_atas": [
+    "Temperature | cP | Temperature | cP | Selisih",
+    "0 | 1.7915 | 21 | 0.961512 | -0.02479599999999993",
+    "5 | 1.5193 | 22 | 0.9367160000000001 | -0.023851999999999984",
+    "10 | 1.307 | 23 | 0.9128640000000001 | -0.022955999999999976",
+    "15 | 1.1383 | 24 | 0.8899080000000001 | -0.022108000000000017 | 25 | 0.8678000000000001 | -0.0809120000000001",
+    "20 | 1.002 | 25 | 0.8678000000000001 | -0.021307999999999883 | 29 | 0.786888"
+   ]
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 191,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "MPE Visco",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 84,
+   "cuplikan_atas": [
+    "Based on Viscometer Operating Instruction No. M13-167-B0614",
+    "Table D-2 for finding the TK (Torque Constant) value",
+    "No. | MODEL (on body) | MODEL (on screen display) | TK",
+    "1 | DV2TLV | LV | 0.09373",
+    "2 | 2.5DV2TLV | L3 | 0.2343",
+    "3 | 5DV2TLV | L5 | 0.4686"
+   ]
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 104,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 66,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/5__Viscometer_86068360_terbaru_",
+   "sheet": "Tabel Pengaruh Temperature",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 115,
+   "cuplikan_atas": [
+    "Temperature | cP | Temperature | cP | Selisih",
+    "0 | 1.7915 | 21 | 0.961512 | -0.02479599999999993",
+    "5 | 1.5193 | 22 | 0.9367160000000001 | -0.023851999999999984",
+    "10 | 1.307 | 23 | 0.9128640000000001 | -0.022955999999999976",
+    "15 | 1.1383 | 24 | 0.8899080000000001 | -0.022108000000000017 | 25 | 0.8678000000000001 | -0.0809120000000001",
+    "20 | 1.002 | 25 | 0.8678000000000001 | -0.021307999999999883 | 29 | 0.786888"
+   ]
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/ViscometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/BentukPindaiFotoCocokTabelTest.php",
+  "tests/Feature/PindaiViscometerTest.php",
+  "tests/Feature/ViscometerApiTest.php",
+  "tests/Feature/ViscometerMasterBaruTest.php",
+  "tests/Feature/ViscometerSesiLainTest.php",
+  "tests/Unit/ViscometerBudgetTest.php",
+  "tests/Unit/ViscometerDataLainTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-viscometer.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-viscometer.md"
+ ],
+ "kandidat_konstanta": [
+  {
+   "baris": 112,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0524_Rev.3';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 120,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0517_Rev.3';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 122,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 124,
+   "nama": "SATUAN",
+   "nilai_awal": "'cP';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 138,
+   "nama": "SUHU_ACUAN",
+   "nilai_awal": "25.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 149,
+   "nama": "VI_TEMPERATURE",
+   "nilai_awal": "50;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 152,
+   "nama": "VI_KALIBRATOR",
+   "nilai_awal": "200;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 159,
+   "nama": "PEMBAGI_CI_SUHU",
+   "nilai_awal": "400.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 167,
+   "nama": "PERSEN_MPE",
+   "nilai_awal": "0.01;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 185,
+   "nama": "DESIMAL_SERTIFIKAT",
+   "nilai_awal": "2;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 203,
+   "nama": "SPINDLE_TIDAK_DIPINDAI",
+   "nilai_awal": "true;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 228,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 305,
+   "nama": "TITIK_TANPA_CMC",
+   "nilai_awal": "['3000', '100000'];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 315,
+   "nama": "TABEL_TK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 339,
+   "nama": "TABEL_SMC",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 412,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 434,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 689,
+   "nama": "JANGKAUAN_LARUTAN",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 709,
+   "nama": "KELONGGARAN_PITA",
+   "nilai_awal": "1.2;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 821,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 829,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 830,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  },
+  {
+   "baris": 848,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ViscometerProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

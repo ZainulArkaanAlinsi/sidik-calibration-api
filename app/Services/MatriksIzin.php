@@ -116,6 +116,13 @@ class MatriksIzin
         'kategori.kemampuan.tambah' => ['POST', 'api/categories/{kode}/kemampuan'],
         'teknisi.kelola' => ['GET', 'api/technicians'],
 
+        // --- data acuan (Studio Data Acuan, CR-48). Baca saja di P1; izin
+        // tulis (`sunting`/`impor`/`ajukan`/`sahkan`, `bentuk-lembar.sunting`)
+        // lahir bersama rutenya. Semua role lab boleh membuka — teknisi cuma
+        // melihat versi `aktif`, dan itu disaring di `DataAcuanController`,
+        // bukan di sini.
+        'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
+
         // --- organisasi & pengguna
         'organisasi.lihat' => ['GET', 'api/organization'],
         'organisasi.ubah' => ['PUT', 'api/organization'],
@@ -129,6 +136,25 @@ class MatriksIzin
         'pengingat.kirim' => ['POST', 'api/reminders/jatuh-tempo'],
         'dashboard.lihat' => ['GET', 'api/dashboard'],
         'notifikasi.lihat' => ['GET', 'api/notifications'],
+    ];
+
+    /**
+     * Izin Sidik Studio (K-50-12) — SATU akun, hak penuh, jadi tidak dibaca dari
+     * `role:` seperti `PETA`. Rute-rutenya di grup `studio` (bukan `role:`):
+     * lab mana pun, termasuk super admin, mendapat 403 di sana, jadi izin ini
+     * sengaja TIDAK ada di `PETA` (yang menjawab `/me/permissions` aplikasi lab).
+     * `untukStudio()` hanya menyebut izin yang rutenya benar-benar terdaftar
+     * DAN ber-gerbang `studio`; `MeIzinTest` mengunci kesesuaiannya.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    public const PETA_STUDIO = [
+        'workbook.lihat' => ['GET', 'api/studio/workbook'],
+        'workbook.hitung' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
+        'workbook.impor' => ['POST', 'api/studio/workbook/impor'],
+        // Bukan rute: aturan di server (`ProteksiLembar::bolehMelewati`) — sel
+        // terkunci di lembar terproteksi boleh disunting di simulasi /hitung.
+        'workbook.sel-terkunci.sunting' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
     ];
 
     /**
@@ -156,6 +182,27 @@ class MatriksIzin
             'boleh' => $this->bolehUntuk($user->role),
             'batasan' => $this->batasanUntuk($user->role),
         ];
+    }
+
+    /**
+     * Izin akun Studio (hak penuh). Akun yang memegang token `studio` sudah
+     * lolos `PastikanAkunStudio`; di sini tinggal menyebut apa yang tersedia.
+     *
+     * @return array{role: string, boleh: list<string>, batasan: array<string, string>}
+     */
+    public function untukStudio(): array
+    {
+        $boleh = [];
+
+        foreach (self::PETA_STUDIO as $izin => [$method, $uri]) {
+            $rute = $this->cariRute($method, $uri);
+
+            if ($rute !== null && in_array('studio', $rute->gatherMiddleware(), true)) {
+                $boleh[] = $izin;
+            }
+        }
+
+        return ['role' => 'studio', 'boleh' => $boleh, 'batasan' => []];
     }
 
     /**

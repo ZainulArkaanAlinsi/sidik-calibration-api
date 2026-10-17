@@ -18,7 +18,11 @@ use App\Models\Penugasan;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
+use App\Services\Studio\Workbook\KanonikWorkbook;
+use App\Services\Studio\Workbook\PembacaCsvWorkbook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteTerdaftar;
 use Illuminate\Support\Facades\Route as Router;
@@ -87,6 +91,19 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
         'worksheetScan' => 'pindai',
         'dokumenBacaan' => 'bacaan',
         'penugasan' => 'penugasan',
+        // Studio Data Acuan (CR-48 P1, 8 Okt). `versi`/`pembanding` = id
+        // `paket_acuan_versi`; `lembar`/`kolom` = kode skema profil, bukan
+        // penunjuk baris. Belum ada baris lab 2-nya di `tanamDataLab2()`, jadi
+        // rute `data-acuan/versi/*` DILEWATI sapuan ini — isolasinya disapu
+        // sendiri oleh `IzinDataAcuanTest` (404 untuk versi lab lain).
+        'versi' => 'versi acuan',
+        'pembanding' => 'versi acuan pembanding',
+        'lembar' => 'lembar acuan (kode skema)',
+        'kolom' => 'kolom acuan (kode skema)',
+        // Sidik Studio S1b (13 Okt) — workbook master + lembarnya. Lembar
+        // lab 2 ditanam dengan sel berpenanda, jadi rute sel ikut disapu isi.
+        'workbook' => 'workbook master',
+        'lembarWorkbook' => 'lembar workbook master',
     ];
 
     /**
@@ -146,7 +163,11 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
 
             $disapu++;
 
-            $respons = $this->actingAs($this->adminLab1)->getJson('/'.$uri);
+            // Rute Studio (K-50-12) hanya menerima akun Studio; jadikan admin lab 1
+            // akun itu supaya yang disapu isolasi datanya, bukan gerbang akunnya.
+            $respons = str_starts_with($uri, 'api/studio/')
+                ? $this->sebagaiStudio($this->adminLab1)->getJson('/'.$uri)
+                : $this->actingAs($this->adminLab1)->getJson('/'.$uri);
             $isi = (string) $respons->getContent();
 
             if ($respons->getStatusCode() !== 200) {
@@ -217,6 +238,10 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'orderItem', 'penugasanItem', 'formulaVersion',
             // Modul pelanggan sisi lab (M1-05) punya test isolasinya sendiri.
             'pengajuan', 'undangan',
+            // Studio tahap C (14 Okt): id gambar = sha256 isi gambar, diraih
+            // lewat induk `{workbook}` (PenjagaOrganisasi di baris pertama);
+            // lab lain → 404 diuji dengan gambar nyata di StudioGambarWorkbookTest.
+            'gambar',
         ];
 
         foreach ($bukanPemilikData as $nama) {
@@ -399,7 +424,27 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'status' => Penugasan::STATUS_AKTIF,
         ]);
 
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $this->lab2->id,
+            'nama' => 'BOCOR-WORKBOOK-LAB2',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('b', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+        $lembarWorkbook = WorkbookMasterLembar::create([
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'BOCOR-LEMBAR-LAB2',
+            'tata_letak' => [],
+            'jumlah_baris' => 1,
+            'jumlah_sel' => 1,
+            'sel' => KanonikWorkbook::sel([PembacaCsvWorkbook::sel(1, 1, 'BOCOR-SEL-WORKBOOK-LAB2')]),
+        ]);
+
         $this->idLab2 = [
+            'workbook' => $workbook->id,
+            'lembarWorkbook' => $lembarWorkbook->id,
             'technician' => $teknisiLab2->id,
             'order' => $paket->id,
             'calibrationMethod' => $metode->id,
@@ -436,6 +481,9 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'BOCOR-BERKAS-LAB2',
             'BOCOR-BACAAN-LAB2',
             'BOCOR-PENUGASAN-LAB2',
+            'BOCOR-WORKBOOK-LAB2',
+            'BOCOR-LEMBAR-LAB2',
+            'BOCOR-SEL-WORKBOOK-LAB2',
         ];
     }
 }

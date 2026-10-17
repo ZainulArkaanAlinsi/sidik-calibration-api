@@ -1,0 +1,570 @@
+{
+ "kode": "hydrometer",
+ "nama": "Hydrometer",
+ "kelompok": "Massa jenis",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [
+  "TabelStandarHydrometer"
+ ],
+ "kalkulator": [
+  "HydrometerCalculator"
+ ],
+ "profil": [
+  "HydrometerProfile"
+ ],
+ "formulir": [
+  "0533"
+ ],
+ "master": [
+  "Hydrometer/Hydrometer_0.600-0.650_gmL",
+  "Hydrometer/Hydrometer_1.800-2.000_gmL"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "hydrometer"
+ ],
+ "catatan_master": "Kelas `TabelStandarHydrometer` ada, tetapi tanpa JSON tabel sendiri; pita CMC-nya dibaca dari kemampuan-kalibrasi.json.",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0533_Rev.2 - LEMBAR KERJA HYDROMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 77,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "FORM_VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "INPUT_DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 42,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "NILAI_U95pct",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 184,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 94,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "PERHITUNGAN_2",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 32,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "sheet": "Tabel_Surface_Tension",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": [
+    "toC",
+    "0.01 | 75.64 | 0.38 | 0.01",
+    "5 | 74.95 | 0.37 | 0",
+    "10 | 74.23 | 0.37 | -0.01",
+    "15 | 73.5 | 0.37 | -0.01",
+    "20 | 72.75 | 0.36 | -0.01"
+   ]
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 77,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "FORM_VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "INPUT_DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 42,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "NILAI_U95pct",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 184,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 90,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "PERHITUNGAN_2",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 32,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Hydrometer/Hydrometer_1.800-2.000_gmL",
+   "sheet": "Tabel_Surface_Tension",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": [
+    "toC",
+    "0.01 | 75.64 | 0.38 | 0.01",
+    "5 | 74.95 | 0.37 | 0",
+    "10 | 74.23 | 0.37 | -0.01",
+    "15 | 73.5 | 0.37 | -0.01",
+    "20 | 72.75 | 0.36 | -0.01"
+   ]
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [
+  "DATABASE!F31",
+  "DATABASE!V20:W21",
+  "DATABASE!V29:W31",
+  "NILAI U95%!C55",
+  "NILAI U95%!E39",
+  "NILAI U95%!L79",
+  "NILAI U95%!N43",
+  "NILAI U95%!Q49",
+  "PERHITUNGAN!AD29",
+  "PERHITUNGAN!AD39",
+  "PERHITUNGAN!AE39",
+  "PERHITUNGAN!AF84",
+  "PERHITUNGAN!AF85",
+  "PERHITUNGAN!G26",
+  "PERHITUNGAN!G56",
+  "PERHITUNGAN!J78",
+  "PERHITUNGAN!J83",
+  "PERHITUNGAN!J86",
+  "PERHITUNGAN!J87",
+  "PERHITUNGAN!J89",
+  "PERHITUNGAN!J90",
+  "PERHITUNGAN!J91",
+  "PERHITUNGAN!L53",
+  "PERHITUNGAN!P15",
+  "SERTIFIKAT!E17",
+  "SERTIFIKAT!O17"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarHydrometer.php",
+  "app/Services/Calibration/HydrometerCalculator.php",
+  "app/Services/Calibration/Profiles/HydrometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarHydrometer": [
+   "CalibrationController",
+   "HydrometerCalculator",
+   "HydrometerMentah",
+   "HydrometerProfile",
+   "VolumetricGlasswareCalculator"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/CetakLembarKerjaOcrTest.php",
+  "tests/Feature/HydrometerSesiTest.php",
+  "tests/Unit/HydrometerGerbangTest.php",
+  "tests/Unit/HydrometerMasterTest.php",
+  "tests/Unit/VolumetricGlasswareMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-hydrometer.md"
+ ],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 31,
+   "nama": "SURFACE_TENSION",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 46,
+   "nama": "FAKTOR_TEGANGAN_KE_DYNE",
+   "nilai_awal": "['dyne/cm' => 1.0, 'mN/m' => 1.0, 'N/m' => 1000.0];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 54,
+   "nama": "FAKTOR_DENSITAS_KE_G_PER_ML",
+   "nilai_awal": "['g/ml' => 1.0, 'kg/m3' => 0.001];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 63,
+   "nama": "SUHU_ACUAN_SAH",
+   "nilai_awal": "[15.0, 20.0, 27.5];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 66,
+   "nama": "PENGULANGAN",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 69,
+   "nama": "UKUR_DIAMETER_STEM",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 76,
+   "nama": "PHI",
+   "nilai_awal": "3.14;                 // PERHITUNGAN!J89 — lab memakai 3,14, bukan π",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 78,
+   "nama": "GRAVITASI_CM_S2",
+   "nilai_awal": "980.665;  // PERHITUNGAN!J90 = 9.80665 * 100",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 80,
+   "nama": "ALPHA",
+   "nilai_awal": "1.0e-5;             // PERHITUNGAN!J83 — muai volumetrik bahan hydrometer",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 82,
+   "nama": "KAPPA",
+   "nilai_awal": "2.5e-11;            // PERHITUNGAN!J86 — isothermal compressibility (1/Pa)",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 84,
+   "nama": "DENSITAS_BEBAN_STANDAR",
+   "nilai_awal": "8.0;   // PERHITUNGAN!AF85 — ρ beban standar timbangan",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 86,
+   "nama": "DENSITAS_SINKER",
+   "nilai_awal": "8.0;          // PERHITUNGAN!J91 — ρ beban tambahan",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 88,
+   "nama": "ERR_TIMBANG",
+   "nilai_awal": "0.0002;           // PERHITUNGAN!AF84 — kesalahan indikasi alat timbang",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 90,
+   "nama": "ERR_DENSITAS",
+   "nilai_awal": "0.0002;          // PERHITUNGAN!J87 — ketidakstabilan densitas acuan",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 92,
+   "nama": "TEKANAN_ACUAN_HPA",
+   "nilai_awal": "1013.25;    // PERHITUNGAN!AD29 = 101.325 kPa * 10",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 100,
+   "nama": "SUHU_ACUAN_FAKTOR_BAWAAN",
+   "nilai_awal": "20.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 109,
+   "nama": "POLINOM_DENSITAS_AIR",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 126,
+   "nama": "U95_TIMBANGAN_LOP",
+   "nilai_awal": "0.00074;    // E29, g",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 128,
+   "nama": "K_TIMBANGAN_LOP",
+   "nilai_awal": "2.0;          // E30",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 130,
+   "nama": "STDEV_TIMBANG",
+   "nilai_awal": "0.0001;         // E34, g",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 132,
+   "nama": "N_TIMBANG",
+   "nilai_awal": "10;                 // E35",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 134,
+   "nama": "U95_THERMOMETER",
+   "nilai_awal": "0.72;         // N29, °C",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 136,
+   "nama": "K_THERMOMETER",
+   "nilai_awal": "2.0;            // N30",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 138,
+   "nama": "U95_SENSOR",
+   "nilai_awal": "0.06;              // N34, °C",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 140,
+   "nama": "K_SENSOR",
+   "nilai_awal": "2.0;                 // N35",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 143,
+   "nama": "U_DENSITAS_ACUAN",
+   "nilai_awal": "5.0e-5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 146,
+   "nama": "U_GRAVITASI",
+   "nilai_awal": "0.0005;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 152,
+   "nama": "U95_TH_SUHU",
+   "nilai_awal": "1.2;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 154,
+   "nama": "U95_TH_RH",
+   "nilai_awal": "3.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/TabelStandarHydrometer.php"
+  },
+  {
+   "baris": 96,
+   "nama": "SUHU_ACUAN_BUDGET",
+   "nilai_awal": "20.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/HydrometerCalculator.php"
+  },
+  {
+   "baris": 99,
+   "nama": "VI_NORMAL",
+   "nilai_awal": "60.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/HydrometerCalculator.php"
+  },
+  {
+   "baris": 101,
+   "nama": "VI_RECTANGULAR",
+   "nilai_awal": "50.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/HydrometerCalculator.php"
+  },
+  {
+   "baris": 63,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0525_Rev.3';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 66,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0533_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 69,
+   "nama": "KODE_SERTIFIKAT",
+   "nilai_awal": "'SIDIK-FM-CAL-2403_Rev.0';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 72,
+   "nama": "SATUAN",
+   "nilai_awal": "'g/ml';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 94,
+   "nama": "CMC_MASTER",
+   "nilai_awal": "0.0007;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 113,
+   "nama": "TITIK_CI_STEM_MASTER_RUSAK",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 137,
+   "nama": "TITIK_TANPA_PEMBANDING_MASTER",
+   "nilai_awal": "4;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 140,
+   "nama": "PENGULANGAN",
+   "nilai_awal": "TabelStandarHydrometer::PENGULANGAN;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 143,
+   "nama": "TITIK_AWAL",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 145,
+   "nama": "TITIK_MAKS",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 163,
+   "nama": "RASIO_RENTANG_MINIMUM",
+   "nilai_awal": "0.5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 173,
+   "nama": "KOREKSI_MAKS_DARI_LEBAR",
+   "nilai_awal": "0.5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 219,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 239,
+   "nama": "NERACA_NAMA",
+   "nilai_awal": "'Analytical Balance Fujitsu FS-AR210';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 241,
+   "nama": "NERACA_SERI",
+   "nilai_awal": "'INS-N1600555';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 244,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "['TH-1', 'TH-2', 'TH-3', 'TH-4', 'TH-5', 'TH-6', 'TH-7'];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 1060,
+   "nama": "ci",
+   "nilai_awal": "0.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  },
+  {
+   "baris": 1084,
+   "nama": "ci",
+   "nilai_awal": "0.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/HydrometerProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

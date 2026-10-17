@@ -1669,6 +1669,40 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Skema data acuan lapis 1 alat ini untuk Studio Data Acuan (ADR-03):
+     * STRUKTUR lembarnya dideklarasikan kode, ISInya data berversi. `null` =
+     * alat ini belum dipindah ke Studio dan tabelnya masih dibaca dari JSON
+     * apa adanya.
+     *
+     * Struktur ikut menentukan cara rumus membacanya, jadi dia lapis 2:
+     * menambah lembar/kolom = PR + `skema_versi` naik, bukan suntingan Studio.
+     *
+     * Bentuk: `skema_versi` (int), `sumber_json` (nama berkas di
+     * `database/data/`), `lembar` (list). Tiap lembar: `kode`, `label`,
+     * `jalur` (jalur di JSON, dipisah `/`, `*` = tiap elemen list induk),
+     * `jenis`, `kunci`, `kolom`, `boleh_tambah_baris`. Arti `jenis`:
+     *
+     *  - `objek`  — satu objek berkolom tetap; tiap kolom = satu kunci objek.
+     *               `kunci` null.
+     *  - `baris`  — objek peta `kunci baris => nilai`; `kunci` menamai kolom
+     *               yang memegang kunci objek, kolom lain memegang nilainya.
+     *  - `daftar` — list objek; tiap kolom = satu kunci objek baris. `kunci`
+     *               menamai kolom pengenal baris, atau null kalau barisnya
+     *               dikenali dari POSISI (urutan list itu data).
+     *
+     * Tiap kolom: `kode`, `label`, `tipe`, `satuan`, `asal` (alamat sel master
+     * bila tercatat di kode/generator, selain itu null — tidak dikarang), dan
+     * `perlu_konfirmasi` (satuan atau maknanya belum bisa dipastikan dari kode
+     * dan wajib dikonfirmasi Lab sebelum disunting lewat Studio).
+     *
+     * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}|null
+     */
+    public function skemaAcuan(): ?array
+    {
+        return null;
+    }
+
+    /**
      * Berapa desimal yang dipakai NYETAK angka hasil di sertifikat, kalau alat
      * ini emang beda dari aturan umum. `null` = ikut aturan umum
      * (`Organization::desimalSertifikat`, yaitu diturunkan dari resolusi alat).

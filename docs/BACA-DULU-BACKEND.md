@@ -51,6 +51,54 @@ Biar jelas mana yang dibaca buat apa:
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
 | [`pelanggan/`](pelanggan/) | Paket rancangan **modul pelanggan** (00–08 + ADR-001): PRD, SRS ber-REQ, SDD, alur UI, task M0–M8, risk register, runbook rilis | ✅ ya (rancangan, BUKAN status) — mendarat 16 Sep 2026, versi 0.1 **draf**, nol barisnya sudah jadi kode kecuali M0-05 |
+| [`studio-data-acuan/`](studio-data-acuan/) | Paket rancangan **Studio Data Acuan** (CR-48, §48 `permintaan-user-7.md`): versi data acuan lapis 1 di server, simulasi, pengesahan | ✅ ya (rancangan, BUKAN status) — statusnya di bagian 9 Okt 2026 di bawah. Sebagian diganti §49, daftarnya di `sidik-studio/00-BACA-DULU.md` §5 |
+| [`sidik-studio/`](sidik-studio/) | Paket rancangan **Sidik Studio** (§49 `permintaan-user-7.md`): aplikasi terpisah Windows + tablet, Kelola Data 56 tabel, Data Acuan tulis, Lembar Hitung (rumus di Studio, PhpSpreadsheet, bayangan → paritas → aktif), PRD/SRS/SDD/UI/task/matriks paritas per alat | ✅ ya (rancangan, BUKAN status) — mulai dari `00-BACA-DULU.md`; bagian bertanda ⏳ menunggu spike S0a–S0c |
+
+---
+
+## 9 Okt 2026 — Studio Data Acuan P1: fondasi server (CR-48), branch `feat/studio-data-acuan`
+
+**Belum di `main`.** Status per 9 Okt: B1–B4 selesai dan dua suite penuh hijau di worktree
+`feat/studio-data-acuan`. SQLite: 5410 test, 5408 lulus, 2 dilewati, 459.725 asersi. MySQL: 5410/5410
+lulus, 459.731 asersi, 286,5 menit. Rinciannya di `permintaan-user-7.md` §48. Arah Studio berubah
+9 Okt menjadi aplikasi terpisah yang juga menyunting rumus (§49, `AGENTS.md` §Olah data butir 1).
+Fondasi P1 di bawah tetap dipakai.
+
+Yang sudah ada di branch:
+
+- **Tabel**: `paket_acuan`, `paket_acuan_versi`, `paket_acuan_suntingan`, dan kolom stempel
+  `uncertainty_calculations.paket_acuan_versi_id` (nullable, `nullOnDelete`, pola
+  `formula_version_id`). Isi versi disimpan sebagai `longText` JSON kanonik (`App\Support\JsonKanonik`)
+  beserta `isi_sha256`, bukan kolom `json`, karena MySQL menormalkan isi kolom `json` dan hash-nya
+  bisa berubah.
+- **Sakelar `DATA_ACUAN_SUMBER=json|db`**, bawaan `json` di config, `render.yaml`, dan kedua phpunit.
+  Selama `json`, perilaku produksi tidak berubah dan stempel ditulis `null`.
+- **Data dari DB hanya dibaca di jalur yang menstempel.** `TabelStandarMicrometer` membaca versi DB
+  hanya di dalam lingkup yang ditetapkan `App\Services\Acuan\PenentuVersiAcuan`. Di luar lingkup
+  tetap JSON. Alasannya: Dial Indicator memakai balok ukur Micrometer, dan versi baru Micrometer
+  tidak boleh mengubah angka Dial Indicator tanpa stempel.
+- **Jalur tulis yang menstempel**: store, update, dan `kalibrasi:hitung-ulang`. Preview memakai
+  lingkup yang sama tanpa menyimpan. Validator memberi `versi_acuan_ditarik` (PERINGATAN) dan
+  `versi_acuan_tanpa_stempel` (INFO).
+- **`php artisan acuan:impor-awal {profil?}`**: membangun versi 1 dari JSON di repo. Idempoten;
+  sha256 beda dari yang tersimpan berakhir dengan exit 1. Versi 1 Micrometer terbukti setara
+  workbook master (8 Okt 2026).
+- **API baca** `GET /api/data-acuan/*` (tujuh rute, izin `data-acuan.lihat`). Teknisi hanya
+  melihat versi aktif; organisasi lain 404. Kontrak: `kontrak-api.md` §15.
+- **Field baru**: `versi_acuan` + ETag/304 di `lembar-kerja`, `paket_acuan_versi` di perhitungan,
+  validasi, dan snapshot sertifikat (`VERSI` snapshot tetap 1, kunci additive).
+
+Yang **belum**: izin dan rute tulis (P2), simulasi (P2), unggah workbook (P5), versi bentuk lembar
+(P6). Hanya Micrometer yang punya `skemaAcuan()`.
+
+**Snapshot sertifikat hanya memuat `paket_acuan_versi` bila hasilnya berstempel.** Kunci yang
+tidak ada berarti null. Kalau kunci null selalu ditulis, `sertifikat:bangun-ulang` (tanpa
+`--dry-run`) akan menilai setiap snapshot lama berubah lalu menulis ulang snapshot, `validasi`, dan
+PDF semua sertifikat terbit. Di respons perhitungan dan validasi API, kuncinya tetap selalu ada.
+
+**`kalibrasi:hitung-ulang` dengan `DATA_ACUAN_SUMBER=json`** pada sesi yang hasilnya sudah
+berstempel akan melepas stempel itu, karena angkanya dihitung dari JSON. Perintah mencetak
+`PERINGATAN` yang menyebut versi yang dilepas, tanpa meminta konfirmasi.
 
 ---
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DataAcuanController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\DokumenGenerikController;
 use App\Http\Controllers\Api\EquipmentController;
@@ -30,6 +31,10 @@ use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
+use App\Http\Controllers\Api\Studio\HitungWorkbookController;
+use App\Http\Controllers\Api\Studio\ImporWorkbookController;
+use App\Http\Controllers\Api\Studio\StudioSesiController;
+use App\Http\Controllers\Api\Studio\WorkbookController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\TelusuriSertifikatController;
 use App\Http\Controllers\Api\UserController;
@@ -287,6 +292,56 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 
 /*
 |--------------------------------------------------------------------------
+| Sidik Studio — SATU akun (K-50-12, 15 Okt 2026)
+|--------------------------------------------------------------------------
+|
+| Studio dipakai satu orang (pemilik): `STUDIO_AKUN`. Login lewat `POST /login`
+| dengan `X-Klien: sidik-studio` menerbitkan token ber-ability `studio` hanya
+| untuk akun itu; gerbang `studio` (`PastikanAkunStudio`) menuntut token itu DAN
+| email == `STUDIO_AKUN` di tiap request. Hak penuh: semua izin `workbook.*`,
+| sel terkunci boleh disunting. Karena itu rute-rute ini TIDAK memakai
+| `aplikasi:internal`/`role:` — token lab (`internal`, wildcard, sesi panel) dan
+| akun lab lain (termasuk super admin) dijawab 403, dan sebaliknya token `studio`
+| ditolak `aplikasi:internal` di semua rute lab. Klien Studio memakai
+| `/studio/me` dan `/studio/logout` sebagai ganti `/me`, `/me/permissions`,
+| dan `/logout`.
+|
+| Workbook lab lain tetap 404 (`PenjagaOrganisasi`): hak penuh bukan lintas lab.
+| Dijaga `StudioSatuAkunTest`, `StudioImporApiTest`, dan sapuan rute.
+|
+*/
+Route::middleware(['auth:sanctum', 'studio'])->prefix('studio')->group(function () {
+    Route::get('/me', [StudioSesiController::class, 'me']);
+    Route::post('/logout', [StudioSesiController::class, 'keluar']);
+
+    // Unggah master (Render tanpa shell). Didaftarkan SEBELUM `/{workbook}`
+    // supaya "impor" tidak terbaca sebagai id. Dua ember jatah: `studio-impor`
+    // (per menit) — berkasnya berat, jadi jauh lebih kecil dari baca.
+    Route::post('/workbook/impor', ImporWorkbookController::class)
+        ->middleware('throttle:studio-impor');
+
+    // "Workbook Alat", mode Asli Excel (izin `workbook.lihat`). Workbook lab
+    // lain dan lembar yang bukan milik workbook di URL → 404 di controller.
+    // Parameter lembar sengaja `{lembarWorkbook}`, bukan `{lembar}`: nama itu
+    // sudah dipakai data-acuan untuk KODE skema (string), dan sapuan rute
+    // mengisi parameter per nama.
+    Route::prefix('workbook')->middleware('throttle:studio-baca')->group(function () {
+        Route::get('/', [WorkbookController::class, 'index']);
+        Route::get('/{workbook}', [WorkbookController::class, 'show']);
+        // K-49-13: semua versi (aktif + riwayat) di jenis workbook ini — baca saja.
+        Route::get('/{workbook}/riwayat', [WorkbookController::class, 'riwayat']);
+        Route::get('/{workbook}/lembar/{lembarWorkbook}', [WorkbookController::class, 'lembar']);
+        // Tahap C: byte gambar lembar (PNG/JPEG; lain → 415).
+        Route::get('/{workbook}/gambar/{gambar}', [WorkbookController::class, 'gambar']);
+    });
+
+    // Tahap C: hitung ulang "bagaimana jika" (stateless; tidak menulis data lab).
+    Route::post('/workbook/{workbook}/hitung', HitungWorkbookController::class)
+        ->middleware('throttle:studio-hitung');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
 |
@@ -410,6 +465,21 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
+
+    // Studio Data Acuan (CR-48) — BACA saja di P1 (izin `data-acuan.lihat`).
+    // Semua role lab; teknisi cuma melihat versi `aktif` (draf, banding, dan
+    // riwayat sel → 404), dan itu disaring di controller, bukan dengan
+    // menyembunyikan tombol. Paket dicari per organisasi pemanggil + kode
+    // profil; versi lab lain → 404. Rute tulis lahir di P2 bersama izinnya.
+    Route::prefix('data-acuan')->group(function () {
+        Route::get('/paket', [DataAcuanController::class, 'daftarPaket']);
+        Route::get('/paket/{kode}', [DataAcuanController::class, 'paket']);
+        Route::get('/paket/{kode}/berlaku', [DataAcuanController::class, 'berlaku']);
+        Route::get('/paket/{kode}/versi', [DataAcuanController::class, 'garisWaktu']);
+        Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
+        Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
+        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+    });
 
     // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
     // Semua role boleh; teknisi cuma dapat pekerjaannya sendiri (di service).

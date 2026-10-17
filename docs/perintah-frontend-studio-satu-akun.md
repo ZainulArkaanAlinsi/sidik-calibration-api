@@ -1,7 +1,10 @@
 # K-50-12 — Studio satu akun (catatan desain, untuk dikerjakan saat merge Studio)
 
-Status: HANYA rancangan. Kode Studio ada di `feat/studio-s1b`; berkas ini tidak
-menggabungkannya. Dikerjakan pada slice G7 (merge Studio).
+Status: DIIMPLEMENTASI (17 Okt 2026, merge Studio di `release/revisi-1510`). Kontrak final:
+`docs/kontrak-api.md` bagian "Satu akun Studio, login, dan unggah master". Keputusan terbuka di bawah
+terjawab: login = `POST /login` biasa dengan header `X-Klien: sidik-studio` (bukan perintah artisan);
+token ability `studio`; klien memakai `/studio/me` & `/studio/logout`; unggah master `POST /studio/workbook/impor`
+(field `berkas`, `alasan`, `sandi`, `gantikan`).
 
 ## Keputusan pemilik (15 Okt 2026)
 Studio dipakai satu orang (pemilik). Tidak ada peran/tim Studio: satu akun, hak penuh,

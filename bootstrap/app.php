@@ -3,7 +3,9 @@
 use App\Http\Middleware\CatatAksesLintasOrganisasi;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
+use App\Http\Middleware\IdentitasKlien;
 use App\Http\Middleware\KonteksPerusahaan;
+use App\Http\Middleware\PastikanAkunStudio;
 use App\Http\Middleware\PastikanAplikasi;
 use App\Http\Middleware\PelangganAktif;
 use App\Http\Middleware\PeranAnggota;
@@ -54,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
             'fitur.pelanggan' => FiturPelanggan::class,
             'aplikasi' => PastikanAplikasi::class,
+            'studio' => PastikanAkunStudio::class,
             'pelanggan.aktif' => PelangganAktif::class,
             'perusahaan' => KonteksPerusahaan::class,
             'peran' => PeranAnggota::class,
@@ -65,6 +68,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // sudah login — biayanya nol untuk request yang berhasil — dan TIDAK
         // pernah mengubah respons (404 tidak dinaikkan jadi 403).
         $middleware->appendToGroup('api', CatatAksesLintasOrganisasi::class);
+
+        // ST-T-013: `X-Klien`/`X-Versi-Klien` ke konteks log, dan 426
+        // `klien_kedaluwarsa` untuk Sidik Studio di bawah versi minimum.
+        // Request tanpa header tidak tersentuh. Lihat docblock kelasnya.
+        $middleware->appendToGroup('api', IdentitasKlien::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

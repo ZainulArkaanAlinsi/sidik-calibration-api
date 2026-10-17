@@ -1,0 +1,502 @@
+{
+ "kode": "waktu",
+ "nama": "Timer & Stopwatch",
+ "kelompok": "Waktu",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-waktu.json"
+ ],
+ "kelas": [
+  "TabelStandarWaktu"
+ ],
+ "kalkulator": [
+  "WaktuCalculator"
+ ],
+ "profil": [
+  "TimerStopwatchProfile"
+ ],
+ "formulir": [
+  "0512"
+ ],
+ "master": [
+  "Waktu_/Master_Olda_Timer_dan_Stopwatch"
+ ],
+ "generator": [
+  "gen-tabel-standar-waktu-frekuensi.py"
+ ],
+ "fixture": [
+  "sesi-master-waktu-frekuensi.json"
+ ],
+ "kata": [
+  "waktu-frekuensi"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0512_Rev.4 - LEMBAR KERJA STOPWATCH & TIMER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "Drift Stopwatch",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 29,
+   "cuplikan_atas": [
+    "Nama Alat: | Stopwatch",
+    "Merk       : | CASIO",
+    "Type       : | Digital",
+    "SN          : | SW-1",
+    "Res        : | 0.001 | s",
+    "Jumlah hari | 360 | hari"
+   ]
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "Human Reaction",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 23,
+   "cuplikan_atas": [
+    "Perhitungan human reaction dapat digunakan untuk pengukuran metoda perbandingan langsung poin 2,3 dan metode totalize",
+    "Pengambilan data human rection disesuaikan dengan metode yang digunakan",
+    "Nominal | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10",
+    "(detik) | s | s | s | s | s | s | s | s | s | s",
+    "Std | 10 | NR | 10.257 | 10.274 | 10.209 | 10.042 | 10.328 | 10.286 | 10.27 | 10.258 | 10.291 | 10.294",
+    "UUT | 10.166 | 10.26 | 10.19 | 10.06 | 10.31 | 10.28 | 10.26 | 10.24 | 10.28 | 10.29"
+   ]
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 300,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "Konsep",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 113,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 274,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "SERTIFIKAT KALIBRATOR",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 26,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Timer_dan_Stopwatch",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-waktu.json": "4bc3981f8fa90896ce779560af61a83fbf035d8b91509bfa4b7dd0203be7adfd"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nama": "Stopwatch",
+    "merk": "CASIO",
+    "resolusi": 0.001
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "sertifikat",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_detik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_ms",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_detik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "contoh": {
+    "nominal_detik": 5.0,
+    "koreksi_ms": 30.0,
+    "u95_detik": 0.14
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 39,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "hari_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang_maks_master_ms",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang_maks_lengkap_ms",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "hari_master": 360,
+    "rentang_maks_master_ms": 298.0,
+    "rentang_maks_lengkap_ms": 322.0
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift/snapshot",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "kolom",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "lab",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "kolom": "F",
+    "tanggal": "2022-12-22",
+    "lab": "PT. Indocal"
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 12,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift/titik",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_detik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_ms.F",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_ms.G",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_ms.H",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_ms.I",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang_ms",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "dihitung_master",
+     "tipe": "boolean",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "contoh": {
+    "nominal_detik": 5.0,
+    "rentang_ms": 126.0,
+    "dihitung_master": false
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 91,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "human_reaction",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "rata_maks_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rata_maks_lengkap",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stdev_maks",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "rata_maks_master": 0.0191,
+    "rata_maks_lengkap": 0.0351,
+    "stdev_maks": 0.0385009379
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "human_reaction/operator",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "inisial",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nominal_detik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "beda",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rata_rata",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stdev",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "inisial": "NR",
+    "nominal_detik": 10.0,
+    "beda": [
+     0.091,
+     0.014,
+     0.019,
+     -0.018,
+     0.018,
+     0.006,
+     0.01,
+     0.018,
+     0.011,
+     0.004
+    ],
+    "rata_rata": 0.0173,
+    "stdev": 0.0280675772
+   },
+   "sumber_json": "tabel-standar-waktu.json",
+   "jumlah_sel_data": 20,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-waktu.json:_sumber": "Master Olda Timer dan Stopwatch.xlsm (sheet SERTIFIKAT KALIBRATOR, Drift Stopwatch, Human Reaction).",
+  "tabel-standar-waktu.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu-frekuensi.py"
+ },
+ "cakupan": {
+  "tabel-standar-waktu.json": {
+   "daun": 173,
+   "tercakup": 173,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarWaktu.php",
+  "app/Services/Calibration/WaktuCalculator.php",
+  "app/Services/Calibration/Profiles/TimerStopwatchProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarWaktu": [
+   "TabelStandarPutaran",
+   "TimerStopwatchProfile",
+   "WaktuCalculator"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/BudgetTerlihatDanGerbangCmcTest.php",
+  "tests/Feature/NominalDiLuarSertifikatDitolakTest.php",
+  "tests/Unit/WaktuFrekuensiMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-waktu-frekuensi.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-waktu-frekuensi.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-waktu-frekuensi.json"
+ ]
+}

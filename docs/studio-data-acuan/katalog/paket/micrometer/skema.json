@@ -1,0 +1,891 @@
+{
+ "kode": "micrometer",
+ "nama": "Micrometer 0–100 mm (4 varian)",
+ "kelompok": "Panjang",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-micrometer.json"
+ ],
+ "kelas": [
+  "TabelStandarMicrometer"
+ ],
+ "kalkulator": [
+  "MicrometerCalculator"
+ ],
+ "profil": [
+  "MicrometerProfile"
+ ],
+ "formulir": [
+  "0522.A",
+  "0522.B",
+  "0522.C",
+  "0522.D"
+ ],
+ "master": [
+  "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+  "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+  "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+  "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm"
+ ],
+ "generator": [
+  "gen-tabel-standar-micrometer.py"
+ ],
+ "fixture": [
+  "sesi-master-micrometer.json"
+ ],
+ "kata": [
+  "micrometer"
+ ],
+ "pilot": true,
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0522.A_Rev.1 - LEMBAR KERJA MICROMETER (0-25).pdf",
+  "SIDIK-FM-CAL-0522.B_Rev.1 - LEMBAR KERJA MICROMETER (25-50).pdf",
+  "SIDIK-FM-CAL-0522.C_Rev.1 - LEMBAR KERJA MICROMETER (50-75).pdf",
+  "SIDIK-FM-CAL-0522.D_Rev.1 - LEMBAR KERJA MICROMETER (75-100).pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 176,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 299,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 286,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2024-01-24T00:00:00",
+    "No Seri | 160006 | LK-410-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 176,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 299,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 286,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2024-01-24T00:00:00",
+    "No Seri | 160006 | LK-410-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 176,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 299,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 286,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2021-01-26T00:00:00",
+    "No Seri | 160006 | LK-102-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 176,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 299,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 286,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2024-01-24T00:00:00",
+    "No Seri | 160006 | LK-410-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-micrometer.json": "7e3a5455d3cc10e77cec2b87129613ab5ff9d08d533e428c280f04e9807d6845"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "traceability",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nama": "Gauge Block Standard",
+    "merk_tipe": "Metrology/GB-9122-0",
+    "seri": "160006"
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "balok_ukur",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.1",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.7",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.8",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.9",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "21.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "76.2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "101.6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "40.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "50.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "60.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "70.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "75.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "80.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "90.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "100.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "200.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 32,
+   "contoh": {
+    "1.0": 1.00011,
+    "1.1": 1.09989,
+    "1.2": 1.20012
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 32,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "ketidakpastian_balok_um",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "lainnya",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "lainnya": 0.0
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "ketidakpastian_balok_um/aturan",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "maks",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "maks": 10.0,
+    "u": 0.12
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "ketidakpastian_balok_um/persis",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "101.6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "101.6": 0.26,
+    "200": 0.73
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "kode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kode_dokumen",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "judul_rentang",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kapasitas_min_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "kapasitas_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "balok_pra_evaluasi_mm",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "kode": "A",
+    "label": "CMC 0-25mm",
+    "kode_dokumen": "SIDIK-FM-CAL-0522.A_Rev.1",
+    "judul_rentang": "0-25 mm",
+    "kapasitas_min_mm": 0.0,
+    "kapasitas_maks_mm": 25.0,
+    "u95_um": 0.83,
+    "balok_pra_evaluasi_mm": [
+     20.0,
+     5.0
+    ]
+   },
+   "lembar_anak": [
+    "cmc/*/titik"
+   ],
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 32,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc/*/titik",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "nominal_cetak_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "tumpukan_mm",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 44,
+   "kunci_baris": [
+    "0·0",
+    "0·1",
+    "0·2",
+    "0·3",
+    "0·4",
+    "0·5",
+    "0·6",
+    "0·7",
+    "0·8",
+    "0·9",
+    "0·10",
+    "1·0",
+    "1·1",
+    "1·2",
+    "1·3",
+    "1·4",
+    "1·5",
+    "1·6",
+    "1·7",
+    "1·8",
+    "1·9",
+    "1·10",
+    "2·0",
+    "2·1",
+    "2·2",
+    "2·3",
+    "2·4",
+    "2·5",
+    "2·6",
+    "2·7",
+    "2·8",
+    "2·9",
+    "2·10",
+    "3·0",
+    "3·1",
+    "3·2",
+    "3·3",
+    "3·4",
+    "3·5",
+    "3·6",
+    "3·7",
+    "3·8",
+    "3·9",
+    "3·10"
+   ],
+   "contoh": {
+    "nominal_cetak_mm": 0.0,
+    "tumpukan_mm": []
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 88,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "delta_alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "wringing_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "geometri_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "drift_a_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "drift_b_um_per_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm/mm"
+    },
+    {
+     "kunci": "suhu_acuan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "vi_type_b",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "contoh": {
+    "delta_alpha_per_c": 1e-05,
+    "wringing_um": 0.111803398875,
+    "geometri_um": 0.5
+   },
+   "sumber_json": "tabel-standar-micrometer.json",
+   "jumlah_sel_data": 7,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-micrometer.json:_sumber": "Master_Olah_Data_Micrometer_{025,2550,5075,75100}mm.xlsm (sheet Standar_GB & DATABASE) — keempat workbook memuat tabel balok ukur yang IDENTIK, sudah diadu oleh skrip generator ini.",
+  "tabel-standar-micrometer.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-micrometer.py"
+ },
+ "cakupan": {
+  "tabel-standar-micrometer.json": {
+   "daun": 175,
+   "tercakup": 175,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!X11",
+  "INPUT DATA!F5",
+  "PERHITUNGAN!F61",
+  "PERHITUNGAN!H23",
+  "PERHITUNGAN!O25",
+  "Standar_GB!Q10:R132",
+  "pita CMC (DATABASE!R5:T8"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarMicrometer.php",
+  "app/Services/Calibration/MicrometerCalculator.php",
+  "app/Services/Calibration/Profiles/MicrometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarMicrometer": [
+   "AuditMicrometerCmc",
+   "CalibrationController",
+   "CalibrationProfileRegistry",
+   "FlowmeterCalculator",
+   "MicrometerCalculator",
+   "MicrometerProfile",
+   "TabelStandarDialIndicator",
+   "TabelStandarFlowmeter"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/AuditMicrometerCmcTest.php",
+  "tests/Feature/FlowmeterLantaiCmcTest.php",
+  "tests/Feature/FlowmeterSesiTest.php",
+  "tests/Feature/HeightGaugeSertifikatTest.php",
+  "tests/Feature/MicrometerSertifikatTest.php",
+  "tests/Feature/MicrometerSesiTest.php",
+  "tests/Unit/HeightGaugeMasterTest.php",
+  "tests/Unit/MicrometerMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-micrometer.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-micrometer.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-micrometer.json"
+ ]
+}

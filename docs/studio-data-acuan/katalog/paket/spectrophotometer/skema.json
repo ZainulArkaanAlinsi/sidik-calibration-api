@@ -1,0 +1,187 @@
+{
+ "kode": "spectrophotometer",
+ "nama": "Spektrofotometer",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "SpectrophotometerProfile"
+ ],
+ "formulir": [
+  "0511"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Spectrofotometer"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "r2-spektro"
+ ],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0511_Rev.5 - LEMBAR KERJA SPECTROFOTOMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 170,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 83,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 101,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 248,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 85,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Spectrofotometer",
+   "sheet": "STANDAR_KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": [
+    "STANDAR FILTER | STANDAR FILTER RECALIBRATION",
+    "Calibration date : | 2020-10-02T00:00:00 | (EXPIRED) | Calibration date : | 2025-04-15T00:00:00 | (VALID-USED)",
+    "Panjang Gelombang (Holmium Oxide) | Panjang Gelombang (Holmium Oxide)",
+    "No. | Nilai Standard | Nilai Aktual | Koreksi | U95% | No. | Nilai Standard | Nilai Aktual | Koreksi | U95%",
+    "1 | 334.1 | - | 1 | 279.6 | - | 0.1",
+    "1 | 334.1 | - | 0.2 | 2 | 287.7 | -"
+   ]
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/BentukPindaiFotoCocokTabelTest.php",
+  "tests/Feature/LembarKerjaSpektroCocokCetakanTest.php",
+  "tests/Feature/R2SpektroTest.php",
+  "tests/Feature/SpectrophotometerApiTest.php",
+  "tests/Feature/SpectrophotometerBudgetTest.php",
+  "tests/Unit/AngkaTandaNolTest.php",
+  "tests/Unit/SpektroDataLainTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-r2-spektro.md"
+ ],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 100,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0511_Rev.5';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 112,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0508_Rev.4';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 118,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 136,
+   "nama": "PENGULANGAN_TRANSMITAN",
+   "nilai_awal": "6;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 138,
+   "nama": "SATUAN_PANJANG_GELOMBANG",
+   "nilai_awal": "'nm';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 140,
+   "nama": "SATUAN_TRANSMITAN",
+   "nilai_awal": "'%T';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 150,
+   "nama": "R2_RSQ_STANDAR_UUT",
+   "nilai_awal": "'rsq_standar_uut';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 164,
+   "nama": "TOLERANSI_TITIK",
+   "nilai_awal": "0.05;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 192,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 253,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  },
+  {
+   "baris": 279,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/SpectrophotometerProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

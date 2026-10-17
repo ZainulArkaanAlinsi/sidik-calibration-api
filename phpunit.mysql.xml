@@ -87,6 +87,10 @@
         <env name="APP_ENV" value="testing"/>
         <env name="VISION_AKTIF" value="true"/>
         <env name="VISION_DRIVER" value="anthropic"/>
+        <!-- Berkas asli Studio: test lama memalsukan disk `local`; test unggah API memilih `arsip` sendiri. -->
+        <env name="STUDIO_DISK_BERKAS" value="local"/>
+        <env name="STUDIO_AKUN" value=""/>
+        <env name="DATA_ACUAN_SUMBER" value="json"/>
         <env name="APP_TIMEZONE" value="Asia/Jakarta"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
+use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
@@ -64,6 +65,8 @@ class CertificateSnapshotBuilder
         // Per SESI, bukan per profil — lampiran membatasi rentang (Vernier
         // Caliper 0-300 mm), dan caliper 600 mm tidak boleh terbit membawa klaim.
         $dalamLingkup = $profil?->dalamLingkupAkreditasiSesi($sesi) ?? true;
+
+        $stempelAcuan = app(PenentuVersiAcuan::class)->ringkasanStempel($sesi);
 
         return [
             'versi' => self::VERSI,
@@ -218,6 +221,20 @@ class CertificateSnapshotBuilder
                     'dalam_lingkup_akreditasi' => $dalamLingkup,
                 ],
             ],
+            // Versi data acuan yang menghitung sesi ini, DIBEKUKAN dari stempel
+            // `uncertainty_calculations.paket_acuan_versi_id` (Studio Data
+            // Acuan FR-20, BR-11) — bukan dicari ulang dari tanggal. Kunci
+            // tambahan saja: `VERSI` tidak naik, pembaca memakai `?? null`.
+            //
+            // HANYA ditulis bila hasilnya berstempel. Tanpa stempel (sumber
+            // JSON, sesi lama, stempel tidak seragam) kuncinya TIDAK ADA —
+            // bukan `null`: `sertifikat:bangun-ulang` membandingkan seluruh
+            // snapshot dengan `==`, dan kunci `null` baru membuat semua
+            // sertifikat terbit "berubah" lalu ditulis ulang beserta
+            // `validasi` & PDF-nya, padahal isinya tidak bergeser satu angka
+            // pun (temuan tinjau P1 S-1, 9 Okt 2026). Lembar perhitungan dan
+            // respons validasi tetap selalu memuat kuncinya (boleh `null`).
+            ...($stempelAcuan === null ? [] : ['paket_acuan_versi' => $stempelAcuan]),
         ];
     }
 

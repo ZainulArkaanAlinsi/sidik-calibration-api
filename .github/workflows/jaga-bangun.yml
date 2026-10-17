@@ -1,0 +1,39 @@
+# Jaga server produksi tetap bangun.
+#
+# Render paket free menidurkan service sesudah ±15 menit tanpa request; request pertama
+# sesudahnya menunggu 30–60 detik (cold start). Itu yang terasa "server nggak nyaut" di app
+# lapangan maupun Sidik Studio. Ping ringan tiap 10 menit menahannya tetap bangun.
+#
+# Kenapa aman dari sisi kuota: satu service free menyala 24 jam × 31 hari = 744 jam, di bawah
+# jatah 750 jam/bulan per workspace — SELAMA tidak ada service free lain di workspace yang sama.
+# Repo publik → menit GitHub Actions gratis. Jadwal GitHub "best effort": bisa telat beberapa
+# menit saat GitHub sibuk, jadi app tetap punya pesan "server sedang bangun" + coba ulang.
+#
+# Hanya GET ke endpoint kesehatan; tidak menyentuh data, tidak butuh secret.
+name: Jaga server bangun
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: jaga-bangun
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping /up dan /api/health
+        env:
+          URL: ${{ vars.API_BASE_URL }}
+        run: |
+          base="${URL:-https://sidik-calibration-api.onrender.com}"
+          for path in /up /api/health; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 --retry 2 --retry-delay 10 "$base$path" || true)
+            echo "$path -> $code"
+          done

@@ -5308,6 +5308,323 @@ K-50-08 `POST /equipments/{id}/jatuh-tempo` (jalur `jadwal_alat` / `revisi_serti
 dan pelanggan (K-50-09), tabel tetap; `kontrak-api.md` §16, `kontrak-api-pelanggan.md` §6, HP §9.
 Gate MySQL penuh belum dijalankan.
 
+## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
+
+**Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
+master, tempat data acuan olah data tiap alat diubah langsung. Data acuan di sini mencakup nilai
+standar, koreksi, U standar, drift, pita CMC, tabel MPE, konstanta metode, dan bentuk lembar.
+Begitu sebuah versi disahkan, server memakainya untuk menghitung, jadi semua HP dan laptop ikut
+tanpa install ulang.
+
+**Rujukan rinci:** `docs/studio-data-acuan/` — `00-CR-Impact-Analysis.md` (dampak ke DB, API, izin,
+data lama, app lama), lalu 01–08 dan Lampiran A. Sesuai §Alur Kerja poin 1 di `AGENTS.md`, PRD
+yang mengikat adalah § ini. Berkas 01-PRD dan seterusnya adalah rincian. Urutan kalau bertentangan:
+`AGENTS.md`, lalu § ini, lalu paket.
+
+**Batas yang tidak ikut berubah:**
+- Studio hanya mengubah **lapis 1** (data acuan) dan **lapis 3** (bentuk lembar).
+- **Lapis 2** (rumus, struktur budget, koefisien sensitivitas) tetap kode dan test rekonsiliasi
+  master. Lapis 2 diubah lewat `prompts/P9-ubah-rumus-master.md`, tidak dari layar.
+- Tidak ada versi yang berlaku tanpa simulasi dan pengesah orang kedua.
+- Sertifikat terbit tidak pernah dihitung ulang. Stempelnya `paket_acuan_versi_id`, di samping
+  `formula_version_id`.
+- Server tetap satu-satunya database.
+
+### Keputusan K-48
+
+Pemilik memilih (8 Okt 2026): **default untuk ketujuhnya.**
+
+| ID | Pertanyaan | Jawaban |
+|---|---|---|
+| K-48-01 | Lapis 2 (rumus) boleh diubah dari UI lewat mesin ekspresi? | **Tidak.** Fase 1–3 tanpa itu; aturan keras §Olah data `AGENTS.md` tetap utuh |
+| K-48-02 | Alat pilot | **Micrometer** (00 §5). pH jadi alat kedua, untuk membuktikan langkah "ekstrak konstanta PHP" |
+| K-48-03 | Pengesah versi data acuan | **`super_admin`**, tidak pernah penyunting atau pengaju versi itu |
+| K-48-04 | Versi baru berlaku menurut apa | **`tanggal_kalibrasi` sesi**, sama dengan `RumusKalibrasi::versiUntukSesi()` |
+| K-48-05 | Master Data boleh menyunting tanpa mengajukan (draf pribadi) | **Boleh.** Draf tidak berpengaruh ke apa pun |
+| K-48-06 | Teknisi boleh melihat tabel acuan aktif | **Boleh**, baca saja, tanpa riwayat draf |
+| K-48-07 | Toleransi uji pembanding per alat | **Ditetapkan Lab per alat** (06 §3). **Belum ada yang diisi**, jadi belum ada alat yang boleh disebut selesai |
+
+**Akibat K-48-03 yang harus dijaga di P2.** `super_admin` hari ini hanya boleh baca, kecuali
+empat rute di §Keadaan nyata `super_admin` (`AGENTS.md`). Mengesahkan versi berarti menambah grup
+rute tulis saudara seperti `sahkan` sertifikat (pola §40). Middleware `lolosBacaSuperAdmin` tidak
+boleh dilonggarkan. `PemisahanWewenang` diperluas ke penyunting dan pengaju versi, tanpa
+pengecualian (K-30-03). K-48-03 berlaku untuk data acuan saja; K4 tentang sertifikat tidak ikut
+terjawab.
+
+### P0 — persiapan (8 Okt 2026, branch `feat/studio-data-acuan`)
+
+- Dokumen 00–08 dan Lampiran A diambil dari branch `docs/studio-data-acuan` (`023d366`), tidak
+  ditulis ulang. Isinya identik dengan paket.
+- Paket dipasang di `docs/studio-data-acuan/`: `katalog/` (32 paket), `alat-bantu/`, `prompts/`.
+- `validasi_katalog.py` terhadap blob git `HEAD`: **LULUS**. Cakupan 15.738/15.738 sel di 21 paket
+  ber-JSON, nol drift. Dijalankan pada working copy Windows, delapan JSON tampak DRIFT. Isinya
+  sama byte-per-byte dengan blob sesudah CR dibuang; yang beda hanya akhir baris CRLF dari
+  `core.autocrlf=true`. Katalog **tidak** dibangun ulang, karena membangun ulang di mesin ini
+  justru menanam sha256 versi CRLF.
+- `database/data/manifest-workbook-micrometer.json`: sha256 keempat workbook terenkripsi asli,
+  tanggal ubah 4 Sep 2026. **Isi .xlsm = JSON, terbukti 8 Okt 2026.** Keempat berkas didekripsi
+  ke folder sementara di luar repo, `gen-tabel-standar-micrometer.py` dijalankan ke sana, dan
+  `git diff --ignore-cr-at-eol --exit-code` pada `tabel-standar-micrometer.json` kosong. Jadi
+  versi 1 Micrometer di P1 boleh dibangun dari JSON itu.
+- Validator dan pembangun katalog kini menormalkan CRLF sebelum hash, jadi validator LULUS
+  langsung di folder kerja Windows.
+- Pertanyaan untuk Lab (toleransi uji pembanding Micrometer, konfirmasi K-48):
+  `docs/pertanyaan-lab-studio-acuan.md`.
+- Tidak ada perubahan di `app/`, migrasi, atau test.
+
+### P1 — fondasi server (8 Okt 2026, berjalan)
+
+Rencana disetujui pemilik 8 Okt dengan empat penyimpangan dari prompt P1:
+
+1. **P1 hanya membuat 3 dari 6 tabel rancangan**: `paket_acuan`, `paket_acuan_versi`,
+   `paket_acuan_suntingan`. `simulasi_acuan` dan `simulasi_acuan_sesi` menyusul di P2,
+   `unggahan_workbook` di P5. Kolom `calibration_sessions.bentuk_versi_id` menyusul di P6.
+2. **Data dari DB hanya dibaca di jalur yang menstempel.** Di luar lingkup versi,
+   `TabelStandarMicrometer` tetap membaca JSON. Alasannya: Dial Indicator memakai balok ukur
+   Micrometer, dan versi baru Micrometer tidak boleh mengubah angka Dial Indicator tanpa stempel.
+   Menyimpang dari kalimat ADR-04 "fallback JSON hanya di testing".
+3. **Izin P1 hanya `data-acuan.lihat`.** Izin tulis lahir bersama rutenya di P2/P6.
+4. Peta `PARAMETER` di `SapuRuteIsolasiOrganisasiTest` ditambah nama parameter rute baru.
+
+**Alasan kolom stempel `uncertainty_calculations.paket_acuan_versi_id`:**
+- Versi yang dipakai harus tercatat saat hasil dihitung. Mencari ulang dari `tanggal_kalibrasi`
+  tidak cukup, karena rentang berlaku berubah sesudahnya (versi baru menutup rentang lama, versi
+  bisa ditarik, versi terjadwal bisa bertanggal mundur).
+- Menaruhnya di JSON `type_b_components` tidak cukup: tanpa FK tidak ada integritas, dan tanpa
+  index tidak bisa menjawab "hasil mana yang dihitung dengan versi X" (dasar simulasi P2 dan
+  penahan terbit saat versi ditarik).
+- Polanya sama dengan `formula_version_id`: nullable, `nullOnDelete`. `null` = dihitung dari JSON.
+- `bentuk_versi_id` ditunda karena di P1 belum punya penulis maupun pembaca.
+
+**Versi 1 Micrometer terbukti setara master:** isi `.xlsm` = `tabel-standar-micrometer.json`
+(8 Okt, lihat P0 di atas), jadi versi 1 yang dibangun dari JSON itu setara workbook.
+
+**Status:** B1 data layer selesai (`f3b1b7b`). B2 selesai: `SumberAcuan`, `acuan:impor-awal`,
+`skemaAcuan()` Micrometer (8 lembar, 175/175 daun JSON). Versi 1 kanonik sha256
+`ba1fa153808d125a2ff1e54ca3589e25c723b59ccb23a68df7372862ef56f585`. B3 selesai:
+`PenentuVersiAcuan` + stempel di store/update/preview/hitung-ulang + validator (`versi_acuan_ditarik`
+PERINGATAN, `versi_acuan_tanpa_stempel` INFO). Dengan `DATA_ACUAN_SUMBER=json` stempel ditulis
+`null`, bukan "tetap ditulis" seperti 07 §2 tahap 3: stempel yang menunjuk versi yang tidak
+benar-benar dipakai lebih buruk daripada null. B4 selesai: izin `data-acuan.lihat`, tujuh rute
+`GET /api/data-acuan/*` (daftar paket, detail, berlaku, garis waktu, versi, banding, riwayat sel;
+teknisi hanya versi aktif, organisasi lain 404), `versi_acuan` + ETag/304 di lembar-kerja, kunci
+`paket_acuan_versi` di perhitungan, validasi, dan snapshot (`VERSI` snapshot tetap 1). Kontrak:
+`docs/kontrak-api.md` §15. `RuteInternalMenolakRoleLainTest` dan `BatasAntarLabTest` ikut
+ditambah fixture rute baru; tidak ada asersi yang diubah.
+
+**Tinjau P1 (9 Okt):** peninjau dan penjaga angka sama-sama LULUS. Angka dari JSON dan dari versi 1
+DB identik bit per bit untuk keempat rentang Micrometer, pipeline 4 sesi seeder, dan 49 sesi alat
+lain (termasuk Dial Indicator). Perbaikan putaran 1:
+- Snapshot sertifikat hanya memuat `paket_acuan_versi` bila berstempel, supaya
+  `sertifikat:bangun-ulang` tidak menulis ulang semua sertifikat lama.
+- `GET /data-acuan/paket/{kode}/berlaku` untuk teknisi memberi alasan generik tanpa status atau
+  tanggal versi yang tidak aktif.
+- `kalibrasi:hitung-ulang` mencetak peringatan bila stempel dilepas karena sumbernya `json`.
+- Test untuk tiga kode 422 di banding dan untuk cabang `untukSesiTersimpan`.
+
+**Dibawa ke P2** (belum dikerjakan, tidak berdampak selama hanya ada versi 1):
+- `lembar-kerja` memilih versi dengan tanggal hari ini, sedangkan simpan memakai
+  `tanggal_kalibrasi`. Baris Micrometer dipetakan ke nominal cetak lewat posisi, dan klien tidak
+  mengirim balik sha versi. Versi yang mengubah `titik_pra_cetak` bisa menggeser nominal tanpa error.
+- Template OCR (`TemplateLembarKerja`) dan `dalamLingkupAkreditasiSesi` di
+  `CertificateSnapshotBuilder` membaca di luar lingkup versi, jadi memakai JSON.
+- Validator diam bila stempel tidak seragam antar titik (yang muncul hanya `hitung_ulang_beda`
+  dengan penyebab yang salah) dan bila stempel menunjuk versi organisasi atau paket lain. Perlu
+  temuan PERINGATAN sendiri. `ringkasanStempel` hanya mengecek organisasi, tidak `kode_profil`.
+- Belum ada penjaga bahwa isi versi yang sudah terkunci tidak boleh diubah atau dihapus. Pengecekan
+  `isi_sha256` di `SumberAcuan` hanya terjadi saat cache miss.
+
+**Perlu dicek di .xlsm oleh pemilik:** asal `PERHITUNGAN!H23` untuk balok khusus 101,6 dan
+200 mm serta nilai `lainnya`, dan `INPUT DATA!F5` untuk ambang kapasitas pita CMC. Keduanya baru
+berbukti dari komentar kode.
+
+## §49 — Sidik Studio: aplikasi terpisah, pusat kendali data & olah data — 9 Okt 2026
+
+**Permintaan pemilik (9 Okt 2026):** Studio bukan menu di aplikasi lapangan. Sidik Studio adalah
+aplikasi tersendiri yang menggantikan workbook Excel master dan akses MySQL bagi orang lab. Dari
+situ cara olah data tiap alat (46 alat, bisa bertambah) diatur dan disunting, dan hasilnya langsung
+dipakai API serta aplikasi lapangan. Contoh yang ditunjukkan pemilik: lembar "CALIBRATION BUDGET
+UNCERTAINTY" workbook Volumetric Glassware (Pipet Ukur).
+
+§ ini **mengubah tiga batas §48**. Bagian §48 yang tidak disebut di bawah tetap berlaku.
+
+**Keputusan pemilik (9 Okt 2026, dijawab lewat pilihan terstruktur):**
+
+| Kode | Pertanyaan | Keputusan |
+|---|---|---|
+| K-49-01 | Platform | Aplikasi Flutter **terpisah**: nama, ikon, identitas, dan desain berbeda total dari aplikasi lapangan. Dibangun untuk Windows dan tablet Android. |
+| K-49-02 | Rumus (lapis 2) | **Boleh disunting langsung di Studio** lewat editor rumus mirip Excel dan mesin hitung di server, dengan versi, simulasi, dan pengesahan. Mengubah §48 "Lapis 2 tetap kode" dan `AGENTS.md` §Olah data butir 1. |
+| K-49-03 | Cakupan | **Semua tabel database**, bukan hanya olah data. Invarian tetap berlaku (lihat bawah). |
+| K-49-04 | Mesin rumus | `phpoffice/phpspreadsheet` (Calculation engine kompatibel Excel). |
+| K-49-05 | Pengesah versi rumus & data acuan | `super_admin`, dan wajib orang kedua: berbeda dari pembuat draf (`PemisahanWewenang`). |
+| K-49-06 | Hapus dari Studio | **Tidak ada hapus permanen.** Studio hanya mengarsipkan (soft delete) dengan riwayat. Hapus permanen tetap lewat `docs/aturan-akses-database.md` butir 4. |
+| K-49-07 | Agregasi budget (u_c, veff Welch–Satterthwaite, faktor k), lantai CMC, PASS/FAIL | **Ikut bisa disunting per alat di Lembar Hitung.** Mengubah `AGENTS.md` §Profil kalibrasi ("tetap di kelas bersama") untuk alat yang punya Lembar Hitung aktif, dengan syarat di bawah. Dijawab pemilik 9 Okt 2026 lewat pilihan terstruktur; menjawab Q-49-10. |
+| K-49-08 | "Sama persis dengan Excel" | **Dua mode.** (a) **Asli Excel**: tata letak dan angka persis workbook master (nama sheet, baris/kolom, alamat sel, merge, lebar, format), untuk melihat dan mencocokkan. (b) **Rapi**: sheet standar per alat (MASUKAN/ACUAN/KONSTANTA/PERHITUNGAN/BUDGET), untuk menyunting. Isi sheet **DATABASE dan SERTIFIKAT** (data pelanggan & sertifikat) **tidak diekstrak dan tidak disimpan**; lembarnya tetap terdaftar dengan tanda `dikecualikan`, alasan, dan tautan ke tabel `customers` / `certificates`. Pemilik, 13 Okt 2026. |
+| K-49-09 | Prioritas | Tampilan **Asli Excel baca-saja dimajukan** ke tahap baru **S1b** (sesudah S1, sebelum S2). Edit rumus tetap S5. Pemilik, 13 Okt 2026. |
+| K-49-10 | Cakupan Asli Excel | **Semua alat**, bukan pilot: 57 `.xlsm` di Downloads + subfolder `suhu\` (berkas kunci `~$` dilewati), ditambah ekspor CSV di repo. Database = semua tabel (menegaskan K-49-03). Pemilik, 13 Okt 2026. |
+| K-49-11 | Berkas `.xlsm` asli | **Ikut disimpan, apa adanya**: byte asli yang masih TERENKRIPSI, tidak pernah versi terdekripsi, di disk privat (`local` → `storage/app/private/workbook-master/{organization_id}/{sha256}.xlsm`), dengan disk, path, sha256, dan ukuran di baris workbook. Sandi tidak pernah disimpan atau dilog. **Membalik Q-49-06** ("berkas tidak disimpan"). Isi DATABASE/SERTIFIKAT tetap tidak diekstrak (K-49-08) — **dicabut K-49-12**. Pemilik, 13 Okt 2026, saat menyetujui rencana S1b. |
+| K-49-12 | Data pelanggan di workbook | **Ditampilkan apa adanya**, termasuk isi sheet DATABASE, SERTIFIKAT (+ `(n)`, `STYLE n`, `Certificate (n)`), `konsep`, dan blok identitas pelanggan di INPUT DATA, untuk sumber `.xlsm` **dan** `.csv`. **Mencabut pengecualian isi K-49-08** (dan menutup risiko terbuka S1b soal redaksi INPUT DATA: tidak diredaksi). Lembar itu tetap ditandai `tautan_tabel` (`customers` / `certificates`) dengan `dikecualikan = false`. Batasnya pindah ke penyimpanan: berkas & DB tetap di luar repo (repo PUBLIC — test memakai fixture sintetis), dan API mengurung isinya per organisasi (lab lain 404). Penahan `--saya-paham-data-pelanggan` dicabut. Pemilik, 13 Okt 2026. |
+| K-49-13 | Satu master per jenis | **Studio HANYA berisi master asli, SATU master aktif per jenis/varian**; olah data/pekerjaan tidak pernah masuk Studio. Impor master baru untuk jenis yang sama = **mengganti** yang aktif, yang lama disimpan sebagai **riwayat tersembunyi** (bisa dibuka), tidak dihapus. Varian beda rentang/standar = jenis berbeda (Micrometer 4 rentang, Timbangan gram/kg/substitusi, Enclosure Constant-Yokogawa vs Recorder, dst.). Implementasi: `workbook_master.kunci_jenis/aktif/versi/digantikan_oleh_id/diarsipkan_pada`, `studio:impor-workbook --gantikan/--kunci-jenis`, `studio:rapikan-workbook` (riwayat/aktifkan/arsip, tanpa hapus), `GET /api/studio/workbook/{w}/riwayat`; kontrak `docs/kontrak-api.md` §16. Pemilik, 15 Okt 2026. |
+| K-49-15 | Kendali Studio & proteksi lembar Excel | **Kendali Studio ada di `super_admin`**; di bawahnya Master Data (`admin`); `teknisi` pegawai biasa. (1) `super_admin` boleh memakai semua fitur Studio, termasuk `POST …/hitung` (sudah jalan sejak tahap C, dikonfirmasi). (2) **Proteksi sheet Excel dihormati:** di lembar yang dilindungi di `.xlsm` asli, sel TERKUNCI tidak bisa disunting di simulasi Studio oleh admin atau peran lain selain `super_admin` (server menolak 422 `sel_terkunci`); `super_admin` boleh menyunting semuanya; sel tidak terkunci tetap mengikuti aturan yang ada (xlsm + berkas asli tersimpan + izin `workbook.hitung`). (3) Dicatat, sudah jalan: berkas asli tanpa sandi disimpan **terenkripsi kunci aplikasi** (`*.enc`) — **membalik "apa adanya" K-49-11** untuk berkas tanpa sandi; `tersembunyi` tetap teks (`tidak`/`hidden`/`veryHidden`); workbook bersandi perlu disiapkan ulang (`php artisan studio:siapkan-hitung <id>`, sandi pemilik) sesudah cache model hitungnya disapu karena 30 hari tidak dipakai. Implementasi: format kanonik 5 (`tata_letak.dilindungi`, `tata_letak.sel_tidak_terkunci`), `ProteksiLembar`, detail `boleh_edit_sel_terkunci`; kontrak `docs/kontrak-api.md` §16. Pemilik, 15 Okt 2026. |
+
+**Syarat K-49-07** (penjabaran gerbang paritas dan simulasi di atas, bukan aturan baru): setiap
+Lembar Hitung lahir dari templat yang memuat blok agregasi GUM bawaan, setara `GumCalculator`
+(`uc = √Σ(ui·ci)²`, Welch–Satterthwaite dengan penyebut **jumlah** semua baris, `k` = t-quantile
+0,975 dengan derajat bebas `floor(veff)`, lantai CMC, PASS bila `|error| + U ≤ toleransi`). Versi
+pertama tiap alat tetap wajib lolos gerbang paritas, jadi blok bawaan itu harus identik dengan
+jalur sekarang. `GumCalculator` tetap menghitung agregasi bersama untuk setiap sesi yang dihitung
+lembar, sebagai **pengawas**: bila hasil lembar beda, simulasi menampilkan selisihnya dan validator
+memberi PERINGATAN berkode (`agregasi_beda_dari_gum`) yang terbaca di jejak sesi, dan penyimpangan
+itu wajib punya catatan sumber (`AGENTS.md` §Olah data butir 4). Tidak memblokir, karena pemilik
+mengizinkan suntingan, tetapi tidak boleh diam. Kesalahan master yang sudah diketahui (mis. veff
+Volumetric Fixed yang dibagi satu baris `K43`, `docs/pertanyaan-lab-volumetric.md` no. 1) tidak
+otomatis ditiru: lembar pertama memakai blok bawaan; meniru master butuh versi baru, simulasi,
+pengesahan, dan jawaban lab. Spike S0a (10 Okt 2026) menjawab soal t-quantile: `TINV`/`T.INV.2T`
+bawaan mesin rumus tidak dipakai (2.162,91 ms pada df 10⁶); `k` di lembar memakai fungsi kustom
+`SIDIK.KFAKTOR` yang identik bit dengan `GumCalculator`, dan simpangan baku memakai `SIDIK.STDEV`
+(STDEV bawaan satu lintasan, selisih sampai 6,7e-8). Rincian: `docs/sidik-studio/03-SDD.md`
+ADR-49-02 dan §6.4.
+
+**Syarat yang membuat K-49-02 aman** (berlaku untuk setiap versi rumus yang dibuat di Studio):
+1. Server tetap satu-satunya tempat menghitung. Studio menyunting; server mengevaluasi untuk
+   pratinjau, simulasi, dan sesi nyata.
+2. Rumus disimpan sebagai "Lembar Hitung" (sheet, sel, rumus, named range, pengikat input dan
+   output) di `formula_versions` (`sumber = database`), dengan isi kanonik dan sha256. Versi yang
+   sudah dipakai satu sesi saja tidak boleh diubah atau dihapus, hanya dipensiunkan.
+3. **Gerbang paritas.** Versi Lembar Hitung pertama untuk sebuah alat baru boleh aktif bila
+   hasilnya sama dengan profil PHP saat ini (nilai antara, U, angka cetak, keputusan) pada semua
+   sesi tersimpan dan vektor master. Pemeriksaannya dilakukan pihak independen (penjaga angka).
+4. Versi berikutnya: draf, lalu simulasi ke semua sesi tersimpan (apa yang berubah, berapa, dan
+   apakah angka cetak berubah), lalu pengesahan orang kedua, lalu berlaku untuk sesi baru menurut
+   `tanggal_kalibrasi`. Sertifikat terbit tetap memakai versi yang distempelkan padanya.
+5. Setiap versi wajib mencatat sumbernya (nomor IK, sel master, keputusan siapa dan kapan) di log
+   metode append-only. Penyimpangan dari master tetap dicatat di `type_b_components`
+   (`AGENTS.md` §Olah data butir 4).
+
+**Invarian yang tidak ikut longgar walau Studio mengelola semua tabel:** nilai isian teknisi tidak
+pernah dihapus (koreksi menyimpan nilai lama dan baru); `audit_logs`, `certificate_email_logs`, dan
+`paket_acuan_suntingan` tidak bisa diubah; sertifikat terbit, sesi disetujui, dan
+`uncertainty_calculations` tersimpan hanya bisa dibaca; penyaringan `organization_id`; pemisahan
+wewenang; `super_admin` tetap baca saja di luar pengecualian yang sudah tercatat. Studio mengakses
+tabel lewat API dengan daftar putih per tabel dan melewati model Eloquent, bukan SQL mentah.
+
+**Tahap:** S0 fondasi (tutup P1, spike mesin rumus, spike aplikasi Studio, pembaca .xlsm) → S1
+kerangka aplikasi → S2 Kelola Data → S3 data acuan tulis (P2 §48) → S4 mesin rumus dan Lembar
+Hitung, pilot Volumetric dan Micrometer → S5 editor rumus → S6 migrasi per alat. Rencana kerja ada
+di `_agents_workspace/studio-data-acuan/06-rencana-rescope.md` (lokal, tidak di-commit).
+
+**Status (9 Okt 2026):** P1 selesai dengan dua suite hijau (SQLite 5408 lulus dan 2 dilewati dari
+5410; MySQL 5410/5410, 286,5 menit). S0 berjalan.
+
+**Butuh dari pemilik:** `.xlsm` asli per alat, minimal Volumetric dan Micrometer untuk pilot.
+Ekspor CSV di `Project-PT-Sidik/alat-alat-Pt-Sidik/` memuat rumus, tetapi alamat rujukannya
+bergeser 1–3 baris di 46 folder non-tekanan, jadi tidak bisa dipakai sebagai peta sel final.
+
+**Temuan terpisah, belum dikerjakan:** `CalibrationController::isiUlangPengukuran()` menghapus
+`raw_measurements` dan `uncertainty_calculations` saat revisi tanpa menyimpan nilai lama. Ini
+dugaan pelanggaran `AGENTS.md` §Peran butir 5 dan belum dibuktikan dengan test.
+
+### §49 S1b — Workbook Alat, mode Asli Excel baca-saja (sisi API, 13 Okt 2026)
+
+Dasar: K-49-08..11. Rencana `_agents_workspace/studio-data-acuan/02-rencana-S1b.md` (lokal),
+disetujui pemilik 13 Okt 2026. Rincian teknis: `docs/sidik-studio/03-SDD.md` ADR-49-10 (revisi)
+dan §4.6, kontrak `docs/kontrak-api.md` §Studio Workbook, tugas ST-T-201..209.
+
+- **Dua tabel additive**, nol kolom di tabel lama: `workbook_master` (satu baris per workbook per
+  lab, unik `(organization_id, sha256)`) dan `workbook_master_lembar` (satu baris per sheet; sel
+  sebagai JSON kanonik LONGTEXT, tata letak JSON).
+- **Impor:** `php artisan studio:impor-workbook --csv` (folder CSV di repo, nilai + rumus bila
+  ada) dan `--xlsm=<berkas|folder|pola>` (sandi lewat prompt tersembunyi, sekali per jalan).
+  Idempoten per sha256; `--kering` tanpa tulis; `--oleh=<id|email>` mengisi `diimpor_oleh` +
+  pelaku audit dan **wajib kecuali `--kering`** (15 Okt 2026, tinjau C-3 #2; juga
+  `studio:rapikan-workbook`); `--ganti` mengganti impor lama ber-sumber sama (csv↔csv, xlsm↔xlsm) bernama
+  sama di lab yang sama sesudah format kanonik naik (xlsm: berkas yang sama diekstrak ulang).
+  Penahan `--saya-paham-data-pelanggan` sudah dicabut (K-49-12).
+- **Dekripsi `.xlsm` tidak memakai temp sistem.** Spike S0c membuktikan reader PhpSpreadsheet
+  meninggalkan ZIP terdekripsi di temp sistem saat exception/kill. Sekarang paket didekripsi
+  sendiri (`AgileEncryption::decryptFile`) ke subfolder acak `storage/app/private/tmp-workbook`,
+  dihapus sesudah reader dilepas, dengan shutdown handler dan penyapu terjadwal
+  `studio:sapu-temp-workbook` (tiap jam, sisa > 60 menit). Putaran kunci dibatasi 100.000.
+- **API baca:** `GET /api/studio/workbook`, `/{workbook}`, `/{workbook}/lembar/{lembar}` (sel
+  per rentang baris, maks 500). Izin `workbook.lihat` (admin, teknisi, viewer; super admin baca
+  lab sendiri). Tidak ada endpoint tulis maupun unduh berkas asli.
+- **ST-T-013:** `X-Klien`/`X-Versi-Klien` masuk konteks log; Studio di bawah
+  `STUDIO_VERSI_MINIMUM` dijawab 426 `klien_kedaluwarsa` (bawaan 0.0.0 = tidak pernah).
+- **Impor CSV nyata ke DB lokal tablet (13 Okt):** 46 workbook, 473 lembar, 135.489 sel, 6.360
+  rumus, 99 lembar dikecualikan, 4 workbook tanpa `kode_profil` (keluarga Fixed/Graduated
+  Volumetric dan dua Enclosure). Enam folder tekanan/piston tidak ada di repo (di-gitignore
+  karena memuat data pelanggan) dan menunggu impor `.xlsm`.
+
+**Risiko yang dulu terbuka — DITUTUP K-49-12 (13 Okt 2026):** blok "IDENTITAS CUSTOMER" di
+INPUT DATA `.xlsm` asli memang memuat nama pelanggan sesi terakhir. Pemilik memutuskan: diterima,
+ditampilkan apa adanya (data internal lab, terkurung organisasi), tidak diredaksi.
+
+### §49 Tahap A — "Workbook Alat persis Excel" (sisi API, 13 Okt 2026)
+
+Dasar: K-49-12. Rincian: SDD §4.6 + ADR-49-10, kontrak `docs/kontrak-api.md` §16, tugas
+ST-T-211..214.
+
+- **Isi lembar disimpan (K-49-12).** DATABASE/SERTIFIKAT/konsep dibaca dari `.xlsm` dan `.csv`
+  apa adanya; `PengecualianLembar` tinggal penanda `tautan_tabel`. Dijaga test: kanari sintetis
+  TERSIMPAN dan terbaca lab pemiliknya, dan 404 + tanpa kanari untuk keempat peran lab lain.
+- **Format kanonik 3** (tata letak `.xlsm` setia Excel, semua dari PhpSpreadsheet): lebar/tinggi
+  per kolom/baris + bawaan sheet (cadangan: tabel font bawaan PhpSpreadsheet), merge, kolom/baris
+  tersembunyi, `freeze` dari `xSplit`/`ySplit` pane (bukan `topLeftCell`), `garis_kisi`, `zoom`;
+  gaya `g` + `bungkus`, `vertikal`, `ukuran`, `font`; sel kosong disimpan hanya bila ber-isi
+  atau ber-garis. Batas yang diketahui: `baseColWidth` tanpa `defaultColWidth` tidak dibaca
+  PhpSpreadsheet; gaya baris/kolom utuh tanpa elemen sel tidak ikut.
+- **CSV:** `lebar_kolom` PERKIRAAN dari panjang teks terpanjang + 1 (4..60), ditandai
+  `tata_letak.lebar_perkiraan = true`.
+- **Daftar API:** xlsm dulu; `ada_versi_xlsm` + `versi_xlsm_id` memasangkan csv dengan versi
+  `.xlsm`-nya (nama setara, atau profil sama + akhiran nama) di lab yang sama.
+- **Impor `.xlsm` oleh pemilik:** skrip lokal `C:\Users\USER\sidik-studio-lokal\impor-xlsm.ps1`
+  (di luar repo) — sandi diketik pemilik di prompt `secret()`, tidak pernah lewat agen.
+- **Impor ulang CSV ke DB lokal tablet (13 Okt, format 3, `--csv --ganti`, cadangan
+  `studio-lokal.sebelum-A.sqlite`):** 46 diganti, 473 lembar, 169.521 sel (sebelumnya 135.489),
+  7.186 rumus, 0 dikecualikan, 99 lembar bertautan (semuanya berisi); ulang = `sudah_ada 46`.
+
+### §49 Tahap C — Lembar Hitung "persis Excel" (sisi API, 14 Okt 2026)
+
+Permintaan pemilik 14 Okt: Studio = Excel persis termasuk cara olah datanya, GENERIK untuk
+semua workbook kalibrasi. Kontrak `docs/kontrak-api.md` §16 "Tahap C". Belum commit.
+
+- **Impor `.xlsx`** lewat `studio:impor-workbook --xlsm=…`; sandi ditanya hanya bila ada berkas
+  bersandi. Berkas tanpa sandi disimpan terenkripsi kunci aplikasi (`*.enc`). Format kanonik 4
+  (`tata_letak.gambar`, `cf`, `cf_gaya_dasar`); `tersembunyi` (string, sejak S1b) tetap.
+- **`POST /api/studio/workbook/{w}/hitung`** (admin, teknisi, super_admin; tidak menulis DB):
+  mesin `App\Services\Studio\Hitung` = PhpSpreadsheet 5.10 + hitung sel kotor saja (graf
+  dependensi dari parser, rumus tak kotor = konstan bernilai cache Excel), pruning ON dengan
+  ulang pruning OFF bila "internal error", STDEV dua lintasan, TINV dari tabel nilai Excel,
+  `^`/POWER seperti Excel (kuadrat-berulang / √ / exp·ln), NOW/TODAY = `waktu_acuan`, daftar
+  putih fungsi, ≤300 edit, rumus ≤8192, batas 20 s → 504. Model hitung di-cache terenkripsi
+  per sha256 berkas (disapu `studio:sapu-temp-workbook`; `studio:siapkan-hitung` untuk bersandi).
+- **Gambar** `GET …/gambar/{id}` (PNG/JPEG, lain 415); **conditional formatting** diterapkan
+  server ke `g` (impor & hasil hitung; cellIs/teks/kosong/galat; iconSet dll. tidak).
+- **Paritas** generik: `docs/skrip/paritas-excel.ps1` (Excel COM pada SALINAN + `studio:paritas-excel`
+  + `studio:paritas-skenario`). Angka & akar beda per workbook di
+  `_agents_workspace/studio-data-acuan/C-anak-timbangan/excel-parity-report.md` (di luar repo).
+- **Dijawab K-49-15 (15 Okt 2026):** super_admin boleh `/hitung` (dikonfirmasi); proteksi lembar
+  Excel kini ditegakkan server (lihat bawah). **Masih menunggu pemilik:** workbook bersandi (57
+  `.xlsm` + 2 Hydrometer `.xlsx`) — paritas & impor dijalankan pemilik dengan sandinya.
+
+### §49 K-49-15 — proteksi lembar Excel di Studio (sisi API, 15 Okt 2026)
+
+- **Impor (format kanonik 5):** per lembar `tata_letak.dilindungi` (`<sheetProtection sheet="1">`)
+  dan `tata_letak.sel_tidak_terkunci` — HIMPUNAN sel yang tidak terkunci sebagai rentang A1
+  (hanya bila dilindungi), bukan penanda per sel. Aturan Excel ditiru: terkunci kecuali gaya
+  `locked="0"`; sel yang tidak ada di berkas ikut gaya baris, lalu gaya kolom, lalu xf 0 — kolom
+  input yang dibuka lewat gaya kolom utuh tetap terbuka sampai baris 1.048.576. Baris format ≤ 4
+  tanpa kunci = tidak dilindungi. `App\Services\Studio\Workbook\ProteksiLembar`.
+- **`/hitung`:** edit ke sel terkunci di lembar dilindungi → 422 `sel_terkunci` (semua alamat
+  disebut di `sel_terkunci`), kecuali `super_admin`. Diperiksa sebelum model hitung dimuat.
+- **Detail workbook:** `boleh_edit_sel_terkunci` (true hanya super_admin) — klien tidak menebak
+  dari peran.
+- **Batas yang diketahui:** "Allow Edit Ranges" (`<protectedRanges>`) tidak dibaca (PhpSpreadsheet
+  hanya membaca sandi format lama) — sel terkunci di rentang itu tetap terkunci bagi selain
+  super_admin (lebih ketat dari Excel).
+- **Perlu impor ulang** (`--ganti`) supaya master yang ada mendapat kunci format 5; sampai itu,
+  semua lembar dianggap tidak dilindungi. Dijaga `StudioProteksiLembarTest`.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -5719,3 +6036,4 @@ Supaya tidak dibangun ulang:
 | G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3), **LIVE `3eff913`**. **3 Okt** (branch `fix/penomoran-pelanggan-serentak`): deadlock nomor permintaan & order ikut ditutup, **LIVE `f6e3666`**. Batas login jadi per akun + IP (branch `fix/batas-login-per-akun`) |
 | G30 | **Super admin semua aksi tulis + Order Number wajib** (K-49-14) — §51 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`) — super admin lolos tiap rute tulis admin/teknisi lewat `EnsureUserHasRole::lolosTulisSuperAdmin()`, cabang "admin boleh X" pindah ke `User::punyaHakAdmin()`, pemisahan wewenang tetap memblokir (approve & sahkan), `approve()` + panel menolak sesi tanpa Order Number (`422 nomor_order_wajib`). Panel tetap baca saja untuk super admin. **Sebagian dibalik §52 (K-50-01/02/07).** Kontrak HP: `docs/perintah-frontend-super-admin-order.md`. Gate MySQL penuh belum |
 | G31 | **Revisi 15 Okt: Tolak & pengesahan dicabut, No. Sertifikat diketik, tarik sertifikat, edit admin + bandingkan** (K-50-01/02/03/04/07/13) — §52 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API) — migrasi additive (`input_asli`, enum `ditarik`), `PemisahanWewenang` dipersempit, `kalibrasi:pindahkan-pengesahan`. Kontrak HP: `docs/perintah-frontend-revisi-1510.md`. Gate MySQL penuh belum |
+| G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |

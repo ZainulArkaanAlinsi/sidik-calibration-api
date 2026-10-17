@@ -1,0 +1,8941 @@
+{
+ "kode": "tids",
+ "nama": "TIDS (indikator suhu digital)",
+ "kelompok": "Suhu",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-tids.json"
+ ],
+ "kelas": [
+  "TabelStandarTids"
+ ],
+ "kalkulator": [
+  "TidsCalculator"
+ ],
+ "profil": [
+  "TidsProfile"
+ ],
+ "formulir": [
+  "0506"
+ ],
+ "master": [
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N"
+ ],
+ "generator": [],
+ "fixture": [
+  "tids-cache-master.json"
+ ],
+ "kata": [
+  "tids-workbook",
+  "tids"
+ ],
+ "pakai_juga": [
+  "tits"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0506_Rev.4 - LEMBAR KERJA TIDS.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Drift Rec TC Type K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 35,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Recorder",
+    "Merk | : | Graptech",
+    "Type | : | GL840",
+    "No. Seri | : | C305B1470",
+    "Range | : | 2000 | oC",
+    "Interval Kalibrasi | : | 1 | tahun"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Drift Rec TC Type N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 42,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Recorder",
+    "Merk | : | Graptech",
+    "Type | : | GL840",
+    "No. Seri | : | C305B1470",
+    "Range | : | 2000 | oC",
+    "Interval Kalibrasi | : | 1 | tahun"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 67,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "Terbaru :"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 191,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 70,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 103,
+   "cuplikan_atas": [
+    "Titik Kalibrasi | Recorder+Type N",
+    "CH1 | CH2 | CH3 | CH4 | CH5 | CH6 | CH7 | CH8 | CH9 | CH10 | CH11 | CH12 | CH13 | CH14 | CH15 | CH16 | CH17 | CH18 | CH19 | CH20",
+    "-20 | 0.1 | -0.2 | 0 | 0 | 0 | 0.1 | 0 | -0.2 | -0.1 | -0.2 | -0.2 | -0.2 | -0.1 | -0.1 | -0.1 | 0.1 | 0 | 0 | 0 | -0.1",
+    "0 | -0.3 | -0.2 | -0.2 | -0.2 | -0.2 | -0.2 | -0.1 | -0.3 | -0.3 | 0.1 | -0.3 | -0.2 | -0.3 | -0.1 | -0.2 | -0.1 | -0.3 | -0.1 | -0.1 | -0.3",
+    "100 | -0.2 | 0.1 | 0 | -0.2 | 0 | 0 | 0.2 | 0.1 | 0.1 | 0.2 | -0.2 | -0.1 | -0.1 | 0.1 | 0 | 0 | -0.1 | -0.1 | 0 | -0.2",
+    "200 | -0.2 | 0.2 | 0 | 0 | 0 | 0 | -0.1 | 0.1 | 0.1 | 0 | 0 | -0.2 | -0.2 | -0.1 | -0.1 | -0.1 | -0.2 | -0.1 | 0 | -0.1"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 48,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.00342684530068027 | 0.08"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Standar_Recorder",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 166,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Recorder | Tanggal Kalibrasi | : | 2025-05-08T00:00:00",
+    "Type | : | GL840 | Due Date Kalibrasi | : | 2026-05-08T00:00:00 | TABEL RECORD DRIFT",
+    "S/N | : | C305B1470 | Tertelusur | : | LK-285-IDN | Std Mode: | Measure",
+    "Std Meter",
+    "TABEL NILAI KOREKSI TEMPERATURE RECORDER | Recorder",
+    "Titik Kalibrasi | Correction (oC) Type N | Correction (oC) Type K | Termocouple | Udrift"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TCK-01~16 | Tertelusur | : | LK-064-IDN",
+    "Tikal | TC-01 Correct | Tikal | TC-02 Corret | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "-20 | -0.21 | -20 | -0.33 | -0.27 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-15 | TCK-16",
+    "0 | -0.06 | 0 | -0.1 | -0.08 | 0 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TCN-06,11 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TCN-06 | TCN-11 | AVERAGE | oC | TC3 | TC4 | TC5 | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12",
+    "-20 | -0.24 | -0.06 | -0.15 | -20 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Variasi axial Dryblok A",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | Fast Cal-Low",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | 321486-1",
+    "Kapasitas: | -20~150 oC | Resolusi | 0.01",
+    "Standard: | Dryblok",
+    "Merk: | Isotech"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "Variasi axial Dryblok B",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | TeCal 700xs",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | DB-B-2",
+    "Kapasitas: | 0~600 oC",
+    "Standard: | Dryblok",
+    "Merk: | Techne"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "sheet": "stdev drywell",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": [
+    "KESTABILAN | KESERAGAMAN",
+    "Posisi | Lubang | Stdev | Average | Stdev",
+    "100 | 200 | 300 | 400 | 100 | 200 | 300 | 400 | 100 | 200 | 300 | 400",
+    "Tengah | 1 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.43999999999998 | 198.44 | 298.24 | 398.0400000000001 | 1.1879393923934147 | 1.1879393923934047 | 1.3293607486307062 | ",
+    "Bawah | 0.0836660026534096 | 0.0836660026534028 | 0.08366600265339941 | 0.08366600265339941 | 100.12 | 200.12 | 300.12 | 400.12",
+    "Tengah | 2 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.55999999999999 | 198.56 | 298.26 | 397.9599999999999 | 1.315218613006978 | 1.2727922061357735 | 1.4142135623730951 | 1"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 68,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00 | Link calculator : https://www.fluke.com/en-us/learn/tools-calculators/pt100-calculator?srsltid=AfmBOoqPe_j-N87lgotXxrFrPdjOLAJ5b_2mxDXIuBjJ08Xi",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "Lama: | Terbaru :"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 203,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 70,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 60,
+   "cuplikan_atas": [
+    "Temp Calibrator : Constant",
+    "Titik Kalibrasi | PRT PT100 | Titik Kalibrasi | Thermocouple Type K | Titik Kalibrasi | Thermocouple Type N | Titik Kalibrasi | Thermocouple Type B | Titik Kalibrasi | Thermocouple Type T | Titik Kalibrasi | Thermocouple",
+    "-20 | 0.10000000000000142 | -20 | 0.1999999999999993 | -20 | 0.10000000000000142 | 600 | 0.10000000000002274 | -100 | 0.12999999999999545 | 0 | 0.05 | 0 | 0.23",
+    "0 | 0.1 | 0 | 0.1 | 0 | 0.1 | 800 | 0.16999999999995907 | 0 | 0.06 | 50 | -0.17999999999999972 | 50 | 0.21000000000000085",
+    "200 | 0.09999999999999432 | 100 | -0.09999999999999432 | 100 | 0.09999999999999432 | 1000 | 0.2999999999999545 | 50 | 0.07000000000000028 | 100 | -0.15000000000000568 | 100 | 0.18999999999999773",
+    "400 | 0.10000000000002274 | 200 | -0.09999999999999432 | 200 | -0.09999999999999432 | 1200 | 0.31999999999993634 | 100 | 0.10999999999999943 | 200 | -0.12999999999999545 | 200 | 0.30000000000001137"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 48,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.00342684530068027 | 0.08"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 63,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": [
+    "STANDAR METER/INDIKATOR | TABEL RECORD DRIFT",
+    "Std Mode: | Measure",
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00 | Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | Std Meter",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-28T00:00:00 | Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00 | Constant | Yokogawa",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN | Type | : | CA 150 Handy Cal | Tertelusur | : | LK-241-IDN | Termocouple | Udrift | Termocouple | Udrift",
+    "S/N | : | 99875850 | S/N | : | 23P1005 | PRT PT100 | 0.07956403269756011 | PRT PT100 | 0.072"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "STANDAR-CONSTANT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 130,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-29T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 99875850",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 170,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-241-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TC-01,02 | Tertelusur | : | LK-064-IDN",
+    "Tikal | TC-01 Correct | Tikal | TC-02 Corret | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "-20 | -0.21 | -20 | -0.33 | -0.27 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-15 | TCK-16",
+    "0 | -0.06 | 0 | -0.1 | -0.08 | 0 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TCN-06,11 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TCN-06 | TCN-11 | AVERAGE | oC | TC3 | TC4 | TC5 | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12",
+    "-20 | -0.24 | -0.06 | -0.15 | -20 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "Variasi axial Dryblok A",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | Fast Cal-Low",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | 321486-1",
+    "Kapasitas: | -20~150 oC | Resolusi | 0.01",
+    "Standard: | Dryblok",
+    "Merk: | Isotech"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "Variasi axial Dryblok B",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | TeCal 700xs",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | DB-B-2",
+    "Kapasitas: | 0~600 oC",
+    "Standard: | Dryblok",
+    "Merk: | Techne"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N",
+   "sheet": "stdev drywell",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": [
+    "KESTABILAN | KESERAGAMAN",
+    "Posisi | Lubang | Stdev | Average | Stdev",
+    "100 | 200 | 300 | 400 | 100 | 200 | 300 | 400 | 100 | 200 | 300 | 400",
+    "Tengah | 1 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.43999999999998 | 198.44 | 298.24 | 398.0400000000001 | 1.1879393923934147 | 1.1879393923934047 | 1.3293607486307062 | ",
+    "Bawah | 0.0836660026534096 | 0.0836660026534028 | 0.08366600265339941 | 0.08366600265339941 | 100.12 | 200.12 | 300.12 | 400.12",
+    "Tengah | 2 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.55999999999999 | 198.56 | 298.26 | 397.9599999999999 | 1.315218613006978 | 1.2727922061357735 | 1.4142135623730951 | 1"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-tids.json": "2eb9a7279a15a48302888512939120867977e917f296d83822ca6e8016321a22"
+ },
+ "lembar": [
+  {
+   "jalur": "index_titik",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "recorder",
+     "tipe": "daftar",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kalibrator",
+     "tipe": "daftar",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "recorder": [
+     "-20",
+     "0",
+     "10",
+     "25",
+     "50",
+     "100",
+     "150",
+     "200",
+     "300",
+     "400",
+     "500",
+     "600",
+     "700",
+     "800",
+     "900",
+     "1000"
+    ],
+    "kalibrator": [
+     "-100",
+     "-20",
+     "0",
+     "25",
+     "50",
+     "100",
+     "200",
+     "300",
+     "400",
+     "500",
+     "600",
+     "700",
+     "800",
+     "900",
+     "1000",
+     "1200",
+     "1400",
+     "1700"
+    ]
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter/recorder/koreksi",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "1.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Type N",
+    "Type K"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 640,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "meter/recorder/u95",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "1.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "18.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "19.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "20.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Type N",
+    "Type K"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 640,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "meter/recorder/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "Type N": 0.25,
+    "Type K": 0.5
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter/constant",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "RTD.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.1400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B.1700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.1400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S.1700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "koreksi",
+    "u95",
+    "drift"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 189,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "meter/yokogawa",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "RTD.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.-100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type J.1200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "koreksi",
+    "u95",
+    "drift"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 124,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "sensor/recorder/koreksi",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Type N",
+    "Type K"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 278,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "sensor/recorder/u95",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Type N",
+    "Type K"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 278,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "sensor/recorder/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "Type N": 0.55,
+    "Type K": 0.55
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "sensor/kalibrator/koreksi",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "17.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "RTD",
+    "Type K",
+    "Type N"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 301,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "sensor/kalibrator/u95",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "17.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.0",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.25",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.50",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.100",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.150",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.200",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.300",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16.400",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.-20",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.500",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.600",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.700",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.800",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.900",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12.1000",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "RTD",
+    "Type K",
+    "Type N"
+   ],
+   "contoh": {},
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 285,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "sensor/kalibrator/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "RTD": 0.502,
+    "Type N": 0.55,
+    "Type K": 0.5
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "dryblock",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "serial",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stabilitas",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "keseragaman",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "A",
+    "B"
+   ],
+   "contoh": {
+    "nama": "Isotech Fast Cal Low",
+    "serial": "321486.1",
+    "rentang": "-20 ~ 150 °C",
+    "stabilitas": 0.0005,
+    "keseragaman": 0.47
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 10,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "min",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "maks",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "min": -20.0,
+    "maks": 150.0,
+    "u95": 0.86
+   },
+   "sumber_json": "tabel-standar-tids.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-tids.json:_sumber": "Master_Olah_Data_Suhu_TIDS_-_Recorder_Graptech.xlsm (sesi 071-CAL-325) & Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N.xlsm — dua workbook TIDS ber-password dari lab, 28 Agt 2026. Sheet Standar_Recorder / STANDAR KALIBRATOR.",
+  "tabel-standar-tids.json:_ejaan": "Master menulis 'PRT PT100'; berkas ini memakai 'RTD' — kosakata yang sama dengan TabelKalibratorSuhu."
+ },
+ "cakupan": {
+  "tabel-standar-tids.json": {
+   "daun": 2763,
+   "tercakup": 2763,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!Q13:U16",
+  "DATABASE!Q19:V25",
+  "DATABASE!R5:S7",
+  "PERHITUNGAN FC!P23",
+  "PERHITUNGAN FC!Q23",
+  "PERHITUNGAN U95%!B24:B35",
+  "SERTIFIKAT!J20",
+  "SERTIFIKAT!L20",
+  "Sheet2!B7",
+  "Standar_Recorder!AM9",
+  "Standar_Recorder!T30"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarTids.php",
+  "app/Services/Calibration/TidsCalculator.php",
+  "app/Services/Calibration/Profiles/TidsProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarTids": [
+   "TidsCalculator",
+   "TidsProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/Suhu3AlatLembarKerjaTest.php",
+  "tests/Feature/ThermohygroSemuaLembarTest.php",
+  "tests/Feature/TidsLembarKerjaTest.php",
+  "tests/Feature/TidsRoutingTidakBisaDitembusTest.php",
+  "tests/Feature/TidsU95TidakBocorTest.php",
+  "tests/Feature/WorksheetExtractionTest.php",
+  "tests/Unit/ProfilDariNamaAlatTest.php",
+  "tests/Unit/RoutingProfilSepakatTest.php",
+  "tests/Unit/TidsMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-tids-workbook.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-tids.md"
+ ],
+ "fixture_ada": [
+  "tids-cache-master.json"
+ ]
+}

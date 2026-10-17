@@ -1,0 +1,513 @@
+{
+ "kode": "putaran",
+ "nama": "Centrifuge & Tachometer",
+ "kelompok": "Waktu",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-putaran.json"
+ ],
+ "kelas": [
+  "TabelStandarPutaran"
+ ],
+ "kalkulator": [
+  "PutaranCalculator"
+ ],
+ "profil": [
+  "ProfilPutaran",
+  "CentrifugeProfile",
+  "TachometerProfile"
+ ],
+ "formulir": [
+  "0515"
+ ],
+ "master": [
+  "Waktu_/Master_Olda_Centrifuge",
+  "Waktu_/Master_Olda_Tachometer"
+ ],
+ "generator": [
+  "gen-tabel-standar-waktu-frekuensi.py"
+ ],
+ "fixture": [
+  "sesi-master-waktu-frekuensi.json"
+ ],
+ "kata": [
+  "waktu-frekuensi"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0515_Rev.4 - LEMBAR KERJA CENTRIFUGE & TACHOMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "Certificate (2)",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "Drift Std Kalibrator",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 35,
+   "cuplikan_atas": [
+    "Nama Alat: | Tachometer",
+    "Merk       : | -",
+    "Type       : | -",
+    "SN          : | 190119000006",
+    "Res        : | 0.1 & 1 | Rpm",
+    "Jumlah Hari: | 420 | hari"
+   ]
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 266,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 289,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "SERTIFIKAT KALIBRATOR",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 26,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Centrifuge",
+   "sheet": "konsep",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "Certificate (2)",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "Drift Std Kalibrator",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 35,
+   "cuplikan_atas": [
+    "Nama Alat: | Tachometer",
+    "Merk       : | -",
+    "Type       : | -",
+    "SN          : | 190119000006",
+    "Res        : | 0.1 & 1 | Rpm",
+    "Jumlah Hari: | 420 | hari"
+   ]
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 276,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 128,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 304,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "SERTIFIKAT KALIBRATOR",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 26,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 61,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Waktu_/Master_Olda_Tachometer",
+   "sheet": "konsep",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-putaran.json": "a980d4d2d7c56cb504987a9a683ec822f387bd49e4b97d3f27aea92c1f2f778b"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "traceability",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 6,
+   "contoh": {
+    "nama": "Infrared Tachometer",
+    "merk": "NKTECH",
+    "resolusi": "0.1 & 1"
+   },
+   "sumber_json": "tabel-standar-putaran.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "sertifikat",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "uut",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "contoh": {
+    "nominal": 60.0,
+    "uut": 60.2,
+    "koreksi": -0.2,
+    "u95": 0.21
+   },
+   "sumber_json": "tabel-standar-putaran.json",
+   "jumlah_sel_data": 52,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "hari_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang_maks_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang_maks_lengkap",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "hari_master": 420,
+    "rentang_maks_master": 4.5,
+    "rentang_maks_lengkap": 5.5
+   },
+   "sumber_json": "tabel-standar-putaran.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift/snapshot",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "kolom",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "lab",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "contoh": {
+    "kolom": "D",
+    "tanggal": "2019-05-13",
+    "lab": "PT. Eastern"
+   },
+   "sumber_json": "tabel-standar-putaran.json",
+   "jumlah_sel_data": 21,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift/titik",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.D",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.F",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.G",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "dihitung_master",
+     "tipe": "boolean",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.H",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.I",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.J",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi.E",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "contoh": {
+    "nominal": 5.0,
+    "rentang": 0.2,
+    "dihitung_master": false
+   },
+   "sumber_json": "tabel-standar-putaran.json",
+   "jumlah_sel_data": 132,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-putaran.json:_sumber": "Master Olda Tachometer.xlsm / Master Olda Centrifuge.xlsm (sheet SERTIFIKAT KALIBRATOR & Drift Std Kalibrator) — kedua workbook memuat tabel yang IDENTIK untuk keping standar yang sama.",
+  "tabel-standar-putaran.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu-frekuensi.py"
+ },
+ "cakupan": {
+  "tabel-standar-putaran.json": {
+   "daun": 214,
+   "tercakup": 214,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "PERHITUNGAN!G34"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarPutaran.php",
+  "app/Services/Calibration/PutaranCalculator.php",
+  "app/Services/Calibration/Profiles/ProfilPutaran.php",
+  "app/Services/Calibration/Profiles/CentrifugeProfile.php",
+  "app/Services/Calibration/Profiles/TachometerProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarPutaran": [
+   "ProfilPutaran",
+   "PutaranCalculator",
+   "TabelStandarWaktu"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/BudgetTerlihatDanGerbangCmcTest.php",
+  "tests/Feature/LantaiCmcPutaranTest.php",
+  "tests/Feature/NominalDiLuarSertifikatDitolakTest.php",
+  "tests/Feature/PayloadHpWaktuFrekuensiTest.php",
+  "tests/Feature/SemuaProfilLembarKerjaTest.php",
+  "tests/Unit/WaktuFrekuensiMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-waktu-frekuensi.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-waktu-frekuensi.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-waktu-frekuensi.json"
+ ]
+}

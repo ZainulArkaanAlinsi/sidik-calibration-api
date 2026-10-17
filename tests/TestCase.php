@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -84,6 +85,20 @@ abstract class TestCase extends BaseTestCase
         // `npm run build` di tahap `aset` Dockerfile, yang gagal keras waktu
         // build kalau temanya nggak bisa dikompilasi.
         $this->withoutVite();
+    }
+
+    /**
+     * Bertindak sebagai AKUN STUDIO (K-50-12): `STUDIO_AKUN` disetel ke email
+     * user ini dan tokennya hanya berability `studio` (tanpa `internal`) --
+     * persis token yang diterbitkan login Studio. Rute `/api/studio/*` hanya
+     * menerima ini; `actingAs()` biasa (sesi/token lab) dijawab 403.
+     */
+    protected function sebagaiStudio(User $user): static
+    {
+        config(['studio.akun' => strtolower((string) $user->email)]);
+        Sanctum::actingAs($user, ['studio']);
+
+        return $this;
     }
 
     /**

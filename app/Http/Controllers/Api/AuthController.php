@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\IdentitasKlien;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\MatriksIzin;
+use App\Services\Studio\AkunStudio;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -70,6 +72,28 @@ class AuthController extends Controller
                 'kode' => 'bukan_akun_internal',
                 'message' => 'Akun ini terdaftar sebagai akun pelanggan. Silakan masuk lewat aplikasi SIDIK Pelanggan.',
             ], 403);
+        }
+
+        // K-50-12 — login dari klien Sidik Studio (`X-Klien: sidik-studio`):
+        // HANYA akun `STUDIO_AKUN` yang dapat token, dan tokennya ber-ability
+        // `studio` saja (tidak memuat `internal`, jadi mati di semua rute lab;
+        // sebaliknya token lab tidak membuka Studio). Diperiksa SESUDAH sandi
+        // cocok, pesan sama untuk "bukan akun Studio" dan "STUDIO_AKUN kosong".
+        // Aplikasi lapangan (tanpa header itu) tidak tersentuh.
+        if (IdentitasKlien::dariStudio($request)) {
+            if (! AkunStudio::cocok($user)) {
+                return response()->json([
+                    'kode' => 'bukan_akun_studio',
+                    'message' => 'Akun ini tidak punya akses ke Sidik Studio.',
+                ], 403);
+            }
+
+            return response()->json([
+                'data' => [
+                    'token' => $user->createToken('studio', [AkunStudio::ABILITY])->plainTextToken,
+                    'user' => new UserResource($user),
+                ],
+            ]);
         }
 
         return response()->json([

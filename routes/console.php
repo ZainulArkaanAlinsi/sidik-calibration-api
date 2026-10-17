@@ -85,3 +85,10 @@ Schedule::command('ocr:bersihkan-citra')->dailyAt('02:30')->withoutOverlapping()
 // sertifikat tersangkut sesudah diam 15 menit, jadi memeriksa lebih sering cuma
 // menambah query tanpa mempercepat pemulihan apa pun.
 Schedule::command('sertifikat:sapu-tertunda')->everyTenMinutes()->withoutOverlapping();
+
+// Sidik Studio S1b: sisa temp `.xlsm` TERDEKRIPSI dari impor workbook yang mati
+// di tengah jalan (kill/timeout — jalur yang tidak sempat menjalankan `finally`
+// maupun shutdown handler). Isinya seluruh workbook termasuk sheet DATABASE,
+// jadi tidak boleh menunggu sampai ada yang ingat. Tiap jam; yang dihapus hanya
+// sisa berumur > 60 menit, jadi impor yang sedang berjalan tidak tersentuh.
+Schedule::command('studio:sapu-temp-workbook')->hourly()->withoutOverlapping();

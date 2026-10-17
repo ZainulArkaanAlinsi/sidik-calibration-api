@@ -1,0 +1,819 @@
+{
+ "kode": "sieve",
+ "nama": "Sieve Mesh",
+ "kelompok": "Panjang",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-sieve.json"
+ ],
+ "kelas": [
+  "TabelStandarSieve"
+ ],
+ "kalkulator": [
+  "SieveCalculator"
+ ],
+ "profil": [
+  "SieveProfile"
+ ],
+ "formulir": [
+  "0536"
+ ],
+ "master": [
+  "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh"
+ ],
+ "generator": [
+  "gen-tabel-standar-sieve.py"
+ ],
+ "fixture": [
+  "sesi-master-sieve.json"
+ ],
+ "kata": [
+  "sieve"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0536_Rev.2 - LEMBAR KERJA SIEVE MESH.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 319,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 63,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 323,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh",
+   "sheet": "STANDAR_KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 148,
+   "cuplikan_atas": [
+    "STANDAR KALIBRATOR",
+    "Name | Digital Microscope | Tgl Kalibrasi | 2026-02-13T00:00:00 | Name | Digital Caliper | Tgl Kalibrasi | 2025-07-25T00:00:00",
+    "No Seri | B1401068 | No Seri | LPI-0368",
+    "Merk | Dino-Lite | Merk | Tesa",
+    "Tipe | AF3113 | Tipe | Cal-IP67",
+    "Rentang Ukur | - | Rentang Ukur | 150 | mm"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-sieve.json": "a9c845e77667e07ebc12c0fd2c99b52e796bd770e18e3fa80e16c7dc49454878"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "traceability",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "berlaku_sampai",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "caliper",
+    "mikroskop"
+   ],
+   "contoh": {
+    "nama": "Digital Caliper",
+    "merk_tipe": "Tesa/Cal-IP67",
+    "seri": "LPI-0368",
+    "traceability": "LK-285-IDN",
+    "tanggal_kalibrasi": "2025-07-25",
+    "interval_tahun": 1,
+    "berlaku_sampai": "2026-07-25",
+    "resolusi_mm": 0.01
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 16,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi/caliper",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nilai_standar_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "penunjukan_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "koreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 10,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "contoh": {
+    "nilai_standar_mm": 1.1,
+    "penunjukan_mm": 1.1,
+    "koreksi_mm": 0.0
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 30,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi/mikroskop_x",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nilai_standar_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "penunjukan_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "koreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 11,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ],
+   "contoh": {
+    "nilai_standar_mm": 0.0102,
+    "penunjukan_mm": 0.0097,
+    "koreksi_mm": 0.0005000000000000004
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 33,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "koreksi/mikroskop_y",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nilai_standar_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "penunjukan_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "koreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 11,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ],
+   "contoh": {
+    "nilai_standar_mm": 0.0102,
+    "penunjukan_mm": 0.0103,
+    "koreksi_mm": -9.99999999999994e-05
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 33,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "u95_sertifikat_mm",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "caliper",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "mikroskop_x",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "mikroskop_y",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "caliper": 0.015,
+    "mikroskop_x": 0.0064,
+    "mikroskop_y": 0.0063
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc_master",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "standar",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "ukuran_min_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "ukuran_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "ukuran_min_mm_eksklusif",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "0",
+    "1"
+   ],
+   "contoh": {
+    "label": "CMC 45-2000 µm",
+    "standar": "mikroskop",
+    "ukuran_min_mm": 0.0,
+    "ukuran_maks_mm": 2.0,
+    "u95_mm": 0.00433
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 10,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc_lampiran",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "ukuran_min_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "ukuran_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "0",
+    "1"
+   ],
+   "contoh": {
+    "label": "45 ~ 4000 µm",
+    "ukuran_min_mm": 0.045,
+    "ukuran_maks_mm": 4.0,
+    "u95_mm": 0.00433
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu_acuan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "delta_alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "vi_sertifikat",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "daya_baca_pengali",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_daya_baca",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "geometri_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "vi_geometri",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_suhu",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_pengulangan",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_pengulangan",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "jumlah_opening_pengulangan",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "k",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 12,
+   "contoh": {
+    "suhu_acuan_c": 20.0,
+    "delta_alpha_per_c": 1e-05,
+    "vi_sertifikat": 200
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 12,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta/u_alpha_pengali",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "mikroskop",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "caliper",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "mikroskop": 1.0,
+    "caliper": 2.0
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta/pembagi_sertifikat",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "mikroskop",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "caliper",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "mikroskop": 2.02,
+    "caliper": 2.0
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mpe",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "ukuran_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "sieve_no",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "ukuran_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "ukuran_inch",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "min_opening.compliance",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "min_opening.inspection",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "min_opening.calibration",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "x_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "y_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "max_stdev_mm",
+     "tipe": "teks",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "kawat_preferred_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "kawat_max_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "kawat_min_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "tanda",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 96,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95"
+   ],
+   "contoh": {
+    "ukuran_mm": 125.0,
+    "sieve_no": "-",
+    "ukuran_um": 125000.0,
+    "ukuran_inch": 5.0,
+    "x_mm": 4.06,
+    "y_mm": 3.3,
+    "max_stdev_mm": "-",
+    "kawat_preferred_mm": 8.0,
+    "kawat_max_mm": 9.2,
+    "kawat_min_mm": 6.8,
+    "tanda": []
+   },
+   "sumber_json": "tabel-standar-sieve.json",
+   "jumlah_sel_data": 1344,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-sieve.json:_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
+  "tabel-standar-sieve.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-sieve.py"
+ },
+ "cakupan": {
+  "tabel-standar-sieve.json": {
+   "daun": 1493,
+   "tercakup": 1493,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!R13:Z14",
+  "DATABASE!S5:T6",
+  "DATABASE!Z13",
+  "INPUT DATA!H89:N91",
+  "INPUT DATA!Z16",
+  "PERHITUNGAN U95%!AC22",
+  "PERHITUNGAN U95%!N15",
+  "PERHITUNGAN U95%!X15",
+  "PERHITUNGAN!G17",
+  "PERHITUNGAN!G81",
+  "PERHITUNGAN!J82",
+  "STANDAR_KALIBRATOR!B41:N136",
+  "master INPUT DATA!H89:N91",
+  "resolusi STANDAR_KALIBRATOR!C7"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarSieve.php",
+  "app/Services/Calibration/SieveCalculator.php",
+  "app/Services/Calibration/Profiles/SieveProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarSieve": [
+   "CalibrationController",
+   "SieveCalculator"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/JangkaSorongSieveSesiTest.php",
+  "tests/Unit/SieveMasterTest.php",
+  "tests/Unit/SieveMpeAstmTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-sieve.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-sieve.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-sieve.json"
+ ]
+}

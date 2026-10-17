@@ -1,0 +1,202 @@
+{
+ "kode": "gas_detector",
+ "nama": "Gas Detector",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "GasDetectorProfile"
+ ],
+ "formulir": [],
+ "master": [
+  "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "gas-detector"
+ ],
+ "catatan_master": "",
+ "formulir_pdf": [],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 188,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 245,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 102,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 243,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 59,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/GasDetectorSesiTest.php",
+  "tests/Unit/GasDetectorBudgetTest.php",
+  "tests/Unit/PeringatanProfilBentukTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-gas-detector.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-gas-detector.md"
+ ],
+ "kandidat_konstanta": [
+  {
+   "baris": 121,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "null;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 127,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0536_Rev.0';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 141,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 147,
+   "nama": "CI_PERSEN_SUHU",
+   "nilai_awal": "0.0034;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 150,
+   "nama": "CI_PERSEN_TEKANAN",
+   "nilai_awal": "0.0098;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 166,
+   "nama": "PEMBAGI_TEKANAN",
+   "nilai_awal": "5.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 177,
+   "nama": "VI_RESOLUSI",
+   "nilai_awal": "60;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 180,
+   "nama": "VI_STANDAR",
+   "nilai_awal": "200;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 193,
+   "nama": "PERSEN_U95_STANDAR",
+   "nilai_awal": "0.05;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 207,
+   "nama": "TOLERANSI_TITIK",
+   "nilai_awal": "3.0;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 242,
+   "nama": "GAS",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 307,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 329,
+   "nama": "PARAMETER_KONDISI_WAJIB",
+   "nilai_awal": "'tekanan';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 675,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 683,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  },
+  {
+   "baris": 697,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/GasDetectorProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

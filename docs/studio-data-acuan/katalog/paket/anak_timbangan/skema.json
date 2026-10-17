@@ -1,0 +1,1624 @@
+{
+ "kode": "anak_timbangan",
+ "nama": "Anak Timbangan (OIML R111)",
+ "kelompok": "Massa",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-anak-timbangan.json"
+ ],
+ "kelas": [
+  "TabelStandarAnakTimbangan"
+ ],
+ "kalkulator": [
+  "AnakTimbanganCalculator"
+ ],
+ "profil": [
+  "AnakTimbanganProfile"
+ ],
+ "formulir": [
+  "0541"
+ ],
+ "master": [
+  "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp"
+ ],
+ "generator": [
+  "gen-tabel-standar-anak-timbangan.py"
+ ],
+ "fixture": [
+  "sesi-master-anak-timbangan.json"
+ ],
+ "kata": [
+  "anak-timbangan"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN).pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 93,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Data Sens Analytical Balance",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": [
+    "E2 | AT yang dipakai untuk Msens",
+    "MPE | 0.16 | mg",
+    "Data Sensitivitas Timbangan Analytical Balance | AT Msens | 20 | mg",
+    "Middle Capacity : | 100 | g",
+    "Repeatability | S (E2) | T (E2) | T+Msens | S+Msens | Nama Standard | Kapasitas",
+    "1 | 99.9999 | 99.9997 | 100.0198 | 100.0199 | Semi Micro Balance | 80"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Data Sens Excellent",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": [
+    "F2 | AT yang dipakai untuk Msens",
+    "MPE | 30 | mg",
+    "Data Sensitivitas Timbangan | AT Msens | 900 | mg",
+    "Middle Capacity : | 2000 | g | AT Msens | 1000",
+    "Repeatability | S (F1) | T (F2) | T+Msens | S+Msens | Nama Standard | Kapasitas",
+    "1 | 2000 | 1999.97 | 2000.97 | 2001 | Semi Micro Balance | 80"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Data Sens Fujitsu",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": [
+    "F1 | AT yang dipakai untuk Msens",
+    "MPE | 2.5 | mg",
+    "Data Sensitivitas Timbangan | AT Msens | 100 | mg",
+    "Middle Capacity : | 500 | g",
+    "Repeatability | S (E2) | T (F1) | T+Msens | S+Msens | Nama Standard | Kapasitas",
+    "1 | 500 | 499.996 | 500.096 | 500.099 | Semi Micro Balance | 80"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Data Sens Mettler Toledo",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": [
+    "F2 | AT yang dipakai untuk Msens",
+    "MPE | 160 | mg",
+    "Data Sensitivitas Timbangan | AT Msens | 4800 | mg",
+    "Middle Capacity : | 10000 | g | AT Msens | 5000",
+    "Repeatability | S (F1) | T (F2) | T+Msens | S+Msens | Nama Standard | Kapasitas",
+    "1 | 10000 | 9999.99 | 10004.99 | 10005 | Semi Micro Balance | 80"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Data Sens Semi Micro",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 175,
+   "cuplikan_atas": [
+    "E2 | AT yang dipakai untuk Msens",
+    "MPE | 0.1 | mg",
+    "Data Sensitivitas Timbangan Semi Micro Balance | AT Msens | 20 | mg",
+    "Middle Capacity : | 50 | g",
+    "Repeatability | S (E2) | T (E2) | T+Msens | S+Msens | Nama Standard | Kapasitas",
+    "1 | 49.99999 | 49.99998 | 50.00199 | 50.00199 | Semi Micro Balance | 80"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Deviasi Standard Timbangan",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 99,
+   "cuplikan_atas": [
+    "Nama Standard | : | Semi Micro Balance",
+    "Nominal AT | : | 50 | g",
+    "Tanggal Verifikasi | 2026-05-04T00:00:00 | 2026-05-05T00:00:00 | 2026-05-06T00:00:00 | 2026-05-07T00:00:00 | 2026-05-08T00:00:00 | 2026-05-11T00:00:00",
+    "Repeat | Pembacaan (g)",
+    "S | T | T | S | ∆m | S | T | T | S | ∆m | S | T | T | S | ∆m | S | T | T | S | ∆m | S | T | T | S | ∆m | S | T | T | S | ∆m",
+    "n | 1 | 2 | 3 | 4 | 5 | 6"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT E2(0.1-200g)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 95,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | Accurate",
+    "Type | : | Stainless",
+    "No. Seri | : | 75870",
+    "Kelas | : | E2"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT E2(1kg)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | -",
+    "Type | : | -",
+    "No. Seri | :",
+    "Kelas | : | E2"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT E2(500g)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | Accurate",
+    "Type | : | Stainless",
+    "No. Seri | : | 100636",
+    "Kelas | : | E2"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT F1(10kg)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | -",
+    "Type | : | -",
+    "No. Seri | : | 4321",
+    "Kelas | : | F1"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT F1(20kg)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | -",
+    "Type | : | -",
+    "No. Seri | : | 130016",
+    "Kelas | : | F1"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT F1(2kg)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | -",
+    "Type | : | -",
+    "No. Seri | :",
+    "Kelas | : | F1"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "Drift AT F1(5kg)",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 38,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Anak Timbangan",
+    "Merk | : | -",
+    "Type | : | -",
+    "No. Seri | : | 111962",
+    "Kelas | : | F1"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 15,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 77,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "MPE AT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 26,
+   "cuplikan_atas": [
+    "Nominal | Class",
+    "Value | in gram | F1 | F2 | M1 | M1-2 | M2 | M2-3 | M3",
+    "20 kg | 20000 | 100 | 300 | 1000 | 3000 | 10000",
+    "10 kg | 10000 | 50 | 160 | 500 | 1600 | 5000",
+    "5 kg | 5000 | 25 | 80 | 250 | 800 | 2500",
+    "2 kg | 2000 | 10 | 30 | 100 | 300 | 1000"
+   ]
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 74,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 345,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 68,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp",
+   "sheet": "STD AT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 89,
+   "cuplikan_atas": [
+    "Nama Alat | : | Anak Timbangan | Tanggal Kalibrasi | : | 2026-01-22T00:00:00 | OVERALL STANDAR ANAK TIMBANGAN",
+    "Kapasitas | : | 1 mg - 200 g | Due Date Kalibrasi | : | 2029-01-22T00:00:00",
+    "Type | : | E2 | Tertelusur | : | LK-045-IDN | Kelas | Massa Nominal | Massa Konvensional | Koreksi AT | Ketidakpastian | Drift of Correction/Instability of mass",
+    "S/N | : | 75870 | No. Sertif | : | 0518/25/KAL/01/2026 | g | g | g | mg | mg",
+    "E2 | 0.001 | 0.00100015 | 1.4999999999997654e-07 | 0.0008 | 0.0004",
+    "Massa Nominal | Massa Konvensional | Koreksi AT | Ketidakpastian | E2 | 0.002 | 0.00200127 | 1.2699999999998303e-06 | 0.0009 | 0.00045"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-anak-timbangan.json": "e28ff2f11460ea70bbfa3e8cd6e5383b78bee115e4ef55e6f99de3b1732d7095"
+ },
+ "lembar": [
+  {
+   "jalur": "sumber",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "workbook",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "lembar_kerja",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "metode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "acuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "revisi_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "dalam_lingkup_akreditasi",
+     "tipe": "boolean",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "digenerate_oleh",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "workbook": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx",
+    "lembar_kerja": "SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN)",
+    "metode": "SIDIK-IK-CAL-0535_Rev.0"
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "rho_udara_referensi_kg_m3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u_bouyancy_kg_m3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_rectangular",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_normal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "faktor_resolusi_ganda",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan_pembagi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_densitas_udara",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "contoh": {
+    "rho_udara_referensi_kg_m3": 1.2,
+    "u_bouyancy_kg_m3": 0.12,
+    "pembagi_rectangular": 1.73
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 7,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta/vi",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "repeatability",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sertifikat_calibrator_at",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi_timbangan_standard",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "instability",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "bouyancy",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sensitivity",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 6,
+   "contoh": {
+    "repeatability": 54,
+    "sertifikat_calibrator_at": 60,
+    "resolusi_timbangan_standard": 100
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "standar_at/set",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kapasitas",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kelas",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "no_seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "no_sertifikat",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "due_date",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "contoh": {
+    "nama": "Anak Timbangan E2 200 g",
+    "kapasitas": "1 mg - 200 g",
+    "kelas": "E2",
+    "merk_tipe": "Accurate/Stainless",
+    "no_seri": "75870",
+    "tertelusur": "LK-045-IDN",
+    "no_sertifikat": "0518/25/KAL/01/2026",
+    "tanggal_kalibrasi": "2026-01-22",
+    "due_date": "2029-01-22",
+    "interval_tahun": 3
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 70,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "standar_at/keping",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "kelas",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nominal_teks",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nominal_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "bintang",
+     "tipe": "boolean",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "konvensional_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "koreksi_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "u_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "drift_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "pola_drift",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 29,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28"
+   ],
+   "contoh": {
+    "kelas": "E2",
+    "nominal_teks": "0.001",
+    "nominal_g": 0.001,
+    "bintang": false,
+    "konvensional_g": 0.00100015,
+    "koreksi_g": 1.4999999999997654e-07,
+    "u_mg": 0.0008,
+    "drift_mg": 0.0004,
+    "pola_drift": "U/2"
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 261,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timbangan",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "no_seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_database",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kapasitas_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "resolusi_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "u95_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "nominal_at_uji_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "stdev_harian_mg",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "std_dev_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "gabungan_harian_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "u_sens_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.delta1_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.delta2_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.de_sens_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.u_msens_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.m_sens_mg",
+     "tipe": "desimal",
+     "satuan_tebakan": "mg"
+    },
+    {
+     "kunci": "sensitivitas.u_relatif",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "contoh": {
+    "nama": "Semi Micro Balance",
+    "merk_tipe": "OHAUS PIONEER/PX85",
+    "no_seri": "C543502629",
+    "tertelusur": "LK-064-IDN",
+    "tanggal_database": "2026-01-26",
+    "kapasitas_g": 80.0,
+    "resolusi_g": 1e-05,
+    "u95_g": 9.7e-05,
+    "nominal_at_uji_g": 50.0,
+    "stdev_harian_mg": [
+     0.008959786704781921,
+     0.007149203529406107,
+     0.006146362971424353,
+     0.005868938953596891,
+     0.010749676997214276,
+     0.009143911150739058
+    ],
+    "std_dev_mg": 0.001923103720334314,
+    "gabungan_harian_mg": 0.00819326733558974,
+    "u_sens_mg": -2.6461006446691237e-05
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 95,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "densitas",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "status",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pertanyaan_lab",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kelas",
+     "tipe": "daftar",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "aturan_diatas_100g",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 6,
+   "contoh": {
+    "status": "disengketakan",
+    "satuan": "kg/m3",
+    "pertanyaan_lab": "§6"
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "densitas/baris",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "E2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "F1",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "F2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M1",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 12,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11"
+   ],
+   "contoh": {
+    "nominal_g": 100.0,
+    "E2": 8010,
+    "F1": 8060.000000000001,
+    "F2": 8550,
+    "M1": 4400,
+    "M2": 2300
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 72,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mpe",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "acuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kelas",
+     "tipe": "daftar",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "satuan": "mg",
+    "acuan": "OIML R111-1 Tabel 1",
+    "kelas": [
+     "F1",
+     "F2",
+     "M1",
+     "M1-2",
+     "M2",
+     "M2-3",
+     "M3"
+    ]
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mpe/baris",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nominal_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "F1",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "F2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M1",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M1-2",
+     "tipe": "kosong",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M2-3",
+     "tipe": "kosong",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "M3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 23,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22"
+   ],
+   "contoh": {
+    "label": "20 kg",
+    "nominal_g": 20000,
+    "F1": 100,
+    "F2": 300,
+    "M1": 1000,
+    "M1-2": null,
+    "M2": 3000,
+    "M2-3": null,
+    "M3": 10000
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 207,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "lokasi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "due_date",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "0"
+   ],
+   "contoh": {
+    "nama": "Thermobarometer",
+    "lokasi": "Inlab (Lab. Volumetrik)",
+    "tanggal_kalibrasi": "2024-06-26",
+    "due_date": "2026-06-27",
+    "tertelusur": "LK-172-IDN"
+   },
+   "lembar_anak": [
+    "meter_lingkungan/*/suhu",
+    "meter_lingkungan/*/kelembaban",
+    "meter_lingkungan/*/tekanan"
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "0"
+   ],
+   "contoh": {
+    "u95": 1.2
+   },
+   "lembar_anak": [
+    "meter_lingkungan/*/suhu/*/titik"
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu/0/titik/0",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    20.1,
+    20,
+    0.1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu/0/titik/1",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    26,
+    25,
+    1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu/0/titik/2",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    29.7,
+    30,
+    -0.3
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu/0/titik/3",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    34.7,
+    35,
+    -0.3
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/suhu/0/titik/4",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    39.8,
+    40,
+    -0.2
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "0"
+   ],
+   "contoh": {
+    "u95": 3
+   },
+   "lembar_anak": [
+    "meter_lingkungan/*/kelembaban/*/titik"
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban/0/titik/0",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    38,
+    40,
+    -2
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban/0/titik/1",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    48.5,
+    50,
+    -1.5
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban/0/titik/2",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    59.2,
+    60,
+    -0.8
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban/0/titik/3",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    70,
+    70,
+    0
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/kelembaban/0/titik/4",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    81.1,
+    80,
+    1.1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "0"
+   ],
+   "contoh": {
+    "u95": 2
+   },
+   "lembar_anak": [
+    "meter_lingkungan/*/tekanan/*/titik"
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/0",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    931,
+    930,
+    1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/1",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    941.1,
+    940,
+    1.1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/2",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    950.9,
+    950,
+    0.9
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/3",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    961.2,
+    960,
+    1.2
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/4",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    971,
+    970,
+    1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/5",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    981.1,
+    980,
+    1.1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/6",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    990.6,
+    990,
+    0.6
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/7",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    1001,
+    1000,
+    1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "meter_lingkungan/*/tekanan/0/titik/8",
+   "bentuk": "daftar",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": [
+    1006,
+    1005,
+    1
+   ],
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "drift_penimbangan",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "maks_index_standar_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "kelompok",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u_drift_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    }
+   ],
+   "jumlah_baris": 7,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "contoh": {
+    "maks_index_standar_g": 200,
+    "kelompok": "E2 0.1-200 g",
+    "u_drift_g": 0
+   },
+   "sumber_json": "tabel-standar-anak-timbangan.json",
+   "jumlah_sel_data": 21,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {},
+ "cakupan": {
+  "tabel-standar-anak-timbangan.json": {
+   "daun": 783,
+   "tercakup": 783,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarAnakTimbangan.php",
+  "app/Services/Calibration/AnakTimbanganCalculator.php",
+  "app/Services/Calibration/Profiles/AnakTimbanganProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarAnakTimbangan": [
+   "AnakTimbanganCalculator",
+   "AnakTimbanganProfile",
+   "CalibrationRequest"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/AlurPenuhAnakTimbanganTest.php",
+  "tests/Feature/AnakTimbanganSertifikatSatuHalamanTest.php",
+  "tests/Unit/AnakTimbanganGerbangTest.php",
+  "tests/Unit/AnakTimbanganMasterTest.php",
+  "tests/Unit/AnakTimbanganRohmanTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-anak-timbangan.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-anak-timbangan.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-anak-timbangan.json"
+ ]
+}

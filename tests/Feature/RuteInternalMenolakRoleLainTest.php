@@ -16,12 +16,16 @@ use App\Models\FormulaVersion;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organization;
+use App\Models\PaketAcuan;
+use App\Models\PaketAcuanVersi;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\UndanganPelanggan;
 use App\Models\User;
+use App\Models\WorkbookMaster;
+use App\Models\WorkbookMasterLembar;
 use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteLaravel;
@@ -203,7 +207,51 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'dibuat_oleh' => $admin->id,
         ]);
         $barisPenugasan = $penugasan->item()->create(['jenis_alat' => 'Autoklaf', 'jumlah' => 1]);
+        // Studio Data Acuan (CR-48 P1, 8 Okt) — seorganisasi, alasan sama.
+        $versiAcuan = PaketAcuanVersi::create([
+            'paket_acuan_id' => PaketAcuan::create([
+                'organization_id' => $org->id,
+                'kode_profil' => 'micrometer',
+                'nama' => 'Micrometer',
+                'skema_versi' => 1,
+            ])->id,
+            'organization_id' => $org->id,
+            'jenis' => PaketAcuanVersi::JENIS_DATA,
+            'nomor_versi' => 1,
+            'status' => PaketAcuanVersi::STATUS_AKTIF,
+            'isi' => '{}',
+            'skema_versi' => 1,
+            'berlaku_mulai' => '2024-01-01',
+        ]);
+
+        // Sidik Studio S1b (13 Okt) — workbook + lembarnya, seorganisasi,
+        // alasan sama: id yang tidak ada → 404 sebelum gerbang role keuji.
+        $workbook = WorkbookMaster::create([
+            'organization_id' => $org->id,
+            'nama' => 'Workbook Contoh',
+            'sumber' => WorkbookMaster::SUMBER_CSV,
+            'sha256' => str_repeat('a', 64),
+            'ukuran' => 1,
+            'jumlah_lembar' => 1,
+        ]);
+        $lembarWorkbook = WorkbookMasterLembar::create([
+            'workbook_master_id' => $workbook->id,
+            'urutan' => 1,
+            'nama' => 'INPUT DATA',
+            'tata_letak' => [],
+            'sel' => '[]',
+        ]);
+
         $this->isiParameter = [
+            'workbook' => (string) $workbook->id,
+            'lembarWorkbook' => (string) $lembarWorkbook->id,
+            // Studio tahap C: id gambar = 32 hex sha256; gerbang role jalan
+            // sebelum controller mencarinya.
+            'gambar' => str_repeat('a', 32),
+            'versi' => (string) $versiAcuan->id,
+            'pembanding' => (string) $versiAcuan->id,
+            'lembar' => 'balok_ukur',
+            'kolom' => 'nilai_terkoreksi_mm',
             'orderItem' => (string) $barisPaket->id,
             'penugasan' => (string) $penugasan->id,
             'penugasanItem' => (string) $barisPenugasan->id,
@@ -307,7 +355,8 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             $punyaGerbang = false;
 
             foreach ($rute->gatherMiddleware() as $middleware) {
-                if (is_string($middleware) && str_starts_with($middleware, 'role:')) {
+                // `studio` (K-50-12): gerbang SATU akun Studio -- lebih sempit dari `role:`.
+                if (is_string($middleware) && (str_starts_with($middleware, 'role:') || $middleware === 'studio')) {
                     $punyaGerbang = true;
                     break;
                 }

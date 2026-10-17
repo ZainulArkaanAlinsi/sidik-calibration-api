@@ -43,6 +43,13 @@ RUN install-php-extensions \
         pcntl \
         opcache
 
+# Batas unggah PHP. Bawaan image (2M / 8M) menolak unggahan master Sidik Studio
+# (`POST /api/studio/workbook/impor`, sampai 30 MB — plafon aplikasinya di
+# `config/studio.php`) SEBELUM Laravel sempat memvalidasi apa pun: yang kelihatan
+# di klien cuma "gagal unggah". Penjaga ukuran yang sebenarnya tetap validasi
+# `max:` di controller; ini hanya melonggarkan pintu PHP-nya.
+RUN { echo 'upload_max_filesize=32M'; echo 'post_max_size=40M'; } > "$PHP_INI_DIR/conf.d/zz-studio-unggah.ini"
+
 # Cabut file capability dari biner frankenphp.
 #
 # Image bawaannya nyetel CAP_NET_BIND_SERVICE biar bisa nempel ke port 80/443.

@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use RuntimeException;
 
 /**
@@ -35,9 +37,6 @@ use RuntimeException;
  */
 class TabelStandarMicrometer
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /**
      * Nilai terkoreksi (mm) satu balok ukur pada `$nominal`, atau `null` kalau
      * nominal itu tidak ada di tabel standar.
@@ -175,20 +174,27 @@ class TabelStandarMicrometer
         return self::muat()['cmc'];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Isi tabel dari [SumberAcuan]: versi DB kalau jalur pemanggilnya membuka
+     * lingkup versi (dan `DATA_ACUAN_SUMBER=db`), berkas JSON di luar itu.
+     *
+     * TIDAK di-cache di kelas ini. Cache statis per kelas yang dulu ada di sini
+     * menyajikan isi versi lama sesudah lingkup berganti; cache-nya sekarang di
+     * SumberAcuan, dikunci (versi, sha256).
+     *
+     * @return array<string, mixed>
+     */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-micrometer.json');
 
+        // Berkas tetap wajib ada di kedua jalur: dia sumber versi 1 dan
+        // pembanding `TabelAcuanSetaraJsonTest` sampai 07 §2 tahap 7.
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar micrometer nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        $isi = app(SumberAcuan::class)->isi((new MicrometerProfile)->kode(), $berkas);
 
         // `standar` ikut diperiksa: [umurStandarHari] membaca
         // `standar.tanggal_kalibrasi` sebagai titik nol umur drift, dan tanpa
@@ -200,6 +206,6 @@ class TabelStandarMicrometer
             throw new RuntimeException("Tabel standar micrometer rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

@@ -270,6 +270,16 @@ services:
       - key: DIREKTORI_PERUSAHAAN_KEY
         sync: false
 
+      # Sumber tabel data acuan (Studio Data Acuan): `json` = berkas
+      # database/data/*.json seperti hari ini, `db` = versi paket_acuan_versi.
+      # Dipatok `value`, BUKAN `sync: false`: angka sertifikat ikut sumber ini,
+      # jadi pindahnya harus lewat commit yang ditinjau — setelan dashboard
+      # ditimpa blueprint tiap deploy (lihat §ARSIP_DRIVER). Pindah ke `db` =
+      # rollout tahap 3, SESUDAH impor awal paket di produksi — sebelum itu
+      # belum ada versi di database untuk dibaca.
+      - key: DATA_ACUAN_SUMBER
+        value: json
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
@@ -371,6 +381,24 @@ services:
         value: "0.0.0"
       - key: PELANGGAN_VERSI_TERBARU
         value: "0.0.0"
+
+      # Versi minimum Sidik Studio (ST-T-013). Request ber-header
+      # `X-Klien: sidik-studio` di bawah angka ini dijawab 426
+      # `klien_kedaluwarsa`; tanpa header tidak pernah kena. "0.0.0" = tidak
+      # pernah menolak. Naikkan hanya bila kontrak API berubah dengan cara yang
+      # membuat Studio lama salah membaca, dan sesudah build barunya terpasang.
+      - key: STUDIO_VERSI_MINIMUM
+        value: "0.0.0"
+
+      # K-50-12: email SATU akun Sidik Studio (pemilik). Login dari klien Studio
+      # (X-Klien: sidik-studio) hanya menerbitkan token untuk akun ini; semua
+      # /api/studio/* menolak selain dia. KOSONG = Studio tertutup total.
+      # `sync: false` karena ini keputusan operasional/identitas, bukan nilai
+      # blueprint (pola ARSIP_DRIVER). Berkas master yang diunggah lewat API
+      # disimpan di disk `arsip`: PASTIKAN ARSIP_DRIVER=s3 (R2) di dashboard,
+      # kalau tidak berkas hilang tiap deploy dan /hitung kehilangan sumbernya.
+      - key: STUDIO_AKUN
+        sync: false
 
       # Maintenance khusus modul pelanggan — TIDAK menyentuh app internal.
       # Dipisah dari `php artisan down` justru karena itu: teknisi di lapangan

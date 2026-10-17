@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Acuan\SumberAcuan;
 use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriLokalDb;
@@ -151,6 +152,13 @@ class AppServiceProvider extends ServiceProvider
                 ? new DirektoriBerlapis([$lokal, $luar])
                 : $luar;
         });
+
+        // Sumber data acuan: SINGLETON, bukan bind. Lingkup versi yang dibuka
+        // `denganVersi()` hidup di instance ini, dan kelas `Tabel*` mengambilnya
+        // lewat container di tengah hitungan. Instance baru per resolve berarti
+        // lingkup yang dibuka pemanggil tidak pernah terlihat oleh tabelnya —
+        // hitungan jalan dari JSON tanpa satu pun error. Lihat SumberAcuan.
+        $this->app->singleton(SumberAcuan::class);
     }
 
     /**
@@ -413,6 +421,30 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('pelanggan-koreksi', 20);
         $perMenitPengguna('pelanggan-alat-tulis', 30);
         $perMenitPengguna('pelanggan-foto', 30);
+        // Sidik Studio — baca Workbook Alat (S1b). Grid "Asli Excel" memuat sel
+        // per halaman 500 baris saat digulir, jadi longgar; tiap halaman
+        // mengurai JSON sel satu lembar, jadi tetap berpagar terhadap skrip
+        // yang menyedot semua workbook sekaligus.
+        $perMenitPengguna('studio-baca', 300);
+        // Studio tahap C — hitung ulang workbook (±0,5–3 s CPU & ±250 MB per
+        // panggilan). Klien memanggil sesudah edit, bukan per ketukan.
+        // Ember & kunci sama dengan `$perMenitPengguna`, tapi 429-nya MEMBAWA
+        // header throttle Laravel (`Retry-After` detik, `X-RateLimit-*`) —
+        // callback bersama di atas membuangnya, dan klien Studio perlu tahu
+        // kapan boleh mencoba lagi (tinjau C #3/#6, kontrak §16).
+        RateLimiter::for('studio-hitung', fn (Request $request) => Limit::perMinute(30)
+            ->by('studio-hitung|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn (Request $request, array $header) => response()->json([
+                'message' => 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.',
+            ], 429, $header)));
+        // Studio — unggah master lewat API (K-50-12). Tiap impor membaca seluruh
+        // workbook (ratusan MB RAM di container 512 MB bersama worker), jadi
+        // ketat; ditambah kunci satu-impor-sekali-jalan di controller.
+        RateLimiter::for('studio-impor', fn (Request $request) => Limit::perMinute(6)
+            ->by('studio-impor|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn (Request $request, array $header) => response()->json([
+                'message' => 'Kebanyakan unggahan. Tunggu sebentar, terus coba lagi.',
+            ], 429, $header)));
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
         // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia

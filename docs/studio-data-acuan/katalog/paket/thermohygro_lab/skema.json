@@ -1,0 +1,395 @@
+{
+ "kode": "thermohygro_lab",
+ "nama": "Thermohygrometer lab (alat kondisi lingkungan, lintas alat)",
+ "kelompok": "Lintas alat",
+ "jenis": "seed-standards",
+ "json": [
+  "thermohygro-lab.json"
+ ],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "(semua profil yang memakai Environmental Meter)"
+ ],
+ "formulir": [],
+ "master": [],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "thermohygro-satuan"
+ ],
+ "catatan_master": "Diseed ThermohygroSeeder ke tabel `standards` (koreksi & U kondisi lingkungan). Sumber kebenaran sesudah seed adalah tabel `standards`, yang SUDAH bisa disunting di menu Standar. Studio menampilkannya sebagai paket ber-versi, tidak membuat salinan kedua.",
+ "formulir_pdf": [],
+ "sheet_master": [],
+ "sha256_json": {
+  "thermohygro-lab.json": "d9ef9442a3deee0bdf4961d71fd487677f550dcf687f475d1f71493288130264"
+ },
+ "lembar": [
+  {
+   "jalur": "thermohygro",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "serial_number",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "lokasi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur_ke",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "berlaku_sampai",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "_catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+   ],
+   "contoh": {
+    "nama": "TH-1",
+    "serial_number": "TH-1",
+    "lokasi": "Inlab (Lab. Dimensi)",
+    "tertelusur_ke": "LK-285-IDN",
+    "tanggal_kalibrasi": "2025-09-11",
+    "berlaku_sampai": "2027-09-12"
+   },
+   "lembar_anak": [
+    "thermohygro/*/parameter_kondisi",
+    "thermohygro/*/titik_kalibrasi"
+   ],
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 49,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/*/parameter_kondisi",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "indexed_value",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "correction",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 17,
+   "kunci_baris": [
+    "0·suhu",
+    "0·kelembaban",
+    "1·suhu",
+    "1·kelembaban",
+    "2·suhu",
+    "2·kelembaban",
+    "3·suhu",
+    "3·kelembaban",
+    "4·suhu",
+    "4·kelembaban",
+    "5·suhu",
+    "5·kelembaban",
+    "6·suhu",
+    "6·kelembaban",
+    "7·suhu",
+    "7·kelembaban",
+    "7·tekanan"
+   ],
+   "contoh": {
+    "indexed_value": 19.3,
+    "correction": -0.16,
+    "u95": 1.7
+   },
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 51,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/*/titik_kalibrasi",
+   "bentuk": "tabel_anak",
+   "kolom": [],
+   "jumlah_baris": 8,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+   ],
+   "contoh": {},
+   "lembar_anak": [
+    "thermohygro/*/titik_kalibrasi/*/suhu",
+    "thermohygro/*/titik_kalibrasi/*/kelembaban",
+    "thermohygro/*/titik_kalibrasi/*/tekanan"
+   ],
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 0,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/*/titik_kalibrasi/*/suhu",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "indexed_value",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "instrument",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "correction",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 40,
+   "kunci_baris": [
+    "0·0",
+    "0·1",
+    "0·2",
+    "0·3",
+    "0·4",
+    "1·0",
+    "1·1",
+    "1·2",
+    "1·3",
+    "1·4",
+    "2·0",
+    "2·1",
+    "2·2",
+    "2·3",
+    "2·4",
+    "3·0",
+    "3·1",
+    "3·2",
+    "3·3",
+    "3·4",
+    "4·0",
+    "4·1",
+    "4·2",
+    "4·3",
+    "4·4",
+    "5·0",
+    "5·1",
+    "5·2",
+    "5·3",
+    "5·4",
+    "6·0",
+    "6·1",
+    "6·2",
+    "6·3",
+    "6·4",
+    "7·0",
+    "7·1",
+    "7·2",
+    "7·3",
+    "7·4"
+   ],
+   "contoh": {
+    "indexed_value": 15.42,
+    "instrument": 15,
+    "correction": 0.46,
+    "u95": 1.7
+   },
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 160,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/*/titik_kalibrasi/*/kelembaban",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "indexed_value",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "instrument",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "correction",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 40,
+   "kunci_baris": [
+    "0·0",
+    "0·1",
+    "0·2",
+    "0·3",
+    "0·4",
+    "1·0",
+    "1·1",
+    "1·2",
+    "1·3",
+    "1·4",
+    "2·0",
+    "2·1",
+    "2·2",
+    "2·3",
+    "2·4",
+    "3·0",
+    "3·1",
+    "3·2",
+    "3·3",
+    "3·4",
+    "4·0",
+    "4·1",
+    "4·2",
+    "4·3",
+    "4·4",
+    "5·0",
+    "5·1",
+    "5·2",
+    "5·3",
+    "5·4",
+    "6·0",
+    "6·1",
+    "6·2",
+    "6·3",
+    "6·4",
+    "7·0",
+    "7·1",
+    "7·2",
+    "7·3",
+    "7·4"
+   ],
+   "contoh": {
+    "indexed_value": 29.6,
+    "instrument": 30,
+    "correction": -0.4,
+    "u95": 4.9
+   },
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 160,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/*/titik_kalibrasi/*/tekanan",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "indexed_value",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "instrument",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "correction",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 9,
+   "kunci_baris": [
+    "7·0",
+    "7·1",
+    "7·2",
+    "7·3",
+    "7·4",
+    "7·5",
+    "7·6",
+    "7·7",
+    "7·8"
+   ],
+   "contoh": {
+    "indexed_value": 931.0,
+    "instrument": 930,
+    "correction": 1.0,
+    "u95": 2.0
+   },
+   "sumber_json": "thermohygro-lab.json",
+   "jumlah_sel_data": 36,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "thermohygro-lab.json:_sumber": "Project-PT-Sidik/Master Olah Data_pH for trial_CSV/DATABASE.csv, blok 'Environmental Meter' (baris 28-67)",
+  "thermohygro-lab.json:_catatan": "Tiap thermohygro dikalibrasi di 5 titik suhu & 5 titik kelembaban. `parameter_kondisi` cuma muat SATU titik per parameter, jadi yang dipilih titik yang paling dekat sama kondisi ruang lab sehari-hari (~20 °C / ~50 %RH) — itu juga titik yang dipakai sheet PERHITUNGAN aslinya buat TH-3 (19,83 / 47,05). Titik penuhnya diarsipkan di `titik_kalibrasi` supaya nggak ilang kalau nanti pemilihan titiknya dibikin otomatis.",
+  "thermohygro-lab.json:_u95_suhu": "Kolom 'Uncertainty ±' suhu di CSV cuma diisi di baris pertama tiap unit (sel di-merge) — berlaku buat kelima titiknya.",
+  "thermohygro-lab.json:_catatan_tekanan": "Thermobarometer Lutron (MHB372, SN AM02225) punya parameter KETIGA: tekanan udara (hPa, 9 titik 930-1005). Sumbernya DATABASE!K28:N39 di 'Gas Detector Uli Skin (std Rigaz).xlsm'. Cuma unit ini yang punya kolom tekanan; TH-1..TH-7 nggak, dan `parameter_kondisi['tekanan']`-nya memang nggak ada."
+ },
+ "cakupan": {
+  "thermohygro-lab.json": {
+   "daun": 456,
+   "tercakup": 456,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-thermohygro-satuan.md"
+ ],
+ "perintah_frontend": [],
+ "fixture_ada": []
+}
