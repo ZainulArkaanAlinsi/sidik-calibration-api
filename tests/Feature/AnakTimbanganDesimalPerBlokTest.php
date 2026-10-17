@@ -225,8 +225,8 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         $perhitungan = $this->actingAs($admin)->getJson("/api/calibrations/{$id}/perhitungan")->assertOk();
         $this->assertSame([5, 4, 3], array_column($perhitungan->json('data.hasil.1.titik'), 'desimal'));
 
-        $this->actingAs($admin)
-            ->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])
+        $this->denganOrderNumber($id)->actingAs($admin)
+            ->postJson("/api/calibrations/{$id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertOk();
 
         $sertifikat = CalibrationSession::findOrFail($id)->certificate()->firstOrFail();
@@ -277,7 +277,7 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
 
         $id = $this->actingAs($teknisi)->postJson('/api/calibrations', $this->payloadTigaNeraca())->assertCreated()->json('data.id');
-        $this->actingAs($admin)->postJson("/api/calibrations/{$id}/approve", ['abaikan_peringatan' => true])->assertOk();
+        $this->denganOrderNumber($id)->actingAs($admin)->postJson("/api/calibrations/{$id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])->assertOk();
 
         $sertifikat = CalibrationSession::findOrFail($id)->certificate()->firstOrFail();
         $snapshot = $sertifikat->snapshot;

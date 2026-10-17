@@ -355,7 +355,7 @@ services:
       # Menyalakannya tetap nggak menyentuh app internal: teknisi di lapangan
       # nggak melihat perubahan apa pun.
       - key: FITUR_PELANGGAN
-        value: "false"
+        value: "true"
 
       # GERBANG_PENGESAHAN dicabut 15 Okt 2026 (K-50-07): pengesahan tidak ada,
       # approve menerbitkan langsung.
