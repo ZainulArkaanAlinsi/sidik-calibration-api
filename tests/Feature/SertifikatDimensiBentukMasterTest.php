@@ -115,7 +115,10 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         $this->assertMatchesRegularExpression('#<td>Standard Deviation of Warp</td>\s*<td>:</td>\s*<td>0[.,]0584</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>Standard Deviation of Weft</td>\s*<td>:</td>\s*<td>0[.,]1164</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>Standard Deviation of Φ</td>\s*<td>:</td>\s*<td>0[.,]0463</td>#u', $html);
-        $this->assertArrayNotHasKey('k', $s->snapshot['hasil'][0]['format'], 'k sieve menunggu jawaban paritas (audit §6 no. 10).');
+        // K-50-15: ÷6 & k = 2 persis master — U95 `169!N20:N22` 0.0262 / 0.0463 / 0.0247, `O23` k 2.
+        $this->assertSame('0', $s->snapshot['hasil'][0]['format']['k']);
+        $this->assertMatchesRegularExpression('#<td>0[.,]0262</td>.*?<td>0[.,]0463</td>.*?<td>0[.,]0247</td>#su', $html);
+        $this->assertMatchesRegularExpression('#Coverage Factor \( k \) =\s*2\s*</div>#u', $html);
     }
 
     /** @return array{0: Certificate, 1: string} */

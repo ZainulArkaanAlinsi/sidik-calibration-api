@@ -252,19 +252,15 @@ class SieveProfile extends CalibrationProfile
 
     /**
      * Format sel master `169`: Nominal Value · Standard Indication ·
-     * Correction · U95 `0.0000` (`E20:N22`).
-     *
-     * `k` SENGAJA tidak diformat: master mengetik `2` (`O23` =
-     * `PERHITUNGAN U95%!AC20`), sementara U95 di sini dihitung dengan `k`
-     * t-Student (2,45 / 2,57 — [SieveCalculator], jawaban lab §14.2).
-     * Mencetak "2" di bawah U95 yang dihitung dengan 2,45 adalah pernyataan
-     * yang salah; menunggu jawaban paritas (audit 04 §6 no. 10).
+     * Correction · U95 `0.0000` (`E20:N22`), `k` `0` (`O23`). `k` = 2 dipatok
+     * sejak K-50-15 membatalkan k t-Student (keputusan 16 Sep 2026), jadi
+     * "2" di bawah tabel kini benar untuk ketiga parameter.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.0000', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000'];
+        return ['standar' => '0.0000', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'];
     }
 
     /**
@@ -595,6 +591,25 @@ class SieveProfile extends CalibrationProfile
                 isset($batas['y_mm']) ? '±'.$batas['y_mm'].' mm' : $batas['min_mm'].'–'.$batas['max_mm'].' mm',
                 $p['keputusan'], $p['vonis']['lulus_master'] ? 'PASS' : 'NOT PASS',
                 $hasil['nominal_mm'], $hasil['minimum_opening'] ?? '-',
+            ),
+            'distribusi' => 'jejak',
+            'nilai' => null,
+            'u_baku' => 0.0,
+            'ci' => 0.0,
+            'vi' => 0.0,
+        ];
+
+        // AGENTS.md §Olah data butir 4 + pengecualian K-50-15 (pemilik 18 Okt
+        // 2026: sel master rusak salin-tempel → hitung benar + catat di jejak
+        // sesi). Yang LAIN di budget ini persis master (÷6, k = 2).
+        $baris[] = [
+            'sumber' => 'penyimpangan_master',
+            'keterangan' => sprintf(
+                'Standard Indication %s = rata-rata mentah + koreksi standar %s mm. Master `169!H20:H22` '
+                .'(`PERHITUNGAN!G82/J82/L82`) menambah 0: VLOOKUP(...; Koreksi_*; 3; 0) menunjuk kolom kosong, '
+                .'kolom Koreksi ada di kolom 4 (salin-tempel, docs/pertanyaan-lab-sieve.md §4). Master mencetak %s mm; '
+                .'selisih %s mm. U95 tidak terpengaruh (tidak ada komponen budget yang memakai nilai terkoreksi).',
+                $p['parameter'], $p['koreksi_standar'], $p['rata_rata'], $p['koreksi_standar'],
             ),
             'distribusi' => 'jejak',
             'nilai' => null,
