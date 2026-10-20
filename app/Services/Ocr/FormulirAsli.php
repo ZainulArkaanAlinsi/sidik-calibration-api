@@ -113,7 +113,7 @@ class FormulirAsli
             return null;
         }
 
-        $cetak = $this->template->dariProfil($profil, $alat, $jumlahPengulangan);
+        $cetak = $this->template->dariProfil($profil, $alat);
         $peta = $this->pilihPeta($semuaPeta, $cetak['kode_dokumen'] ?? null, $kodeDokumen);
 
         if (is_string($peta)) {
@@ -124,6 +124,12 @@ class FormulirAsli
 
         if ($draf === null) {
             return null;
+        }
+
+        $ulang = self::pengulanganKertas($jumlahPengulangan, $peta, $cetak);
+
+        if ($ulang !== null) {
+            $cetak = $this->template->dariProfil($profil, $alat, $ulang);
         }
 
         $calonIsian = array_values(array_filter(
@@ -285,6 +291,55 @@ class FormulirAsli
         }
 
         return $hasil;
+    }
+
+    /**
+     * Jumlah kolom repeat yang dipakai membangun template KERTAS ASLI, atau
+     * null = bentuk bawaan profil.
+     *
+     * - `jumlah_pengulangan` dikirim → dipakai, kecuali sama dengan bawaan
+     *   profil (bentuk bawaan dipakai utuh; tanpa ini Anak Timbangan yang
+     *   bawaannya 1 dijepit ke `MIN_KOLOM_PENGULANGAN` 2).
+     * - Tidak dikirim → jumlah repeat MAKSIMUM yang tercetak di peta, bila itu
+     *   melebihi repeat di template bawaan. Keputusan 20 Okt 2026: kertas
+     *   0541 Rev.0 mencetak X1–X3 (120 sel) sementara bawaan profil 1
+     *   (`AnakTimbanganMentah::PENGULANGAN_KERTAS`), dan HP tidak mengirim
+     *   `jumlah_pengulangan` — irisan dulu membuang 80 sel diam-diam. Tidak
+     *   mengubah perhitungan: tiga pembacaan per peran dirata-ratakan server
+     *   (`AnakTimbanganMentah::rataDeret`). Peta yang repeat-nya tidak melebihi
+     *   bawaan tidak berubah sama sekali (irisan sudah memuat semua selnya).
+     *
+     * Kunci sel `tabel|titik|repeat|field` ([TemplateLembarKerja::kunci]).
+     *
+     * @param  array<string, mixed>  $peta
+     * @param  array<string, mixed>  $cetak  template bawaan profil
+     */
+    private static function pengulanganKertas(?int $diminta, array $peta, array $cetak): ?int
+    {
+        if ($diminta !== null) {
+            return $diminta === ($cetak['jumlah_pengulangan'] ?? null) ? null : $diminta;
+        }
+
+        $maksPeta = self::repeatMaks(array_column($peta['sel'] ?? [], 'kunci'));
+        $maksCetak = self::repeatMaks(array_keys($cetak['sel'] ?? []));
+
+        return $maksPeta > $maksCetak ? $maksPeta : null;
+    }
+
+    /** @param  list<mixed>  $kunci */
+    private static function repeatMaks(array $kunci): int
+    {
+        $maks = 0;
+
+        foreach ($kunci as $k) {
+            $bagian = explode('|', (string) $k);
+
+            if (count($bagian) === 4 && ctype_digit($bagian[2])) {
+                $maks = max($maks, (int) $bagian[2]);
+            }
+        }
+
+        return $maks;
     }
 
     /**

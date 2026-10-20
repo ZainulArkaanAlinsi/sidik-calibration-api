@@ -358,7 +358,11 @@ class TemplateFormulirAsliTest extends TestCase
 
         $this->tulisFormulirSintetis(
             'ph_meter-0509.peta.json', 'ph_meter', 'SIDIK-FM-CAL-0509_Rev.4',
-            [...$sebagian, 'tabel_ngawur|1|1|pembacaan', 'sebelum_adjustment|1|9|pembacaan'],
+            // Kunci asing: tabel yang tidak ada, dan titik yang tidak ada.
+            // (Repeat di luar bawaan — dulu `|1|9|` — sejak 20 Okt 2026 justru
+            // MELEBARKAN template ke repeat maksimum peta; dijaga
+            // `FormulirAsliPengulanganKertasTest`.)
+            [...$sebagian, 'tabel_ngawur|1|1|pembacaan', 'sebelum_adjustment|99|1|pembacaan'],
             terverifikasi: true,
         );
 
