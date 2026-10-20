@@ -2,8 +2,10 @@
 
 namespace Tests\Unit;
 
+use App\Models\RawMeasurement;
 use App\Services\Calibration\AnakTimbanganCalculator;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
+use App\Support\AnakTimbanganMentah;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -363,8 +365,66 @@ class AnakTimbanganMasterTest extends TestCase
         );
     }
 
-    /** @return array<string, mixed> */
-    private function hitung(): array
+    /**
+     * Lembar 0541 tiga kolom (keputusan 20 Okt 2026): tiap peran diisi TIGA
+     * pembacaan `v − δ, v, v + δ` yang rata-ratanya angka master, lalu disusun
+     * lewat jalur hitung ulang yang sama (`AnakTimbanganMentah::dari`).
+     *
+     * Master cuma punya SATU sel per baris; rata-rata (`rataDeret`) adalah
+     * perlakuan yang runtuh ke master untuk deret satu angka (pertanyaan lab
+     * §23). Test ini membuktikan tiga kolom tidak menggeser ms, de, mT, maupun
+     * U95 selama rata-ratanya sama — Type A tetap dari keterulangan neraca,
+     * bukan sebaran ketiga pembacaan.
+     */
+    #[Test]
+    public function tiga_pembacaan_per_peran_dirata_ratakan_tetap_cocok_dengan_master(): void
+    {
+        $delta = 0.0001;
+
+        $hasil = $this->hitung(static function (array $t) use ($delta): array {
+            $baris = collect();
+
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                if ($t[$peran] === null) {
+                    continue;
+                }
+
+                foreach ([-$delta, 0.0, $delta] as $i => $geser) {
+                    $baris->push(new RawMeasurement([
+                        'peran_sensor' => $peran,
+                        'pembacaan_ke' => $i + 1,
+                        'pembacaan' => (float) $t[$peran] + $geser,
+                    ]));
+                }
+            }
+
+            $mentah = AnakTimbanganMentah::dari($baris);
+
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                $t[$peran] = $mentah[$peran] ?? null;
+            }
+
+            return $t;
+        });
+
+        $master = $this->masterPerTitik();
+        $this->assertCount(14, $hasil['titik']);
+
+        foreach ($hasil['titik'] as $t) {
+            $m = $master[$t['titik_ke']];
+            $label = "titik {$t['titik_ke']} (3 pembacaan)";
+
+            $this->assertCocok($m['ms_g'], $t['ms_g'], "{$label} ms");
+            $this->assertCocok($m['de_g'], $t['de_g'], "{$label} de");
+            $this->assertCocok($m['u95_mg'] / 1000, $t['u95_g'], "{$label} U95");
+        }
+    }
+
+    /**
+     * @param  (callable(array<string, mixed>): array<string, mixed>)|null  $ubahTitik
+     * @return array<string, mixed>
+     */
+    private function hitung(?callable $ubahTitik = null): array
     {
         $fx = self::$fixture;
 
@@ -376,6 +436,10 @@ class AnakTimbanganMasterTest extends TestCase
             'at_t2' => $t['at_t2'],
             'at_s2' => $t['at_s2'],
         ], $fx['titik']);
+
+        if ($ubahTitik !== null) {
+            $titik = array_map($ubahTitik, $titik);
+        }
 
         $k = $fx['konteks'];
         $identitas = [];

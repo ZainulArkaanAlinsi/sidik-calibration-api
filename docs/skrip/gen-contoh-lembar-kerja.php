@@ -616,7 +616,13 @@ foreach ($kelompok as $k) {
         $p = new $kelas;
         // Aturan dua halaman yang SAMA dengan endpoint — tanpa ini mock HP
         // tetap satu gulungan sementara server mengirim dua halaman.
-        $bentuk = CalibrationProfile::susunDuaHalaman($p->bentukLembarKerja());
+        $bentuk = $p->bentukLembarKerja();
+        // Kolom pengulangan bawaan lembar HP yang SAMA dengan endpoint
+        // (Anak Timbangan: 3) — tanpa ini mock HP menggambar 1 kolom.
+        if (($ulang = $p->pengulanganLembarBawaan()) !== null) {
+            $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $ulang);
+        }
+        $bentuk = CalibrationProfile::susunDuaHalaman($bentuk);
 
         $fungsi[] = sprintf(
             <<<'DART'

@@ -324,8 +324,14 @@ class CalibrationController extends Controller
                 ], 422);
             }
 
-            if ($request->filled('pengulangan')) {
-                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
+            // Pilihan eksplisit menang; tanpa itu bawaan lembar HP profilnya
+            // (Anak Timbangan: 3, keputusan 20 Okt 2026), atau bentuk apa adanya.
+            $pengulangan = $request->filled('pengulangan')
+                ? $request->integer('pengulangan')
+                : $profil->pengulanganLembarBawaan();
+
+            if ($pengulangan !== null) {
+                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $pengulangan);
             }
 
             // Dua halaman — persiapan | pengukuran — buat SEMUA lembar (permintaan
