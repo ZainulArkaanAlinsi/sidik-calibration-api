@@ -569,7 +569,9 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
 
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
-        Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+        // `DELETE /equipments/{equipment}` pindah ke blok `role:admin` di bawah
+        // (keputusan pemilik proyek 20 Okt 2026): teknisi tetap menambah &
+        // mengubah alat dari lembar, tapi menghapus milik Master Data.
 
         // Nama alat baru buat master kemampuan kalibrasi, langsung dari HP.
         //
@@ -690,6 +692,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // Approval kalibrasi & master data: admin (+ super admin sejak K-49-14,
     // lewat `EnsureUserHasRole::lolosTulisSuperAdmin`).
     Route::middleware('role:admin')->group(function () {
+        // Hapus alat: admin (+ super admin lewat K-49-14) saja — teknisi 403
+        // sejak keputusan pemilik proyek 20 Okt 2026. Dijaga `RoleAccessTest`.
+        Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+
         /*
          * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------
          *

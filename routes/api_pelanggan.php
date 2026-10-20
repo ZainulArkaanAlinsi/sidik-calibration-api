@@ -191,11 +191,10 @@ Route::middleware('fitur.pelanggan')->group(function () {
          * aplikasi pelanggan hanya membaca (beranda, alat, sertifikat, notifikasi).
          * Tabelnya tetap ada; rute ini tidak dibangun ulang tanpa keputusan baru.
          *
-         * `PATCH /alat/{alat}` (lokasi & catatan milik pelanggan) tidak disentuh.
+         * `PATCH /alat/{alat}` ikut DICABUT (keputusan pemilik proyek 20 Okt
+         * 2026): pelanggan tidak mengubah data alat. Rute tulis yang tersisa
+         * dikunci daftar izin di `PengecualianTulisPelangganTest`.
          */
-        Route::patch('/alat/{alat}', [AlatController::class, 'update'])
-            ->middleware('throttle:pelanggan-alat-tulis')
-            ->name('pelanggan.alat.ubah');
 
         // Saklar notifikasi PER perusahaan (anggota dari `Konteks`, bukan body).
         Route::get('/preferensi-notifikasi', [PreferensiNotifikasiController::class, 'tampil'])

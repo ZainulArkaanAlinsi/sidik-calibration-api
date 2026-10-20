@@ -595,11 +595,34 @@ Rute yang dipakai aplikasi: `auth/{terima-undangan,masuk,keluar,keluar-semua,lup
 atur-ulang-sandi}`, `beranda`, `alat` (daftar, `alat/{id}` termasuk `riwayat_sertifikat`, dan
 status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/
 seri di PT sendiri — nomor PT lain = daftar kosong, `sertifikat/{id}`, `sertifikat/{id}/unduh`),
-`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*`, `/paket*`, dan
-`PATCH /alat/{id}` (lokasi & catatan milik pelanggan) tidak disentuh.
+`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*` dan `/paket*` tidak
+disentuh. **`PATCH /alat/{id}` DICABUT 20 Okt 2026** (keputusan pemilik; balasan sekarang `405`/`404`):
+pelanggan tidak mengubah data alat, perubahan lewat lab. Field `terkunci`/`field_terkunci`/`catatan`/
+`resolusi` di detail alat tetap dikirim (kontrak tidak dipersempit). Rute tulis yang tersisa dikunci
+`PengecualianTulisPelangganTest`.
 
 Respons sertifikat tidak lagi memuat `bisa_minta_koreksi`, `koreksi_menunggu`, `data_cetak`; respons
 detail alat tidak lagi memuat `foto` dan `koreksi_menunggu`. Pesan `field_terkunci` kini
 "Hubungi lab bila ada yang keliru". Nomor sertifikat yang `ditarik` tidak terlihat pelanggan sampai
 revisi `-R<n>` terbit.
 
+
+## 7. `status_alat` — lima status alat (additive, 20 Okt 2026)
+
+Field BARU di setiap objek alat: `GET /alat` (`data[]`), `GET /alat/{id}` (`data`), dan
+`GET /beranda` (`data.perlu_perhatian[]`). Field lama `status_kalibrasi`
+(`aman|segera_jatuh_tempo|lewat_jatuh_tempo|belum_ada_jadwal|nonaktif`) **tetap dikirim** apa
+adanya — tidak ada yang dihapus atau diganti nama.
+
+| `status_alat` | Aturan (dicek berurutan, turunan, tidak disimpan) |
+|---|---|
+| `nonaktif` | `equipments.status = nonaktif` |
+| `belum_pernah` | belum ada sertifikat berstatus `terbit` untuk alat ini **dan** `tanggal_kalibrasi_terakhir` kosong (alat impor bertanggal kalibrasi dinilai dari tanggal) |
+| `lewat_jadwal` | `hari_ke_jatuh_tempo < 0` |
+| `mendekati_jadwal` | `0 ≤ hari_ke_jatuh_tempo ≤ 30` (= anak tangga pertama pengingat, `meta.jendela_segera_hari`) |
+| `terkalibrasi` | selain di atas (termasuk bersertifikat tanpa tanggal jatuh tempo) |
+
+`dalam_proses` (REQ-ALT-05) **tidak dikirim**: sumbernya permintaan kalibrasi pelanggan, yang dicabut
+K-50-09. Aplikasi pelanggan (`StatusKalibrasi.dariApi`) sudah membaca keenam kode dan jatuh ke
+`status_kalibrasi` kalau `status_alat` tidak ada, jadi APK lama maupun baru aman.
+Ringkasan beranda (`ringkasan.*`) tidak berubah. Penjaga: `StatusAlatPelangganTest`.

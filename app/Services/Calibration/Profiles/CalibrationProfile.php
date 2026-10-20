@@ -864,6 +864,20 @@ abstract class CalibrationProfile
     public const MAKS_KOLOM_PENGULANGAN = 10;
 
     /**
+     * Jumlah kolom pengulangan bawaan lembar kerja HP (`GET
+     * /calibrations/lembar-kerja`) bila `?pengulangan=` tidak dikirim, atau
+     * null = bentuk bawaan `bentukLembarKerja()` apa adanya.
+     *
+     * Terpisah dari `bentukLembarKerja()` karena bentuk itu juga dipakai jalur
+     * OCR (`TemplateLembarKerja`, `FormulirAsli`) yang punya aturan repeat
+     * sendiri. Murni soal berapa kotak yang digambar — tidak menyentuh rumus.
+     */
+    public function pengulanganLembarBawaan(): ?int
+    {
+        return null;
+    }
+
+    /**
      * Penanda TAMPIL-BERSYARAT di kontrak field — `['kode' => ..., 'nilai' =>
      * [...]]`, dibaca "tampilkan field ini cuma kalau field `kode` isinya salah
      * satu dari `nilai`". `null` (bawaan tiap field) artinya selalu tampil.

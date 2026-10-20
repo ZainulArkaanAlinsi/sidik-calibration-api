@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Pelanggan;
 
-use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Pelanggan\AlatPelangganResource;
 use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
@@ -16,7 +15,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 /**
  * `/alat` — daftar & detail alat milik perusahaan pelanggan.
@@ -62,11 +60,13 @@ class AlatController extends Controller
             ->paginate($data['per_page'] ?? 20);
 
         $terakhir = $this->sertifikatTerakhir($lingkup, collect($alat->items())->pluck('id'));
+        $konteksStatus = AlatPelangganResource::konteks($alat->items());
 
         return response()->json([
             'data' => collect($alat->items())
                 ->map(fn (Equipment $a) => (new AlatPelangganResource($a))
                     ->denganSertifikat($terakhir->get($a->id))
+                    ->denganKonteks($konteksStatus[$a->id])
                     ->resolve($request))
                 ->values(),
             'meta' => [
@@ -90,73 +90,12 @@ class AlatController extends Controller
         return response()->json(['data' => $this->rinci($request, $lingkup, $baris)]);
     }
 
-    /**
-     * PL_Ubah_Alat (§42 B2). Lokasi & catatan selalu boleh; identitas cuma
-     * selama alat BELUM punya sertifikat terbit — sesudahnya identitas sudah
-     * tercetak di dokumen; perubahannya lewat lab.
+    /*
+     * `update()` (PL_Ubah_Alat, §42 B2) DICABUT — keputusan pemilik proyek
+     * 20 Okt 2026: aplikasi pelanggan tidak mengubah data alat. Perubahan
+     * identitas, lokasi, dan catatan lewat lab. `PengecualianTulisPelangganTest`
+     * menahan rute tulis baru yang lahir tanpa keputusan.
      */
-    public function update(Request $request, Konteks $konteks, string $alat): JsonResponse
-    {
-        $lingkup = new LingkupData($konteks);
-        /** @var Equipment $baris */
-        $baris = $lingkup->alat()->whereKey($alat)->firstOrFail();
-
-        $data = $request->validate([
-            'lokasi' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'catatan' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            'nama_alat' => ['sometimes', 'required', 'string', 'max:255'],
-            'merk' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'model' => ['sometimes', 'nullable', 'string', 'max:255'],
-            // Kolomnya NOT NULL & unik per lab (§41.3).
-            'serial_number' => ['sometimes', 'required', 'string', 'max:255'],
-            'no_identifikasi' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'range_min' => ['sometimes', 'nullable', 'numeric'],
-            'range_max' => ['sometimes', 'nullable', 'numeric'],
-            'satuan' => ['sometimes', 'nullable', 'string', 'max:30'],
-            'resolusi' => ['sometimes', 'nullable', 'numeric', 'min:0'],
-        ]);
-
-        $identitas = array_values(array_intersect(array_keys($data), array_keys(AlatPelangganResource::KUNCI_IDENTITAS)));
-
-        if ($identitas !== [] && self::terkunci($baris)) {
-            return response()->json([
-                'message' => 'Identitas alat ini sudah tercetak di sertifikat, jadi tidak bisa diubah langsung. Hubungi lab bila ada yang keliru.',
-                'kode' => 'field_terkunci',
-                'errors' => collect($identitas)->mapWithKeys(fn (string $k) => [$k => ['Terkunci — sudah tercetak di sertifikat.']])->all(),
-            ], 422);
-        }
-
-        $rangeMin = array_key_exists('range_min', $data) ? $data['range_min'] : $baris->range_min;
-        $rangeMax = array_key_exists('range_max', $data) ? $data['range_max'] : $baris->range_max;
-
-        if ($rangeMin !== null && $rangeMax !== null && (float) $rangeMax < (float) $rangeMin) {
-            throw ValidationException::withMessages(['range_max' => 'Rentang maks. tidak boleh lebih kecil dari rentang min.']);
-        }
-
-        if (array_key_exists('serial_number', $data) && Equipment::withTrashed()
-            ->where('organization_id', $baris->organization_id)
-            ->where('serial_number', $data['serial_number'])
-            ->whereKeyNot($baris->id)
-            ->exists()) {
-            // Sengaja tidak menyebut milik siapa — bentrok dengan perusahaan
-            // lain tidak boleh jadi cara memetakan alat pesaing (§41.3).
-            throw ValidationException::withMessages(['serial_number' => 'Nomor seri ini sudah terdaftar di lab. Hubungi lab kalau ini alat yang sama.']);
-        }
-
-        if (array_key_exists('catatan', $data)) {
-            $data['catatan_pelanggan'] = $data['catatan'];
-            unset($data['catatan']);
-        }
-
-        $baris->update($data);
-
-        PerubahanDataOrganisasi::siarkanAman((int) $baris->organization_id, 'alat', 'diubah', $baris->id);
-
-        return response()->json([
-            'message' => 'Data alat tersimpan.',
-            'data' => $this->rinci($request, $lingkup, $baris->fresh()),
-        ]);
-    }
 
     /** Sudah ada sertifikat TERBIT untuk alat ini → identitasnya tercetak. */
     public static function terkunci(Equipment $alat): bool

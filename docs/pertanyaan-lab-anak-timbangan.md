@@ -622,6 +622,13 @@ dengan workbook. Aplikasi sekarang meminta satu pembacaan per baris. Deret lama
 yang berisi tiga angka tetap dirata-ratakan, jadi sesi lama tidak bergeser.
 Pertanyaan di atas tetap berlaku untuk kertas Rev.0 kalau masih dipakai.
 
+**Perkembangan 20 Okt 2026 (pindai kertas asli).** Pindai `kertas: "asli"` tanpa
+`jumlah_pengulangan` kini memakai jumlah repeat MAKSIMUM yang tercetak di peta
+formulir (0541 Rev.0: X1–X3 → 120 sel, dulu 40 karena irisan dengan bawaan profil 1).
+`AnakTimbanganMentah::PENGULANGAN_KERTAS` dan perhitungannya TIDAK berubah — tiga
+pembacaan per peran tetap dirata-ratakan server, jadi pertanyaan di atas masih
+menunggu jawaban lab. Penjaga: `FormulirAsliPengulanganKertasTest`.
+
 ---
 
 ## §24 — Kapasitas Alat: satu rentang atau beberapa?

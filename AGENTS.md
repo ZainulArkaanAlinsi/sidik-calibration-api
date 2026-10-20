@@ -524,6 +524,14 @@ memasukkan `super_admin` ke sana bikin admin biasa bisa mencetak super admin.
 `User::rolesInternal()` menjawab "siapa yang bukan orang luar". Super admin ada
 di yang kedua saja. **Jangan digabung.**
 
+**Keputusan peran 20 Okt 2026** (`docs/permintaan-user-7.md` §53): teknisi tetap
+menambah/mengubah alat, kemampuan, dan PT cepat dari lembar, tetapi
+`DELETE /equipments/{e}` hanya admin & super admin. Aplikasi pelanggan hanya membaca —
+`PATCH /pelanggan/v1/alat/{alat}` dicabut; rute tulis pelanggan dikunci daftar izin di
+`PengecualianTulisPelangganTest`. `viewer` tidak ditawarkan untuk akun BARU dan akun lain
+tidak bisa diubah MENJADI viewer (`User::rolesAkunBaru()`, `PUT /users/{u}` → 422); akun
+viewer lama tetap sah dan `User::roles()` tidak berubah.
+
 **K-49-14 — tulis dibuka di aplikasi, panel tetap baca saja.** Dulu tulis ditahan
 sampai K4 (siapa yang boleh mengesahkan) turun. Pemilik proyek memutuskan 15 Okt
 2026: super admin boleh semua yang teknisi & Master Data boleh, di organisasinya

@@ -182,7 +182,7 @@ Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu ken
   "data": {
     "role": "teknisi",
     "boleh": [
-      "alat.lihat", "alat.tambah", "alat.ubah", "alat.hapus",
+      "alat.lihat", "alat.tambah", "alat.ubah",
       "kalibrasi.lihat", "kalibrasi.buat", "kalibrasi.ubah",
       "kalibrasi.hitung-preview", "kalibrasi.pindai-foto",
       "kalibrasi.verifikasi-pindai",
@@ -304,7 +304,7 @@ Query params yang mobile pakai: `?search=kaliper&category=panjang&status=overdue
 >
 > **3. `status: "overdue"` NGGAK bisa dikirim.** Dia dihitung backend dari `tanggal_jatuh_tempo` — kalau dikirim di body, ditolak `422`. Yang bisa diset cuma `aktif`/`nonaktif`. Sebabnya: kalau `overdue` disimpen, nilainya basi tiap ganti hari.
 >
-> **4. Hak akses**: baca = semua role (termasuk viewer). Nulis (`POST`/`PUT`/`DELETE`) = **admin & teknisi**; viewer ditolak `403`. Sesuai permintaan kamu.
+> **4. Hak akses**: baca = semua role (termasuk viewer). Nulis (`POST`/`PUT`) = **admin & teknisi**; viewer ditolak `403`. **`DELETE` = admin (+ super admin) saja sejak 20 Okt 2026** — teknisi `403`, izin `alat.hapus` hilang dari `/me/permissions` teknisi.
 >
 > **5. Field bonus di response** (di luar kontrak, aman diabaikan): `model`, `no_identifikasi`, `range_min`, `range_max`, `satuan`, `resolusi`, `toleransi`, `lokasi`, dan **`nama_alat_kemampuan`**. Ini dibutuhin nanti pas layar kalibrasi.
 >

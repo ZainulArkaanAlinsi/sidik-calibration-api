@@ -77,6 +77,8 @@ Daftar lembar kerja yang dikenal sistem. Untuk layar "pilih lembar kerja".
 
 Query opsional: `equipment_id` (bentuk lembar bisa ikut alat pelanggan — Conductivity memilih µS/cm vs mS/cm dari resolusi alatnya) dan `jumlah_pengulangan` (2–10).
 
+> **Kertas asli (`kertas=asli`), 20 Okt 2026:** tanpa `jumlah_pengulangan`, server memakai jumlah repeat MAKSIMUM yang tercetak di peta formulir bila melebihi bawaan profil (Anak Timbangan 0541 Rev.0: X1–X3 = 120 sel, dulu 40). HP tidak perlu mengirim apa pun; `POST /worksheet-scans` memakai aturan yang sama. Baca jumlah kolom dari `jumlah_pengulangan` & `sel` di respons, jangan dari konstanta di APK.
+
 Isi yang wajib kamu pakai:
 
 | Field | Untuk apa |

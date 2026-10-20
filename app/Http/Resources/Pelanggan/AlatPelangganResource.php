@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources\Pelanggan;
 
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -49,8 +51,35 @@ class AlatPelangganResource extends JsonResource
 
     public const STATUS_BELUM_ADA = 'belum_ada_jadwal';
 
+    /*
+     * `status_alat` — status kalibrasi menurut tabel 02-SRS REQ-ALT-05, untuk
+     * beranda & daftar alat (20 Okt 2026). ADDITIVE: field lama
+     * `status_kalibrasi` tetap dikirim apa adanya karena aplikasi yang sudah
+     * terpasang membacanya. Dua-duanya turunan, tidak disimpan.
+     *
+     * Kode `dalam_proses` milik rancangan yang sama SENGAJA tidak dikirim:
+     * sumbernya permintaan kalibrasi pelanggan, yang dicabut K-50-09.
+     */
+    public const ALAT_TERKALIBRASI = 'terkalibrasi';
+
+    public const ALAT_MENDEKATI_JADWAL = 'mendekati_jadwal';
+
+    public const ALAT_LEWAT_JADWAL = 'lewat_jadwal';
+
+    public const ALAT_BELUM_PERNAH = 'belum_pernah';
+
+    public const ALAT_NONAKTIF = 'nonaktif';
+
     /** Diisi controller: sertifikat terbit terakhir alat ini, atau null. */
     public ?Certificate $sertifikatTerakhir = null;
+
+    /**
+     * Diisi controller lewat [konteks()] (satu query per halaman). Null = belum
+     * diisi; `toArray()` lalu menghitungnya sendiri untuk alat ini saja.
+     *
+     * @var array{pernah_terbit: bool}|null
+     */
+    public ?array $konteksStatus = null;
 
     public function toArray(Request $request): array
     {
@@ -81,6 +110,11 @@ class AlatPelangganResource extends JsonResource
                 'diterbitkan_pada' => $this->sertifikatTerakhir->diterbitkan_pada?->toDateString(),
                 'berlaku_sampai' => $this->sertifikatTerakhir->berlaku_sampai?->toDateString(),
             ],
+            'status_alat' => self::statusAlat(
+                $alat,
+                $hari,
+                ($this->konteksStatus ?? self::konteks([$alat])[$alat->id])['pernah_terbit'],
+            ),
         ];
     }
 
@@ -89,6 +123,65 @@ class AlatPelangganResource extends JsonResource
         $this->sertifikatTerakhir = $sertifikat;
 
         return $this;
+    }
+
+    /** @param  array{pernah_terbit: bool}  $konteks */
+    public function denganKonteks(array $konteks): self
+    {
+        $this->konteksStatus = $konteks;
+
+        return $this;
+    }
+
+    /**
+     * Pernah atau tidaknya tiap alat punya sertifikat `terbit` — SATU query,
+     * berapa pun jumlah alatnya.
+     *
+     * @param  iterable<Equipment>  $alat
+     * @return array<int, array{pernah_terbit: bool}>
+     */
+    public static function konteks(iterable $alat): array
+    {
+        $daftar = collect($alat);
+        $hasil = $daftar->mapWithKeys(fn (Equipment $a) => [$a->id => ['pernah_terbit' => false]])->all();
+
+        if ($daftar->isEmpty()) {
+            return $hasil;
+        }
+
+        CalibrationSession::query()
+            ->whereIn('equipment_id', $daftar->pluck('id')->all())
+            ->whereHas('certificate', fn (Builder $c) => $c->where('status', Certificate::STATUS_TERBIT))
+            ->distinct()
+            ->pluck('equipment_id')
+            ->each(function ($equipmentId) use (&$hasil): void {
+                $hasil[(int) $equipmentId]['pernah_terbit'] = true;
+            });
+
+        return $hasil;
+    }
+
+    /**
+     * Tabel 02-SRS REQ-ALT-05, dicek berurutan.
+     *
+     * `nonaktif` diperiksa PERTAMA walau barisnya di tabel paling bawah: dibaca
+     * harfiah dia tidak pernah tercapai (setiap alat pasti "belum pernah" atau
+     * "ada sertifikat terbit" lebih dulu). `belum_pernah` hanya bila TIDAK ada
+     * sertifikat terbit DAN `tanggal_kalibrasi_terakhir` kosong. Jendela "mendekati" = anak tangga
+     * pertama pengingat (30 hari), supaya layar dan push tidak berbeda.
+     */
+    public static function statusAlat(Equipment $alat, ?int $hari, bool $pernahTerbit): string
+    {
+        return match (true) {
+            $alat->status === Equipment::STATUS_NONAKTIF => self::ALAT_NONAKTIF,
+            // "Pernah" = ada sertifikat terbit di sistem ATAU tanggal kalibrasi
+            // terakhir terisi (alat impor yang sertifikatnya terbit di luar
+            // sistem). Keputusan orkestrator 20 Okt 2026, dilaporkan ke pemilik.
+            ! $pernahTerbit && $alat->tanggal_kalibrasi_terakhir === null => self::ALAT_BELUM_PERNAH,
+            $hari !== null && $hari < 0 => self::ALAT_LEWAT_JADWAL,
+            $hari !== null && $hari <= PengingatJatuhTempoPelanggan::TANGGA_HARI[0] => self::ALAT_MENDEKATI_JADWAL,
+            default => self::ALAT_TERKALIBRASI,
+        };
     }
 
     /**

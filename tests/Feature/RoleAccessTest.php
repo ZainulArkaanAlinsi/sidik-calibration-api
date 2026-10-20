@@ -88,6 +88,28 @@ class RoleAccessTest extends TestCase
         $this->assertDatabaseMissing('organizations', ['nama' => 'PT Bajakan']);
     }
 
+    /**
+     * Keputusan pemilik proyek 20 Okt 2026: teknisi tetap menambah & mengubah
+     * alat (alat baru dari lembar), tapi MENGHAPUS alat ditutup — 403. Admin
+     * tetap boleh. Sebelumnya `DELETE /equipments/{e}` ada di blok
+     * `role:admin,teknisi`.
+     */
+    public function test_teknisi_tidak_boleh_hapus_alat_tapi_admin_boleh(): void
+    {
+        $teknisi = $this->user(User::ROLE_TEKNISI);
+
+        $this->actingAs($teknisi)
+            ->putJson("/api/equipments/{$this->alat->id}", ['nama_alat' => 'Diubah Teknisi'])
+            ->assertOk();
+        $this->actingAs($teknisi)->deleteJson("/api/equipments/{$this->alat->id}")->assertForbidden();
+        $this->assertNotSoftDeleted('equipments', ['id' => $this->alat->id]);
+
+        $this->actingAs($this->user(User::ROLE_ADMIN))
+            ->deleteJson("/api/equipments/{$this->alat->id}")
+            ->assertOk();
+        $this->assertSoftDeleted('equipments', ['id' => $this->alat->id]);
+    }
+
     public function test_admin_boleh_semuanya(): void
     {
         $admin = $this->user(User::ROLE_ADMIN);

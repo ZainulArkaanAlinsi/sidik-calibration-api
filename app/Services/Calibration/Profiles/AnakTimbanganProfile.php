@@ -91,6 +91,19 @@ class AnakTimbanganProfile extends CalibrationProfile
     /** Tiga kolom `X1 X2 X3` tiap baris Standard/UUT/UUT/Standard. */
     public const PENGULANGAN = AnakTimbanganMentah::PENGULANGAN_KERTAS;
 
+    /**
+     * Kolom bawaan lembar kerja HP untuk sesi BARU — keputusan pemilik 20 Okt
+     * 2026 (opsi a): kertas 0541 Rev.0 mencetak X1–X3 per baris
+     * Standard/UUT/UUT/Standard (10 blok = 120 sel), dan lembar 1 kolom
+     * membuat HP membuang X2/X3 hasil pindai diam-diam.
+     *
+     * Hanya jumlah KOTAK. `PENGULANGAN` / `PENGULANGAN_KERTAS` (1) tidak
+     * digeser, dan perhitungannya tetap rata-rata per peran
+     * (`AnakTimbanganMentah::rataDeret`) — sesi lama berisi satu angka per
+     * peran tidak berubah angkanya. `?pengulangan=` eksplisit tetap menang.
+     */
+    public const PENGULANGAN_LEMBAR_BARU = 3;
+
     /** Nomor Instruksi Kerja, dari `INPUT DATA` & sertifikat master. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0535_Rev.0';
 
@@ -774,6 +787,11 @@ class AnakTimbanganProfile extends CalibrationProfile
         }
 
         return $temuan;
+    }
+
+    public function pengulanganLembarBawaan(): ?int
+    {
+        return self::PENGULANGAN_LEMBAR_BARU;
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
