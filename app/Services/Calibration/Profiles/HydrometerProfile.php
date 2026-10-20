@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\HydrometerCalculator;
 use App\Services\Calibration\TabelStandarHydrometer;
 use App\Support\HydrometerMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -361,6 +362,97 @@ class HydrometerProfile extends CalibrationProfile
     public function u95PerTitik(): bool
     {
         return true;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Dua master aktif Studio: `Hydrometer 0.600 - 0.650 gmL` (id 188, varian
+    // beban tambahan/sinker — `HydrometerMasterTest::RINGAN`) dan `Hydrometer
+    // 1.800 - 2.000 gmL` (id 189, tanpa sinker — `::BERAT`). Lembar
+    // SERTIFIKAT keduanya sama kecuali format U95. Hanya bentuk cetak; tidak
+    // satu nilai pun dihitung ulang.
+
+    /**
+     * Timpaan bentuk mayoritas:
+     *
+     * - label lingkungan `Environment Condition` (`188!M9`, `189!M9`);
+     * - judul kolom U95 `U95%, K=2` (`S15`) — kolom lain sudah ikut hook judul
+     *   (`Nominal Value` `E15`, `Actual Value` `J15`, `Correction` `O15`);
+     * - `Standard Used :` (`B27`, huruf U besar);
+     * - kalimat `k` `E23` "The uncertainty is taken at a convidence level 95 %
+     *   and coverage factor ( k ) = " — huruf kecil ikut master, salah ketik
+     *   "convidence" TIDAK ditiru (G4, `TataLetakSertifikat::MAYORITAS_MASTER`).
+     *
+     * Baris `E22` "Uncertainty U95% = ±" tersembunyi di master (baris 20–22),
+     * jadi tidak ada yang perlu ditambahkan untuknya.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tataLetak = parent::tataLetakSertifikat($sesi);
+
+        $kepala = array_map(
+            static fn (array $baris): array => array_map(
+                static fn (?array $sel): ?array => ($sel['kunci'] ?? null) === 'env_condition'
+                    ? [...$sel, 'label' => 'Environment Condition']
+                    : $sel,
+                $baris,
+            ),
+            $tataLetak['kepala'],
+        );
+
+        return [
+            ...$tataLetak,
+            'kepala' => $kepala,
+            'judul_kolom_u95' => 'U95%, K=2',
+            'judul_standar_digunakan' => 'Standard Used :',
+            'kalimat_k' => 'The uncertainty is taken at a confidence level 95 % and coverage factor ( k )',
+        ];
+    }
+
+    /**
+     * Format sel master: Nominal/Actual/Correction `0.000` (`E17`/`J17`/`O17`
+     * — `0.610`, bukan `0,61`), U95 `0.00000` (`188!S17`) atau `0.0000`
+     * (`189!S17`), `k` `0` (`U23`). Variannya dipilih seperti hitungannya
+     * sendiri: `pakai_beban_tambahan` blok sesi.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $blok = HydrometerMentah::blokSesi($sesi->spesifikasi_alat);
+
+        return [
+            'standar' => '0.000',
+            'uut' => '0.000',
+            'koreksi' => '0.000',
+            'u95' => ($blok['pakai_beban_tambahan'] ?? true) ? '0.00000' : '0.0000',
+            'k' => '0',
+        ];
+    }
+
+    /**
+     * `E14:L14` "Suhu acuan Hydrometer : 20.0 °C", di antara `Calibration
+     * Report :` dan judul kolom. `J14 = 'INPUT DATA'!E17` — kotak
+     * `Temperature` blok identitas (`suhu_acuan_faktor`, BUKAN `tr`; temuan 6
+     * `HydrometerCalculator`), format `0.0`; `L14 = W9` `°C`. Sesi tanpa blok
+     * Pre Condition tidak mencetak blok ini (titiknya memang tidak terhitung).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = HydrometerMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null) {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
+            'tabel' => [['Suhu acuan Hydrometer :', TataLetakSertifikat::formatAngka($blok['suhu_acuan_faktor'], '0.0').' °C']],
+        ]];
     }
 
     /**

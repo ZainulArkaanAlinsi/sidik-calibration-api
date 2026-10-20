@@ -1035,6 +1035,123 @@ abstract class FlowmeterProfile extends CalibrationProfile
         ];
     }
 
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Empat master aktif Studio, satu per mode × varian metode:
+    //
+    //   Totalizer gravimetri  id 148  `1.2 Master olda Flowmeter Totalizer dini 2026`
+    //   Totalizer UFM         id 149  `1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer`
+    //   Flowrate gravimetri   id 150  `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026`
+    //   Flowrate UFM          id 185  `Master olda Ultrasonic Flowrate (100-300 lpm) 2026`
+    //
+    // Hanya bentuk cetak; tidak satu nilai pun dihitung ulang.
+
+    /**
+     * Format sel tabel hasil per mode × varian: `[nilai, u95]`. `nilai` =
+     * kolom UUT, Standard Indication, Correction (format sama di ketiganya).
+     *
+     * - 148 `B22`/`D22`/`G22` `0.00`, U95 `J22` `0.0` (L). `G25` berformat
+     *   `0.000` sendirian — sel salin-tempel yang beda dari tiga baris di
+     *   atasnya, tidak ditiru.
+     * - 149 `D22`/`I22`/`K22` `0.00`.
+     * - 150 `B21`/`D21`/`G21` & U95 `K21` `0.0000` (m3/h).
+     * - 185 `E26`/`H26`/`K26` `0.000`.
+     *
+     * U95 varian UFM (`149!O22`, `185!N26`) `null`: masternya mencetak U95
+     * RELATIF `%OR` (`= U95 / UUT × 100`, format `0.0`), sedangkan snapshot
+     * menyimpan U95 mutlak. Format `0.0` di atas angka mutlak L akan tercetak
+     * sebagai angka lain berlabel sama — jadi kolomnya tetap mutlak dengan
+     * desimal lama sampai builder punya kolom U95 relatif (dilaporkan, bukan
+     * diakali di sini).
+     *
+     * @var array<string, array<string, array{0: string, 1: string|null}>>
+     */
+    private const FORMAT_SERTIFIKAT = [
+        FlowmeterMentah::MODE_TOTALIZER => [
+            'gravimetri' => ['0.00', '0.0'],
+            'ufm' => ['0.00', null],
+        ],
+        FlowmeterMentah::MODE_FLOWRATE => [
+            'gravimetri' => ['0.0000', '0.0000'],
+            'ufm' => ['0.000', null],
+        ],
+    ];
+
+    /**
+     * Timpaan bentuk mayoritas, sama di keempat master:
+     *
+     * - urutan kolom UUT DULU: `Unit Under Test | Standard Indication |
+     *   Correction | U95% ±` (`148!B20/D20/G20/J20`, `149!D20/I20/K20/O20`,
+     *   `185!E24/H24/K24/N24`); 150 menulis judul U95 `Uncertainty 95% ±`
+     *   (`150!K19`);
+     * - kolom Standard used TANPA titik dua: `Merk/Type`, `Serial Number`,
+     *   `Traceable to SI through` (`148!I31/L31/Q31`, `149!G31`, `150!I29`,
+     *   `185!G36`);
+     * - `Issuance Date` tanpa titik dua (`148!B40`, `149!B39`, `150!B36`,
+     *   `185!B45`).
+     *
+     * Yang TIDAK bisa dinyatakan dari sini (butuh template/builder): kolom
+     * `Measured Flowrate During Calibration (m3/h)` (`148!K20`) dan `Fluids
+     * Condition` — `Temperature (⁰C)` & `Type of Fluids` (`148!N20:R21`,
+     * `150!N19:R20`) — serta U95 `%OR` varian UFM.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+        $gravimetriFlowrate = $blok !== null
+            && $blok['mode'] === FlowmeterMentah::MODE_FLOWRATE
+            && $blok['varian_metode'] === VarianMetodeFlowmeter::GRAVIMETRI->value;
+
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'kolom_hasil' => [
+                ['kolom' => 'uut', 'judul' => 'Unit Under Test'],
+                ['kolom' => 'standar', 'judul' => 'Standard Indication'],
+                ['kolom' => 'koreksi', 'judul' => 'Correction'],
+                ['kolom' => 'u95', 'judul' => $gravimetriFlowrate ? 'Uncertainty 95% ±' : 'U95% ±'],
+            ],
+            'kolom_standar_digunakan' => [
+                ['kunci' => 'name', 'label' => 'Name'],
+                ['kunci' => 'merk_type', 'label' => 'Merk/Type'],
+                ['kunci' => 'serial_number', 'label' => 'Serial Number'],
+                ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through'],
+            ],
+            'label_tanggal_terbit' => 'Issuance Date',
+        ];
+    }
+
+    /**
+     * Format sel master per kolom — lihat [FORMAT_SERTIFIKAT]. `k` `0` di
+     * keempat master (`148!L26`, `149!Q26`, `150!L24`, `185!Q29`). Sesi tanpa
+     * blok yang sah, atau varian yang tidak dikenal, tidak diberi format
+     * (jalur desimal lama) — sesinya memang sudah ditolak waktu dihitung.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+        $format = $blok === null || $blok['mode'] !== $this->mode()
+            ? null
+            : (self::FORMAT_SERTIFIKAT[$blok['mode']][$blok['varian_metode'] ?? ''] ?? null);
+
+        if ($format === null) {
+            return [];
+        }
+
+        [$nilai, $u95] = $format;
+
+        return [
+            'standar' => $nilai,
+            'uut' => $nilai,
+            'koreksi' => $nilai,
+            ...($u95 === null ? [] : ['u95' => $u95]),
+            'k' => '0',
+        ];
+    }
+
     public function bentukPindaiFoto(): array
     {
         return [
