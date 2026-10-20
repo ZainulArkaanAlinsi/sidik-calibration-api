@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\VarianMetodeFlowmeter;
 use App\Services\DataTampilanSertifikat;
+use App\Support\Angka;
 use App\Support\FlowmeterMentah;
 use App\Support\TataLetakSertifikat;
 use Database\Seeders\DatabaseSeeder;
@@ -177,7 +178,7 @@ class SertifikatAliranHydrometerMasterTest extends TestCase
             'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
             'judul' => null,
             'baris' => [],
-            'tabel' => [['Suhu acuan Hydrometer :', TataLetakSertifikat::formatAngka(20.0, '0.0').' °C']],
+            'tabel' => [['Suhu acuan Hydrometer :', Angka::keTitik(TataLetakSertifikat::formatAngka(20.0, '0.0')).' °C']],
         ]], $snapshot['catatan_blok']);
 
         $teks = $this->teks($sertifikat);
@@ -186,7 +187,7 @@ class SertifikatAliranHydrometerMasterTest extends TestCase
             'Correction', 'U95%, K=2', 'Standard Used :'], $teks);
         // `0.610` di master (`E17` `0.000`), bukan `0,61`: nol di belakang tidak dibuang.
         $this->assertStringContainsString(
-            TataLetakSertifikat::formatAngka((float) $snapshot['hasil'][0]['standard_value'], '0.000'),
+            Angka::keTitik(TataLetakSertifikat::formatAngka((float) $snapshot['hasil'][0]['standard_value'], '0.000')),
             $teks,
         );
         $this->assertStringContainsString('coverage factor ( k ) = 2', $teks);
