@@ -258,7 +258,10 @@ class SertifikatBentukMasterTest extends TestCase
 
             // Bentuk master (snapshot baru) memang memisah per satuan.
             $baru = $this->html($sertifikat);
-            $laporanBaru = substr($baru, (int) strpos($baru, 'Calibration Report :'), (int) strpos($baru, 'Standard used :') - (int) strpos($baru, 'Calibration Report :'));
+            // Judul blok standar ikut master per alat (`157!B47` Conductivity
+            // "Standard Used :" berhuruf U besar), jadi batasnya dicari tanpa
+            // peduli huruf besar-kecil.
+            $laporanBaru = substr($baru, (int) strpos($baru, 'Calibration Report :'), (int) stripos($baru, 'Standard used :') - (int) strpos($baru, 'Calibration Report :'));
             $this->assertSame(count($satuan), substr_count($laporanBaru, '<table class="data">'), "{$nomor}: bentuk master tidak memisah per satuan.");
         }
     }
