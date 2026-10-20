@@ -10,6 +10,7 @@ use App\Services\Calibration\AnakTimbanganCalculator;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 
 /**
@@ -1258,17 +1259,13 @@ class AnakTimbanganProfile extends CalibrationProfile
      * - `A58` "Issuance Date" tanpa titik dua; `G68` "------- End of
      *   Certificate -------".
      *
-     * Satuan di judul kolom (`Nominal (g)`), bukan baris sendiri seperti
-     * `F16:L16`, dan judul bagian `C14` "1. ACCURACY" TIDAK dicetak: dengan
-     * keduanya plus End of Certificate, lembar 40 keping
-     * ([BATAS_KEPING_SATU_HALAMAN]) meluap ke halaman dua walau mode padat
-     * (diukur 20 Okt 2026 — tanpa keduanya muat). Mengembalikannya butuh
-     * ruang dari template bersama (`pdf.blade.php`), bukan profil.
-     *
-     * Yang BELUM (butuh perubahan template bersama, dilaporkan): kolom `C15`
-     * "ID Number" (No. Seri per keping — `teksSel` tidak punya kolom teks per
-     * baris dari sesi) dan `L16` Uncertainty dalam **mg** (`teksSel` tidak
-     * punya faktor satuan per kolom; U tetap dicetak dalam satuan baris, g).
+     * - judul bagian `C14` "1. ACCURACY" (blok atas tabel, [catatanSertifikat]);
+     * - kolom `C15` "ID Number" (No. Seri keping, `C17 = INPUT DATA!E37`, `-`
+     *   bila kosong) lewat `tambahan:id` ([kolomTambahanTitik]);
+     * - satuan di baris sendiri (`F16:L16` `(g)`/`(g)`/`(mg)`), dan
+     *   Uncertainty dalam **mg** format `0.00` (`L16`, `L17`): faktor kolom
+     *   mg per satuan baris (g × 1000, kg × 10⁶). Hanya cetak — nilai snapshot
+     *   tetap dalam satuan baris.
      *
      * @return array<string, mixed>
      */
@@ -1292,11 +1289,14 @@ class AnakTimbanganProfile extends CalibrationProfile
             ...$tataLetak,
             'kepala' => $kepala,
             'kolom_hasil' => [
+                ['kolom' => TataLetakSertifikat::AWALAN_TAMBAHAN.self::KOLOM_ID, 'judul' => 'ID Number'],
                 ['kolom' => 'standar', 'judul' => 'Nominal'],
                 ['kolom' => 'uut', 'judul' => 'Conventional Mass'],
-                ['kolom' => 'u95', 'judul' => 'Uncertainty ±'],
+                [
+                    'kolom' => 'u95', 'judul' => 'Uncertainty ±', 'satuan' => 'mg',
+                    'faktor' => $this->mgPerSatuanCetak($sesi), 'format' => '0.'.str_repeat('0', self::DESIMAL_U95_MG),
+                ],
             ],
-            'satuan_baris_sendiri' => false,
             'kalimat_k' => 'That weighing uncertainty is measured at confidence level 95% & coverage factor K',
             'judul_standar_digunakan' => '2. STANDARD USED',
             'kolom_standar_digunakan' => [
@@ -1309,6 +1309,41 @@ class AnakTimbanganProfile extends CalibrationProfile
             'label_tanggal_terbit' => 'Issuance Date',
             'akhir_sertifikat' => '------- End of Certificate -------',
         ];
+    }
+
+    /** Kunci kolom tambahan `ID Number` (`139!C15`). */
+    public const KOLOM_ID = 'id';
+
+    /**
+     * Judul bagian `139!C14` / `141!C14` "1. ACCURACY" di atas tabel hasil.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [['posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL, 'judul' => '1. ACCURACY']];
+    }
+
+    /**
+     * `ID Number` keping ini = `identitas` blok sesi per `titik_ke` (No. Seri
+     * yang diketik teknisi); kosong dicetak `-` seperti master
+     * (`IF('INPUT DATA'!E37<>"",…,"-")`).
+     *
+     * @return array<string, float|int|string|null>
+     */
+    public function kolomTambahanTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): array
+    {
+        $identitas = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['identitas'] ?? [];
+
+        return [self::KOLOM_ID => filled($identitas[$titikKe] ?? null) ? (string) $identitas[$titikKe] : '-'];
+    }
+
+    /** mg per satu satuan baris sertifikat (g → 1000, kg → 10⁶). */
+    private function mgPerSatuanCetak(CalibrationSession $sesi): float
+    {
+        $satuan = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['satuan'] ?? self::SATUAN;
+
+        return 1000.0 * (AnakTimbanganMentah::FAKTOR_KE_G[strtolower(trim((string) $satuan))] ?? 1.0);
     }
 
     /**

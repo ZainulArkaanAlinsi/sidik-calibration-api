@@ -245,8 +245,15 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         $html = $this->html($sertifikat);
         foreach ($baris as $b) {
             $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $b['unit_under_test'], $b['desimal'])).'</td>', $html);
-            $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $b['u95'], 5)).'</td>', $html);
+            // U dalam mg, format `0.00` (`139!L16:L17`, K-50-15 putaran 3) —
+            // presisinya sama dengan 5 desimal gram.
+            $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $b['u95'] * 1000, 2)).'</td>', $html);
         }
+        // `1. ACCURACY` (`C14`), kolom `ID Number` (`C15`, `-` bila kosong),
+        // baris satuan (`F16:L16`).
+        $this->assertStringContainsString('1. ACCURACY', $html);
+        $this->assertStringContainsString('<th>ID Number</th>', $html);
+        $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th></th>\s*<th>g</th>\s*<th>g</th>\s*<th>mg</th>#u', $html);
         // Keping 500 g: tiga desimal, bukan lima.
         $this->assertStringNotContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $baris[2]['unit_under_test'], 5)).'</td>', $html);
         // K-50-15 (pemilik, 18 Okt 2026): kalimat `k` ikut master `139!D38`
@@ -265,15 +272,18 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         $this->assertStringNotContainsString('Issuance Date :', $html);
         $this->assertStringContainsString('------- End of Certificate -------', $html);
 
-        // Excel — angka (bukan teks), dibulatkan sama persis dengan PDF.
+        // Excel — angka (bukan teks), dibulatkan sama persis dengan PDF. Bentuk
+        // master: kolom Excel ikut tabel PDF (`ID Number | Nominal |
+        // Conventional Mass | Uncertainty ± (mg)`, `139!C15:L16`).
         $sel = $this->selExcel($sertifikat);
         foreach ($baris as $b) {
             $barisExcel = collect($sel)->first(
-                fn (array $r): bool => is_numeric($r[0] ?? null) && abs((float) $r[0] - (float) $b['standard_value']) < 1e-9,
+                fn (array $r): bool => ($r[0] ?? null) === '-' && is_numeric($r[1] ?? null)
+                    && abs((float) $r[1] - (float) $b['standard_value']) < 1e-9,
             );
             $this->assertNotNull($barisExcel, 'Baris Excel keping '.$b['standard_value'].' g nggak ketemu.');
-            $this->assertEqualsWithDelta(round((float) $b['unit_under_test'], $b['desimal']), (float) $barisExcel[1], 1e-12);
-            $this->assertEqualsWithDelta(round((float) $b['u95'], 5), (float) $barisExcel[3], 1e-12);
+            $this->assertEqualsWithDelta(round((float) $b['unit_under_test'], $b['desimal']), (float) $barisExcel[2], 1e-12);
+            $this->assertEqualsWithDelta(round((float) $b['u95'] * 1000, 2), (float) $barisExcel[3], 1e-12);
         }
     }
 

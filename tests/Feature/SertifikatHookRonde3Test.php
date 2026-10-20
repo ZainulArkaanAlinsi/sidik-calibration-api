@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
 use App\Services\DataTampilanSertifikat;
+use App\Support\AnakTimbanganMentah;
 use App\Support\TataLetakSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
@@ -121,6 +122,53 @@ class SertifikatHookRonde3Test extends TestCase
                 $rowspan,
                 "{$nomor}: rowspan U95 = ukuran tiap rentang.",
             );
+        }
+    }
+
+    /**
+     * Anak Timbangan `139`: `1. ACCURACY` (`C14`), `ID Number` = No. Seri
+     * keping dari sesi (`C15`/`C17`), U dalam mg `0.00` (`L16:L17`), baris
+     * satuan (`F16:L16`).
+     */
+    public function test_anak_timbangan_id_number_dan_u_mg(): void
+    {
+        $this->siap();
+        $contoh = CalibrationSession::where('nomor_sesi', 'DEMO-AT-001')->firstOrFail();
+        $keping = [];
+
+        foreach ([1.0, 2.0, 5.0] as $i => $n) {
+            $keping[] = [
+                'titik_ukur' => $n, 'no_identitas' => 'SN-'.($i + 1),
+                'at_s1' => [$n, $n, $n], 'at_t1' => [$n + 0.0001, $n + 0.0001, $n + 0.0001],
+                'at_t2' => [$n + 0.0001, $n + 0.0001, $n + 0.0001], 'at_s2' => [$n, $n, $n],
+            ];
+        }
+
+        $id = $this->actingAs(User::where('role', User::ROLE_TEKNISI)->firstOrFail())->postJson('/api/calibrations', [
+            'equipment_id' => $contoh->equipment_id,
+            'standard_id' => $contoh->standard_id,
+            'thermohygro_standard_id' => $contoh->thermohygro_standard_id,
+            'tanggal_kalibrasi' => '2026-09-11',
+            'suhu_awal' => 23.1, 'suhu_akhir' => 23.0,
+            'kelembaban_awal' => 55.0, 'kelembaban_akhir' => 56.0,
+            'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => [
+                'kelas_uut' => 'F1', 'kelas_standar' => 'E2', 'timbangan' => 'Analytical Balance',
+                'meter_lingkungan' => 'Thermobarometer', 'kapasitas_min_g' => 1, 'kapasitas_g' => 200,
+                'suhu_awal' => 23.1, 'suhu_akhir' => 23.0, 'kelembaban_awal' => 55.0, 'kelembaban_akhir' => 56.0,
+                'tekanan_awal' => 933.2, 'tekanan_akhir' => 933.1,
+            ]],
+            'measurements' => $keping,
+        ])->assertCreated()->json('data.id');
+        $sesi = CalibrationSession::findOrFail($id);
+        [$s, $html] = $this->terbitkan($sesi->nomor_sesi);
+
+        $this->assertSame(['SN-1', 'SN-2', 'SN-3'], array_map(static fn (array $b): string => $b['tambahan']['id'], $s->snapshot['hasil']));
+        $this->assertStringContainsString('1. ACCURACY', $html);
+        $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th></th>\s*<th>g</th>\s*<th>g</th>\s*<th>mg</th>#u', $html);
+
+        foreach ($s->snapshot['hasil'] as $b) {
+            $mg = number_format((float) $b['u95'] * 1000, 2, '.', '');
+            $this->assertMatchesRegularExpression('#<td>'.preg_quote($b['tambahan']['id'], '#').'</td>\s*<td>[^<]+</td>\s*<td>[^<]+</td>\s*<td>'.preg_quote($mg, '#').'</td>#u', $html);
         }
     }
 
