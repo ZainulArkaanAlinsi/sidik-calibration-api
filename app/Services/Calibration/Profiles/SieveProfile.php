@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\SieveCalculator;
 use App\Support\SieveMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -48,6 +49,8 @@ use Carbon\Carbon;
  */
 class SieveProfile extends CalibrationProfile
 {
+    use SertifikatDimensi;
+
     public const SATUAN = 'mm';
 
     /** Baris opening yang tercetak di kertas: dua blok × 15. */
@@ -183,6 +186,118 @@ class SieveProfile extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 4;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /** Label baris blok simpangan baku `169!B26:B28`, per `titik_ke` ([remarkTitikKe]). */
+    private const LABEL_STDEV_SERTIFIKAT = [
+        1 => 'Standard Deviation of Warp',
+        2 => 'Standard Deviation of Weft',
+        3 => 'Standard Deviation of Φ',
+    ];
+
+    /**
+     * Master `169` mencetak SATU tabel "Hole Dimension" (`B17:N22`), bukan tiga
+     * tabel per parameter: `Parameters | Nominal Value | Standard Indication |
+     * Correction | U95%` (`B18:N18`), baris satuan `mm` (`E19:N19`, kolom
+     * Parameters tanpa satuan), U95 per baris (`N20:N22`).
+     *
+     * Kepala: `Capacity/Sieve No.` (`B11`) dan baris tambahan `Type of Test
+     * Sieve` (`B13`) di bawah Technician ID.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tataLetak = $this->tataLetakDimensi(parent::tataLetakSertifikat($sesi));
+
+        $tataLetak['kepala'] = array_map(
+            static fn (array $baris): array => array_map(
+                static fn (?array $sel): ?array => $sel !== null && $sel['kunci'] === 'capacity_graduation'
+                    ? [...$sel, 'label' => 'Capacity/Sieve No.']
+                    : $sel,
+                $baris,
+            ),
+            $tataLetak['kepala'],
+        );
+        $tataLetak['kepala'][] = [['kunci' => 'tipe_sieve', 'label' => 'Type of Test Sieve'], null];
+
+        return [
+            ...$tataLetak,
+            'pisah_per_remark' => false,
+            'kolom_hasil' => [
+                ['kolom' => 'remark', 'judul' => 'Parameters', 'satuan' => ''],
+                ['kolom' => 'standar', 'judul' => 'Nominal Value'],
+                ['kolom' => 'uut', 'judul' => 'Standard Indication'],
+                ['kolom' => 'koreksi', 'judul' => 'Correction'],
+                ['kolom' => 'u95', 'judul' => 'U95%'],
+            ],
+        ];
+    }
+
+    /**
+     * `Type of Test Sieve` (`169!E13` = `INPUT DATA!Z14`, `Inspection`) dari
+     * pilihan teknisi `tipe`. Kosong = `null` (kepala mencetak `—`), bukan
+     * tebakan.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        $tipe = SieveMentah::blokSesi($sesi->spesifikasi_alat)['tipe'] ?? null;
+
+        return ['tipe_sieve' => $tipe === null ? null : ucfirst($tipe)];
+    }
+
+    /**
+     * Format sel master `169`: Nominal Value · Standard Indication ·
+     * Correction · U95 `0.0000` (`E20:N22`).
+     *
+     * `k` SENGAJA tidak diformat: master mengetik `2` (`O23` =
+     * `PERHITUNGAN U95%!AC20`), sementara U95 di sini dihitung dengan `k`
+     * t-Student (2,45 / 2,57 — [SieveCalculator], jawaban lab §14.2).
+     * Mencetak "2" di bawah U95 yang dihitung dengan 2,45 adalah pernyataan
+     * yang salah; menunggu jawaban paritas (audit 04 §6 no. 10).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.0000', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000'];
+    }
+
+    /**
+     * Blok master di sekitar tabel:
+     *
+     * - `Hole Dimension` (`169!B17`), judul di atas tabel;
+     * - `Standard Deviation of Warp / Weft / Φ : 0.0000` (`169!B26:G28` =
+     *   `PERHITUNGAN!G83/J83/L83`, STDEV opening) — dari `standar_deviasi`
+     *   tersimpan tiap parameter, angka yang sama yang diadu ke master di
+     *   `SieveMasterTest`.
+     *
+     * `Minimum Number of Apertures Examined` (`B25`) BELUM: angkanya lahir dari
+     * Tabel MPE di kalkulator dan tidak disimpan per sesi; menyalin
+     * pencariannya ke sini berarti dua jalur untuk satu angka.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $stdev = [];
+
+        foreach ($sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]) as $t) {
+            $label = self::LABEL_STDEV_SERTIFIKAT[(int) $t->titik_ke] ?? null;
+
+            if ($label !== null && $t->standar_deviasi !== null) {
+                $stdev[] = [$label, ':', TataLetakSertifikat::formatAngka((float) $t->standar_deviasi, '0.0000')];
+            }
+        }
+
+        return [
+            ['posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL, 'judul' => 'Hole Dimension'],
+            ...($stdev === [] ? [] : [['posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL, 'tabel' => $stdev]]),
+        ];
     }
 
     /**

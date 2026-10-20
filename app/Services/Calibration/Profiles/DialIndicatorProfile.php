@@ -47,6 +47,8 @@ use Carbon\Carbon;
  */
 class DialIndicatorProfile extends CalibrationProfile
 {
+    use SertifikatDimensi;
+
     public const SATUAN = 'mm';
 
     /**
@@ -364,6 +366,38 @@ class DialIndicatorProfile extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 5;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /** `159!D16` "Nominal Standard". */
+    public function judulKolomStandar(): string
+    {
+        return 'Nominal Standard';
+    }
+
+    /** `159!G16` "Pembacaan Alat". */
+    public function judulKolomUut(): string
+    {
+        return 'Pembacaan Alat';
+    }
+
+    /** @return array<string, mixed> */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return $this->tataLetakDimensi(parent::tataLetakSertifikat($sesi));
+    }
+
+    /**
+     * Format sel master `159` (K-50-15 membatalkan lima desimal untuk CETAK;
+     * nilai snapshot tetap presisi penuh): Nominal Standard · Pembacaan Alat ·
+     * Correction `0.00` (`D18:L27`), U95 `0.0000` (`J28`), `k` `0` (`O29`).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0000', 'k' => '0'];
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array

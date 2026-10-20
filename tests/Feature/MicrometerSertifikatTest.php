@@ -298,8 +298,14 @@ class MicrometerSertifikatTest extends TestCase
         // judul kolom seperti master (`165!D17:L17` "mm"), bukan `Standard (mm)`.
         $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>mm</th>\s*<th>mm</th>\s*<th>mm</th>#u', $html);
         $this->assertStringContainsString('<th>Correction</th>', $html);
-        $this->assertStringContainsString('0,00087', $html);
-        $this->assertStringContainsString('0,00027', $html);
+        // K-50-15 (pemilik, 18 Okt 2026) membatalkan cetak lima desimal: CETAK
+        // ikut format sel master `0.000` (`166!D18:L28`, U95 `166!J29`), jadi
+        // `25,00027` → `25,000` dan U95 `0,00087` → `0,001`. Nilai snapshot
+        // tetap presisi penuh (dijaga test lain di berkas ini). Yang dijaga di
+        // sini tetap sama: U95 tercetak mm, bukan µm (`0,871`).
+        $this->assertMatchesRegularExpression('#<td>0[.,]001 mm</td>#u', $html);
+        $this->assertMatchesRegularExpression('#<td>25[.,]000</td>#u', $html);
+        $this->assertStringNotContainsString('0,00087', $html);
         $this->assertStringNotContainsString('0,871', $html);
     }
 }
