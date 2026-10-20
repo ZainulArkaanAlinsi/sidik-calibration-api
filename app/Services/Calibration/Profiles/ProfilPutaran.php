@@ -201,7 +201,9 @@ abstract class ProfilPutaran extends CalibrationProfile
      *   (`C17:S17`; bukan `Setting` — [judulKolomUut] tetap untuk layar),
      *   baris satuan `Rpm` di bawahnya (`C18:S18`);
      * - U95 satu kotak per rentang (`S19:V21`, `S22:V24`, …): kolom `gabung`
-     *   menggabung sel bersebelahan yang ANGKA CETAKNYA sama.
+     *   menggabung baris dengan IDENTITAS rentang yang sama
+     *   ([kunciGabungTitik]), bukan angka cetak yang sama — dua rentang yang
+     *   kebetulan sama-sama `3.2` tetap dua kotak seperti master.
      *
      * Kolom Standard used, `Issuance Date   :` dan strip penafian = bawaan.
      *
@@ -218,6 +220,25 @@ abstract class ProfilPutaran extends CalibrationProfile
                 ['kolom' => 'u95', 'judul' => 'U95% (±)', 'satuan' => 'Rpm', 'gabung' => true],
             ],
         ];
+    }
+
+    /**
+     * Identitas rentang = nomor blok tiga titik, persis pengelompokan
+     * [hitungPerGrup]: `titik_ke` yang berdata diurut, lalu dipotong per
+     * `PutaranCalculator::TITIK_PER_BLOK`. Satu blok = satu budget = satu U95
+     * (`180!S19:V21`, `S22:V24`, …; `182!S19:V21`, …). Hanya cetak.
+     */
+    public function kunciGabungTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): ?string
+    {
+        $urut = $sesi->rawMeasurements
+            ->filter(static fn ($b): bool => $b->pembacaan !== null)
+            ->map(static fn ($b): int => (int) $b->titik_ke)
+            ->unique()
+            ->sort()
+            ->values();
+        $posisi = $urut->search($titikKe, true);
+
+        return $posisi === false ? null : 'blok-'.intdiv((int) $posisi, PutaranCalculator::TITIK_PER_BLOK);
     }
 
     /**

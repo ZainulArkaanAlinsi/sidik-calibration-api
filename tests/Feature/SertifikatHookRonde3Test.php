@@ -90,6 +90,40 @@ class SertifikatHookRonde3Test extends TestCase
         $this->assertSame(1, $this->halamanTerbaik($s));
     }
 
+    /**
+     * Centrifuge `180` & Tachometer `182`: U95 satu kotak per RENTANG (blok
+     * tiga titik = satu budget, `S19:V21`, `S22:V24`, …), dipisah menurut
+     * identitas blok, bukan kesamaan angka cetak.
+     */
+    public function test_putaran_u95_digabung_per_rentang(): void
+    {
+        $this->siap();
+
+        foreach (['0133-CAL-324', '0140-CAL-424'] as $nomor) {
+            [$s, $html] = $this->terbitkan($nomor);
+            $baris = TataLetakSertifikat::barisDicetak($s->snapshot['hasil']);
+            $blok = collect($baris)->groupBy('kunci_gabung');
+
+            $this->assertNotContains(null, array_column($baris, 'kunci_gabung'), "{$nomor}: tiap baris punya rentang.");
+            $this->assertSame(range(0, $blok->count() - 1), $blok->keys()->map(static fn (string $k): int => (int) substr($k, 5))->all());
+
+            foreach ($blok as $kunci => $anggota) {
+                $this->assertLessThanOrEqual(3, $anggota->count(), "{$nomor} {$kunci}: maksimal tiga titik.");
+                // Satu blok satu budget: U95 dan k anggotanya sama.
+                $this->assertCount(1, $anggota->pluck('u95')->unique(), "{$nomor} {$kunci}: U95 satu blok.");
+                $this->assertCount(1, $anggota->pluck('faktor_cakupan_k')->unique(), "{$nomor} {$kunci}: k satu blok.");
+            }
+
+            // Satu kotak U95 per rentang.
+            $rowspan = preg_match_all('#<td class="gabung" rowspan="(\d+)"#u', $html, $m) ? array_map('intval', $m[1]) : [];
+            $this->assertSame(
+                $blok->map->count()->filter(static fn (int $n): bool => $n > 1)->values()->all(),
+                $rowspan,
+                "{$nomor}: rowspan U95 = ukuran tiap rentang.",
+            );
+        }
+    }
+
     private function siap(): void
     {
         $this->seed(DatabaseSeeder::class);
