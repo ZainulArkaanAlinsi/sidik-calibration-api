@@ -33,7 +33,7 @@
     $tgl = fn (?string $iso): string => $iso
         ? \Illuminate\Support\Carbon::parse($iso)->translatedFormat('d F Y')
         : '—';
-    $angka = fn ($nilai): string => \App\Support\Angka::id($nilai === null ? null : (float) $nilai, $desimal);
+    $angka = fn ($nilai): string => \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id($nilai === null ? null : (float) $nilai, $desimal), $tataLetak);
     $isi = fn (?string $nilai): string => filled($nilai) ? $nilai : '—';
 @endphp
 <!DOCTYPE html>
@@ -835,7 +835,9 @@
          jalur yang SAMA dengan satu kelompok tanpa judul — bentuk cetaknya
          nggak berubah sama sekali.
 
-         K-50-15: kelompoknya `remark` DAN satuan PER BARIS — satuan baris
+         K-50-15, bentuk master saja (`pisah_per_satuan`; snapshot terbit tanpa
+         `tata_letak` tetap per `remark`): kelompoknya `remark` DAN satuan PER
+         BARIS — satuan baris
          pertama dulu dipakai untuk seluruh tabel, sehingga baris mS/cm
          Conductivity tercetak di bawah kepala `(µS/cm)` dan titik %RH
          Thermohygro di bawah `(°C)`. Master mencetak tabel sendiri per satuan,
@@ -843,7 +845,7 @@
          ke satu tabel (Chlorine, Sieve: remark jadi KOLOM). Baris yang
          disembunyikan master (`dicetak: false`) dilewati. --}}
     @php($pisahRemark = (bool) $tataLetak['pisah_per_remark'])
-    @php($kelompok = collect(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? []))->groupBy(fn ($b) => \App\Support\TataLetakSertifikat::kunciKelompok($b, $pisahRemark)))
+    @php($kelompok = collect(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? []))->groupBy(fn ($b) => \App\Support\TataLetakSertifikat::kunciKelompok($b, $pisahRemark, (bool) $tataLetak['pisah_per_satuan'])))
 
     {{-- Autoklaf: TIGA bagian, bukan tabel empat kolom.
 
@@ -917,7 +919,7 @@
     @php($enclosure = $snapshot['enclosure'] ?? null)
 
     @if ($flowmeter)
-        @php($mm = fn ($v) => $v === null ? '—' : \App\Support\Angka::id((float) $v, 2).' mm')
+        @php($mm = fn ($v) => $v === null ? '—' : \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, 2), $tataLetak).' mm')
         <div class="judul-sub">PIPE SPECIFICATION &amp; SENSOR MOUNTING</div>
         <table class="data">
             <tbody>
@@ -983,7 +985,7 @@
         @php($dTekanU95 = 4)
         @php($suhu = $autoclave['suhu'] ?? [])
         @php($tek = $autoclave['tekanan'] ?? [])
-        @php($angka = fn ($v, $d) => $v === null ? '—' : \App\Support\Angka::id((float) $v, $d))
+        @php($angka = fn ($v, $d) => $v === null ? '—' : \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak))
 
         {{-- Bagian A & B cuma dicetak kalau suhunya MEMANG diukur. Sesi
              tekanan-saja itu skenario sah (lihat `AutoclaveCalculator::hitung`),
@@ -1098,7 +1100,7 @@
         @if (($tek['ekstrapolasi_tekanan'] ?? null) !== null)
             <div class="ket-k">
                 Titik tekanan ini di bawah titik kalibrasi terendah standar
-                ({{ \App\Support\Angka::id((float) ($tek['ekstrapolasi_tekanan']['tabel_min_bar'] ?? 0), 2) }} bar),
+                ({{ \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) ($tek['ekstrapolasi_tekanan']['tabel_min_bar'] ?? 0), 2), $tataLetak) }} bar),
                 sehingga koreksi &amp; ketidakpastian standarnya diambil dari titik terdekat dan
                 ketidakpastian ekstrapolasinya ikut dihitung.
                 <strong>Baris tekanan ini di luar lingkup akreditasi</strong>; baris suhu tidak terpengaruh.
@@ -1117,7 +1119,7 @@
         @php($dT = $timbangan['desimal'] ?? $desimal)
         @php($dS = $timbangan['desimal_stdev'] ?? max($dT, 2))
         @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
-        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
+        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak)))
 
         {{-- Bagian 1 nggak dicetak sama sekali kalau nggak ada slot yang diisi.
              Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
@@ -1142,10 +1144,10 @@
                     <tr>
                         <td class="kiri">
                             {{ $rpt['label'] ?? '' }} =
-                            {{ \App\Support\Angka::nilaiStandar(
+                            {{ \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::nilaiStandar(
                                 ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
                                 $dT,
-                            ) }}
+                            ), $tataLetak) }}
                         </td>
                         <td>{!! $nT($rpt['stdev'] ?? null, $dS) !!}</td>
                         <td>{!! $nT($rpt['maks_beda'] ?? null, $dT) !!}</td>
@@ -1296,7 +1298,7 @@
         @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
         @php($dP = (int) ($tekanan['desimal'] ?? $desimal))
         @php($dPU = (int) ($tekanan['desimal_u95'] ?? $dP + 1))
-        @php($nP = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
+        @php($nP = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak)))
         <table class="data">
             <thead>
                 <tr>
@@ -1337,7 +1339,7 @@
                 {{-- Master: `ROUND(k;1)` berformat General — 1,98 tercetak `2`,
                      4,30 tercetak `4,3`. Bukan `2,0`. --}}
                 @php($kP = round((float) ($tekanan['k_cetak'] ?? 2), 1))
-                {{ \App\Support\Angka::id($kP, floor($kP) == $kP ? 0 : 1) }}
+                {{ \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id($kP, floor($kP) == $kP ? 0 : 1), $tataLetak) }}
             </div>
         @endif
     @elseif ($enclosure)
@@ -1360,7 +1362,7 @@
         @php($fE = is_array($enclosure['desimal'] ?? null) ? $enclosure['desimal'] : [])
         @php($nolE = (bool) ($enclosure['tanda_nol'] ?? true))
         @php($dE = fn ($kolom) => array_key_exists($kolom, $fE) ? $fE[$kolom] : 1)
-        @php($nE = fn ($v, $kolom) => $v === null ? '—' : ($dE($kolom) === null ? \App\Support\Angka::nilaiStandar((float) $v, 10) : \App\Support\Angka::hasil((float) $v, (int) $dE($kolom), tandaNol: $nolE)))
+        @php($nE = fn ($v, $kolom) => $v === null ? '—' : \App\Support\TataLetakSertifikat::angka(($dE($kolom) === null ? \App\Support\Angka::nilaiStandar((float) $v, 10) : \App\Support\Angka::hasil((float) $v, (int) $dE($kolom), tandaNol: $nolE)), $tataLetak))
         @php($spE = array_values($enclosure['set_point'] ?? []))
         @php($posisiE = array_values($enclosure['posisi'] ?? []))
         @php($acuanE = collect($spE)->pluck('posisi_acuan')->filter(fn ($p) => $p !== null)->unique()->values())
@@ -1456,16 +1458,17 @@
             <div class="judul-kelompok">{{ $judulKelompok }}</div>
         @endif
 
-        {{-- Satuan KELOMPOK — sejak K-50-15 satu kelompok memang satu satuan
-             (kunci kelompoknya ikut satuan baris), jadi baris pertama mewakili
-             semuanya. Lembar master nulisnya di KEPALA kolom (`Standard (nm)`)
+        {{-- Satuan KELOMPOK dari baris pertama. Bentuk master (K-50-15,
+             `pisah_per_satuan`) menjamin satu kelompok satu satuan; bentuk lama
+             dikelompokkan per `remark` saja, persis waktu terbit. Lembar master nulisnya di KEPALA kolom (`Standard (nm)`)
              atau, kalau `satuan_baris_sendiri`, di baris sendiri di bawah judul
              kolom (`D17` "mm"). Alat bersatuan seragam ngirim null di baris.
              Bentuk lama: kepalanya tanpa satuan (tetap begitu untuk snapshot
              lama). Bentuk master (`satuan_baris_sendiri`, K-50-15): baris
-             satuannya jatuh ke satuan sertifikat (`snapshot.satuan`) — master
+             satuannya jatuh ke satuan ALAT (`snapshot.satuan_cetak`, bukan satuan
+             pembacaan mentah: Piston menimbang `g`, masternya `ml`) — master
              selalu menulisnya (`177!C21` `NTU`, `178!C20` `cP`). --}}
-        @php($satKelompok = $pertama['satuan'] ?? ($tataLetak['satuan_baris_sendiri'] ? ($snapshot['satuan'] ?? null) : null))
+        @php($satKelompok = $pertama['satuan'] ?? ($tataLetak['satuan_baris_sendiri'] ? ($snapshot['satuan_cetak'] ?? null) : null))
         {{-- Kolom R² cuma ada di blok %T Spectrophotometer, dan cuma kalau
              definisinya udah diputus lab (`config('kalibrasi.r2_spektro')`).
              Kelompok lain & sertifikat lama yang snapshot-nya belum punya kunci
@@ -1618,13 +1621,13 @@
         @php($k = $pertama['faktor_cakupan_k'] ?? null)
         @php($kBeda = $barisKelompok
             ->filter(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null)
-            ->map(fn ($b) => \App\Support\TataLetakSertifikat::teksK($b, (float) $b['faktor_cakupan_k']))
+            ->map(fn ($b) => \App\Support\TataLetakSertifikat::teksK($b, (float) $b['faktor_cakupan_k'], $tataLetak))
             ->unique()
             ->count() > 1)
         @if ($k !== null)
             <div class="ket-k">
                 {{ $tataLetak['kalimat_k'] ?? 'The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k )' }} {{ $kBeda ? '≈' : '=' }}
-                {{ \App\Support\TataLetakSertifikat::teksK($pertama, (float) $k) }}
+                {{ \App\Support\TataLetakSertifikat::teksK($pertama, (float) $k, $tataLetak) }}
             </div>
         @endif
     @empty

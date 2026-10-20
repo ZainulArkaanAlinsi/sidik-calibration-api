@@ -1507,12 +1507,15 @@ class ViscometerProfile extends CalibrationProfile
     /** Master Viscometer: `PERHITUNGAN!G14` format `General` → `25,02`. */
     public function desimalSuhuEnv(): ?int
     {
-        return null;
+        // K-50-15, pemilik 20 Okt 2026 ("ikut master semua"): sel lembar
+        // SERTIFIKAT `178!T12` berformat `0.0` (25.0), bukan General.
+        return 1;
     }
 
     /** Master Viscometer: `PERHITUNGAN!G15` format `General` → `56,5`. */
     public function desimalKelembabanEnv(): ?int
     {
-        return null;
+        // `178!T13` berformat `0` (57). Lihat [desimalSuhuEnv].
+        return 0;
     }
 }

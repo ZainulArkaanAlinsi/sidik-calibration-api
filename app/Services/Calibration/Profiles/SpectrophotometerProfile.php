@@ -1318,12 +1318,15 @@ class SpectrophotometerProfile extends CalibrationProfile
     /** Master Spectrophotometer: `PERHITUNGAN!G14` format `General` → `21,61`. */
     public function desimalSuhuEnv(): ?int
     {
-        return null;
+        // K-50-15, pemilik 20 Okt 2026 ("ikut master semua"): sel lembar
+        // SERTIFIKAT `170!S11` berformat `0.0` (21.6), bukan General.
+        return 1;
     }
 
     /** Master Spectrophotometer: `PERHITUNGAN!G15` format `General` → `56,5`. */
     public function desimalKelembabanEnv(): ?int
     {
-        return null;
+        // `170!S12` berformat `0` (57). Lihat [desimalSuhuEnv].
+        return 0;
     }
 }

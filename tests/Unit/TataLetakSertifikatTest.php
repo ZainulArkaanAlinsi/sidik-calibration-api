@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -117,6 +118,34 @@ class TataLetakSertifikatTest extends TestCase
         $this->assertSame('1,97', TataLetakSertifikat::teksK([], 1.9714));
     }
 
+    /** P2 & P3 (pemilik 20 Okt 2026): `k` format sel `0`, titik desimal. */
+    public function test_bentuk_master_k_format_nol_dan_titik_desimal(): void
+    {
+        $master = TataLetakSertifikat::untuk(['tata_letak' => TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER)]);
+
+        $this->assertSame('2', TataLetakSertifikat::teksK([], 1.9714, $master));
+        // Profil yang menyatakan desimal/format sendiri tetap menang.
+        $this->assertSame('3', TataLetakSertifikat::teksK(['desimal_k' => 0], 3.18, $master));
+        $this->assertSame('2.0', TataLetakSertifikat::teksK(['format' => ['k' => '0.0']], 1.9714, $master));
+        // Bentuk lama tidak berubah.
+        $this->assertSame('1,97', TataLetakSertifikat::teksK([], 1.9714));
+
+        $baris = ['standard_value' => 1412.0, 'unit_under_test' => 1413.25, 'correction' => -1.25, 'desimal' => 2];
+        $snapMaster = ['tata_letak' => TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER)];
+        $this->assertSame('1413.25', TataLetakSertifikat::teksSel($baris, 'uut', $snapMaster, 2));
+        $this->assertSame('1412', TataLetakSertifikat::teksSel($baris, 'standar', $snapMaster, 2));
+        $this->assertSame('1413,25', TataLetakSertifikat::teksSel($baris, 'uut', [], 2));
+        $this->assertSame('-0', TataLetakSertifikat::teksSel(['standard_value' => -0.0001, 'desimal' => 2], 'standar', [], 2));
+        $this->assertSame('0', TataLetakSertifikat::teksSel(['standard_value' => -0.0001, 'desimal' => 2], 'standar', $snapMaster, 2));
+    }
+
+    public function test_ke_titik_hanya_mengubah_angka(): void
+    {
+        $this->assertSame('T 21.0 °C ± 1.7 °C', Angka::keTitik('T 21,0 °C ± 1,7 °C'));
+        $this->assertSame('0–30000 rpm / 0.01 rpm', Angka::keTitik('0–30.000 rpm / 0,01 rpm'));
+        $this->assertSame('Spindel No. 3, Speed 60', Angka::keTitik('Spindel No. 3, Speed 60'));
+    }
+
     public function test_kode_format_yang_tidak_dikenal_dilempar(): void
     {
         $this->assertSame(['k' => '0'], TataLetakSertifikat::normalisasiFormat(['k' => '0', 'u95' => null]));
@@ -134,10 +163,15 @@ class TataLetakSertifikatTest extends TestCase
 
     public function test_kelompok_tabel_dipisah_per_satuan(): void
     {
-        $uS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'µS/cm'], true);
-        $mS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'mS/cm'], true);
+        $uS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'µS/cm'], true, true);
+        $mS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'mS/cm'], true, true);
 
         $this->assertNotSame($uS, $mS);
+        // Bentuk lama (snapshot terbit tanpa `tata_letak`): per `remark` saja.
+        $this->assertSame(
+            TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'µS/cm'], true),
+            TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'mS/cm'], true),
+        );
         $this->assertSame(
             TataLetakSertifikat::kunciKelompok(['remark' => 'Free', 'satuan' => 'mg/L'], false),
             TataLetakSertifikat::kunciKelompok(['remark' => 'Total', 'satuan' => 'mg/L'], false),

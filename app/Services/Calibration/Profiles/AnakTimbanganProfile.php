@@ -1207,4 +1207,14 @@ class AnakTimbanganProfile extends CalibrationProfile
     {
         return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => '2. STANDARD USED'];
     }
+
+    /**
+     * Koreksi negatif yang membulat ke nol dicetak TANPA tanda (`0.0000`):
+     * master `139!I17:I36` tidak pernah menampilkan nol negatif (pemilik
+     * 20 Okt 2026, "ikut master semua"). Cetak saja.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
 }

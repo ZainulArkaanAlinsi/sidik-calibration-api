@@ -115,6 +115,15 @@ final class TataLetakSertifikat
         // (master: `Issuance Date :`, `Issuance Date:`).
         'label_tanggal_terbit' => 'Issuance Date:',
         'akhir_sertifikat' => null,
+        // Kelompok tabel hasil ikut SATUAN baris juga, bukan cuma `remark`.
+        // Bentuk lama `false`: snapshot terbit tanpa `tata_letak` dikelompokkan
+        // seperti waktu terbit (satu tabel Conductivity µS/cm + mS/cm).
+        'pisah_per_satuan' => false,
+        // Format sel `k` bawaan bila baris & profil tidak menyatakannya
+        // (`format.k`, `desimal_k`). `null` = perilaku lama (2 desimal).
+        'format_k' => null,
+        // Pemisah desimal angka yang DICETAK. `,` = bentuk lama.
+        'pemisah_desimal' => ',',
     ];
 
     /**
@@ -162,9 +171,9 @@ final class TataLetakSertifikat
      * (`145!L76`), autoclave (`155!E66`), piston pipette/dispensett
      * (`160!G45`), buret digital (`164!G47`), TITS (`173!F53`, `174!F47`) —
      * bunyi stripnya beda per master, jadi tiap profil menulisnya sendiri.
-     * `kop` & `judul` (G2) dibiarkan bentuk lama: lembar SERTIFIKAT tidak
-     * memuat kop gambar maupun "CALIBRATION CERTIFICATE", tapi apakah kertas
-     * cetaknya berkop belum diputuskan pemilik.
+     * `kop` & `judul` (G2): pemilik 20 Okt 2026 memutuskan ikut master —
+     * lembar SERTIFIKAT tidak memuat kop gambar maupun "CALIBRATION
+     * CERTIFICATE", jadi keduanya tidak dicetak di bentuk master.
      */
     public const MAYORITAS_MASTER = [
         'kepala' => [
@@ -190,6 +199,18 @@ final class TataLetakSertifikat
             ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through :'],
         ],
         'label_tanggal_terbit' => 'Issuance Date :',
+        // Keputusan pemilik 20 Okt 2026 ("ikut master semua"):
+        // - P1: lembar SERTIFIKAT tidak memuat kop gambar maupun judul
+        //   "CALIBRATION CERTIFICATE" (`tata_letak.gambar` kosong di 52 lembar).
+        'kop' => false,
+        'judul' => null,
+        // - tabel sendiri per satuan (`157!C33:T36` µS/cm, `C38:T42` mS/cm).
+        'pisah_per_satuan' => true,
+        // - P2: sel `k` berformat `0` di 40 lembar (`165!P30`, `163!T36`).
+        //   Cetak saja; U95 tetap dihitung dengan k sebenarnya.
+        'format_k' => '0',
+        // - P3: titik desimal seperti tampilan sel master (`20.2`, `0.610`).
+        'pemisah_desimal' => '.',
         'catatan' => [
             'The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2',
             '- Calibration results are not to be announced and only apply to related tools -',
@@ -242,7 +263,11 @@ final class TataLetakSertifikat
 
         foreach ($timpaan as $kunci => $nilai) {
             $hasil[$kunci] = match ($kunci) {
-                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri' => self::bool($kunci, $nilai),
+                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan' => self::bool($kunci, $nilai),
+                'format_k' => $nilai === null ? null : self::normalisasiFormat(['k' => $nilai])['k'],
+                'pemisah_desimal' => in_array($nilai, [',', '.'], true)
+                    ? $nilai
+                    : throw new InvalidArgumentException('Tata letak sertifikat `pemisah_desimal` harus `,` atau `.`.'),
                 'judul', 'akhir_sertifikat', 'judul_kolom_u95', 'label_u95', 'kalimat_k' => self::teksAtauNull($kunci, $nilai),
                 'judul_laporan', 'judul_standar_digunakan', 'label_tanggal_terbit' => self::teks($kunci, $nilai),
                 'kepala' => self::kepala($nilai, [...self::KUNCI_KEPALA, ...$kunciKepalaTambahan]),
@@ -469,16 +494,31 @@ final class TataLetakSertifikat
     }
 
     /**
-     * Kunci kelompok tabel. Satu tabel = satu `remark` DAN satu satuan: baris
-     * mS/cm Conductivity tidak boleh tercetak di bawah kepala `(µS/cm)` milik
-     * baris pertama, dan U95 serta `k` kelompoknya ikut terpisah — persis
-     * master yang mencetak tabel sendiri per satuan.
+     * Kunci kelompok tabel. Bentuk master (`pisah_per_satuan`): satu tabel =
+     * satu `remark` DAN satu satuan — baris mS/cm Conductivity tidak boleh
+     * tercetak di bawah kepala `(µS/cm)` milik baris pertama, dan U95 serta `k`
+     * kelompoknya ikut terpisah, persis master yang mencetak tabel sendiri per
+     * satuan. Bentuk lama (snapshot terbit tanpa `tata_letak`): `remark` saja,
+     * seperti waktu terbit.
      *
      * @param  array<string, mixed>  $baris
      */
-    public static function kunciKelompok(array $baris, bool $pisahPerRemark): string
+    public static function kunciKelompok(array $baris, bool $pisahPerRemark, bool $pisahPerSatuan = false): string
     {
-        return ($pisahPerRemark ? (string) ($baris['remark'] ?? '') : '')."\u{1F}".(string) ($baris['satuan'] ?? '');
+        return ($pisahPerRemark ? (string) ($baris['remark'] ?? '') : '')
+            .($pisahPerSatuan ? "\u{1F}".(string) ($baris['satuan'] ?? '') : '');
+    }
+
+    /**
+     * Teks angka hasil `Angka` dalam pemisah desimal tata letak ini: bentuk
+     * lama apa adanya (koma), bentuk master titik desimal tanpa pemisah ribuan
+     * ([Angka::keTitik]). Hanya untuk teks yang lahir dari `Angka`.
+     *
+     * @param  array<string, mixed>  $tataLetak  hasil [untuk]
+     */
+    public static function angka(string $teks, array $tataLetak): string
+    {
+        return ($tataLetak['pemisah_desimal'] ?? ',') === '.' ? Angka::keTitik($teks) : $teks;
     }
 
     /**
@@ -489,6 +529,27 @@ final class TataLetakSertifikat
      * @param  array<string, mixed>  $snapshot
      */
     public static function teksSel(array $baris, string $kolom, array $snapshot, int $desimalSertifikat): string
+    {
+        if ($kolom === 'remark') {
+            return filled($baris['remark'] ?? null) ? (string) $baris['remark'] : '—';
+        }
+
+        $teks = self::angka(self::teksSelKoma($baris, $kolom, $snapshot, $desimalSertifikat), self::untuk($snapshot));
+
+        // Nominal negatif mungil yang membulat ke nol (`-0,0001` titik nol Load
+        // Cell) tercetak `-0` di bentuk lama; tidak ada master yang mencetaknya.
+        // Hanya bentuk master — snapshot terbit tetap tercetak seperti dulu.
+        return $kolom === 'standar' && isset($snapshot['tata_letak']) && $teks === '-0' ? '0' : $teks;
+    }
+
+    /**
+     * [teksSel] dalam bunyi `Angka` (koma desimal) — sebelum pemisah tata
+     * letak diterapkan.
+     *
+     * @param  array<string, mixed>  $baris
+     * @param  array<string, mixed>  $snapshot
+     */
+    private static function teksSelKoma(array $baris, string $kolom, array $snapshot, int $desimalSertifikat): string
     {
         $format = is_array($baris['format'] ?? null) ? $baris['format'] : [];
         $db = (int) ($baris['desimal'] ?? $desimalSertifikat);
@@ -524,21 +585,29 @@ final class TataLetakSertifikat
     }
 
     /**
-     * Teks `k` di kalimat faktor cakupan untuk satu baris.
+     * Teks `k` di kalimat faktor cakupan untuk satu baris. Urutan: format sel
+     * baris (`format.k`), desimal profil (`desimal_k`), format `k` bawaan tata
+     * letak (`format_k`, bentuk master `0`), lalu perilaku lama (2 desimal, nol
+     * di belakang dibuang). Hanya CETAK — U95 sudah dihitung dengan k
+     * sebenarnya dan tidak tersentuh.
      *
      * @param  array<string, mixed>  $baris
+     * @param  array<string, mixed>  $tataLetak  hasil [untuk]; kosong = bentuk lama
      */
-    public static function teksK(array $baris, float $k): string
+    public static function teksK(array $baris, float $k, array $tataLetak = []): string
     {
         $format = is_array($baris['format'] ?? null) ? $baris['format'] : [];
-
-        if (isset($format['k'])) {
-            return self::formatAngka($k, $format['k']);
-        }
-
         $dbK = $baris['desimal_k'] ?? null;
+        $bawaan = $tataLetak['format_k'] ?? null;
 
-        return $dbK === null ? Angka::idRingkas($k, 2) : Angka::id($k, (int) $dbK);
+        $teks = match (true) {
+            isset($format['k']) => self::formatAngka($k, $format['k']),
+            $dbK !== null => Angka::id($k, (int) $dbK),
+            $bawaan !== null => self::formatAngka($k, $bawaan),
+            default => Angka::idRingkas($k, 2),
+        };
+
+        return self::angka($teks, $tataLetak);
     }
 
     /**

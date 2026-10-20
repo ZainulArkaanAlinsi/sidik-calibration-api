@@ -847,4 +847,16 @@ class JangkaSorongProfile extends CalibrationProfile
     {
         return $this->tabel ??= new TabelStandarJangkaSorong;
     }
+
+    /**
+     * `k` dicetak format `General` seperti sel master (`153!O36` 1.9759…),
+     * bukan `0` bawaan bentuk master (K-50-15, pemilik 20 Okt 2026). Cetak
+     * saja — U95 tetap dihitung dengan k sebenarnya.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['k' => 'General'];
+    }
 }

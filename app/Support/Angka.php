@@ -165,17 +165,10 @@ class Angka
         $teks = self::hasil($nilai, $desimal);
 
         if (! str_contains($teks, ',')) {
-            return $teks === '-0' ? '0' : $teks;
+            return $teks;
         }
 
-        $teks = rtrim(rtrim($teks, '0'), ',');
-
-        // Nilai negatif mungil yang membulat ke nol (`-0,0001` di titik nol Load
-        // Cell) tidak boleh tercetak `-0`: sesudah nol di belakang dibuang, tanda
-        // minus tinggal menempel pada angka bulat nol — tidak ada satu master pun
-        // yang mencetak nominal `-0`. Kolom ber-desimal tetap (`Angka::hasil`,
-        // `-0,00` Turbidimeter) tidak lewat sini, jadi tidak ikut berubah.
-        return $teks === '-0' ? '0' : $teks;
+        return rtrim(rtrim($teks, '0'), ',');
     }
 
     /**
@@ -240,5 +233,22 @@ class Angka
         $teks = number_format($nilai, $desimal, ',', '.');
 
         return str_contains($teks, ',') ? rtrim(rtrim($teks, '0'), ',') : $teks;
+    }
+
+    /**
+     * Teks hasil fungsi di kelas ini (koma desimal, titik ribuan) → bunyi
+     * lembar SERTIFIKAT master: titik desimal, tanpa pemisah ribuan (`1.412`
+     * → `1412`, `0,01` → `0.01`). K-50-15, keputusan pemilik 20 Okt 2026
+     * ("ikut master semua").
+     *
+     * HANYA untuk teks yang lahir dari `Angka` — titik di situ selalu pemisah
+     * ribuan. Menjalankannya pada teks yang sudah bertitik desimal (`1.000`
+     * berarti satu) akan merusaknya, jadi jangan dijalankan dua kali.
+     */
+    public static function keTitik(string $teks): string
+    {
+        $tanpaRibuan = preg_replace('/(?<=\d)\.(?=\d{3}(?!\d))/u', '', $teks) ?? $teks;
+
+        return preg_replace('/(?<=\d),(?=\d)/u', '.', $tanpaRibuan) ?? $tanpaRibuan;
     }
 }

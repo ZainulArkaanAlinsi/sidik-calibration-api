@@ -16,6 +16,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -146,7 +147,8 @@ class SertifikatBentukMasterTest extends TestCase
         $this->assertSame('Standard Value', $snapshot['judul_standar']);
 
         // G9: T & %RH sebaris-sebaris, format pH master (T `0.0`, %RH General).
-        $this->assertSame("T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %", $snapshot['header']['env_condition']);
+        // P3 (pemilik 20 Okt 2026): titik desimal seperti tampilan sel master.
+        $this->assertSame("T 21.0 °C ± 1.7 °C\n%RH 51.95 % ± 5.7 %", $snapshot['header']['env_condition']);
 
         $html = $this->html($sertifikat);
         $teks = $this->teks($html);
@@ -177,6 +179,14 @@ class SertifikatBentukMasterTest extends TestCase
 
         // G4: "Convidence" master TIDAK ditiru — penyimpangan sadar.
         $this->assertStringNotContainsString('Convidence', $teks);
+
+        // Keputusan pemilik 20 Okt 2026 ("ikut master semua"):
+        // P1 — lembar SERTIFIKAT tanpa kop & tanpa judul besar.
+        $this->assertStringNotContainsString('CALIBRATION CERTIFICATE', $teks);
+        $this->assertStringNotContainsString('class="kop', $html);
+        // P3 — titik desimal di tabel hasil (4.01, bukan 4,01).
+        $this->assertStringContainsString('4.01', $teks);
+        $this->assertStringNotContainsString('4,01', $teks);
     }
 
     public function test_snapshot_lama_tanpa_tata_letak_tetap_tercetak_bentuk_lama(): void
@@ -197,6 +207,9 @@ class SertifikatBentukMasterTest extends TestCase
         $this->assertStringContainsString('STANDARD USED', $teks);
         $this->assertStringContainsString('Issuance Date:', $teks);
         $this->assertStringNotContainsString('End of Certificate', $teks);
+        // Kop, judul besar, dan koma desimal bentuk lama tetap.
+        $this->assertStringContainsString('CALIBRATION CERTIFICATE', $teks);
+        $this->assertStringContainsString('4,01', $teks);
     }
 
     /**
@@ -205,6 +218,70 @@ class SertifikatBentukMasterTest extends TestCase
      * yang disembunyikan master. Kuncinya disuntik langsung ke snapshot —
      * bentuk yang sama dengan yang dibekukan builder dari profil.
      */
+    /**
+     * Snapshot TERBIT tanpa `tata_letak` dikelompokkan seperti waktu terbit:
+     * per `remark` saja. Pemisahan tabel per satuan (master `157!C33:T42`)
+     * hanya milik bentuk master — cetak ulang sertifikat Conductivity atau
+     * (Thermohygro) yang sudah di tangan pelanggan tidak boleh berubah jadi dua
+     * tabel.
+     */
+    public function test_snapshot_lama_satuan_campuran_tetap_satu_tabel(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
+
+        // Dua sesi contoh Conductivity bersatuan campuran (µS/cm + mS/cm). Sesi
+        // contoh Thermohygro meratakan titiknya ke satu satuan, jadi tidak
+        // bisa dipakai di sini; jalurnya sama (`kunciKelompok`).
+        foreach (['DEMO-COND-MSCM', '2405.32.A.NK'] as $nomor) {
+            $sesi = CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail();
+            $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+                ->assertOk();
+            $sertifikat = $sesi->fresh()->certificate()->firstOrFail();
+
+            $lama = $sertifikat->snapshot;
+            $satuan = array_unique(array_filter(array_column($lama['hasil'], 'satuan')));
+            $this->assertGreaterThan(1, count($satuan), "{$nomor}: sesi contoh harus bersatuan campuran.");
+            unset($lama['tata_letak']);
+
+            $html = $this->html($sertifikat, $lama);
+            $laporan = substr($html, (int) strpos($html, 'CALIBRATION REPORT'), (int) strpos($html, 'STANDARD USED') - (int) strpos($html, 'CALIBRATION REPORT'));
+            $this->assertSame(1, substr_count($laporan, '<table class="data">'), "{$nomor}: snapshot lama terpecah per satuan.");
+
+            // Bentuk master (snapshot baru) memang memisah per satuan.
+            $baru = $this->html($sertifikat);
+            $laporanBaru = substr($baru, (int) strpos($baru, 'Calibration Report :'), (int) strpos($baru, 'Standard used :') - (int) strpos($baru, 'Calibration Report :'));
+            $this->assertSame(count($satuan), substr_count($laporanBaru, '<table class="data">'), "{$nomor}: bentuk master tidak memisah per satuan.");
+        }
+    }
+
+    /**
+     * Baris satuan bentuk master memakai satuan ALAT, bukan satuan pembacaan
+     * mentah. Piston, Dispensett, dan Buret Digital menimbang dalam `g`, tapi
+     * master mencetak `ml` (`160!E20`, `164!E20:S20`). Temuan penjaga-angka
+     * 20 Okt 2026.
+     */
+    public function test_satuan_cetak_piston_ikut_satuan_alat_bukan_gram(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
+
+        foreach (['DEMO-PP-FIX-001', 'DEMO-DS-FIX-001', 'DEMO-BD-GRD-001'] as $nomor) {
+            $sesi = CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail();
+            $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+                ->assertOk();
+            $sertifikat = $sesi->fresh()->certificate()->firstOrFail();
+
+            $this->assertContains($sertifikat->snapshot['satuan_cetak'], ['ml', 'µl'], "{$nomor}: satuan cetak bukan satuan volume.");
+
+            $html = $this->html($sertifikat);
+            $this->assertStringNotContainsString('<th>g</th>', $html, "{$nomor}: baris satuan mencetak gram.");
+            $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>(ml|µl)</th>#u', $html, "{$nomor}: baris satuan tidak ber-ml.");
+        }
+    }
+
     public function test_mekanisme_hook_profil_tergambar_di_lembar(): void
     {
         $sertifikat = $this->terbitkan();
@@ -233,10 +310,10 @@ class SertifikatBentukMasterTest extends TestCase
         $this->assertStringNotContainsString('1,97', $teks);
         // Titik kedua tercetak dengan format sel `0.000` (nol di belakang tetap).
         $this->assertStringContainsString(
-            Angka::hasil((float) $snapshot['hasil'][1]['standard_value'], 3),
+            Angka::keTitik(Angka::hasil((float) $snapshot['hasil'][1]['standard_value'], 3)),
             $teks,
         );
         // Titik pertama disembunyikan: angkanya tidak tercetak di tabel hasil.
-        $this->assertStringNotContainsString(Angka::hasil((float) $titikPertama, 3), $teks);
+        $this->assertStringNotContainsString(Angka::keTitik(Angka::hasil((float) $titikPertama, 3)), $teks);
     }
 }
