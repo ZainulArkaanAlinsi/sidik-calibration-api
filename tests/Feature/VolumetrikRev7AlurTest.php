@@ -489,9 +489,18 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertSame(2, $sertifikat->snapshot['hasil'][0]['desimal']);
         $this->assertSame(4, $sertifikat->snapshot['hasil'][0]['desimal_u95']);
 
+        // K-50-15 (pemilik, 18 Okt 2026): CETAK sertifikat ikut format sel
+        // lembar SERTIFIKAT master Fixed (Studio id 143) — `E21` `0.0`, `N21`/
+        // `S21` `0.0000`, `Q22` `0.0000` — bukan lagi `0.00` salinan workbook
+        // PV 2. `desimal` snapshot (dibaca layar HP) tetap 2: format sel hanya
+        // mengatur cetak (`formatKolomSertifikat`), hook desimal tidak disentuh.
+        $this->assertSame(
+            ['standar' => '0.0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'],
+            $sertifikat->snapshot['hasil'][0]['format'],
+        );
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('2,00', $html);
-        $this->assertStringContainsString('1,99', $html);
+        $this->assertStringContainsString('<td>2,0</td>', $html);
+        $this->assertMatchesRegularExpression('/<td>1,99\d\d<\/td>/', $html);
         $this->assertStringContainsString('0,0034', $html);
     }
 
@@ -520,11 +529,16 @@ class VolumetrikRev7AlurTest extends TestCase
             $snapshot['header']['env_condition'],
         );
 
-        // `SERTIFIKAT!O14` & `E18`.
-        $this->assertSame(
-            'Class/Permitted Error : A/±0,15 ml — Suhu Dasar Volume : 20 °C',
-            $snapshot['catatan_atas_hasil'],
-        );
+        // `SERTIFIKAT!O14` & `E18`. K-50-15: dulu satu baris
+        // `catatan_atas_hasil`; sekarang kotak kepala `Class/Permitted Error`
+        // (`143!O14:U14`) dan blok `Suhu Dasar Volume : 20 °C` (`143!E18:N18`)
+        // di antara `Calibration Report :` dan tabel — letaknya seperti master.
+        $this->assertNull($snapshot['catatan_atas_hasil']);
+        $this->assertSame(['kelas_toleransi' => 'A/±0,15 ml'], $snapshot['header_tambahan']);
+        $this->assertSame([[
+            'posisi' => 'atas_hasil', 'judul' => null, 'baris' => [], 'tabel' => [['Suhu Dasar Volume', ':', '20 °C']],
+        ]], $snapshot['catatan_blok']);
+        $this->assertSame('------------------ End of Certificate ------------------', $snapshot['tata_letak']['akhir_sertifikat']);
 
         // `SERTIFIKAT!B29:W30`: neraca + Termometer & Sensor Std., sensor PRT
         // tidak dicetak terpisah. Kunci tiap baris diurutkan dulu: kolom JSON
@@ -542,14 +556,19 @@ class VolumetrikRev7AlurTest extends TestCase
             $urutKunci($snapshot['standar_digunakan']),
         );
 
-        // Nominal dengan nol di belakang (`E21` format `0.00`).
+        // Nominal dengan nol di belakang. K-50-15: format sel master Fixed
+        // (`143!E21` `0.0`, `N21` `0.0000`), bukan `0.00` salinan LU-200.
         $this->assertFalse($snapshot['hasil'][0]['standar_ringkas']);
 
         $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
         $html = view('sertifikat.pdf', $bahan)->render();
-        $this->assertStringContainsString('200,00', $html);
-        $this->assertStringContainsString('199,85', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0,15 ml', $html);
+        $this->assertStringContainsString('<td>200,0</td>', $html);
+        $this->assertMatchesRegularExpression('/<td>199,8\d{3}<\/td>/', $html);
+        $this->assertStringContainsString('Class/Permitted Error', $html);
+        $this->assertStringContainsString('A/±0,15 ml', $html);
+        $this->assertStringContainsString('Environmental Condition', $html);
+        $this->assertStringContainsString('Suhu Dasar Volume', $html);
+        $this->assertStringContainsString('End of Certificate', $html);
 
         // Tetap SATU halaman, mode normal.
         $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => false]);
@@ -571,13 +590,20 @@ class VolumetrikRev7AlurTest extends TestCase
         ])));
 
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('0,500', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0,005 ml', $html);
+        // K-50-15: Nominal Value ikut `143!E21` `0.0` → `0,5` (dulu `0,500`
+        // salinan PV 0,5); kelas & toleransi di kotak kepala (`143!O14:U14`).
+        $this->assertStringContainsString('<td>0,5</td>', $html);
+        $this->assertSame('A/±0,005 ml', $sertifikat->snapshot['header_tambahan']['kelas_toleransi']);
+        $this->assertStringContainsString('A/±0,005 ml', $html);
         $this->assertSame('Analytical Balance', $sertifikat->snapshot['standar_digunakan'][0]['name']);
         $this->assertSame('Termometer & Sensor Std.', $sertifikat->snapshot['standar_digunakan'][1]['name']);
     }
 
-    /** Sertifikat alat lain (Picnometer, Fixed lama) tidak berubah bentuk. */
+    /**
+     * Picnometer (Fixed lama) tidak ikut aturan Rev.7 (tekanan, standar
+     * termometer). Bentuk lembarnya K-50-15 ikut master Fixed 143 seperti
+     * labu ukur: kotak Class/Permitted Error & blok Suhu Dasar Volume.
+     */
     public function test_sertifikat_picnometer_tidak_ikut_berubah(): void
     {
         $alat = $this->alat('Picnometer', 25);
@@ -604,6 +630,8 @@ class VolumetrikRev7AlurTest extends TestCase
         $snapshot = $this->terbitkan($sesi)->snapshot;
 
         $this->assertNull($snapshot['catatan_atas_hasil']);
+        $this->assertSame(['kelas_toleransi' => 'A/±0,04 ml'], $snapshot['header_tambahan']);
+        $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
         $this->assertStringNotContainsString('hPa', (string) $snapshot['header']['env_condition']);
         $this->assertSame(['Analytical Balance'], array_column($snapshot['standar_digunakan'], 'name'));
         $this->assertTrue($snapshot['hasil'][0]['standar_ringkas']);
