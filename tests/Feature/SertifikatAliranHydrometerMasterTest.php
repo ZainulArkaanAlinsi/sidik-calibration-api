@@ -106,6 +106,38 @@ class SertifikatAliranHydrometerMasterTest extends TestCase
     }
 
     /**
+     * Standard Indication gravimetri = VOLUME, seperti `148!D22:D24`
+     * (`'PERHITUNGAN FC'!D69` dst.): 140,529 / 501,724 / 1003,364 L — bukan
+     * massa air 139,87 kg berlabel L. Tabelnya harus menjumlah: UUT +
+     * Correction = Standard.
+     */
+    public function test_flowmeter_gravimetri_standard_indication_volume_master_148(): void
+    {
+        $this->siap();
+        $snapshot = $this->terbitkan('DEMO-FM-GRAV-TOT-001')->snapshot;
+
+        $master = [1 => 140.52944129426598, 2 => 501.7242276961913, 3 => 1003.3639826190846];
+        $cetakMaster = [1 => '140.53', 2 => '501.72', 3 => '1003.36'];
+
+        $this->assertCount(3, $snapshot['hasil']);
+
+        foreach ($snapshot['hasil'] as $baris) {
+            $titik = $baris['titik_ke'];
+            $this->assertEqualsWithDelta($master[$titik], $baris['standard_value'], 1e-6, "Titik {$titik}: `148!D` volume.");
+            $this->assertEqualsWithDelta(
+                $baris['standard_value'],
+                $baris['unit_under_test'] + $baris['correction'],
+                1e-9,
+                "Titik {$titik}: UUT + Correction harus = Standard.",
+            );
+            $this->assertSame(
+                $cetakMaster[$titik],
+                str_replace(',', '.', TataLetakSertifikat::teksSel($baris, 'standar', $snapshot, 2)),
+            );
+        }
+    }
+
+    /**
      * Flowrate gravimetri (master 150) tidak punya sesi contoh — seedernya
      * sengaja tidak menanamnya (`FlowmeterGravimetriSeeder`). Yang diuji di
      * sini pemetaan cetaknya saja: sesi Flowrate contoh dengan label varian

@@ -273,6 +273,28 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return true;
     }
 
+    /**
+     * Kolom Standard Indication = UUT + Correction, bukan `titik_ukur`.
+     *
+     * Varian GRAVIMETRI menyimpan `titik_ukur` = `std_terkoreksi`, yaitu MASSA
+     * air terkoreksi (kg, `FlowmeterGravimetriCalculator` kunci
+     * `std_terkoreksi`), sedangkan Standard Indication master adalah VOLUME
+     * (`148!D22 = 'PERHITUNGAN FC'!D69` = massa × (1+E) / ρ = 140,529 L;
+     * kunci `hasil` kalkulator, dijaga `FlowmeterGravimetriMasterTest`).
+     * Dicetak apa adanya, sertifikat menulis 139,87 berlabel L dan tabelnya
+     * tidak menjumlah (140,11 + 0,42 ≠ 139,87). `koreksi` tersimpan =
+     * `hasil − uut_rata`, jadi `rata_rata + koreksi` = `hasil` persis — angka
+     * yang sudah dihitung, bukan konversi baru. Flowrate gravimetri (150) sama:
+     * `hasil` = laju massa / ρ.
+     *
+     * Varian UFM: `koreksi` = `std_terkoreksi − uut_rata`, jadi hasilnya
+     * `titik_ukur` itu sendiri (beda hanya di digit float ke-15).
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return true;
+    }
+
     public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): ?string
     {
         return $this->satuanHasil();
