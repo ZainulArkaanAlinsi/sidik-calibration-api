@@ -10,6 +10,7 @@ use App\Services\Calibration\GayaCalculator;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Services\GumCalculator;
 use App\Support\GayaMentah as M;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -885,6 +886,98 @@ abstract class GayaProfile extends CalibrationProfile
     public function judulKolomStandar(): string
     {
         return 'Standard Value';
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /**
+     * Nama satuan di blok `Units Used` — `Tabel_Satuan` kolom `Units`
+     * (`DATABASE!R20:T24`, sama di master `161`, `162`, `163`).
+     */
+    private const NAMA_SATUAN = [
+        'kN' => 'Kilo-newton',
+        'N' => 'Newton',
+        'lbf' => 'Pound-force',
+        'kgf' => 'Kilogram-force',
+        'tnf' => 'Ton-force',
+    ];
+
+    /**
+     * Titik nol tidak dicetak: ketiga master menyembunyikan baris pertama
+     * tabel hasil (`163!E21:V21`, `161!E21:V21`, `162!E22:V22`, beban 0).
+     * Barisnya tetap di snapshot (presisi penuh), cuma cetaknya dilewati.
+     * `$titikUkur` alat gaya = set point dalam satuan alat.
+     */
+    public function titikDicetakSertifikat(CalibrationSession $sesi, float $titikUkur, int $titikKe): bool
+    {
+        return $titikUkur !== 0.0;
+    }
+
+    /**
+     * Blok khas lembar SERTIFIKAT gaya, dalam urutan master:
+     *
+     * - `Type of Force : Pull` di atas tabel (`163!E18:J18`, `161!E18:J18` =
+     *   `INPUT DATA!Z22`) — pilihan teknisi `tipe_beban`; tidak dicetak kalau
+     *   kosong. Proving Ring tidak punya baris ini.
+     * - `RRPE : Relative Repeatability Error` (`163!E37`, `161!E37`) — legenda
+     *   kolom keempat; Proving Ring mencetak `Repeatability`, tanpa legenda.
+     * - `Units Used:` (`163!E39:I40`, `161!E39:I41`): satuan alat + namanya
+     *   dari `Tabel_Satuan`, lalu `FS : Full Scale` (Load Cell & Proving Ring
+     *   saja — UTM tidak punya barisnya).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = M::blokSesi($sesi->spesifikasi_alat);
+        $tipe = $blok['tipe_beban'] ?? null;
+
+        return array_values(array_filter([
+            $this->cetakTipeGayaSertifikat() && filled($tipe)
+                ? ['posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL, 'tabel' => [['Type of Force', ':', (string) $tipe]]]
+                : null,
+            $this->judulKolomSebaran() === 'RRPE'
+                ? ['posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL, 'baris' => ['RRPE : Relative Repeatability Error']]
+                : null,
+            $this->blokSatuanSertifikat($blok['satuan'] ?? null),
+        ]));
+    }
+
+    /** Baris `Type of Force` dicetak (UTM & Load Cell); Proving Ring menimpa. */
+    protected function cetakTipeGayaSertifikat(): bool
+    {
+        return true;
+    }
+
+    /** Baris `FS : Full Scale` di blok satuan (`161!E41`, `162!E44`); UTM tidak. */
+    protected function cetakFullScaleSertifikat(): bool
+    {
+        return true;
+    }
+
+    /** Judul blok satuan: `Units Used:` (`163!E39`, `161!E39`); Proving Ring `Units used:`. */
+    protected function judulSatuanSertifikat(): string
+    {
+        return 'Units Used:';
+    }
+
+    /** @return array<string, mixed>|null */
+    protected function blokSatuanSertifikat(?string $satuan): ?array
+    {
+        $nama = $satuan === null ? null : (self::NAMA_SATUAN[$satuan] ?? null);
+
+        if ($nama === null) {
+            return null;
+        }
+
+        return [
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => $this->judulSatuanSertifikat(),
+            'tabel' => [
+                [$satuan, ':', $nama],
+                ...($this->cetakFullScaleSertifikat() ? [['FS', ':', 'Full Scale']] : []),
+            ],
+        ];
     }
 
     /** @return array<string, mixed> */

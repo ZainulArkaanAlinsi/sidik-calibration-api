@@ -29,11 +29,11 @@ use DateTimeInterface;
  *
  * Kejanggalan METODE ditiru apa adanya (`docs/pertanyaan-lab-sieve.md`):
  *
- *  - ~~Pengulangan dibagi 6, bukan √6~~ dan ~~k dipatok 2~~ — **dibetulkan
- *    16 Sep 2026** sesudah lab menjawab (§14.1 & §14.2 `jawaban.md`). Keduanya
- *    MEMBESARKAN U, jadi tidak ada sertifikat yang jadi mengaku lebih teliti:
- *    weft sesi contoh 0,0463 → 0,1075 mm, k 2 → 2,447. Sertifikat yang sudah
- *    terbit ditinjau lab lewat prosedur Pekerjaan Tidak Sesuai, bukan di sini.
+ *  - **Pengulangan dibagi 6** (`PERHITUNGAN U95%!Q16/Q33/Q51`) dan **k = 2**
+ *    (`AC20/AC37/AC55`), persis master. K-50-15 (pemilik, 18 Okt 2026:
+ *    sertifikat = master persis, keputusan lama yang bertentangan BATAL)
+ *    membatalkan keputusan 16 Sep 2026 (jawaban lab §14.1 ÷√6 & §14.2 k
+ *    TINV). U kembali ke master: warp 0,0262 / weft 0,0463 / kawat 0,0247 mm.
  *  - **"Pengulangan pada 1 opening" = salinan opening 1..6** (`H89 = G34`).
  *    Diturunkan dari opening 1..6 persis seperti master, TIDAK diminta dari
  *    teknisi — kertasnya pun tidak punya blok itu.
@@ -69,6 +69,9 @@ use DateTimeInterface;
 class SieveCalculator
 {
     public const PARAMETER = ['warp', 'weft', 'kawat'];
+
+    /** `PERHITUNGAN U95%!AC20/AC37/AC55` = 2 (K-50-15). */
+    public const K_MASTER = 2.0;
 
     private ?GumCalculator $gum = null;
 
@@ -324,12 +327,12 @@ class SieveCalculator
                 0.0, $akar3, $lMm * $uAlpha, (float) $k['vi_suhu']),
             $baris('koefisien_muai', 'Koefisien muai termal', 'rectangular',
                 $uAlpha, $akar3, $lMm * ($suhuC - (float) $k['suhu_acuan_c']), (float) $k['vi_suhu']),
-            // Master membagi n (6); yang benar √n — GUM 4.2.3: ketidakpastian
-            // baku rata-rata n bacaan itu `s/√n`. Dibetulkan 16 Sep 2026 atas
-            // jawaban lab §14.1; arahnya MEMBESARKAN U (weft sesi contoh
-            // 0,0463 → 0,1075 mm), dan test menegakkan arah itu.
+            // Pembagi n (6), persis master `PERHITUNGAN U95%!Q16` (`U16 =
+            // N16/Q16`). K-50-15 (pemilik 18 Okt 2026) membatalkan keputusan
+            // 16 Sep 2026 (jawaban lab §14.1, `s/√6`). Lihat
+            // `docs/pertanyaan-lab-sieve.md` §1.
             $baris('pengulangan', 'Ketidakpastian baku pengulangan pembacaan', 't-student',
-                $this->simpanganBaku($pengulangan), sqrt((float) $k['pembagi_pengulangan']), 1.0, (float) $k['vi_pengulangan']),
+                $this->simpanganBaku($pengulangan), (float) $k['pembagi_pengulangan'], 1.0, (float) $k['vi_pengulangan']),
         ];
     }
 
@@ -360,13 +363,13 @@ class SieveCalculator
             : $nominalMm;
 
         $budget = $this->budget($parameter, $standar, $nominalMm, $suhuC, $pengulangan);
-        // `k` DIHITUNG dari v_eff (t-Student, v_eff dibulatkan ke bawah), bukan
-        // dipatok 2 seperti master (`AC20`): v_eff sieve cuma 6–15, dan pada
-        // derajat kebebasan sekecil itu k = 2 mengaku tingkat kepercayaan yang
-        // tidak dia punya. Weft sesi contoh k = 2,447. Sejalan dengan sepuluh
-        // alat panjang lain, dan arahnya membesarkan U (jawaban lab §14.2).
+        // `k` = 2 dipatok, persis master `PERHITUNGAN U95%!AC20/AC37/AC55`.
+        // K-50-15 (pemilik 18 Okt 2026) membatalkan keputusan 16 Sep 2026
+        // (jawaban lab §14.2, k dari TINV v_eff). v_eff tetap dihitung &
+        // disimpan. Lihat `docs/pertanyaan-lab-sieve.md` §2.
         $agregat = $this->gum()->agregasiBudget(
             array_map(static fn (array $b): array => ['u' => $b['u'], 'ci' => $b['ci'], 'vi' => $b['vi']], $budget),
+            self::K_MASTER,
         );
 
         $u95 = $lantaiMm === null

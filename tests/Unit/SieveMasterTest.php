@@ -120,33 +120,32 @@ class SieveMasterTest extends TestCase
                 $this->dekat($m['ci'], $b['ci'], "{$p} komponen {$i} ci");
                 $this->assertEqualsWithDelta($m['vi'], $b['vi'], 1e-9, "{$p} komponen {$i} vi");
 
-                // Komponen pengulangan SENGAJA menyimpang dari master: master
-                // membagi n, GUM 4.2.3 membagi √n. Yang diadu arahnya — kita
-                // wajib LEBIH BESAR, persis √n kali (jawaban lab 16 Sep 2026).
-                if ($b['sumber'] === 'pengulangan') {
-                    $this->dekat(sqrt($m['pembagi']), $b['pembagi'], "{$p} pembagi pengulangan √n");
-                    $this->dekat($m['ui'] * sqrt($m['pembagi']), $b['u'], "{$p} ui pengulangan");
-
-                    continue;
-                }
-
                 $this->dekat($m['pembagi'], $b['pembagi'], "{$p} komponen {$i} pembagi");
                 $this->dekat($m['ui'], $b['u'], "{$p} komponen {$i} ui");
             }
 
-            // uc & U kita lebih besar dari master — dua penyimpangan di atas
-            // dan `k` t-Student sama-sama menaikkan, tidak ada yang menurunkan.
-            $this->assertGreaterThan($a[$p]['uc'], $r['ketidakpastian_gabungan'], "{$p} uc wajib > master");
-            $this->assertGreaterThan(
-                $a[$p]['u_diperluas'],
-                $r['ketidakpastian_diperluas'],
-                "{$p} U wajib > master — kalau lebih kecil, sertifikat mengaku lebih teliti dari yang bisa dibuktikan",
-            );
-
-            // `k` dari t-Student pada v_eff yang dibulatkan ke bawah, bukan 2.
-            $this->assertGreaterThanOrEqual(2.0, $r['faktor_cakupan_k'], "{$p} k");
-            $this->assertLessThan(3.0, $r['faktor_cakupan_k'], "{$p} k");
+            // K-50-15 (pemilik, 18 Okt 2026): persis master — pengulangan ÷6
+            // (`Q16`) dan k = 2 (`AC20`). Keputusan 16 Sep 2026 (÷√6, k TINV)
+            // BATAL; dulu test ini menegakkan U > master, sekarang U = master.
+            $this->dekat($a[$p]['uc'], $r['ketidakpastian_gabungan'], "{$p} uc = master");
+            $this->dekat($a[$p]['u_diperluas'], $r['ketidakpastian_diperluas'], "{$p} U = master");
+            $this->assertSame(2.0, (float) $r['faktor_cakupan_k'], "{$p} k = 2 (AC20)");
         }
+    }
+
+    /**
+     * Paritas angka CETAK sertifikat `169!N20:N22` (U95%, format 0.0000):
+     * 0.0262 / 0.0463 / 0.0247 — sesudah lantai CMC, seperti yang terbit.
+     */
+    public function test_u95_sertifikat_sama_dengan_master_n20_n22(): void
+    {
+        $h = $this->hitung();
+
+        foreach (['warp' => '0.0262', 'weft' => '0.0463', 'kawat' => '0.0247'] as $p => $master) {
+            $this->assertSame($master, number_format($h['parameter'][$p]['u95_sertifikat'], 4, '.', ''), "{$p} U95 cetak");
+        }
+
+        $this->dekat(0.0261578, $h['parameter']['warp']['u95_sertifikat'], 'warp U95 penuh (N20)');
     }
 
     /**

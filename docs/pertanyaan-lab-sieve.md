@@ -13,8 +13,8 @@ Angka dampak di bawah semuanya dari sesi contoh (mm).
 
 | § | Temuan | Jenis | Sistem sekarang |
 |---|---|---|---|
-| 1 | Pengulangan dibagi 6, bukan √6 | Metode | **Ditiru** |
-| 2 | k dipatok 2 walau veff 6–15 | Metode | **Ditiru** |
+| 1 | Pengulangan dibagi 6, bukan √6 | Metode | **Persis master ÷6** (K-50-15, 18 Okt 2026; ÷√6 16 Sep BATAL) |
+| 2 | k dipatok 2 walau veff 6–15 | Metode | **Persis master k = 2** (K-50-15, 18 Okt 2026; k TINV 16 Sep BATAL) |
 | 3 | "Pengulangan 1 opening" = salinan opening 1–6 | Metode | **Ditiru**, tidak diminta dari teknisi |
 | 4 | Koreksi standar selalu 0 (VLOOKUP ke kolom kosong) | Salin-tempel | **Dihitung benar** (+0,01 mm) |
 | 5 | Minimum opening tipe Calibration ambil kolom Inspection | Salin-tempel | **Dihitung benar** |
@@ -46,6 +46,14 @@ enam pembacaan lazimnya `s/√6`.
 **Pertanyaan:** pembagi 6 disengaja (dengan alasan tertulis) atau salah ketik √6?
 Kalau salah ketik, sertifikat yang sudah terbit menyatakan U ≈ separuh seharusnya.
 
+**Status (21 Okt 2026): DIPUTUS — ÷6 persis master.** Lab sempat menjawab ÷√6
+(16 Sep 2026, §14.1 `jawaban.md`) dan sistem memakainya. Keputusan pemilik
+K-50-15 (18 Okt 2026, ditegaskan 20 Okt: sertifikat = lembar master persis,
+keputusan lama yang bertentangan BATAL) membatalkan jawaban itu. Sistem kembali ke
+`PERHITUNGAN U95%!Q16 = 6` (`SieveCalculator::budget`). Sesi contoh: U warp
+0,0649 → **0,0262**, weft 0,1382 → **0,0463**, kawat 0,0595 → **0,0247**
+(= master `169!N20:N22`; bersama §2).
+
 ## §2 — k = 2 dipatok
 
 `AC20/AC37/AC55` berisi angka 2. veff dihitung (12,84 / 6,47 / 14,93) tapi tidak
@@ -53,6 +61,11 @@ dipakai. Dengan TINV(0,05; veff): warp k 2,179 → U 0,0285; **weft k 2,447 → 
 kawat k 2,145 → U 0,0265. Dial Indicator dan Jangka Sorong di lab yang sama memakai TINV.
 
 **Pertanyaan:** k = 2 kebijakan untuk Sieve, atau ikut TINV seperti alat panjang lain?
+
+**Status (21 Okt 2026): DIPUTUS — k = 2 persis master.** Jawaban 16 Sep 2026
+(§14.2, k dari TINV v_eff; sesi contoh 2,447 / 2,571 / 2,447) BATAL oleh
+K-50-15. Sistem memakai `AC20/AC37/AC55` = 2 (`SieveCalculator::K_MASTER`); v_eff
+tetap dihitung dan disimpan. Sertifikat mencetak `k = 2` (`169!O23`).
 
 ## §3 — Blok "pengulangan pada 1 sample opening" ternyata salinan
 

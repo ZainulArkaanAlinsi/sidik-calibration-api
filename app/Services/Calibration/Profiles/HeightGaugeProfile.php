@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Support\HeightGaugeMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -110,6 +111,8 @@ use Carbon\Carbon;
  */
 class HeightGaugeProfile extends CalibrationProfile
 {
+    use SertifikatDimensi;
+
     /** Satuan lembar, sertifikat, DAN budget — ketiganya mm. */
     public const SATUAN = 'mm';
 
@@ -533,6 +536,74 @@ class HeightGaugeProfile extends CalibrationProfile
         // U95 sesi contoh 0,01563 mm; di tiga desimal dia runtuh jadi `0,016`
         // dan kehilangan sebagian besar angka pentingnya.
         return 5;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /**
+     * Titik yang DICETAK master `184`: baris `24`, `29`, `33` (titik 1, 6,
+     * 10 — nominal 25 / 300 / 600 mm). Baris `25:28` dan `30:32` (titik 2–5,
+     * 7–9) disembunyikan di lembar SERTIFIKAT master. Sepuluh titiknya tetap
+     * diukur, dihitung, dan disimpan di snapshot (presisi penuh); yang
+     * dilewati cuma cetaknya.
+     */
+    public const TITIK_DICETAK_SERTIFIKAT = [1, 6, 10];
+
+    /** `184!D22` "Standar Reading", ejaan master. */
+    public function judulKolomStandar(): string
+    {
+        return 'Standar Reading';
+    }
+
+    /** @return array<string, mixed> */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return $this->tataLetakDimensi(parent::tataLetakSertifikat($sesi));
+    }
+
+    /**
+     * Format sel master `184` (K-50-15 membatalkan lima desimal untuk CETAK;
+     * nilai snapshot tetap presisi penuh): Standar Reading · UUT · Correction
+     * `0.00` (`D24:L33`), U95 `0.000` (`J34`), `k` `General` (`O35` — master
+     * mencetak k hitung penuh, `2.085963447265865`).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'];
+    }
+
+    /** Lihat [TITIK_DICETAK_SERTIFIKAT]. */
+    public function titikDicetakSertifikat(CalibrationSession $sesi, float $titikUkur, int $titikKe): bool
+    {
+        return in_array($titikKe, self::TITIK_DICETAK_SERTIFIKAT, true);
+    }
+
+    /**
+     * Blok `Note :` di bawah tabel hasil (`184!D37:H38`): "Result of
+     * Paralelism : Good/Not Good". Vonisnya dari fungsi yang SAMA dengan
+     * peringatan sesi ([peringatanSesi] → `HeightGaugeCalculator::
+     * paralelisme`), bukan dihitung ulang di sini. Master `INPUT DATA!K33`
+     * menulis `Good`/`Not Good`. Tanpa pembacaan paralelisme bloknya tidak
+     * dicetak — tidak mengarang "Good".
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = HeightGaugeMentah::blokSesi($sesi->spesifikasi_alat);
+        $paralelisme = $blok === null ? null : $this->kalk()->paralelisme($blok['paralelisme']);
+
+        if ($paralelisme === null) {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => [['Result of Paralelism :', $paralelisme['lulus'] ? 'Good' : 'Not Good']],
+        ]];
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array

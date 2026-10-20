@@ -48,6 +48,8 @@ use Carbon\Carbon;
  */
 class JangkaSorongProfile extends CalibrationProfile
 {
+    use SertifikatDimensi;
+
     public const SATUAN = 'mm';
 
     /** Pembacaan per titik mengikuti KERTAS: Outside 5 pasang, Inside & Depth 5. */
@@ -401,6 +403,41 @@ class JangkaSorongProfile extends CalibrationProfile
     {
         return 5;
     }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /** `153!D23` / `D39` / `D55` "Standar Reading", ejaan master. */
+    public function judulKolomStandar(): string
+    {
+        return 'Standar Reading';
+    }
+
+    /** @return array<string, mixed> */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return $this->tataLetakDimensi(parent::tataLetakSertifikat($sesi));
+    }
+
+    /**
+     * Format sel master `153` (K-50-15 membatalkan lima desimal untuk CETAK;
+     * nilai snapshot tetap presisi penuh): Standar Reading · UUT · Correction
+     * `0.00` (`D25:L34`, `D41:L50`, `D57:L61`), U95 `0.000` (`J35`, `J51`,
+     * `J62`), `k` `General` (`O36`, `O52`, `O63` — master mencetak k hitung
+     * penuh, `1.97590533089662`) — bukan `0` bawaan bentuk master (K-50-15,
+     * pemilik 20 Okt 2026). Cetak saja: U95 tetap dihitung dengan k sebenarnya.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'];
+    }
+
+    // Blok `Note : Kerataan Muka Ukur dalam kondisi : Baik` (`153!B64:F65`)
+    // SENGAJA belum dicetak (tidak ada `catatanSertifikat()` di sini): tiga
+    // tabel + dua standar sudah memakai lembar padat, sisa ruangnya 13 px, dan
+    // satu baris blok catatan pun meluap ke halaman dua (diukur 20 Okt 2026).
+    // Butuh perubahan template bersama (ruang blok di mode padat), bukan hook.
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
@@ -846,17 +883,5 @@ class JangkaSorongProfile extends CalibrationProfile
     private function tabel(): TabelStandarJangkaSorong
     {
         return $this->tabel ??= new TabelStandarJangkaSorong;
-    }
-
-    /**
-     * `k` dicetak format `General` seperti sel master (`153!O36` 1.9759…),
-     * bukan `0` bawaan bentuk master (K-50-15, pemilik 20 Okt 2026). Cetak
-     * saja — U95 tetap dihitung dengan k sebenarnya.
-     *
-     * @return array<string, string>
-     */
-    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
-    {
-        return ['k' => 'General'];
     }
 }

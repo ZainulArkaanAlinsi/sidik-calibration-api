@@ -63,6 +63,8 @@ use Carbon\Carbon;
  */
 class MicrometerProfile extends CalibrationProfile
 {
+    use SertifikatDimensi;
+
     /** Satuan panjang lembar & sertifikat. Budget-nya sendiri dalam µm. */
     public const SATUAN = 'mm';
 
@@ -654,6 +656,41 @@ class MicrometerProfile extends CalibrationProfile
         // pelanggan alatnya sempurna di tiap titik. Lihat
         // `docs/pertanyaan-lab-micrometer.md` §9.
         return 5;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /**
+     * Judul kolom pertama persis master: `Standar Reading` (`165!D16`,
+     * `166!D16`, `167!D16`), ejaan master.
+     */
+    public function judulKolomStandar(): string
+    {
+        return 'Standar Reading';
+    }
+
+    /** @return array<string, mixed> */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return $this->tataLetakDimensi(parent::tataLetakSertifikat($sesi));
+    }
+
+    /**
+     * Format sel master (K-50-15 membatalkan lima desimal [desimalSertifikat]
+     * & [desimalU95] untuk CETAK; nilai snapshot tetap presisi penuh):
+     *
+     * - Standard · UUT · Correction `0.000` (`165!D18:L28`, `166!D18:L28`,
+     *   `167!D18:L28`);
+     * - U95 `0.000` — `166!J29`, `167!J29` (sesi mm). `165!J29` berformat
+     *   `0.0000` karena contoh di workbook itu inch; sertifikat ini selalu mm
+     *   ([satuanTitik]);
+     * - `k` `0` (`165!P30`, `166!P30`, `167!P30`).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.000', 'k' => '0'];
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array

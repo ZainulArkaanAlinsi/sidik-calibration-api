@@ -2,10 +2,12 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Services\Calibration\GayaCalculator;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Support\GayaMentah as M;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 
 /**
@@ -246,6 +248,169 @@ class ProvingRingProfile extends GayaProfile
     public function desimalKolomKoreksi(): ?int
     {
         return 5;
+    }
+
+    /**
+     * Kolom `Standard Value` dari `titik_ukur`, BUKAN `rata_rata + koreksi`.
+     *
+     * Induk ([GayaProfile::nilaiStandarDariKoreksi]) benar untuk UTM & Load
+     * Cell, tapi di sini `rata_rata` = pembacaan dial dalam DIVISI dan
+     * `koreksi` = faktor kN/Div — jumlahnya tidak bermakna dan tercetak
+     * `24209,46` untuk titik 30 kgf. `titik_ukur` Proving Ring sudah
+     * menyimpan Z (kN, [hitungPerGrup]); dibagi faktor satuan seperti master
+     * `162!E23` = `'PERHITUNGAN FC'!Z31 / DATABASE!S23` = 29,99919.
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return false;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+
+    /**
+     * Kolom & baris satuan master `162!E20:V21`: `Standard Value` (`kgf`) ·
+     * `Unit Under Test` (`(1 Division x 0.002 mm)`, `L21`) · `Calibration
+     * Factor` (`kgf / Div`, `S21:T21`) · `Repeatability` (`%`).
+     *
+     * `L21` di master teks ketikan (`INPUT DATA!J16`); di sini disusun dari
+     * resolusi dial sesi supaya dial 0,01 mm tidak tercetak "x 0.002 mm".
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $satuan = M::blokSesi($sesi->spesifikasi_alat)['satuan'] ?? null;
+        $resolusi = $this->angkaDial($sesi, 'resolusi_dial_mm');
+
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'kolom_hasil' => [
+                ['kolom' => 'standar'],
+                [
+                    'kolom' => 'uut',
+                    'judul' => 'Unit Under Test',
+                    'satuan' => $resolusi === null ? '(1 Division)' : '(1 Division x '.$resolusi.' mm)',
+                ],
+                ['kolom' => 'koreksi', 'satuan' => $satuan === null ? '' : $satuan.' / Div'],
+                ['kolom' => 'sebaran'],
+            ],
+        ];
+    }
+
+    /**
+     * Format sel master `162` (K-50-15): Standard Value `0.00` (`E23:E31`),
+     * UUT `0` (`L23:L31`, divisi), Calibration Factor `0.0` (`Q23:Q31`),
+     * Repeatability `0.0` (`V23:V31`), U95 `0.0` (`P38`), `k` `0` (`U39`).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0', 'koreksi' => '0.0', 'sebaran' => '0.0', 'u95' => '0.0', 'k' => '0'];
+    }
+
+    /** Lembar `162` tidak punya baris `Type of Force`. */
+    protected function cetakTipeGayaSertifikat(): bool
+    {
+        return false;
+    }
+
+    /** `162!E42` "Units used:" (huruf kecil, beda dari UTM & Load Cell). */
+    protected function judulSatuanSertifikat(): string
+    {
+        return 'Units used:';
+    }
+
+    /**
+     * Urutan master `162`: `Dial Spesification` di bawah kepala (`B14:X16`),
+     * lalu sesudah kalimat `k`: `Mean of Calibration Factor` (`E40:N40`) dan
+     * `Units used:` (`E42:I44`).
+     *
+     * Dial Spesification: `Serial Number` = seri alat (`INPUT DATA!K13` =
+     * `E13`), `Range & Res.` dari kapasitas & resolusi dial sesi. Merk & Type
+     * dial belum punya kotak isian (ditunda W2/W3), jadi tercetak `-` seperti
+     * sel master yang tidak diisi (`162!J15`) — bukan tebakan.
+     *
+     * Mean of Calibration Factor = `AVERAGE(Q23:U37)` master: rata-rata faktor
+     * kalibrasi TERCETAK (titik nol `-` dan baris kosong tidak ikut), dari
+     * `koreksi` tersimpan yang sama dengan kolom tabel, dalam satuan cetak
+     * yang sama ([cetakDalamSatuanAlat]). Format `0.00` (`L40`).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = M::blokSesi($sesi->spesifikasi_alat);
+        $satuan = $blok['satuan'] ?? null;
+        $kapasitas = $this->angkaDial($sesi, 'kapasitas_dial_mm');
+        $resolusi = $this->angkaDial($sesi, 'resolusi_dial_mm');
+        $seri = $sesi->alat_serial_number ?: $sesi->equipment?->serial_number;
+
+        $rentang = $kapasitas === null && $resolusi === null
+            ? '-'
+            : ($kapasitas ?? '-').' mm / '.($resolusi ?? '-').' mm';
+
+        $dial = [
+            'posisi' => TataLetakSertifikat::POSISI_SESUDAH_KEPALA,
+            'judul' => 'Dial Spesification :',
+            'tabel' => [
+                ['Manufacture', ':', '-', 'Serial Number', ':', filled($seri) ? (string) $seri : '-'],
+                ['Type', ':', '-', 'Range & Res.', ':', $rentang],
+            ],
+        ];
+
+        $rataFaktor = $this->rataFaktorTercetak($sesi);
+        $rata = $rataFaktor === null || $satuan === null ? [] : [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'baris' => ['Mean of Calibration Factor = '.TataLetakSertifikat::formatAngka($rataFaktor, '0.00').' '.$satuan.' / Div'],
+        ]];
+
+        // Induk: tanpa Type of Force & legenda RRPE (lihat dua hook di atas),
+        // jadi isinya tinggal blok `Units used:` — dicetak SESUDAH Mean.
+        return [$dial, ...$rata, ...parent::catatanSertifikat($sesi)];
+    }
+
+    /**
+     * Rata-rata faktor kalibrasi yang TERCETAK, satuan cetak; `null` kalau
+     * tidak ada satu pun.
+     */
+    private function rataFaktorTercetak(CalibrationSession $sesi): ?float
+    {
+        $cetak = $this->cetakDalamSatuanAlat($sesi);
+
+        if ($cetak === null) {
+            return null;
+        }
+
+        $faktor = [];
+
+        foreach ($sesi->uncertaintyCalculations as $t) {
+            $rantai = is_array($t->type_b_components) ? ($t->type_b_components['gaya_rantai'] ?? null) : null;
+
+            // Titik nol: faktor tidak terdefinisi, master mencetak `-` dan
+            // AVERAGE melewatinya. Sama dengan `koreksi_kosong` snapshot.
+            if (is_array($rantai) && array_key_exists('CF_faktor_kn_per_divisi', $rantai) && $rantai['CF_faktor_kn_per_divisi'] === null) {
+                continue;
+            }
+
+            $nilai = ($cetak['ubah'])((float) $t->koreksi, (int) $t->titik_ke);
+
+            if ($nilai !== null) {
+                $faktor[] = $this->tandaKoreksiSertifikat() * $nilai;
+            }
+        }
+
+        return $faktor === [] ? null : array_sum($faktor) / count($faktor);
+    }
+
+    /** Angka dial dari blok sesi, ditulis seperti diisi (`General`); `null` kalau kosong. */
+    private function angkaDial(CalibrationSession $sesi, string $kunci): ?string
+    {
+        $nilai = $sesi->spesifikasi_alat[M::KUNCI_SESI][$kunci] ?? null;
+
+        return is_numeric($nilai) && (float) $nilai > 0.0
+            ? TataLetakSertifikat::formatAngka((float) $nilai, 'General')
+            : null;
     }
 
     /** Sama dengan dua alat gaya lain — lihat docblock `UtmProfile`. */
