@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Services\DataTampilanSertifikat;
+use App\Support\Angka;
 use App\Support\VolumetricGlasswareMentah as M;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -426,16 +427,25 @@ class VolumetrikRev7AlurTest extends TestCase
 
     // ── Keputusan 8 Okt 2026 (terakhir): angka ikut workbook + penjaga ────────
 
-    public function test_kondisi_workbook_lu200_tidak_memunculkan_peringatan_pergeseran(): void
+    /**
+     * K-50-15 (master menang, 21 Okt 2026): V20 dicetak 4 desimal (`143!N21`
+     * `0.0000`). Di kondisi workbook LU-200 kedua cabang ρ air berselisih di
+     * digit ke-4 (199,8513 lawan 199,8539) — dulu, 2 desimal, sama-sama 199,85
+     * tanpa peringatan. Penjaga mengikuti angka yang benar-benar tercetak.
+     */
+    public function test_kondisi_workbook_lu200_peringatan_ikut_digit_ke_4(): void
     {
         $sesi = $this->simpan($this->payloadLabu($this->alat('Labu Ukur', 200)));
 
         // Bawaan `master`: V20 = cache workbook `PERHITUNGAN!H60`.
         $this->assertEqualsWithDelta(199.85125467654402, (float) $sesi->uncertaintyCalculations()->sole()->rata_rata, 1e-8);
-        $this->assertSame([], $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak'));
+        $temuan = $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak');
+        $this->assertCount(1, $temuan);
+        $this->assertStringContainsString('V20 199,8513 mL, Correction -0,1487 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('V20 199,8539 mL, Correction -0,1461 mL', $temuan[0]['pesan']);
     }
 
-    /** LU-500: `master` 500,24 lawan suhu terukur 500,25 — peringatan HARUS muncul. */
+    /** LU-500: `master` 500,2447 lawan suhu terukur 500,2513 — peringatan HARUS muncul. */
     public function test_lu500_memunculkan_peringatan_pergeseran_angka_cetak(): void
     {
         $sesi = $this->simpan($this->payloadLabu($this->alat('Labu Ukur', 500), [
@@ -451,8 +461,9 @@ class VolumetrikRev7AlurTest extends TestCase
         $temuan = $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak');
         $this->assertCount(1, $temuan);
         $this->assertSame('peringatan', $temuan[0]['tingkat']);
-        $this->assertStringContainsString('V20 500,24 mL, Correction 0,24 mL', $temuan[0]['pesan']);
-        $this->assertStringContainsString('V20 500,25 mL, Correction 0,25 mL', $temuan[0]['pesan']);
+        // K-50-15: 4 desimal master `143!N21`/`S21` `0.0000`.
+        $this->assertStringContainsString('V20 500,2447 mL, Correction 0,2447 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('V20 500,2513 mL, Correction 0,2513 mL', $temuan[0]['pesan']);
         $this->assertStringContainsString('PERHITUNGAN!H40', $temuan[0]['pesan']);
         $this->assertStringContainsString('no. 14', $temuan[0]['pesan']);
         // Peringatan, bukan penahan: masih boleh terbit dengan konfirmasi.
@@ -468,8 +479,13 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertCount(1, $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak'));
     }
 
-    /** PV 2 mL: `SERTIFIKAT!N21` `0.00` — layar HP & sertifikat sama-sama 2 desimal. */
-    public function test_pipet_volume_2_ml_dua_desimal_di_layar_dan_sertifikat(): void
+    /**
+     * PV 2 mL: layar HP & sertifikat memakai desimal yang SAMA. K-50-15
+     * (pemilik 21 Okt 2026, master menang): format lembar SERTIFIKAT master
+     * Fixed Studio 143 — `N21`/`S21` & `Q22` `0.0000` (4 / 4), `E21` `0.0` —
+     * bukan lagi `0.00` salinan workbook PV 2.
+     */
+    public function test_pipet_volume_2_ml_desimal_layar_sama_dengan_sertifikat(): void
     {
         $sesi = $this->simpan($this->payloadLabu($this->alat('Pipet Volume', 2), [
             'measurements' => [[
@@ -483,23 +499,21 @@ class VolumetrikRev7AlurTest extends TestCase
 
         $this->actingAs($this->teknisi)->getJson("/api/calibrations/{$sesi->id}")
             ->assertOk()
-            ->assertJsonPath('data.titik.0.desimal', 2);
+            ->assertJsonPath('data.titik.0.desimal', 4);
 
         $sertifikat = $this->terbitkan($sesi);
-        $this->assertSame(2, $sertifikat->snapshot['hasil'][0]['desimal']);
-        $this->assertSame(4, $sertifikat->snapshot['hasil'][0]['desimal_u95']);
-
-        // K-50-15 (pemilik, 18 Okt 2026): CETAK sertifikat ikut format sel
-        // lembar SERTIFIKAT master Fixed (Studio id 143) — `E21` `0.0`, `N21`/
-        // `S21` `0.0000`, `Q22` `0.0000` — bukan lagi `0.00` salinan workbook
-        // PV 2. `desimal` snapshot (dibaca layar HP) tetap 2: format sel hanya
-        // mengatur cetak (`formatKolomSertifikat`), hook desimal tidak disentuh.
+        $baris = $sertifikat->snapshot['hasil'][0];
+        $this->assertSame(4, $baris['desimal']);
+        $this->assertSame(4, $baris['desimal_u95']);
+        // Format cetak = desimal layar (kolom UUT, Correction, U95).
         $this->assertSame(
             ['standar' => '0.0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'],
-            $sertifikat->snapshot['hasil'][0]['format'],
+            $baris['format'],
         );
+
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
         $this->assertStringContainsString('<td>2,0</td>', $html);
+        $this->assertStringContainsString('<td>'.Angka::hasil((float) $baris['unit_under_test'], 4).'</td>', $html);
         $this->assertMatchesRegularExpression('/<td>1,99\d\d<\/td>/', $html);
         $this->assertStringContainsString('0,0034', $html);
     }

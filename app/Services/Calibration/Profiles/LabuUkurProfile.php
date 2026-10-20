@@ -26,15 +26,8 @@ class LabuUkurProfile extends FixedVolumetricGlasswareRev7Profile
         return ['Volumetric Flask'];
     }
 
-    /** `SERTIFIKAT!E21/N21/S21` workbook Rev.7 Labu Ukur: format `0.00`. */
-    public function desimalSertifikat(): ?int
-    {
-        return 2;
-    }
-
-    /** `SERTIFIKAT!Q22` workbook Rev.7 Labu Ukur: format `0.000`. */
-    public function desimalU95(): ?int
-    {
-        return 3;
-    }
+    // Desimal cetak (HP, sertifikat, peringatan "angka cetak bergeser") ikut
+    // master Fixed Studio 143 (K-50-15, pemilik 21 Okt 2026: master menang):
+    // `N21`/`S21` & `Q22` `0.0000` = bawaan keluarga (4 / 4). Format `0.00` /
+    // `0.000` salinan workbook LU-200/250/500 tidak dipakai lagi.
 }

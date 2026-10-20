@@ -53,11 +53,11 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
      * Format sel lembar `SERTIFIKAT` master Fixed (Studio id 143, K-50-15):
      * `E21` Nominal Value `0.0`, `N21` Actual Volume & `S21` Correction
      * `0.0000`, `Q22` U95 `0.0000`, `V23` k `0`. Berlaku untuk ketiga alat
-     * keluarga ini (Labu Ukur, Pipet Volume, Picnometer): format per nominal
-     * dari salinan workbook Rev.7 per alat (`desimalSertifikat*` Labu Ukur &
-     * Pipet Volume) tidak dipakai lagi untuk CETAK sertifikat — master satu
-     * per varian yang berlaku (K-50-15 membatalkan keputusan lama yang beda).
-     * Hanya cetak; nilai snapshot tetap presisi penuh.
+     * keluarga ini (Labu Ukur, Pipet Volume, Picnometer). Hook desimal
+     * (`desimalSertifikat` 4, [desimalU95] 4) sama dengan format ini, jadi
+     * layar HP, peringatan angka cetak, dan sertifikat sepakat; format per
+     * nominal salinan workbook Rev.7 per alat tidak dipakai lagi (K-50-15,
+     * master menang). Hanya cetak; nilai snapshot tetap presisi penuh.
      *
      * @return array<string, string>
      */
