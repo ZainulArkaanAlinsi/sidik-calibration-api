@@ -97,6 +97,8 @@ use Carbon\Carbon;
  */
 class TitsProfile extends CalibrationProfile
 {
+    use BentukSertifikatSuhu;
+
     /**
      * Nomor formulir lembar kerja, dari footer PDF-nya sendiri:
      * `Page 1 of 1   Revise : 3   SIDIK-FM-CAL-0505`.
@@ -414,10 +416,17 @@ class TitsProfile extends CalibrationProfile
         return 1;
     }
 
-    /** Kelembaban ikut sel yang sama, `P16` format `0.0`. */
+    /**
+     * Kelembaban NOL desimal — `SERTIFIKAT!P14` (Measure, `173`) dan `P10`
+     * (Source, `174`) berformat `0` (`61`).
+     *
+     * Dulu `1`, mengacu `PERHITUNGAN FC!P16` (`0.0`). K-50-15 (18 Okt 2026):
+     * yang dicetak mengikuti format sel lembar SERTIFIKAT. Tampilan saja —
+     * nilai di sesi tidak berubah.
+     */
     public function desimalKelembabanEnv(): ?int
     {
-        return 1;
+        return 0;
     }
 
     /**
@@ -447,6 +456,44 @@ class TitsProfile extends CalibrationProfile
         }
 
         return trim(sprintf('Mode : %s %s', $mode === TabelKalibratorSuhu::MODE_MEASURE ? 'Measure' : 'Source', $tipe ?? ''));
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master (K-50-15). Bersama keluarga Suhu
+     * ([BentukSertifikatSuhu]): judul `Standard Reading (oC)` tanpa baris
+     * satuan, label `Uncertainty  95%  ±`, kolom Standard used & `Issuance
+     * Date` tanpa titik dua (`173!B34:Q35`, `173!B41`; `174!B29:Q30`,
+     * `174!B36`). Khas TITS: `End of Certificate` sesudah tanda tangan
+     * (`173!F53`, `174!F47` — bunyi sama, spasi tepi master dibuang).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi)),
+            'akhir_sertifikat' => '--------- End of Certificate  ---------',
+        ];
+    }
+
+    /**
+     * Format sel tabel hasil: Standard, UUT, Correction `0.0` di kedua master
+     * (`173!E20:L28`, `174!E16:L23` — `5.0`, bukan `5`). U95 beda per varian:
+     * Measure `0.00` (`173!L29` `0.85`), Source `0.0` (`174!L24` `1.2`). `k`
+     * `0` (`173!O30`, `174!O25`). Mode tidak terbaca = bentuk Measure, sama
+     * dengan [desimalU95] lama.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return [
+            'standar' => '0.0',
+            'uut' => '0.0',
+            'koreksi' => '0.0',
+            'u95' => $this->modeSesi($sesi) === TabelKalibratorSuhu::MODE_SOURCE ? '0.0' : '0.00',
+            'k' => '0',
+        ];
     }
 
     /**

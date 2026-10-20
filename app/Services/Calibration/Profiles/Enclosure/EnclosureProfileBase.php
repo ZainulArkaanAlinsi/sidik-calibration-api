@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\EnclosureCalculator;
+use App\Services\Calibration\Profiles\BentukSertifikatSuhu;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use Carbon\Carbon;
@@ -52,6 +53,8 @@ use Illuminate\Support\Collection;
  */
 abstract class EnclosureProfileBase extends CalibrationProfile
 {
+    use BentukSertifikatSuhu;
+
     /** Metode kalibrasi enclosure — `DATABASE!C68` master. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0501_Rev.6';
 
@@ -300,6 +303,27 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     public function standarBerkurvaSuhu(): bool
     {
         return false;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master enclosure (`171` Constant Yokogawa,
+     * `172` Recorder; K-50-15) di luar dua bagian tabelnya: kolom Standard
+     * used tanpa titik dua (`I52:Q52`) dan `Issuance Date` tanpa titik dua
+     * (`B59`), sama di kedua master.
+     *
+     * BELUM: `Thermocouple Position :` (`F18`) — keterangan sebuah GAMBAR
+     * posisi sensor (`171!J17`, `172!I17`); blok catatan hanya teks/tabel,
+     * jadi tanpa gambarnya labelnya tidak ditulis.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
+            'label_tanggal_terbit' => 'Issuance Date',
+        ];
     }
 
     /**

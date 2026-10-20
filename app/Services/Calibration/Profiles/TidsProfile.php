@@ -100,6 +100,8 @@ use Carbon\Carbon;
  */
 class TidsProfile extends CalibrationProfile
 {
+    use BentukSertifikatSuhu;
+
     /** Nomor formulir lembar kerja — tercetak di footer PDF-nya. */
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0506_Rev.4';
 
@@ -394,6 +396,21 @@ class TidsProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return 0;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master (K-50-15), sama di kedua workbook
+     * (`193`, `194`): judul `Standard Reading (oC)` tanpa baris satuan
+     * (`E19:L19`), label `Uncertainty  95%  ±` (`E34`), Standard used tanpa
+     * titik dua (`B40:Q40`), `Issuance Date` tanpa titik dua (`B47`). Tidak
+     * ada `End of Certificate`. Desimal tetap ikut resolusi alat (docblock
+     * [desimalSertifikat]) — format sel kedua varian memang mengikutinya.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi));
     }
 
     /**
