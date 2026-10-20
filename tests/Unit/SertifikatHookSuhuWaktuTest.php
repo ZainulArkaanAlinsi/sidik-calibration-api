@@ -193,4 +193,37 @@ class SertifikatHookSuhuWaktuTest extends TestCase
         $this->assertSame(['u95' => '0.0', 'k' => 'General'], $format);
         $this->assertSame('0,8', TataLetakSertifikat::formatAngka(0.81, $format['u95']));
     }
+
+    public function test_tachometer_urutan_dan_tanda_persis_master_182(): void
+    {
+        $tacho = app(TachometerProfile::class);
+        $tl = $this->tataLetak($tacho);
+
+        // 182!C17:P17: Standard Value = set point (kunci `unit_under_test`),
+        // Unit Under Test = standar terkoreksi (kunci `standard_value`).
+        $this->assertSame(['uut', 'standar', 'koreksi', 'u95'], array_column($tl['kolom_hasil'], 'kolom'));
+        $this->assertSame(['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'], array_column($tl['kolom_hasil'], 'judul'));
+        $this->assertSame(-1, $tacho->tandaKoreksiSertifikat());
+        $this->assertSame(1, app(CentrifugeProfile::class)->tandaKoreksiSertifikat());
+
+        // Angka master 182: baris 60 rpm C19/J19/P19 = 60.0 / 59.8 / 0.2
+        // (PERHITUNGAN!G22 = 60, G32 = 59,78, koreksi tersimpan G32 − G22 = −0,22);
+        // baris 15000 rpm C34/J34/P34 = 15001 / 15000 / 1.1.
+        $cetak = function (float $setPoint, float $terkoreksi) use ($tacho, $tl): array {
+            $baris = [
+                'standard_value' => $terkoreksi,
+                'unit_under_test' => $setPoint,
+                'correction' => $tacho->tandaKoreksiSertifikat() * ($terkoreksi - $setPoint),
+                'format' => $tacho->formatKolomSertifikat($this->sesi(), $setPoint, 'rpm'),
+            ];
+
+            return array_map(
+                static fn (array $k): string => TataLetakSertifikat::teksSel($baris, $k['kolom'], [], 1),
+                array_slice($tl['kolom_hasil'], 0, 3),
+            );
+        };
+
+        $this->assertSame(['60,0', '59,8', '0,2'], $cetak(60.0, 59.78));
+        $this->assertSame(['15001', '15000', '1,1'], $cetak(15001.0, 14999.88));
+    }
 }

@@ -95,6 +95,42 @@ class TachometerProfile extends ProfilPutaran
     }
 
     /**
+     * Correction dicetak `Standard Value − Unit Under Test` lembar 182
+     * (`SERTIFIKAT!P19 = C19 − J19` = +0,22 di 60 rpm), kebalikan tanda
+     * `uncertainty_calculations.koreksi` (terkoreksi − set point, dipakai
+     * Centrifuge `180!P19`). K-50-15 (pemilik 18 Okt 2026): sertifikat persis
+     * master, jawaban lab lama (`docs/pertanyaan-lab-waktu-frekuensi.md` §10)
+     * batal. Yang tersimpan TIDAK berubah — cuma cara cetaknya.
+     */
+    public function tandaKoreksiSertifikat(): int
+    {
+        return -1;
+    }
+
+    /**
+     * Urutan kolom lembar 182 (K-50-15): `Standard Value` = set point
+     * (`C19 = PERHITUNGAN!G22`, 60,0) — di snapshot kunci `unit_under_test`;
+     * `Unit Under Test` = pembacaan standar terkoreksi (`J19 = PERHITUNGAN!G32`,
+     * 59,78) — kunci `standard_value`. Pemetaan tampilan saja; Centrifuge
+     * (`180!C19 = G32`, `J19 = G22`) tetap urutan [ProfilPutaran].
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tl = parent::tataLetakSertifikat($sesi);
+        $judul = ['standar' => 'Unit Under Test', 'uut' => 'Standard Value'];
+        $kolom = [];
+
+        foreach (['uut', 'standar', 'koreksi', 'u95'] as $nama) {
+            $k = collect($tl['kolom_hasil'])->firstWhere('kolom', $nama);
+            $kolom[] = isset($judul[$nama]) ? [...$k, 'judul' => $judul[$nama]] : $k;
+        }
+
+        return [...$tl, 'kolom_hasil' => $kolom];
+    }
+
+    /**
      * Baris ≥ 10000 rpm: Standard & UUT berformat `0` (`182!C31:J36`
      * `10000`, `15001`), Correction & U95 tetap `0.0` (`P31`, `S31`).
      * `$titikUkur` = set point (lihat [nilaiStandarDariKoreksi]).

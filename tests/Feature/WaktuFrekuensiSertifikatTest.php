@@ -51,7 +51,9 @@ class WaktuFrekuensiSertifikatTest extends TestCase
      * Nomor sesi ter-seed per alat, dan baris pertama tabel hasilnya seperti
      * TERCETAK di master.
      *
-     * Centrifuge & Timer disalin apa adanya. Tachometer TIDAK: sheet
+     * Centrifuge & Timer disalin apa adanya. Tachometer (sejak K-50-15 juga
+     * persis master — lihat komentar barisnya; paragraf berikut alasan LAMA
+     * yang dibatalkan pemilik 18 Okt 2026): sheet
      * `SERTIFIKAT`-nya menukar kedua kolom (`C19 = PERHITUNGAN!G22` set point,
      * `J19 = G32` standar terkoreksi) sehingga koreksinya terbit `+0,22` —
      * kebalikan tanda dari Centrifuge untuk data yang SAMA PERSIS. Itu
@@ -67,7 +69,12 @@ class WaktuFrekuensiSertifikatTest extends TestCase
         return [
             // nomor sesi, standard, uut, correction
             'Centrifuge' => ['0133-CAL-324', 59.779999999999994, 60.0, -0.22000000000000597],
-            'Tachometer' => ['0140-CAL-424', 59.779999999999994, 60.0, -0.22000000000000597],
+            // K-50-15 (pemilik 18 Okt 2026, sertifikat persis master): koreksi
+            // Tachometer dicetak seperti `182!P19 = C19 − J19` (+0,22), dan
+            // kolom `Standard Value`/`Unit Under Test` ditukar di tata letak
+            // (`C19` = set point = kunci `unit_under_test`, `J19` = 59,78 =
+            // kunci `standard_value`). Dulu −0,22 (jawaban lab §10, batal).
+            'Tachometer' => ['0140-CAL-424', 59.779999999999994, 60.0, 0.22000000000000597],
             // Timer dalam DETIK: STD CORRECTED 60,09633 s lawan rata-rata UUT
             // 60,137 s -> koreksi −0,040667 s (master menulisnya −40,667 ms).
             'Timer/Stopwatch' => ['015-CAL-424', 60.09633333333333, 60.137, -0.04066666666666],
@@ -110,10 +117,15 @@ class WaktuFrekuensiSertifikatTest extends TestCase
 
         $this->assertNotEmpty($baris, "Sesi {$nomorSesi} nggak punya baris hasil sama sekali.");
 
+        // Tachometer (K-50-15): yang TERCETAK `Standard Value` = kunci
+        // `unit_under_test`, `Unit Under Test` = kunci `standard_value`, dan
+        // Correction = keduanya dikurangkan seperti `182!P19 = C19 − J19`.
+        $tukar = $nomorSesi === '0140-CAL-424';
+
         foreach ($baris as $b) {
             $this->assertEqualsWithDelta(
-                (float) $b['standard_value'],
-                (float) $b['unit_under_test'] + (float) $b['correction'],
+                (float) $b[$tukar ? 'unit_under_test' : 'standard_value'],
+                (float) $b[$tukar ? 'standard_value' : 'unit_under_test'] + (float) $b['correction'],
                 self::TOL,
                 sprintf(
                     'Sesi %s titik %d: Standard %s ≠ UUT %s + Correction %s. Tabel sertifikat '
