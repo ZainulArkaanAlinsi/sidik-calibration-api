@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Support\JangkaSorongMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -433,11 +434,30 @@ class JangkaSorongProfile extends CalibrationProfile
         return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'];
     }
 
-    // Blok `Note : Kerataan Muka Ukur dalam kondisi : Baik` (`153!B64:F65`)
-    // SENGAJA belum dicetak (tidak ada `catatanSertifikat()` di sini): tiga
-    // tabel + dua standar sudah memakai lembar padat, sisa ruangnya 13 px, dan
-    // satu baris blok catatan pun meluap ke halaman dua (diukur 20 Okt 2026).
-    // Butuh perubahan template bersama (ruang blok di mode padat), bukan hook.
+    /**
+     * Blok `Note :` / `Kerataan Muka Ukur dalam kondisi  : Baik`
+     * (`153!B64:F65`) di bawah tabel hasil. Nilainya `kerataan_muka_ukur`
+     * blok sesi (`baik`/`buruk`), bukan `INPUT DATA!Z22` yang selalu membaca
+     * checkbox pertama ([JangkaSorongMentah::kerataan]). Belum diisi → blok
+     * tidak dicetak (tidak ditebak). Muat satu halaman sejak mode padat
+     * bentuk master dirapatkan (template K-50-15 putaran 3).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $kerataan = JangkaSorongMentah::blokSesi($sesi->spesifikasi_alat)['kerataan_muka_ukur'] ?? null;
+
+        if ($kerataan === null) {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => [['Kerataan Muka Ukur dalam kondisi :', ucfirst($kerataan)]],
+        ]];
+    }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {

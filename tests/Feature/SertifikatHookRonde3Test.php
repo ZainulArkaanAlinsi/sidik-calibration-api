@@ -7,6 +7,7 @@ use App\Models\Certificate;
 use App\Models\User;
 use App\Services\DataTampilanSertifikat;
 use App\Support\AnakTimbanganMentah;
+use App\Support\JangkaSorongMentah;
 use App\Support\TataLetakSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
@@ -188,6 +189,26 @@ class SertifikatHookRonde3Test extends TestCase
 
         $this->assertStringContainsString('%RH 50.8 %', (string) $gram->snapshot['header']['env_condition']);
         $this->assertStringContainsString('%RH 51 %', (string) $kg->snapshot['header']['env_condition']);
+    }
+
+    /** Jangka Sorong: blok Note Kerataan (`153!B64:F65`) dari sesi, tetap satu halaman. */
+    public function test_jangka_sorong_note_kerataan(): void
+    {
+        $this->siap();
+        $sesi = CalibrationSession::where('nomor_sesi', '001-CAL-126')->firstOrFail();
+        $kerataan = JangkaSorongMentah::blokSesi($sesi->spesifikasi_alat)['kerataan_muka_ukur'];
+        $this->assertNotNull($kerataan, 'Sesi contoh mengisi kerataan muka ukur.');
+
+        [$s, $html] = $this->terbitkan('001-CAL-126');
+
+        $this->assertSame([[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'baris' => [],
+            'tabel' => [['Kerataan Muka Ukur dalam kondisi :', ucfirst($kerataan)]],
+        ]], $s->snapshot['catatan_blok']);
+        $this->assertStringContainsString('Kerataan Muka Ukur dalam kondisi :', $html);
+        $this->assertSame(1, $this->halamanTerbaik($s));
     }
 
     private function siap(): void
