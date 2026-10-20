@@ -727,18 +727,52 @@ abstract class TekananProfile extends CalibrationProfile
             return null;
         }
 
-        $desimal = self::desimalDari($blok['resolusi'] ?? null);
+        $format = self::FORMAT_SERTIFIKAT[$blok['varian'] ?? ''] ?? null;
+        $desimal = $format['nilai'] ?? self::desimalDari($blok['resolusi'] ?? null);
+        // Master mencetak `ROUND(k;1)` di keempat sertifikat tekanan (`U36`).
+        $kCetak = $k === null ? null : round((float) $k, 1);
 
         return [
             'satuan' => $blok['satuan'] ?? '',
             'baris' => $baris,
             'u95' => $u95,
-            // Master mencetak `ROUND(k;1)` di keempat sertifikat tekanan.
-            'k_cetak' => $k === null ? null : round((float) $k, 1),
+            // Differential memformat sel itu `0` (`191!U36`): `ROUND(k;1)` lalu
+            // tampil bulat. Tiga master lain General — 1,98 tercetak `2`.
+            'k_cetak' => $kCetak !== null && ($format['k_bulat'] ?? false) ? round($kCetak) : $kCetak,
             'desimal' => $desimal,
-            'desimal_u95' => $desimal + 1,
+            'desimal_u95' => $format['u95'] ?? $desimal + 1,
         ];
     }
+
+    /**
+     * Format sel lembar `SERTIFIKAT` master per varian kalibrator (K-50-15),
+     * dibaca dari Studio (`workbook_master` aktif):
+     *
+     *   varian      master  Standard/Correction/Hysterisis  U95 `P35`  k `U36`
+     *   DRUCK07G    181     `I22:V27` `0.0`                 `0.000`    General
+     *   DRUCK13G    190     `I22:V27` `0.0`                 `0.0`      General
+     *   SPMK        192     `I22:V34` `0.00`                `0.00`     General
+     *   Differential 191    `I22:V27` `0.0`                 `0.00`     `0`
+     *
+     * Di 181/190/191 kolom Correction baris 28–34 (`N28:P34`) berformat
+     * `0.000`/`0.00`, beda dari enam baris di atasnya dan dari kolom Standard
+     * di sebelahnya — sel salin-tempel, tidak ditiru: satu titik tidak boleh
+     * tercetak lebih teliti hanya karena urutannya ke-7.
+     *
+     * Kolom UUT (`E22`) berformat lain (`0` 181/190, `0.0` 191, `0.000` 192),
+     * tapi blok `tekanan` di template mencetak setelan dengan desimal yang sama
+     * dengan kolom lain — memisahkannya butuh perubahan template (dilaporkan).
+     * Varian yang tidak dikenal jatuh ke aturan lama (desimal resolusi).
+     * Hanya cetak; nilai tersimpan tidak berubah.
+     *
+     * @var array<string, array{nilai: int, u95: int, k_bulat: bool}>
+     */
+    private const FORMAT_SERTIFIKAT = [
+        Tabel::DRUCK07G => ['nilai' => 1, 'u95' => 3, 'k_bulat' => false],
+        Tabel::DRUCK13G => ['nilai' => 1, 'u95' => 1, 'k_bulat' => false],
+        Tabel::SPMK => ['nilai' => 2, 'u95' => 2, 'k_bulat' => false],
+        Tabel::DIFFERENTIAL => ['nilai' => 1, 'u95' => 2, 'k_bulat' => true],
+    ];
 
     /** Desimal cetak = desimal resolusi alat (0,1 → 1; 0,05 → 2). */
     public static function desimalDari(mixed $resolusi): int

@@ -251,13 +251,56 @@ class TekananSesiTest extends TestCase
         $this->assertSame('kg/cm2', $tabel['satuan']);
         $this->assertCount(3, $tabel['baris']);
         $this->assertSame(2.0, $tabel['k_cetak']);
-        $this->assertSame(1, $tabel['desimal'], 'Resolusi 0,5 → satu desimal.');
+        // Dulu `1` (desimal resolusi 0,5). K-50-15: desimal cetak = format sel
+        // master varian SPMK — `192!I22:V34` `0.00`, U95 `192!P35` `0.00`.
+        $this->assertSame(2, $tabel['desimal'], 'SPMK: format sel `192!I22` `0.00`.');
+        $this->assertSame(2, $tabel['desimal_u95'], 'SPMK: format sel `192!P35` `0.00`.');
 
         foreach ($tabel['baris'] as $i => $b) {
             $p = $h['per_titik'][$i];
             $this->assertEqualsWithDelta($p['terkoreksi_up'] / $h['faktor'], $b['standar_up'], 1e-12);
             $this->assertEqualsWithDelta($p['terkoreksi_down'] / $h['faktor'], $b['standar_down'], 1e-12);
             $this->assertEqualsWithDelta($p['hys'][0] / $h['faktor'], $b['histeresis'][0], 1e-12);
+        }
+    }
+
+    /**
+     * Format cetak per varian kalibrator = format sel lembar SERTIFIKAT
+     * masternya (K-50-15): 07G `181`, 13G `190`, Differential `191`. Hanya
+     * label varian di blok sesi yang diganti sesudah hasilnya tersimpan —
+     * yang diuji pemetaan CETAKNYA, bukan hitungan (angka tersimpan tidak
+     * dibaca ulang dari varian).
+     */
+    public function test_format_cetak_ikut_master_varian(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertCreated()
+            ->json('data.id');
+        $sesi = CalibrationSession::findOrFail($id);
+        $profil = new PressureGaugeProfile;
+        $terakhir = UncertaintyCalculation::where('calibration_session_id', $id)->orderByDesc('titik_ke')->firstOrFail();
+        $kMentah = $terakhir->type_b_components['tekanan_budget']['k'] ?? $terakhir->faktor_cakupan_k;
+
+        $harapan = [
+            // varian => [desimal (I22), desimal_u95 (P35), k bulat (U36 `0`)]
+            Tabel::DRUCK07G => [1, 3, false],
+            Tabel::DRUCK13G => [1, 1, false],
+            Tabel::DIFFERENTIAL => [1, 2, true],
+        ];
+
+        foreach ($harapan as $varian => [$desimal, $desimalU95, $kBulat]) {
+            $spek = $sesi->spesifikasi_alat;
+            $spek[M::KUNCI_SESI]['varian'] = $varian;
+            $sesi->forceFill(['spesifikasi_alat' => $spek])->saveQuietly();
+
+            $tabel = $profil->tabelSertifikatTekanan($sesi->fresh());
+
+            $this->assertSame($desimal, $tabel['desimal'], "{$varian}: desimal kolom Standard/Correction/Hysterisis.");
+            $this->assertSame($desimalU95, $tabel['desimal_u95'], "{$varian}: desimal U95.");
+            $kSatuDesimal = round((float) $kMentah, 1);
+            $this->assertSame($kBulat ? round($kSatuDesimal) : $kSatuDesimal, $tabel['k_cetak'], "{$varian}: k cetak.");
         }
     }
 }
