@@ -8,8 +8,10 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\PistonVolumeCalculator as K;
 use App\Services\Calibration\TabelStandarPistonVolume as Tabel;
+use App\Support\Angka;
 use App\Support\LogMetodeTekananPiston as LogMetode;
 use App\Support\PistonVolumeMentah as M;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
@@ -662,6 +664,111 @@ abstract class PistonVolumeProfile extends CalibrationProfile
     protected function kalk(): K
     {
         return $this->kalk ??= new K;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Dua master aktif Studio: `Master Olah Data_Fixed Piston Volume` (id 160)
+    // dan `Master Olah Data_Graduated Piston Volume` (id 164). Lembarnya dipilih
+    // KELUARGA sesi (`spesifikasi_alat.piston.keluarga`), bukan profil — sama
+    // dengan hitungannya (docblock kelas). Hanya bentuk cetak; tidak satu
+    // nilai pun dihitung ulang.
+
+    /**
+     * Suhu dasar volume yang dicetak `160!E18:N18` / `164!E18:N18` "Suhu Dasar
+     * Volume : 20 0C" (`L18 = 'INPUT DATA'!E16`/`E17` = 20). Angka yang sama
+     * dengan suku `(t − 20)` muai termal di `PistonVolumeCalculator` (V20).
+     */
+    public const SUHU_DASAR_VOLUME = 20.0;
+
+    /**
+     * Timpaan bentuk mayoritas, sama di 160 & 164:
+     *
+     * - label lingkungan `Environmental Condition` (`O11`);
+     * - kalimat `k` `160!E23` / `164!E25` "The uncertainty is taken at a
+     *   convidence level 95 % and coverage factor (k) = " — huruf kecil ikut
+     *   master, salah ketik "convidence" TIDAK ditiru (G4);
+     * - `160!G45` / `164!G47` "------------------ End of Certificate
+     *   ------------------".
+     *
+     * Kotak kepala `Class/Permitted Error` (`O14`) TIDAK dipasang: isinya
+     * `'INPUT DATA'!I16` yang diketik ("- /± -"), dan sesi piston tidak punya
+     * field kelas/toleransi — tidak ada yang bisa dicetak tanpa mengarang.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tataLetak = parent::tataLetakSertifikat($sesi);
+
+        $tataLetak['kepala'] = array_map(
+            static fn (array $baris): array => array_map(
+                static fn (?array $sel): ?array => ($sel['kunci'] ?? null) === 'env_condition'
+                    ? [...$sel, 'label' => 'Environmental Condition']
+                    : $sel,
+                $baris,
+            ),
+            $tataLetak['kepala'],
+        );
+
+        return [
+            ...$tataLetak,
+            'kalimat_k' => 'The uncertainty is taken at a confidence level 95 % and coverage factor (k)',
+            'akhir_sertifikat' => '------------------ End of Certificate ------------------',
+        ];
+    }
+
+    /**
+     * `E18:N18` "Suhu Dasar Volume : 20 °C", di antara `Calibration Report :`
+     * dan judul kolom tabel hasil. Master menulis "0C" (o kecil sebagai tanda
+     * derajat) — dicetak `°C`, seperti Volumetrik.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
+            'tabel' => [['Suhu Dasar Volume', ':', Angka::nilaiStandar(self::SUHU_DASAR_VOLUME, 2).' °C']],
+        ]];
+    }
+
+    /**
+     * Format sel tabel hasil per master keluarga:
+     *
+     * - Fixed (`160`): Nominal Value `E21` `0`, Actual Volume `N21` &
+     *   Correction `S21` `0.0000`, U95 `Q22` `0.000`, k `V23` `0`;
+     * - Graduated (`164`): `E21:S23` `0.00` ketiga kolom, U95 `Q24` `0.00`,
+     *   k `V25` `0`.
+     *
+     * Keluarga belum diisi → `[]` (aturan lama `desimalSertifikat`). Hanya
+     * cetak; nilai snapshot tetap presisi penuh.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return match (M::blokSesi($sesi->spesifikasi_alat)['keluarga'] ?? null) {
+            K::FIXED => ['standar' => '0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.000', 'k' => '0'],
+            K::GRADUATED => ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'],
+            default => [],
+        };
+    }
+
+    /**
+     * Tekanan udara di kondisi lingkungan: `160!U13` / `164!U13` =
+     * `PERHITUNGAN!G18`/`G19` = `AVERAGE` tekanan awal & akhir BACAAN (tanpa
+     * koreksi, format `0`). Nilai yang sama yang masuk hitungan densitas udara
+     * ([hitungPerGrup] `tekanan_udara`).
+     */
+    public function tekananEnvSertifikat(CalibrationSession $sesi): ?float
+    {
+        $terisi = array_values(array_filter(
+            [$sesi->tekanan_awal, $sesi->tekanan_akhir],
+            static fn ($p): bool => $p !== null,
+        ));
+
+        return $terisi === [] ? null : array_sum(array_map('floatval', $terisi)) / count($terisi);
     }
 
     /** @return array<string, mixed> */
