@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -813,5 +814,34 @@ class RefractometerProfile extends CalibrationProfile
     public function u95PerTitik(): bool
     {
         return true;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Master aktif Studio `Master Olah Data_Refractometer` (id 168), lembar
+    // `SERTIFIKAT`. Hanya bentuk cetak; tidak satu nilai pun dihitung ulang.
+
+    /**
+     * Judul kolom keempat `168!R16` "U95%, k=2" (bukan `U95% (±)`), satuan
+     * `n20D` di baris sendiri (`R17`).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'judul_kolom_u95' => 'U95%, k=2'];
+    }
+
+    /**
+     * Format sel `168!C18:R19` `0.00000` di keempat kolom (`1.33659`,
+     * `-0.00276`, `0.00053`) — sama dengan [desimalSertifikat], ditulis
+     * eksplisit supaya Standard Value tidak membuang nol di belakang. `U21`
+     * k `0`. Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00000', 'uut' => '0.00000', 'koreksi' => '0.00000', 'u95' => '0.00000', 'k' => '0'];
     }
 }

@@ -267,7 +267,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // (snapshot tanpa `tata_letak`) pun sudah meluap di mode normal.
         '2405.32.A.NK (Conductivity Meter)',
         '2406.25.AI (Oven)',
-        '2406.32.C (Chlorine Meter)',
+        // Chlorine KELUAR dari daftar ini 21 Okt 2026 (K-50-15, pemilik 18 Okt:
+        // sertifikat persis lembar SERTIFIKAT master): master `156` mencetak
+        // SATU tabel dengan kolom U95 & Remark (`C16:W19`) dan satu kalimat
+        // `k`, bukan dua tabel per remark dengan judul & baris U95 masing-
+        // masing. Lembarnya memendek, jadi muat di mode normal.
         '2406.51.S (Autoclave)',
         '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',

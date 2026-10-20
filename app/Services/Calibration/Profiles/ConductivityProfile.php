@@ -1398,4 +1398,34 @@ class ConductivityProfile extends CalibrationProfile
     {
         return true;
     }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Master aktif Studio `Master Olah Data_Conductivity` (id 157), lembar
+    // `SERTIFIKAT STYLE 1` & `STYLE 2`. Hanya yang SAMA di kedua lembar yang
+    // ditiru di sini. Format angka per kolom sengaja belum: titik 111 mS/cm
+    // berformat `0.00` di STYLE 2 (`C41:R41`) tapi `0.000`/`0.00`/`0.0000`/
+    // `0.000` di STYLE 1 (`C41`/`J41`/`P41`/`R41`), dan nomor style-nya sendiri
+    // tertukar (lihat [styleSertifikat]) — butuh jawaban lab, bukan tebakan.
+
+    /**
+     * `157!B47` "Standard Used :" (huruf U besar, kedua style).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => 'Standard Used :'];
+    }
+
+    /**
+     * `k` berformat `0` di kedua style (`U36`/`U42` STYLE 1, `U37`/`U42`
+     * STYLE 2). Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['k' => '0'];
+    }
 }
