@@ -9,6 +9,7 @@ use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\ThermohygroCalculator;
+use App\Support\PasanganStandarUutMentah;
 use Carbon\Carbon;
 
 /**
@@ -219,10 +220,10 @@ class ThermohygroProfile extends ProfilSuhuPasangan
      * - Standard used tanpa titik dua (`I70:Q70`); `Issuance Date :` (`B74`)
      *   = bawaan.
      *
-     * BELUM: seksi `1. Temperature` / `2. Humidity` (`E19`/`E32`) dengan tabel
-     * %RH sendiri. Baris snapshot tidak membawa parameter (suhu/kelembapan) —
-     * [satuanTitik] dan `remarkTitikKe()` tidak menerima sesi — jadi pemisahnya
-     * butuh perubahan `CertificateSnapshotBuilder` (lapisan T), bukan hook ini.
+     * - seksi `1. Temperature` / `2. Humidity` (`E19`/`E32`), masing-masing
+     *   tabel sendiri bersatuan `(oC)` / `(%RH)` (`E21`/`E34`): remark &
+     *   satuan per titik dari parameter titiknya ([satuanTitikSesi],
+     *   [remarkTitikSesi]).
      *
      * @return array<string, mixed>
      */
@@ -244,16 +245,49 @@ class ThermohygroProfile extends ProfilSuhuPasangan
     }
 
     /**
-     * Format sel: Standard & Correction `0.00` (`E22`, `N22`), U95 `0.0`
-     * (`U22`), `k` `0` (`T30`). UUT TIDAK disebut: suhu `0.0` (`K22`) dan %RH
-     * `0` (`K35`), sedangkan baris snapshot tidak tahu parameternya (lihat
-     * [tataLetakSertifikat]) — tetap desimal lama sampai lapisan T membawanya.
+     * Format sel: Standard & Correction `0.00` (`E22`/`N22`, `E35`/`N35`),
+     * U95 `0.0` (`U22`, `U35`), `k` `0` (`T30`). UUT ikut parameter: suhu
+     * `0.0` (`K22`), %RH `0` (`K35`) — `$satuan` = satuan cetak titik dari
+     * [satuanTitikSesi].
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'];
+        return [
+            'standar' => '0.00',
+            'uut' => $satuan === self::SATUAN_RH ? '0' : '0.0',
+            'koreksi' => '0.00',
+            'u95' => '0.0',
+            'k' => '0',
+        ];
+    }
+
+    /**
+     * Satuan cetak titik dari PARAMETER titiknya — baris mentah ber-satuan
+     * `%RH` = kelembapan ([PasanganStandarUutMentah::dari], aturan yang sama
+     * dengan jalur hitung). Master `154!E21` `(oC)`, `E34` `(%RH)`.
+     */
+    public function satuanTitikSesi(CalibrationSession $sesi, float $titikUkur, int $titikKe, ?Equipment $equipment = null): ?string
+    {
+        return $this->parameterTitik($sesi, $titikKe) === ThermohygroCalculator::PARAMETER_KELEMBABAN
+            ? self::SATUAN_RH
+            : self::SATUAN_SUHU;
+    }
+
+    /** Judul seksi master: `1. Temperature` (`154!E19`), `2. Humidity` (`E32`). */
+    public function remarkTitikSesi(CalibrationSession $sesi, int $titikKe, float $titikUkur): ?string
+    {
+        return $this->parameterTitik($sesi, $titikKe) === ThermohygroCalculator::PARAMETER_KELEMBABAN
+            ? '2. Humidity'
+            : '1. Temperature';
+    }
+
+    private function parameterTitik(CalibrationSession $sesi, int $titikKe): string
+    {
+        $baris = $sesi->rawMeasurements->filter(static fn ($b): bool => (int) $b->titik_ke === $titikKe);
+
+        return PasanganStandarUutMentah::dari($baris)['parameter'] ?? ThermohygroCalculator::PARAMETER_SUHU;
     }
 
     /**

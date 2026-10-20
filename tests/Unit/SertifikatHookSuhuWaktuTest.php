@@ -126,10 +126,15 @@ class SertifikatHookSuhuWaktuTest extends TestCase
         $labelLingkungan = collect($tl['kepala'])->flatten(1)->filter()->firstWhere('kunci', 'env_condition')['label'];
         $this->assertSame('Environmental Condition', $labelLingkungan);
 
-        // UUT sengaja tidak diformat (suhu `0.0`, %RH `0`, parameter baris tidak diketahui).
+        // UUT ikut parameter titik (K-50-15 putaran 3, `satuanTitikSesi`):
+        // suhu `0.0` (`154!K22`), %RH `0` (`K35`).
         $this->assertSame(
-            ['standar' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'],
+            ['standar' => '0.00', 'uut' => '0.0', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'],
             app(ThermohygroProfile::class)->formatKolomSertifikat($this->sesi(), 25.0, '°C'),
+        );
+        $this->assertSame(
+            ['standar' => '0.00', 'uut' => '0', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'],
+            app(ThermohygroProfile::class)->formatKolomSertifikat($this->sesi(), 50.0, '%RH'),
         );
     }
 
