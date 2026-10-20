@@ -175,6 +175,14 @@ class GayaMentah
             'preload_zero' => $angkaDeret($blok['preload_zero'] ?? null),
             'preload_max' => $angkaDeret($blok['preload_max'] ?? null),
             'misalignment' => $angkaDeret($blok['misalignment'] ?? null),
+            // Spesifikasi dial Proving Ring — sumber komponen `daya_baca_uut`
+            // (`PERHITUNGAN U95%!N10` = `((K5/S4)*100)/2`). Dulu tidak
+            // diteruskan, jadi `GayaCalculator::komponenBudgetProvingRing`
+            // membaca 0 dan komponennya hilang tanpa error (parita 21 Okt 2026).
+            'kapasitas_dial_mm' => isset($blok['kapasitas_dial_mm']) && is_numeric($blok['kapasitas_dial_mm'])
+                ? (float) $blok['kapasitas_dial_mm'] : null,
+            'resolusi_dial_mm' => isset($blok['resolusi_dial_mm']) && is_numeric($blok['resolusi_dial_mm'])
+                ? (float) $blok['resolusi_dial_mm'] : null,
         ];
     }
 

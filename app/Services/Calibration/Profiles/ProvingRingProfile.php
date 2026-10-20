@@ -250,6 +250,21 @@ class ProvingRingProfile extends GayaProfile
         return 5;
     }
 
+    /**
+     * Kolom `Standard Value` dari `titik_ukur`, BUKAN `rata_rata + koreksi`.
+     *
+     * Induk ([GayaProfile::nilaiStandarDariKoreksi]) benar untuk UTM & Load
+     * Cell, tapi di sini `rata_rata` = pembacaan dial dalam DIVISI dan
+     * `koreksi` = faktor kN/Div — jumlahnya tidak bermakna dan tercetak
+     * `24209,46` untuk titik 30 kgf. `titik_ukur` Proving Ring sudah
+     * menyimpan Z (kN, [hitungPerGrup]); dibagi faktor satuan seperti master
+     * `162!E23` = `'PERHITUNGAN FC'!Z31 / DATABASE!S23` = 29,99919.
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return false;
+    }
+
     // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
 
     /**

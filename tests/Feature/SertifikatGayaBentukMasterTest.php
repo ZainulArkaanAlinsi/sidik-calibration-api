@@ -81,8 +81,8 @@ class SertifikatGayaBentukMasterTest extends TestCase
             $s->snapshot['hasil'][1]['format']);
         $this->assertMatchesRegularExpression('#<th>Standard Value</th>\s*<th>Unit Under Test</th>\s*<th>Calibration Factor</th>\s*<th>Repeatability</th>#u', $html);
         $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>kgf</th>\s*<th>\(1 Division x 0[.,]002 mm\)</th>\s*<th>kgf / Div</th>\s*<th>%</th>#u', $html);
-        // `162!L23` 237, `Q23` 0.1, `V23` 0.2.
-        $this->assertMatchesRegularExpression('#<td>237</td>\s*<td>0[.,]1</td>\s*<td>0[.,]2</td>#u', $html);
+        // `162!E23` 30.00 (Z31 / S23), `L23` 237, `Q23` 0.1, `V23` 0.2.
+        $this->assertMatchesRegularExpression('#<td>30[.,]00</td>\s*<td>237</td>\s*<td>0[.,]1</td>\s*<td>0[.,]2</td>#u', $html);
         $this->assertStringNotContainsString('Type of Force', $html, '`162` tidak punya baris Type of Force.');
         $this->assertStringContainsString('Dial Spesification :', $html);
         $this->assertMatchesRegularExpression('#<td>Range &amp; Res\.</td>\s*<td>:</td>\s*<td>25 mm / 0[.,]002 mm</td>#u', $html);
