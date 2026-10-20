@@ -12,6 +12,7 @@ use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarFlowmeterGravimetri;
 use App\Services\Calibration\VarianMetodeFlowmeter;
 use App\Support\FlowmeterMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -1112,19 +1113,25 @@ abstract class FlowmeterProfile extends CalibrationProfile
      * - `Issuance Date` tanpa titik dua (`148!B40`, `149!B39`, `150!B36`,
      *   `185!B45`).
      *
-     * Yang TIDAK bisa dinyatakan dari sini (butuh template/builder): kolom
-     * `Measured Flowrate During Calibration (m3/h)` (`148!K20`) dan `Fluids
-     * Condition` — `Temperature (⁰C)` & `Type of Fluids` (`148!N20:R21`,
-     * `150!N19:R20`) — serta U95 `%OR` varian UFM.
+     * - varian UFM (149, 185): kolom U95 relatif `U95% ±` satuan `%OR`
+     *   format `0.0` (`149!O20:O22`, `185!N24:N26`) — `u95_relatif` template
+     *   (U95 / UUT × 100, padanan `149!O22`, `185!N26`);
+     * - varian gravimetri (148, 150): kolom `Fluids Condition` —
+     *   `Temperature (⁰C)` `0.0` & `Type of Fluids` (`148!N20:R22`,
+     *   `150!N19:R21`), nilainya dari data sesi ([kolomTambahanTitik]).
+     *
+     * Yang TIDAK dicetak: `Measured Flowrate During Calibration (m3/h)`
+     * (`148!K20:K22`) — angka ketik di master, tidak ada di data sesi
+     * (BLOCKER, menunggu field input).
      *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
         $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
-        $gravimetriFlowrate = $blok !== null
-            && $blok['mode'] === FlowmeterMentah::MODE_FLOWRATE
-            && $blok['varian_metode'] === VarianMetodeFlowmeter::GRAVIMETRI->value;
+        $gravimetri = $blok !== null && $blok['varian_metode'] === VarianMetodeFlowmeter::GRAVIMETRI->value;
+        $ufm = $blok !== null && $blok['varian_metode'] === VarianMetodeFlowmeter::UFM->value;
+        $gravimetriFlowrate = $gravimetri && $blok['mode'] === FlowmeterMentah::MODE_FLOWRATE;
 
         return [
             ...parent::tataLetakSertifikat($sesi),
@@ -1132,7 +1139,13 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ['kolom' => 'uut', 'judul' => 'Unit Under Test'],
                 ['kolom' => 'standar', 'judul' => 'Standard Indication'],
                 ['kolom' => 'koreksi', 'judul' => 'Correction'],
-                ['kolom' => 'u95', 'judul' => $gravimetriFlowrate ? 'Uncertainty 95% ±' : 'U95% ±'],
+                $ufm
+                    ? ['kolom' => 'u95_relatif', 'judul' => 'U95% ±', 'satuan' => '%OR', 'format' => '0.0']
+                    : ['kolom' => 'u95', 'judul' => $gravimetriFlowrate ? 'Uncertainty 95% ±' : 'U95% ±'],
+                ...($gravimetri ? [
+                    ['kolom' => TataLetakSertifikat::AWALAN_TAMBAHAN.self::KOLOM_SUHU_FLUIDA, 'judul' => 'Fluids Condition Temperature', 'satuan' => '⁰C', 'format' => '0.0'],
+                    ['kolom' => TataLetakSertifikat::AWALAN_TAMBAHAN.self::KOLOM_JENIS_FLUIDA, 'judul' => 'Type of Fluids'],
+                ] : []),
             ],
             'kolom_standar_digunakan' => [
                 ['kunci' => 'name', 'label' => 'Name'],
@@ -1141,6 +1154,48 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through'],
             ],
             'label_tanggal_terbit' => 'Issuance Date',
+        ];
+    }
+
+    /** Kunci kolom tambahan `Fluids Condition` gravimetri (`148!N20:R22`). */
+    public const KOLOM_SUHU_FLUIDA = 'suhu_fluida';
+
+    public const KOLOM_JENIS_FLUIDA = 'jenis_fluida';
+
+    /**
+     * `Fluids Condition` varian gravimetri, HANYA dari data sesi:
+     *
+     * - Temperature = `AVERAGE('PERHITUNGAN FC'!D55:G55)` (`148!N22`,
+     *   `150!N21` dari `D63:G63`) = rata-rata dari (rata-rata suhu air awal,
+     *   rata-rata suhu air akhir) titik itu — baris `flow_suhu_awal` /
+     *   `flow_suhu_akhir`. Sel kosong dilewati seperti `AVERAGE`.
+     * - Type of Fluids = `jenis_fluida` blok sesi, apa adanya (master
+     *   mengetik `Water` di `R22`; yang dicetak isian teknisi).
+     *
+     * Hanya cetak; tidak menyentuh perhitungan.
+     *
+     * @return array<string, float|int|string|null>
+     */
+    public function kolomTambahanTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): array
+    {
+        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null || $blok['varian_metode'] !== VarianMetodeFlowmeter::GRAVIMETRI->value) {
+            return [];
+        }
+
+        $mentah = FlowmeterMentah::dari($sesi->rawMeasurements->filter(static fn ($b): bool => (int) $b->titik_ke === $titikKe));
+        $rata = array_map(
+            static fn (array $deret): float => array_sum($deret) / count($deret),
+            array_filter([
+                $mentah[FlowmeterMentah::PERAN_SUHU_AWAL] ?? [],
+                $mentah[FlowmeterMentah::PERAN_SUHU_AKHIR] ?? [],
+            ], static fn (array $deret): bool => $deret !== []),
+        );
+
+        return [
+            self::KOLOM_SUHU_FLUIDA => $rata === [] ? null : array_sum($rata) / count($rata),
+            self::KOLOM_JENIS_FLUIDA => $blok['jenis_fluida'],
         ];
     }
 
