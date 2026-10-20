@@ -285,11 +285,19 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // dua kolom gaya di sebelahnya dua desimal. Tabel paling lebar sekaligus
         // paling tinggi di kelompok gaya.
         //
-        // Yang justru TIDAK masuk sini: UTM. Kolom sebaran (RRPE) yang baru
+        // (Sampai 20 Okt 2026 — lihat entri UTM di bawah.) Yang justru TIDAK
+        // masuk sini: UTM. Kolom sebaran (RRPE) yang baru
         // ditambahkan 25 Sep 2026 tidak menggesernya ke mode padat — enam titik
         // masih muat berempat kolom. Itu yang membedakan "tata letak menyusut"
         // dari "lembarnya memang panjang".
         'DEMO-PR-001 (Proving Ring)',
+        // UTM masuk sini 20 Okt 2026 (K-50-15, pemilik 18 Okt: sertifikat
+        // persis lembar SERTIFIKAT master). Master `163` mencetak tiga blok
+        // yang dulu tidak ada: `Type of Force : Pull` (`E18`), legenda `RRPE`
+        // (`E37`) dan `Units Used: kgf : Kilogram-force` (`E39:I40`). Isinya
+        // bertambah, bukan tata letak yang menyusut; titik nol (`E21`,
+        // disembunyikan master) malah keluar dari tabel. Tetap satu halaman.
+        'DEMO-UTM-001 (Universal Testing Machine)',
     ];
 
     /**

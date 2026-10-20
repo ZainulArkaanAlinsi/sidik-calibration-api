@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
+
 /**
  * Load Cell — alat gaya kedua, sebangun UTM tapi TIDAK identik.
  *
@@ -160,6 +162,17 @@ class LoadCellProfile extends GayaProfile
     public function desimalFaktorCakupan(): ?int
     {
         return 0;
+    }
+
+    /**
+     * Format sel master `161` (K-50-15): Standard Value · UUT · Correction ·
+     * RRPE `0.00` (`E22:V30`), U95 `0.00` (`P35`), `k` `0` (`T36`).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.00', 'k' => '0'];
     }
 
     /** Sama dengan UTM — lihat docblock di sana. */

@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
+
 /**
  * Mesin UTM (Universal Testing Machine) — alat gaya pertama yang mendarat.
  *
@@ -162,6 +164,25 @@ class UtmProfile extends GayaProfile
     public function desimalFaktorCakupan(): ?int
     {
         return 0;
+    }
+
+    /**
+     * Format sel master `163` (K-50-15): Standard Value & UUT `0.0`
+     * (`E22:L30`), Correction `0.00` (`Q22:Q30`), RRPE `0.00` (`V22:V30`), U95
+     * `0.0` (`P35`), `k` `0` (`T36`). Baris `31:34` master berformat `0.00`
+     * tapi kosong di semua contoh (titik ke-11 dst.) — tidak ditiru.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.0', 'k' => '0'];
+    }
+
+    /** `163` tidak punya baris `FS : Full Scale` di bawah `Units Used:` (`E39:I40`). */
+    protected function cetakFullScaleSertifikat(): bool
+    {
+        return false;
     }
 
     /**
