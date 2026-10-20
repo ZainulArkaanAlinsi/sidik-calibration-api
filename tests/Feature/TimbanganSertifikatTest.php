@@ -396,6 +396,34 @@ class TimbanganSertifikatTest extends TestCase
     }
 
     /**
+     * K-50-15: kaki lembar persis master `145/146/147!C56:L76` — kolom
+     * standar `Name | Nominal Mass | Merk/Class | SN | Traceability`,
+     * penafian berstrip SESUDAH tabel standar (`G65`), `Issuance Date` tanpa
+     * titik dua (`B67`), lalu End of Certificate (`L76`).
+     */
+    public function test_kaki_lembar_ikut_master(): void
+    {
+        $html = $this->htmlSertifikat(self::SESI_SUB);
+
+        foreach (['>Nominal Mass<', '>Merk/Class<', '>SN<', '>Traceability<'] as $judul) {
+            $this->assertStringContainsString($judul, $html);
+        }
+        $this->assertStringNotContainsString('Merk/Type :', $html);
+
+        $standar = strpos($html, '8. STANDARD USED');
+        $strip = strpos($html, TimbanganProfile::STRIP_PENAFIAN);
+        $terbit = strpos($html, 'Issuance Date ');
+        $akhir = strpos($html, '------- End of Certificate -------');
+        $this->assertNotFalse($standar);
+        $this->assertNotFalse($strip);
+        $this->assertNotFalse($terbit);
+        $this->assertNotFalse($akhir);
+        $this->assertTrue($standar < $strip && $strip < $terbit && $terbit < $akhir, 'Urutan kaki lembar beda dari master.');
+        $this->assertSame(1, substr_count($html, TimbanganProfile::STRIP_PENAFIAN));
+        $this->assertStringNotContainsString('Issuance Date :', $html);
+    }
+
+    /**
      * Angkanya beneran nyampe ke lembarnya — bukan cuma judulnya.
      *
      * Desimalnya: `d` = 1 (resolusi 0,1 kg) buat nilai & koreksi, `max(d,2)`
