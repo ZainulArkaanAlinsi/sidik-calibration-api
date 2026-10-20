@@ -2160,6 +2160,53 @@ abstract class CalibrationProfile
     }
 
     /**
+     * [satuanTitik] dengan konteks sesi & urutan titik — untuk alat yang
+     * satuannya tidak bisa diturunkan dari nominal saja (Thermohygro: titik
+     * suhu °C dan titik kelembapan %RH bisa bernominal mirip; master
+     * `154!E32:U62` mencetak seksi `2. Humidity` sendiri). Dipakai builder
+     * sertifikat. Bawaannya meneruskan ke [satuanTitik] — perilaku lama.
+     */
+    public function satuanTitikSesi(CalibrationSession $sesi, float $titikUkur, int $titikKe, ?Equipment $equipment = null): ?string
+    {
+        return $this->satuanTitik($titikUkur, $equipment);
+    }
+
+    /**
+     * [remarkTitikKe] dengan konteks sesi (judul seksi per parameter,
+     * `1. Temperature` / `2. Humidity`). Bawaannya meneruskan ke
+     * [remarkTitikKe] — perilaku lama.
+     */
+    public function remarkTitikSesi(CalibrationSession $sesi, int $titikKe, float $titikUkur): ?string
+    {
+        return $this->remarkTitikKe($titikKe, $titikUkur);
+    }
+
+    /**
+     * Identitas RENTANG titik ini untuk sel gabung (`kolom_hasil.gabung`).
+     * `null` = tanpa identitas: sel bersebelahan digabung bila teks cetaknya
+     * sama (perilaku lama). Dengan identitas, yang digabung hanya baris
+     * berurutan dengan identitas sama — dua rentang Centrifuge yang
+     * kebetulan sama-sama `3.2` tetap dua kotak (`180!S19:V30`).
+     */
+    public function kunciGabungTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Nilai kolom tambahan satu titik, `kunci => angka|teks|null`, dicetak oleh
+     * kolom `tambahan:<kunci>` di `tata_letak.kolom_hasil` (mis. Fluids
+     * Condition Flowmeter gravimetri `148!N20:R21`). HANYA nilai yang memang
+     * ada di data sesi — jangan mengarang. Bawaannya kosong.
+     *
+     * @return array<string, float|int|string|null>
+     */
+    public function kolomTambahanTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): array
+    {
+        return [];
+    }
+
+    /**
      * Desimal NILAI suhu & kelembaban di baris `Env. Condition`.
      * `null` = tulis apa adanya (nol di belakang dibuang), padanan format
      * `General` di Excel.
@@ -2197,6 +2244,25 @@ abstract class CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return 0;
+    }
+
+    /**
+     * [desimalSuhuEnv] dengan konteks sesi — untuk master yang formatnya beda
+     * per varian. Bawaannya meneruskan ke [desimalSuhuEnv] (perilaku lama).
+     */
+    public function desimalSuhuEnvSesi(CalibrationSession $sesi): ?int
+    {
+        return $this->desimalSuhuEnv();
+    }
+
+    /**
+     * [desimalKelembabanEnv] dengan konteks sesi — Timbangan varian gram
+     * memformat %RH `0.0` (`145!AB14`), varian kg `0`. Bawaannya meneruskan
+     * ke [desimalKelembabanEnv] (perilaku lama).
+     */
+    public function desimalKelembabanEnvSesi(CalibrationSession $sesi): ?int
+    {
+        return $this->desimalKelembabanEnv();
     }
 
     /**

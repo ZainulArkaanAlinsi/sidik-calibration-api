@@ -248,8 +248,10 @@ class R2SpektroTest extends TestCase
     /** @return list<string> */
     private function headerTabelExcel(Certificate $sertifikat): array
     {
+        // K-50-15: kepala tabel Excel bentuk master = kepala PDF (`Standard`,
+        // master `170!C18`), bukan `Standard Value` jalur Excel lama.
         $baris = collect($this->selExcel($sertifikat))
-            ->first(fn (array $b) => ($b[0] ?? null) === 'Standard Value');
+            ->first(fn (array $b) => in_array($b[0] ?? null, ['Standard', 'Standard Value'], true));
 
         return array_map(static fn ($v) => (string) $v, $baris ?? []);
     }
@@ -266,7 +268,7 @@ class R2SpektroTest extends TestCase
         $awal = null;
 
         foreach ($sel as $i => $baris) {
-            if (($baris[0] ?? null) === 'Standard Value') {
+            if (in_array($baris[0] ?? null, ['Standard', 'Standard Value'], true)) {
                 $awal = $i + 1;
                 break;
             }

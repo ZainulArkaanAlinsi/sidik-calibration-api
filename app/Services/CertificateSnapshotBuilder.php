@@ -417,7 +417,7 @@ class CertificateSnapshotBuilder
                 // alat lain tidak bergeser. Satuannya satuan yang DICETAK —
                 // label yang sama dengan kunci `satuan` di bawah.
                 $satuanCetak = $cetak['satuan']
-                    ?? $profil?->satuanTitik((float) $titik->titik_ukur, $alat);
+                    ?? $profil?->satuanTitikSesi($sesi, (float) $titik->titik_ukur, (int) $titik->titik_ke, $alat);
 
                 $desimal = $profil?->desimalSertifikatTitikSesi($sesi, (float) $titik->titik_ukur, $satuanCetak)
                     ?? $profil?->desimalSertifikat()
@@ -425,7 +425,11 @@ class CertificateSnapshotBuilder
                         ? $organisasi->desimalSertifikat($resolusi)
                         : Angka::desimalDariResolusi($resolusi));
 
-                $remark = $profil?->remarkTitikKe((int) $titik->titik_ke, (float) $titik->titik_ukur);
+                $remark = $profil?->remarkTitikSesi($sesi, (int) $titik->titik_ke, (float) $titik->titik_ukur);
+                // Identitas rentang (sel gabung) & kolom tambahan dari data sesi
+                // (K-50-15). Ditulis hanya bila profil menyatakannya.
+                $kunciGabung = $profil?->kunciGabungTitik($sesi, (float) $titik->titik_ukur, (int) $titik->titik_ke);
+                $tambahan = $profil?->kolomTambahanTitik($sesi, (float) $titik->titik_ukur, (int) $titik->titik_ke) ?? [];
 
                 // Format sel master per kolom & baris yang disembunyikan master
                 // (K-50-15). Dua-duanya hanya mengatur CETAK — nilai di baris ini
@@ -614,6 +618,8 @@ class CertificateSnapshotBuilder
                     // Baris yang disembunyikan master: tetap di snapshot, tidak
                     // dicetak di PDF maupun Excel (`TataLetakSertifikat::barisDicetak`).
                     ...($dicetak ? [] : ['dicetak' => false]),
+                    ...($kunciGabung === null ? [] : ['kunci_gabung' => $kunciGabung]),
+                    ...($tambahan === [] ? [] : ['tambahan' => $tambahan]),
                 ];
             })
             ->values()
@@ -1052,7 +1058,7 @@ class CertificateSnapshotBuilder
     {
         $alat = $sesi->equipment;
         $titik = self::titikUrut($sesi)->first();
-        $dariProfil = $titik === null ? null : $profil?->satuanTitik((float) $titik->titik_ukur, $alat);
+        $dariProfil = $titik === null ? null : $profil?->satuanTitikSesi($sesi, (float) $titik->titik_ukur, (int) $titik->titik_ke, $alat);
 
         return $dariProfil ?? (filled($alat?->satuan) ? $alat->satuan : $sesi->rawMeasurements->first()?->satuan);
     }
@@ -1394,8 +1400,8 @@ class CertificateSnapshotBuilder
         // dibuang. Dibatesin 2 desimal dulu supaya derau float
         // (`23.069999999999997`) nggak ikut kecetak — Excel juga mangkas di
         // situ waktu nampilin `General`.
-        $suhuDesimal = $profil?->desimalSuhuEnv();
-        $rhDesimal = $profil?->desimalKelembabanEnv();
+        $suhuDesimal = $profil?->desimalSuhuEnvSesi($sesi);
+        $rhDesimal = $profil?->desimalKelembabanEnvSesi($sesi);
 
         $tulis = static fn (float $nilai, ?int $desimal): string => $desimal === null
             ? Angka::nilaiStandar($nilai, 2)

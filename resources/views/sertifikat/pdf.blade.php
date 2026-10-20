@@ -216,6 +216,24 @@
         table.info.kepala-master td { padding-top: 1px; padding-bottom: 1px; line-height: 1.3; }
         body.padat table.info.kepala-master td { padding-top: 0; padding-bottom: 0; line-height: 1.05; }
         body.padat table.data tr.satuan th { padding-top: 0; padding-bottom: 0; line-height: 1; font-size: 7.5px; }
+        /* Mode padat bentuk master (K-50-15): blok catatan khas alat (Note
+           Kerataan Jangka Sorong `153!B64:F65`, Paralelism, Units Used) butuh
+           ruang di lembar yang sudah padat. Jarak antar bagian dirapatkan —
+           ukuran huruf & tinggi ruang tanda tangan TIDAK disentuh (dipatok
+           bareng `UkuranTandaTangan`). Lembar bentuk lama tidak berubah. */
+        body.padat.bentuk-master { line-height: 1.3; }
+        body.padat.bentuk-master .judul { margin: 0 0 3px; }
+        body.padat.bentuk-master .kop { margin-bottom: 4px; }
+        body.padat.bentuk-master .kop-gambar { margin-bottom: 3px; }
+        body.padat.bentuk-master table.info { margin-bottom: 2px; }
+        body.padat.bentuk-master .judul-sub { margin: 4px 0 2px; }
+        body.padat.bentuk-master .judul-kelompok { margin: 3px 0 1px; }
+        body.padat.bentuk-master .ket-k { margin: 0 0 2px; }
+        body.padat.bentuk-master .catatan { margin-top: 2px; line-height: 1.2; }
+        body.padat.bentuk-master .catatan div { margin-bottom: 1px; }
+        body.padat.bentuk-master .blok-catatan { margin: 1px 0; line-height: 1.15; }
+        body.padat.bentuk-master table.ttd { margin-top: 3px; }
+        body.padat.bentuk-master .kode-dokumen { margin-top: 2px; }
         table.data td.gabung { vertical-align: middle; }
         .akhir-sertifikat { text-align: center; font-size: 10px; margin-top: 8px; }
 
@@ -619,7 +637,7 @@
      berlaku bersama `padat`, dan tidak untuk Autoklaf/Timbangan yang punya
      pemadatannya sendiri. Lihat `.cadangan-footer`. --}}
 @php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
-<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
+<body class="{{ $padat ? 'padat' : '' }}{{ isset($snapshot['tata_letak']) ? ' bentuk-master' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
 @if ($web ?? false)
     @if ($ditarik ?? false)
         {{-- K-50-03: sertifikat ditarik ke lembar kerja untuk dikoreksi. Lembar
@@ -994,8 +1012,26 @@
              Dua hal itu ditindaklanjuti orang dengan cara yang berbeda. --}}
         @if (! empty($suhu))
         <div class="judul-kelompok">A) SEBARAN SUHU</div>
+        {{-- Bentuk master (K-50-15): satu kepala `Sensor No. (oC)` selebar
+             kolom sensor, nomor sensor di baris bawahnya (`155!F23`, `F24`,
+             `K24`, `P24`). Snapshot terbit tanpa `tata_letak` tetap bentuk
+             lama (`Sensor No. 1 (°C)` per kolom). --}}
+        @php($autoMaster = isset($snapshot['tata_letak']))
         <table class="data">
             <thead>
+                @if ($autoMaster)
+                <tr>
+                    <th rowspan="2">Pembacaan Indikator Enklosur (°C)</th>
+                    <th rowspan="2">Standar &amp; Koreksi Indikator (°C)</th>
+                    <th colspan="{{ max(1, count($suhu['sensor'] ?? [])) }}">Sensor No. (°C)</th>
+                    <th rowspan="2">U<sub>95%</sub> &plusmn; (°C)</th>
+                </tr>
+                <tr>
+                    @foreach ($suhu['sensor'] ?? [] as $sensor)
+                        <th>{{ $sensor['no'] ?? '' }}</th>
+                    @endforeach
+                </tr>
+                @else
                 <tr>
                     <th>Pembacaan Indikator Enklosur (°C)</th>
                     <th>Standar &amp; Koreksi Indikator (°C)</th>
@@ -1004,6 +1040,7 @@
                     @endforeach
                     <th>U<sub>95%</sub> &plusmn; (°C)</th>
                 </tr>
+                @endif
             </thead>
             <tbody>
                 <tr>
@@ -1062,7 +1099,13 @@
 
         {{-- Sebaliknya juga: sesi suhu-saja nggak nyetak blok tekanan kosong. --}}
         @if (! empty($tek))
+        {{-- Bentuk master (K-50-15): judul `C) Tekanan` (`155!B35`) dan satuan
+             di baris sendiri di bawah kepala kolom (`B38:P38`). --}}
+        @if (isset($snapshot['tata_letak']))
+        <div class="judul-kelompok">C) Tekanan</div>
+        @else
         <div class="judul-kelompok">C) TEKANAN ({{ $tek['satuan'] ?? '' }})</div>
+        @endif
         <table class="data">
             <thead>
                 <tr>
@@ -1071,6 +1114,13 @@
                     <th>Correction</th>
                     <th>U<sub>95%</sub> &plusmn;</th>
                 </tr>
+                @if (isset($snapshot['tata_letak']) && filled($tek['satuan'] ?? null))
+                <tr class="satuan">
+                    @for ($j = 0; $j < 4; $j++)
+                        <th>{{ $tek['satuan'] }}</th>
+                    @endfor
+                </tr>
+                @endif
             </thead>
             <tbody>
                 <tr>
@@ -1299,8 +1349,38 @@
         @php($dP = (int) ($tekanan['desimal'] ?? $desimal))
         @php($dPU = (int) ($tekanan['desimal_u95'] ?? $dP + 1))
         @php($nP = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak)))
+        {{-- Bentuk master (K-50-15, snapshot ber-`tata_letak`): kepala `UUT`
+             (`181!E19`, sama di 190/191/192), ejaan master `Hysterisis`
+             (`R19`), baris satuan sendiri (`E20:R20`), dan baris U95 terpisah
+             dari kalimat `k` (`E35` / `E36`). Format kolom setelan bisa beda
+             dari kolom lain (`E22` `0` di 181/190, `0.0` di 191, `0.000` di
+             192): profil menyatakannya lewat `tekanan.format_setelan`
+             (`TekananProfile::tabelSertifikatTekanan`), bawaannya desimal
+             tabel seperti sebelumnya. Snapshot terbit tanpa `tata_letak` tetap
+             bentuk lama. --}}
+        @php($tekMaster = isset($snapshot['tata_letak']))
+        @php($fSetelan = $tekMaster ? ($tekanan['format_setelan'] ?? null) : null)
+        @php($nSetelan = fn ($v) => $fSetelan === null || $v === null ? $nP($v, $dP) : e(\App\Support\TataLetakSertifikat::angka(\App\Support\TataLetakSertifikat::formatAngka((float) $v, $fSetelan), $tataLetak)))
         <table class="data">
             <thead>
+                @if ($tekMaster)
+                <tr>
+                    <th>UUT</th>
+                    <th colspan="2">Standard Indication</th>
+                    <th colspan="2">Correction</th>
+                    <th colspan="3">Hysterisis</th>
+                </tr>
+                @if ($sat !== '')
+                <tr class="satuan">
+                    <th>{{ $sat }}</th>
+                    <th colspan="2">{{ $sat }}</th>
+                    <th colspan="2">{{ $sat }}</th>
+                    <th colspan="3">{{ $sat }}</th>
+                </tr>
+                @endif
+                <tr>
+                    <th></th>
+                @else
                 <tr>
                     <th rowspan="2">UUT Setting{{ $satKurung }}</th>
                     <th colspan="2">Standard Indication{{ $satKurung }}</th>
@@ -1308,6 +1388,7 @@
                     <th colspan="3">Hysteresis{{ $satKurung }}</th>
                 </tr>
                 <tr>
+                @endif
                     <th>Up</th>
                     <th>Down</th>
                     <th>Up</th>
@@ -1320,7 +1401,7 @@
             <tbody>
                 @foreach ($tekanan['baris'] ?? [] as $b)
                     <tr>
-                        <td>{!! $nP($b['setelan'] ?? null, $dP) !!}</td>
+                        <td>{!! $nSetelan($b['setelan'] ?? null) !!}</td>
                         <td>{!! $nP($b['standar_up'] ?? null, $dP) !!}</td>
                         <td>{!! $nP($b['standar_down'] ?? null, $dP) !!}</td>
                         <td>{!! $nP($b['koreksi_up'] ?? null, $dP) !!}</td>
@@ -1333,8 +1414,13 @@
             </tbody>
         </table>
         @if (($tekanan['u95'] ?? null) !== null)
+            @if ($tekMaster)
+                <div class="ket-k">Uncertainty U95% = &plusmn; {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}</div>
+            @endif
             <div class="ket-k">
+                @unless ($tekMaster)
                 Uncertainty U95% = &plusmn; {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}.
+                @endunless
                 The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
                 {{-- Master: `ROUND(k;1)` berformat General — 1,98 tercetak `2`,
                      4,30 tercetak `4,3`. Bukan `2,0`. --}}
@@ -1534,28 +1620,38 @@
              - `-` di koreksi titik nol Proving Ring (`koreksi_kosong`) dan di
                sebaran titik nol — bukan `0,00`, yang kebaca "diukur dan
                hasilnya nol sempurna". --}}
-        @php($teksBaris = $barisKelompok->map(fn ($b) => collect($kolomHasil)->mapWithKeys(fn ($k) => [$k['kolom'] => \App\Support\TataLetakSertifikat::teksSel($b, $k['kolom'], $snapshot, (int) $desimal)])->all())->all())
+        @php($teksBaris = $barisKelompok->map(fn ($b) => collect($kolomHasil)->mapWithKeys(fn ($k) => [$k['kolom'] => isset($k['pecah']) ? \App\Support\TataLetakSertifikat::teksPecah($b, $k, $snapshot) : \App\Support\TataLetakSertifikat::teksSel($b, $k['kolom'], $snapshot, (int) $desimal, $k)])->all())->all())
+        {{-- Kolom berpecah (Timer `H | M | S | S(0,001)`, `183!E18:W18`):
+             judulnya satu sel selebar pecahannya, judul pecahan di baris
+             satuan. --}}
+        @php($adaPecah = collect($kolomHasil)->contains(fn ($k) => isset($k['pecah'])))
         {{-- Sel `gabung` = satu kotak setinggi sel-sel bersebelahan yang angkanya
              sama, niru sel merge di master: R² satu kotak per kelompok
              (`SERTIFIKAT!R47:R51`), U95 per rentang. Tanpa `middle` angkanya
              nempel di baris pertama dan kotaknya kebaca kayak nilai baris
              pertama doang. --}}
-        @php($rentang = \App\Support\TataLetakSertifikat::rentangGabung($teksBaris, $kolomHasil))
+        @php($rentang = \App\Support\TataLetakSertifikat::rentangGabung($teksBaris, $kolomHasil, $barisKelompok->all()))
         <table class="data">
             <thead>
                 <tr>
                     @foreach ($kolomHasil as $kol)
-                        <th>{!! $judulTh($kol) !!}</th>
+                        <th{!! isset($kol['pecah']) ? ' colspan="'.count($kol['pecah']).'"' : '' !!}>{!! $judulTh($kol) !!}</th>
                     @endforeach
                 </tr>
                 {{-- Baris satuan (master `D17` "mm") cuma digambar kalau ada
                      satuan yang ditulis — sesi tanpa satuan tidak dapat baris
                      kepala kosong. --}}
                 @php($satuanKolom = collect($kolomHasil)->map(fn ($kol) => \App\Support\TataLetakSertifikat::satuanKolom($kol, $satKelompok)))
-                @if ($barisSatuan && $satuanKolom->filter()->isNotEmpty())
+                @if ($adaPecah || ($barisSatuan && $satuanKolom->filter()->isNotEmpty()))
                     <tr class="satuan">
-                        @foreach ($satuanKolom as $satuanTh)
-                            <th>{{ $satuanTh ?? '' }}</th>
+                        @foreach ($kolomHasil as $iKol => $kol)
+                            @if (isset($kol['pecah']))
+                                @foreach ($kol['pecah'] as $p)
+                                    <th>{{ $p['judul'] }}</th>
+                                @endforeach
+                            @else
+                                <th>{{ $barisSatuan ? ($satuanKolom[$iKol] ?? '') : '' }}</th>
+                            @endif
                         @endforeach
                     </tr>
                 @endif
@@ -1564,7 +1660,11 @@
                 @foreach ($barisKelompok as $i => $baris)
                     <tr>
                         @foreach ($kolomHasil as $kol)
-                            @if (! $kol['gabung'])
+                            @if (isset($kol['pecah']))
+                                @foreach ($teksBaris[$i][$kol['kolom']] as $teksPecah)
+                                    <td>{{ $teksPecah }}</td>
+                                @endforeach
+                            @elseif (! $kol['gabung'])
                                 <td>{{ $teksBaris[$i][$kol['kolom']] }}</td>
                             @elseif (($rentang[$kol['kolom']][$i] ?? 0) > 0)
                                 <td class="{{ $kol['kolom'] === 'r2' ? 'r2' : 'gabung' }}" rowspan="{{ $rentang[$kol['kolom']][$i] }}">{{ $teksBaris[$i][$kol['kolom']] }}</td>
@@ -1586,7 +1686,9 @@
                 @if (! $u95Kolom)
                 <tr class="u95">
                     <td colspan="{{ \App\Support\TataLetakSertifikat::posisiU95($kolomHasil) }}">{!! $tataLetak['label_u95'] === null ? 'Uncertainty U<sub>95%</sub> = &plusmn;' : e($tataLetak['label_u95']) !!}</td>
-                    <td>{{ \App\Support\TataLetakSertifikat::teksSel($pertama, 'u95', $snapshot, (int) $desimal) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
+                    @php($spekU95 = collect($kolomHasil)->firstWhere('kolom', 'u95'))
+                    @php($satU95 = $spekU95 === null ? $satKelompok : \App\Support\TataLetakSertifikat::satuanKolom($spekU95, $satKelompok))
+                    <td>{{ \App\Support\TataLetakSertifikat::teksSel($pertama, 'u95', $snapshot, (int) $desimal, $spekU95) }}{{ $satU95 ? ' '.$satU95 : '' }}</td>
                     {{-- Sel kosong biar baris U95 tetap selebar tabelnya waktu
                          kolom R² muncul. Tanpa ini kolom terakhir kegeser dan
                          angka U95 mendarat di bawah kepala `R²`. --}}
@@ -1618,8 +1720,12 @@
              Bunyi kalimatnya bisa ditimpa profil (`tata_letak.kalimat_k`, mis.
              persis master "… Convidence Level …"); `=`/`≈` dan angkanya tetap
              ditambahkan di sini. --}}
-        @php($k = $pertama['faktor_cakupan_k'] ?? null)
-        @php($kBeda = $barisKelompok
+        {{-- `k_tunggal` (K-50-15): master yang mencetak SATU sel `k` walau `k`
+             antar titik beda (Timer `183!V29` = `k` satu budget) — satu angka,
+             `=`, baris dipilih profil. Bawaan `null` = perilaku di atas. --}}
+        @php($barisDenganK = $tataLetak['k_tunggal'] === null ? $pertama : \App\Support\TataLetakSertifikat::barisK($barisKelompok->all(), $tataLetak['k_tunggal']))
+        @php($k = $barisDenganK['faktor_cakupan_k'] ?? null)
+        @php($kBeda = $tataLetak['k_tunggal'] === null && $barisKelompok
             ->filter(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null)
             ->map(fn ($b) => \App\Support\TataLetakSertifikat::teksK($b, (float) $b['faktor_cakupan_k'], $tataLetak))
             ->unique()
@@ -1627,7 +1733,7 @@
         @if ($k !== null)
             <div class="ket-k">
                 {{ $tataLetak['kalimat_k'] ?? 'The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k )' }} {{ $kBeda ? '≈' : '=' }}
-                {{ \App\Support\TataLetakSertifikat::teksK($pertama, (float) $k, $tataLetak) }}
+                {{ \App\Support\TataLetakSertifikat::teksK($barisDenganK, (float) $k, $tataLetak) }}
             </div>
         @endif
     @empty

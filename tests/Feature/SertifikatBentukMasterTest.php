@@ -16,6 +16,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -290,6 +291,120 @@ class SertifikatBentukMasterTest extends TestCase
             $this->assertStringNotContainsString('<th>g</th>', $html, "{$nomor}: baris satuan mencetak gram.");
             $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>(ml|µl)</th>#u', $html, "{$nomor}: baris satuan tidak ber-ml.");
         }
+    }
+
+    /**
+     * Tabel Tekanan bentuk master (`181!E19:V36`): kepala `UUT`, ejaan
+     * `Hysterisis`, baris satuan, U95 sebaris sendiri lalu kalimat `k`, dan
+     * format kolom setelan dari `tekanan.format_setelan`. Snapshot lama tetap
+     * `UUT Setting` / `Hysteresis` / satu kalimat.
+     */
+    public function test_tabel_tekanan_bentuk_master(): void
+    {
+        $sertifikat = $this->terbitkan();
+        $snapshot = $sertifikat->snapshot;
+        $snapshot['tekanan'] = [
+            'satuan' => 'Psi', 'desimal' => 1, 'desimal_u95' => 2, 'u95' => 0.3, 'k_cetak' => 2.0,
+            'format_setelan' => '0',
+            'baris' => [[
+                'setelan' => 100.0, 'standar_up' => 99.77, 'standar_down' => 99.81,
+                'koreksi_up' => -0.23, 'koreksi_down' => -0.19, 'histeresis' => [0.04, 0.05, 0.03],
+            ]],
+        ];
+
+        $html = $this->html($sertifikat, $snapshot);
+        $this->assertStringContainsString('<th>UUT</th>', $html);
+        $this->assertStringContainsString('Hysterisis', $html);
+        $this->assertStringNotContainsString('UUT Setting', $html);
+        $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>Psi</th>\s*<th colspan="2">Psi</th>#u', $html);
+        $this->assertMatchesRegularExpression('#<td>100</td>\s*<td>99\.8</td>#u', $html);
+        $this->assertMatchesRegularExpression('#<div class="ket-k">Uncertainty U95% = &plusmn; 0\.30 Psi</div>#u', $html);
+
+        unset($snapshot['tata_letak']);
+        $lama = $this->html($sertifikat, $snapshot);
+        $this->assertStringContainsString('UUT Setting (Psi)', $lama);
+        $this->assertStringContainsString('Hysteresis (Psi)', $lama);
+        $this->assertMatchesRegularExpression('#<td>100,0</td>#u', $lama);
+        $this->assertStringContainsString('Uncertainty U95% = &plusmn; 0,30 Psi.', $lama);
+    }
+
+    /** Kolom berpecah Timer tergambar: judul selebar pecahan, judul pecahan di baris satuan. */
+    public function test_kolom_pecah_tergambar(): void
+    {
+        $sertifikat = $this->terbitkan();
+        $snapshot = $sertifikat->snapshot;
+        $pecah = [
+            ['judul' => 'H', 'faktor' => 3600, 'format' => '0.00'],
+            ['judul' => 'M', 'faktor' => 60, 'format' => '0.00'],
+            ['judul' => 'S', 'faktor' => 1, 'format' => '0.00'],
+            ['judul' => 'S(0,001)', 'faktor' => 0.001, 'format' => '0'],
+        ];
+        $snapshot['tata_letak'] = [...$snapshot['tata_letak'], ...TataLetakSertifikat::normalisasi(['kolom_hasil' => [
+            ['kolom' => 'standar', 'pecah' => $pecah], ['kolom' => 'uut', 'pecah' => $pecah], ['kolom' => 'koreksi', 'pecah' => $pecah], 'u95',
+        ]])];
+        $snapshot['hasil'] = [[...$snapshot['hasil'][0], 'standard_value' => 60.0963333333, 'unit_under_test' => 60.137, 'correction' => -0.0406666667, 'satuan' => 's']];
+
+        $html = $this->html($sertifikat, $snapshot);
+        $this->assertStringContainsString('<th colspan="4">Standard Value</th>', $html);
+        $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>H</th>\s*<th>M</th>\s*<th>S</th>\s*<th>S\(0,001\)</th>#u', $html);
+        $this->assertMatchesRegularExpression('#<td>0\.00</td>\s*<td>1\.00</td>\s*<td>0\.00</td>\s*<td>96</td>\s*<td>0\.00</td>\s*<td>1\.00</td>\s*<td>0\.00</td>\s*<td>137</td>\s*<td>0\.00</td>\s*<td>0\.00</td>\s*<td>0\.00</td>\s*<td>-41</td>#u', $html);
+    }
+
+    /**
+     * Jalur bersama dengan sesi contoh sungguhan:
+     *  - Autoclave bentuk master: `Sensor No. (°C)` bernomor & `C) Tekanan`
+     *    (`155!F23:P24`, `B35`);
+     *  - Jangka Sorong mode padat bentuk master masih muat blok Note
+     *    Kerataan (`153!B64:F65`) dalam satu halaman;
+     *  - U95 relatif Flowmeter UFM sama dengan `u95_persen_of_reading`
+     *    kalkulator yang tercatat di jejak titik.
+     */
+    public function test_autoclave_note_jangka_dan_u95_relatif_dengan_sesi_contoh(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
+        $terbit = function (string $nomor): Certificate {
+            $sesi = CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail();
+            $this->denganOrderNumber($sesi->id)->sebagaiPemeriksaLain($sesi)
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+                ->assertOk();
+
+            return $sesi->fresh()->certificate()->firstOrFail();
+        };
+
+        $auto = $terbit('2406.51.S');
+        $html = $this->html($auto);
+        $this->assertStringContainsString('C) Tekanan', $html);
+        $this->assertStringNotContainsString('C) TEKANAN', $html);
+        $this->assertMatchesRegularExpression('#<th colspan="\d+">Sensor No\. \(°C\)</th>#u', $html);
+        $lamaAuto = $auto->snapshot;
+        unset($lamaAuto['tata_letak']);
+        $this->assertStringContainsString('C) TEKANAN', $this->html($auto, $lamaAuto));
+        $this->assertStringContainsString('Sensor No. 1 (°C)', $this->html($auto, $lamaAuto));
+
+        $jangka = $terbit('001-CAL-126');
+        $bahan = app(DataTampilanSertifikat::class)->untuk($jangka);
+        $bahan['snapshot']['catatan_blok'] = TataLetakSertifikat::normalisasiBlok([[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => [['Kerataan Muka Ukur dalam kondisi', ':', 'Baik']],
+        ]]);
+        $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => true]);
+        $pdf->output();
+        $this->assertSame(1, (int) $pdf->getDomPDF()->getCanvas()->get_page_count(), 'Jangka Sorong + Note meluap ke halaman dua.');
+
+        $sesiUfm = CalibrationSession::where('nomor_sesi', 'DEMO-FM-TOT-001')->firstOrFail();
+        $ufm = $terbit('DEMO-FM-TOT-001');
+        $jejak = collect($sesiUfm->uncertaintyCalculations()->orderBy('titik_ke')->first()->type_b_components)
+            ->firstWhere('sumber', 'jejak_titik');
+        $this->assertNotNull($jejak);
+        $this->assertSame(1, preg_match('/([\d.]+) % of reading/', $jejak['keterangan'], $m));
+        $baris = $ufm->snapshot['hasil'][0];
+        $this->assertEqualsWithDelta((float) $m[1], abs($baris['u95'] / $baris['unit_under_test'] * 100), 0.0006);
+        $this->assertSame(
+            Angka::keTitik(Angka::hasil((float) $m[1], 3)),
+            TataLetakSertifikat::teksSel($baris, 'u95_relatif', $ufm->snapshot, 2, ['format' => '0.000']),
+        );
     }
 
     public function test_mekanisme_hook_profil_tergambar_di_lembar(): void
