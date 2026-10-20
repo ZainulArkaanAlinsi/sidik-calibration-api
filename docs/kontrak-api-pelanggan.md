@@ -606,3 +606,23 @@ detail alat tidak lagi memuat `foto` dan `koreksi_menunggu`. Pesan `field_terkun
 "Hubungi lab bila ada yang keliru". Nomor sertifikat yang `ditarik` tidak terlihat pelanggan sampai
 revisi `-R<n>` terbit.
 
+
+## 7. `status_alat` — lima status alat (additive, 20 Okt 2026)
+
+Field BARU di setiap objek alat: `GET /alat` (`data[]`), `GET /alat/{id}` (`data`), dan
+`GET /beranda` (`data.perlu_perhatian[]`). Field lama `status_kalibrasi`
+(`aman|segera_jatuh_tempo|lewat_jatuh_tempo|belum_ada_jadwal|nonaktif`) **tetap dikirim** apa
+adanya — tidak ada yang dihapus atau diganti nama.
+
+| `status_alat` | Aturan (dicek berurutan, turunan, tidak disimpan) |
+|---|---|
+| `nonaktif` | `equipments.status = nonaktif` |
+| `belum_pernah` | belum ada sertifikat berstatus `terbit` untuk alat ini (walau tanggal jatuh tempo terisi) |
+| `lewat_jadwal` | `hari_ke_jatuh_tempo < 0` |
+| `mendekati_jadwal` | `0 ≤ hari_ke_jatuh_tempo ≤ 30` (= anak tangga pertama pengingat, `meta.jendela_segera_hari`) |
+| `terkalibrasi` | selain di atas (termasuk bersertifikat tanpa tanggal jatuh tempo) |
+
+`dalam_proses` (REQ-ALT-05) **tidak dikirim**: sumbernya permintaan kalibrasi pelanggan, yang dicabut
+K-50-09. Aplikasi pelanggan (`StatusKalibrasi.dariApi`) sudah membaca keenam kode dan jatuh ke
+`status_kalibrasi` kalau `status_alat` tidak ada, jadi APK lama maupun baru aman.
+Ringkasan beranda (`ringkasan.*`) tidak berubah. Penjaga: `StatusAlatPelangganTest`.

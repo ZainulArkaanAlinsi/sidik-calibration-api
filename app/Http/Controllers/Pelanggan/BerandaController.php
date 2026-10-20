@@ -52,6 +52,7 @@ class BerandaController extends Controller
             ->orderBy('tanggal_jatuh_tempo')
             ->limit(self::BATAS)
             ->get();
+        $konteksStatus = AlatPelangganResource::konteks($perluPerhatian);
 
         // Yang berlaku saja — beranda bukan tempat riwayat.
         $sertifikatTerbaru = $lingkup->sertifikat()
@@ -90,7 +91,9 @@ class BerandaController extends Controller
                     'notifikasi_belum_dibaca' => $request->user()->unreadNotifications()->count(),
                 ],
                 'perlu_perhatian' => $perluPerhatian
-                    ->map(fn (Equipment $a) => (new AlatPelangganResource($a))->resolve($request))
+                    ->map(fn (Equipment $a) => (new AlatPelangganResource($a))
+                        ->denganKonteks($konteksStatus[$a->id])
+                        ->resolve($request))
                     ->values(),
                 'sertifikat_terbaru' => $sertifikatTerbaru
                     ->map(fn (Certificate $c) => (new SertifikatPelangganResource($c))->resolve($request))

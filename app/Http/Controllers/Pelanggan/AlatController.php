@@ -60,11 +60,13 @@ class AlatController extends Controller
             ->paginate($data['per_page'] ?? 20);
 
         $terakhir = $this->sertifikatTerakhir($lingkup, collect($alat->items())->pluck('id'));
+        $konteksStatus = AlatPelangganResource::konteks($alat->items());
 
         return response()->json([
             'data' => collect($alat->items())
                 ->map(fn (Equipment $a) => (new AlatPelangganResource($a))
                     ->denganSertifikat($terakhir->get($a->id))
+                    ->denganKonteks($konteksStatus[$a->id])
                     ->resolve($request))
                 ->values(),
             'meta' => [
