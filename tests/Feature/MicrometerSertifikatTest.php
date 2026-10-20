@@ -289,6 +289,8 @@ class MicrometerSertifikatTest extends TestCase
     /** Sertifikatnya beneran kerender, bukan cuma snapshot-nya kebentuk. */
     public function test_html_kerender_dengan_satuan_dan_sebelas_baris(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         [$sesi] = $this->terbitkan();
 
         $bahan = app(DataTampilanSertifikat::class)->untuk($sesi->certificate()->firstOrFail());
@@ -298,8 +300,8 @@ class MicrometerSertifikatTest extends TestCase
         // judul kolom seperti master (`165!D17:L17` "mm"), bukan `Standard (mm)`.
         $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>mm</th>\s*<th>mm</th>\s*<th>mm</th>#u', $html);
         $this->assertStringContainsString('<th>Correction</th>', $html);
-        $this->assertStringContainsString('0,00087', $html);
-        $this->assertStringContainsString('0,00027', $html);
-        $this->assertStringNotContainsString('0,871', $html);
+        $this->assertStringContainsString('0.00087', $html);
+        $this->assertStringContainsString('0.00027', $html);
+        $this->assertStringNotContainsString('0.871', $html);
     }
 }

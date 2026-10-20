@@ -404,20 +404,22 @@ class TimbanganSertifikatTest extends TestCase
      */
     public function test_lembar_cetak_bawa_angkanya(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $html = $this->htmlSertifikat(self::SESI_SUB);
 
         // §1 STDEV Full Capacity 0,0316 -> 2 desimal.
-        $this->assertStringContainsString('0,03', $html);
+        $this->assertStringContainsString('0.03', $html);
         // §3 koreksi kumulatif titik terakhir — 13,3, BUKAN 1,5.
-        $this->assertStringContainsString('13,3', $html);
+        $this->assertStringContainsString('13.3', $html);
         // §3 & §7 U95 0,52 -> 2 desimal.
-        $this->assertStringContainsString('0,52', $html);
+        $this->assertStringContainsString('0.52', $html);
         // §4 Maximum Difference 0,2.
-        $this->assertStringContainsString('0,2', $html);
+        $this->assertStringContainsString('0.2', $html);
         // §5 perbandingan, bukan nilai.
-        $this->assertStringContainsString('&lt; 0,1', $html);
+        $this->assertStringContainsString('&lt; 0.1', $html);
         // §6 LOP 13,66.
-        $this->assertStringContainsString('13,66', $html);
+        $this->assertStringContainsString('13.66', $html);
         // §7 kalimat faktor cakupan, `K` bulat.
         $this->assertStringContainsString('coverage factor ( K ) =', $html);
     }

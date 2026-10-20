@@ -210,10 +210,13 @@ class AutoclaveCertificateTest extends TestCase
             $this->assertStringContainsString($judul, $html, "Bagian {$judul} nggak kecetak.");
         }
 
+        // Angka di lembar bentuk master bertitik desimal (K-50-15, pemilik
+        // 20 Okt 2026: "ikut master semua"); desimalnya tidak berubah.
+        //
         // Bagian A: baris Terukur & Koreksi, plus U95 sekali buat seluruh blok.
         $this->assertStringContainsString('Terukur', $html);
         $this->assertStringContainsString('Koreksi', $html);
-        $this->assertStringContainsString('0,44', $html);
+        $this->assertStringContainsString('0.44', $html);
 
         // Bagian C: desimalnya IKUT FORMAT SEL master, dan formatnya beda per
         // kolom — `Master Olah Data_Autoclave.xlsm` sheet SERTIFIKAT:
@@ -226,14 +229,14 @@ class AutoclaveCertificateTest extends TestCase
         // U95-nya memang tetap 4 desimal — tapi kebablasan ke tiga kolom
         // lainnya: koreksi `0,0111` kecetak di tempat master nulis `0,011`.
         // Waktu itu workbook-nya belum ada di tangan, jadi formatnya ditebak.
-        $this->assertStringContainsString('0,0059', $html);
-        $this->assertStringContainsString('0,011', $html);
-        $this->assertStringNotContainsString('0,0111', $html);
+        $this->assertStringContainsString('0.0059', $html);
+        $this->assertStringContainsString('0.011', $html);
+        $this->assertStringNotContainsString('0.0111', $html);
 
         // `k` di master diformat `0` (sel P33 & P43) — yang tercetak `2`,
         // bukan `1,97`/`2,09`.
-        $this->assertStringNotContainsString('1,97', $html);
-        $this->assertStringNotContainsString('2,09', $html);
+        $this->assertStringNotContainsString('1.97', $html);
+        $this->assertStringNotContainsString('2.09', $html);
 
         // Tabel empat kolom milik tujuh alat lain NGGAK ikut kegambar.
         $this->assertStringNotContainsString('Uncertainty U', $html);

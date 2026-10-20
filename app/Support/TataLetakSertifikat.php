@@ -171,9 +171,9 @@ final class TataLetakSertifikat
      * (`145!L76`), autoclave (`155!E66`), piston pipette/dispensett
      * (`160!G45`), buret digital (`164!G47`), TITS (`173!F53`, `174!F47`) —
      * bunyi stripnya beda per master, jadi tiap profil menulisnya sendiri.
-     * `kop` & `judul` (G2): pemilik 20 Okt 2026 memutuskan ikut master —
-     * lembar SERTIFIKAT tidak memuat kop gambar maupun "CALIBRATION
-     * CERTIFICATE", jadi keduanya tidak dicetak di bentuk master.
+     * `kop` & `judul` (G2) tetap bentuk lama: lembar SERTIFIKAT tidak memuat
+     * kop gambar maupun "CALIBRATION CERTIFICATE", tapi kop membawa nomor
+     * akreditasi KAN — mencabutnya menunggu konfirmasi eksplisit pemilik.
      */
     public const MAYORITAS_MASTER = [
         'kepala' => [
@@ -200,10 +200,9 @@ final class TataLetakSertifikat
         ],
         'label_tanggal_terbit' => 'Issuance Date :',
         // Keputusan pemilik 20 Okt 2026 ("ikut master semua"):
-        // - P1: lembar SERTIFIKAT tidak memuat kop gambar maupun judul
-        //   "CALIBRATION CERTIFICATE" (`tata_letak.gambar` kosong di 52 lembar).
-        'kop' => false,
-        'judul' => null,
+        // - P1 (kop & judul besar) SENGAJA tidak ditimpa: kop memuat nomor
+        //   akreditasi KAN, dan klaim itu tidak boleh hilang tanpa konfirmasi
+        //   eksplisit pemilik (koordinator 20 Okt 2026). Bentuk lama berlaku.
         // - tabel sendiri per satuan (`157!C33:T36` µS/cm, `C38:T42` mS/cm).
         'pisah_per_satuan' => true,
         // - P2: sel `k` berformat `0` di 40 lembar (`165!P30`, `163!T36`).

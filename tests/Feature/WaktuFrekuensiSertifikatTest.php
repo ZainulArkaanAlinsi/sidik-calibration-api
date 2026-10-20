@@ -141,7 +141,9 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $html = $this->htmlSertifikat('0140-CAL-424');
+        // Mekanisme `≈` tetap dijaga di sertifikat TERBIT (snapshot tanpa
+        // `tata_letak`, dicetak bentuk lama: k 2 desimal).
+        $html = $this->htmlSertifikat('0140-CAL-424', bentukLama: true);
 
         // Diadu lewat regex, bukan string mati: Blade menyisipkan baris baru
         // antara tanda dan angkanya, dan yang dijaga di sini BUNYI kalimatnya —
@@ -151,6 +153,13 @@ class WaktuFrekuensiSertifikatTest extends TestCase
             'Satu kelompok memuat k 1,96 dan 1,97, tapi kalimatnya masih mengaku persis.',
         );
         $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) =/u', $html);
+
+        // Sertifikat baru (K-50-15, pemilik 20 Okt 2026 "ikut master semua"):
+        // `k` dicetak seperti format sel master `182!U37` (`0`) — `2`. Semua k
+        // 1,95997…1,96879 tercetak sama, jadi kalimatnya kembali `=`.
+        $baru = $this->htmlSertifikat('0140-CAL-424');
+        $this->assertMatchesRegularExpression('/Coverage Factor \( k \) =\s*2\s*</u', $baru);
+        $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) ≈/u', $baru);
     }
 
     /** Baris pertama tiap alat diadu ke sel `SERTIFIKAT` masternya. */
@@ -218,7 +227,7 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     }
 
     /** HTML sertifikat satu sesi, lewat jalur terbit yang sama dengan produksi. */
-    private function htmlSertifikat(string $nomorSesi): string
+    private function htmlSertifikat(string $nomorSesi, bool $bentukLama = false): string
     {
         $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
 
@@ -228,6 +237,13 @@ class WaktuFrekuensiSertifikatTest extends TestCase
                 ->assertOk();
         }) ?? $sesi->fresh()->certificate()->firstOrFail();
 
-        return view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
+        $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
+
+        if ($bentukLama) {
+            // Snapshot terbit sebelum K-50-15 belum punya `tata_letak`.
+            unset($bahan['snapshot']['tata_letak']);
+        }
+
+        return view('sertifikat.pdf', $bahan)->render();
     }
 }

@@ -239,6 +239,8 @@ class GasDetectorSesiTest extends TestCase
      */
     public function test_sertifikat_kecetak_dengan_desimal_master(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sesi = $this->sesi();
         $sertifikat = Certificate::create([
             'organization_id' => $sesi->organization_id,
@@ -272,7 +274,7 @@ class GasDetectorSesiTest extends TestCase
                 static fn (string $t): bool => $t !== '',
             ));
 
-            $angka = fn (string $t): bool => preg_match('/^-?\d+(,\d+)?$/', $t) === 1;
+            $angka = fn (string $t): bool => preg_match('/^-?\d+(\.\d+)?$/', $t) === 1;
 
             if (count($teks) === 4 && count(array_filter($teks, $angka)) === 4) {
                 $tabel[] = $teks;
@@ -280,10 +282,10 @@ class GasDetectorSesiTest extends TestCase
         }
 
         $this->assertSame([
-            ['101', '100', '1', '5,1'],
-            ['25', '24', '1', '1,5'],
-            ['50', '50', '0', '2,6'],
-            ['17,9', '16,7', '1,2', '0,89'],
+            ['101', '100', '1', '5.1'],
+            ['25', '24', '1', '1.5'],
+            ['50', '50', '0', '2.6'],
+            ['17.9', '16.7', '1.2', '0.89'],
         ], $tabel);
 
         // Judul kolom keempat TIDAK boleh mengklaim `k=2` — lihat test di bawah.

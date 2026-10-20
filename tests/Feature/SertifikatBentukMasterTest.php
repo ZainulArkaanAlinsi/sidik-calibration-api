@@ -181,9 +181,16 @@ class SertifikatBentukMasterTest extends TestCase
         $this->assertStringNotContainsString('Convidence', $teks);
 
         // Keputusan pemilik 20 Okt 2026 ("ikut master semua"):
-        // P1 — lembar SERTIFIKAT tanpa kop & tanpa judul besar.
-        $this->assertStringNotContainsString('CALIBRATION CERTIFICATE', $teks);
-        $this->assertStringNotContainsString('class="kop', $html);
+        // P1 — kop & judul besar TETAP (kop membawa nomor akreditasi KAN;
+        // mencabutnya menunggu konfirmasi eksplisit pemilik). Jalur kop teks
+        // wajib menyebut nomor akreditasinya di bentuk master juga.
+        $this->assertStringContainsString('CALIBRATION CERTIFICATE', $teks);
+        $kan = $snapshot;
+        $kan['meta']['organization']['no_akreditasi'] = 'LK-285-IDN';
+        $htmlKan = view('sertifikat.pdf', [...app(DataTampilanSertifikat::class)->untuk($sertifikat), 'kop' => null, 'snapshot' => $kan])->render();
+        $this->assertStringContainsString('class="kop"', $htmlKan);
+        $this->assertStringContainsString('Terakreditasi', $htmlKan);
+        $this->assertStringContainsString('LK-285-IDN', $htmlKan);
         // P3 — titik desimal di tabel hasil (4.01, bukan 4,01).
         $this->assertStringContainsString('4.01', $teks);
         $this->assertStringNotContainsString('4,01', $teks);
