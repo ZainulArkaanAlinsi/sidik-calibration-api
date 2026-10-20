@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
 use App\Services\Calibration\VolumetricGlasswareCalculator as V;
 
 /**
@@ -47,6 +48,19 @@ abstract class GraduatedVolumetricGlasswareProfile extends VolumetricGlasswarePr
     public function desimalU95(): ?int
     {
         return 2;
+    }
+
+    /**
+     * Format sel lembar `SERTIFIKAT` master Graduated (Studio id 144,
+     * K-50-15): `E21:E23` Nominal Value, `N21:N23` Actual Volume, `S21:S23`
+     * Correction `0.0000` (nominal `10.0000`, bukan `10`); `Q26` U95 `0.00`;
+     * `V27` k `0`. Hanya cetak; nilai snapshot tetap presisi penuh.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.0000', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.00', 'k' => '0'];
     }
 
     /**

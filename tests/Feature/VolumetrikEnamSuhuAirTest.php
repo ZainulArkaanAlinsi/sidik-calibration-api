@@ -423,8 +423,9 @@ class VolumetrikEnamSuhuAirTest extends TestCase
 
         $this->assertCount(1, $temuan);
         $this->assertSame('peringatan', $temuan[0]['tingkat']);
-        $this->assertStringContainsString('Tercetak (ikut workbook): U95 0,036 mL', $temuan[0]['pesan']);
-        $this->assertStringContainsString('Kalau `M39` ikut: U95 0,042 mL', $temuan[0]['pesan']);
+        // K-50-15: 4 desimal master `143!Q22` `0.0000` (dulu 0,036 / 0,042).
+        $this->assertStringContainsString('Tercetak (ikut workbook): U95 0,0356 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('Kalau `M39` ikut: U95 0,0416 mL', $temuan[0]['pesan']);
         $this->assertStringContainsString('no. 15', $temuan[0]['pesan']);
         $this->assertTrue(app(CalibrationValidator::class)->periksa($sesi->fresh())['boleh_terbit'], 'peringatan, bukan penahan');
     }
@@ -435,9 +436,12 @@ class VolumetrikEnamSuhuAirTest extends TestCase
             app(CalibrationValidator::class)->periksa($s)['temuan'], 'kode',
         );
 
-        // (1) Angka cetak sama walau rentangnya beda (CMC di bawah U, M39 sedikit lebih tinggi).
+        // (1) M39 sedikit lebih tinggi, CMC di bawah U. Sejak K-50-15 (master
+        // menang, 21 Okt 2026) U95 dicetak 4 desimal (`143!Q22` `0.0000`), dan
+        // selisih kecil ini SUDAH menggeser digit ke-4 — peringatan memang harus
+        // muncul. Dulu 3 desimal (salinan LU-250) angka cetaknya sama.
         [$alat, $teknisi] = $this->siapkan('Labu Ukur 250 mL', 'Labu Ukur', [[250, 0.03]], [0, 250, null]);
-        $this->assertNotContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, self::SUHU_ENAM))));
+        $this->assertContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, self::SUHU_ENAM))));
         // (2) Tiga bacaan: tidak ada M39 yang terlewat.
         $this->assertNotContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, [25.2, 25.3, 30.0]))));
 

@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Services\DataTampilanSertifikat;
+use App\Support\Angka;
 use App\Support\VolumetricGlasswareMentah as M;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -426,16 +427,25 @@ class VolumetrikRev7AlurTest extends TestCase
 
     // ── Keputusan 8 Okt 2026 (terakhir): angka ikut workbook + penjaga ────────
 
-    public function test_kondisi_workbook_lu200_tidak_memunculkan_peringatan_pergeseran(): void
+    /**
+     * K-50-15 (master menang, 21 Okt 2026): V20 dicetak 4 desimal (`143!N21`
+     * `0.0000`). Di kondisi workbook LU-200 kedua cabang ρ air berselisih di
+     * digit ke-4 (199,8513 lawan 199,8539) — dulu, 2 desimal, sama-sama 199,85
+     * tanpa peringatan. Penjaga mengikuti angka yang benar-benar tercetak.
+     */
+    public function test_kondisi_workbook_lu200_peringatan_ikut_digit_ke_4(): void
     {
         $sesi = $this->simpan($this->payloadLabu($this->alat('Labu Ukur', 200)));
 
         // Bawaan `master`: V20 = cache workbook `PERHITUNGAN!H60`.
         $this->assertEqualsWithDelta(199.85125467654402, (float) $sesi->uncertaintyCalculations()->sole()->rata_rata, 1e-8);
-        $this->assertSame([], $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak'));
+        $temuan = $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak');
+        $this->assertCount(1, $temuan);
+        $this->assertStringContainsString('V20 199,8513 mL, Correction -0,1487 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('V20 199,8539 mL, Correction -0,1461 mL', $temuan[0]['pesan']);
     }
 
-    /** LU-500: `master` 500,24 lawan suhu terukur 500,25 — peringatan HARUS muncul. */
+    /** LU-500: `master` 500,2447 lawan suhu terukur 500,2513 — peringatan HARUS muncul. */
     public function test_lu500_memunculkan_peringatan_pergeseran_angka_cetak(): void
     {
         $sesi = $this->simpan($this->payloadLabu($this->alat('Labu Ukur', 500), [
@@ -451,8 +461,9 @@ class VolumetrikRev7AlurTest extends TestCase
         $temuan = $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak');
         $this->assertCount(1, $temuan);
         $this->assertSame('peringatan', $temuan[0]['tingkat']);
-        $this->assertStringContainsString('V20 500,24 mL, Correction 0,24 mL', $temuan[0]['pesan']);
-        $this->assertStringContainsString('V20 500,25 mL, Correction 0,25 mL', $temuan[0]['pesan']);
+        // K-50-15: 4 desimal master `143!N21`/`S21` `0.0000`.
+        $this->assertStringContainsString('V20 500,2447 mL, Correction 0,2447 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('V20 500,2513 mL, Correction 0,2513 mL', $temuan[0]['pesan']);
         $this->assertStringContainsString('PERHITUNGAN!H40', $temuan[0]['pesan']);
         $this->assertStringContainsString('no. 14', $temuan[0]['pesan']);
         // Peringatan, bukan penahan: masih boleh terbit dengan konfirmasi.
@@ -468,8 +479,13 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertCount(1, $this->temuanBerkode($sesi, 'volumetric_suhu_25_5_menggeser_cetak'));
     }
 
-    /** PV 2 mL: `SERTIFIKAT!N21` `0.00` — layar HP & sertifikat sama-sama 2 desimal. */
-    public function test_pipet_volume_2_ml_dua_desimal_di_layar_dan_sertifikat(): void
+    /**
+     * PV 2 mL: layar HP & sertifikat memakai desimal yang SAMA. K-50-15
+     * (pemilik 21 Okt 2026, master menang): format lembar SERTIFIKAT master
+     * Fixed Studio 143 — `N21`/`S21` & `Q22` `0.0000` (4 / 4), `E21` `0.0` —
+     * bukan lagi `0.00` salinan workbook PV 2.
+     */
+    public function test_pipet_volume_2_ml_desimal_layar_sama_dengan_sertifikat(): void
     {
         // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
         // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
@@ -485,15 +501,22 @@ class VolumetrikRev7AlurTest extends TestCase
 
         $this->actingAs($this->teknisi)->getJson("/api/calibrations/{$sesi->id}")
             ->assertOk()
-            ->assertJsonPath('data.titik.0.desimal', 2);
+            ->assertJsonPath('data.titik.0.desimal', 4);
 
         $sertifikat = $this->terbitkan($sesi);
-        $this->assertSame(2, $sertifikat->snapshot['hasil'][0]['desimal']);
-        $this->assertSame(4, $sertifikat->snapshot['hasil'][0]['desimal_u95']);
+        $baris = $sertifikat->snapshot['hasil'][0];
+        $this->assertSame(4, $baris['desimal']);
+        $this->assertSame(4, $baris['desimal_u95']);
+        // Format cetak = desimal layar (kolom UUT, Correction, U95).
+        $this->assertSame(
+            ['standar' => '0.0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'],
+            $baris['format'],
+        );
 
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('2.00', $html);
-        $this->assertStringContainsString('1.99', $html);
+        $this->assertStringContainsString('<td>2.0</td>', $html);
+        $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $baris['unit_under_test'], 4)).'</td>', $html);
+        $this->assertMatchesRegularExpression('/<td>1.99\d\d<\/td>/', $html);
         $this->assertStringContainsString('0.0034', $html);
     }
 
@@ -524,11 +547,16 @@ class VolumetrikRev7AlurTest extends TestCase
             $snapshot['header']['env_condition'],
         );
 
-        // `SERTIFIKAT!O14` & `E18`.
-        $this->assertSame(
-            'Class/Permitted Error : A/±0.15 ml — Suhu Dasar Volume : 20 °C',
-            $snapshot['catatan_atas_hasil'],
-        );
+        // `SERTIFIKAT!O14` & `E18`. K-50-15: dulu satu baris
+        // `catatan_atas_hasil`; sekarang kotak kepala `Class/Permitted Error`
+        // (`143!O14:U14`) dan blok `Suhu Dasar Volume : 20 °C` (`143!E18:N18`)
+        // di antara `Calibration Report :` dan tabel — letaknya seperti master.
+        $this->assertNull($snapshot['catatan_atas_hasil']);
+        $this->assertSame(['kelas_toleransi' => 'A/±0.15 ml'], $snapshot['header_tambahan']);
+        $this->assertSame([[
+            'posisi' => 'atas_hasil', 'judul' => null, 'baris' => [], 'tabel' => [['Suhu Dasar Volume', ':', '20 °C']],
+        ]], $snapshot['catatan_blok']);
+        $this->assertSame('------------------ End of Certificate ------------------', $snapshot['tata_letak']['akhir_sertifikat']);
 
         // `SERTIFIKAT!B29:W30`: neraca + Termometer & Sensor Std., sensor PRT
         // tidak dicetak terpisah. Kunci tiap baris diurutkan dulu: kolom JSON
@@ -546,14 +574,19 @@ class VolumetrikRev7AlurTest extends TestCase
             $urutKunci($snapshot['standar_digunakan']),
         );
 
-        // Nominal dengan nol di belakang (`E21` format `0.00`).
+        // Nominal dengan nol di belakang. K-50-15: format sel master Fixed
+        // (`143!E21` `0.0`, `N21` `0.0000`), bukan `0.00` salinan LU-200.
         $this->assertFalse($snapshot['hasil'][0]['standar_ringkas']);
 
         $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
         $html = view('sertifikat.pdf', $bahan)->render();
-        $this->assertStringContainsString('200.00', $html);
-        $this->assertStringContainsString('199.85', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0.15 ml', $html);
+        $this->assertStringContainsString('<td>200.0</td>', $html);
+        $this->assertMatchesRegularExpression('/<td>199.8\d{3}<\/td>/', $html);
+        $this->assertStringContainsString('Class/Permitted Error', $html);
+        $this->assertStringContainsString('A/±0.15 ml', $html);
+        $this->assertStringContainsString('Environmental Condition', $html);
+        $this->assertStringContainsString('Suhu Dasar Volume', $html);
+        $this->assertStringContainsString('End of Certificate', $html);
 
         // Tetap SATU halaman, mode normal.
         $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => false]);
@@ -577,13 +610,20 @@ class VolumetrikRev7AlurTest extends TestCase
         ])));
 
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('0.500', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0.005 ml', $html);
+        // K-50-15: Nominal Value ikut `143!E21` `0.0` → `0.5` (dulu `0.500`
+        // salinan PV 0,5); kelas & toleransi di kotak kepala (`143!O14:U14`).
+        $this->assertStringContainsString('<td>0.5</td>', $html);
+        $this->assertSame('A/±0.005 ml', $sertifikat->snapshot['header_tambahan']['kelas_toleransi']);
+        $this->assertStringContainsString('A/±0.005 ml', $html);
         $this->assertSame('Analytical Balance', $sertifikat->snapshot['standar_digunakan'][0]['name']);
         $this->assertSame('Termometer & Sensor Std.', $sertifikat->snapshot['standar_digunakan'][1]['name']);
     }
 
-    /** Sertifikat alat lain (Picnometer, Fixed lama) tidak berubah bentuk. */
+    /**
+     * Picnometer (Fixed lama) tidak ikut aturan Rev.7 (tekanan, standar
+     * termometer). Bentuk lembarnya K-50-15 ikut master Fixed 143 seperti
+     * labu ukur: kotak Class/Permitted Error & blok Suhu Dasar Volume.
+     */
     public function test_sertifikat_picnometer_tidak_ikut_berubah(): void
     {
         $alat = $this->alat('Picnometer', 25);
@@ -610,6 +650,8 @@ class VolumetrikRev7AlurTest extends TestCase
         $snapshot = $this->terbitkan($sesi)->snapshot;
 
         $this->assertNull($snapshot['catatan_atas_hasil']);
+        $this->assertSame(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
+        $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
         $this->assertStringNotContainsString('hPa', (string) $snapshot['header']['env_condition']);
         $this->assertSame(['Analytical Balance'], array_column($snapshot['standar_digunakan'], 'name'));
         $this->assertTrue($snapshot['hasil'][0]['standar_ringkas']);

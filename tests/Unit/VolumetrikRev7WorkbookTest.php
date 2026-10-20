@@ -283,14 +283,20 @@ class VolumetrikRev7WorkbookTest extends TestCase
             'PV-4' => ['3.9850', '-0.0150', '0.0039'],
         ][$kode];
 
-        $profil = str_starts_with($kode, 'LU') ? new LabuUkurProfile : new PipetVolumeProfile;
-        $d = $profil->desimalSertifikatTitik($c['nominal']) ?? $profil->desimalSertifikat();
+        // Desimal = format sel SALINAN workbook ini (yang tercetak di atas).
+        // Sejak K-50-15 (master menang, 21 Okt 2026) profil mencetak format
+        // master Studio 143 (4 / 4) — yang diadu di sini paritas HITUNG ke
+        // salinan workbook, bukan hook desimal profil.
+        [$d, $dU] = [
+            'LU-200' => [2, 3], 'LU-250' => [2, 3], 'LU-500' => [2, 3],
+            'PV-0.5' => [3, 4], 'PV-2' => [2, 4], 'PV-3' => [3, 4], 'PV-4' => [4, 4],
+        ][$kode];
         $u95 = max($h['agregat']['ketidakpastian_diperluas'], $c['cmc']);
 
         $this->assertSame($cetakWorkbook, [
             number_format($h['v20'], $d, '.', ''),
             number_format($h['deviasi'], $d, '.', ''),
-            number_format($u95, $profil->desimalU95(), '.', ''),
+            number_format($u95, $dU, '.', ''),
         ], "$kode angka cetak");
     }
 
@@ -310,29 +316,22 @@ class VolumetrikRev7WorkbookTest extends TestCase
         }
     }
 
-    /** `SERTIFIKAT!N21/S21` & `Q22` workbook Rev.7 (PV per nominal); `V23` (k) format `0` tetap. */
-    public function test_desimal_cetak_mengikuti_workbook(): void
+    /**
+     * K-50-15 (pemilik 21 Okt 2026, master menang): desimal cetak Labu Ukur &
+     * Pipet Volume ikut lembar SERTIFIKAT master Fixed Studio 143 — `N21`/`S21`
+     * & `Q22` `0.0000` — untuk semua nominal, bukan lagi format per salinan
+     * workbook (LU 2/3, PV 3/2/3/4). `V23` (k) format `0` tetap.
+     */
+    public function test_desimal_cetak_mengikuti_master(): void
     {
-        $labu = new LabuUkurProfile;
-        $this->assertSame(2, $labu->desimalSertifikat());
-        $this->assertSame(3, $labu->desimalU95());
-        $this->assertSame(0, $labu->desimalFaktorCakupan());
-
-        $pipet = new PipetVolumeProfile;
-        $this->assertSame(3, $pipet->desimalSertifikat());
-        $this->assertSame(4, $pipet->desimalU95());
-        $this->assertSame(0, $pipet->desimalFaktorCakupan());
-        // Per nominal — `SERTIFIKAT!N21/S21` keempat workbook PV.
-        $this->assertSame(3, $pipet->desimalSertifikatTitik(0.5));
-        $this->assertSame(2, $pipet->desimalSertifikatTitik(2.0));
-        $this->assertSame(3, $pipet->desimalSertifikatTitik(3.0));
-        $this->assertSame(4, $pipet->desimalSertifikatTitik(4.0));
-        $this->assertNull($pipet->desimalSertifikatTitik(1.0), 'nominal lain ikut desimalSertifikat() = 3');
-        $this->assertNull($labu->desimalSertifikatTitik(500.0));
-
-        $picno = new PicnometerProfile;
-        $this->assertSame(4, $picno->desimalSertifikat(), 'Picnometer tidak ikut Rev.7');
-        $this->assertSame(4, $picno->desimalU95());
+        foreach ([new LabuUkurProfile, new PipetVolumeProfile, new PicnometerProfile] as $p) {
+            $this->assertSame(4, $p->desimalSertifikat(), $p::class);
+            $this->assertSame(4, $p->desimalU95(), $p::class);
+            $this->assertSame(0, $p->desimalFaktorCakupan(), $p::class);
+            foreach ([0.5, 2.0, 3.0, 4.0, 200.0, 500.0] as $nominal) {
+                $this->assertNull($p->desimalSertifikatTitik($nominal), $p::class.' '.$nominal);
+            }
+        }
     }
 
     /** Tanpa parameter = workbook lama persis: ρ_AT 7,95, γ_A 9,9e-6, delapan komponen. */

@@ -98,6 +98,9 @@ class CertificateSnapshotBuilder
             'baris' => array_map($teksAngka, $b['baris']),
             'tabel' => array_map(static fn (array $baris): array => array_map($teksAngka, $baris), $b['tabel']),
         ], $blokCatatan);
+        // Kepala tambahan (`Class/Permitted Error : A/±0.15 ml` Volumetrik)
+        // juga teks berangka yang dibekukan — ikut aturan yang sama.
+        $kepalaTambahan = array_map($teksAngka, $kepalaTambahan);
 
         return [
             'versi' => self::VERSI,

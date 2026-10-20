@@ -8,6 +8,8 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\TabelStandarVolumetric;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
+use App\Support\Angka;
+use App\Support\TataLetakSertifikat;
 use App\Support\VolumetricGlasswareMentah as M;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -156,6 +158,100 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
     public function tandaKoreksiSertifikat(): int
     {
         return -1;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Kedua master aktif Studio — `(NEW) Master Olah Data_Fixed Volumetric
+    // Glassware_2026` (id 143) dan `(New) Master Olah Data_Graduated Volumetric
+    // Glassware _ 2026` (id 144) — mencetak bentuk yang sama di luar format
+    // angka tabel hasil (yang ada di kelas keluarga). Hanya bentuk cetak; tidak
+    // satu nilai pun dihitung ulang.
+
+    /** Kunci `header_tambahan` untuk kotak `Class/Permitted Error`. */
+    public const KEPALA_KELAS_TOLERANSI = 'kelas_toleransi';
+
+    /**
+     * Timpaan bentuk mayoritas:
+     *
+     * - label lingkungan `Environmental Condition` (`143!O11`, `144!O11`);
+     * - kotak `Class/Permitted Error` (`143!O14:U14`, `144!O14:U14`) di kolom
+     *   kanan sesudah kondisi lingkungan — baris terakhir grid (sebelahan
+     *   Technician ID), urutan baca sama dengan master tanpa menambah baris;
+     * - kalimat `k` `143!E23` / `144!E27` "The uncertainty is taken at a
+     *   convidence level 95 % and coverage factor (k) = " — huruf kecil ikut
+     *   master, salah ketik "convidence" TIDAK ditiru (G4,
+     *   `TataLetakSertifikat::MAYORITAS_MASTER`);
+     * - `143!G45` / `144!G49` "------------------ End of Certificate
+     *   ------------------".
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tataLetak = parent::tataLetakSertifikat($sesi);
+
+        $kepala = array_map(
+            static fn (array $baris): array => array_map(
+                static fn (?array $sel): ?array => ($sel['kunci'] ?? null) === 'env_condition'
+                    ? [...$sel, 'label' => 'Environmental Condition']
+                    : $sel,
+                $baris,
+            ),
+            $tataLetak['kepala'],
+        );
+        $kelas = ['kunci' => self::KEPALA_KELAS_TOLERANSI, 'label' => 'Class/Permitted Error'];
+        $terakhir = array_key_last($kepala);
+
+        if ($kepala[$terakhir][1] === null) {
+            $kepala[$terakhir][1] = $kelas;
+        } else {
+            $kepala[] = [null, $kelas];
+        }
+
+        return [
+            ...$tataLetak,
+            'kepala' => $kepala,
+            'kalimat_k' => 'The uncertainty is taken at a confidence level 95 % and coverage factor (k)',
+            'akhir_sertifikat' => '------------------ End of Certificate ------------------',
+        ];
+    }
+
+    /**
+     * `143!T14:U14` / `144!T14:U14` = `CONCATENATE(kelas, "/±", toleransi)` +
+     * satuan: `B/±0,008 ml`. Kuncinya selalu ada (isi `null` = kelas belum
+     * diisi) karena sel kepala di [tataLetakSertifikat] menyebutnya.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        $blok = M::blokSesi($sesi->spesifikasi_alat);
+        $teks = null;
+
+        if ($blok !== null && $blok['kelas'] !== null) {
+            $teks = $blok['kelas'].($blok['toleransi_ml'] === null
+                ? ''
+                : '/±'.Angka::nilaiStandar($blok['toleransi_ml'], 6).' '.self::SATUAN);
+        }
+
+        return [self::KEPALA_KELAS_TOLERANSI => $teks];
+    }
+
+    /**
+     * `143!E18:N18` / `144!E18:N18` "Suhu Dasar Volume : 20 °C", di antara
+     * `Calibration Report :` dan judul kolom tabel hasil. `L18 = INPUT
+     * DATA!E16` = suhu acuan 20 °C; `N18` menulis "0C" (o kecil sebagai tanda
+     * derajat) — dicetak `°C`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
+            'tabel' => [['Suhu Dasar Volume', ':', Angka::nilaiStandar(VolumetricGlasswareCalculator::SUHU_ACUAN, 2).' °C']],
+        ]];
     }
 
     /**

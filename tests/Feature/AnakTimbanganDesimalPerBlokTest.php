@@ -249,7 +249,21 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         }
         // Keping 500 g: tiga desimal, bukan lima.
         $this->assertStringNotContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $baris[2]['unit_under_test'], 5)).'</td>', $html);
-        $this->assertMatchesRegularExpression('/Coverage Factor \( k \) =\s*2\s*</', $html);
+        // K-50-15 (pemilik, 18 Okt 2026): kalimat `k` ikut master `139!D38`
+        // "That weighing uncertainty is mearured at confidence level 95% &
+        // coverage factor K = " (salah ketik "mearured" tidak ditiru); `k`
+        // tetap `N38` format `0` → `2`.
+        $this->assertMatchesRegularExpression('/coverage factor K =\s*2\s*</', $html);
+        // Bentuk master `139`: kepala `Class` (`A8`) menggantikan Model/Type,
+        // tabel tanpa Correction (`C15:L15`), kolom `Nominal Mass` (`E43`),
+        // `Issuance Date` tanpa titik dua (`A58`), End of Certificate (`G68`).
+        $this->assertStringContainsString('>Class<', $html);
+        $this->assertStringNotContainsString('>Model/Type<', $html);
+        $this->assertStringNotContainsString('Correction', $html);
+        $this->assertStringContainsString('>Nominal Mass<', $html);
+        $this->assertStringContainsString('2. STANDARD USED', $html);
+        $this->assertStringNotContainsString('Issuance Date :', $html);
+        $this->assertStringContainsString('------- End of Certificate -------', $html);
 
         // Excel — angka (bukan teks), dibulatkan sama persis dengan PDF.
         $sel = $this->selExcel($sertifikat);

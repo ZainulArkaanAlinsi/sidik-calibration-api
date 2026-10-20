@@ -10,6 +10,7 @@ use App\Services\Calibration\TabelStandarTimbangan;
 use App\Services\Calibration\TimbanganCalculator;
 use App\Services\Calibration\VarianMasterTimbangan;
 use App\Support\Angka;
+use App\Support\TataLetakSertifikat;
 use App\Support\TimbanganMentah;
 use Carbon\Carbon;
 
@@ -1850,16 +1851,86 @@ class TimbanganProfile extends CalibrationProfile
         return rtrim(rtrim(number_format($n, 4, ',', '.'), '0'), ',');
     }
 
+    /** Kunci kolom tambahan Standard Used — `K57` "Nominal Mass". */
+    public const KOLOM_NOMINAL_MASS = 'nominal_mass';
+
+    /** `145!G65`, `146!G65`, `147!G65` — sesudah tabel Standard Used. */
+    public const STRIP_PENAFIAN = '- Calibration results are not to be announced and only apply to related tools -';
+
     /**
-     * Judul tabel standar bernomor seperti master (`145!C56`, `146!C56`,
-     * `147!C56` "8. STANDARD USED"), bukan `Standard used :` bawaan bersama
-     * K-50-15. Sisa bentuk master (kolom `Nominal Mass`, `Merk/Class`, `SN`,
-     * `Traceability`; `Issuance Date` tanpa titik dua) belum — hook profil.
+     * Bentuk lembar `SERTIFIKAT` ketiga master aktif (Studio id 145 gram, 146
+     * kg, 147 substitusi — sama di ketiganya), di atas bentuk mayoritas:
+     *
+     * - judul tabel standar bernomor `C56` "8. STANDARD USED";
+     * - kolom `C57:AD57` Name | Nominal Mass | Merk/Class | SN | Traceability
+     *   (`Merk/Class` = `Standar_AT` kolom 3, mis. `-/E2` — isi `merk_type`);
+     * - `B67` "Issuance Date" TANPA titik dua;
+     * - penafian berstrip `G65` dicetak SESUDAH tabel standar (bukan di bawah
+     *   tabel hasil) — `catatan` dikosongkan, kalimatnya jadi blok
+     *   [catatanSertifikat] posisi `sesudah_standar`. Kalimat `k` mayoritas
+     *   memang tidak tercetak di lembar ini (bagian 7 mencetak kalimatnya
+     *   sendiri, `C54`);
+     * - `L76` "------- End of Certificate -------".
+     *
+     * Yang BELUM: `%RH` master gram (`145!AB14`) berformat `0.0`, kg &
+     * substitusi `0` — desimal lingkungan per varian butuh konteks sesi di
+     * `CertificateSnapshotBuilder` (hook `desimalKelembabanEnv()` tanpa sesi).
      *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => '8. STANDARD USED'];
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'judul_standar_digunakan' => '8. STANDARD USED',
+            'kolom_standar_digunakan' => [
+                ['kunci' => 'name', 'label' => 'Name'],
+                ['kunci' => self::KOLOM_NOMINAL_MASS, 'label' => 'Nominal Mass'],
+                ['kunci' => 'merk_type', 'label' => 'Merk/Class'],
+                ['kunci' => 'serial_number', 'label' => 'SN'],
+                ['kunci' => 'traceable_to', 'label' => 'Traceability'],
+            ],
+            'label_tanggal_terbit' => 'Issuance Date',
+            'catatan' => [],
+            'akhir_sertifikat' => '------- End of Certificate -------',
+        ];
+    }
+
+    /**
+     * Penafian berstrip di tempat master menaruhnya: sesudah tabel standar
+     * (`145!G65`). Lihat [tataLetakSertifikat].
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [['posisi' => TataLetakSertifikat::POSISI_SESUDAH_STANDAR, 'baris' => [self::STRIP_PENAFIAN]]];
+    }
+
+    /**
+     * Kolom `K57` "Nominal Mass" = `VLOOKUP(nama, Standar_AT, 2)`, tabel
+     * `DATABASE!R25:S31` master — sama dengan [STANDARD_TERCETAK] `nominal`.
+     * Master gram (`145!DATABASE!S25:S29`) menulis satuan `g` ("100 mg - 200
+     * g"), kg & substitusi (146/147) `gr`. Standar di luar tabel itu: kosong.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanStandarDigunakan(CalibrationSession $sesi, Standard $standar): array
+    {
+        $nominal = null;
+
+        foreach (self::STANDARD_TERCETAK as $baris) {
+            if (strcasecmp(trim((string) $standar->nama), $baris['nama']) === 0) {
+                $nominal = $baris['nominal'];
+
+                break;
+            }
+        }
+
+        if ($nominal !== null && ($this->ringkasanSertifikat($sesi)['varian'] ?? null) === VarianMasterTimbangan::GRAM) {
+            $nominal = preg_replace('/\bgr\b/', 'g', $nominal);
+        }
+
+        return [self::KOLOM_NOMINAL_MASS => $nominal];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
 use App\Services\Calibration\VolumetricGlasswareCalculator as V;
 
 /**
@@ -46,6 +47,23 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
     public function desimalU95(): ?int
     {
         return 4;
+    }
+
+    /**
+     * Format sel lembar `SERTIFIKAT` master Fixed (Studio id 143, K-50-15):
+     * `E21` Nominal Value `0.0`, `N21` Actual Volume & `S21` Correction
+     * `0.0000`, `Q22` U95 `0.0000`, `V23` k `0`. Berlaku untuk ketiga alat
+     * keluarga ini (Labu Ukur, Pipet Volume, Picnometer). Hook desimal
+     * (`desimalSertifikat` 4, [desimalU95] 4) sama dengan format ini, jadi
+     * layar HP, peringatan angka cetak, dan sertifikat sepakat; format per
+     * nominal salinan workbook Rev.7 per alat tidak dipakai lagi (K-50-15,
+     * master menang). Hanya cetak; nilai snapshot tetap presisi penuh.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'];
     }
 
     /**

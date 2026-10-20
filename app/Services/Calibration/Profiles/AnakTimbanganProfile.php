@@ -1213,17 +1213,155 @@ class AnakTimbanganProfile extends CalibrationProfile
         return $this->kalk ??= new AnakTimbanganCalculator;
     }
 
+    /** Kunci `header_tambahan` kotak `Class` (`139!A8`). */
+    public const KEPALA_KELAS = 'kelas';
+
+    /** Kunci kolom tambahan Standard Used — `139!E43` "Nominal Mass". */
+    public const KOLOM_NOMINAL_MASS = 'nominal_mass';
+
     /**
-     * Judul tabel standar bernomor seperti master (`139!A42`, `141!A42`
-     * "2. STANDARD USED"), bukan `Standard used :` bawaan bersama K-50-15.
-     * Sisa bentuk master (kepala `Class`/`Capacity`, kolom `ID Number`,
-     * `Nominal Mass`, End of Certificate `139!G68`) belum — hook profil.
+     * Kolom `139!E44:E55` / `141!E44:E55` "Nominal Mass" per standar, kunci =
+     * nama di [STANDARD_TERCETAK] (`cocok[0]`). Lima neraca diketik di sel
+     * lembar SERTIFIKAT (`E44:E48`); tujuh anak timbangan dari
+     * `DATABASE!X19:X25`. Teks apa adanya, termasuk titik `0.2 - 220 g`.
+     *
+     * @var array<string, string>
+     */
+    public const NOMINAL_MASS_STANDAR = [
+        'Semi Micro Balance' => '80 g',
+        'Analytical Balance' => '0.2 - 220 g',
+        'Electronic Balance Fujitsu' => '1200 g',
+        'Electronic Balance Excellent' => '1 - 3100 g',
+        'Electronic Balance  Mettler' => '30 kg',
+        'Anak Timbangan E2 200 g' => '1 mg - 200 g',
+        'Anak Timbangan E2 500 g' => '500 g',
+        'Anak Timbangan E2 1 kg' => '1000 g',
+        'Anak Timbangan F1-2' => '2000 g',
+        'Anak Timbangan F1-5' => '5000 g',
+        'Anak Timbangan F1-10' => '10 kg',
+        'Anak Timbangan F1-20' => '20 kg',
+    ];
+
+    /**
+     * Bentuk lembar `SERTIFIKAT` kedua master aktif (Studio id 139 F1, 141
+     * F2 — sama di keduanya), di atas bentuk mayoritas:
+     *
+     * - kepala: `A8` "Class" menggantikan Model/Type (master tidak punya
+     *   Model/Type), `A10` "Capacity" (bukan Capacity/Graduation);
+     * - tabel `C15:L16` tanpa kolom Correction: Nominal | Conventional Mass |
+     *   Uncertainty ±;
+     * - kalimat `k` `D38` "That weighing uncertainty is mearured at confidence
+     *   level 95% & coverage factor K = " — salah ketik "mearured" tidak
+     *   ditiru, sama dengan bagian 7 Timbangan di `pdf.blade.php`;
+     * - `A42` "2. STANDARD USED", kolom `A43:P43` Name | Nominal Mass |
+     *   Merk/Class | Serial Number | Traceability;
+     * - `A58` "Issuance Date" tanpa titik dua; `G68` "------- End of
+     *   Certificate -------".
+     *
+     * Satuan di judul kolom (`Nominal (g)`), bukan baris sendiri seperti
+     * `F16:L16`, dan judul bagian `C14` "1. ACCURACY" TIDAK dicetak: dengan
+     * keduanya plus End of Certificate, lembar 40 keping
+     * ([BATAS_KEPING_SATU_HALAMAN]) meluap ke halaman dua walau mode padat
+     * (diukur 20 Okt 2026 — tanpa keduanya muat). Mengembalikannya butuh
+     * ruang dari template bersama (`pdf.blade.php`), bukan profil.
+     *
+     * Yang BELUM (butuh perubahan template bersama, dilaporkan): kolom `C15`
+     * "ID Number" (No. Seri per keping — `teksSel` tidak punya kolom teks per
+     * baris dari sesi) dan `L16` Uncertainty dalam **mg** (`teksSel` tidak
+     * punya faktor satuan per kolom; U tetap dicetak dalam satuan baris, g).
      *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => '2. STANDARD USED'];
+        $tataLetak = parent::tataLetakSertifikat($sesi);
+
+        $kepala = array_map(
+            static fn (array $baris): array => array_map(
+                static fn (?array $sel): ?array => match ($sel['kunci'] ?? null) {
+                    'model_type' => ['kunci' => self::KEPALA_KELAS, 'label' => 'Class'],
+                    'capacity_graduation' => [...$sel, 'label' => 'Capacity'],
+                    default => $sel,
+                },
+                $baris,
+            ),
+            $tataLetak['kepala'],
+        );
+
+        return [
+            ...$tataLetak,
+            'kepala' => $kepala,
+            'kolom_hasil' => [
+                ['kolom' => 'standar', 'judul' => 'Nominal'],
+                ['kolom' => 'uut', 'judul' => 'Conventional Mass'],
+                ['kolom' => 'u95', 'judul' => 'Uncertainty ±'],
+            ],
+            'satuan_baris_sendiri' => false,
+            'kalimat_k' => 'That weighing uncertainty is measured at confidence level 95% & coverage factor K',
+            'judul_standar_digunakan' => '2. STANDARD USED',
+            'kolom_standar_digunakan' => [
+                ['kunci' => 'name', 'label' => 'Name'],
+                ['kunci' => self::KOLOM_NOMINAL_MASS, 'label' => 'Nominal Mass'],
+                ['kunci' => 'merk_type', 'label' => 'Merk/Class'],
+                ['kunci' => 'serial_number', 'label' => 'Serial Number'],
+                ['kunci' => 'traceable_to', 'label' => 'Traceability'],
+            ],
+            'label_tanggal_terbit' => 'Issuance Date',
+            'akhir_sertifikat' => '------- End of Certificate -------',
+        ];
+    }
+
+    /**
+     * `139!D8` = `INPUT DATA!AB24` — kelas OIML keping yang dikalibrasi.
+     * Kuncinya selalu ada karena sel kepala menyebutnya.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        return [self::KEPALA_KELAS => AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['kelas_uut'] ?? null];
+    }
+
+    /**
+     * Kolom "Nominal Mass" ([NOMINAL_MASS_STANDAR]); nama dicocokkan tanpa
+     * peduli spasi ganda & huruf besar (`DATABASE!W34` "Electronic Balance
+     * Mettler" bersepasi dua). Standar di luar daftar: kosong.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanStandarDigunakan(CalibrationSession $sesi, Standard $standar): array
+    {
+        $rapikan = static fn (string $nama): string => strtolower((string) preg_replace('/\s+/', ' ', trim($nama)));
+        $nama = $rapikan((string) $standar->nama);
+
+        foreach (self::NOMINAL_MASS_STANDAR as $kunci => $nominal) {
+            if ($rapikan($kunci) === $nama) {
+                return [self::KOLOM_NOMINAL_MASS => $nominal];
+            }
+        }
+
+        return [self::KOLOM_NOMINAL_MASS => null];
+    }
+
+    /**
+     * `139!M11:R11` / `141!M11:R11` "Tekanan Udara … hPa" di kondisi
+     * lingkungan. Master mengetik angkanya (`N11` 933, tanpa rumus); yang
+     * dicetak di sini rata-rata BACAAN tekanan sesi
+     * (`spesifikasi_alat.anak_timbangan.tekanan`) — angka yang sama yang masuk
+     * densitas udara (rata-rata mentah, lihat jejak titik). `null` = belum
+     * diisi, barisnya tidak dicetak.
+     */
+    public function tekananEnvSertifikat(CalibrationSession $sesi): ?float
+    {
+        $tekanan = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['tekanan'] ?? null;
+
+        if ($tekanan === null) {
+            return null;
+        }
+
+        $terisi = array_values(array_filter([$tekanan['awal'], $tekanan['akhir']], static fn ($p): bool => $p !== null));
+
+        return $terisi === [] ? null : array_sum($terisi) / count($terisi);
     }
 
     /**

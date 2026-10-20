@@ -28,7 +28,7 @@ use Illuminate\Support\Collection;
  * | thermobarometer Lutron di pilihan thermohygro | `INPUT DATA!E24` |
  * | Standard Used = neraca + Termometer & Sensor Std. | `SERTIFIKAT!B29:W30` |
  * | tekanan udara di Env. Condition | `SERTIFIKAT!T13:Y13` |
- * | Class/Permitted Error & Suhu Dasar Volume 20 °C | `SERTIFIKAT!O14:U14`, `E18:N18` |
+ * | Class/Permitted Error & Suhu Dasar Volume 20 °C | `SERTIFIKAT!O14:U14`, `E18:N18` — sejak K-50-15 kotak kepala & blok di atas tabel untuk keenam alat volumetrik ([VolumetricGlasswareProfile]), bukan lagi baris `catatanAtasTabelHasil` di sini |
  * | suhu env 1 desimal, RH bulat, nominal dengan nol di belakang | format sel `SERTIFIKAT!U11/U12/E21` |
  *
  * Picnometer TIDAK ikut: workbook-nya masih `Fixed_Volumetric_Glassware_2026`.
@@ -194,28 +194,6 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
         ));
 
         return $terisi === [] ? null : array_sum(array_map('floatval', $terisi)) / count($terisi);
-    }
-
-    /**
-     * `SERTIFIKAT!O14` "Class/Permitted Error : A/±0.15 ml" dan `E18` "Suhu
-     * Dasar Volume : 20 °C". Kepala sertifikat dikunci 16 kotak
-     * (`sertifikat/pdf.blade.php`), jadi keduanya lewat baris di atas tabel
-     * hasil — pintu yang sama dengan `Spindel No.` Viscometer.
-     */
-    public function catatanAtasTabelHasil(CalibrationSession $sesi): ?string
-    {
-        $blok = M::blokSesi($sesi->spesifikasi_alat);
-        $bagian = [];
-
-        if ($blok !== null && $blok['kelas'] !== null) {
-            $bagian[] = 'Class/Permitted Error : '.$blok['kelas'].($blok['toleransi_ml'] === null
-                ? ''
-                : '/±'.Angka::nilaiStandar($blok['toleransi_ml'], 6).' '.self::SATUAN);
-        }
-
-        $bagian[] = 'Suhu Dasar Volume : '.Angka::nilaiStandar(V::SUHU_ACUAN, 2).' °C';
-
-        return implode(' — ', $bagian);
     }
 
     /**
