@@ -284,13 +284,14 @@ class TekananSesiTest extends TestCase
         $kMentah = $terakhir->type_b_components['tekanan_budget']['k'] ?? $terakhir->faktor_cakupan_k;
 
         $harapan = [
-            // varian => [desimal (I22), desimal_u95 (P35), k bulat (U36 `0`)]
-            Tabel::DRUCK07G => [1, 3, false],
-            Tabel::DRUCK13G => [1, 1, false],
-            Tabel::DIFFERENTIAL => [1, 2, true],
+            // varian => [desimal (I22), desimal_u95 (P35), k bulat (U36 `0`), format UUT (E22)]
+            Tabel::DRUCK07G => [1, 3, false, '0'],
+            Tabel::DRUCK13G => [1, 1, false, '0'],
+            Tabel::DIFFERENTIAL => [1, 2, true, '0.0'],
+            Tabel::SPMK => [2, 2, false, '0.000'],
         ];
 
-        foreach ($harapan as $varian => [$desimal, $desimalU95, $kBulat]) {
+        foreach ($harapan as $varian => [$desimal, $desimalU95, $kBulat, $formatSetelan]) {
             $spek = $sesi->spesifikasi_alat;
             $spek[M::KUNCI_SESI]['varian'] = $varian;
             $sesi->forceFill(['spesifikasi_alat' => $spek])->saveQuietly();
@@ -301,6 +302,8 @@ class TekananSesiTest extends TestCase
             $this->assertSame($desimalU95, $tabel['desimal_u95'], "{$varian}: desimal U95.");
             $kSatuDesimal = round((float) $kMentah, 1);
             $this->assertSame($kBulat ? round($kSatuDesimal) : $kSatuDesimal, $tabel['k_cetak'], "{$varian}: k cetak.");
+            // Kolom UUT berformat sendiri (`181/190!E22` `0`, `191` `0.0`, `192` `0.000`).
+            $this->assertSame($formatSetelan, $tabel['format_setelan'], "{$varian}: format kolom UUT.");
         }
     }
 }

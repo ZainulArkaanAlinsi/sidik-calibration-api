@@ -741,6 +741,8 @@ abstract class TekananProfile extends CalibrationProfile
             'k_cetak' => $kCetak !== null && ($format['k_bulat'] ?? false) ? round($kCetak) : $kCetak,
             'desimal' => $desimal,
             'desimal_u95' => $format['u95'] ?? $desimal + 1,
+            // Format kolom UUT/setelan (`E22`), hanya dibaca bentuk master.
+            ...(isset($format['setelan']) ? ['format_setelan' => $format['setelan']] : []),
         ];
     }
 
@@ -759,19 +761,20 @@ abstract class TekananProfile extends CalibrationProfile
      * di sebelahnya — sel salin-tempel, tidak ditiru: satu titik tidak boleh
      * tercetak lebih teliti hanya karena urutannya ke-7.
      *
-     * Kolom UUT (`E22`) berformat lain (`0` 181/190, `0.0` 191, `0.000` 192),
-     * tapi blok `tekanan` di template mencetak setelan dengan desimal yang sama
-     * dengan kolom lain — memisahkannya butuh perubahan template (dilaporkan).
+     * Kolom UUT (`E22:E27`/`E22:E34`) berformat lain: `0` 181/190, `0.0`
+     * 191, `0.000` 192 (dibaca dari Studio 21 Okt 2026). Dicetak lewat
+     * `tekanan.format_setelan` (template K-50-15 putaran 3); snapshot lama
+     * tanpa `tata_letak` mengabaikannya.
      * Varian yang tidak dikenal jatuh ke aturan lama (desimal resolusi).
      * Hanya cetak; nilai tersimpan tidak berubah.
      *
-     * @var array<string, array{nilai: int, u95: int, k_bulat: bool}>
+     * @var array<string, array{nilai: int, u95: int, k_bulat: bool, setelan: string}>
      */
     private const FORMAT_SERTIFIKAT = [
-        Tabel::DRUCK07G => ['nilai' => 1, 'u95' => 3, 'k_bulat' => false],
-        Tabel::DRUCK13G => ['nilai' => 1, 'u95' => 1, 'k_bulat' => false],
-        Tabel::SPMK => ['nilai' => 2, 'u95' => 2, 'k_bulat' => false],
-        Tabel::DIFFERENTIAL => ['nilai' => 1, 'u95' => 2, 'k_bulat' => true],
+        Tabel::DRUCK07G => ['nilai' => 1, 'u95' => 3, 'k_bulat' => false, 'setelan' => '0'],
+        Tabel::DRUCK13G => ['nilai' => 1, 'u95' => 1, 'k_bulat' => false, 'setelan' => '0'],
+        Tabel::SPMK => ['nilai' => 2, 'u95' => 2, 'k_bulat' => false, 'setelan' => '0.000'],
+        Tabel::DIFFERENTIAL => ['nilai' => 1, 'u95' => 2, 'k_bulat' => true, 'setelan' => '0.0'],
     ];
 
     /** Desimal cetak = desimal resolusi alat (0,1 → 1; 0,05 → 2). */
