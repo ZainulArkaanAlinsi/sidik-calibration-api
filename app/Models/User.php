@@ -105,6 +105,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Role yang boleh dipilih waktu MEMBUAT akun baru (approve pendaftar API,
+     * form "buat" panel) — [roles()] minus `viewer`.
+     *
+     * Keputusan pemilik proyek 20 Okt 2026: `viewer` tidak lagi ditawarkan untuk
+     * akun baru. Akun `viewer` yang sudah ada TETAP sah — makanya [roles()]
+     * (gerbang channel, saringan daftar pengguna, `rolesInternal()`) tidak
+     * diubah, dan nilai kolom `role` tidak disentuh. Dijaga `ViewerAkunBaruTest`.
+     *
+     * @return array<int, string>
+     */
+    public static function rolesAkunBaru(): array
+    {
+        return [self::ROLE_ADMIN, self::ROLE_TEKNISI];
+    }
+
+    /**
      * Role yang boleh MASUK ke sisi internal — [roles()] + `super_admin`.
      *
      * Dua daftar, dua pertanyaan yang beda. Menggabungkannya yang bikin

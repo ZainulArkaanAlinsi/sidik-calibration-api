@@ -595,8 +595,11 @@ Rute yang dipakai aplikasi: `auth/{terima-undangan,masuk,keluar,keluar-semua,lup
 atur-ulang-sandi}`, `beranda`, `alat` (daftar, `alat/{id}` termasuk `riwayat_sertifikat`, dan
 status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/
 seri di PT sendiri — nomor PT lain = daftar kosong, `sertifikat/{id}`, `sertifikat/{id}/unduh`),
-`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*`, `/paket*`, dan
-`PATCH /alat/{id}` (lokasi & catatan milik pelanggan) tidak disentuh.
+`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*` dan `/paket*` tidak
+disentuh. **`PATCH /alat/{id}` DICABUT 20 Okt 2026** (keputusan pemilik; balasan sekarang `405`/`404`):
+pelanggan tidak mengubah data alat, perubahan lewat lab. Field `terkunci`/`field_terkunci`/`catatan`/
+`resolusi` di detail alat tetap dikirim (kontrak tidak dipersempit). Rute tulis yang tersisa dikunci
+`PengecualianTulisPelangganTest`.
 
 Respons sertifikat tidak lagi memuat `bisa_minta_koreksi`, `koreksi_menunggu`, `data_cetak`; respons
 detail alat tidak lagi memuat `foto` dan `koreksi_menunggu`. Pesan `field_terkunci` kini

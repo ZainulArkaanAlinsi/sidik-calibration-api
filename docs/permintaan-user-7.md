@@ -5308,6 +5308,26 @@ K-50-08 `POST /equipments/{id}/jatuh-tempo` (jalur `jadwal_alat` / `revisi_serti
 dan pelanggan (K-50-09), tabel tetap; `kontrak-api.md` §16, `kontrak-api-pelanggan.md` §6, HP §9.
 Gate MySQL penuh belum dijalankan.
 
+## §53 — Keputusan peran 20 Okt 2026 (teknisi tidak menghapus alat, pelanggan hanya baca, viewer tidak untuk akun baru)
+
+Keputusan pemilik proyek 20 Okt 2026 — jangan ditanya ulang.
+
+| Keputusan | Yang diturunkan (API) |
+|---|---|
+| Teknisi **tetap** boleh `POST`/`PUT /equipments`, `POST /categories/{kode}/kemampuan`, `POST /customers/cepat` (alat baru dari lembar), tapi **tidak** menghapus alat. | `DELETE /equipments/{e}` pindah ke grup `role:admin` (admin + super admin lewat K-49-14). Teknisi `403`. `/me/permissions` ikut sendiri karena `MatriksIzin` membaca middleware rute: `alat.hapus` hilang dari daftar teknisi. |
+| Pelanggan **tidak** mengubah data alat. | `PATCH /pelanggan/v1/alat/{alat}` dan `AlatController::update()` dicabut (`404`/`405`). Detail alat tetap membawa `terkunci`, `field_terkunci`, `catatan`, `resolusi` (kontrak tidak dipersempit). Yang tetap: ganti sandi, `PATCH`/`DELETE /saya`, `PUT /preferensi-notifikasi`, kelola anggota PIC, perangkat push, tanda baca notifikasi, auth. |
+| `viewer` tidak ditawarkan saat **membuat** akun. Akun viewer lama tetap sah; nilai kolom `role` tidak berubah. | `User::rolesAkunBaru()` = admin, teknisi. Dipakai `POST /users/{u}/approve` dan form **buat** akun panel. `User::roles()` (gerbang channel, saringan daftar pengguna, `rolesInternal()`) tidak diubah; `PUT /users/{u}` tetap menerima `viewer` (mengubah akun yang sudah ada). |
+
+### Penjaga
+
+`RoleAccessTest::test_teknisi_tidak_boleh_hapus_alat_tapi_admin_boleh`,
+`PengecualianTulisPelangganTest` (membaca daftar rute pelanggan dari router; rute non-GET di luar
+daftar izin → merah), `ViewerAkunBaruTest`, `MeIzinTest` (mencocokkan izin ke penjagaan asli).
+
+**Status:** **DIKERJAKAN** (20 Okt 2026, branch `feat/peran-ocr-pelanggan`). Aplikasi lab yang
+menampilkan tombol Hapus alat untuk teknisi membaca `alat.hapus` dari `/me/permissions`, jadi
+tombolnya hilang tanpa rilis APK. Gate MySQL penuh belum dijalankan.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook

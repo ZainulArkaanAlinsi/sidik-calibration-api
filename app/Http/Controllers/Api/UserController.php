@@ -43,10 +43,11 @@ class UserController extends Controller
 
         // Admin yang nentuin role-nya di sini, bukan si pendaftar.
         $validated = $request->validate(
-            ['role' => ['required', Rule::in(User::roles())]],
+            // `viewer` tidak lagi ditawarkan untuk akun baru (20 Okt 2026).
+            ['role' => ['required', Rule::in(User::rolesAkunBaru())]],
             [
                 'role.required' => 'Role wajib diisi.',
-                'role.in' => 'Role harus salah satu dari: admin, teknisi, viewer.',
+                'role.in' => 'Role harus salah satu dari: admin, teknisi.',
             ],
         );
 
