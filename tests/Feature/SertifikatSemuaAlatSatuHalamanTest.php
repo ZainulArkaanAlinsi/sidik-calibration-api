@@ -258,6 +258,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // Suhu (dua baris × 9 posisi per set point) dan B) Kinerja Enklosur —
         // jadi 4 set point Inkubator = 8 baris + 4 baris + dua kepala tabel.
         '2405.03.AV (Incubator)',
+        // Conductivity masuk sini 20 Okt 2026 (K-50-15, pemilik 18 Okt:
+        // sertifikat persis lembar SERTIFIKAT master). Master `157` mencetak
+        // tabel SENDIRI per satuan (`C33:T36` µS/cm, `C38:T42` mS/cm), masing-
+        // masing dengan U95 & kalimat `k`-nya; dulu baris mS/cm salah tercetak
+        // di bawah kepala `(µS/cm)` satu tabel. Dua tabel + baris satuan =
+        // isinya bertambah, bukan tata letak yang menyusut — bentuk lama
+        // (snapshot tanpa `tata_letak`) pun sudah meluap di mode normal.
+        '2405.32.A.NK (Conductivity Meter)',
         '2406.25.AI (Oven)',
         '2406.32.C (Chlorine Meter)',
         '2406.51.S (Autoclave)',
@@ -270,6 +278,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // sendiri cuma enam titik dan tetap muat di mode normal — jadi ini
         // bukan gejala tata letak gaya yang menyusut, melainkan sesi contoh
         // yang memang paling panjang di kelompoknya.
+        'DEMO-COND-MSCM (Conductivity Meter)',
         'DEMO-LC-001 (Load Cell)',
         // Proving Ring (alat ke-42, 25 Sep 2026) — sepuluh titik, DAN kolom
         // ketiganya berdesimal lima (faktor kalibrasi 0,12632 kgf/Div) sementara

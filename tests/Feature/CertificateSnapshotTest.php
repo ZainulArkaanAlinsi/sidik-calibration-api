@@ -13,6 +13,7 @@ use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
+use App\Support\TataLetakSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -155,7 +156,11 @@ class CertificateSnapshotTest extends TestCase
         // desimalSuhuEnv()`. Baris ini udah tiga kali digeser bolak-balik
         // justru karena tiap kali dipatok ke satu master lalu dikeluhkan dari
         // master yang lain.
-        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%', $header['env_condition']);
+        //
+        // K-50-15 (pemilik, 18 Okt 2026, sertifikat persis lembar SERTIFIKAT
+        // master): T dan %RH di baris sendiri-sendiri, bunyi sel master
+        // (`T 21.0 °C ± 1.7 °C`), bukan `T: …°C — %RH: …` sebaris.
+        $this->assertSame("T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %", $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 
@@ -174,8 +179,9 @@ class CertificateSnapshotTest extends TestCase
     {
         $env = $this->terbitkanSertifikat()->snapshot['header']['env_condition'];
 
-        $this->assertMatchesRegularExpression('/± \d+,\d°C/', $env);
-        $this->assertMatchesRegularExpression('/± \d+,\d%/', $env);
+        // K-50-15: satuan dipisah spasi seperti sel master (`± 1.7 ⁰C`).
+        $this->assertMatchesRegularExpression('/± \d+,\d °C/', $env);
+        $this->assertMatchesRegularExpression('/± \d+,\d %/', $env);
     }
 
     public function test_correction_di_tabel_hasil_itu_standard_value_dikurangi_pembacaan(): void
@@ -199,7 +205,9 @@ class CertificateSnapshotTest extends TestCase
     {
         $snapshot = $this->terbitkanSertifikat()->snapshot;
 
-        $this->assertSame(CertificateSnapshotBuilder::CATATAN_HASIL, $snapshot['catatan']);
+        // K-50-15: bunyi mayoritas lembar SERTIFIKAT master — penafian
+        // berstrip (`165!D35`). `CATATAN_HASIL` tinggal bunyi snapshot lama.
+        $this->assertSame(TataLetakSertifikat::MAYORITAS_MASTER['catatan'], $snapshot['catatan']);
     }
 
     public function test_tabel_standar_nggak_nulis_standar_yang_sama_dua_kali(): void

@@ -182,7 +182,8 @@ class R2SpektroTest extends TestCase
 
         $html = $this->pdf($sertifikat->fresh());
 
-        $this->assertStringContainsString('CALIBRATION REPORT', $html);
+        // Judul bagian sejak K-50-15: bunyi master `170!B15` + `:`.
+        $this->assertStringContainsString('Calibration Report :', $html);
         $this->assertStringNotContainsString('R<sup>2</sup>', $html);
         $this->assertNotContains('R2', $this->headerTabelExcel($sertifikat->fresh()));
     }

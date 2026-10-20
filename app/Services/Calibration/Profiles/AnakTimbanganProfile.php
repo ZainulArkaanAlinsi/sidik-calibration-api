@@ -1194,4 +1194,17 @@ class AnakTimbanganProfile extends CalibrationProfile
         // jauh dari penyebabnya.
         return $this->kalk ??= new AnakTimbanganCalculator;
     }
+
+    /**
+     * Judul tabel standar bernomor seperti master (`139!A42`, `141!A42`
+     * "2. STANDARD USED"), bukan `Standard used :` bawaan bersama K-50-15.
+     * Sisa bentuk master (kepala `Class`/`Capacity`, kolom `ID Number`,
+     * `Nominal Mass`, End of Certificate `139!G68`) belum — hook profil.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => '2. STANDARD USED'];
+    }
 }

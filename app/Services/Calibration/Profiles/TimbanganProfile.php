@@ -1849,4 +1849,17 @@ class TimbanganProfile extends CalibrationProfile
     {
         return rtrim(rtrim(number_format($n, 4, ',', '.'), '0'), ',');
     }
+
+    /**
+     * Judul tabel standar bernomor seperti master (`145!C56`, `146!C56`,
+     * `147!C56` "8. STANDARD USED"), bukan `Standard used :` bawaan bersama
+     * K-50-15. Sisa bentuk master (kolom `Nominal Mass`, `Merk/Class`, `SN`,
+     * `Traceability`; `Issuance Date` tanpa titik dua) belum — hook profil.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => '8. STANDARD USED'];
+    }
 }

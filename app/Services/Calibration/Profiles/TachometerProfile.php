@@ -81,4 +81,14 @@ class TachometerProfile extends ProfilPutaran
     {
         return [self::BATAS_AKREDITASI_RPM, 39];
     }
+
+    /**
+     * Suhu lingkungan dicetak format `General`: master `182!O11` T `25.37`
+     * tanpa format angka (Centrifuge `180` memakai `0.0` — bawaan bersama).
+     * %RH ikut bawaan `0` (`182!O12`).
+     */
+    public function desimalSuhuEnv(): ?int
+    {
+        return null;
+    }
 }

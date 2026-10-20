@@ -165,10 +165,17 @@ class Angka
         $teks = self::hasil($nilai, $desimal);
 
         if (! str_contains($teks, ',')) {
-            return $teks;
+            return $teks === '-0' ? '0' : $teks;
         }
 
-        return rtrim(rtrim($teks, '0'), ',');
+        $teks = rtrim(rtrim($teks, '0'), ',');
+
+        // Nilai negatif mungil yang membulat ke nol (`-0,0001` di titik nol Load
+        // Cell) tidak boleh tercetak `-0`: sesudah nol di belakang dibuang, tanda
+        // minus tinggal menempel pada angka bulat nol — tidak ada satu master pun
+        // yang mencetak nominal `-0`. Kolom ber-desimal tetap (`Angka::hasil`,
+        // `-0,00` Turbidimeter) tidak lewat sini, jadi tidak ikut berubah.
+        return $teks === '-0' ? '0' : $teks;
     }
 
     /**

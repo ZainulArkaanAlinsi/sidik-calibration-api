@@ -259,8 +259,10 @@ class SertifikatSpektroCocokMasterTest extends TestCase
     {
         $html = $this->pdf();
 
-        $awal = strpos($html, 'CALIBRATION REPORT');
-        $akhir = strpos($html, 'STANDARD USED');
+        // Judul bagian sejak K-50-15 = bunyi master (`170!B15` "Calibration
+        // Report" + `:`, `170!B63` "Standard used :").
+        $awal = strpos($html, 'Calibration Report :');
+        $akhir = strpos($html, 'Standard used :');
         $this->assertIsInt($awal);
         $this->assertIsInt($akhir);
 

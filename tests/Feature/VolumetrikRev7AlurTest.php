@@ -513,8 +513,10 @@ class VolumetrikRev7AlurTest extends TestCase
 
         // `SERTIFIKAT!T11:Y13`: T 20.9 ± 1.2 °C, RH 49 ± 3.2 %, tekanan 1001 ± 2.0 hPa
         // (rata-rata BACAAN tekanan, `G19`, tanpa koreksi Lutron).
+        // K-50-15 (pemilik, 18 Okt 2026): tiga baris, bunyi sel master
+        // (`143!O11:Y13` `T`, `%RH`, `Tekanan Udara`).
         $this->assertSame(
-            'T: 20,9°C ± 1,2°C — %RH: 49% ± 3,2% — P: 1001 hPa ± 2,0 hPa',
+            "T 20,9 °C ± 1,2 °C\n%RH 49 % ± 3,2 %\nTekanan Udara 1001 hPa ± 2,0 hPa",
             $snapshot['header']['env_condition'],
         );
 

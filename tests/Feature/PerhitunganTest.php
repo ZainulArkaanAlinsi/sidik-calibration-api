@@ -254,7 +254,10 @@ class PerhitunganTest extends TestCase
             // thermohygro ikut kepakai: `20,97` beda dari average mentah `21,4`.
             // Itu tetap kejaga — dan sekarang malah lebih jelas, karena dua
             // digit hasil koreksinya nggak lagi kepangkas jadi `21,0`.
-            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
+            //
+            // Bunyinya K-50-15 (pemilik, 18 Okt 2026): baris T & %RH sendiri-
+            // sendiri seperti sel lembar SERTIFIKAT master.
+            "T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %",
             $sesi->fresh()->certificate->snapshot['header']['env_condition'],
         );
     }

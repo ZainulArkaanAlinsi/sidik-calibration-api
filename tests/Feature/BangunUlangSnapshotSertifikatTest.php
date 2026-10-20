@@ -140,8 +140,10 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
         $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
 
+        // Bentuk kode sekarang: K-50-15 (pemilik, 18 Okt 2026) menulis T dan
+        // %RH sebaris-sebaris seperti sel lembar SERTIFIKAT master.
         $this->assertSame(
-            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
+            "T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %",
             $sertifikat->fresh()->snapshot['header']['env_condition'],
         );
     }

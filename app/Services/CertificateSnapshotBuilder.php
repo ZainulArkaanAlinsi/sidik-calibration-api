@@ -16,6 +16,7 @@ use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\TekananProfile;
 use App\Support\Angka;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -29,9 +30,15 @@ use RuntimeException;
  * sama persis kayak yang dulu diterbitin. Snapshot bikin PDF, Excel, halaman
  * verifikasi QR, dan API mustahil beda isi — semuanya baca dari sini.
  *
- * Strukturnya SENGAJA dikunci di empat bagian sesuai spesifikasi: header
- * informasi, tabel hasil, tabel standar, footer. Nambah field di luar itu
- * dilarang di dokumennya, jadi jangan ditambah di sini juga.
+ * Dulu strukturnya dikunci di empat bagian spesifikasi (header informasi, tabel
+ * hasil, tabel standar, footer) dan field di luar itu dilarang. K-50-15
+ * (pemilik, 18 Okt 2026, `docs/permintaan-user-7.md` §52) membatalkannya:
+ * sertifikat wajib persis lembar `SERTIFIKAT` master alatnya, termasuk blok
+ * catatan, kepala, dan End of Certificate yang beda-beda per master. Bentuk itu
+ * dinyatakan profil (`tataLetakSertifikat`, `catatanSertifikat`,
+ * `isiTambahanKepala`, `isiTambahanStandarDigunakan`, `formatKolomSertifikat`,
+ * `titikDicetakSertifikat`) dan dibekukan di sini. Kunci barunya hanya ditulis
+ * bila profil menyatakan sesuatu — snapshot alat lain tidak berubah satu byte.
  */
 class CertificateSnapshotBuilder
 {
@@ -67,6 +74,18 @@ class CertificateSnapshotBuilder
         $dalamLingkup = $profil?->dalamLingkupAkreditasiSesi($sesi) ?? true;
 
         $stempelAcuan = app(PenentuVersiAcuan::class)->ringkasanStempel($sesi);
+
+        // Bentuk lembar SERTIFIKAT master (K-50-15). Diperiksa SEKARANG, waktu
+        // terbit: kunci tata letak yang salah ketik melempar, dan
+        // `GenerateCertificate` mengirim pesannya ke admin — bukan terbit
+        // berbentuk lama tanpa tanda.
+        $kepalaTambahan = $this->kepalaTambahan($profil, $sesi);
+        $tataLetak = $profil === null
+            ? []
+            : TataLetakSertifikat::normalisasi($profil->tataLetakSertifikat($sesi), array_keys($kepalaTambahan));
+        $catatanBaku = $tataLetak['catatan'] ?? self::CATATAN_HASIL;
+        unset($tataLetak['catatan']);
+        $blokCatatan = $profil === null ? [] : TataLetakSertifikat::normalisasiBlok($profil->catatanSertifikat($sesi));
 
         return [
             'versi' => self::VERSI,
@@ -120,7 +139,7 @@ class CertificateSnapshotBuilder
             // waktu sertifikat terbit, bukan dibaca ulang tiap cetak.
             'catatan_atas_hasil' => $profil?->catatanAtasTabelHasil($sesi),
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
-            'header' => $this->header($sesi, $sertifikat),
+            'header' => $this->header($sesi, $sertifikat, (bool) ($tataLetak['env_bertumpuk'] ?? false)),
             // Enclosure TIDAK punya tabel `Standard | UUT | Correction`. Baris
             // `uncertainty_calculations`-nya memang menyimpan Keseragaman di
             // kolom `koreksi` (wakil "koreksi terbesar", lihat
@@ -188,8 +207,28 @@ class CertificateSnapshotBuilder
             'enclosure' => $profil instanceof EnclosureProfileBase
                 ? $this->enclosure($sesi, $profil)
                 : null,
-            'catatan' => self::CATATAN_HASIL,
-            'standar_digunakan' => $this->standarDigunakan($sesi),
+            // Kalimat baku di bawah tabel hasil — tetap list<string> (aplikasi HP
+            // membacanya sebagai teks). Profil boleh menggantinya dengan bunyi
+            // persis masternya (`tataLetakSertifikat()['catatan']`, mis. penafian
+            // berstrip " - Calibration results … -").
+            'catatan' => $catatanBaku,
+            // Tiga kunci K-50-15 di bawah HANYA ditulis bila profil menyatakan
+            // sesuatu. Kunci `null`/kosong di semua snapshot membuat
+            // `sertifikat:bangun-ulang` (pembanding `==`) menulis ulang seluruh
+            // sertifikat terbit beserta PDF-nya padahal isinya tidak bergeser —
+            // alasan yang sama dengan `paket_acuan_versi` di bawah.
+            //
+            // `tata_letak`: TIMPAAN saja, bukan hasil gabung — dibaca
+            // `TataLetakSertifikat::untuk()` di atas bawaan bentuk lama.
+            ...($tataLetak === [] ? [] : ['tata_letak' => $tataLetak]),
+            // `catatan_blok`: blok catatan/legenda khas alat dalam urutan master.
+            // Kunci terpisah dari `catatan` karena HP membaca `catatan` sebagai
+            // daftar teks; blok berstruktur di sana tercetak sebagai `{…}`.
+            ...($blokCatatan === [] ? [] : ['catatan_blok' => $blokCatatan]),
+            // Field kepala di luar enam belas field baku (`header` tetap enam
+            // belas — dijaga `CertificateSnapshotTest`).
+            ...($kepalaTambahan === [] ? [] : ['header_tambahan' => $kepalaTambahan]),
+            'standar_digunakan' => $this->standarDigunakan($sesi, $profil),
             'footer' => $this->footer($sesi, $sertifikat, $pengaturan),
             // Bukan bagian dari dokumen cetak — dipakai halaman verifikasi &
             // API buat nampilin status alat. Ditaruh di luar empat bagian baku
@@ -243,7 +282,7 @@ class CertificateSnapshotBuilder
      *
      * @return array<string, mixed>
      */
-    private function header(CalibrationSession $sesi, Certificate $sertifikat): array
+    private function header(CalibrationSession $sesi, Certificate $sertifikat, bool $envBertumpuk = false): array
     {
         $alat = $sesi->equipment;
         $pelanggan = $alat?->customer;
@@ -274,7 +313,7 @@ class CertificateSnapshotBuilder
             'serial_number' => $sesi->alat_serial_number ?: $alat?->serial_number,
             'calibration_method' => $this->metodeKalibrasi($sesi),
             'capacity_graduation' => $this->kapasitasGraduasi($sesi),
-            'env_condition' => $this->kondisiLingkungan($sesi),
+            'env_condition' => $this->kondisiLingkungan($sesi, $envBertumpuk),
             'technician_id' => $sesi->teknisi?->kodeTeknisi(),
         ];
     }
@@ -363,6 +402,17 @@ class CertificateSnapshotBuilder
                         : Angka::desimalDariResolusi($resolusi));
 
                 $remark = $profil?->remarkTitikKe((int) $titik->titik_ke, (float) $titik->titik_ukur);
+
+                // Format sel master per kolom & baris yang disembunyikan master
+                // (K-50-15). Dua-duanya hanya mengatur CETAK — nilai di baris ini
+                // tetap presisi penuh — dan hanya ditulis bila bukan bawaan, jadi
+                // baris alat lain tidak berubah satu kunci pun.
+                $formatKolom = $profil === null
+                    ? []
+                    : TataLetakSertifikat::normalisasiFormat(
+                        $profil->formatKolomSertifikat($sesi, (float) $titik->titik_ukur, $satuanCetak),
+                    );
+                $dicetak = $profil?->titikDicetakSertifikat($sesi, (float) $titik->titik_ukur, (int) $titik->titik_ke) ?? true;
 
                 // Nilai acuan yang TERCETAK di kolom `Standard Value`.
                 //
@@ -533,6 +583,13 @@ class CertificateSnapshotBuilder
                     // Ikut dibekukan; sertifikat lama yang belum punya kunci
                     // ini dibaca `?? true` di PDF, persis perilaku lamanya.
                     'standar_ringkas' => $profil?->nolBelakangStandarDibuang() ?? true,
+                    // Format sel master per kolom (`CalibrationProfile::
+                    // formatKolomSertifikat`) — menang atas `desimal*` di atas
+                    // untuk kolom yang disebutnya. Lihat `TataLetakSertifikat::teksSel`.
+                    ...($formatKolom === [] ? [] : ['format' => $formatKolom]),
+                    // Baris yang disembunyikan master: tetap di snapshot, tidak
+                    // dicetak di PDF maupun Excel (`TataLetakSertifikat::barisDicetak`).
+                    ...($dicetak ? [] : ['dicetak' => false]),
                 ];
             })
             ->values()
@@ -880,7 +937,7 @@ class CertificateSnapshotBuilder
         return $sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]);
     }
 
-    private function standarDigunakan(CalibrationSession $sesi): array
+    private function standarDigunakan(CalibrationSession $sesi, ?CalibrationProfile $profil = null): array
     {
         /** @var Collection<int, Standard> $standar */
         $standar = self::titikUrut($sesi)
@@ -927,8 +984,44 @@ class CertificateSnapshotBuilder
                 'merk_type' => trim(($s->merk ?? '').'/'.($s->model ?? ''), '/ ') ?: null,
                 'serial_number' => $s->serial_number,
                 'traceable_to' => $s->tertelusur_ke,
+                // Kolom tambahan master (`Nominal Mass`, K-50-15). Kosong untuk
+                // alat lain — barisnya tetap empat kunci.
+                ...$this->isiTambahanStandar($sesi, $profil, $s),
             ])
             ->all();
+    }
+
+    /** @return array<string, string|null> */
+    private function isiTambahanStandar(CalibrationSession $sesi, ?CalibrationProfile $profil, Standard $standar): array
+    {
+        $tambahan = $profil?->isiTambahanStandarDigunakan($sesi, $standar) ?? [];
+        $bentrok = array_intersect(array_keys($tambahan), TataLetakSertifikat::KUNCI_STANDAR);
+
+        if ($bentrok !== []) {
+            throw new RuntimeException('isiTambahanStandarDigunakan() tidak boleh menimpa kolom baku Standard Used: '
+                .implode(', ', $bentrok).'.');
+        }
+
+        return array_map(static fn ($v): ?string => $v === null ? null : (string) $v, $tambahan);
+    }
+
+    /**
+     * Field kepala tambahan sesi ini (`CalibrationProfile::isiTambahanKepala`).
+     * Kuncinya tidak boleh menimpa enam belas field baku — yang baku punya
+     * jalurnya sendiri (teknisi menang atas master alat, lihat [header]).
+     *
+     * @return array<string, string|null>
+     */
+    private function kepalaTambahan(?CalibrationProfile $profil, CalibrationSession $sesi): array
+    {
+        $tambahan = $profil?->isiTambahanKepala($sesi) ?? [];
+        $bentrok = array_intersect(array_keys($tambahan), TataLetakSertifikat::KUNCI_KEPALA);
+
+        if ($bentrok !== []) {
+            throw new RuntimeException('isiTambahanKepala() tidak boleh menimpa field kepala baku: '.implode(', ', $bentrok).'.');
+        }
+
+        return array_map(static fn ($v): ?string => $v === null ? null : (string) $v, $tambahan);
     }
 
     /** @return list<Standard> */
@@ -1233,7 +1326,7 @@ class CertificateSnapshotBuilder
      * Bagian `±`-nya cuma ditulis kalau admin ngisi ketidakpastiannya. Nulis
      * `± 0` waktu angkanya nggak diketahui itu klaim yang nggak benar.
      */
-    private function kondisiLingkungan(CalibrationSession $sesi): ?string
+    private function kondisiLingkungan(CalibrationSession $sesi, bool $bertumpuk = false): ?string
     {
         $bagian = [];
 
@@ -1275,11 +1368,19 @@ class CertificateSnapshotBuilder
             ? Angka::nilaiStandar($nilai, 2)
             : Angka::id($nilai, $desimal);
 
+        // Bunyi tiap bagian. Bertumpuk (`env_bertumpuk`, K-50-15) = bunyi sel
+        // master: label, angka, satuan dipisah spasi (`165!N12:T13`
+        // `T | 20.2 | ⁰C | ± | 1.7 | ⁰C`, `143!O13` `Tekanan Udara`). Sebaris =
+        // bunyi lama, dipertahankan untuk profil yang menimpanya `false`.
+        [$labelT, $satT, $labelRh, $satRh, $labelP] = $bertumpuk
+            ? ['T ', ' °C', '%RH ', ' %', 'Tekanan Udara ']
+            : ['T: ', '°C', '%RH: ', '%', 'P: '];
+
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.$tulis((float) $sesi->suhu_ruang, $suhuDesimal).'°C';
+            $teks = $labelT.$tulis((float) $sesi->suhu_ruang, $suhuDesimal).$satT;
 
             if ($sesi->suhu_ketidakpastian !== null) {
-                $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
+                $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).$satT;
             }
 
             $bagian[] = $teks;
@@ -1291,10 +1392,10 @@ class CertificateSnapshotBuilder
             // `52`; Chlorine nyimpen 53,0 dan nyetak `53`. Nilai penuhnya tetap
             // utuh di DB dan tetap dipakai ngitung; yang dipangkas cuma yang
             // kecetak.
-            $teks = '%RH: '.$tulis((float) $sesi->kelembaban, $rhDesimal).'%';
+            $teks = $labelRh.$tulis((float) $sesi->kelembaban, $rhDesimal).$satRh;
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
-                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
+                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).$satRh;
             }
 
             $bagian[] = $teks;
@@ -1308,7 +1409,7 @@ class CertificateSnapshotBuilder
         $tekanan = $profil?->tekananEnvSertifikat($sesi);
 
         if ($tekanan !== null) {
-            $teks = 'P: '.Angka::hasil($tekanan, 0).' hPa';
+            $teks = $labelP.Angka::hasil($tekanan, 0).' hPa';
 
             if ($sesi->tekanan_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->tekanan_ketidakpastian, 1).' hPa';
@@ -1317,6 +1418,9 @@ class CertificateSnapshotBuilder
             $bagian[] = $teks;
         }
 
-        return $bagian === [] ? null : implode(' — ', $bagian);
+        // Bertumpuk (`env_bertumpuk`, K-50-15): master menulis T, %RH, dan
+        // Tekanan Udara di baris sendiri-sendiri (`SERTIFIKAT!N12:T14`). Yang
+        // merender wajib menghormati baris baru (`white-space: pre-line`).
+        return $bagian === [] ? null : implode($bertumpuk ? "\n" : ' — ', $bagian);
     }
 }

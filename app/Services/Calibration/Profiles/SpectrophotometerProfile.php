@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -564,6 +565,28 @@ class SpectrophotometerProfile extends CalibrationProfile
     public function judulKolomUut(): string
     {
         return 'UUT';
+    }
+
+    /**
+     * `Standard (nm)` (`170!C18`), bukan `Standard Value` — bawaan bersama
+     * sejak K-50-15. Lihat [CalibrationProfile::judulKolomStandar].
+     */
+    public function judulKolomStandar(): string
+    {
+        return 'Standard';
+    }
+
+    /**
+     * Satuan ditulis DI judul kolom (`170!C18` `Standard (nm)`, `J18`
+     * `UUT (nm)`), bukan di baris sendiri seperti mayoritas master — lembar ini
+     * tidak punya baris satuan (`170!C19` langsung angka `279.6`). Sisanya
+     * ikut bentuk bersama.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'satuan_baris_sendiri' => false];
     }
 
     /**

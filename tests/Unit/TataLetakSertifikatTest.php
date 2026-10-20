@@ -1,0 +1,196 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Support\TataLetakSertifikat;
+use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Lapisan bentuk sertifikat bersama (K-50-15, pemilik 18 Okt 2026: sertifikat
+ * persis lembar `SERTIFIKAT` master alatnya).
+ *
+ * Yang dijaga di sini MEKANISME-nya: timpaan profil yang salah ketik melempar,
+ * format sel master tidak membuang nol di belakang, `k` dicetak seperti format
+ * selnya, baris yang disembunyikan master tidak dicetak, dan snapshot lama
+ * tanpa `tata_letak` tetap dibaca bentuk lamanya. Isi per alat (H) dijaga test
+ * profil masing-masing.
+ */
+class TataLetakSertifikatTest extends TestCase
+{
+    public function test_snapshot_tanpa_tata_letak_dibaca_bentuk_lama(): void
+    {
+        $this->assertSame(TataLetakSertifikat::BAWAAN, TataLetakSertifikat::untuk([]));
+        $this->assertSame(TataLetakSertifikat::BAWAAN, TataLetakSertifikat::untuk(['tata_letak' => null]));
+    }
+
+    public function test_timpaan_menang_atas_bawaan_dan_kunci_asing_di_snapshot_diabaikan(): void
+    {
+        $tl = TataLetakSertifikat::untuk(['tata_letak' => ['judul_laporan' => 'Calibration Report :', 'bukan_kunci' => 1]]);
+
+        $this->assertSame('Calibration Report :', $tl['judul_laporan']);
+        $this->assertArrayNotHasKey('bukan_kunci', $tl);
+        $this->assertSame(TataLetakSertifikat::BAWAAN['kepala'], $tl['kepala']);
+    }
+
+    public function test_kunci_tata_letak_salah_ketik_dilempar(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('judul_lapoan');
+
+        TataLetakSertifikat::normalisasi(['judul_lapoan' => 'Calibration Report']);
+    }
+
+    public function test_kepala_hanya_menerima_field_snapshot_atau_kepala_tambahan(): void
+    {
+        $kepala = [[['certificate_number', 'Certificate Number'], ['class', 'Class']]];
+
+        $hasil = TataLetakSertifikat::normalisasi(['kepala' => $kepala], ['class']);
+        $this->assertSame(['kunci' => 'class', 'label' => 'Class'], $hasil['kepala'][0][1]);
+
+        $this->expectException(InvalidArgumentException::class);
+        TataLetakSertifikat::normalisasi(['kepala' => $kepala]);
+    }
+
+    /**
+     * Bentuk mayoritas master yang jadi bawaan profil harus lolos pemeriksa
+     * yang sama dengan timpaan profil mana pun.
+     */
+    public function test_bentuk_mayoritas_master_lolos_normalisasi(): void
+    {
+        $hasil = TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER);
+
+        $this->assertSame(TataLetakSertifikat::MAYORITAS_MASTER['judul_laporan'], $hasil['judul_laporan']);
+        $this->assertTrue($hasil['env_bertumpuk']);
+        $this->assertTrue($hasil['satuan_baris_sendiri']);
+
+        // Kepala dua kelompok, urutan master: kiri sepuluh field, kanan enam.
+        $kiri = array_column(array_filter(array_column($hasil['kepala'], 0)), 'kunci');
+        $kanan = array_column(array_filter(array_column($hasil['kepala'], 1)), 'kunci');
+        $this->assertSame([
+            'certificate_number', 'page', 'order_number', 'received_date', 'equipment_name',
+            'manufacturer', 'model_type', 'serial_number', 'capacity_graduation', 'technician_id',
+        ], $kiri);
+        $this->assertSame([
+            'owner', 'address', 'calibration_location', 'calibration_date', 'calibration_method', 'env_condition',
+        ], $kanan);
+    }
+
+    public function test_format_sel_tetap_tidak_membuang_nol_di_belakang(): void
+    {
+        $this->assertSame('5,0', TataLetakSertifikat::formatAngka(5.0, '0.0'));
+        $this->assertSame('0,610', TataLetakSertifikat::formatAngka(0.61, '0.000'));
+        $this->assertSame('237', TataLetakSertifikat::formatAngka(237.49, '0'));
+        // `General`: presisi tampilan, nol di belakang dibuang.
+        $this->assertSame('1,9759', TataLetakSertifikat::formatAngka(1.9759, 'General'));
+        $this->assertSame('—', TataLetakSertifikat::formatAngka(null, '0.0'));
+    }
+
+    public function test_format_kolom_di_baris_menang_atas_desimal_lama(): void
+    {
+        $baris = [
+            'standard_value' => 5.0, 'unit_under_test' => 5.04, 'correction' => -0.04,
+            'u95' => 0.0188, 'desimal' => 4, 'desimal_u95' => 4,
+            'format' => ['standar' => '0.0', 'u95' => '0.000'],
+        ];
+
+        $this->assertSame('5,0', TataLetakSertifikat::teksSel($baris, 'standar', [], 2));
+        $this->assertSame('5,0400', TataLetakSertifikat::teksSel($baris, 'uut', [], 2));
+        $this->assertSame('0,019', TataLetakSertifikat::teksSel($baris, 'u95', [], 2));
+        $this->assertSame(1, TataLetakSertifikat::desimalKolom($baris, 'standar', [], 2));
+        $this->assertSame(4, TataLetakSertifikat::desimalKolom($baris, 'uut', [], 2));
+
+        // Tanpa `format`: perilaku lama — Standard Value dibuang nol-nya.
+        unset($baris['format']);
+        $this->assertSame('5', TataLetakSertifikat::teksSel($baris, 'standar', [], 2));
+    }
+
+    public function test_k_dicetak_seperti_format_selnya(): void
+    {
+        // 40 lembar SERTIFIKAT memformat sel `k` `0`: k hitung 1,9714 tercetak `2`.
+        $this->assertSame('2', TataLetakSertifikat::teksK(['format' => ['k' => '0']], 1.9714));
+        // Turbidimeter `U27` `0.0`.
+        $this->assertSame('2,0', TataLetakSertifikat::teksK(['format' => ['k' => '0.0']], 1.9714));
+        // `desimal_k` (hook `desimalFaktorCakupan`) — jalur Spektro.
+        $this->assertSame('3', TataLetakSertifikat::teksK(['desimal_k' => 0], 3.182446));
+        // Tanpa keduanya: perilaku lama, 2 desimal nol di belakang dibuang.
+        $this->assertSame('1,97', TataLetakSertifikat::teksK([], 1.9714));
+    }
+
+    public function test_kode_format_yang_tidak_dikenal_dilempar(): void
+    {
+        $this->assertSame(['k' => '0'], TataLetakSertifikat::normalisasiFormat(['k' => '0', 'u95' => null]));
+
+        $this->expectException(InvalidArgumentException::class);
+        TataLetakSertifikat::normalisasiFormat(['k' => '#,##0.00']);
+    }
+
+    public function test_baris_yang_disembunyikan_master_tidak_dicetak(): void
+    {
+        $hasil = [['titik_ke' => 1, 'dicetak' => false], ['titik_ke' => 2], ['titik_ke' => 3, 'dicetak' => true]];
+
+        $this->assertSame([2, 3], array_column(TataLetakSertifikat::barisDicetak($hasil), 'titik_ke'));
+    }
+
+    public function test_kelompok_tabel_dipisah_per_satuan(): void
+    {
+        $uS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'µS/cm'], true);
+        $mS = TataLetakSertifikat::kunciKelompok(['remark' => null, 'satuan' => 'mS/cm'], true);
+
+        $this->assertNotSame($uS, $mS);
+        $this->assertSame(
+            TataLetakSertifikat::kunciKelompok(['remark' => 'Free', 'satuan' => 'mg/L'], false),
+            TataLetakSertifikat::kunciKelompok(['remark' => 'Total', 'satuan' => 'mg/L'], false),
+        );
+    }
+
+    public function test_blok_catatan_dirapikan_dan_posisi_asing_dilempar(): void
+    {
+        $blok = TataLetakSertifikat::normalisasiBlok([[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => [['Kerataan Muka Ukur dalam Kondisi', ':', 'Baik']],
+        ]]);
+
+        $this->assertSame([[
+            'posisi' => 'bawah_hasil', 'judul' => 'Note :', 'baris' => [],
+            'tabel' => [['Kerataan Muka Ukur dalam Kondisi', ':', 'Baik']],
+        ]], $blok);
+
+        $this->expectException(InvalidArgumentException::class);
+        TataLetakSertifikat::normalisasiBlok([['posisi' => 'di_mana_saja', 'baris' => ['x']]]);
+    }
+
+    public function test_sel_kepala_kosong_ditelan_sel_berisi_di_atasnya(): void
+    {
+        // Kondisi lingkungan (baris 6 kanan) menelan empat sel kosong di
+        // bawahnya — tiga barisnya tidak mempertinggi baris Manufacturer.
+        $rentang = TataLetakSertifikat::rentangKepala(TataLetakSertifikat::MAYORITAS_MASTER['kepala']);
+
+        $this->assertSame([1, 5], $rentang[5]);
+        $this->assertSame([1, 0], $rentang[9]);
+
+        // Bentuk lama tanpa sel kosong: semua rentang 1.
+        foreach (TataLetakSertifikat::rentangKepala(TataLetakSertifikat::BAWAAN['kepala']) as $baris) {
+            $this->assertSame([1, 1], $baris);
+        }
+
+        // Sel kosong di puncak kolom tetap sel sendiri.
+        $this->assertSame([[1, 1], [1, 1]], TataLetakSertifikat::rentangKepala([
+            [['kunci' => 'page', 'label' => 'Page'], null],
+            [['kunci' => 'owner', 'label' => 'Owner'], ['kunci' => 'address', 'label' => 'Address']],
+        ]));
+    }
+
+    public function test_sel_gabung_menyatukan_teks_cetak_yang_sama(): void
+    {
+        $kolom = [['kolom' => 'standar', 'gabung' => false], ['kolom' => 'u95', 'gabung' => true]];
+        $teks = [
+            ['standar' => '60', 'u95' => '2,6'],
+            ['standar' => '80', 'u95' => '2,6'],
+            ['standar' => '100', 'u95' => '3,1'],
+        ];
+
+        $this->assertSame(['u95' => [0 => 2, 1 => 0, 2 => 1]], TataLetakSertifikat::rentangGabung($teks, $kolom));
+    }
+}

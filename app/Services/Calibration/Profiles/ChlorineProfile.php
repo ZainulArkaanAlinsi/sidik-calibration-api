@@ -652,4 +652,21 @@ class ChlorineProfile extends CalibrationProfile
      * menurut konstruksi (`remarkTitik()`), jadi itu baru bisa terjadi lewat
      * perubahan yang sengaja — dan pembacanya mendarat di catatan ini.
      */
+
+    /**
+     * Lingkungan dicetak format `General` (presisi tampilan, nol di belakang
+     * dibuang): master `156!O11` T `23.21`, `156!O12` %RH `53`, dua-duanya
+     * tanpa format angka. Bawaan bersama sejak K-50-15 (T `0.0`, %RH `0`) akan
+     * memangkasnya jadi `23,2` — bukan bunyi master alat ini.
+     */
+    public function desimalSuhuEnv(): ?int
+    {
+        return null;
+    }
+
+    /** Lihat [desimalSuhuEnv]. */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return null;
+    }
 }

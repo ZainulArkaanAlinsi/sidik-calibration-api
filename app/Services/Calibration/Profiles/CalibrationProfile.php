@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\GumCalculator;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 
 /**
@@ -1838,6 +1839,12 @@ abstract class CalibrationProfile
      * mirip-mirip (1,9714 di Turbidimeter, 1,9707 di pH) dan belum pernah diadu
      * ke cetakannya. Dipukul rata 0 desimal, empat sertifikat yang udah beredar
      * berubah bunyi tanpa satu pun bukti kertas.
+     *
+     * K-50-15 (18 Okt 2026) membatalkan pilihan "cetak `k` hitung bila master
+     * belum diadu": `k` dicetak seperti format sel `k` lembar SERTIFIKAT master
+     * (40 lembar berformat `0`). Bawaan `null` di sini tetap perilaku lama
+     * sampai profilnya menyatakan format lewat
+     * [formatKolomSertifikat] (`'k' => '0'`) atau hook ini.
      */
     public function desimalFaktorCakupan(): ?int
     {
@@ -1916,10 +1923,19 @@ abstract class CalibrationProfile
      * sertifikat yang sudah terbit tidak boleh ganti judul kolom gara-gara
      * profilnya diedit sesudahnya. Snapshot lama yang belum punya kunci ini
      * dibaca `?? 'Standard'` — persis judul lamanya.
+     *
+     * K-50-15 (18 Okt 2026): bawaannya `Standard Value`, judul terbanyak di
+     * lembar SERTIFIKAT master aktif (12 lembar: Chlorine `156!C16`,
+     * Conductivity `157!C23`, Turbidimeter `177!C20`, Viscometer `178!C19`,
+     * Refractometer `168!C16`, Gaya, Centrifuge, Tachometer, Timer). Yang
+     * masternya lain menimpa: `Nominal Value` (Volumetrik, Piston, Hydrometer),
+     * `Standard Reading (oC)` (TITS, TIDS, Thermocouple, Glass), `Standar
+     * Reading` (Micrometer, Jangka Sorong, Height Gauge), `Nominal Standard`
+     * (Dial), `Standard Indication` (DO, Tekanan), `Standard` (Spectro).
      */
     public function judulKolomStandar(): string
     {
-        return 'Standard';
+        return 'Standard Value';
     }
 
     /**
@@ -2001,6 +2017,134 @@ abstract class CalibrationProfile
         return true;
     }
 
+    // ---- Bentuk lembar SERTIFIKAT (K-50-15) --------------------------------
+    //
+    // Keputusan pemilik 18 Okt 2026: tiap sertifikat persis lembar `SERTIFIKAT`
+    // master alatnya — kepala, urutan & judul bagian, kolom, satuan, desimal per
+    // format sel, `k` seperti format selnya, catatan tetap, End of Certificate.
+    // Hook di bawah yang menyatakannya. [tataLetakSertifikat] bawaannya bentuk
+    // MAYORITAS master (`TataLetakSertifikat::MAYORITAS_MASTER`); sisanya
+    // bawaannya "tidak menyatakan apa-apa" (kunci snapshot-nya tidak ditulis).
+    // Snapshot LAMA tanpa `tata_letak` tetap dibaca bentuk lamanya
+    // (`TataLetakSertifikat::BAWAAN`) — cetak ulangnya tidak berubah.
+    // `sertifikat:bangun-ulang` (tanpa `--dry-run`) memang akan menulis bentuk
+    // baru ke sertifikat terbit; itu keputusan operator, bukan efek samping.
+    //
+    // Yang dibekukan ke snapshot adalah JAWABAN hook ini waktu terbit; mengubah
+    // profil sesudahnya hanya berlaku untuk sertifikat baru.
+
+    /**
+     * Timpaan tata letak lembar sertifikat sesi ini. Kunci yang dikenal dan
+     * bentuk lamanya: `App\Support\TataLetakSertifikat::BAWAAN`. Kunci asing
+     * DILEMPAR waktu terbit (salah ketik tidak boleh jadi sertifikat berbentuk
+     * lama tanpa tanda).
+     *
+     * Ringkasnya: `kop` & `judul` (kop gambar dan "CALIBRATION CERTIFICATE"),
+     * `kepala` (grid identitas: baris `[kiri, kanan]`, sel `[kunci, label]` atau
+     * `null`), `env_bertumpuk` (T / %RH / P sebaris-sebaris), `judul_laporan`,
+     * `kolom_hasil` (urutan & judul kolom tabel hasil, satuan per kolom, sel
+     * `gabung`), `pisah_per_remark`, `satuan_baris_sendiri` (baris satuan di
+     * bawah judul kolom, seperti master), `judul_kolom_u95`, `label_u95`,
+     * `kalimat_k`, `catatan` (pengganti kalimat baku di bawah tabel, mis.
+     * berstrip " - … -"), `judul_standar_digunakan`, `kolom_standar_digunakan`,
+     * `label_tanggal_terbit`, `akhir_sertifikat` ("End of Certificate").
+     *
+     * Sumber tiap nilai wajib sel lembar `SERTIFIKAT` master (tulis `sheet!sel`
+     * di docblock profilnya).
+     *
+     * Bawaannya bentuk mayoritas 52 lembar master aktif
+     * (`TataLetakSertifikat::MAYORITAS_MASTER`, sumbernya di docblock
+     * konstanta itu). Profil yang masternya beda MENIMPA di atasnya —
+     * `[...parent::tataLetakSertifikat($sesi), 'akhir_sertifikat' => …]` —
+     * supaya perbaikan bentuk bersama ikut sampai ke profil itu.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return TataLetakSertifikat::MAYORITAS_MASTER;
+    }
+
+    /**
+     * Blok catatan/legenda khas alat, dalam URUTAN master. Tiap blok:
+     * `['posisi' => TataLetakSertifikat::POSISI_*, 'judul' => ?string,
+     * 'baris' => list<string>, 'tabel' => list<list<string>>]`.
+     *
+     * Contoh: Note Kerataan Muka Ukur (micrometer `B31:G33`, posisi
+     * `bawah_hasil`, tabel `[['Kerataan Muka Ukur dalam Kondisi', ':', 'Baik']]`),
+     * `Type of Force : Pull` (UTM `E18`, posisi `atas_hasil`), `Units Used`.
+     *
+     * Isinya TEKS yang dibaca dari data sesi, bukan angka yang dihitung ulang:
+     * angka yang ikut tercetak di blok (Mean of Calibration Factor) wajib datang
+     * dari nilai yang sama dengan tabel hasil, diformat seperti sel masternya.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [];
+    }
+
+    /**
+     * Field kepala di luar enam belas field baku (`Class`, `Capacity` Anak
+     * Timbangan; `Dial Spesification` Proving Ring), `kunci => teks`. Kuncinya
+     * boleh dipakai sel `kepala` di [tataLetakSertifikat]. Dibekukan ke
+     * `snapshot.header_tambahan` — `snapshot.header` tetap enam belas field.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        return [];
+    }
+
+    /**
+     * Kolom tambahan satu baris tabel Standard Used (`nominal_mass` Timbangan &
+     * Anak Timbangan, master `K57` / `E43`), `kunci => teks`. Dicetak bila
+     * kuncinya disebut `kolom_standar_digunakan`.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanStandarDigunakan(CalibrationSession $sesi, Standard $standar): array
+    {
+        return [];
+    }
+
+    /**
+     * Format sel master per kolom di titik ini: `kolom => kode format`
+     * (`General`, `0`, `0.0`, `0.000`, …). Kolom: `standar`, `uut`, `koreksi`,
+     * `sebaran`, `u95`, `k`. Kolom yang tidak disebut ikut aturan lama
+     * (`desimalSertifikat*`, `desimalU95*`, `desimalKolomKoreksi`,
+     * `desimalFaktorCakupan`, `nolBelakangStandarDibuang`).
+     *
+     * Ini pengganti satu angka `desimalSertifikat` untuk seluruh baris: master
+     * memformat kolom bersebelahan berbeda (UTM `E22` `0.0` lawan `Q22` `0.00`;
+     * Volumetrik `E21` `0.0` lawan `N21` `0.0000`), dan format tetap `0.0` tidak
+     * membuang nol di belakang (`5.0`, bukan `5`).
+     *
+     * Nilai di snapshot TETAP presisi penuh; format hanya mengatur cetak.
+     * `$titikUkur` dalam satuan `uncertainty_calculations`, `$satuan` satuan
+     * cetak baris itu.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return [];
+    }
+
+    /**
+     * Apakah baris titik ini DICETAK di tabel hasil sertifikat. `false` untuk
+     * baris yang disembunyikan master (titik nol UTM/Load Cell/Proving Ring,
+     * `SERTIFIKAT!E21` baris tersembunyi). Barisnya tetap ada di snapshot
+     * (presisi penuh, ditandai `dicetak: false`) — hanya cetaknya dilewati, di
+     * PDF dan Excel.
+     */
+    public function titikDicetakSertifikat(CalibrationSession $sesi, float $titikUkur, int $titikKe): bool
+    {
+        return true;
+    }
+
     /**
      * Desimal NILAI suhu & kelembaban di baris `Env. Condition`.
      * `null` = tulis apa adanya (nol di belakang dibuang), padanan format
@@ -2023,16 +2167,22 @@ abstract class CalibrationProfile
      * Nggak ada satu aturan yang bener buat keempatnya — jadi jangan dicari.
      * Ketidakpastiannya beda: `0.0` di keempat workbook, jadi ITU tetap dipatok
      * global (1 desimal) di `CertificateSnapshotBuilder`.
+     *
+     * K-50-15 (18 Okt 2026): bawaannya format sel lembar `SERTIFIKAT` yang
+     * terbanyak — T `0.0` & %RH `0` (± `0.0`), di 47 dari 52 lembar master
+     * aktif (micrometer `165!O12`/`O13`, autoclave, Gaya, Suhu, Aliran, …).
+     * Dulu `null` (General). Yang masternya General menimpa ke `null`:
+     * Chlorine (`156` T & %RH), Tachometer (`182` T), Turbidimeter (`177` T).
      */
     public function desimalSuhuEnv(): ?int
     {
-        return null;
+        return 1;
     }
 
     /** Lihat [desimalSuhuEnv]. */
     public function desimalKelembabanEnv(): ?int
     {
-        return null;
+        return 0;
     }
 
     /**

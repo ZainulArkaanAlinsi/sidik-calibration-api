@@ -294,8 +294,10 @@ class MicrometerSertifikatTest extends TestCase
         $bahan = app(DataTampilanSertifikat::class)->untuk($sesi->certificate()->firstOrFail());
         $html = view('sertifikat.pdf', [...$bahan, 'paksaPadat' => false])->render();
 
-        $this->assertStringContainsString('Standard (mm)', $html);
-        $this->assertStringContainsString('Correction (mm)', $html);
+        // K-50-15 (pemilik, 18 Okt 2026): satuan di baris sendiri di bawah
+        // judul kolom seperti master (`165!D17:L17` "mm"), bukan `Standard (mm)`.
+        $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>mm</th>\s*<th>mm</th>\s*<th>mm</th>#u', $html);
+        $this->assertStringContainsString('<th>Correction</th>', $html);
         $this->assertStringContainsString('0,00087', $html);
         $this->assertStringContainsString('0,00027', $html);
         $this->assertStringNotContainsString('0,871', $html);

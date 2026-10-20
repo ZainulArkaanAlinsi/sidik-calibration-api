@@ -5,14 +5,19 @@
     model. Snapshot dibekukan waktu terbit, jadi cetak ulang tahun depan tetap
     keluar angka & alamat yang sama persis kayak salinan yang dipegang pelanggan.
 
-    Empat bagian, nggak boleh ditambah: header informasi, tabel hasil kalibrasi
-    (+ dua catatan baku), tabel standar yang dipakai, footer. Kalau ada
-    permintaan nambah kolom, yang diubah spesifikasinya dulu — bukan file ini.
+    Dulu: empat bagian, nggak boleh ditambah (header informasi, tabel hasil +
+    dua catatan baku, tabel standar, footer). K-50-15 (pemilik, 18 Okt 2026,
+    `docs/permintaan-user-7.md` §52) membatalkannya: sertifikat wajib persis
+    lembar `SERTIFIKAT` master alatnya. Bentuk tiap master dinyatakan profil dan
+    dibekukan di snapshot (`tata_letak`, `catatan_blok`, `header_tambahan`,
+    `format` & `dicetak` per baris); file ini cuma menggambarnya. Tanpa kunci
+    itu — semua sertifikat lama dan alat yang profilnya belum menyatakan apa
+    pun — lembarnya keluar persis bentuk lamanya
+    (`App\Support\TataLetakSertifikat::BAWAAN`).
 
-    Satu pengecualian yang UDAH lewat jalur itu: `catatan_atas_hasil` (baris
-    opsional di atas tabel hasil, `Spindel No.` / `Speed (rpm)` Viscometer) —
-    spesifikasinya `docs/PRD-viscometer.md` §7 & `SERTIFIKAT.csv` baris 18.
-    `null` di enam alat lain, jadi bentuk cetaknya nggak kesenggol sama sekali.
+    `catatan_atas_hasil` (baris opsional di atas tabel hasil, `Spindel No.` /
+    `Speed (rpm)` Viscometer, `docs/PRD-viscometer.md` §7) tetap dibaca seperti
+    dulu.
 --}}
 @php
     $header = $snapshot['header'] ?? [];
@@ -20,6 +25,10 @@
     $meta = $snapshot['meta'] ?? [];
     $organisasi = $meta['organization'] ?? [];
     $desimal = $snapshot['desimal'] ?? \App\Support\Angka::DESIMAL_DEFAULT;
+    // Bentuk lembar (K-50-15): timpaan profil yang dibekukan di atas bentuk lama.
+    $tataLetak = \App\Support\TataLetakSertifikat::untuk($snapshot ?? []);
+    $blokCatatanPosisi = collect($snapshot['catatan_blok'] ?? [])->groupBy('posisi');
+    $nilaiKepala = [...($snapshot['header_tambahan'] ?? []), ...$header];
 
     $tgl = fn (?string $iso): string => $iso
         ? \Illuminate\Support\Carbon::parse($iso)->translatedFormat('d F Y')
@@ -188,6 +197,27 @@
         body.padat .kop-gambar { margin-bottom: 5px; }
         .catatan { font-size: 10px; font-style: italic; color: #444; margin-top: 8px; line-height: 1.5; }
         .catatan div { margin-bottom: 3px; }
+
+        /* K-50-15: blok catatan khas alat, baris satuan di bawah judul kolom,
+           sel gabung, dan "End of Certificate". Hanya dipakai lembar yang
+           snapshot-nya menyatakannya — lembar lain tidak punya elemennya. */
+        .blok-catatan { font-size: 10px; margin: 5px 0; }
+        .blok-catatan .judul-blok { font-weight: bold; }
+        table.catatan-tabel { border-collapse: collapse; }
+        table.catatan-tabel td { padding: 0 6px 0 0; vertical-align: top; }
+        body.padat .blok-catatan { font-size: 8.5px; margin: 3px 0; }
+        table.data tr.satuan th { font-weight: normal; }
+        /* Kepala dua kelompok master (K-50-15) punya SEPULUH baris, grid lama
+           delapan, dan baris satuan menambah satu baris lagi di tiap tabel
+           hasil. Tanpa dirapatkan, lembar terpadat (Spectrophotometer 24
+           titik, sisa 2 px di bentuk lama) meluap ke halaman dua. Barisnya
+           dirapatkan sampai tinggi kepala baru tidak melebihi grid lama.
+           Cuma kena kepala bentuk master — lembar bentuk lama tidak berubah. */
+        table.info.kepala-master td { padding-top: 1px; padding-bottom: 1px; line-height: 1.3; }
+        body.padat table.info.kepala-master td { padding-top: 0; padding-bottom: 0; line-height: 1.05; }
+        body.padat table.data tr.satuan th { padding-top: 0; padding-bottom: 0; line-height: 1; font-size: 7.5px; }
+        table.data td.gabung { vertical-align: middle; }
+        .akhir-sertifikat { text-align: center; font-size: 10px; margin-top: 8px; }
 
         .putusan { text-align: center; font-size: 14.5px; font-weight: bold; padding: 6px; margin: 10px 0; border: 2px solid; }
         .pass { color: #146c2e; border-color: #146c2e; }
@@ -571,7 +601,7 @@
      `longgar`. Kalau dikirim, `SertifikatSatuHalaman` sudah mengukur hasil
      render sungguhan tingkat demi tingkat — tebakan itu justru membuat
      Centrifuge 13 baris dipaksa ke tabel 8px padahal muat di ukuran rapat. --}}
-@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && collect($snapshot['hasil'] ?? [])->count() > 12) || ($snapshot['timbangan'] ?? null) !== null))
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && count(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? [])) > 12) || ($snapshot['timbangan'] ?? null) !== null))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -699,8 +729,13 @@
 
       Kop teks tetap dipertahanin sebagai jalur cadangan: organisasi yang belum
       punya berkas kop tetap dapat sertifikat berkepala, bukan lembar telanjang.
+
+      `tata_letak.kop` = false (K-50-15) melewati kop sama sekali: lembar
+      SERTIFIKAT master tidak memuat kop gambar, dan kertasnya bisa saja sudah
+      berkop cetak. Bawaannya `true` — bentuk lama.
     --}}
-    @if (! empty($kop))
+    @if (! $tataLetak['kop'])
+    @elseif (! empty($kop))
         <div class="kop-gambar"><img src="{{ $kop }}" alt="Kop surat"></div>
     @else
     <div class="kop">
@@ -737,48 +772,43 @@
     </div>
     @endif
 
-    <div class="judul">CALIBRATION CERTIFICATE</div>
+    @if (filled($tataLetak['judul']))
+        <div class="judul">{{ $tataLetak['judul'] }}</div>
+    @endif
     @if (filled($header['catatan_revisi'] ?? null))
         <div class="catatan-revisi">{{ $header['catatan_revisi'] }}</div>
     @endif
 
-    {{-- Header informasi: 16 field, urutannya dikunci spesifikasi. --}}
-    <table class="info">
-        <tr>
-            <td class="lbl">Certificate Number</td><td class="val">{{ $isi($header['certificate_number'] ?? null) }}</td>
-            <td class="lbl">Page</td><td class="val">{{ $isi($header['page'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Owner</td><td class="val">{{ $isi($header['owner'] ?? null) }}</td>
-            <td class="lbl">Order Number</td><td class="val">{{ $isi($header['order_number'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Address</td><td class="val">{{ $isi($header['address'] ?? null) }}</td>
-            <td class="lbl">Received Date</td><td class="val">{{ $tgl($header['received_date'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Equipment Name</td><td class="val alat">{{ $isi($header['equipment_name'] ?? null) }}</td>
-            <td class="lbl">Manufacturer</td><td class="val">{{ $isi($header['manufacturer'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Calibration Location</td><td class="val">{{ $isi($header['calibration_location'] ?? null) }}</td>
-            <td class="lbl">Model/Type</td><td class="val">{{ $isi($header['model_type'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Calibration Date</td><td class="val">{{ $tgl($header['calibration_date'] ?? null) }}</td>
-            <td class="lbl">Serial Number</td><td class="val">{{ $isi($header['serial_number'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Calibration Method</td><td class="val">{{ $isi($header['calibration_method'] ?? null) }}</td>
-            <td class="lbl">Capacity/Graduation</td><td class="val tumpuk">{{ $isi($header['capacity_graduation'] ?? null) }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Env. Condition</td><td class="val">{{ $isi($header['env_condition'] ?? null) }}</td>
-            <td class="lbl">Technician ID</td><td class="val">{{ $isi($header['technician_id'] ?? null) }}</td>
-        </tr>
+    {{-- Header informasi. Dulu 16 field dengan urutan yang "dikunci
+         spesifikasi"; K-50-15 (18 Okt 2026, `docs/permintaan-user-7.md` §52)
+         membatalkan kunci itu — urutan & label grid ikut lembar `SERTIFIKAT`
+         master alatnya (`tata_letak.kepala`: baris `[kiri, kanan]`, sel kosong
+         boleh). Bawaannya grid lama 8 × 2 (`TataLetakSertifikat::BAWAAN`).
+         Sel ber-`\n` (Capacity/Graduation bertingkat, Env. Condition
+         bertumpuk) dicetak `pre-line`. --}}
+    <table class="info{{ $tataLetak['kepala'] !== \App\Support\TataLetakSertifikat::BAWAAN['kepala'] ? ' kepala-master' : '' }}">
+        @php($rentangKepala = \App\Support\TataLetakSertifikat::rentangKepala($tataLetak['kepala']))
+        @foreach ($tataLetak['kepala'] as $iKepala => $barisKepala)
+            <tr>
+                @foreach ($barisKepala as $jKepala => $selKepala)
+                    @php($rsKepala = $rentangKepala[$iKepala][$jKepala] ?? 1)
+                    @php($atrRs = $rsKepala > 1 ? ' rowspan="'.$rsKepala.'"' : '')
+                    @if ($rsKepala === 0)
+                    @elseif ($selKepala === null)
+                        <td class="lbl"></td><td class="val"></td>
+                    @else
+                        @php($kunciKepala = $selKepala['kunci'])
+                        @php($teksKepala = in_array($kunciKepala, \App\Support\TataLetakSertifikat::KUNCI_TANGGAL, true) ? $tgl($nilaiKepala[$kunciKepala] ?? null) : $isi($nilaiKepala[$kunciKepala] ?? null))
+                        <td class="lbl"{!! $atrRs !!}>{{ $selKepala['label'] }}</td><td class="val{{ $kunciKepala === 'equipment_name' ? ' alat' : '' }}{{ $kunciKepala === 'capacity_graduation' || str_contains($teksKepala, "\n") ? ' tumpuk' : '' }}"{!! $atrRs !!}>{{ $teksKepala }}</td>
+                    @endif
+                @endforeach
+            </tr>
+        @endforeach
     </table>
 
-    <div class="judul-sub">CALIBRATION REPORT</div>
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_SESUDAH_KEPALA, [])])
+
+    <div class="judul-sub">{{ $tataLetak['judul_laporan'] }}</div>
     {{-- Baris opsional DI ATAS tabel — `catatan_atas_hasil` di snapshot,
          `null` di enam alat lain, baris nggak dicetak sama sekali. Satu-
          satunya pengecualian yang dikasih ke aturan "empat bagian, nggak
@@ -789,6 +819,7 @@
     @if (filled($snapshot['catatan_atas_hasil'] ?? null))
         <div class="catatan-atas-hasil">{{ $snapshot['catatan_atas_hasil'] }}</div>
     @endif
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_ATAS_HASIL, [])])
     {{-- Kolom "Remark" cuma dicetak kalau alatnya emang punya keterangan
          parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
          alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
@@ -802,8 +833,17 @@
 
          Alat tanpa keterangan titik (pH, Turbidimeter, Refractometer) lewat
          jalur yang SAMA dengan satu kelompok tanpa judul — bentuk cetaknya
-         nggak berubah sama sekali. --}}
-    @php($kelompok = collect($snapshot['hasil'] ?? [])->groupBy(fn ($b) => $b['remark'] ?? ''))
+         nggak berubah sama sekali.
+
+         K-50-15: kelompoknya `remark` DAN satuan PER BARIS — satuan baris
+         pertama dulu dipakai untuk seluruh tabel, sehingga baris mS/cm
+         Conductivity tercetak di bawah kepala `(µS/cm)` dan titik %RH
+         Thermohygro di bawah `(°C)`. Master mencetak tabel sendiri per satuan,
+         dengan U95 & `k` sendiri. `pisah_per_remark` = false menyatukan remark
+         ke satu tabel (Chlorine, Sieve: remark jadi KOLOM). Baris yang
+         disembunyikan master (`dicetak: false`) dilewati. --}}
+    @php($pisahRemark = (bool) $tataLetak['pisah_per_remark'])
+    @php($kelompok = collect(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? []))->groupBy(fn ($b) => \App\Support\TataLetakSertifikat::kunciKelompok($b, $pisahRemark)))
 
     {{-- Autoklaf: TIGA bagian, bukan tabel empat kolom.
 
@@ -1408,187 +1448,148 @@
         </table>
     @else
 
-    @forelse ($kelompok as $judulKelompok => $barisKelompok)
+    @forelse ($kelompok as $barisKelompok)
+        @php($barisKelompok = $barisKelompok->values())
+        @php($pertama = $barisKelompok->first())
+        @php($judulKelompok = $pisahRemark ? (string) ($pertama['remark'] ?? '') : '')
         @if (filled($judulKelompok))
             <div class="judul-kelompok">{{ $judulKelompok }}</div>
         @endif
 
-        {{-- Satuan diambil dari baris pertama kelompoknya: satu kelompok selalu
-             satu satuan (nm buat panjang gelombang, %T buat transmitan), dan
-             lembar master nulisnya di KEPALA kolom — `Standard (nm)`. Alat
-             bersatuan seragam ngirim null dan kepalanya tetap kayak dulu. --}}
-        @php($satKelompok = $barisKelompok->first()['satuan'] ?? null)
-        @php($sufiks = $satKelompok ? ' ('.$satKelompok.')' : '')
+        {{-- Satuan KELOMPOK — sejak K-50-15 satu kelompok memang satu satuan
+             (kunci kelompoknya ikut satuan baris), jadi baris pertama mewakili
+             semuanya. Lembar master nulisnya di KEPALA kolom (`Standard (nm)`)
+             atau, kalau `satuan_baris_sendiri`, di baris sendiri di bawah judul
+             kolom (`D17` "mm"). Alat bersatuan seragam ngirim null di baris.
+             Bentuk lama: kepalanya tanpa satuan (tetap begitu untuk snapshot
+             lama). Bentuk master (`satuan_baris_sendiri`, K-50-15): baris
+             satuannya jatuh ke satuan sertifikat (`snapshot.satuan`) — master
+             selalu menulisnya (`177!C21` `NTU`, `178!C20` `cP`). --}}
+        @php($satKelompok = $pertama['satuan'] ?? ($tataLetak['satuan_baris_sendiri'] ? ($snapshot['satuan'] ?? null) : null))
         {{-- Kolom R² cuma ada di blok %T Spectrophotometer, dan cuma kalau
              definisinya udah diputus lab (`config('kalibrasi.r2_spektro')`).
              Kelompok lain & sertifikat lama yang snapshot-nya belum punya kunci
              ini balik null — kolomnya NGGAK MUNCUL, bukan muncul kosong.
              Alasan lengkapnya: docs/pertanyaan-lab-r2-spektro.md. --}}
-        @php($r2 = $barisKelompok->first()['r2'] ?? null)
-        {{-- Judul kolom kedua beda per master: lima alat nulis
-             `Unit Under Test`, Spectrophotometer nulis `UUT` (di ketiga
-             bloknya, jadi bukan sel yang kepotong). Sertifikat lama yang
-             snapshot-nya belum punya kunci ini jatuh ke judul lamanya. --}}
-        @php($judulUut = $snapshot['judul_uut'] ?? 'Unit Under Test')
-        @php($judulStandar = $snapshot['judul_standar'] ?? 'Standard')
-        {{-- `U95` jadi kolom keempat (Viscometer) atau satu baris ringkas di
-             bawah tabel (lima alat lain). Sertifikat lama yang snapshot-nya
-             belum punya kunci ini balik `false` — bentuk cetaknya persis kayak
-             waktu diterbitkan. Lihat `CalibrationProfile::u95PerTitik()`. --}}
-        @php($u95Kolom = $snapshot['u95_per_titik'] ?? false)
-        {{-- Judul kolom KETIGA. Empat puluh alat nyetak `Correction`; Proving
-             Ring nyetak `Calibration Factor`, dan isinya bukan selisih
-             melainkan pembagian (kN per divisi dial). Snapshot lama yang belum
-             punya kunci ini jatuh ke judul lamanya. --}}
-        @php($judulKoreksi = $snapshot['judul_koreksi'] ?? 'Correction')
-        {{-- Kolom KEEMPAT: sebaran per titik. `null` = nggak dicetak, dan itu
-             perilaku empat puluh alat lain. Kelompok Gaya makai: UTM & Load
-             Cell nulis `RRPE`, Proving Ring `Repeatability` — dua nama karena
-             dua besaran yang beda pembaginya. --}}
-        @php($judulSebaran = $snapshot['judul_sebaran'] ?? null)
-        {{-- Desimal khusus kolom ketiga. `null` = ikut desimal barisnya, dan
-             itu perilaku empat puluh alat lain. --}}
-        @php($dKoreksi = $snapshot['desimal_koreksi'] ?? null)
+        @php($r2 = $pertama['r2'] ?? null)
+        {{-- Kolom yang dicetak & urutannya. Tanpa `tata_letak.kolom_hasil`
+             susunannya bentuk lama: Standard · UUT · Correction · (sebaran,
+             kalau `judul_sebaran`) · (U95 per titik, kalau `u95_per_titik` —
+             Viscometer) · (R²). Dengan timpaan profil, urutan & judul ikut
+             master (Flowmeter: UUT dulu; Chlorine/Sieve: kolom Remark;
+             Anak Timbangan: tanpa Correction). Judul bawaan tiap kolom tetap
+             dari snapshot (`judul_standar`, `judul_uut`, `judul_koreksi`,
+             `judul_sebaran`) — sertifikat lama jatuh ke judul lamanya. --}}
+        @php($kolomHasil = \App\Support\TataLetakSertifikat::kolomHasil($snapshot, $tataLetak, $r2 !== null))
+        @php($susunanLama = $tataLetak['kolom_hasil'] === null)
+        @php($u95Kolom = collect($kolomHasil)->contains(fn ($k) => $k['kolom'] === 'u95'))
+        @php($barisSatuan = (bool) $tataLetak['satuan_baris_sendiri'])
+        {{-- Judul kolom U95 bawaan nyebut `k` cuma kalau alat ini emang
+             MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis kayak masternya
+             (`SERTIFIKAT` R21): angka ketidakpastian tanpa faktor cakupannya
+             nggak berarti apa-apa, dan `k`-nya emang dikunci 2.
+
+             Gas Detector nggak ngunci — `k` keempat gasnya beda (1,9715 /
+             2,0106 / 1,9744 / 1,9717), jadi judul `k=2` di situ pernyataan yang
+             SALAH. Masternya sendiri nulis `U95% (±)`.
+
+             Snapshot lama belum punya `faktor_cakupan_tetap` sama sekali dan
+             jatuh ke 2.0 — sertifikat Viscometer yang udah terbit nggak berubah
+             bentuk. Dipakai `array_key_exists`, BUKAN `??`: alat yang `k`-nya
+             nggak dikunci nyimpen null di kunci itu, dan `??` nggak bisa
+             mbedain "kuncinya belum ada" dari "kuncinya ada, isinya null". --}}
+        @php($kTetap = array_key_exists('faktor_cakupan_tetap', $snapshot) ? $snapshot['faktor_cakupan_tetap'] : 2.0)
+        @php($judulTh = function (array $k) use ($snapshot, $tataLetak, $satKelompok, $barisSatuan, $kTetap): string {
+            $sat = \App\Support\TataLetakSertifikat::satuanKolom($k, $satKelompok);
+            $sufiks = $barisSatuan || $sat === null ? '' : ' ('.e($sat).')';
+
+            if ($k['kolom'] === 'u95' && $k['judul'] === null) {
+                return $tataLetak['judul_kolom_u95'] !== null
+                    ? e($tataLetak['judul_kolom_u95']).$sufiks
+                    : 'U<sub>95%</sub>'.e($kTetap === null ? ' (±)' : ', k='.\App\Support\Angka::hasil((float) $kTetap, 0)).$sufiks;
+            }
+
+            if ($k['kolom'] === 'r2' && $k['judul'] === null) {
+                return 'R<sup>2</sup>';
+            }
+
+            return e(\App\Support\TataLetakSertifikat::judulKolom($k, $snapshot)).$sufiks;
+        })
+        {{-- Teks tiap sel lewat SATU aturan (`TataLetakSertifikat::teksSel`),
+             yang juga dipakai Excel buat desimalnya:
+
+             - desimal PER BARIS dulu (`desimal`), baru tingkat sertifikat —
+               Turbidimeter 0,01 / 0,1 / 1 per rentang nggak bisa diwakili satu
+               angka;
+             - `format` per kolom dari format sel master (K-50-15) menang di
+               kolom yang disebutnya — `0.0` tetap `5,0`, `General` presisi
+               tampilan;
+             - koreksi negatif yang membulat ke nol: `-0,0` atau `0,0` menurut
+               `tanda_nol` master masing-masing;
+             - Standard Value nol di belakang dibuang (`standar_ringkas`) kecuali
+               master menulisnya penuh (Spektro `334,0`);
+             - `-` di koreksi titik nol Proving Ring (`koreksi_kosong`) dan di
+               sebaran titik nol — bukan `0,00`, yang kebaca "diukur dan
+               hasilnya nol sempurna". --}}
+        @php($teksBaris = $barisKelompok->map(fn ($b) => collect($kolomHasil)->mapWithKeys(fn ($k) => [$k['kolom'] => \App\Support\TataLetakSertifikat::teksSel($b, $k['kolom'], $snapshot, (int) $desimal)])->all())->all())
+        {{-- Sel `gabung` = satu kotak setinggi sel-sel bersebelahan yang angkanya
+             sama, niru sel merge di master: R² satu kotak per kelompok
+             (`SERTIFIKAT!R47:R51`), U95 per rentang. Tanpa `middle` angkanya
+             nempel di baris pertama dan kotaknya kebaca kayak nilai baris
+             pertama doang. --}}
+        @php($rentang = \App\Support\TataLetakSertifikat::rentangGabung($teksBaris, $kolomHasil))
         <table class="data">
             <thead>
                 <tr>
-                    <th>{{ $judulStandar }}{{ $sufiks }}</th>
-                    <th>{{ $judulUut }}{{ $sufiks }}</th>
-                    <th>{{ $judulKoreksi }}{{ $sufiks }}</th>
-                    @if ($judulSebaran !== null)
-                        <th>{{ $judulSebaran }} (%)</th>
-                    @endif
-                    {{-- Judulnya nyebut `k` cuma kalau alat ini emang
-                         MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis
-                         kayak masternya (`SERTIFIKAT` R21): angka
-                         ketidakpastian tanpa faktor cakupannya nggak berarti
-                         apa-apa, dan `k`-nya emang dikunci 2.
-
-                         Gas Detector nggak ngunci — `k` keempat gasnya beda
-                         (1,9715 / 2,0106 / 1,9744 / 1,9717), jadi judul `k=2`
-                         di situ pernyataan yang SALAH. Masternya sendiri nulis
-                         `U95% (±)`. Angkanya tetap dilaporkan lengkap di
-                         kalimat `Coverage Factor ( k ) = …` di bawah tabel.
-
-                         Snapshot lama belum punya `faktor_cakupan_tetap`
-                         sama sekali dan jatuh ke 2.0 — sertifikat Viscometer
-                         yang udah terbit nggak berubah bentuk.
-
-                         Dipakai `array_key_exists`, BUKAN `??`: alat yang
-                         `k`-nya nggak dikunci nyimpen null di kunci itu, dan
-                         `??` nggak bisa mbedain "kuncinya belum ada" dari
-                         "kuncinya ada, isinya null" — dua-duanya bakal jatuh
-                         ke 2.0 dan Gas Detector balik nyetak `k=2`. --}}
-                    @if ($u95Kolom)
-                        @php($kTetap = array_key_exists('faktor_cakupan_tetap', $snapshot)
-                            ? $snapshot['faktor_cakupan_tetap']
-                            : 2.0)
-                        <th>
-                            U<sub>95%</sub>{{ $kTetap === null ? ' (±)' : ', k='.\App\Support\Angka::hasil((float) $kTetap, 0) }}{{ $sufiks }}
-                        </th>
-                    @endif
-                    @if ($r2 !== null)
-                        <th>R<sup>2</sup></th>
-                    @endif
+                    @foreach ($kolomHasil as $kol)
+                        <th>{!! $judulTh($kol) !!}</th>
+                    @endforeach
                 </tr>
+                {{-- Baris satuan (master `D17` "mm") cuma digambar kalau ada
+                     satuan yang ditulis — sesi tanpa satuan tidak dapat baris
+                     kepala kosong. --}}
+                @php($satuanKolom = collect($kolomHasil)->map(fn ($kol) => \App\Support\TataLetakSertifikat::satuanKolom($kol, $satKelompok)))
+                @if ($barisSatuan && $satuanKolom->filter()->isNotEmpty())
+                    <tr class="satuan">
+                        @foreach ($satuanKolom as $satuanTh)
+                            <th>{{ $satuanTh ?? '' }}</th>
+                        @endforeach
+                    </tr>
+                @endif
             </thead>
             <tbody>
-                @foreach ($barisKelompok as $baris)
-                    {{-- Desimal diambil PER BARIS dulu, baru jatuh ke $desimal
-                         tingkat-sertifikat. Alat yang resolusinya berubah
-                         menurut rentang (Turbidimeter: 0,01 di bawah 10 NTU,
-                         0,1 di 10–100, 1 di atasnya) nggak bisa diwakili satu
-                         angka: dipaksa satu, titik 100 NTU kecetak `101,00` —
-                         dua digit yang alatnya nggak bisa tampilkan. --}}
-                    @php($db = $baris['desimal'] ?? $desimal)
-                    {{-- Koreksi negatif yang membulat ke nol: `-0,0` di
-                         Turbidimeter/pH/Chlorine, `0,0` di Conductivity. Beda
-                         itu dibaca dari master masing-masing, bukan dinalar —
-                         lihat `CalibrationProfile::tandaNolDicetak()`. --}}
-                    @php($tandaNol = $baris['tanda_nol'] ?? true)
-                    {{-- Nol di belakang koma di kolom Standard Value dibuang
-                         (`100`) atau ditulis penuh (`100,0`) — beda per master,
-                         dibaca dari `CalibrationProfile::nolBelakangStandarDibuang()`.
-                         Sertifikat lama yang snapshot-nya belum punya kunci ini
-                         jatuh ke `true`, persis perilaku lamanya. --}}
-                    @php($standarRingkas = $baris['standar_ringkas'] ?? true)
+                @foreach ($barisKelompok as $i => $baris)
                     <tr>
-                        {{-- Standard Value nulis nilai NOMINAL standarnya.
-                             Turbidimeter mau `1` / `100` / `1000` (nol di
-                             belakang dibuang), Spectrophotometer mau `334,0` /
-                             `460,0` — dua kolom lain selalu ikut desimal
-                             barisnya. --}}
-                        <td>{{ $standarRingkas
-                            ? \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db)
-                            : \App\Support\Angka::hasil($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db, tandaNol: $tandaNol) }}</td>
-                        <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
-                        {{-- `-`, bukan `0,00000`: titik yang memang nggak punya
-                             nilai di kolom ini (faktor kalibrasi titik nol
-                             Proving Ring — pembaginya nol). Masternya nyetak
-                             `-` juga. Snapshot lama nggak punya kunci ini dan
-                             jatuh ke `false`, persis perilaku lamanya. --}}
-                        <td>{{ ($baris['koreksi_kosong'] ?? false)
-                            ? '-'
-                            : \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $dKoreksi ?? $db, tandaNol: $tandaNol) }}</td>
-                        @if ($judulSebaran !== null)
-                            {{-- Titik nol nggak punya sebaran, dan masternya
-                                 nyetak `-` di situ — bukan `0,00`, yang kebaca
-                                 sebagai "diukur dan hasilnya nol sempurna". --}}
-                            <td>{{ $baris['sebaran'] === null
-                                ? '-'
-                                : \App\Support\Angka::hasil((float) $baris['sebaran'], 2) }}</td>
-                        @endif
-                        @if ($u95Kolom)
-                            {{-- Desimalnya lewat jalur `desimal_u95` yang sama
-                                 kayak baris ringkas di bawah — bukan `$db` —
-                                 biar alat yang nyetak U95 beda desimal dari
-                                 kolom hasilnya tetap kepegang satu aturan. --}}
-                            <td>{{ \App\Support\Angka::hasil($baris['u95'] === null ? null : (float) $baris['u95'], $baris['desimal_u95'] ?? $db) }}</td>
-                        @endif
-                        @if ($r2 !== null && $loop->first)
-                            {{-- Angkanya SATU buat seluruh kelompok, jadi
-                                 selnya di-`rowspan` setinggi tabelnya — persis
-                                 master, yang nge-merge `SERTIFIKAT!R47:R51`
-                                 jadi satu kotak. Diulang tiap baris malah
-                                 kebaca kayak lima R² yang kebetulan sama.
-
-                                 NOL desimal, bukan empat. Sel masternya nyimpen
-                                 `0,9359` tapi diformat 0 desimal, jadi yang
-                                 tercetak `1` — dan `1` itu juga yang keluar
-                                 kalau angkanya dihitung ulang dari data blok
-                                 (`RSQ` = 0,999922). Dua kandidat rumus yang
-                                 belum bisa dibedain itu NYETAK ANGKA YANG SAMA,
-                                 jadi kolomnya nggak lagi nunggu jawaban lab —
-                                 lihat `docs/pertanyaan-lab-r2-spektro.md`. --}}
-                            <td class="r2" rowspan="{{ $barisKelompok->count() }}">{{ \App\Support\Angka::id((float) $r2, 0) }}</td>
-                        @endif
+                        @foreach ($kolomHasil as $kol)
+                            @if (! $kol['gabung'])
+                                <td>{{ $teksBaris[$i][$kol['kolom']] }}</td>
+                            @elseif (($rentang[$kol['kolom']][$i] ?? 0) > 0)
+                                <td class="{{ $kol['kolom'] === 'r2' ? 'r2' : 'gabung' }}" rowspan="{{ $rentang[$kol['kolom']][$i] }}">{{ $teksBaris[$i][$kol['kolom']] }}</td>
+                            @endif
+                        @endforeach
                     </tr>
                 @endforeach
 
                 {{-- U95 satu kelompok — diambil dari baris pertama, BUKAN
                      dihitung ulang. Tiap titik sekelompok emang bawa angka yang
                      sama; kalau suatu saat beda, yang salah datanya, dan
-                     ngerata-ratain di sini cuma nyembunyiin itu. --}}
-                @php($barisU95 = $barisKelompok->first())
-                {{-- Desimal U95 punya jalurnya sendiri: master nyetak
-                     `0,50 %T` sementara kolom UUT & Correction di blok yang
-                     sama pakai tiga desimal (`9,665`). Sertifikat lama yang
-                     snapshot-nya belum punya kunci ini jatuh ke desimal titik,
-                     persis kayak waktu diterbitkan. --}}
-                @php($dbU95 = $barisU95['desimal_u95'] ?? $barisU95['desimal'] ?? $desimal)
-                {{-- Dilewat kalau U95 udah jadi kolom per baris — kalau
+                     ngerata-ratain di sini cuma nyembunyiin itu. Desimalnya
+                     jalur `desimal_u95` / `format.u95` (master spektro nyetak
+                     `0,50 %T` sementara UUT di blok yang sama tiga desimal).
+
+                     Dilewat kalau U95 udah jadi kolom per baris — kalau
                      dua-duanya digambar, angka titik pertama kecetak dobel dan
                      kebaca kayak U95 buat seluruh tabel. --}}
                 @if (! $u95Kolom)
                 <tr class="u95">
-                    <td colspan="2">Uncertainty U<sub>95%</sub> = &plusmn;</td>
-                    <td>{{ \App\Support\Angka::hasil($barisU95['u95'] === null ? null : (float) $barisU95['u95'], $dbU95) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
+                    <td colspan="{{ \App\Support\TataLetakSertifikat::posisiU95($kolomHasil) }}">{!! $tataLetak['label_u95'] === null ? 'Uncertainty U<sub>95%</sub> = &plusmn;' : e($tataLetak['label_u95']) !!}</td>
+                    <td>{{ \App\Support\TataLetakSertifikat::teksSel($pertama, 'u95', $snapshot, (int) $desimal) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
                     {{-- Sel kosong biar baris U95 tetap selebar tabelnya waktu
                          kolom R² muncul. Tanpa ini kolom terakhir kegeser dan
                          angka U95 mendarat di bawah kepala `R²`. --}}
-                    @if ($r2 !== null)
+                    @for ($j = 0; $j < \App\Support\TataLetakSertifikat::kosongSesudahU95($kolomHasil, $susunanLama); $j++)
                         <td></td>
-                    @endif
+                    @endfor
                 </tr>
                 @endif
             </tbody>
@@ -1597,45 +1598,33 @@
         {{-- Kalimat faktor cakupan dicetak PER KELOMPOK: k-nya beda-beda
              (Holmium 3,18; Didynium 2,36; %T 2,01). Sertifikat lama yang
              snapshot-nya belum punya `faktor_cakupan_k` nggak nyetak baris ini
-             sama sekali — bukan ngarang angkanya. --}}
-        @php($k = $barisKelompok->first()['faktor_cakupan_k'] ?? null)
-        {{-- Desimal `k` punya jalurnya sendiri: master spektro nyimpen
-             3,182446… tapi selnya diformat 0 desimal, jadi yang tercetak `3`.
-             Sertifikat lama (dan alat yang masternya belum diadu ke cetakan)
-             jatuh ke perilaku lama: 2 desimal, nol di belakang dibuang. --}}
-        @php($dbK = $barisKelompok->first()['desimal_k'] ?? null)
-        {{-- `=` jadi `≈` kalau kelompok ini memuat `k` yang BEDA di presisi yang
-             dicetak.
+             sama sekali — bukan ngarang angkanya.
 
-             Kalimat ini dicetak sekali per kelompok `remark`, memakai `k` baris
-             PERTAMA. Buat Spektro itu benar — tiap kelompoknya memang satu `k`
-             (Holmium 3,18; Didynium 2,36; %T 2,01). Tapi alat yang seluruh
-             barisnya ber-`remark` kosong punya SATU kelompok berisi banyak `k`:
-             di Tachometer & Centrifuge rentangnya 1,95997…1,96879, dan blok
-             terakhir membulat ke 1,97 sementara yang tercetak 1,96.
+             Angka `k` lewat `TataLetakSertifikat::teksK`: `format.k` dari sel
+             master (K-50-15, 40 lembar `0` → `2`), lalu `desimal_k` (spektro
+             0 desimal), lalu perilaku lama (2 desimal, nol di belakang dibuang).
 
-             Yang diubah cuma satu tanda, dan sengaja: (a) mencetak rentang atau
-             (b) satu kalimat per blok mengubah TATA LETAK dokumen terakreditasi
-             yang sudah terbit. `≈` menghentikan dokumen mengaku presisi yang
-             nggak dia punya tanpa menyentuh satu pun angka maupun susunannya.
+             `=` jadi `≈` kalau kelompok ini memuat `k` yang BEDA di presisi yang
+             dicetak. Alat yang seluruh barisnya ber-`remark` kosong punya SATU
+             kelompok berisi banyak `k` — di Tachometer & Centrifuge rentangnya
+             1,95997…1,96879, dan blok terakhir membulat ke 1,97 sementara yang
+             tercetak 1,96. `≈` menghentikan dokumen mengaku presisi yang nggak
+             dia punya tanpa menyentuh satu pun angka maupun susunannya.
+             Dihitung dari yang TERCETAK, bukan dari nilai mentahnya.
 
-             Dihitung dari yang TERCETAK, bukan dari nilai mentahnya: dua `k`
-             yang beda di desimal keempat tapi membulat ke angka yang sama
-             memang bukan ketidakcocokan yang kebaca pelanggan, dan menandainya
-             `≈` cuma bikin tanda itu murah. --}}
-        @php($cetakK = fn ($nilai) => $dbK === null
-            ? \App\Support\Angka::idRingkas((float) $nilai, 2)
-            : \App\Support\Angka::id((float) $nilai, $dbK))
+             Bunyi kalimatnya bisa ditimpa profil (`tata_letak.kalimat_k`, mis.
+             persis master "… Convidence Level …"); `=`/`≈` dan angkanya tetap
+             ditambahkan di sini. --}}
+        @php($k = $pertama['faktor_cakupan_k'] ?? null)
         @php($kBeda = $barisKelompok
-            ->pluck('faktor_cakupan_k')
-            ->filter(fn ($n) => $n !== null)
-            ->map($cetakK)
+            ->filter(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null)
+            ->map(fn ($b) => \App\Support\TataLetakSertifikat::teksK($b, (float) $b['faktor_cakupan_k']))
             ->unique()
             ->count() > 1)
         @if ($k !== null)
             <div class="ket-k">
-                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) {{ $kBeda ? '≈' : '=' }}
-                {{ $cetakK($k) }}
+                {{ $tataLetak['kalimat_k'] ?? 'The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k )' }} {{ $kBeda ? '≈' : '=' }}
+                {{ \App\Support\TataLetakSertifikat::teksK($pertama, (float) $k) }}
             </div>
         @endif
     @empty
@@ -1645,6 +1634,8 @@
         </table>
     @endforelse
     @endif
+
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_BAWAH_HASIL, [])])
 
     {{-- Catatan baku dari snapshot. Kalimat "The Uncertainty is taken at a
          Confidence Level…" DILEWATI kalau tiap kelompok udah nyetak kalimatnya
@@ -1667,35 +1658,41 @@
         @endforeach
     </div>
 
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_SESUDAH_CATATAN, [])])
+
     {{-- Keputusan PASS/FAIL bukan bagian struktur baku — cuma muncul kalau lab
          sengaja nyalain lewat pengaturan organisasi. --}}
     @if (! empty($keputusan))
         <div class="putusan {{ strtolower($keputusan) }}">KEPUTUSAN: {{ $keputusan }}</div>
     @endif
 
-    <div class="judul-sub">STANDARD USED</div>
+    {{-- Judul & kolom ikut master (K-50-15): `Standard used :`, `8. STANDARD
+         USED`; Timbangan & Anak Timbangan punya kolom `Nominal Mass`
+         (`isiTambahanStandarDigunakan`). Bawaannya bentuk lama empat kolom. --}}
+    @php($kolomStandar = $tataLetak['kolom_standar_digunakan'])
+    <div class="judul-sub">{{ $tataLetak['judul_standar_digunakan'] }}</div>
     <table class="data">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Merk/Type</th>
-                <th>Serial Number</th>
-                <th>Traceable to SI through</th>
+                @foreach ($kolomStandar as $kolom)
+                    <th>{{ $kolom['label'] }}</th>
+                @endforeach
             </tr>
         </thead>
         <tbody>
             @forelse ($snapshot['standar_digunakan'] ?? [] as $standar)
                 <tr>
-                    <td class="kiri">{{ $isi($standar['name'] ?? null) }}</td>
-                    <td>{{ $isi($standar['merk_type'] ?? null) }}</td>
-                    <td>{{ $isi($standar['serial_number'] ?? null) }}</td>
-                    <td>{{ $isi($standar['traceable_to'] ?? null) }}</td>
+                    @foreach ($kolomStandar as $kolom)
+                        <td{!! $kolom['kunci'] === 'name' ? ' class="kiri"' : '' !!}>{{ $isi($standar[$kolom['kunci']] ?? null) }}</td>
+                    @endforeach
                 </tr>
             @empty
-                <tr><td colspan="4">—</td></tr>
+                <tr><td colspan="{{ count($kolomStandar) }}">—</td></tr>
             @endforelse
         </tbody>
     </table>
+
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_SESUDAH_STANDAR, [])])
 
     <table class="ttd">
         {{--
@@ -1706,7 +1703,7 @@
         --}}
         <tr>
             <td style="width: 38%;">
-                <div>Issuance Date: {{ $tgl($footer['issuance_date'] ?? null) }}</div>
+                <div>{{ $tataLetak['label_tanggal_terbit'] }} {{ $tgl($footer['issuance_date'] ?? null) }}</div>
 
                 {{--
                   Ruang tanda tangan. Tingginya dipatok di CSS, jadi tata letaknya
@@ -1794,6 +1791,15 @@
             @endif
         </tr>
     </table>
+
+    @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_SESUDAH_TTD, [])])
+
+    {{-- "End of Certificate" — 13 master mencetaknya sesudah tanda tangan
+         (`139!G68`, `155!E66`, `173!F53`, …), dengan strip persis masternya.
+         `null` = tidak dicetak (bentuk lama). --}}
+    @if (filled($tataLetak['akhir_sertifikat']))
+        <div class="akhir-sertifikat">{{ $tataLetak['akhir_sertifikat'] }}</div>
+    @endif
 
     <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
     @if ($longgar !== 0)

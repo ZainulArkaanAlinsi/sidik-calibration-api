@@ -231,6 +231,9 @@ class SertifikatCocokMasterTest extends TestCase
      */
     public static function envKondisi(): array
     {
+        // Bunyi K-50-15 (pemilik, 18 Okt 2026): T & %RH sebaris-sebaris dan
+        // satuan dipisah spasi, seperti sel lembar SERTIFIKAT master. Angka &
+        // desimalnya tidak berubah.
         return [
             // ⚠ pH & Refractometer BELUM diadu ke halaman master masing-masing.
             //
@@ -245,18 +248,18 @@ class SertifikatCocokMasterTest extends TestCase
             // bawah 10 Agt 2026. Jangan dianggap kelar cuma karena ijo.
             'pH Meter' => [
                 'nomorSesi' => '2405.13.A',
-                'harapan' => 'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
+                'harapan' => "T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %",
             ],
             // Disalin dari halaman `Env. Condition` master yang diadu langsung
             // 10 Agt 2026 — `T 23,07 °C ± 1,7 °C` & `%RH 52 % ± 4,8 %`. Nilai
             // kelembaban tersimpan 51,83, yang kecetak `52`.
             'Turbidimeter' => [
                 'nomorSesi' => '2406.32.A',
-                'harapan' => 'T: 23,07°C ± 1,7°C — %RH: 52% ± 4,8%',
+                'harapan' => "T 23,07 °C ± 1,7 °C\n%RH 52 % ± 4,8 %",
             ],
             'Chlorine Meter' => [
                 'nomorSesi' => '2406.32.C',
-                'harapan' => 'T: 23,21°C ± 1,8°C — %RH: 53% ± 4,9%',
+                'harapan' => "T 23,21 °C ± 1,8 °C\n%RH 53 % ± 4,9 %",
             ],
             // U95 kelembaban SENGAJA beda dari master: 5,20 punya kita vs
             // 5,292447448959697 di sheet. Nilai & koreksinya sendiri cocok
@@ -294,7 +297,7 @@ class SertifikatCocokMasterTest extends TestCase
                 'nomorSesi' => '2211.11.R',
                 // T & nilai RH cocok persis sama master (21,96 & 60,41);
                 // yang beda cuma U95 RH — lihat catatan di atas.
-                'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60% ± 5,2%',
+                'harapan' => "T 22,0 °C ± 1,8 °C\n%RH 60 % ± 5,2 %",
             ],
         ];
     }
