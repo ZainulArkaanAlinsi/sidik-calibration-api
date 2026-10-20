@@ -206,7 +206,8 @@ class AutoclaveCertificateTest extends TestCase
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
 
-        foreach (['A) SEBARAN SUHU', 'B) KINERJA AUTOCLAVE', 'C) TEKANAN'] as $judul) {
+        // `C) Tekanan`: bunyi master `155!B35` di bentuk master (K-50-15).
+        foreach (['A) SEBARAN SUHU', 'B) KINERJA AUTOCLAVE', 'C) Tekanan'] as $judul) {
             $this->assertStringContainsString($judul, $html, "Bagian {$judul} nggak kecetak.");
         }
 

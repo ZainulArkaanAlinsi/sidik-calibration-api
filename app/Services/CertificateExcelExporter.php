@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Certificate;
 use App\Support\Angka;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\CellAlignment;
@@ -102,10 +103,10 @@ class CertificateExcelExporter
                     $header['owner'] ?? '',
                     $header['equipment_name'] ?? '',
                     $header['serial_number'] ?? '',
-                    $this->bulat($baris['standard_value'] ?? null, $db),
-                    $this->bulat($baris['unit_under_test'] ?? null, $db),
-                    $this->bulat($baris['correction'] ?? null, $db),
-                    $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $s->snapshot ?? [])),
+                    $this->bulat($baris['standard_value'] ?? null, $this->desimalSel($baris, 'standar', $db)),
+                    $this->bulat($baris['unit_under_test'] ?? null, $this->desimalSel($baris, 'uut', $db)),
+                    $this->bulat($baris['correction'] ?? null, $this->desimalSel($baris, 'koreksi', $db)),
+                    $this->bulat($baris['u95'] ?? null, $this->desimalSel($baris, 'u95', $this->desimalU95Baris($baris, $s->snapshot ?? []))),
                     // Kolomnya SELALU ada di rekap, beda dari sertifikat satuan:
                     // isinya lintas alat, dan yang punya remark cuma sebagian.
                     // Kolom yang muncul-ilang tergantung isi bikin rekap dua
@@ -218,6 +219,21 @@ class CertificateExcelExporter
      * @param  array<string, mixed>  $baris
      * @param  array<string, mixed>  $snapshot
      */
+    /**
+     * Desimal satu sel: format sel master baris itu (`baris.format`, K-50-15)
+     * menang bila ada — `null` = General — supaya Excel tidak menulis lima
+     * desimal `desimal` sementara PDF mencetak `0.000` master. Tanpa `format`:
+     * aturan lama (`$bawaan`).
+     *
+     * @param  array<string, mixed>  $baris
+     */
+    private function desimalSel(array $baris, string $kolom, int $bawaan): ?int
+    {
+        $format = $baris['format'][$kolom] ?? null;
+
+        return is_string($format) ? TataLetakSertifikat::desimalFormat($format) : $bawaan;
+    }
+
     private function desimalU95Baris(array $baris, array $snapshot): int
     {
         return (int) ($baris['desimal_u95'] ?? $this->desimalBaris($baris, $snapshot));
@@ -272,6 +288,16 @@ class CertificateExcelExporter
             return;
         }
 
+        // Bentuk master (K-50-15): tabel Excel = tabel PDF — urutan & judul
+        // kolom (`tata_letak.kolom_hasil`), tanda koreksi yang sudah dibekukan
+        // di snapshot, dan ANGKA TERCETAK (format sel). Snapshot terbit tanpa
+        // `tata_letak` tetap lewat jalur lama di bawah, byte demi byte.
+        if (isset($snapshot['tata_letak'])) {
+            $this->tulisHasilMaster($writer, $snapshot);
+
+            return;
+        }
+
         $adaRemark = collect($snapshot['hasil'] ?? [])
             ->contains(fn ($b) => filled($b['remark'] ?? null));
 
@@ -307,7 +333,9 @@ class CertificateExcelExporter
 
         $remarkTerakhir = null;
 
-        foreach ($snapshot['hasil'] ?? [] as $baris) {
+        // Baris yang disembunyikan master (`dicetak: false`, K-50-15) tidak
+        // ditulis — sama dengan PDF (`TataLetakSertifikat::barisDicetak`).
+        foreach (TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? []) as $baris) {
             $db = $this->desimalBaris($baris, $snapshot);
 
             // R² itu angka SATU KELOMPOK, bukan angka per titik — ditulis sekali
@@ -318,10 +346,10 @@ class CertificateExcelExporter
             $remarkTerakhir = $remark;
 
             $writer->addRow(Row::fromValues(array_merge([
-                $this->bulat($baris['standard_value'] ?? null, $db),
-                $this->bulat($baris['unit_under_test'] ?? null, $db),
-                $this->bulat($baris['correction'] ?? null, $db),
-                $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $snapshot)),
+                $this->bulat($baris['standard_value'] ?? null, $this->desimalSel($baris, 'standar', $db)),
+                $this->bulat($baris['unit_under_test'] ?? null, $this->desimalSel($baris, 'uut', $db)),
+                $this->bulat($baris['correction'] ?? null, $this->desimalSel($baris, 'koreksi', $db)),
+                $this->bulat($baris['u95'] ?? null, $this->desimalSel($baris, 'u95', $this->desimalU95Baris($baris, $snapshot))),
             ], $adaRemark ? [$baris['remark'] ?? ''] : [], $adaR2 ? [
                 // NOL desimal, sama kayak PDF & sel masternya (`0,9359`
                 // diformat 0 desimal → tercetak `1`). Empat desimal bikin
@@ -465,6 +493,112 @@ class CertificateExcelExporter
     private function kosong(Writer $writer): void
     {
         $writer->addRow(Row::fromValues(['']));
+    }
+
+    /**
+     * Tabel hasil bentuk master: tiap sel diturunkan dari teks yang DICETAK
+     * PDF (`TataLetakSertifikat::teksSel` / `teksPecah`), lalu ditulis
+     * sebagai angka bila teks itu angka — jadi Excel tidak bisa beda urutan,
+     * tanda, atau pembulatan dari PDF-nya (Tachometer: kolom Standard/UUT
+     * ditukar & koreksi bertanda −1 di profil; tabelnya tetap menjumlah).
+     *
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function tulisHasilMaster(Writer $writer, array $snapshot): void
+    {
+        $tl = TataLetakSertifikat::untuk($snapshot);
+        $baris = TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? []);
+        $adaR2 = collect($baris)->contains(fn ($b) => ($b['r2'] ?? null) !== null);
+        $kolom = TataLetakSertifikat::kolomHasil($snapshot, $tl, $adaR2);
+
+        // PDF mencetak U95 kelompok di baris ringkas di bawah tabel bila tidak
+        // menjadi kolom; tabel Excel tidak punya baris ringkas, jadi U95 tetap
+        // satu kolom sesudah Correction — seperti jalur lama.
+        if (! in_array('u95', array_column($kolom, 'kolom'), true)) {
+            $posisi = array_search('koreksi', array_column($kolom, 'kolom'), true);
+            $posisi = $posisi === false ? count($kolom) : $posisi + 1;
+            array_splice($kolom, $posisi, 0, [['kolom' => 'u95', 'judul' => null, 'satuan' => null, 'gabung' => false]]);
+        }
+        // Remark (judul tabel kelompok di PDF) jadi kolom sebelum R², seperti
+        // jalur lama — tabel Excel satu lembar, bukan per kelompok.
+        if (collect($baris)->contains(fn ($b) => filled($b['remark'] ?? null))
+            && ! in_array('remark', array_column($kolom, 'kolom'), true)) {
+            $posisiR2 = array_search('r2', array_column($kolom, 'kolom'), true);
+            array_splice($kolom, $posisiR2 === false ? count($kolom) : $posisiR2, 0, [['kolom' => 'remark', 'judul' => null, 'satuan' => null, 'gabung' => false]]);
+        }
+        $desimal = (int) ($snapshot['desimal'] ?? Angka::DESIMAL_DEFAULT);
+        // Satu baris satuan hanya bila seluruh tabel satu satuan; tabel
+        // bersatuan campuran (Spectro nm/%T, Conductivity µS/mS) tidak diberi
+        // satuan tunggal yang salah.
+        $satuanBaris = array_values(array_unique(array_map(static fn ($b) => $b['satuan'] ?? null, $baris)));
+        $satuanTabel = count($satuanBaris) === 1
+            ? ($satuanBaris[0] ?? ($tl['satuan_baris_sendiri'] ? ($snapshot['satuan_cetak'] ?? null) : null))
+            : null;
+
+        $judul = [];
+        $satuan = [];
+
+        foreach ($kolom as $k) {
+            $teks = $k['kolom'] === 'u95' && $k['judul'] === null && $tl['judul_kolom_u95'] !== null
+                ? $tl['judul_kolom_u95']
+                : TataLetakSertifikat::judulKolom($k, $snapshot);
+
+            foreach ($k['pecah'] ?? [null] as $p) {
+                $judul[] = $p === null ? $teks : $teks.' '.$p['judul'];
+                $satuan[] = $p === null ? (TataLetakSertifikat::satuanKolom($k, $satuanTabel) ?? '') : '';
+            }
+        }
+
+        $writer->addRow(Row::fromValues($judul, $this->gayaHeaderTabel()));
+
+        if (array_filter($satuan) !== []) {
+            $writer->addRow(Row::fromValues($satuan));
+        }
+
+        $sebagaiAngka = static function (string $teks): float|string {
+            if (! is_numeric($teks)) {
+                return $teks === '—' ? '' : $teks;
+            }
+
+            // `-0.00` tercetak sebagai nol bertanda; Excel tidak punya nol
+            // negatif yang kebaca, jadi ditulis 0 seperti jalur lama.
+            return (float) $teks == 0.0 ? 0.0 : (float) $teks;
+        };
+
+        $teksBaris = array_map(static fn (array $b): array => collect($kolom)->mapWithKeys(fn (array $k) => [
+            $k['kolom'] => isset($k['pecah'])
+                ? TataLetakSertifikat::teksPecah($b, $k, $snapshot)
+                : TataLetakSertifikat::teksSel($b, $k['kolom'], $snapshot, $desimal, $k),
+        ])->all(), $baris);
+        // Sel gabung PDF (R², U95 per rentang) ditulis SEKALI di baris
+        // pertamanya, sisanya kosong — seperti sel merge master.
+        $rentang = TataLetakSertifikat::rentangGabung($teksBaris, $kolom, $baris);
+
+        foreach ($baris as $i => $b) {
+            $sel = [];
+
+            foreach ($kolom as $k) {
+                $teks = $teksBaris[$i][$k['kolom']];
+
+                if (is_array($teks)) {
+                    foreach ($teks as $t) {
+                        $sel[] = $sebagaiAngka($t);
+                    }
+
+                    continue;
+                }
+
+                $sel[] = ($k['gabung'] && ($rentang[$k['kolom']][$i] ?? 1) === 0) ? '' : $sebagaiAngka($teks);
+            }
+
+            $writer->addRow(Row::fromValues($sel));
+        }
+
+        $this->kosong($writer);
+
+        foreach ($snapshot['catatan'] ?? [] as $catatan) {
+            $writer->addRow(Row::fromValues([$catatan], (new Style)->setFontItalic()));
+        }
     }
 
     private function gayaHeaderTabel(): Style

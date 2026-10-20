@@ -2,6 +2,9 @@
 
 namespace Tests\Unit;
 
+use App\Models\CalibrationSession;
+use App\Services\Calibration\Profiles\ChlorineProfile;
+use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
 use InvalidArgumentException;
@@ -226,5 +229,111 @@ class TataLetakSertifikatTest extends TestCase
         ];
 
         $this->assertSame(['u95' => [0 => 2, 1 => 0, 2 => 1]], TataLetakSertifikat::rentangGabung($teks, $kolom));
+    }
+
+    /**
+     * Identitas rentang menang atas kesamaan teks: dua rentang Centrifuge
+     * yang sama-sama tercetak `3.2` tetap dua kotak (`180!S19:V30`).
+     */
+    public function test_sel_gabung_ikut_identitas_rentang_bukan_teks(): void
+    {
+        $kolom = [['kolom' => 'standar', 'gabung' => false], ['kolom' => 'u95', 'gabung' => true]];
+        $teks = [
+            ['standar' => '60', 'u95' => '3.2'],
+            ['standar' => '80', 'u95' => '3.2'],
+            ['standar' => '500', 'u95' => '3.2'],
+            ['standar' => '700', 'u95' => '3.2'],
+        ];
+        $baris = [['kunci_gabung' => 'A'], ['kunci_gabung' => 'A'], ['kunci_gabung' => 'B'], ['kunci_gabung' => 'B']];
+
+        $this->assertSame(['u95' => [0 => 2, 1 => 0, 2 => 2, 3 => 0]], TataLetakSertifikat::rentangGabung($teks, $kolom, $baris));
+        // Tanpa identitas: perilaku lama (satu kotak).
+        $this->assertSame(['u95' => [0 => 4, 1 => 0, 2 => 0, 3 => 0]], TataLetakSertifikat::rentangGabung($teks, $kolom, [[], [], [], []]));
+    }
+
+    /**
+     * Kolom berpecah Timer (`183!E19:W19`): Standard 60,0963 s → H 0, M 1,
+     * S 0, S(0,001) 96; UUT 60,137 s → 0, 1, 0, 137; Correction per sel
+     * (`S19 = E19-O19`, `W19 = L19-R19`) → 0, 0, 0, -41.
+     */
+    public function test_kolom_pecah_timer_seperti_master(): void
+    {
+        $spek = TataLetakSertifikat::normalisasi(['kolom_hasil' => [
+            ['kolom' => 'standar', 'pecah' => [
+                ['judul' => 'H', 'faktor' => 3600, 'format' => '0.00'],
+                ['judul' => 'M', 'faktor' => 60, 'format' => '0.00'],
+                ['judul' => 'S', 'faktor' => 1, 'format' => '0.00'],
+                ['judul' => 'S(0,001)', 'faktor' => 0.001, 'format' => '0'],
+            ]],
+            'uut',
+            'koreksi',
+        ]])['kolom_hasil'];
+        $pecah = $spek[0]['pecah'];
+        $snap = ['tata_letak' => TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER)];
+        $baris = ['standard_value' => 60.0963333333, 'unit_under_test' => 60.137, 'correction' => -0.0406666667];
+
+        $this->assertSame(['0.00', '1.00', '0.00', '96'], TataLetakSertifikat::teksPecah($baris, $spek[0], $snap));
+        $this->assertSame(['0.00', '1.00', '0.00', '137'], TataLetakSertifikat::teksPecah($baris, ['kolom' => 'uut', 'pecah' => $pecah], $snap));
+        $this->assertSame(['0.00', '0.00', '0.00', '-41'], TataLetakSertifikat::teksPecah($baris, ['kolom' => 'koreksi', 'pecah' => $pecah], $snap));
+        $this->assertSame(4, TataLetakSertifikat::lebarKolom($spek[0]));
+
+        $this->expectException(InvalidArgumentException::class);
+        TataLetakSertifikat::normalisasi(['kolom_hasil' => [['kolom' => 'standar', 'pecah' => [['judul' => 'S', 'faktor' => 1], ['judul' => 'M', 'faktor' => 60]]]]]);
+    }
+
+    /**
+     * U95 relatif (`%OR`, master `149!O22` `=K62/S23/D22*100`): padanan
+     * `u95_persen_of_reading` kalkulator — 13,572 / 1004,58 × 100 = 1,351 →
+     * `1.4` di format `0.0`. Kolom tambahan mencetak teks apa adanya dan angka
+     * dengan format kolomnya.
+     */
+    public function test_u95_relatif_dan_kolom_tambahan(): void
+    {
+        $snap = ['tata_letak' => TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER)];
+        $baris = ['u95' => 13.572, 'unit_under_test' => 1004.58, 'tambahan' => ['suhu' => 25.45, 'fluida' => 'Water']];
+
+        $this->assertSame('1.4', TataLetakSertifikat::teksSel($baris, 'u95_relatif', $snap, 2, ['kolom' => 'u95_relatif', 'format' => '0.0']));
+        $this->assertSame('25.5', TataLetakSertifikat::teksSel($baris, 'tambahan:suhu', $snap, 2, ['format' => '0.0']));
+        $this->assertSame('Water', TataLetakSertifikat::teksSel($baris, 'tambahan:fluida', $snap, 2, []));
+        $this->assertSame('—', TataLetakSertifikat::teksSel($baris, 'tambahan:laju', $snap, 2, []));
+        $this->assertSame('%OR', TataLetakSertifikat::satuanKolom(['kolom' => 'u95_relatif', 'satuan' => null], 'L'));
+    }
+
+    /**
+     * Hook ber-sesi yang dibuka untuk builder H (Thermohygro, Timbangan,
+     * Centrifuge, Flowmeter) bawaannya sama persis dengan hook lamanya —
+     * profil yang belum menimpanya tidak bergeser satu karakter pun.
+     */
+    public function test_hook_ber_sesi_bawaannya_perilaku_lama(): void
+    {
+        $sesi = new CalibrationSession;
+
+        foreach ([new ChlorineProfile, new PhMeterProfile] as $profil) {
+            $this->assertSame($profil->desimalSuhuEnv(), $profil->desimalSuhuEnvSesi($sesi));
+            $this->assertSame($profil->desimalKelembabanEnv(), $profil->desimalKelembabanEnvSesi($sesi));
+
+            foreach ([1 => 1.74, 2 => 1.83] as $ke => $titik) {
+                $this->assertSame($profil->satuanTitik($titik), $profil->satuanTitikSesi($sesi, $titik, $ke));
+                $this->assertSame($profil->remarkTitikKe($ke, $titik), $profil->remarkTitikSesi($sesi, $ke, $titik));
+                $this->assertNull($profil->kunciGabungTitik($sesi, $titik, $ke));
+                $this->assertSame([], $profil->kolomTambahanTitik($sesi, $titik, $ke));
+            }
+        }
+    }
+
+    /** `k_tunggal`: satu `k` per kelompok, baris dipilih seperti sel master. */
+    public function test_k_tunggal_memilih_baris(): void
+    {
+        $baris = [
+            ['faktor_cakupan_k' => 1.9652, 'u95' => 0.81],
+            ['faktor_cakupan_k' => 1.9640, 'u95' => 0.95],
+        ];
+
+        $this->assertSame(1.9652, TataLetakSertifikat::barisK($baris, 'baris_pertama')['faktor_cakupan_k']);
+        $this->assertSame(1.9640, TataLetakSertifikat::barisK($baris, 'u95_terbesar')['faktor_cakupan_k']);
+        $this->assertNull(TataLetakSertifikat::BAWAAN['k_tunggal']);
+
+        $this->expectException(InvalidArgumentException::class);
+        TataLetakSertifikat::normalisasi(['k_tunggal' => 'rata_rata']);
     }
 }

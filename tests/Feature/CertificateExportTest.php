@@ -12,6 +12,7 @@ use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\CertificateExcelExporter;
+use App\Support\TataLetakSertifikat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use OpenSpout\Reader\XLSX\Reader;
@@ -272,6 +273,101 @@ class CertificateExportTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.snapshot.header.owner', 'PT Contoh Jaya')
             ->assertJsonPath('data.validasi.boleh_terbit', true);
+    }
+
+    /**
+     * Bentuk master (K-50-15): Excel mengikuti tabel PDF — urutan & judul
+     * kolom `kolom_hasil` (Tachometer menukar Standard/UUT), tanda koreksi
+     * yang dibekukan di snapshot, dan angka tercetak menurut format sel.
+     */
+    public function test_excel_bentuk_master_ikut_kolom_dan_angka_pdf(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $sertifikat->update(['snapshot' => [
+            'desimal' => 2,
+            'header' => ['certificate_number' => $sertifikat->nomor],
+            'tata_letak' => [
+                ...TataLetakSertifikat::normalisasi(TataLetakSertifikat::MAYORITAS_MASTER),
+                ...TataLetakSertifikat::normalisasi(['kolom_hasil' => [
+                    ['kolom' => 'standar', 'judul' => 'Standard Value'],
+                    ['kolom' => 'uut', 'judul' => 'Unit Under Test'],
+                    'koreksi',
+                    ['kolom' => 'u95', 'judul' => 'U95% (±)'],
+                ]]),
+            ],
+            'hasil' => [[
+                'titik_ke' => 1, 'standard_value' => 60.0, 'unit_under_test' => 59.78, 'correction' => 0.22,
+                'u95' => 2.61, 'desimal' => 2, 'satuan' => 'Rpm',
+                'format' => ['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.0', 'u95' => '0.0'],
+            ]],
+        ]]);
+
+        $berkas = tempnam(sys_get_temp_dir(), 'uji-').'.xlsx';
+        app(CertificateExcelExporter::class)->satu($sertifikat->fresh(), $berkas);
+        $sel = [];
+        $pembaca = new Reader;
+        $pembaca->open($berkas);
+        foreach ($pembaca->getSheetIterator() as $lembar) {
+            foreach ($lembar->getRowIterator() as $baris) {
+                $sel[] = array_map(static fn ($c) => $c->getValue(), $baris->getCells());
+            }
+            break;
+        }
+        $pembaca->close();
+        @unlink($berkas);
+
+        $kepala = collect($sel)->first(fn ($b) => ($b[0] ?? null) === 'Standard Value');
+        $this->assertSame(['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'], $kepala);
+        $this->assertContains(['Rpm', 'Rpm', 'Rpm', 'Rpm'], $sel);
+
+        $angka = collect($sel)->first(fn ($b) => is_numeric($b[0] ?? null));
+        $this->assertEqualsWithDelta(60.0, (float) $angka[0], 1e-12);
+        $this->assertEqualsWithDelta(59.8, (float) $angka[1], 1e-12, 'UUT harus ikut format `0.0` PDF.');
+        $this->assertEqualsWithDelta(0.2, (float) $angka[2], 1e-12);
+        $this->assertEqualsWithDelta(2.6, (float) $angka[3], 1e-12);
+    }
+
+    /**
+     * Format sel master per baris (`baris.format`, K-50-15) menang atas
+     * `desimal` di Excel, sama dengan PDF: `desimal` 5 tetapi format `0.000`
+     * → tiga desimal. Baris yang disembunyikan master tidak ditulis.
+     */
+    public function test_excel_ikut_format_sel_master_bukan_desimal(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $sertifikat->update(['snapshot' => [
+            'desimal' => 5,
+            'header' => ['certificate_number' => $sertifikat->nomor],
+            'hasil' => [
+                ['titik_ke' => 1, 'standard_value' => 0.0, 'unit_under_test' => 0.0, 'correction' => 0.0, 'u95' => 0.1, 'desimal' => 5, 'dicetak' => false],
+                [
+                    'titik_ke' => 2, 'standard_value' => 25.0, 'unit_under_test' => 25.00027, 'correction' => -0.00027,
+                    'u95' => 0.00087, 'desimal' => 5, 'desimal_u95' => 5,
+                    'format' => ['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.0000'],
+                ],
+            ],
+        ]]);
+
+        $berkas = tempnam(sys_get_temp_dir(), 'uji-').'.xlsx';
+        app(CertificateExcelExporter::class)->satu($sertifikat->fresh(), $berkas);
+        $sel = [];
+        $pembaca = new Reader;
+        $pembaca->open($berkas);
+        foreach ($pembaca->getSheetIterator() as $lembar) {
+            foreach ($lembar->getRowIterator() as $baris) {
+                $sel[] = array_map(static fn ($c) => $c->getValue(), $baris->getCells());
+            }
+            break;
+        }
+        $pembaca->close();
+        @unlink($berkas);
+
+        $angka = array_values(array_filter($sel, static fn ($b) => is_float($b[0] ?? null) || is_int($b[0] ?? null)));
+        $this->assertCount(1, $angka, 'Baris tersembunyi ikut ditulis ke Excel.');
+        $this->assertEqualsWithDelta(25.0, (float) $angka[0][0], 1e-12);
+        $this->assertEqualsWithDelta(25.0, (float) $angka[0][1], 1e-12, 'UUT harus 3 desimal seperti format sel master, bukan 5.');
+        $this->assertEqualsWithDelta(0.0, (float) $angka[0][2], 1e-12);
+        $this->assertEqualsWithDelta(0.0009, (float) $angka[0][3], 1e-12);
     }
 
     /**

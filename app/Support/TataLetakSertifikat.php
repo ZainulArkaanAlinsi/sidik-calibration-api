@@ -58,10 +58,19 @@ final class TataLetakSertifikat
     ];
 
     /** Kolom tabel hasil yang bisa disusun profil. */
-    public const KOLOM_HASIL = ['standar', 'uut', 'koreksi', 'sebaran', 'u95', 'remark', 'r2'];
+    public const KOLOM_HASIL = ['standar', 'uut', 'koreksi', 'sebaran', 'u95', 'u95_relatif', 'remark', 'r2'];
+
+    /**
+     * Awalan kolom tambahan: `tambahan:<kunci>` mencetak
+     * `baris.tambahan.<kunci>` (`CalibrationProfile::kolomTambahanTitik`).
+     */
+    public const AWALAN_TAMBAHAN = 'tambahan:';
 
     /** Kolom yang boleh diberi format sel (`formatKolomSertifikat`). */
-    public const KOLOM_FORMAT = ['standar', 'uut', 'koreksi', 'sebaran', 'u95', 'k'];
+    public const KOLOM_FORMAT = ['standar', 'uut', 'koreksi', 'sebaran', 'u95', 'u95_relatif', 'k'];
+
+    /** Pilihan `k_tunggal`: satu `k` per kelompok dipilih seperti sel master. */
+    public const K_TUNGGAL = ['baris_pertama', 'u95_terbesar'];
 
     /** Enam belas field kepala snapshot (`CertificateSnapshotBuilder::header`). */
     public const KUNCI_KEPALA = [
@@ -124,6 +133,10 @@ final class TataLetakSertifikat
         'format_k' => null,
         // Pemisah desimal angka yang DICETAK. `,` = bentuk lama.
         'pemisah_desimal' => ',',
+        // Satu `k` per kelompok walau `k` antar baris beda (master mencetak
+        // satu sel `k`, mis. `183!V29`). `null` = perilaku lama: `k` baris
+        // pertama, `≈` bila angka cetaknya berbeda.
+        'k_tunggal' => null,
     ];
 
     /**
@@ -264,6 +277,9 @@ final class TataLetakSertifikat
             $hasil[$kunci] = match ($kunci) {
                 'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan' => self::bool($kunci, $nilai),
                 'format_k' => $nilai === null ? null : self::normalisasiFormat(['k' => $nilai])['k'],
+                'k_tunggal' => $nilai === null || in_array($nilai, self::K_TUNGGAL, true)
+                    ? $nilai
+                    : throw new InvalidArgumentException('Tata letak sertifikat `k_tunggal` harus null atau salah satu dari '.implode(', ', self::K_TUNGGAL).'.'),
                 'pemisah_desimal' => in_array($nilai, [',', '.'], true)
                     ? $nilai
                     : throw new InvalidArgumentException('Tata letak sertifikat `pemisah_desimal` harus `,` atau `.`.'),
@@ -527,10 +543,48 @@ final class TataLetakSertifikat
      * @param  array<string, mixed>  $baris
      * @param  array<string, mixed>  $snapshot
      */
-    public static function teksSel(array $baris, string $kolom, array $snapshot, int $desimalSertifikat): string
+    public static function teksSel(array $baris, string $kolom, array $snapshot, int $desimalSertifikat, ?array $spek = null): string
     {
         if ($kolom === 'remark') {
             return filled($baris['remark'] ?? null) ? (string) $baris['remark'] : '—';
+        }
+
+        if (str_starts_with($kolom, self::AWALAN_TAMBAHAN)) {
+            $nilai = $baris['tambahan'][substr($kolom, strlen(self::AWALAN_TAMBAHAN))] ?? null;
+
+            return match (true) {
+                $nilai === null || $nilai === '' => '—',
+                is_string($nilai) && ! is_numeric($nilai) => $nilai,
+                default => self::angka(self::formatAngka((float) $nilai, $spek['format'] ?? 'General'), self::untuk($snapshot)),
+            };
+        }
+
+        if ($kolom === 'u95_relatif') {
+            // U95 relatif terhadap pembacaan UUT (`%OR`, master `149!O22`
+            // `=K62/S23/D22*100`, `185!N26`) — padanan `u95_persen_of_reading`
+            // kalkulator Flowmeter: U95 / rata-rata UUT × 100. Hanya cetak.
+            $u95 = $baris['u95'] ?? null;
+            $uut = $baris['unit_under_test'] ?? null;
+
+            if ($u95 === null || $uut === null || (float) $uut == 0.0) {
+                return '—';
+            }
+
+            $format = $baris['format']['u95_relatif'] ?? $spek['format'] ?? 'General';
+
+            return self::angka(self::formatAngka(abs((float) $u95 / (float) $uut * 100), $format), self::untuk($snapshot));
+        }
+
+        if ($spek !== null && isset($spek['faktor'])) {
+            $sumber = ['standar' => 'standard_value', 'uut' => 'unit_under_test', 'koreksi' => 'correction', 'sebaran' => 'sebaran', 'u95' => 'u95'][$kolom] ?? null;
+
+            if ($sumber !== null && ($baris[$sumber] ?? null) !== null) {
+                $baris[$sumber] = (float) $baris[$sumber] * $spek['faktor'];
+            }
+        }
+
+        if ($spek !== null && isset($spek['format']) && ! isset($baris['format'][$kolom])) {
+            $baris['format'] = [...(is_array($baris['format'] ?? null) ? $baris['format'] : []), $kolom => $spek['format']];
         }
 
         $teks = self::angka(self::teksSelKoma($baris, $kolom, $snapshot, $desimalSertifikat), self::untuk($snapshot));
@@ -539,6 +593,109 @@ final class TataLetakSertifikat
         // Cell) tercetak `-0` di bentuk lama; tidak ada master yang mencetaknya.
         // Hanya bentuk master — snapshot terbit tetap tercetak seperti dulu.
         return $kolom === 'standar' && isset($snapshot['tata_letak']) && $teks === '-0' ? '0' : $teks;
+    }
+
+    /**
+     * Teks sel-sel kolom yang dipecah (`pecah`): nilai dalam satuan baris
+     * diurai serakah ke tiap sel (Timer: detik → H, M, S, S(0,001) — master
+     * `183!E19:L19` dari `PERHITUNGAN!C30:G30`). Kolom Correction diurai PER
+     * SEL sebagai Standard − UUT, persis master (`183!S19 = E19-O19`, …,
+     * `W19 = L19-R19`), bukan mengurai koreksinya.
+     *
+     * @param  array<string, mixed>  $baris
+     * @param  array{kolom: string, pecah: list<array{judul: string, faktor: float, format: string}>}  $spek
+     * @param  array<string, mixed>  $snapshot
+     * @return list<string>
+     */
+    public static function teksPecah(array $baris, array $spek, array $snapshot): array
+    {
+        $tl = self::untuk($snapshot);
+        $nilai = static fn (string $k): ?float => ($baris[$k] ?? null) === null ? null : (float) $baris[$k];
+        $sel = match ($spek['kolom']) {
+            'standar' => self::urai($nilai('standard_value'), $spek['pecah']),
+            'uut' => self::urai($nilai('unit_under_test'), $spek['pecah']),
+            'koreksi' => ($nilai('standard_value') === null || $nilai('unit_under_test') === null)
+                ? array_fill(0, count($spek['pecah']), null)
+                : array_map(
+                    static fn (float $a, float $b): float => $a - $b,
+                    self::urai($nilai('standard_value'), $spek['pecah']),
+                    self::urai($nilai('unit_under_test'), $spek['pecah']),
+                ),
+            'u95' => self::urai($nilai('u95'), $spek['pecah']),
+            default => throw new InvalidArgumentException("Kolom `{$spek['kolom']}` tidak bisa dipecah."),
+        };
+        $tandaNol = (bool) ($baris['tanda_nol'] ?? true);
+
+        return array_map(
+            static fn (?float $v, array $p): string => self::angka(self::formatAngka($v, $p['format'], $tandaNol), $tl),
+            $sel,
+            $spek['pecah'],
+        );
+    }
+
+    /**
+     * @param  list<array{faktor: float}>  $pecah
+     * @return list<float|null>
+     */
+    private static function urai(?float $nilai, array $pecah): array
+    {
+        if ($nilai === null) {
+            return array_fill(0, count($pecah), null);
+        }
+
+        $tanda = $nilai < 0 ? -1.0 : 1.0;
+        $sisa = abs($nilai);
+        $hasil = [];
+        $akhir = count($pecah) - 1;
+
+        foreach ($pecah as $i => $p) {
+            if ($i === $akhir) {
+                $hasil[] = $tanda * $sisa / $p['faktor'];
+
+                break;
+            }
+
+            // Toleransi derau biner: 59.9999999 detik tetap 0 menit 59 detik,
+            // tapi 60.0000000001 jadi 1 menit.
+            $n = floor($sisa / $p['faktor'] + 1e-9);
+            $sisa = max(0.0, $sisa - $n * $p['faktor']);
+            $hasil[] = $tanda * $n;
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Lebar kolom dalam sel tabel (kolom berpecah = jumlah pecahannya).
+     *
+     * @param  array<string, mixed>  $kolom
+     */
+    public static function lebarKolom(array $kolom): int
+    {
+        return isset($kolom['pecah']) ? count($kolom['pecah']) : 1;
+    }
+
+    /**
+     * Baris yang `k`-nya dicetak untuk satu kelompok. Bentuk lama & `k_tunggal`
+     * null: baris pertama. `u95_terbesar`: baris ber-U95 terbesar (master yang
+     * mencetak `MAX` U95 dengan `k` budgetnya).
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return array<string, mixed>|null
+     */
+    public static function barisK(array $baris, ?string $mode): ?array
+    {
+        $ber = array_values(array_filter($baris, static fn ($b): bool => ($b['faktor_cakupan_k'] ?? null) !== null));
+
+        if ($ber === []) {
+            return null;
+        }
+
+        if ($mode === 'u95_terbesar') {
+            usort($ber, static fn ($a, $b): int => (float) ($b['u95'] ?? 0) <=> (float) ($a['u95'] ?? 0));
+        }
+
+        return $ber[0];
     }
 
     /**
@@ -654,8 +811,10 @@ final class TataLetakSertifikat
             'koreksi' => (string) ($snapshot['judul_koreksi'] ?? 'Correction'),
             'sebaran' => (string) ($snapshot['judul_sebaran'] ?? ''),
             'u95' => 'U95% (±)',
+            'u95_relatif' => 'U95% ±',
             'remark' => 'Remark',
             'r2' => 'R2',
+            default => substr($kolom['kolom'], strlen(self::AWALAN_TAMBAHAN)),
         };
     }
 
@@ -673,8 +832,13 @@ final class TataLetakSertifikat
             return $kolom['satuan'] === '' ? null : $kolom['satuan'];
         }
 
+        if (str_starts_with($kolom['kolom'], self::AWALAN_TAMBAHAN)) {
+            return null;
+        }
+
         return match ($kolom['kolom']) {
             'sebaran' => '%',
+            'u95_relatif' => '%OR',
             'remark', 'r2' => null,
             default => filled($satuan) ? $satuan : null,
         };
@@ -690,8 +854,12 @@ final class TataLetakSertifikat
      * @param  list<array{kolom: string, gabung: bool}>  $kolom
      * @return array<string, array<int, int>>
      */
-    public static function rentangGabung(array $teksBaris, array $kolom): array
+    public static function rentangGabung(array $teksBaris, array $kolom, array $baris = []): array
     {
+        // Identitas rentang (`kunci_gabung`, `CalibrationProfile::
+        // kunciGabungTitik`) menang atas kesamaan teks: dua rentang yang
+        // kebetulan tercetak sama tetap dua kotak.
+        $pakaiKunci = array_filter(array_column($baris, 'kunci_gabung'), static fn ($v) => $v !== null) !== [];
         $rentang = [];
 
         foreach ($kolom as $k) {
@@ -703,7 +871,12 @@ final class TataLetakSertifikat
             $awal = null;
 
             foreach ($teksBaris as $i => $teks) {
-                if ($awal !== null && $teksBaris[$awal][$nama] === $teks[$nama]) {
+                $sama = $pakaiKunci && $nama !== 'r2'
+                    ? ($baris[$awal ?? 0]['kunci_gabung'] ?? null) !== null
+                        && ($baris[$awal ?? 0]['kunci_gabung'] ?? null) === ($baris[$i]['kunci_gabung'] ?? null)
+                    : $awal !== null && $teksBaris[$awal][$nama] === $teks[$nama];
+
+                if ($awal !== null && $sama) {
                     $rentang[$nama][$awal]++;
                     $rentang[$nama][$i] = 0;
 
@@ -728,8 +901,9 @@ final class TataLetakSertifikat
     public static function posisiU95(array $kolom): int
     {
         $i = array_search('koreksi', array_column($kolom, 'kolom'), true);
+        $i = $i === false ? count($kolom) - 1 : $i;
 
-        return max(1, $i === false ? count($kolom) - 1 : $i);
+        return max(1, array_sum(array_map(self::lebarKolom(...), array_slice($kolom, 0, $i))));
     }
 
     /**
@@ -742,9 +916,16 @@ final class TataLetakSertifikat
      */
     public static function kosongSesudahU95(array $kolom, bool $susunanLama): int
     {
-        $sesudah = array_slice(array_column($kolom, 'kolom'), self::posisiU95($kolom) + 1);
+        $i = array_search('koreksi', array_column($kolom, 'kolom'), true);
+        $i = $i === false ? count($kolom) - 1 : $i;
+        $sesudah = array_slice($kolom, max(1, $i) + 1);
 
-        return $susunanLama ? count(array_intersect($sesudah, ['r2'])) : count($sesudah);
+        return $susunanLama
+            ? count(array_intersect(array_column($sesudah, 'kolom'), ['r2']))
+            : array_sum(array_map(self::lebarKolom(...), $sesudah))
+                // Sel angka U95 cuma memakai satu sel kolom yang ditempatinya;
+                // sisa pecahannya diisi kosong.
+                + self::lebarKolom($kolom[max(1, $i)] ?? []) - 1;
     }
 
     // ---- pemeriksa bentuk ------------------------------------------------
@@ -843,12 +1024,16 @@ final class TataLetakSertifikat
         foreach (array_values($nilai) as $i => $k) {
             $k = is_string($k) ? ['kolom' => $k] : $k;
 
-            if (! is_array($k) || ! in_array($k['kolom'] ?? null, self::KOLOM_HASIL, true)) {
+            $namaKolom = is_array($k) ? ($k['kolom'] ?? null) : null;
+            $tambahan = is_string($namaKolom) && str_starts_with($namaKolom, self::AWALAN_TAMBAHAN)
+                && strlen($namaKolom) > strlen(self::AWALAN_TAMBAHAN);
+
+            if (! is_array($k) || (! $tambahan && ! in_array($namaKolom, self::KOLOM_HASIL, true))) {
                 throw new InvalidArgumentException("Tata letak sertifikat `kolom_hasil` #{$i}: kolom harus salah satu dari "
-                    .implode(', ', self::KOLOM_HASIL).'.');
+                    .implode(', ', self::KOLOM_HASIL).' atau `'.self::AWALAN_TAMBAHAN.'<kunci>`.');
             }
 
-            $asing = array_diff(array_keys($k), ['kolom', 'judul', 'satuan', 'gabung']);
+            $asing = array_diff(array_keys($k), ['kolom', 'judul', 'satuan', 'gabung', 'format', 'pecah', 'faktor']);
 
             if ($asing !== []) {
                 throw new InvalidArgumentException("Tata letak sertifikat `kolom_hasil` #{$i}: kunci tidak dikenal ".implode(', ', $asing).'.');
@@ -862,6 +1047,15 @@ final class TataLetakSertifikat
                 // kotak (rowspan) — U95 per rentang Centrifuge, satu U95 per
                 // kamar Thermohygro. R² selalu satu kotak per kelompok.
                 'gabung' => (bool) ($k['gabung'] ?? $k['kolom'] === 'r2'),
+                // Format sel kolom ini bila baris tidak menyatakannya (kolom
+                // tambahan & `u95_relatif` tidak punya hook format per baris).
+                ...(isset($k['format']) ? ['format' => self::normalisasiFormat(['k' => $k['format']])['k']] : []),
+                // Satu kolom master yang dipecah jadi beberapa sel (Timer
+                // `H | M | S | S(0,001)`, `183!E18:W18`).
+                ...(isset($k['pecah']) ? ['pecah' => self::periksaPecah($k['pecah'], $i)] : []),
+                // Pengali satuan cetak kolom ini (U Anak Timbangan dalam mg,
+                // `139!L16`: g × 1000). Hanya cetak; nilai snapshot tetap.
+                ...(isset($k['faktor']) ? ['faktor' => self::faktorKolom($k['faktor'], $i)] : []),
             ];
         }
 
@@ -872,6 +1066,49 @@ final class TataLetakSertifikat
         }
 
         return $hasil;
+    }
+
+    /**
+     * `[['judul' => 'H', 'faktor' => 3600, 'format' => '0.00'], …]`, faktor
+     * dalam satuan nilai baris, urut dari terbesar.
+     *
+     * @return list<array{judul: string, faktor: float, format: string}>
+     */
+    private static function periksaPecah(mixed $nilai, int $i): array
+    {
+        if (! is_array($nilai) || count($nilai) < 2) {
+            throw new InvalidArgumentException("Tata letak sertifikat `kolom_hasil` #{$i}: `pecah` harus daftar minimal dua sel.");
+        }
+
+        $hasil = [];
+        $sebelum = INF;
+
+        foreach (array_values($nilai) as $p) {
+            $faktor = is_array($p) ? ($p['faktor'] ?? null) : null;
+
+            if (! is_array($p) || ! is_string($p['judul'] ?? null) || ! is_numeric($faktor) || (float) $faktor <= 0.0
+                || (float) $faktor >= $sebelum || array_diff(array_keys($p), ['judul', 'faktor', 'format']) !== []) {
+                throw new InvalidArgumentException("Tata letak sertifikat `kolom_hasil` #{$i}: sel `pecah` harus `['judul', 'faktor' > 0 menurun, 'format']`.");
+            }
+
+            $sebelum = (float) $faktor;
+            $hasil[] = [
+                'judul' => $p['judul'],
+                'faktor' => (float) $faktor,
+                'format' => self::normalisasiFormat(['k' => $p['format'] ?? 'General'])['k'],
+            ];
+        }
+
+        return $hasil;
+    }
+
+    private static function faktorKolom(mixed $nilai, int $i): float
+    {
+        if (! is_numeric($nilai) || (float) $nilai <= 0.0) {
+            throw new InvalidArgumentException("Tata letak sertifikat `kolom_hasil` #{$i}: `faktor` harus angka > 0.");
+        }
+
+        return (float) $nilai;
     }
 
     /** @return list<array{kunci: string, label: string}> */
