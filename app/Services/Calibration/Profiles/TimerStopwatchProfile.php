@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\WaktuCalculator;
+use App\Support\TataLetakSertifikat;
 use App\Support\WaktuMentah;
 use Carbon\Carbon;
 
@@ -189,30 +190,93 @@ class TimerStopwatchProfile extends CalibrationProfile
      *   sesi (`ms`) padahal angkanya detik;
      * - U95 satu kotak untuk semua baris tercetak (`X19:Y23`, `0.8`).
      *
-     * BELUM: pemecahan tiap kolom jadi `H | M | S | S(0,001)` (UUT `S(0,01)`,
-     * `E18:W18`) dan blok `Note : H = Hour, …` (`E30:P32`) yang menerangkan
-     * pecahan itu. Kolom hasil hanya mengenal satu sel per kolom
-     * (`TataLetakSertifikat::KOLOM_HASIL`), jadi butuh lapisan T.
+     * - Standard, UUT, dan Correction dipecah `H | M | S | S(0,001)`
+     *   (`E18:W18`): H/M/S `0.00`, S(0,001) `0` (`E19:L19`, `O19:R19`), dan
+     *   Correction dihitung PER SEL Standard − UUT (`S19 = E19-O19`, …,
+     *   `W19 = L19-R19`) oleh `TataLetakSertifikat::teksPecah`. Judul UUT
+     *   master `R18` "S(0,01)" salah ketik — nilainya `R19 = PERHITUNGAN!K30`
+     *   seperseribu detik dan `W19 = L19-R19` mengurangkannya dari S(0,001) —
+     *   jadi dicetak seperti `L18`/`W18`. Ditulis `S(0.001)` (titik): blok
+     *   catatan bentuk master dikonversi ke titik desimal oleh builder
+     *   (K-50-15 P3), dan judul kolom disamakan supaya satu lembar tidak
+     *   memuat dua ejaan.
+     *
+     * Pecahan dihitung dari nilai baris dalam SATUAN ALAT (detik/menit/jam,
+     * [nilaiDalamSatuanAlat]). Satuan alat yang tidak dikenal → tanpa pecahan
+     * (satu sel per kolom seperti sebelumnya); faktornya tidak ditebak.
+     *
+     * `k_tunggal` SENGAJA belum diisi: `V29 = 'PERHITUNGAN U95%'!AC17` adalah
+     * `k` satu budget dan budget mana yang mewakili belum dijawab lab.
      *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
+        $detik = self::detikPerSatuanAlat($sesi->equipment?->satuan);
+        $pecah = $detik === null ? null : array_map(
+            static fn (array $p): array => [...$p, 'faktor' => $p['faktor'] / $detik],
+            [
+                ['judul' => 'H', 'faktor' => 3600.0, 'format' => '0.00'],
+                ['judul' => 'M', 'faktor' => 60.0, 'format' => '0.00'],
+                ['judul' => 'S', 'faktor' => 1.0, 'format' => '0.00'],
+                ['judul' => 'S(0.001)', 'faktor' => 0.001, 'format' => '0'],
+            ],
+        );
+        $kolom = static fn (string $nama, string $judul): array => $pecah === null
+            ? ['kolom' => $nama, 'judul' => $judul, 'satuan' => 'S']
+            : ['kolom' => $nama, 'judul' => $judul, 'pecah' => $pecah];
+
         return [
             ...parent::tataLetakSertifikat($sesi),
             'kolom_hasil' => [
-                ['kolom' => 'standar', 'judul' => 'Standard Value', 'satuan' => 'S'],
-                ['kolom' => 'uut', 'judul' => 'Unit Under Test', 'satuan' => 'S'],
-                ['kolom' => 'koreksi', 'judul' => 'Correction', 'satuan' => 'S'],
+                $kolom('standar', 'Standard Value'),
+                $kolom('uut', 'Unit Under Test'),
+                $kolom('koreksi', 'Correction'),
                 ['kolom' => 'u95', 'judul' => 'Uncertainty 95% ±', 'satuan' => 'S', 'gabung' => true],
             ],
         ];
     }
 
     /**
+     * Blok `Note :` di bawah tabel (`183!E30:P32`) yang menerangkan pecahan
+     * kolom: `H : Hour`, `S : Second`, `M : Minute`, `S(0,001) : Second per
+     * One Thousand`. Hanya bila kolomnya memang dipecah.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        if (self::detikPerSatuanAlat($sesi->equipment?->satuan) === null) {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => [
+                ['H :', 'Hour', 'S :', 'Second'],
+                // Ditulis berkoma: builder mengubah teks blok ke titik desimal
+                // (`Angka::keTitik`) — `0.001` di sini akan terbaca ribuan.
+                ['M :', 'Minute', 'S(0,001) :', 'Second per One Thousand'],
+            ],
+        ]];
+    }
+
+    /** Detik per satu satuan alat — padanan [nilaiDalamSatuanAlat]; `null` = tidak dikenal. */
+    private static function detikPerSatuanAlat(?string $satuan): ?float
+    {
+        return match (strtolower(trim((string) $satuan))) {
+            's', 'sec', 'detik' => 1.0,
+            'min', 'menit' => 60.0,
+            'jam', 'hour', 'h' => 3600.0,
+            default => null,
+        };
+    }
+
+    /**
      * Format sel: U95 `0.0` (`X19`), `k` `General` (`V29` `1.96516849139021`).
-     * Standard/UUT/Correction tetap tiga desimal detik ([desimalSertifikat])
-     * sampai pecahan H/M/S ada.
+     * Format Standard/UUT/Correction ada di pecahan kolom
+     * ([tataLetakSertifikat]).
      *
      * @return array<string, string>
      */
