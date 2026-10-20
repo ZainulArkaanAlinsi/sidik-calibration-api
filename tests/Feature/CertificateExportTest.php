@@ -273,4 +273,55 @@ class CertificateExportTest extends TestCase
             ->assertJsonPath('data.snapshot.header.owner', 'PT Contoh Jaya')
             ->assertJsonPath('data.validasi.boleh_terbit', true);
     }
+
+    /**
+     * Env. Condition bertumpuk (K-50-15: T / %RH / Tekanan Udara sebaris-
+     * sebaris seperti lembar SERTIFIKAT master) ditulis ke Excel sebagai SATU
+     * sel berbungkus — barisnya sama dengan PDF, bukan satu baris panjang
+     * dengan karakter baris baru yang tersembunyi.
+     */
+    public function test_env_condition_bertumpuk_ditulis_berbungkus_di_excel(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $env = "T 21.0 °C ± 1.7 °C\n%RH 52 % ± 4.9 %\nTekanan Udara 1001 hPa ± 2.0 hPa";
+        $snapshot = $sertifikat->snapshot;
+        $snapshot['header']['env_condition'] = $env;
+        $sertifikat->update(['snapshot' => $snapshot]);
+
+        $berkas = tempnam(sys_get_temp_dir(), 'uji-').'.xlsx';
+        app(CertificateExcelExporter::class)->satu($sertifikat->fresh(), $berkas);
+
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($berkas) === true);
+        $lembar = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+        $gaya = (string) $zip->getFromName('xl/styles.xml');
+        $zip->close();
+
+        $pembaca = new Reader;
+        $pembaca->open($berkas);
+        $nilaiEnv = null;
+        $nomorBaris = null;
+        foreach ($pembaca->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $i => $baris) {
+                $sel = $baris->getCells();
+                if (($sel[0] ?? null)?->getValue() === 'Env. Condition') {
+                    $nilaiEnv = $sel[1]->getValue();
+                    $nomorBaris = $i;
+                }
+            }
+            break;
+        }
+        $pembaca->close();
+        @unlink($berkas);
+
+        // Isinya tiga baris yang sama persis dengan PDF.
+        $this->assertSame($env, $nilaiEnv);
+
+        // Sel B baris itu memakai gaya ber-wrapText.
+        $this->assertNotNull($nomorBaris);
+        $this->assertSame(1, preg_match('#<c r="B\d+" s="(\d+)"[^>]*><is><t[^>]*>T 21\.0#u', $lembar, $m), 'Sel Env. Condition tanpa gaya.');
+        preg_match('#<cellXfs[^>]*>(.*?)</cellXfs>#s', $gaya, $xfs);
+        preg_match_all('#<xf\b.*?(?:/>|</xf>)#s', $xfs[1], $daftar);
+        $this->assertStringContainsString('wrapText="1"', $daftar[0][(int) $m[1]]);
+    }
 }

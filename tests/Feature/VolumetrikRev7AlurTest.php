@@ -471,6 +471,8 @@ class VolumetrikRev7AlurTest extends TestCase
     /** PV 2 mL: `SERTIFIKAT!N21` `0.00` — layar HP & sertifikat sama-sama 2 desimal. */
     public function test_pipet_volume_2_ml_dua_desimal_di_layar_dan_sertifikat(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sesi = $this->simpan($this->payloadLabu($this->alat('Pipet Volume', 2), [
             'measurements' => [[
                 'titik_ukur' => 2,
@@ -490,9 +492,9 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertSame(4, $sertifikat->snapshot['hasil'][0]['desimal_u95']);
 
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('2,00', $html);
-        $this->assertStringContainsString('1,99', $html);
-        $this->assertStringContainsString('0,0034', $html);
+        $this->assertStringContainsString('2.00', $html);
+        $this->assertStringContainsString('1.99', $html);
+        $this->assertStringContainsString('0.0034', $html);
     }
 
     // ── Bagian 3 — isi sertifikat mengikuti sheet `SERTIFIKAT` ───────────────
@@ -508,6 +510,8 @@ class VolumetrikRev7AlurTest extends TestCase
 
     public function test_sertifikat_labu_ukur_mengikuti_sheet_sertifikat_workbook(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sertifikat = $this->terbitkan($this->simpan($this->payloadLabu($this->alat('Labu Ukur', 200))));
         $snapshot = $sertifikat->snapshot;
 
@@ -516,13 +520,13 @@ class VolumetrikRev7AlurTest extends TestCase
         // K-50-15 (pemilik, 18 Okt 2026): tiga baris, bunyi sel master
         // (`143!O11:Y13` `T`, `%RH`, `Tekanan Udara`).
         $this->assertSame(
-            "T 20,9 °C ± 1,2 °C\n%RH 49 % ± 3,2 %\nTekanan Udara 1001 hPa ± 2,0 hPa",
+            "T 20.9 °C ± 1.2 °C\n%RH 49 % ± 3.2 %\nTekanan Udara 1001 hPa ± 2.0 hPa",
             $snapshot['header']['env_condition'],
         );
 
         // `SERTIFIKAT!O14` & `E18`.
         $this->assertSame(
-            'Class/Permitted Error : A/±0,15 ml — Suhu Dasar Volume : 20 °C',
+            'Class/Permitted Error : A/±0.15 ml — Suhu Dasar Volume : 20 °C',
             $snapshot['catatan_atas_hasil'],
         );
 
@@ -547,9 +551,9 @@ class VolumetrikRev7AlurTest extends TestCase
 
         $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
         $html = view('sertifikat.pdf', $bahan)->render();
-        $this->assertStringContainsString('200,00', $html);
-        $this->assertStringContainsString('199,85', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0,15 ml', $html);
+        $this->assertStringContainsString('200.00', $html);
+        $this->assertStringContainsString('199.85', $html);
+        $this->assertStringContainsString('Class/Permitted Error : A/±0.15 ml', $html);
 
         // Tetap SATU halaman, mode normal.
         $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => false]);
@@ -559,6 +563,8 @@ class VolumetrikRev7AlurTest extends TestCase
 
     public function test_sertifikat_pipet_volume_mencetak_nominal_tiga_desimal(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $alat = $this->alat('Pipet Volume', 0.5);
         $sertifikat = $this->terbitkan($this->simpan($this->payloadLabu($alat, [
             'measurements' => [[
@@ -571,8 +577,8 @@ class VolumetrikRev7AlurTest extends TestCase
         ])));
 
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
-        $this->assertStringContainsString('0,500', $html);
-        $this->assertStringContainsString('Class/Permitted Error : A/±0,005 ml', $html);
+        $this->assertStringContainsString('0.500', $html);
+        $this->assertStringContainsString('Class/Permitted Error : A/±0.005 ml', $html);
         $this->assertSame('Analytical Balance', $sertifikat->snapshot['standar_digunakan'][0]['name']);
         $this->assertSame('Termometer & Sensor Std.', $sertifikat->snapshot['standar_digunakan'][1]['name']);
     }

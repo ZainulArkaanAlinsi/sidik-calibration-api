@@ -257,7 +257,7 @@ class PerhitunganTest extends TestCase
             //
             // Bunyinya K-50-15 (pemilik, 18 Okt 2026): baris T & %RH sendiri-
             // sendiri seperti sel lembar SERTIFIKAT master.
-            "T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %",
+            "T 21.0 °C ± 1.7 °C\n%RH 51.95 % ± 5.7 %",
             $sesi->fresh()->certificate->snapshot['header']['env_condition'],
         );
     }

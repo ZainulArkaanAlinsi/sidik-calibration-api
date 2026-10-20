@@ -125,10 +125,12 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
                     "{$alat} titik ke-{$ke}: U95-nya null, padahal alat ini wajib punya U95 tiap titik.",
                 );
 
-                $tercetak = Angka::hasil(
+                // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat
+                // baru bertitik desimal seperti tampilan sel master.
+                $tercetak = Angka::keTitik(Angka::hasil(
                     (float) $hasil['u95'],
                     $hasil['desimal_u95'] ?? $hasil['desimal'] ?? 4,
-                );
+                ));
 
                 $this->assertArrayHasKey(
                     $titik,

@@ -86,6 +86,18 @@ class CertificateSnapshotBuilder
         $catatanBaku = $tataLetak['catatan'] ?? self::CATATAN_HASIL;
         unset($tataLetak['catatan']);
         $blokCatatan = $profil === null ? [] : TataLetakSertifikat::normalisasiBlok($profil->catatanSertifikat($sesi));
+        // Teks berangka yang DIBEKUKAN sebagai teks (kepala, catatan) ikut
+        // pemisah desimal tata letaknya (P3, pemilik 20 Okt 2026: titik seperti
+        // master). Aplikasi HP membaca teks ini apa adanya, jadi dikonversi di
+        // sini, bukan waktu render. Angka di `hasil` tetap angka presisi penuh.
+        $tl = TataLetakSertifikat::untuk(['tata_letak' => $tataLetak]);
+        $teksAngka = static fn (?string $teks): ?string => $teks === null ? null : TataLetakSertifikat::angka($teks, $tl);
+        $blokCatatan = array_map(static fn (array $b): array => [
+            ...$b,
+            'judul' => $teksAngka($b['judul']),
+            'baris' => array_map($teksAngka, $b['baris']),
+            'tabel' => array_map(static fn (array $baris): array => array_map($teksAngka, $baris), $b['tabel']),
+        ], $blokCatatan);
 
         return [
             'versi' => self::VERSI,
@@ -137,9 +149,15 @@ class CertificateSnapshotBuilder
             //
             // Ikut DIBEKUKAN sama alasannya kayak `judul_uut`: dihitung SEKALI
             // waktu sertifikat terbit, bukan dibaca ulang tiap cetak.
-            'catatan_atas_hasil' => $profil?->catatanAtasTabelHasil($sesi),
+            'catatan_atas_hasil' => $teksAngka($profil?->catatanAtasTabelHasil($sesi)),
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
-            'header' => $this->header($sesi, $sertifikat, (bool) ($tataLetak['env_bertumpuk'] ?? false)),
+            // Satuan yang DICETAK di baris satuan bentuk master bila baris hasil
+            // tidak membawanya. Satuan ALAT (profil, lalu `equipments.satuan`)
+            // menang atas satuan pembacaan mentah: Piston/Dispensett/Buret
+            // Digital menimbang dalam `g` tapi masternya mencetak `ml`
+            // (`164!E20:S20`). `satuan` di atas dibiarkan — HP membacanya.
+            ...($tataLetak === [] ? [] : ['satuan_cetak' => $this->satuanCetak($sesi, $profil)]),
+            'header' => $this->header($sesi, $sertifikat, (bool) ($tataLetak['env_bertumpuk'] ?? false), $teksAngka),
             // Enclosure TIDAK punya tabel `Standard | UUT | Correction`. Baris
             // `uncertainty_calculations`-nya memang menyimpan Keseragaman di
             // kolom `koreksi` (wakil "koreksi terbesar", lihat
@@ -282,7 +300,10 @@ class CertificateSnapshotBuilder
      *
      * @return array<string, mixed>
      */
-    private function header(CalibrationSession $sesi, Certificate $sertifikat, bool $envBertumpuk = false): array
+    /**
+     * @param  (callable(?string): ?string)|null  $teksAngka  pemisah desimal tata letak (lihat [bangun])
+     */
+    private function header(CalibrationSession $sesi, Certificate $sertifikat, bool $envBertumpuk = false, ?callable $teksAngka = null): array
     {
         $alat = $sesi->equipment;
         $pelanggan = $alat?->customer;
@@ -312,8 +333,8 @@ class CertificateSnapshotBuilder
             'calibration_date' => $sesi->tanggal_kalibrasi?->toDateString(),
             'serial_number' => $sesi->alat_serial_number ?: $alat?->serial_number,
             'calibration_method' => $this->metodeKalibrasi($sesi),
-            'capacity_graduation' => $this->kapasitasGraduasi($sesi),
-            'env_condition' => $this->kondisiLingkungan($sesi, $envBertumpuk),
+            'capacity_graduation' => $teksAngka ? $teksAngka($this->kapasitasGraduasi($sesi)) : $this->kapasitasGraduasi($sesi),
+            'env_condition' => $teksAngka ? $teksAngka($this->kondisiLingkungan($sesi, $envBertumpuk)) : $this->kondisiLingkungan($sesi, $envBertumpuk),
             'technician_id' => $sesi->teknisi?->kodeTeknisi(),
         ];
     }
@@ -1022,6 +1043,15 @@ class CertificateSnapshotBuilder
         }
 
         return array_map(static fn ($v): ?string => $v === null ? null : (string) $v, $tambahan);
+    }
+
+    private function satuanCetak(CalibrationSession $sesi, ?CalibrationProfile $profil): ?string
+    {
+        $alat = $sesi->equipment;
+        $titik = self::titikUrut($sesi)->first();
+        $dariProfil = $titik === null ? null : $profil?->satuanTitik((float) $titik->titik_ukur, $alat);
+
+        return $dariProfil ?? (filled($alat?->satuan) ? $alat->satuan : $sesi->rawMeasurements->first()?->satuan);
     }
 
     /** @return list<Standard> */

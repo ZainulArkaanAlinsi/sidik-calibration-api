@@ -240,14 +240,15 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
         // Layar = sertifikat, titik demi titik.
         $this->assertSame($baris->pluck('desimal')->all(), array_column($detail->json('data.titik'), 'desimal'));
 
-        // PDF.
+        // PDF. Sertifikat baru berbentuk master (K-50-15, pemilik 20 Okt 2026):
+        // titik desimal seperti tampilan sel master — desimalnya tetap sama.
         $html = $this->html($sertifikat);
         foreach ($baris as $b) {
-            $this->assertStringContainsString('<td>'.Angka::hasil((float) $b['unit_under_test'], $b['desimal']).'</td>', $html);
-            $this->assertStringContainsString('<td>'.Angka::hasil((float) $b['u95'], 5).'</td>', $html);
+            $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $b['unit_under_test'], $b['desimal'])).'</td>', $html);
+            $this->assertStringContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $b['u95'], 5)).'</td>', $html);
         }
         // Keping 500 g: tiga desimal, bukan lima.
-        $this->assertStringNotContainsString('<td>'.Angka::hasil((float) $baris[2]['unit_under_test'], 5).'</td>', $html);
+        $this->assertStringNotContainsString('<td>'.Angka::keTitik(Angka::hasil((float) $baris[2]['unit_under_test'], 5)).'</td>', $html);
         $this->assertMatchesRegularExpression('/Coverage Factor \( k \) =\s*2\s*</', $html);
 
         // Excel — angka (bukan teks), dibulatkan sama persis dengan PDF.
@@ -287,6 +288,9 @@ class AnakTimbanganDesimalPerBlokTest extends TestCase
             unset($snapshot['hasil'][$i]['desimal_k']);
         }
         $snapshot['desimal'] = 5;
+        // Terbitan 7–13 Okt belum punya `tata_letak` (K-50-15 lahir 18 Okt):
+        // tanpa kunci itu lembar dicetak bentuk lama (koma, k 2 desimal).
+        unset($snapshot['tata_letak'], $snapshot['satuan_cetak']);
         $sertifikat->update(['snapshot' => $snapshot]);
         $sebelum = $sertifikat->fresh()->snapshot;
 

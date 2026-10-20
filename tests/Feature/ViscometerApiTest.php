@@ -441,6 +441,8 @@ class ViscometerApiTest extends TestCase
      */
     public function test_tiga_u95_kecetak_satu_kolom_per_baris(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sesi = $this->simpanSesi();
 
         // Admin dibikin di sini, bukan di `setUp()` — cuma test ini yang perlu
@@ -478,7 +480,8 @@ class ViscometerApiTest extends TestCase
             // Baris hasil = empat sel yang SEMUANYA angka bergaya Indonesia
             // (`-1253,73`). Kepala tabel, baris identitas, dan catatan kaki
             // nggak lolos saringan ini.
-            $angka = fn (string $sel): bool => preg_match('/^-?\d+,\d+$/', $sel) === 1;
+            // (Bentuk master K-50-15: titik desimal, `-1253.73`.)
+            $angka = fn (string $sel): bool => preg_match('/^-?\d+\.\d+$/', $sel) === 1;
 
             if (count($teks) === 4 && count(array_filter($teks, $angka)) === 4) {
                 $tabel[] = $teks;
@@ -488,9 +491,9 @@ class ViscometerApiTest extends TestCase
         // Dua desimal cuma di baris pertama — sisanya satu, ikut format sel
         // masternya. Yang diuji bukan cuma angkanya, tapi juga bentuknya.
         $this->assertSame([
-            ['93,88', '96,72', '-2,84', '0,49'],
-            ['910,3', '917,7', '-7,4', '2,7'],
-            ['61898,1', '63151,9', '-1253,7', '145,7'],
+            ['93.88', '96.72', '-2.84', '0.49'],
+            ['910.3', '917.7', '-7.4', '2.7'],
+            ['61898.1', '63151.9', '-1253.7', '145.7'],
         ], $tabel);
 
         // Baris ringkas lamanya nggak boleh ikut kegambar — kalau dua-duanya

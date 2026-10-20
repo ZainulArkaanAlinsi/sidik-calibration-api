@@ -146,7 +146,7 @@ class CertificateSnapshotTest extends TestCase
         $this->assertSame('B628755900', $header['serial_number']);
         $this->assertSame('Lab. Uji A', $header['calibration_location']);
         $this->assertSame('SIDIK-IK-CAL-0506_Rev.6', $header['calibration_method']);
-        $this->assertSame('0–14 pH / 0,01 pH', $header['capacity_graduation']);
+        $this->assertSame('0–14 pH / 0.01 pH', $header['capacity_graduation']);
         // Bentuk pH, disalin dari format sel `Master Olah Data_pH for trial.xlsm`
         // sheet SERTIFIKAT (diadu 10 Agt 2026): `U14` format `0.0` → `21,0`,
         // `U15` format `General` → `51,95`, dua ketidakpastian format `0.0`.
@@ -160,7 +160,7 @@ class CertificateSnapshotTest extends TestCase
         // K-50-15 (pemilik, 18 Okt 2026, sertifikat persis lembar SERTIFIKAT
         // master): T dan %RH di baris sendiri-sendiri, bunyi sel master
         // (`T 21.0 °C ± 1.7 °C`), bukan `T: …°C — %RH: …` sebaris.
-        $this->assertSame("T 21,0 °C ± 1,7 °C\n%RH 51,95 % ± 5,7 %", $header['env_condition']);
+        $this->assertSame("T 21.0 °C ± 1.7 °C\n%RH 51.95 % ± 5.7 %", $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 
@@ -180,8 +180,9 @@ class CertificateSnapshotTest extends TestCase
         $env = $this->terbitkanSertifikat()->snapshot['header']['env_condition'];
 
         // K-50-15: satuan dipisah spasi seperti sel master (`± 1.7 ⁰C`).
-        $this->assertMatchesRegularExpression('/± \d+,\d °C/', $env);
-        $this->assertMatchesRegularExpression('/± \d+,\d %/', $env);
+        // P3 (pemilik 20 Okt 2026): titik desimal seperti tampilan sel master.
+        $this->assertMatchesRegularExpression('/± \d+\.\d °C/', $env);
+        $this->assertMatchesRegularExpression('/± \d+\.\d %/', $env);
     }
 
     public function test_correction_di_tabel_hasil_itu_standard_value_dikurangi_pembacaan(): void

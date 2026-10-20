@@ -7,6 +7,7 @@ use App\Support\Angka;
 use Illuminate\Support\Collection;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\CellAlignment;
+use OpenSpout\Common\Entity\Style\CellVerticalAlignment;
 use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\XLSX\Options;
 use OpenSpout\Writer\XLSX\Writer;
@@ -165,11 +166,18 @@ class CertificateExcelExporter
         ];
 
         foreach ($label as $kunci => $teks) {
-            $writer->addRow(Row::fromValuesWithStyles(
-                [$teks, $header[$kunci] ?? ''],
-                null,
-                [0 => (new Style)->setFontBold()],
-            ));
+            $nilai = (string) ($header[$kunci] ?? '');
+            $gaya = [0 => (new Style)->setFontBold()];
+
+            // Sel bertumpuk (Env. Condition T / %RH / Tekanan Udara sebaris-
+            // sebaris sejak K-50-15, Capacity/Graduation bertingkat) dibungkus,
+            // supaya barisnya terbaca sama dengan PDF — bukan satu baris
+            // panjang dengan karakter baris baru tersembunyi.
+            if (str_contains($nilai, "\n")) {
+                $gaya[1] = (new Style)->setShouldWrapText()->setCellVerticalAlignment(CellVerticalAlignment::TOP);
+            }
+
+            $writer->addRow(Row::fromValuesWithStyles([$teks, $nilai], null, $gaya));
         }
     }
 

@@ -241,6 +241,8 @@ class EnclosureSertifikatTest extends TestCase
 
     public function test_pdf_cetak_sebaran_dan_kinerja_tanpa_baris_correction(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sertifikat = $this->terbitkan($this->sesi('2405.03.AV'));
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
 
@@ -263,15 +265,15 @@ class EnclosureSertifikatTest extends TestCase
 
         // SP1 posisi 1: Terukur 14,34625 → `14,3`, Koreksi −0,65375 → `-0,7`;
         // SP4 posisi 3: 100,221 → `100,2`. Satu desimal = format sel `0.0` master.
-        $this->assertStringContainsString('<td>14,3</td>', $html);
-        $this->assertStringContainsString('<td>-0,7</td>', $html);
-        $this->assertStringContainsString('<td>100,2</td>', $html);
+        $this->assertStringContainsString('<td>14.3</td>', $html);
+        $this->assertStringContainsString('<td>-0.7</td>', $html);
+        $this->assertStringContainsString('<td>100.2</td>', $html);
         // U95 `U25` format `0.0` → `1,4` (bukan `1,40`); k `P37` format `0` → `2`.
-        $this->assertStringContainsString('<td rowspan="2">1,4</td>', $html);
-        $this->assertStringNotContainsString('1,40', $html);
+        $this->assertStringContainsString('<td rowspan="2">1.4</td>', $html);
+        $this->assertStringNotContainsString('1.40', $html);
         $this->assertMatchesRegularExpression('/coverage factor \( k \)\s*=\s*2\s*</', $html);
         // SP1 Kinerja sistem (5 pembacaan): KS 0,3 — master (peta rusak) 0,2.
-        $this->assertStringContainsString('<td>0,3</td>', $html);
+        $this->assertStringContainsString('<td>0.3</td>', $html);
 
         // Yang DIBUANG: tabel empat kolom & kalimat baku `k = 2`.
         $this->assertStringNotContainsString('Correction', $html);
@@ -372,13 +374,15 @@ class EnclosureSertifikatTest extends TestCase
     /** Recorder: format sel master `0.00` untuk Terukur/Koreksi/Kinerja, `General` untuk Setting. */
     public function test_pdf_recorder_ikut_format_sel_master(): void
     {
+        // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
+        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
         $sertifikat = $this->terbitkan($this->sesi('2406.25.AI'));
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
 
         // SISTEM_RECORDER_SP1: Terukur pos 1 67,028 → `67,03`; Koreksi −0,332 → `-0,33`;
         // Indikator A (B25 `0.0`) `67,4`; Indikator B (E41 `0.00`) `67,36`;
         // Setting (C41 General) `67`; KS `1,75`; SS 0,0249999… → `0,02`; VK 2,6499999… → `2,65`; U95 `1,5`.
-        foreach (['<td>67,03</td>', '<td>-0,33</td>', '<td rowspan="2">67,4</td>', '<td>67,36</td>', '<td>67</td>', '<td>1,75</td>', '<td>0,02</td>', '<td>2,65</td>', '<td rowspan="2">1,5</td>'] as $sel) {
+        foreach (['<td>67.03</td>', '<td>-0.33</td>', '<td rowspan="2">67.4</td>', '<td>67.36</td>', '<td>67</td>', '<td>1.75</td>', '<td>0.02</td>', '<td>2.65</td>', '<td rowspan="2">1.5</td>'] as $sel) {
             $this->assertStringContainsString($sel, $html, "Sel {$sel} nggak kecetak.");
         }
     }
