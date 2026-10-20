@@ -5,11 +5,14 @@ namespace Tests\Unit;
 use App\Models\CalibrationSession;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
+use App\Services\Calibration\Profiles\TachometerProfile;
 use App\Services\Calibration\Profiles\ThermocoupleProfile;
 use App\Services\Calibration\Profiles\ThermohygroProfile;
 use App\Services\Calibration\Profiles\ThermometerGlassProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
+use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Support\TataLetakSertifikat;
 use Tests\TestCase;
@@ -141,5 +144,53 @@ class SertifikatHookSuhuWaktuTest extends TestCase
         $this->assertSame('Standard used :', $oven['judul_standar_digunakan']);
         $this->assertSame('Issuance Date', $oven['label_tanggal_terbit']);
         $this->assertSame(['Name', 'Merk/Type', 'Serial Number', 'Traceable to SI through'], $this->labelStandar($oven));
+    }
+
+    public function test_centrifuge_dan_tachometer_u95_gabung_per_rentang_dan_penafian(): void
+    {
+        foreach ([CentrifugeProfile::class, TachometerProfile::class] as $kelas) {
+            $profil = app($kelas);
+            $tl = $this->tataLetak($profil);
+
+            // 180!C17:S18 / 182!C17:S18 — `Unit Under Test`, bukan `Setting`.
+            $this->assertSame(['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'], array_column($tl['kolom_hasil'], 'judul'), $kelas);
+            $this->assertSame(['Rpm', 'Rpm', 'Rpm', 'Rpm'], array_column($tl['kolom_hasil'], 'satuan'), $kelas);
+            $this->assertSame([false, false, false, true], array_column($tl['kolom_hasil'], 'gabung'), $kelas);
+
+            // 180!A56 / 182!A59, sesudah tanda tangan.
+            $blok = TataLetakSertifikat::normalisasiBlok($profil->catatanSertifikat($this->sesi()));
+            $this->assertCount(1, $blok, $kelas);
+            $this->assertSame(TataLetakSertifikat::POSISI_SESUDAH_TTD, $blok[0]['posisi']);
+            $this->assertStringStartsWith('It is prohibited to quote, reproduce, and/or publish', $blok[0]['baris'][0]);
+            $this->assertStringStartsWith('This certificate is valid when it is registered and sealed', $blok[0]['baris'][1]);
+
+            $this->assertSame(
+                ['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.0', 'u95' => '0.0', 'k' => '0'],
+                TataLetakSertifikat::normalisasiFormat($profil->formatKolomSertifikat($this->sesi(), 5000.0, 'rpm')),
+                $kelas,
+            );
+        }
+
+        // 182!C31:J36 `0` mulai 10000 rpm; Centrifuge 180!C31:J33 tetap `0.0`.
+        $this->assertSame('0', app(TachometerProfile::class)->formatKolomSertifikat($this->sesi(), 10000.0, 'rpm')['standar']);
+        $this->assertSame('0.0', app(TachometerProfile::class)->formatKolomSertifikat($this->sesi(), 7000.0, 'rpm')['uut']);
+        $this->assertSame('0.0', app(CentrifugeProfile::class)->formatKolomSertifikat($this->sesi(), 15000.0, 'rpm')['standar']);
+    }
+
+    public function test_timer_u95_satu_kotak_dan_k_general(): void
+    {
+        $timer = app(TimerStopwatchProfile::class);
+        $tl = $this->tataLetak($timer);
+
+        // 183!E17:X18.
+        $this->assertSame(['Standard Value', 'Unit Under Test', 'Correction', 'Uncertainty 95% ±'], array_column($tl['kolom_hasil'], 'judul'));
+        $this->assertSame(['S', 'S', 'S', 'S'], array_column($tl['kolom_hasil'], 'satuan'));
+        $this->assertTrue($tl['kolom_hasil'][3]['gabung']);
+        $this->assertSame([], $timer->catatanSertifikat($this->sesi()));
+
+        // X19 `0.0`, V29 General.
+        $format = TataLetakSertifikat::normalisasiFormat($timer->formatKolomSertifikat($this->sesi(), 60.0, null));
+        $this->assertSame(['u95' => '0.0', 'k' => 'General'], $format);
+        $this->assertSame('0,8', TataLetakSertifikat::formatAngka(0.81, $format['u95']));
     }
 }

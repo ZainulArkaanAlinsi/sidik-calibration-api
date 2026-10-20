@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\WaktuCalculator;
@@ -176,6 +177,48 @@ class TimerStopwatchProfile extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 2;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master `183` (K-50-15), sejauh yang bisa
+     * dinyatakan profil:
+     *
+     * - judul `Standard Value | Unit Under Test | Correction | Uncertainty 95%
+     *   ±` (`E17`, `O17`, `S17`, `X17`; spasi ekor master dibuang);
+     * - satuan `S` (`X18`) — sebelumnya baris satuan jatuh ke satuan mentah
+     *   sesi (`ms`) padahal angkanya detik;
+     * - U95 satu kotak untuk semua baris tercetak (`X19:Y23`, `0.8`).
+     *
+     * BELUM: pemecahan tiap kolom jadi `H | M | S | S(0,001)` (UUT `S(0,01)`,
+     * `E18:W18`) dan blok `Note : H = Hour, …` (`E30:P32`) yang menerangkan
+     * pecahan itu. Kolom hasil hanya mengenal satu sel per kolom
+     * (`TataLetakSertifikat::KOLOM_HASIL`), jadi butuh lapisan T.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'kolom_hasil' => [
+                ['kolom' => 'standar', 'judul' => 'Standard Value', 'satuan' => 'S'],
+                ['kolom' => 'uut', 'judul' => 'Unit Under Test', 'satuan' => 'S'],
+                ['kolom' => 'koreksi', 'judul' => 'Correction', 'satuan' => 'S'],
+                ['kolom' => 'u95', 'judul' => 'Uncertainty 95% ±', 'satuan' => 'S', 'gabung' => true],
+            ],
+        ];
+    }
+
+    /**
+     * Format sel: U95 `0.0` (`X19`), `k` `General` (`V29` `1.96516849139021`).
+     * Standard/UUT/Correction tetap tiga desimal detik ([desimalSertifikat])
+     * sampai pecahan H/M/S ada.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['u95' => '0.0', 'k' => 'General'];
     }
 
     /** Sama seperti kelompok Putaran: lampiran maupun master tidak menyebut batas keberterimaan. */

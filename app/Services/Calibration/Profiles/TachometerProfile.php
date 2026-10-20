@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
+
 /**
  * Profil **Infrared Tachometer** — lampiran akreditasi LK-285-IDN kelompok
  * "Waktu dan Frekuensi" no. 39, pita CMC 60–7000 rpm → 1,5 rpm dan
@@ -90,5 +92,19 @@ class TachometerProfile extends ProfilPutaran
     public function desimalSuhuEnv(): ?int
     {
         return null;
+    }
+
+    /**
+     * Baris ≥ 10000 rpm: Standard & UUT berformat `0` (`182!C31:J36`
+     * `10000`, `15001`), Correction & U95 tetap `0.0` (`P31`, `S31`).
+     * `$titikUkur` = set point (lihat [nilaiStandarDariKoreksi]).
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $format = parent::formatKolomSertifikat($sesi, $titikUkur, $satuan);
+
+        return $titikUkur >= 10000.0 ? [...$format, 'standar' => '0', 'uut' => '0'] : $format;
     }
 }

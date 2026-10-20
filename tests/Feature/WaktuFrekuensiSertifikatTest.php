@@ -141,16 +141,26 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
+        // K-50-15 (pemilik 18 Okt 2026, sertifikat persis lembar SERTIFIKAT
+        // master): sertifikat BARU mencetak `k` seperti format selnya —
+        // `182!U37` `0` → `= 2`, sama di tiap baris, jadi tidak ada `≈`.
+        // Bentuk `≈ 1,96` di bawah tetap berlaku untuk snapshot LAMA (tanpa
+        // `format` per baris), dan itu yang tetap dijaga test ini.
         $html = $this->htmlSertifikat('0140-CAL-424');
+
+        $this->assertMatchesRegularExpression('/Coverage Factor \( k \) =\s*2\s*</u', $html);
+        $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) ≈/u', $html);
+
+        $lama = $this->htmlSertifikat('0140-CAL-424', bentukLama: true);
 
         // Diadu lewat regex, bukan string mati: Blade menyisipkan baris baru
         // antara tanda dan angkanya, dan yang dijaga di sini BUNYI kalimatnya —
         // bukan spasi di HTML-nya.
         $this->assertMatchesRegularExpression(
-            '/Coverage Factor \( k \) ≈\s*1,96/u', $html,
+            '/Coverage Factor \( k \) ≈\s*1,96/u', $lama,
             'Satu kelompok memuat k 1,96 dan 1,97, tapi kalimatnya masih mengaku persis.',
         );
-        $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) =/u', $html);
+        $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) =/u', $lama);
     }
 
     /** Baris pertama tiap alat diadu ke sel `SERTIFIKAT` masternya. */
@@ -217,8 +227,12 @@ class WaktuFrekuensiSertifikatTest extends TestCase
         return $metode->invoke(app(CertificateSnapshotBuilder::class), $sesi);
     }
 
-    /** HTML sertifikat satu sesi, lewat jalur terbit yang sama dengan produksi. */
-    private function htmlSertifikat(string $nomorSesi): string
+    /**
+     * HTML sertifikat satu sesi, lewat jalur terbit yang sama dengan produksi.
+     * `bentukLama`: snapshot dibaca seperti sertifikat yang terbit sebelum
+     * K-50-15 — tanpa `tata_letak`, `catatan_blok`, dan `format` per baris.
+     */
+    private function htmlSertifikat(string $nomorSesi, bool $bentukLama = false): string
     {
         $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
 
@@ -228,6 +242,17 @@ class WaktuFrekuensiSertifikatTest extends TestCase
                 ->assertOk();
         }) ?? $sesi->fresh()->certificate()->firstOrFail();
 
-        return view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
+        $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
+
+        if ($bentukLama) {
+            unset($bahan['snapshot']['tata_letak'], $bahan['snapshot']['catatan_blok']);
+            $bahan['snapshot']['hasil'] = array_map(static function (array $b): array {
+                unset($b['format']);
+
+                return $b;
+            }, $bahan['snapshot']['hasil']);
+        }
+
+        return view('sertifikat.pdf', $bahan)->render();
     }
 }

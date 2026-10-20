@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\PutaranCalculator;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -180,6 +181,63 @@ abstract class ProfilPutaran extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 1;
+    }
+
+    /**
+     * Penafian tetap di bawah tanda tangan, dua baris dalam satu sel gabung
+     * (Centrifuge `180!A56:Z56`, Tachometer `182!A59:Z59`). Nama PT ditulis
+     * persis master.
+     */
+    public const PENAFIAN_MASTER = [
+        'It is prohibited to quote, reproduce, and/or publish part of this certificate without written permission from PT. Sistem Dirgantara Inovasi Teknologi',
+        'This certificate is valid when it is registered and sealed by PT. Sistem Dirgantara Inovasi Teknologi',
+    ];
+
+    /**
+     * Bentuk lembar SERTIFIKAT master kedua alat rpm (K-50-15), sama di
+     * Centrifuge `180` dan Tachometer `182`:
+     *
+     * - kolom `Standard Value | Unit Under Test | Correction | U95% (±)`
+     *   (`C17:S17`; bukan `Setting` — [judulKolomUut] tetap untuk layar),
+     *   baris satuan `Rpm` di bawahnya (`C18:S18`);
+     * - U95 satu kotak per rentang (`S19:V21`, `S22:V24`, …): kolom `gabung`
+     *   menggabung sel bersebelahan yang ANGKA CETAKNYA sama.
+     *
+     * Kolom Standard used, `Issuance Date   :` dan strip penafian = bawaan.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'kolom_hasil' => [
+                ['kolom' => 'standar', 'judul' => 'Standard Value', 'satuan' => 'Rpm'],
+                ['kolom' => 'uut', 'judul' => 'Unit Under Test', 'satuan' => 'Rpm'],
+                ['kolom' => 'koreksi', 'judul' => 'Correction', 'satuan' => 'Rpm'],
+                ['kolom' => 'u95', 'judul' => 'U95% (±)', 'satuan' => 'Rpm', 'gabung' => true],
+            ],
+        ];
+    }
+
+    /**
+     * Format sel: semua kolom `0.0` (`180!C19:S33`, `182!C19:S30`), `k` `0`
+     * (`180!U34`, `182!U37`). Tachometer menimpa Standard & UUT ≥ 10000 rpm.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.0', 'u95' => '0.0', 'k' => '0'];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_SESUDAH_TTD,
+            'baris' => self::PENAFIAN_MASTER,
+        ]];
     }
 
     /**
