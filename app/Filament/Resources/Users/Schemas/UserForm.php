@@ -33,13 +33,14 @@ class UserForm
                     ->required()
                     ->maxLength(255),
                 Select::make('role')
-                    // `viewer` hanya muncul saat MENGUBAH akun (akun viewer
-                    // lama tetap sah); akun baru tidak ditawari (20 Okt 2026).
-                    ->options(fn (string $operation): array => array_filter([
+                    // `viewer` hanya muncul untuk akun yang SUDAH viewer (akun
+                    // lama tetap sah); akun baru maupun akun lain tidak bisa
+                    // dijadikan viewer (20 Okt 2026) — sejalan `UserController`.
+                    ->options(fn (?User $record): array => array_filter([
                         User::ROLE_ADMIN => 'Admin',
                         User::ROLE_TEKNISI => 'Teknisi',
                         User::ROLE_VIEWER => 'Viewer',
-                    ], fn (string $role): bool => $operation !== 'create' || in_array($role, User::rolesAkunBaru(), true), ARRAY_FILTER_USE_KEY))
+                    ], fn (string $role): bool => $record?->role === User::ROLE_VIEWER || in_array($role, User::rolesAkunBaru(), true), ARRAY_FILTER_USE_KEY))
                     ->default(User::ROLE_TEKNISI)
                     ->required(),
                 Select::make('status')

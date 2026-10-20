@@ -46,6 +46,38 @@ class ViewerAkunBaruTest extends TestCase
         $this->assertSame(User::STATUS_PENDING, $pendaftar->fresh()->status);
     }
 
+    public function test_ubah_akun_menjadi_viewer_ditolak(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teknisi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+
+        $this->actingAs($admin)
+            ->putJson("/api/users/{$teknisi->id}", ['role' => User::ROLE_VIEWER])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('role');
+
+        $this->assertSame(User::ROLE_TEKNISI, $teknisi->fresh()->role);
+    }
+
+    public function test_akun_viewer_lama_boleh_tetap_viewer_dan_diubah_datanya(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
+
+        $this->actingAs($admin)
+            ->putJson("/api/users/{$viewer->id}", ['role' => User::ROLE_VIEWER, 'department' => 'QA'])
+            ->assertOk();
+
+        $this->assertSame(User::ROLE_VIEWER, $viewer->fresh()->role);
+        $this->assertSame('QA', $viewer->fresh()->department);
+
+        // Dan boleh dinaikkan ke peran lain.
+        $this->actingAs($admin)
+            ->putJson("/api/users/{$viewer->id}", ['role' => User::ROLE_TEKNISI])
+            ->assertOk();
+        $this->assertSame(User::ROLE_TEKNISI, $viewer->fresh()->role);
+    }
+
     public function test_akun_viewer_lama_tetap_bisa_masuk_dan_membaca(): void
     {
         $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
@@ -70,6 +102,19 @@ class ViewerAkunBaruTest extends TestCase
             ->assertHasFormErrors(['role']);
 
         $this->assertDatabaseMissing('users', ['email' => 'calon@lab.test']);
+    }
+
+    public function test_form_ubah_akun_teknisi_menjadi_viewer_ditolak(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        $teknisi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+
+        Livewire::test(EditUser::class, ['record' => $teknisi->getKey()])
+            ->fillForm(['role' => User::ROLE_VIEWER])
+            ->call('save')
+            ->assertHasFormErrors(['role']);
+
+        $this->assertSame(User::ROLE_TEKNISI, $teknisi->fresh()->role);
     }
 
     public function test_form_ubah_akun_viewer_lama_tetap_tersimpan(): void

@@ -617,7 +617,7 @@ adanya — tidak ada yang dihapus atau diganti nama.
 | `status_alat` | Aturan (dicek berurutan, turunan, tidak disimpan) |
 |---|---|
 | `nonaktif` | `equipments.status = nonaktif` |
-| `belum_pernah` | belum ada sertifikat berstatus `terbit` untuk alat ini (walau tanggal jatuh tempo terisi) |
+| `belum_pernah` | belum ada sertifikat berstatus `terbit` untuk alat ini **dan** `tanggal_kalibrasi_terakhir` kosong (alat impor bertanggal kalibrasi dinilai dari tanggal) |
 | `lewat_jadwal` | `hari_ke_jatuh_tempo < 0` |
 | `mendekati_jadwal` | `0 ≤ hari_ke_jatuh_tempo ≤ 30` (= anak tangga pertama pengingat, `meta.jendela_segera_hari`) |
 | `terkalibrasi` | selain di atas (termasuk bersertifikat tanpa tanggal jatuh tempo) |

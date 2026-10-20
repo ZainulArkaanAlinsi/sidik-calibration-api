@@ -189,10 +189,12 @@ class RolePelangganTidakMasukRoleInternalTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'sanctum')
-            ->putJson("/api/users/{$teknisi->id}", ['role' => User::ROLE_VIEWER])
+            // Dulu teknisi → viewer; sejak 20 Okt 2026 mengubah akun MENJADI
+            // viewer ditolak (ViewerAkunBaruTest), jadi contohnya teknisi → admin.
+            ->putJson("/api/users/{$teknisi->id}", ['role' => User::ROLE_ADMIN])
             ->assertOk();
 
-        $this->assertSame(User::ROLE_VIEWER, $teknisi->fresh()->role);
+        $this->assertSame(User::ROLE_ADMIN, $teknisi->fresh()->role);
     }
 
     /** Arah masuk: akun pelanggan nggak boleh menyentuh endpoint internal sama sekali. */

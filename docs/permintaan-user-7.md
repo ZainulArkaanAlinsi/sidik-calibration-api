@@ -5316,7 +5316,7 @@ Keputusan pemilik proyek 20 Okt 2026 — jangan ditanya ulang.
 |---|---|
 | Teknisi **tetap** boleh `POST`/`PUT /equipments`, `POST /categories/{kode}/kemampuan`, `POST /customers/cepat` (alat baru dari lembar), tapi **tidak** menghapus alat. | `DELETE /equipments/{e}` pindah ke grup `role:admin` (admin + super admin lewat K-49-14). Teknisi `403`. `/me/permissions` ikut sendiri karena `MatriksIzin` membaca middleware rute: `alat.hapus` hilang dari daftar teknisi. |
 | Pelanggan **tidak** mengubah data alat. | `PATCH /pelanggan/v1/alat/{alat}` dan `AlatController::update()` dicabut (`404`/`405`). Detail alat tetap membawa `terkunci`, `field_terkunci`, `catatan`, `resolusi` (kontrak tidak dipersempit). Yang tetap: ganti sandi, `PATCH`/`DELETE /saya`, `PUT /preferensi-notifikasi`, kelola anggota PIC, perangkat push, tanda baca notifikasi, auth. |
-| `viewer` tidak ditawarkan saat **membuat** akun. Akun viewer lama tetap sah; nilai kolom `role` tidak berubah. | `User::rolesAkunBaru()` = admin, teknisi. Dipakai `POST /users/{u}/approve` dan form **buat** akun panel. `User::roles()` (gerbang channel, saringan daftar pengguna, `rolesInternal()`) tidak diubah; `PUT /users/{u}` tetap menerima `viewer` (mengubah akun yang sudah ada). |
+| `viewer` tidak ditawarkan saat **membuat** akun. Akun viewer lama tetap sah; nilai kolom `role` tidak berubah. | `User::rolesAkunBaru()` = admin, teknisi. Dipakai `POST /users/{u}/approve` dan form **buat** akun panel. `User::roles()` (gerbang channel, saringan daftar pengguna, `rolesInternal()`) tidak diubah. `PUT /users/{u}` dan form ubah panel menolak mengubah akun MENJADI viewer (`422`) kecuali akunnya sudah viewer (keputusan orkestrator 20 Okt, dilaporkan ke pemilik). |
 
 ### Penjaga
 

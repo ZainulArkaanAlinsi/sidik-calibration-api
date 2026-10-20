@@ -166,14 +166,18 @@ class AlatPelangganResource extends JsonResource
      *
      * `nonaktif` diperiksa PERTAMA walau barisnya di tabel paling bawah: dibaca
      * harfiah dia tidak pernah tercapai (setiap alat pasti "belum pernah" atau
-     * "ada sertifikat terbit" lebih dulu). Jendela "mendekati" = anak tangga
+     * "ada sertifikat terbit" lebih dulu). `belum_pernah` hanya bila TIDAK ada
+     * sertifikat terbit DAN `tanggal_kalibrasi_terakhir` kosong. Jendela "mendekati" = anak tangga
      * pertama pengingat (30 hari), supaya layar dan push tidak berbeda.
      */
     public static function statusAlat(Equipment $alat, ?int $hari, bool $pernahTerbit): string
     {
         return match (true) {
             $alat->status === Equipment::STATUS_NONAKTIF => self::ALAT_NONAKTIF,
-            ! $pernahTerbit => self::ALAT_BELUM_PERNAH,
+            // "Pernah" = ada sertifikat terbit di sistem ATAU tanggal kalibrasi
+            // terakhir terisi (alat impor yang sertifikatnya terbit di luar
+            // sistem). Keputusan orkestrator 20 Okt 2026, dilaporkan ke pemilik.
+            ! $pernahTerbit && $alat->tanggal_kalibrasi_terakhir === null => self::ALAT_BELUM_PERNAH,
             $hari !== null && $hari < 0 => self::ALAT_LEWAT_JADWAL,
             $hari !== null && $hari <= PengingatJatuhTempoPelanggan::TANGGA_HARI[0] => self::ALAT_MENDEKATI_JADWAL,
             default => self::ALAT_TERKALIBRASI,

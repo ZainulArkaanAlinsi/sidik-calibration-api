@@ -93,7 +93,9 @@ class UserController extends Controller
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'employee_id' => ['sometimes', 'string', 'max:50', Rule::unique('users', 'employee_id')->ignore($user->id)],
             'department' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role' => ['sometimes', Rule::in(User::roles())],
+            // `viewer` hanya boleh DIPERTAHANKAN pada akun yang sudah viewer;
+            // mengubah akun lain MENJADI viewer ditolak (20 Okt 2026).
+            'role' => ['sometimes', Rule::in($user->role === User::ROLE_VIEWER ? User::roles() : User::rolesAkunBaru())],
             'status' => ['sometimes', Rule::in([User::STATUS_AKTIF, User::STATUS_PENDING, User::STATUS_NONAKTIF])],
         ], [
             'email.unique' => 'Email ini sudah terdaftar.',

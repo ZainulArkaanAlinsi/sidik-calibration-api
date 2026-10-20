@@ -77,8 +77,8 @@ class StatusAlatPelangganTest extends TestCase
             AlatPelangganResource::ALAT_TERKALIBRASI => $this->alat(['tanggal_jatuh_tempo' => now()->addDays(200)]),
             AlatPelangganResource::ALAT_MENDEKATI_JADWAL => $this->alat(['tanggal_jatuh_tempo' => now()->addDays(10)]),
             AlatPelangganResource::ALAT_LEWAT_JADWAL => $this->alat(['tanggal_jatuh_tempo' => now()->subDays(3)]),
-            // Ada jadwal, tapi belum ada sertifikat terbit di sistem.
-            AlatPelangganResource::ALAT_BELUM_PERNAH => $this->alat(['tanggal_jatuh_tempo' => now()->subDays(3)], null),
+            // Belum ada sertifikat terbit DAN tanggal kalibrasi terakhir kosong.
+            AlatPelangganResource::ALAT_BELUM_PERNAH => $this->alat(['tanggal_jatuh_tempo' => null, 'tanggal_kalibrasi_terakhir' => null], null),
             AlatPelangganResource::ALAT_NONAKTIF => $this->alat(['status' => Equipment::STATUS_NONAKTIF]),
         ];
 
@@ -92,9 +92,32 @@ class StatusAlatPelangganTest extends TestCase
         }
     }
 
+    /**
+     * Alat impor: jatuh tempo & tanggal kalibrasi terakhir terisi, sertifikatnya
+     * terbit di luar sistem (tidak ada baris `terbit`) → dinilai dari tanggal,
+     * bukan `belum_pernah`.
+     */
+    public function test_alat_impor_tanpa_sertifikat_terbit_dinilai_dari_tanggal(): void
+    {
+        $lewat = $this->alat([
+            'tanggal_kalibrasi_terakhir' => now()->subYear()->subDays(3),
+            'tanggal_jatuh_tempo' => now()->subDays(3),
+        ], null);
+        $aman = $this->alat([
+            'tanggal_kalibrasi_terakhir' => now()->subMonth(),
+            'tanggal_jatuh_tempo' => now()->addDays(200),
+        ], null);
+
+        $daftar = collect($this->ambil('/alat')->json('data'))->keyBy('id');
+
+        $this->assertSame(AlatPelangganResource::ALAT_LEWAT_JADWAL, $daftar[$lewat->id]['status_alat']);
+        $this->assertSame(AlatPelangganResource::ALAT_TERKALIBRASI, $daftar[$aman->id]['status_alat']);
+        $this->assertSame(AlatPelangganResource::ALAT_LEWAT_JADWAL, $this->ambil("/alat/{$lewat->id}")->json('data.status_alat'));
+    }
+
     public function test_sertifikat_belum_terbit_dihitung_belum_pernah(): void
     {
-        $alat = $this->alat(['tanggal_jatuh_tempo' => now()->addDays(200)], Certificate::STATUS_MENUNGGU_GENERATE);
+        $alat = $this->alat(['tanggal_jatuh_tempo' => now()->addDays(200), 'tanggal_kalibrasi_terakhir' => null], Certificate::STATUS_MENUNGGU_GENERATE);
 
         $this->assertSame(AlatPelangganResource::ALAT_BELUM_PERNAH, $this->ambil("/alat/{$alat->id}")->json('data.status_alat'));
     }
