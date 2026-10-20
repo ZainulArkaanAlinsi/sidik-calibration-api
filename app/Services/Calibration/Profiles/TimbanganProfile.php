@@ -1872,9 +1872,8 @@ class TimbanganProfile extends CalibrationProfile
      *   sendiri, `C54`);
      * - `L76` "------- End of Certificate -------".
      *
-     * Yang BELUM: `%RH` master gram (`145!AB14`) berformat `0.0`, kg &
-     * substitusi `0` — desimal lingkungan per varian butuh konteks sesi di
-     * `CertificateSnapshotBuilder` (hook `desimalKelembabanEnv()` tanpa sesi).
+     * `%RH` master gram (`145!AB14`) berformat `0.0`, kg & substitusi `0`:
+     * [desimalKelembabanEnvSesi].
      *
      * @return array<string, mixed>
      */
@@ -1905,6 +1904,19 @@ class TimbanganProfile extends CalibrationProfile
     public function catatanSertifikat(CalibrationSession $sesi): array
     {
         return [['posisi' => TataLetakSertifikat::POSISI_SESUDAH_STANDAR, 'baris' => [self::STRIP_PENAFIAN]]];
+    }
+
+    /**
+     * %RH di kepala `Env. Condition`: master gram `145!AB14` berformat `0.0`
+     * (50.8), kg `146!AB14` & substitusi `147!AB14` `0` (dibaca dari Studio
+     * 21 Okt 2026). Varian dari [ringkasanSertifikat] — jalur yang sama
+     * dengan hitungan. Hanya cetak.
+     */
+    public function desimalKelembabanEnvSesi(CalibrationSession $sesi): ?int
+    {
+        return ($this->ringkasanSertifikat($sesi)['varian'] ?? null) === VarianMasterTimbangan::GRAM
+            ? 1
+            : $this->desimalKelembabanEnv();
     }
 
     /**

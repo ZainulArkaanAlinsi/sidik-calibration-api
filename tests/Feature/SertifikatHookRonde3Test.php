@@ -172,6 +172,24 @@ class SertifikatHookRonde3Test extends TestCase
         }
     }
 
+    /** Timbangan: %RH env `0.0` di master gram (`145!AB14`), `0` di kg (`146!AB14`). */
+    public function test_timbangan_gram_kelembaban_satu_desimal(): void
+    {
+        $this->siap();
+
+        // Sesi contoh tidak membawa kelembapan ruang; diisi seperti `145!AB14`
+        // (50.8) supaya baris %RH tercetak.
+        foreach (['019-CAL-425', '011-CAL-525'] as $nomor) {
+            CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail()->forceFill(['kelembaban' => 50.8])->saveQuietly();
+        }
+
+        [$gram] = $this->terbitkan('019-CAL-425');
+        [$kg] = $this->terbitkan('011-CAL-525');
+
+        $this->assertStringContainsString('%RH 50.8 %', (string) $gram->snapshot['header']['env_condition']);
+        $this->assertStringContainsString('%RH 51 %', (string) $kg->snapshot['header']['env_condition']);
+    }
+
     private function siap(): void
     {
         $this->seed(DatabaseSeeder::class);
