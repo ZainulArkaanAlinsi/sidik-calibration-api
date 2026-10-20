@@ -9,6 +9,7 @@ use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\ThermometerGlassCalculator;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -62,6 +63,8 @@ use Carbon\Carbon;
  */
 class ThermometerGlassProfile extends ProfilSuhuPasangan
 {
+    use BentukSertifikatSuhu;
+
     /**
      * Nomor formulir lembar kerja, dari kertasnya sendiri.
      *
@@ -171,6 +174,41 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
     public function desimalU95(): ?int
     {
         return 1;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master `176` (K-50-15): judul `Standard Reading
+     * (oC)` tanpa baris satuan (`E20:L20`), label `Uncertainty  95%  ±`
+     * (`E35`), Standard used tanpa titik dua (`B41:Q41`), `Issuance Date`
+     * tanpa titik dua (`B48`). Tidak ada `End of Certificate`.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi));
+    }
+
+    /**
+     * Baris `Tipe Thermometer Glass : Total Immersion` tepat di atas tabel
+     * hasil (`176!E19` label, `J19` isi = pilihan `tipe_pencelupan` sesi).
+     * Sesi tanpa pilihan tidak mencetak baris kosong — [peringatanSesi] sudah
+     * menandainya `gelas_tipe_pencelupan_kosong`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $tipe = trim((string) ($this->atributSesi($sesi, 'tipe_pencelupan') ?? ''));
+
+        if ($tipe === '') {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
+            'tabel' => [['Tipe Thermometer Glass :', $tipe]],
+        ]];
     }
 
     /**

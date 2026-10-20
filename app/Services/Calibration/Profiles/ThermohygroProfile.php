@@ -60,6 +60,8 @@ use Carbon\Carbon;
  */
 class ThermohygroProfile extends ProfilSuhuPasangan
 {
+    use BentukSertifikatSuhu;
+
     /**
      * Nomor formulir lembar kerja, dari kertasnya sendiri — dan SATU-SATUNYA
      * dari sebelas formulir yang nomor revisinya BERSELISIH dengan dirinya.
@@ -203,6 +205,55 @@ class ThermohygroProfile extends ProfilSuhuPasangan
     public function desimalU95(): ?int
     {
         return 1;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master `154` (K-50-15), sejauh yang bisa
+     * dinyatakan profil:
+     *
+     * - label lingkungan `Environmental Condition` (`L13`);
+     * - kolom `Standard Reading | Unit Under Test | Correction | Uncertainty
+     *   95% ±` (`E20:U20`), satuan di baris sendiri (`E21:N21`, sel U95
+     *   kosong), U95 sebagai KOLOM yang digabung (`U22`; baris ringkas
+     *   `E29:M29` disembunyikan master);
+     * - Standard used tanpa titik dua (`I70:Q70`); `Issuance Date :` (`B74`)
+     *   = bawaan.
+     *
+     * BELUM: seksi `1. Temperature` / `2. Humidity` (`E19`/`E32`) dengan tabel
+     * %RH sendiri. Baris snapshot tidak membawa parameter (suhu/kelembapan) —
+     * [satuanTitik] dan `remarkTitikKe()` tidak menerima sesi — jadi pemisahnya
+     * butuh perubahan `CertificateSnapshotBuilder` (lapisan T), bukan hook ini.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $induk = parent::tataLetakSertifikat($sesi);
+
+        return [
+            ...$induk,
+            'kepala' => self::labelKepala($induk['kepala'], 'env_condition', 'Environmental Condition'),
+            'kolom_hasil' => [
+                ['kolom' => 'standar', 'judul' => 'Standard Reading'],
+                ['kolom' => 'uut', 'judul' => 'Unit Under Test'],
+                ['kolom' => 'koreksi', 'judul' => 'Correction'],
+                ['kolom' => 'u95', 'judul' => self::LABEL_U95_SUHU, 'satuan' => '', 'gabung' => true],
+            ],
+            'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
+        ];
+    }
+
+    /**
+     * Format sel: Standard & Correction `0.00` (`E22`, `N22`), U95 `0.0`
+     * (`U22`), `k` `0` (`T30`). UUT TIDAK disebut: suhu `0.0` (`K22`) dan %RH
+     * `0` (`K35`), sedangkan baris snapshot tidak tahu parameternya (lihat
+     * [tataLetakSertifikat]) — tetap desimal lama sampai lapisan T membawanya.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'];
     }
 
     /**

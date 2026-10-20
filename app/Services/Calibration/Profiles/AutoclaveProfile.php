@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -37,6 +38,8 @@ use App\Models\Standard;
  */
 class AutoclaveProfile extends CalibrationProfile
 {
+    use BentukSertifikatSuhu;
+
     /**
      * Nomor Instruksi Kerja alat ini — `DATABASE` baris 31 (Autoclave).
      *
@@ -195,6 +198,30 @@ class AutoclaveProfile extends CalibrationProfile
     public function punyaToleransi(): bool
     {
         return false;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master `155` (K-50-15) di luar tiga bagian
+     * tabelnya: `Standard Used :` berhuruf besar (`B45`), kolomnya tanpa titik
+     * dua (`G46:Q46`), `Issuance Date:` (`B54`), dan `End of Certificate`
+     * sesudah tanda tangan (`E66`, spasi tepi master dibuang).
+     *
+     * BELUM (bagian tabel autoklaf digambar `pdf.blade.php`, lapisan T):
+     * `Thermocouple Position : (For Temperature)` + gambar posisi (`F19`,
+     * gambar di `J19`), kepala `Sensor No. (oC)` bernomor (`F23:P24`), judul
+     * `C) Tekanan` (`B35`).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'judul_standar_digunakan' => 'Standard Used :',
+            'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
+            'label_tanggal_terbit' => 'Issuance Date:',
+            'akhir_sertifikat' => '-------------- End of Certificate  --------------',
+        ];
     }
 
     /**

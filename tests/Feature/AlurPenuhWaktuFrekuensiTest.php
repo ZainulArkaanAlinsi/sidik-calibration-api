@@ -49,7 +49,12 @@ class AlurPenuhWaktuFrekuensiTest extends TestCase
     {
         return [
             'Centrifuge' => ['0133-CAL-324', 59.779999999999994, 60.0, -0.22000000000000597],
-            'Tachometer' => ['0140-CAL-424', 59.779999999999994, 60.0, -0.22000000000000597],
+            // K-50-15 (pemilik 18 Okt 2026, sertifikat persis master): koreksi
+            // Tachometer dicetak seperti `182!P19 = C19 − J19` (+0,22), dan
+            // kolom `Standard Value`/`Unit Under Test` ditukar di tata letak
+            // (`C19` = set point = kunci `unit_under_test`, `J19` = 59,78 =
+            // kunci `standard_value`). Dulu −0,22 (jawaban lab §10, batal).
+            'Tachometer' => ['0140-CAL-424', 59.779999999999994, 60.0, 0.22000000000000597],
             'Timer/Stopwatch' => ['015-CAL-424', 60.09633333333333, 60.137, -0.04066666666666],
         ];
     }

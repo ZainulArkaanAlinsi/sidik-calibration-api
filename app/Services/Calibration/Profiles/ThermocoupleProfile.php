@@ -71,6 +71,8 @@ use Carbon\Carbon;
  */
 class ThermocoupleProfile extends ProfilSuhuPasangan
 {
+    use BentukSertifikatSuhu;
+
     /**
      * Nomor formulir lembar kerja, dari kertasnya sendiri.
      *
@@ -285,6 +287,19 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
     public function desimalU95(): ?int
     {
         return 2;
+    }
+
+    /**
+     * Bentuk lembar SERTIFIKAT master `175` (K-50-15): judul `Standard Reading
+     * (oC)` tanpa baris satuan (`E19:L19`), label `Uncertainty  95%  ±`
+     * (`E34`), Standard used tanpa titik dua (`B40:Q40`), `Issuance Date`
+     * tanpa titik dua (`B47`). Tidak ada `End of Certificate`.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi));
     }
 
     /**
