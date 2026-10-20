@@ -651,4 +651,23 @@ class TurbidimeterProfile extends CalibrationProfile
     {
         return true;
     }
+
+    /**
+     * Format sel lembar `SERTIFIKAT` master Turbidimeter (Studio id 177,
+     * K-50-15). Standard Value selalu `0` (`C22:C24`: `1`, `100`, `1000`);
+     * UUT, Correction, dan U95 per rentang mengikuti resolusi titiknya —
+     * `J22`/`P22`/`S22` `0.00`, `J23`/`P23`/`S23` `0.0`, `J24`/`P24`/`S24`
+     * `0` — sama dengan `desimal` [TITIK] (2/1/0), tapi nol di belakang tetap
+     * tercetak (`1.00`, `100.0`). `k` `U27` berformat `0.0` → `2.0`, satu-
+     * satunya master analitik yang begitu. Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $desimal = $this->desimalTitik($titikUkur) ?? 0;
+        $kode = $desimal === 0 ? '0' : '0.'.str_repeat('0', $desimal);
+
+        return ['standar' => '0', 'uut' => $kode, 'koreksi' => $kode, 'u95' => $kode, 'k' => '0.0'];
+    }
 }

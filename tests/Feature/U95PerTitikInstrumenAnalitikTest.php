@@ -100,10 +100,17 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
             // Judul kolomnya diadu HARFIAH. Tanpa ini, kolom U95 bisa hilang
             // sama sekali dan test tetap hijau selama angkanya kebetulan muncul
             // di tempat lain di halaman.
+            //
+            // Refractometer: K-50-15 (pemilik 18 Okt 2026, sertifikat persis
+            // lembar SERTIFIKAT master) — master `168!R16` menulis `U95%, k=2`,
+            // dan `k` tercetaknya memang `2` (`U21` format `0`). Faktor
+            // cakupannya tetap TIDAK dikunci (assert di atas): yang berubah
+            // judul cetaknya saja, lewat `tata_letak.judul_kolom_u95`.
+            $judulU95 = $alat === 'Refractometer' ? 'U95%, k=2' : 'U<sub>95%</sub> (±)';
             $this->assertStringContainsString(
-                'U<sub>95%</sub> (±)',
+                $judulU95,
                 $html,
-                "{$alat}: kepala kolom `U95% (±)` nggak ada di sertifikatnya.",
+                "{$alat}: kepala kolom `{$judulU95}` nggak ada di sertifikatnya.",
             );
 
             // Tiap nilai dicari DI DALAM barisnya sendiri, bukan di seluruh

@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -629,5 +630,46 @@ class DoMeterProfile extends CalibrationProfile
         }
 
         return $bentuk;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Master aktif Studio `Master Olah Data_DO Meter` (id 158), lembar
+    // `SERTIFIKAT`. Blok %O2 (`E16:W21`, "1. Oksigen in Air Methode") baris
+    // tersembunyi — yang tercetak hanya tabel mg/L `E22:V26`. Hanya bentuk
+    // cetak; tidak satu nilai pun dihitung ulang.
+
+    /** `158!E22` "Standard Indication". */
+    public function judulKolomStandar(): string
+    {
+        return 'Standard Indication';
+    }
+
+    /** `158!N22` "Instrument Indication". */
+    public function judulKolomUut(): string
+    {
+        return 'Instrument Indication';
+    }
+
+    /**
+     * Tanpa judul kelompok: master tidak mencetak "Dissolved Oxygen" di atas
+     * tabel (remark tetap ada di snapshot, hanya tidak jadi judul).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [...parent::tataLetakSertifikat($sesi), 'pisah_per_remark' => false];
+    }
+
+    /**
+     * Format sel `158!E24`/`N24`/`S24` `0.00`, U95 `Q25` `0.00`, k `V26` `0`
+     * (sama dengan [desimalFaktorCakupan]). Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -668,5 +669,40 @@ class ChlorineProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return null;
+    }
+
+    // ---- Bentuk lembar SERTIFIKAT master (K-50-15) -------------------------
+    //
+    // Master aktif Studio `Master Olah Data_Chlorine Meter` (id 156), lembar
+    // `SERTIFIKAT`. Hanya bentuk cetak; tidak satu nilai pun dihitung ulang.
+
+    /**
+     * SATU tabel, Remark jadi KOLOM: `156!C16:W16` "Standard Value | Unit
+     * Under Test | Correction | U95% (±) | Remark", satuan `mg/L` di baris
+     * sendiri (`C17:S17`, kolom Remark tanpa satuan), U95 per baris
+     * (`S18`/`S19`), `W18` "Free Chlorine" / `W19` "Total Chlorine". Satu
+     * kalimat `k` di bawah tabel (`C21`/`U21`). Dulu dua tabel per remark
+     * dengan baris `Uncertainty U95% = ±` masing-masing.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'pisah_per_remark' => false,
+            'kolom_hasil' => ['standar', 'uut', 'koreksi', 'u95', 'remark'],
+        ];
+    }
+
+    /**
+     * Format sel `156!C18:S19` `0.00` di keempat kolom angka (nol di belakang
+     * tetap: `1.74`, `-0.02`), `U21` k `0`. Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'];
     }
 }
