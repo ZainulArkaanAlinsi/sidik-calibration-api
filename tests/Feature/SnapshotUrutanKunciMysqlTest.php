@@ -10,6 +10,7 @@ use App\Services\CertificateExcelExporter;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use OpenSpout\Reader\XLSX\Reader;
 use Tests\TestCase;
 
@@ -66,11 +67,21 @@ class SnapshotUrutanKunciMysqlTest extends TestCase
 
             foreach (['mysql' => false, 'dibalik' => true] as $nama => $balik) {
                 $acak = self::urutUlang($asli, $balik);
-                $this->assertNotSame(json_encode($asli), json_encode($acak), "{$sesi->nomor_sesi}: urutan {$nama} tidak mengubah apa pun — simulasinya kosong.");
+
+                // Di MySQL snapshot yang dibaca balik SUDAH berurutan MySQL, jadi
+                // urutan `mysql` boleh tidak mengubah apa pun. Urutan dibalik
+                // selalu harus berbeda; kalau tidak, simulasinya kosong.
+                if ($balik) {
+                    $this->assertNotSame(json_encode($asli), json_encode($acak), "{$sesi->nomor_sesi}: urutan {$nama} tidak mengubah apa pun — simulasinya kosong.");
+                }
 
                 $sertifikat->forceFill(['snapshot' => $acak])->saveQuietly();
                 $dibaca = Certificate::findOrFail($sertifikat->id);
-                $this->assertSame(json_encode($acak), json_encode($dibaca->snapshot), 'Cast kolom harus memulangkan urutan yang disimpan.');
+                // SQLite menyimpan teks apa adanya; MySQL menyusun ulang kunci
+                // saat menyimpan, jadi yang dibaca balik selalu urutan MySQL —
+                // persis keadaan produksi, dan sekaligus menguji tiruan urutannya.
+                $harapanDibaca = DB::connection()->getDriverName() === 'mysql' ? self::urutUlang($acak, false) : $acak;
+                $this->assertSame(json_encode($harapanDibaca), json_encode($dibaca->snapshot), 'Cast kolom memulangkan urutan yang tidak terduga.');
 
                 $this->assertSame($teksAsli, $this->teks($dibaca), "{$sesi->nomor_sesi}: teks PDF berubah dengan urutan kunci {$nama}.");
                 $this->assertSame($excelAsli, $this->excel($dibaca), "{$sesi->nomor_sesi}: Excel berubah dengan urutan kunci {$nama}.");

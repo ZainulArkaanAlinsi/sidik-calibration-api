@@ -65,7 +65,7 @@ class SertifikatAnalitikBentukMasterTest extends TestCase
 
         // ---- Turbidimeter (`177`) ---------------------------------------------
         [$s, $html] = $this->terbitkan('2406.32.A');
-        $this->assertSame(
+        $this->assertSamaPetaJson(
             [
                 ['standar' => '0', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0.0'],
                 ['standar' => '0', 'uut' => '0.0', 'koreksi' => '0.0', 'u95' => '0.0', 'k' => '0.0'],
