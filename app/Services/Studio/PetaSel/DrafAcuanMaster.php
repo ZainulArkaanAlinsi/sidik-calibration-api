@@ -3,9 +3,11 @@
 namespace App\Services\Studio\PetaSel;
 
 use App\Models\PaketAcuan;
+use App\Models\PaketAcuanLog;
 use App\Models\PaketAcuanSuntingan;
 use App\Models\PaketAcuanVersi;
 use App\Models\WorkbookMaster;
+use App\Services\Acuan\AlurVersiAcuan;
 use App\Services\Acuan\PenentuVersiAcuan;
 use App\Support\JsonKanonik;
 use RuntimeException;
@@ -158,6 +160,24 @@ final class DrafAcuanMaster
                 'user_id' => $userId,
             ]);
         }
+
+        // Log metode: sumber draf (master id + sha256) — disalin ke tiap
+        // transisi berikutnya oleh `AlurVersiAcuan`.
+        AlurVersiAcuan::catat($versi, PaketAcuanLog::AKSI_DIBUAT, null, PaketAcuanVersi::STATUS_DRAF, $userId,
+            "Diekstrak dari master Studio #{$workbook->id}.",
+            sumber: [
+                'workbook_master_id' => $workbook->id,
+                'workbook_nama' => $workbook->nama,
+                'workbook_sha256' => $workbook->sha256,
+                'workbook_sumber' => $workbook->sumber,
+                'peta_sel' => $peta->kodeProfil,
+                'peta_sel_sha256' => $peta->sha256,
+                'varian' => $hasil['varian'],
+                'dasar' => $dasar['label'],
+                'dasar_sha256' => $dasar['sha256'],
+            ],
+            rincian: ['sel_berubah' => count($berubah)],
+        );
 
         return ['status' => 'draf_dibuat', 'versi_id' => $versi->id, 'nomor_versi' => $nomor, 'sel_berubah' => count($berubah)] + $ringkasan;
     }

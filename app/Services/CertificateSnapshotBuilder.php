@@ -299,6 +299,35 @@ class CertificateSnapshotBuilder
     }
 
     /**
+     * Potongan snapshot yang menentukan ANGKA CETAK tabel hasil — tanpa
+     * sertifikat, tanpa menulis apa pun. Dipakai simulasi versi data acuan
+     * (AGENTS.md §Olah data butir 3) untuk menilai apakah angka cetak bergeser:
+     * baris & aturan desimalnya lahir dari [hasil] yang SAMA dengan `bangun()`,
+     * lalu dirender `TataLetakSertifikat::teksSel()` seperti PDF.
+     *
+     * `$sesi->uncertaintyCalculations` boleh berisi model yang belum disimpan
+     * (hasil hitung simulasi). Enclosure: `hasil` kosong, persis `bangun()`.
+     *
+     * @return array{hasil: list<array<string, mixed>>, desimal: int, desimal_koreksi: ?int, tata_letak?: array<string, mixed>}
+     */
+    public function potonganCetak(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+        $profil = $alat ? app(CalibrationProfileRegistry::class)->untukAlat($alat) : null;
+        $tataLetak = $profil === null
+            ? []
+            : TataLetakSertifikat::normalisasi($profil->tataLetakSertifikat($sesi), array_keys($this->kepalaTambahan($profil, $sesi)));
+        unset($tataLetak['catatan']);
+
+        return [
+            'hasil' => $profil instanceof EnclosureProfileBase ? [] : $this->hasil($sesi),
+            'desimal' => $this->desimal($alat, $sesi->organization),
+            'desimal_koreksi' => $profil?->desimalKolomKoreksi(),
+            ...($tataLetak === [] ? [] : ['tata_letak' => $tataLetak]),
+        ];
+    }
+
+    /**
      * Header informasi — 16 field, persis urutan & nama di spesifikasi.
      *
      * @return array<string, mixed>

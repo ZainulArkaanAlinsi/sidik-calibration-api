@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CalibrationSession;
+use App\Models\PaketAcuanVersi;
 use App\Models\User;
 
 /**
@@ -53,6 +54,9 @@ class PemisahanWewenang
 
     public const KODE_PENYETUJU_MEMVERIFIKASI_OCR = 'penyetuju_mengonfirmasi_pindai';
 
+    /** 03-SDD §3 — kode error pengesahan versi data acuan (BR-08). */
+    public const KODE_PENGESAH_IKUT_MENYUNTING = 'pengesah_ikut_menyunting';
+
     /**
      * Periksa satu rencana PERSETUJUAN sesi (API `approve()` dan panel).
      *
@@ -83,6 +87,42 @@ class PemisahanWewenang
         }
 
         return $this->hasil($temuan);
+    }
+
+    /**
+     * Periksa rencana PENGESAHAN versi data acuan (Studio Data Acuan BR-08,
+     * ADR-05): pengesah ≠ pembuat draf, penyunting sel, pengaju, atau pengimpor
+     * workbook master sumber draf. Tanpa pengecualian, termasuk super admin.
+     *
+     * @param  list<int>  $penyunting  user_id di `paket_acuan_suntingan` versi ini
+     * @param  ?int  $pengimpor  `workbook_master.diimpor_oleh` sumber draf
+     * @return array{bersih: bool, memblokir: bool, temuan: list<array{kode: string, pesan: string}>}
+     */
+    public function periksaPengesahanVersiAcuan(PaketAcuanVersi $versi, User $pengesah, array $penyunting, ?int $pengimpor): array
+    {
+        $peran = [];
+
+        if ($this->sama($versi->dibuat_oleh, $pengesah->id)) {
+            $peran[] = 'membuat draf';
+        }
+
+        if (in_array((int) $pengesah->id, array_map('intval', $penyunting), true)) {
+            $peran[] = 'menyunting isinya';
+        }
+
+        if ($this->sama($versi->diajukan_oleh, $pengesah->id)) {
+            $peran[] = 'mengajukannya';
+        }
+
+        if ($this->sama($pengimpor, $pengesah->id)) {
+            $peran[] = 'mengimpor workbook master sumbernya';
+        }
+
+        return $this->hasil($peran === [] ? [] : [[
+            'kode' => self::KODE_PENGESAH_IKUT_MENYUNTING,
+            'pesan' => 'Kamu '.implode(', ', $peran).' untuk versi ini, jadi pengesahannya harus oleh '
+                .'super admin lain (BR-08).',
+        ]]);
     }
 
     /**

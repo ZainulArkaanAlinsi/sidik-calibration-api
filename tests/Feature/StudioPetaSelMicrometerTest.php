@@ -322,8 +322,8 @@ class StudioPetaSelMicrometerTest extends TestCase
         $this->assertSame([$this->v1->id, $this->v1->id, $this->v1->id], $this->stempelSesi($idSaatDraf));
         $this->assertEquals($angkaV1Juli, $this->angkaSesi($idSaatDraf));
 
-        // 4) Pengesahan — DITIRU di test: alur ajukan/simulasi/sahkan (T2.2/T2.3)
-        // belum ada di kode. Yang diuji: begitu versi berlaku, baru dia menghitung.
+        // 4) Pengesahan DITIRU langsung di sini; alur resminya (ajukan/simulasi/
+        // sahkan) diuji AlurVersiAcuanTest. Yang diuji: begitu berlaku, baru menghitung.
         $this->v1->update(['status' => PaketAcuanVersi::STATUS_PENSIUN, 'berlaku_sampai' => '2025-05-31']);
         $v2->update([
             'status' => PaketAcuanVersi::STATUS_AKTIF,
