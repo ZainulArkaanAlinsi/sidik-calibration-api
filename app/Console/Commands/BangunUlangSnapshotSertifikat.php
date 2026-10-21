@@ -11,6 +11,7 @@ use App\Services\DataTampilanSertifikat;
 use App\Services\SertifikatSatuHalaman;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -246,36 +247,44 @@ class BangunUlangSnapshotSertifikat extends Command
 
             try {
                 $snapshotLama = $sertifikat->snapshot;
-                $sertifikat->update([
-                    'snapshot' => $baru,
-                    'validasi' => $validator->periksa($sesi),
-                ]);
+                // Snapshot, PDF, dan baris audit satu transaksi: kalau PDF atau
+                // audit gagal, snapshot ikut batal — tidak pernah ada sertifikat
+                // terbit yang berubah tanpa catatan alasannya.
+                DB::transaction(function () use ($sertifikat, $baru, $validator, $sesi, $satuHalaman, $izin, $snapshotLama): void {
+                    $sertifikat->update([
+                        'snapshot' => $baru,
+                        'validasi' => $validator->periksa($sesi),
+                    ]);
 
-                // PDF ikut ditulis ulang — kalau nggak, lembar yang dipegang
-                // pelanggan beda dari yang muncul waktu QR-nya discan, dan itu
-                // justru yang paling dijaga di `GenerateCertificate`.
-                //
-                // Yang belum punya `pdf_path` dilewati BERKASNYA doang, bukan
-                // dibatalin seluruhnya: snapshot-nya tetap yang dibaca layar &
-                // halaman verifikasi, jadi mbetulin itu udah ada gunanya. Baris
-                // tanpa PDF itu wajar ada — sertifikat demo, atau yang
-                // generate-nya dulu gagal di tengah.
-                if ((string) $sertifikat->pdf_path !== '') {
-                    $isiPdf = $satuHalaman->isi($sertifikat->fresh());
+                    // Audit sebelum PDF: berkas adalah langkah terakhir yang bisa
+                    // gagal, jadi gagalnya membatalkan snapshot DAN auditnya.
+                    self::catatTulis($sertifikat, $izin, 'snapshot & validasi dibangun ulang', $snapshotLama, $baru);
 
-                    // Tulis yang gagal balik `false` tanpa exception (disknya
-                    // `throw => false`). Tanpa penjagaan ini perintahnya
-                    // ngelaporin baris itu sebagai berhasil dibangun ulang,
-                    // padahal PDF lamanya masih yang beredar — dan justru
-                    // ketidakcocokan itu yang perintah ini ada buat mbetulin.
-                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
-                        throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
+                    // PDF ikut ditulis ulang — kalau nggak, lembar yang dipegang
+                    // pelanggan beda dari yang muncul waktu QR-nya discan, dan itu
+                    // justru yang paling dijaga di `GenerateCertificate`.
+                    //
+                    // Yang belum punya `pdf_path` dilewati BERKASNYA doang, bukan
+                    // dibatalin seluruhnya: snapshot-nya tetap yang dibaca layar &
+                    // halaman verifikasi, jadi mbetulin itu udah ada gunanya. Baris
+                    // tanpa PDF itu wajar ada — sertifikat demo, atau yang
+                    // generate-nya dulu gagal di tengah.
+                    if ((string) $sertifikat->pdf_path !== '') {
+                        $isiPdf = $satuHalaman->isi($sertifikat->fresh());
+
+                        // Tulis yang gagal balik `false` tanpa exception (disknya
+                        // `throw => false`). Tanpa penjagaan ini perintahnya
+                        // ngelaporin baris itu sebagai berhasil dibangun ulang,
+                        // padahal PDF lamanya masih yang beredar — dan justru
+                        // ketidakcocokan itu yang perintah ini ada buat mbetulin.
+                        if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
+                            throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
+                        }
+                    } else {
+                        $this->warn("  {$sertifikat->nomor}: snapshot dibangun ulang, PDF dilewati (pdf_path kosong).");
                     }
-                } else {
-                    $this->warn("  {$sertifikat->nomor}: snapshot dibangun ulang, PDF dilewati (pdf_path kosong).");
-                }
 
-                self::catatTulis($sertifikat, $izin, 'snapshot & validasi dibangun ulang', $snapshotLama, $baru);
+                });
 
                 $berubah++;
             } catch (Throwable $e) {

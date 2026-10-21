@@ -198,6 +198,10 @@ php artisan akun:admin
 
 # Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit.
 #
+# Sejak 22 Okt 2026 jalur boot ini cuma LAPORAN (dry-run): menulis ulang
+# sertifikat terbit butuh --termasuk-terbit --oleh --alasan, yang sengaja tidak
+# disambung lewat env. Teks di bawah menjelaskan asal jalur ini.
+#
 # ## Kenapa lewat boot, bukan dijalankan sekali lewat shell
 #
 # Alasannya sama persis dengan impor direktori di bawah: paket gratis Render
@@ -232,9 +236,9 @@ php artisan akun:admin
 # dari "gagal" di kode keluarnya.
 if [ "${BANGUN_ULANG_ON_BOOT}" = "true" ]; then
     tahap "bangun ulang snapshot & PDF sertifikat"
-    echo "!! BANGUN_ULANG_ON_BOOT=true — jalan tiap container nyala." >&2
-    echo "   Matikan lagi di Render → Environment sesudah hasilnya kebaca di" >&2
-    echo "   log ini, biar tiap boot berikutnya nggak nulis ulang semua PDF." >&2
+    echo "!! BANGUN_ULANG_ON_BOOT=true — LAPORAN saja (dry-run) sejak 22 Okt 2026." >&2
+    echo "   Sertifikat terbit hanya ditulis ulang dengan --termasuk-terbit" >&2
+    echo "   --oleh --alasan (keputusan pemilik); boot sengaja tidak memberinya." >&2
     php artisan sertifikat:bangun-ulang --render-ulang-pdf || true
 fi
 
