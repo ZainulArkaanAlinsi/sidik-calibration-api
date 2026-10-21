@@ -7,7 +7,11 @@ namespace App\Services\Calibration\Profiles;
  * 2026: sertifikat persis lembar SERTIFIKAT master alatnya). Tampilan saja —
  * tidak ada angka yang dihitung di sini.
  *
- * Dibaca 20 Okt 2026 dari Studio (`workbook_master` aktif):
+ * Dibaca TANGAN 20 Okt 2026 dari Studio (`workbook_master` aktif) lalu
+ * disalin jadi konstanta kode SEMENTARA di bawah — trait ini tidak membaca
+ * Studio saat jalan. Master baru yang mengubah judul/label TIDAK mengubah
+ * cetakan sampai konstanta ini dipindah ke peta sel (rencana
+ * studio-kendali-olah-data fase 3):
  *
  * - Judul kolom dengan satuan DI DALAM judulnya, tanpa baris satuan:
  *   `Standard Reading (oC)` · `Unit Under Test (oC)` · `Correction (oC)`

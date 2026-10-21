@@ -1073,6 +1073,11 @@ abstract class FlowmeterProfile extends CalibrationProfile
      * Format sel tabel hasil per mode × varian: `[nilai, u95]`. `nilai` =
      * kolom UUT, Standard Indication, Correction (format sama di ketiganya).
      *
+     * Konstanta kode SEMENTARA, disalin tangan dari lembar SERTIFIKAT master
+     * di bawah — tidak dibaca dari Studio saat jalan. Master baru yang
+     * mengubah format TIDAK mengubah cetakan sampai dipindah ke peta sel
+     * (rencana studio-kendali-olah-data fase 3).
+     *
      * - 148 `B22`/`D22`/`G22` `0.00`, U95 `J22` `0.0` (L). `G25` berformat
      *   `0.000` sendirian — sel salin-tempel yang beda dari tiga baris di
      *   atasnya, tidak ditiru.

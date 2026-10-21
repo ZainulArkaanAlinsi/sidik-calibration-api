@@ -747,8 +747,12 @@ abstract class TekananProfile extends CalibrationProfile
     }
 
     /**
-     * Format sel lembar `SERTIFIKAT` master per varian kalibrator (K-50-15),
-     * dibaca dari Studio (`workbook_master` aktif):
+     * Format sel lembar `SERTIFIKAT` master per varian kalibrator (K-50-15).
+     * Alamat & format di bawah DISALIN TANGAN dari Studio (`workbook_master`
+     * aktif) saat ditulis — konstanta kode SEMENTARA, bukan dibaca dari Studio
+     * saat jalan. Master baru yang mengubah format TIDAK mengubah cetakan
+     * sampai konstanta ini dipindah ke peta sel (rencana studio-kendali-olah-data
+     * fase 3):
      *
      *   varian      master  Standard/Correction/Hysterisis  U95 `P35`  k `U36`
      *   DRUCK07G    181     `I22:V27` `0.0`                 `0.000`    General

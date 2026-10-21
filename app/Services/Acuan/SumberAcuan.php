@@ -12,8 +12,12 @@ use UnexpectedValueException;
 /**
  * Satu pintu baca data acuan lapis 1 (Studio Data Acuan, 03-SDD §4, ADR-04).
  *
- * Kelas `Tabel*` tidak lagi membaca `database/data/*.json` sendiri; mereka
- * bertanya ke sini dengan kode profil dan path berkasnya. Jawabannya:
+ * Pemakai hari ini HANYA `TabelStandarMicrometer` (satu-satunya profil yang
+ * punya `skemaAcuan()`). Kelas `Tabel*` lain masih membaca
+ * `database/data/*.json` sendiri — angkanya konstanta berkas/kode sampai
+ * profilnya dimigrasikan (skemaAcuan + peta sel), bukan "dari Studio".
+ * Pemakai kelas ini bertanya dengan kode profil dan path berkasnya.
+ * Jawabannya:
  *
  *  - **isi versi DB** bila `config('acuan.sumber') === 'db'` DAN ada versi
  *    yang sedang dalam lingkup untuk profil itu ([denganVersi]);
