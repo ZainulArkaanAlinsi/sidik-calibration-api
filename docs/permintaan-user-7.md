@@ -5353,13 +5353,24 @@ versi `aktif` — AGENTS.md §Olah data butir 3. Rujukan: `docs/studio-data-acua
 | `GET /paket/{kode}/alur` — versi data + status simulasi + `wajib_diakui` + log metode | admin, viewer, super admin; teknisi 404 |
 | `GET /versi/{versi}/simulasi` — laporan simulasi terakhir utuh | idem |
 | `POST /versi/{versi}/ajukan` `{alasan, rujukan[]}` — draf → diajukan, sha256 dikunci | admin, super admin |
-| `POST /versi/{versi}/simulasi` — semua sesi profil itu, tanpa menulis; laporan dibekukan | admin, super admin |
+| `POST /versi/{versi}/simulasi` — semua sesi profil itu; yang ditulis HANYA laporannya sendiri (`simulasi_acuan` + log + `simulasi_terakhir_id`), tidak satu pun data sesi, hasil hitung, atau sertifikat | admin, super admin |
 | `POST /versi/{versi}/tolak` `{alasan}` — draf → dibuang; diajukan → ditolak (super admin) | admin, super admin |
 | `POST /versi/{versi}/aktifkan` `{berlaku_mulai, password, catatan?, pengakuan}` | super admin saja |
 
 Tiap transisi = satu baris `paket_acuan_log` (append-only): aksi, status dari → ke, isi sha256,
 pelaku, alasan, sumber (workbook master id + sha256, peta sel, varian), rincian. Tidak ada yang
 dihapus. Organisasi lain → 404.
+
+**Append-only di dua lapis.** Model (`updating`/`deleting` melempar) DAN trigger database
+(`2026_10_22_120000_kunci_append_only_log_dan_simulasi_acuan`: MySQL `SIGNAL SQLSTATE '45000'`,
+SQLite `RAISE(ABORT)`) untuk `paket_acuan_log` dan `simulasi_acuan` — `update()`/`delete()` massal
+juga ditolak. **Pengecualian sadar:** kedua tabel `organization_id … cascadeOnDelete`; aksi FK
+berantai MySQL tidak menyalakan trigger, jadi menghapus ORGANISASI tetap ikut menghapus log &
+simulasinya. Bila MySQL produksi menolak `CREATE TRIGGER` (binlog tanpa SUPER / tanpa hak TRIGGER),
+migrasi tidak gagal tetapi menulis galat ke log & stderr — periksa log deploy.
+
+Semua transisi mengunci baris `paket_acuan` dulu, baru versinya, supaya dua pengaktifan dalam satu
+paket tidak bisa sama-sama `aktif` (BR-03).
 
 ### Penjaga
 
