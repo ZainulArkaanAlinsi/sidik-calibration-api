@@ -76,7 +76,12 @@ class LembarKerjaDuaHalamanTest extends TestCase
 
     /**
      * Pembelahannya CUMA menyentuh `halaman`. Isi bagian lain — field, tabel,
-     * urutan — identik dengan yang disusun profilnya.
+     * urutan — identik dengan yang disusun profilnya, SESUDAH jumlah kolom
+     * pengulangan bawaan lembar HP diterapkan (`pengulanganLembarBawaan`,
+     * Anak Timbangan 3 sejak 20 Okt 2026). Bawaan itu sengaja di luar
+     * `bentukLembarKerja()` (jalur OCR memakai bentuk mentah) dan diterapkan
+     * endpoint serta generator mock HP sebelum `susunDuaHalaman()`, jadi
+     * pembandingnya ikut menerapkannya — yang diuji tetap pembelahannya saja.
      */
     public function test_pembelahan_tidak_mengubah_isi_bagian_lain(): void
     {
@@ -84,7 +89,13 @@ class LembarKerjaDuaHalamanTest extends TestCase
         $konteks = new Equipment(['organization_id' => $this->org->id]);
 
         foreach (app(CalibrationProfileRegistry::class)->semua() as $profil) {
-            $mentah = json_decode((string) json_encode($profil->bentukLembarKerja(false, $konteks)['bagian']), true);
+            $bentuk = $profil->bentukLembarKerja(false, $konteks);
+
+            if (($ulang = $profil->pengulanganLembarBawaan()) !== null) {
+                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $ulang);
+            }
+
+            $mentah = json_decode((string) json_encode($bentuk['bagian']), true);
             $endpoint = $this->bagianDariEndpoint($teknisi, $profil->kode());
 
             $this->assertSame($this->tanpaHalaman($mentah), $this->tanpaHalaman($endpoint), "{$profil->kode()}: isi bagian berubah.");
