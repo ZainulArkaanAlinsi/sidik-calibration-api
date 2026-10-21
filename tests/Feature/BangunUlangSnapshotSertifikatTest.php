@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Contracts\Console\Kernel;
@@ -30,6 +32,95 @@ use Tests\TestCase;
 class BangunUlangSnapshotSertifikatTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Izin menulis sertifikat terbit (22 Okt 2026): tanpa ini perintahnya
+     * dry run. Pelaku = admin organisasi sertifikat seeder.
+     *
+     * @param  array<string, mixed>  $opsi
+     * @return array<string, mixed>
+     */
+    private function izin(array $opsi = []): array
+    {
+        $sertifikat = Certificate::where('status', Certificate::STATUS_TERBIT)->firstOrFail();
+        $admin = User::where('organization_id', $sertifikat->organization_id)
+            ->where('role', User::ROLE_ADMIN)
+            ->firstOrFail();
+
+        return [
+            ...$opsi,
+            '--termasuk-terbit' => true,
+            '--oleh' => $admin->email,
+            '--alasan' => 'uji bangun ulang sertifikat terbit',
+        ];
+    }
+
+    /**
+     * Sertifikat terbit BEKU (pemilik 22 Okt 2026): tanpa `--termasuk-terbit`
+     * perintahnya dry run — snapshot basi tetap basi, PDF tidak disentuh,
+     * tidak ada baris audit.
+     */
+    public function test_tanpa_izin_termasuk_terbit_bawaannya_dry_run(): void
+    {
+        Storage::fake('arsip');
+        $sertifikat = $this->sertifikatTerbit();
+        $sertifikat->forceFill(['pdf_path' => 'certificates/uji.pdf'])->save();
+        Storage::disk('arsip')->put('certificates/uji.pdf', 'BUKAN-PDF');
+
+        $basi = $sertifikat->snapshot;
+        $basi['header']['env_condition'] = 'BASI';
+        $sertifikat->update(['snapshot' => $basi]);
+        $auditSebelum = AuditLog::query()->count();
+
+        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+            ->expectsOutputToContain('Dry run (bawaan)')
+            ->assertSuccessful();
+
+        $this->assertSame('BASI', $sertifikat->fresh()->snapshot['header']['env_condition']);
+        $this->assertSame('BUKAN-PDF', (string) Storage::disk('arsip')->get('certificates/uji.pdf'));
+        $this->assertSame($auditSebelum, AuditLog::query()->count(), 'dry run tidak menulis apa pun, termasuk audit');
+    }
+
+    /** Izin setengah (tanpa pelaku/alasan, atau pelaku bukan admin) ditolak, tidak menulis. */
+    public function test_izin_tidak_lengkap_ditolak(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $basi = $sertifikat->snapshot;
+        $basi['header']['env_condition'] = 'BASI';
+        $sertifikat->update(['snapshot' => $basi]);
+        $teknisi = User::where('organization_id', $sertifikat->organization_id)->where('role', User::ROLE_TEKNISI)->firstOrFail();
+
+        $this->artisan('sertifikat:bangun-ulang', ['--termasuk-terbit' => true])->assertFailed();
+        $this->artisan('sertifikat:bangun-ulang', ['--termasuk-terbit' => true, '--oleh' => $teknisi->email, '--alasan' => 'alasan cukup'])->assertFailed();
+        $this->artisan('sertifikat:bangun-ulang', ['--alasan' => 'tanpa izin'])->assertFailed();
+
+        $this->assertSame('BASI', $sertifikat->fresh()->snapshot['header']['env_condition']);
+    }
+
+    /** Penulisan sertifikat terbit tercatat: waktu, pelaku, alasan, sha256 snapshot sebelum/sesudah. */
+    public function test_tulis_dengan_izin_tercatat_di_audit(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $basi = $sertifikat->snapshot;
+        $basi['header']['env_condition'] = 'BASI';
+        $sertifikat->update(['snapshot' => $basi]);
+        $basi = $sertifikat->fresh()->snapshot;
+        $izin = $this->izin();
+
+        $this->artisan('sertifikat:bangun-ulang', $izin)->assertSuccessful();
+
+        $this->assertNotSame('BASI', $sertifikat->fresh()->snapshot['header']['env_condition']);
+        $catatan = AuditLog::query()
+            ->where('entity_type', 'certificates')
+            ->where('entity_id', $sertifikat->id)
+            ->where('note', 'like', 'sertifikat:bangun-ulang --termasuk-terbit%')
+            ->sole();
+        $this->assertSame((int) User::where('email', $izin['--oleh'])->value('id'), (int) $catatan->changed_by);
+        $this->assertNotNull($catatan->created_at);
+        $this->assertStringContainsString('Alasan: uji bangun ulang sertifikat terbit', (string) $catatan->note);
+        $this->assertSame(hash('sha256', (string) json_encode($basi)), $catatan->old_data['snapshot_sha256']);
+        $this->assertNotSame($catatan->old_data['snapshot_sha256'], $catatan->new_data['snapshot_sha256']);
+    }
 
     private function sertifikatTerbit(): Certificate
     {
@@ -72,7 +163,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         ];
         $organisasi->save();
 
-        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+        $this->artisan('sertifikat:bangun-ulang', $this->izin(['--render-ulang-pdf' => true]))
             ->expectsOutputToContain('penandatangannya sudah ganti')
             ->assertSuccessful();
 
@@ -99,7 +190,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         ];
         $organisasi->save();
 
-        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+        $this->artisan('sertifikat:bangun-ulang', $this->izin(['--render-ulang-pdf' => true]))
             ->doesntExpectOutputToContain('penandatangannya sudah ganti')
             ->assertSuccessful();
     }
@@ -113,7 +204,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $payload = $sebelum->qr_payload;
         $terbit = $sebelum->diterbitkan_pada;
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         $sesudah = $sebelum->fresh();
 
@@ -138,7 +229,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $basi['header']['env_condition'] = 'T: 99,9°C ± 9,9°C — %RH: 99% ± 9%';
         $sertifikat->update(['snapshot' => $basi]);
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         // Bentuk kode sekarang: K-50-15 (pemilik, 18 Okt 2026) menulis T dan
         // %RH sebaris-sebaris seperti sel lembar SERTIFIKAT master.
@@ -212,7 +303,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $basi['header']['env_condition'] = 'T: 99,9°C ± 9,9°C — %RH: 99% ± 9%';
         $sertifikat->update(['snapshot' => $basi]);
 
-        $this->artisan('sertifikat:bangun-ulang')
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())
             ->expectsOutputToContain('T: 99,9°C ± 9,9°C — %RH: 99% ± 9%  →  ')
             ->assertSuccessful();
     }
@@ -279,7 +370,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
         $this->app->make(Kernel::class)->call(
             'sertifikat:bangun-ulang',
-            [],
+            $this->izin(),
             $keluar,
         );
 
@@ -336,7 +427,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $basi['header']['env_condition'] = 'JANGAN DISENTUH';
         $lain->update(['snapshot' => $basi]);
 
-        $this->artisan('sertifikat:bangun-ulang', ['sesi' => ['2405.13.A']])->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin(['sesi' => ['2405.13.A']]))->assertSuccessful();
 
         $this->assertSame('JANGAN DISENTUH', $lain->fresh()->snapshot['header']['env_condition']);
     }
@@ -352,7 +443,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
         $sebelum = $sertifikat->snapshot['hasil'];
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         $this->assertEquals($sebelum, $sertifikat->fresh()->snapshot['hasil']);
     }
@@ -363,7 +454,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
         $belum = CalibrationSession::whereDoesntHave('certificate')->first();
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         if ($belum !== null) {
             $this->assertNull($belum->fresh()->certificate);
@@ -385,12 +476,12 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
         // Dijalankan sekali dulu supaya snapshot-nya pasti sudah mutakhir —
         // jalan berikutnya dijamin masuk cabang "nggak berubah".
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         $sertifikat->forceFill(['pdf_path' => 'certificates/uji.pdf'])->save();
         Storage::disk('arsip')->put('certificates/uji.pdf', 'BUKAN-PDF');
 
-        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+        $this->artisan('sertifikat:bangun-ulang', $this->izin(['--render-ulang-pdf' => true]))
             ->assertSuccessful();
 
         $this->assertStringStartsWith(
@@ -406,12 +497,12 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         Storage::fake('arsip');
         $sertifikat = $this->sertifikatTerbit();
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         $sertifikat->forceFill(['pdf_path' => 'certificates/uji.pdf'])->save();
         Storage::disk('arsip')->put('certificates/uji.pdf', 'BUKAN-PDF');
 
-        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+        $this->artisan('sertifikat:bangun-ulang', $this->izin())->assertSuccessful();
 
         $this->assertSame(
             'BUKAN-PDF',

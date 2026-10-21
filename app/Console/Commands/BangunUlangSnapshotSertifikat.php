@@ -2,12 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AuditLog;
 use App\Models\Certificate;
+use App\Models\User;
 use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\SertifikatSatuHalaman;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -50,12 +53,35 @@ use Throwable;
  * jangan diakalin dari sini.
  *
  * Aman diulang: hasilnya cuma bergantung data sesi + kode yang lagi jalan.
+ *
+ * ## Sertifikat terbit BEKU — menulis butuh izin eksplisit (pemilik, 22 Okt 2026)
+ *
+ * Bawaannya DRY RUN: tanpa `--termasuk-terbit` tidak ada snapshot, validasi,
+ * maupun PDF yang ditulis — keluarannya cuma laporan apa yang AKAN berubah.
+ * Menulis butuh ketiganya sekaligus:
+ *
+ *   php artisan sertifikat:bangun-ulang --termasuk-terbit \
+ *       --oleh=admin@lab.test --alasan="perbaikan format U95 (tiket …)"
+ *
+ *  - `--termasuk-terbit` — sadar bahwa yang disentuh dokumen yang sudah di
+ *    tangan pelanggan;
+ *  - `--oleh=<id|email>` — admin/super_admin; pelaku jejak audit, dan
+ *    sapuannya dibatasi ke organisasi orang itu;
+ *  - `--alasan=` — tercatat di `audit_logs` (satu baris per sertifikat yang
+ *    ditulis, di samping baris `diubah` otomatis `Diaudit` yang memuat
+ *    snapshot lama & baru).
+ *
+ * `BANGUN_ULANG_ON_BOOT` di `docker/entrypoint.sh` memanggil perintah ini
+ * tanpa izin itu, jadi sejak 22 Okt 2026 jalur boot cuma melaporkan.
  */
 class BangunUlangSnapshotSertifikat extends Command
 {
     protected $signature = 'sertifikat:bangun-ulang
         {sesi?* : Nomor sesi tertentu (kosong = semua yang udah terbit)}
-        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa}
+        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa (bawaan tanpa --termasuk-terbit)}
+        {--termasuk-terbit : IZIN menulis ulang sertifikat yang SUDAH terbit (wajib bersama --oleh & --alasan)}
+        {--oleh= : Pelaku (id user atau email admin/super_admin); sapuan dibatasi ke organisasinya}
+        {--alasan= : Alasan menulis ulang sertifikat terbit, masuk jejak audit}
         {--render-ulang-pdf : Tulis ulang PDF-nya walau snapshot-nya nggak berubah}';
 
     protected $description = 'Bangun ulang snapshot & PDF sertifikat terbit, nomor & QR-nya tetap';
@@ -80,11 +106,27 @@ class BangunUlangSnapshotSertifikat extends Command
         SertifikatSatuHalaman $satuHalaman,
     ): int {
         $nomorSesi = (array) $this->argument('sesi');
-        $keringMode = (bool) $this->option('dry-run');
         $renderUlangPdf = (bool) $this->option('render-ulang-pdf');
+        $izin = $this->izinTulis();
+
+        if ($izin === false) {
+            return self::FAILURE;
+        }
+
+        // Sertifikat terbit beku: tanpa izin lengkap, SELALU dry run.
+        $keringMode = (bool) $this->option('dry-run') || $izin === null;
+
+        if ($izin === null && ! $this->option('dry-run')) {
+            $this->warn('Dry run (bawaan): sertifikat terbit beku. Menulis butuh --termasuk-terbit --oleh=<admin> --alasan="…".');
+        }
+
+        if ($izin !== null) {
+            Auth::setUser($izin['oleh']);
+        }
 
         $daftar = Certificate::query()
             ->where('status', Certificate::STATUS_TERBIT)
+            ->when($izin !== null, fn ($q) => $q->where('organization_id', $izin['oleh']->organization_id))
             ->when($nomorSesi !== [], fn ($q) => $q->whereHas(
                 'session',
                 fn ($s) => $s->whereIn('nomor_sesi', $nomorSesi),
@@ -188,6 +230,7 @@ class BangunUlangSnapshotSertifikat extends Command
                     }
 
                     $this->line('  └─ PDF ditulis ulang (snapshot nggak berubah)');
+                    self::catatTulis($sertifikat, $izin, 'PDF dirender ulang, snapshot tidak berubah', $sertifikat->snapshot, $sertifikat->snapshot);
                     $berubah++;
                 } catch (Throwable $e) {
                     $this->error("{$sertifikat->nomor}: gagal nulis ulang PDF — {$e->getMessage()}");
@@ -202,6 +245,7 @@ class BangunUlangSnapshotSertifikat extends Command
             }
 
             try {
+                $snapshotLama = $sertifikat->snapshot;
                 $sertifikat->update([
                     'snapshot' => $baru,
                     'validasi' => $validator->periksa($sesi),
@@ -231,6 +275,8 @@ class BangunUlangSnapshotSertifikat extends Command
                     $this->warn("  {$sertifikat->nomor}: snapshot dibangun ulang, PDF dilewati (pdf_path kosong).");
                 }
 
+                self::catatTulis($sertifikat, $izin, 'snapshot & validasi dibangun ulang', $snapshotLama, $baru);
+
                 $berubah++;
             } catch (Throwable $e) {
                 $this->error("{$sertifikat->nomor}: gagal nulis — {$e->getMessage()}");
@@ -244,6 +290,74 @@ class BangunUlangSnapshotSertifikat extends Command
             : "{$berubah} sertifikat dibangun ulang, {$dilewati} dilewati, {$gagal} gagal.");
 
         return $gagal > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Izin menulis sertifikat terbit. `null` = tidak diminta (dry run),
+     * `false` = diminta tapi tidak lengkap/tidak sah (pesan sudah dicetak).
+     *
+     * @return array{oleh: User, alasan: string}|null|false
+     */
+    private function izinTulis(): array|null|false
+    {
+        $oleh = trim((string) $this->option('oleh'));
+        $alasan = trim((string) $this->option('alasan'));
+
+        if (! $this->option('termasuk-terbit')) {
+            if ($oleh !== '' || $alasan !== '') {
+                $this->error('--oleh/--alasan hanya berarti bersama --termasuk-terbit (izin menulis sertifikat terbit).');
+
+                return false;
+            }
+
+            return null;
+        }
+
+        if ($oleh === '' || mb_strlen($alasan) < 5) {
+            $this->error('--termasuk-terbit wajib bersama --oleh=<id|email admin> dan --alasan="…" (minimal 5 huruf): '
+                .'penulisan ulang sertifikat terbit tercatat di jejak audit beserta pelaku & alasannya.');
+
+            return false;
+        }
+
+        $user = User::query()
+            ->where(ctype_digit($oleh) ? 'id' : 'email', ctype_digit($oleh) ? (int) $oleh : $oleh)
+            ->first();
+
+        if ($user === null
+            || ! in_array($user->role, [User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN], true)
+            || $user->organization_id === null) {
+            $this->error("--oleh '{$oleh}' bukan admin/super_admin yang terdaftar di sebuah organisasi.");
+
+            return false;
+        }
+
+        return ['oleh' => $user, 'alasan' => $alasan];
+    }
+
+    /**
+     * Satu baris audit per sertifikat terbit yang ditulis: waktu, pelaku,
+     * alasan, sha256 snapshot sebelum/sesudah. Isi snapshot lengkapnya ikut
+     * baris `diubah` otomatis `Diaudit` (bila snapshot berubah).
+     *
+     * @param  array{oleh: User, alasan: string}  $izin
+     * @param  array<string, mixed>|null  $lama
+     * @param  array<string, mixed>|null  $baru
+     */
+    private static function catatTulis(Certificate $sertifikat, array $izin, string $apa, ?array $lama, ?array $baru): void
+    {
+        $sha = static fn (?array $s): ?string => $s === null ? null : hash('sha256', (string) json_encode($s));
+
+        AuditLog::create([
+            'organization_id' => $sertifikat->organization_id,
+            'entity_type' => $sertifikat->getTable(),
+            'entity_id' => $sertifikat->getKey(),
+            'action' => AuditLog::ACTION_DIUBAH,
+            'old_data' => ['snapshot_sha256' => $sha($lama), 'pdf_path' => $sertifikat->pdf_path],
+            'new_data' => ['snapshot_sha256' => $sha($baru), 'pdf_path' => $sertifikat->pdf_path],
+            'changed_by' => $izin['oleh']->id,
+            'note' => "sertifikat:bangun-ulang --termasuk-terbit ({$apa}). Alasan: {$izin['alasan']}",
+        ]);
     }
 
     /**
