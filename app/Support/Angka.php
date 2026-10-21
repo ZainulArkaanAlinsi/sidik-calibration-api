@@ -236,18 +236,32 @@ class Angka
     }
 
     /**
-     * Teks hasil fungsi di kelas ini (koma desimal, titik ribuan) → bunyi
-     * lembar SERTIFIKAT master: titik desimal, tanpa pemisah ribuan (`1.412`
-     * → `1412`, `0,01` → `0.01`). K-50-15, keputusan pemilik 20 Okt 2026
+     * Teks bunyi `Angka` (koma desimal, titik ribuan) → bunyi lembar
+     * SERTIFIKAT master: titik desimal, tanpa pemisah ribuan (`1.412,5` →
+     * `1412.5`, `0,01` → `0.01`). K-50-15, keputusan pemilik 20 Okt 2026
      * ("ikut master semua").
      *
-     * HANYA untuk teks yang lahir dari `Angka` — titik di situ selalu pemisah
-     * ribuan. Menjalankannya pada teks yang sudah bertitik desimal (`1.000`
-     * berarti satu) akan merusaknya, jadi jangan dijalankan dua kali.
+     * Aman untuk teks campuran (blok catatan, kepala) yang sebagian sudah
+     * bertitik desimal:
+     *
+     * - koma desimal = koma di ANTARA dua digit → titik;
+     * - titik dibuang HANYA bila dia pemisah ribuan sah buatan
+     *   `number_format(…, ',', '.')`: angka diawali 1–3 digit yang bukan nol,
+     *   lalu satu atau lebih kelompok `.ddd`, dan tidak disambung digit/titik
+     *   lain. `0.001`, `S(0.001)`, `2.5`, `1.23456` tidak pernah disentuh —
+     *   kelompok pertama `0` tidak mungkin lahir dari pemisah ribuan.
+     *
+     * Batas yang diketahui: teks bebas berbunyi `1.500` (satu koma lima,
+     * ditulis bertitik) akan dibaca ribuan. Teks blok/kepala yang ditulis
+     * profil wajib berbunyi `Angka` (koma) untuk angka ≥ 1 berdesimal tiga.
      */
     public static function keTitik(string $teks): string
     {
-        $tanpaRibuan = preg_replace('/(?<=\d)\.(?=\d{3}(?!\d))/u', '', $teks) ?? $teks;
+        $tanpaRibuan = preg_replace_callback(
+            '/(?<![\d.,])[1-9]\d{0,2}(?:\.\d{3})+(?![\d]|\.\d)/u',
+            static fn (array $m): string => str_replace('.', '', $m[0]),
+            $teks,
+        ) ?? $teks;
 
         return preg_replace('/(?<=\d),(?=\d)/u', '.', $tanpaRibuan) ?? $tanpaRibuan;
     }

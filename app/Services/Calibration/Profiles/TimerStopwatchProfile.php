@@ -196,10 +196,8 @@ class TimerStopwatchProfile extends CalibrationProfile
      *   `W19 = L19-R19`) oleh `TataLetakSertifikat::teksPecah`. Judul UUT
      *   master `R18` "S(0,01)" salah ketik — nilainya `R19 = PERHITUNGAN!K30`
      *   seperseribu detik dan `W19 = L19-R19` mengurangkannya dari S(0,001) —
-     *   jadi dicetak seperti `L18`/`W18`. Ditulis `S(0.001)` (titik): blok
-     *   catatan bentuk master dikonversi ke titik desimal oleh builder
-     *   (K-50-15 P3), dan judul kolom disamakan supaya satu lembar tidak
-     *   memuat dua ejaan.
+     *   jadi dicetak seperti `L18`/`W18`. Ditulis `S(0.001)` (titik desimal
+     *   bentuk master, K-50-15 P3) di judul kolom maupun blok Note.
      *
      * Pecahan dihitung dari nilai baris dalam SATUAN ALAT (detik/menit/jam,
      * [nilaiDalamSatuanAlat]). Satuan alat yang tidak dikenal → tanpa pecahan
@@ -255,9 +253,7 @@ class TimerStopwatchProfile extends CalibrationProfile
             'judul' => 'Note :',
             'tabel' => [
                 ['H :', 'Hour', 'S :', 'Second'],
-                // Ditulis berkoma: builder mengubah teks blok ke titik desimal
-                // (`Angka::keTitik`) — `0.001` di sini akan terbaca ribuan.
-                ['M :', 'Minute', 'S(0,001) :', 'Second per One Thousand'],
+                ['M :', 'Minute', 'S(0.001) :', 'Second per One Thousand'],
             ],
         ]];
     }
