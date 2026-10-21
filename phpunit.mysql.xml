@@ -90,6 +90,8 @@
         <!-- Berkas asli Studio: test lama memalsukan disk `local`; test unggah API memilih `arsip` sendiri. -->
         <env name="STUDIO_DISK_BERKAS" value="local"/>
         <env name="STUDIO_AKUN" value=""/>
+        <!-- K-50-11: tests pin the decided default (mode uji on); CI copies .env.example, which keeps it off. -->
+        <env name="OCR_FORMULIR_ASLI_UJI" value="true"/>
         <env name="DATA_ACUAN_SUMBER" value="json"/>
         <env name="APP_TIMEZONE" value="Asia/Jakarta"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
