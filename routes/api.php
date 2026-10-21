@@ -372,7 +372,9 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal,studio', 'role:admin,tekni
 | Data Acuan T2.2/T2.3, 02-SRS §3/§4). `aplikasi:internal` saja: token Studio
 | (satu akun) ditolak, karena pengesahan butuh orang KEDUA (BR-08) dan satu
 | akun tidak bisa memberinya. Ajukan/simulasi/tolak: Master Data (admin) +
-| super admin lewat `lolosTulisSuperAdmin`. Sahkan: super admin saja.
+| super admin lewat `lolosTulisSuperAdmin`. Aktifkan (= "sahkan" 02-SRS):
+| super admin saja. Path-nya `/aktifkan`, bukan `/sahkan`: kata itu milik pengesahan
+| SESI yang dicabut K-50-07 dan dijaga `PengesahanDicabutTest` (koordinator 22 Okt).
 */
 Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin'])
     ->prefix('data-acuan')->group(function () {
@@ -386,7 +388,7 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin'])
 
 Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
     ->prefix('data-acuan')->group(function () {
-        Route::post('/versi/{versi}/sahkan', [DataAcuanAlurController::class, 'sahkan'])
+        Route::post('/versi/{versi}/aktifkan', [DataAcuanAlurController::class, 'sahkan'])
             ->middleware('throttle:data-acuan-tulis');
     });
 

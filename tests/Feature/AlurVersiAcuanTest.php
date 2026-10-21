@@ -133,7 +133,7 @@ class AlurVersiAcuanTest extends TestCase
     /** @param  array<string, string>  $pengakuan */
     private function sahkan(User $oleh, PaketAcuanVersi $v, array $pengakuan = [], ?string $mulai = null): TestResponse
     {
-        return $this->actingAs($oleh)->postJson("/api/data-acuan/versi/{$v->id}/sahkan", [
+        return $this->actingAs($oleh)->postJson("/api/data-acuan/versi/{$v->id}/aktifkan", [
             'berlaku_mulai' => $mulai ?? now()->toDateString(),
             'password' => 'password',
             'pengakuan' => $pengakuan,
@@ -209,7 +209,7 @@ class AlurVersiAcuanTest extends TestCase
             ->assertJsonPath('rincian.butir', ['terbit_cetak_berubah', 'bersama_antar_varian']);
         $this->sahkan($this->sa1, $v2, ['bersama_antar_varian' => 'Balok 19 mm direkalibrasi; master A-D akan diselaraskan.'])
             ->assertStatus(422)->assertJsonPath('rincian.butir', ['terbit_cetak_berubah']);
-        $this->actingAs($this->sa1)->postJson("/api/data-acuan/versi/{$v2->id}/sahkan", [
+        $this->actingAs($this->sa1)->postJson("/api/data-acuan/versi/{$v2->id}/aktifkan", [
             'berlaku_mulai' => now()->toDateString(), 'password' => 'salah',
         ])->assertStatus(422)->assertJsonPath('kode', 'konfirmasi_sandi_salah');
         $this->sahkan($this->sa1, $v2, [], now()->subDay()->toDateString())->assertStatus(422);
@@ -284,8 +284,23 @@ class AlurVersiAcuanTest extends TestCase
         $this->sahkan($this->sa1, $v2, ['bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).'])
             ->assertStatus(422)->assertJsonPath('kode', 'simulasi_kedaluwarsa');
 
+        // Sesi baru profil ini sesudah simulasi → kedaluwarsa.
         $this->simulasi($this->admin, $v2)->assertCreated();
-        $this->sahkan($this->sa1, $v2, ['bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).'])->assertOk();
+        $id = $this->simpanSesi($this->payloadMicrometer());
+        $this->sahkan($this->sa1, $v2, ['bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).'])
+            ->assertStatus(422)->assertJsonPath('kode', 'simulasi_kedaluwarsa');
+
+        // Sertifikat terbit sesudah simulasi → kedaluwarsa.
+        $this->simulasi($this->admin, $v2)->assertCreated();
+        Certificate::factory()->create(['calibration_session_id' => $id, 'organization_id' => $this->org->id, 'status' => Certificate::STATUS_TERBIT]);
+        $this->sahkan($this->sa1, $v2, ['bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).'])
+            ->assertStatus(422)->assertJsonPath('kode', 'simulasi_kedaluwarsa');
+
+        $this->simulasi($this->admin, $v2)->assertCreated()->assertJsonPath('data.status', 'terbaru');
+        $this->sahkan($this->sa1, $v2, [
+            'bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).',
+            'terbit_cetak_berubah' => 'Sertifikat terbit tetap memakai v1 (uji).',
+        ])->assertOk();
     }
 
     public function test_tolak_dan_buang_dengan_alasan_tanpa_menghapus(): void
@@ -322,7 +337,7 @@ class AlurVersiAcuanTest extends TestCase
         $pelanggan = User::factory()->create(['organization_id' => $this->org->id, 'role' => User::ROLE_PELANGGAN]);
 
         foreach ([$this->teknisi, $viewer, $pelanggan] as $u) {
-            foreach (['ajukan', 'simulasi', 'tolak', 'sahkan'] as $aksi) {
+            foreach (['ajukan', 'simulasi', 'tolak', 'aktifkan'] as $aksi) {
                 $s = $this->actingAs($u)->postJson("/api/data-acuan/versi/{$v2->id}/{$aksi}", ['alasan' => self::ALASAN])->getStatusCode();
                 $this->assertSame(403, $s, "{$u->role} {$aksi}");
             }
@@ -350,7 +365,7 @@ class AlurVersiAcuanTest extends TestCase
             $this->actingAs($u)->getJson('/api/data-acuan/paket/micrometer/alur')->assertNotFound();
         }
 
-        $this->actingAs($sa2)->postJson("/api/data-acuan/versi/{$v2->id}/sahkan", ['berlaku_mulai' => now()->toDateString(), 'password' => 'password'])
+        $this->actingAs($sa2)->postJson("/api/data-acuan/versi/{$v2->id}/aktifkan", ['berlaku_mulai' => now()->toDateString(), 'password' => 'password'])
             ->assertNotFound();
         $this->assertSame(PaketAcuanVersi::STATUS_DRAF, $v2->fresh()->status);
         $this->assertSame(0, SimulasiAcuan::query()->count());

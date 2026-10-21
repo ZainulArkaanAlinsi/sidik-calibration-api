@@ -279,12 +279,12 @@ class IzinDataAcuanTest extends TestCase
                 ->json('data.boleh');
 
             $this->assertContains('data-acuan.lihat', $boleh, $role);
-            // Alur versi (T2.3): ajukan/simulasi = admin & super admin; sahkan = super admin saja.
+            // Alur versi (T2.3): ajukan/simulasi = admin & super admin; aktifkan = super admin saja.
             $tulis = array_values(array_filter($boleh, static fn (string $i): bool => str_starts_with($i, 'data-acuan.') && $i !== 'data-acuan.lihat'));
             sort($tulis);
             $this->assertSame(match ($role) {
                 User::ROLE_ADMIN => ['data-acuan.ajukan', 'data-acuan.simulasi'],
-                User::ROLE_SUPER_ADMIN => ['data-acuan.ajukan', 'data-acuan.sahkan', 'data-acuan.simulasi'],
+                User::ROLE_SUPER_ADMIN => ['data-acuan.ajukan', 'data-acuan.aktifkan', 'data-acuan.simulasi'],
                 default => [],
             }, $tulis, $role);
         }

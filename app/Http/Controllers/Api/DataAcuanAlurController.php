@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Hash;
  *    untuk teknisi, 02-SRS §4 — 404, bukan 403, supaya tidak mengakui ada).
  *  - Ajukan/simulasikan/tolak draf: Master Data (admin) & super admin
  *    (`role:admin` + `lolosTulisSuperAdmin`).
- *  - Sahkan: grup `role:super_admin` (02-SRS §3/§4) + konfirmasi sandi +
+ *  - Aktifkan (`POST versi/{versi}/aktifkan`, "sahkan" di 02-SRS): grup `role:super_admin` (02-SRS §3/§4) + konfirmasi sandi +
  *    `PemisahanWewenang::periksaPengesahanVersiAcuan` (BR-08).
  *  - Organisasi lain → 404 (`PenjagaOrganisasi`).
  */

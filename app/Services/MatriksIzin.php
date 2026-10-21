@@ -123,11 +123,11 @@ class MatriksIzin
         // bukan di sini.
         'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
         // Alur versi lapis 1 (T2.3, 22 Okt 2026): ajukan & simulasi = Master
-        // Data + super admin; sahkan = super admin saja (02-SRS §4). Pemisahan
+        // Data + super admin; aktifkan ("sahkan" 02-SRS §4) = super admin saja. Pemisahan
         // wewenang (BR-08) diperiksa server per versi, bukan di peta ini.
         'data-acuan.ajukan' => ['POST', 'api/data-acuan/versi/{versi}/ajukan'],
         'data-acuan.simulasi' => ['POST', 'api/data-acuan/versi/{versi}/simulasi'],
-        'data-acuan.sahkan' => ['POST', 'api/data-acuan/versi/{versi}/sahkan'],
+        'data-acuan.aktifkan' => ['POST', 'api/data-acuan/versi/{versi}/aktifkan'],
 
         // --- organisasi & pengguna
         'organisasi.lihat' => ['GET', 'api/organization'],

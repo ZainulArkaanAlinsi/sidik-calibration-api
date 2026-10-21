@@ -192,6 +192,10 @@ final class AlurVersiAcuan
             $sim->status !== SimulasiAcuan::STATUS_SELESAI => ['simulasi' => $sim, 'status' => 'gagal'],
             ! hash_equals($sim->isi_sha256_saat_jalan, PenentuVersiAcuan::sha256($versi))
                 || ($versi->isi_sha256 !== null && ! hash_equals($versi->isi_sha256, JsonKanonik::sha256((string) $versi->isi))) => ['simulasi' => $sim, 'status' => 'kedaluwarsa'],
+            // Sesi/sertifikat profil ini berubah sesudah simulasi (koordinator
+            // 22 Okt 2026): laporan tidak lagi menggambarkan data sekarang.
+            // `!=` bukan `!==`: kolom json MySQL mengurutkan ulang kunci.
+            ($sim->ringkasan['jejak_data'] ?? null) != app(SimulasiVersiAcuan::class)->jejakData($versi) => ['simulasi' => $sim, 'status' => 'kedaluwarsa'],
             default => ['simulasi' => $sim, 'status' => 'terbaru'],
         };
     }
@@ -266,7 +270,7 @@ final class AlurVersiAcuan
             }
 
             if ($statusSim === 'kedaluwarsa') {
-                throw new AlurVersiAcuanDitolak('simulasi_kedaluwarsa', 'Isi versi berubah sesudah simulasi terakhir; jalankan simulasi ulang.');
+                throw new AlurVersiAcuanDitolak('simulasi_kedaluwarsa', 'Isi versi, atau sesi/sertifikat terbit profil ini, berubah sesudah simulasi terakhir; jalankan simulasi ulang.');
             }
 
             if ($statusSim === 'gagal') {

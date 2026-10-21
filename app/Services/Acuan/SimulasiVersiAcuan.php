@@ -11,6 +11,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CertificateSnapshotBuilder;
 use App\Support\SiapHitungSesi;
 use App\Support\TataLetakSertifikat;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -60,6 +61,9 @@ final class SimulasiVersiAcuan
         $versi->loadMissing('paketAcuan');
         $kode = (string) $versi->paketAcuan?->kode_profil;
         $sumberAsli = config('acuan.sumber');
+        // Diambil SEBELUM menghitung: perubahan selama simulasi berjalan ikut
+        // membuat simulasinya kedaluwarsa.
+        $jejak = $this->jejakData($versi);
 
         config(['acuan.sumber' => 'db']);
 
@@ -89,9 +93,54 @@ final class SimulasiVersiAcuan
                     ? null
                     : 'DATA_ACUAN_SUMBER bukan db: simulasi dihitung dalam mode db, tetapi jalur hitung produksi '
                         .'belum membaca versi DB — versi yang disahkan belum menghitung sesi apa pun sampai sumbernya dipindah.',
+                'jejak_data' => $jejak,
             ],
             'sesi' => array_values($laporan),
         ];
+    }
+
+    /**
+     * Sidik keadaan data yang disimulasikan: jumlah & `updated_at` terakhir
+     * sesi profil ini di organisasi ini, dan jumlah sertifikat TERBIT-nya.
+     * Pengaktifan menolak simulasi yang sidiknya beda dengan keadaan sekarang
+     * (sesi baru/diubah, sertifikat terbit/ditarik sesudah simulasi) —
+     * keputusan koordinator 22 Okt 2026, melengkapi FR-13.
+     *
+     * @return array{sesi_jumlah: int, sesi_terakhir_diubah: ?string, sertifikat_terbit_jumlah: int}
+     */
+    public function jejakData(PaketAcuanVersi $versi): array
+    {
+        $versi->loadMissing('paketAcuan');
+        $organisasi = (int) $versi->organization_id;
+        $alat = $this->alatProfil($organisasi, (string) $versi->paketAcuan?->kode_profil);
+
+        $sesi = CalibrationSession::query()
+            ->where('organization_id', $organisasi)
+            ->whereIn('equipment_id', $alat === [] ? [0] : $alat);
+
+        $terakhir = (clone $sesi)->max('updated_at');
+
+        return [
+            'sesi_jumlah' => (clone $sesi)->count(),
+            'sesi_terakhir_diubah' => $terakhir === null ? null : CarbonImmutable::parse($terakhir)->format('Y-m-d H:i:s'),
+            'sertifikat_terbit_jumlah' => Certificate::query()
+                ->where('status', Certificate::STATUS_TERBIT)
+                ->whereIn('calibration_session_id', (clone $sesi)->select('id'))
+                ->count(),
+        ];
+    }
+
+    /** @return list<int> id alat organisasi ini yang dipetakan ke profil `$kode` */
+    private function alatProfil(int $organisasiId, string $kode): array
+    {
+        return Equipment::query()
+            ->where('organization_id', $organisasiId)
+            ->get()
+            ->filter(fn (Equipment $e): bool => $this->registry->untukAlat($e)->kode() === $kode)
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->values()
+            ->all();
     }
 
     /**
@@ -101,12 +150,7 @@ final class SimulasiVersiAcuan
      */
     private function sesiProfil(int $organisasiId, string $kode): Collection
     {
-        $alat = Equipment::query()
-            ->where('organization_id', $organisasiId)
-            ->get()
-            ->filter(fn (Equipment $e): bool => $this->registry->untukAlat($e)->kode() === $kode)
-            ->pluck('id')
-            ->all();
+        $alat = $this->alatProfil($organisasiId, $kode);
 
         if ($alat === []) {
             return collect();
