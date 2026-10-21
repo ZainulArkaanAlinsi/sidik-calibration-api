@@ -23,6 +23,14 @@ class PengesahanDicabutTest extends TestCase
     public function test_rute_pengesahan_tidak_ada(): void
     {
         foreach (Route::getRoutes() as $rute) {
+            // K-50-07 mencabut pengesahan SESI. Pengesahan VERSI data acuan
+            // (`api/data-acuan/versi/{versi}/sahkan`, 03-SDD §3 Studio Data
+            // Acuan, AGENTS.md §Olah data butir 3) adalah gerbang lain yang
+            // memang wajib ada — dikecualikan dengan prefix persisnya saja.
+            if ($rute->uri() === 'api/data-acuan/versi/{versi}/sahkan') {
+                continue;
+            }
+
             $this->assertDoesNotMatchRegularExpression('#/(sahkan|kembalikan-dari-pengesahan|tarik-pengajuan)$|pengesahan/antrean#', $rute->uri());
         }
 

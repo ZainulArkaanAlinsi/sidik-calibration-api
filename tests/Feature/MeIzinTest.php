@@ -12,6 +12,8 @@ use App\Models\FolderFile;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organization;
+use App\Models\PaketAcuan;
+use App\Models\PaketAcuanVersi;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
 use App\Models\User;
@@ -339,6 +341,25 @@ class MeIzinTest extends TestCase
         if (str_contains($uri, '{customer}')) {
             $ganti['{customer}'] = (string) Customer::factory()->create([
                 'organization_id' => $user->organization_id,
+            ])->id;
+        }
+
+        if (str_contains($uri, '{versi}')) {
+            // Versi data acuan lab user ini (alur versi T2.3). Statusnya
+            // `ditolak`: aksi apa pun yang lolos gerbang jatuh ke 422
+            // `status_tidak_sesuai`, bukan menjalankan simulasi sungguhan.
+            $paket = PaketAcuan::query()->firstOrCreate(
+                ['organization_id' => $user->organization_id, 'kode_profil' => 'micrometer'],
+                ['nama' => 'Micrometer', 'skema_versi' => 1],
+            );
+            $ganti['{versi}'] = (string) PaketAcuanVersi::create([
+                'paket_acuan_id' => $paket->id,
+                'organization_id' => $user->organization_id,
+                'jenis' => PaketAcuanVersi::JENIS_DATA,
+                'nomor_versi' => 1 + (int) $paket->versi()->max('nomor_versi'),
+                'status' => PaketAcuanVersi::STATUS_DITOLAK,
+                'isi' => '{}',
+                'skema_versi' => 1,
             ])->id;
         }
 

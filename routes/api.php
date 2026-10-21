@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DataAcuanAlurController;
 use App\Http\Controllers\Api\DataAcuanController;
 use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\DokumenGenerikController;
@@ -361,6 +362,32 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal,studio', 'role:admin,tekni
         Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
         Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
         Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+        // Alur versi (T2.2/T2.3) — baca. Teknisi → 404 di controller.
+        Route::get('/paket/{kode}/alur', [DataAcuanAlurController::class, 'daftar']);
+        Route::get('/versi/{versi}/simulasi', [DataAcuanAlurController::class, 'simulasi']);
+    });
+
+/*
+| Alur versi data acuan lapis 1 — TULIS (AGENTS.md §Olah data butir 3; Studio
+| Data Acuan T2.2/T2.3, 02-SRS §3/§4). `aplikasi:internal` saja: token Studio
+| (satu akun) ditolak, karena pengesahan butuh orang KEDUA (BR-08) dan satu
+| akun tidak bisa memberinya. Ajukan/simulasi/tolak: Master Data (admin) +
+| super admin lewat `lolosTulisSuperAdmin`. Sahkan: super admin saja.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin'])
+    ->prefix('data-acuan')->group(function () {
+        Route::post('/versi/{versi}/ajukan', [DataAcuanAlurController::class, 'ajukan'])
+            ->middleware('throttle:data-acuan-tulis');
+        Route::post('/versi/{versi}/simulasi', [DataAcuanAlurController::class, 'simulasikan'])
+            ->middleware('throttle:data-acuan-simulasi');
+        Route::post('/versi/{versi}/tolak', [DataAcuanAlurController::class, 'tolak'])
+            ->middleware('throttle:data-acuan-tulis');
+    });
+
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
+    ->prefix('data-acuan')->group(function () {
+        Route::post('/versi/{versi}/sahkan', [DataAcuanAlurController::class, 'sahkan'])
+            ->middleware('throttle:data-acuan-tulis');
     });
 
 /*

@@ -190,6 +190,9 @@ class BatasAntarLabTest extends TestCase
             'data-acuan garis waktu' => ['api/data-acuan/paket/{kode}/versi', 'kodeAcuan'],
             'data-acuan versi' => ['api/data-acuan/versi/{versi}', 'versiAcuan'],
             'data-acuan banding' => ['api/data-acuan/versi/{versi}/banding/{pembanding}', 'versiAcuan'],
+            // Alur versi (T2.3, 22 Okt) — baca daftar alur & simulasi.
+            'data-acuan alur' => ['api/data-acuan/paket/{kode}/alur', 'kodeAcuan'],
+            'data-acuan simulasi' => ['api/data-acuan/versi/{versi}/simulasi', 'versiAcuan'],
             // Sidik Studio S1b (13 Okt) — Workbook Alat. Sapuan mengisi SEMUA
             // parameter dengan id yang sama, jadi lembarnya ditanam dengan id
             // = id workbook (lihat `punyaLabB`) supaya kontrol pemiliknya 200.

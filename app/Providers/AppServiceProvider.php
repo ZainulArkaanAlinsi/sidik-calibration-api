@@ -426,6 +426,10 @@ class AppServiceProvider extends ServiceProvider
         // mengurai JSON sel satu lembar, jadi tetap berpagar terhadap skrip
         // yang menyedot semua workbook sekaligus.
         $perMenitPengguna('studio-baca', 300);
+        // Alur versi data acuan (T2.3): ajukan/tolak/sahkan — aksi jarang,
+        // ketat. Simulasi menghitung ulang SEMUA sesi profil itu: lebih ketat.
+        $perMenitPengguna('data-acuan-tulis', 20);
+        $perMenitPengguna('data-acuan-simulasi', 6);
         // Studio tahap C — hitung ulang workbook (±0,5–3 s CPU & ±250 MB per
         // panggilan). Klien memanggil sesudah edit, bukan per ketukan.
         // Ember & kunci sama dengan `$perMenitPengguna`, tapi 429-nya MEMBAWA
