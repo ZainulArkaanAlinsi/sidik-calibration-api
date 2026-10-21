@@ -2,6 +2,7 @@
 
 namespace App\Services\Acuan;
 
+use App\Models\PaketAcuan;
 use App\Models\PaketAcuanLog;
 use App\Models\PaketAcuanSuntingan;
 use App\Models\PaketAcuanVersi;
@@ -149,6 +150,11 @@ final class AlurVersiAcuan
         ];
 
         return DB::transaction(function () use ($v, $oleh, $sha, $mulai, $hasil, $bersama, $ringkasan): SimulasiAcuan {
+            // Simulasi berjalan di luar transaksi (lama); status bisa berubah
+            // selama itu — diperiksa ulang di bawah kunci paket.
+            $v = $this->kunci($v);
+            $this->pastikanStatus($v, [PaketAcuanVersi::STATUS_DRAF, PaketAcuanVersi::STATUS_DIAJUKAN], 'Status versi berubah selama simulasi berjalan.');
+
             $sim = SimulasiAcuan::create([
                 'paket_acuan_versi_id' => $v->id,
                 'organization_id' => $v->organization_id,
@@ -356,6 +362,7 @@ final class AlurVersiAcuan
     {
         return DB::transaction(function () use ($versi, $oleh, $alasan): PaketAcuanVersi {
             $v = $this->kunci($versi);
+            $this->pastikanJenisData($v);
             $this->pastikanStatus($v, [PaketAcuanVersi::STATUS_DRAF, PaketAcuanVersi::STATUS_DIAJUKAN], 'Hanya draf atau versi diajukan yang bisa ditolak.');
 
             $dari = $v->status;
@@ -380,8 +387,18 @@ final class AlurVersiAcuan
         });
     }
 
+    /**
+     * Kunci baris PAKET dulu, baru versinya — urutan yang sama di semua
+     * transisi. Tanpa kunci paket, dua pengaktifan versi berbeda dalam satu
+     * paket tidak saling melihat (masing-masing hanya mengunci versinya
+     * sendiri) dan dua versi bisa sama-sama `aktif` (BR-03).
+     */
     private function kunci(PaketAcuanVersi $versi): PaketAcuanVersi
     {
+        $paketId = PaketAcuanVersi::query()->whereKey($versi->id)->value('paket_acuan_id');
+
+        PaketAcuan::withTrashed()->whereKey($paketId)->lockForUpdate()->first();
+
         return PaketAcuanVersi::query()->with('paketAcuan')->lockForUpdate()->findOrFail($versi->id);
     }
 

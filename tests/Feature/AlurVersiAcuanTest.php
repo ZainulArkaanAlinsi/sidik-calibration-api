@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
 use App\Models\PaketAcuanLog;
@@ -9,13 +10,17 @@ use App\Models\PaketAcuanVersi;
 use App\Models\SimulasiAcuan;
 use App\Models\User;
 use App\Models\WorkbookMaster;
+use App\Services\Acuan\SimulasiVersiAcuan;
 use App\Services\Acuan\SumberAcuan;
 use App\Services\Studio\Workbook\ImporWorkbook;
 use App\Support\JsonKanonik;
+use Illuminate\Database\QueryException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use LogicException;
+use RuntimeException;
 use Tests\Concerns\SesiDataAcuan;
 use Tests\TestCase;
 
@@ -369,5 +374,114 @@ class AlurVersiAcuanTest extends TestCase
             ->assertNotFound();
         $this->assertSame(PaketAcuanVersi::STATUS_DRAF, $v2->fresh()->status);
         $this->assertSame(0, SimulasiAcuan::query()->count());
+    }
+
+    /** Semua butir pengakuan sekaligus — butir yang tidak diwajibkan diabaikan. */
+    private const AKUI_SEMUA = [
+        'terbit_cetak_berubah' => 'Sertifikat terbit tetap memakai versinya (uji).',
+        'bersama_antar_varian' => 'Balok 19 mm direkalibrasi (uji).',
+        'sesi_gagal' => 'Sesi gagal disimulasikan sudah ditinjau (uji).',
+    ];
+
+    public function test_pengaktifan_kedua_di_paket_sama_melihat_yang_pertama(): void
+    {
+        $v2 = $this->drafV2();
+        $this->ajukan($this->admin, $v2)->assertOk();
+        $this->simulasi($this->admin, $v2)->assertCreated();
+        $this->sahkan($this->sa1, $v2, self::AKUI_SEMUA)->assertOk();
+
+        // v3 berdasar v2, dibuat Master Data.
+        $isi = $v2->fresh()->isiTerurai();
+        $isi['balok_ukur']['19.0'] = 19.00311;
+        $v3 = PaketAcuanVersi::create([
+            ...$v2->only(['paket_acuan_id', 'organization_id', 'jenis', 'skema_versi']),
+            'dasar_versi_id' => $v2->id, 'nomor_versi' => 3, 'status' => PaketAcuanVersi::STATUS_DRAF,
+            'isi' => JsonKanonik::serialisasi($isi), 'dibuat_oleh' => $this->admin->id,
+        ]);
+        $this->ajukan($this->admin, $v3)->assertOk();
+        $this->simulasi($this->admin, $v3)->assertCreated();
+
+        // Mulai hari yang sama dengan v2 → bentrok (BR-03), tidak ada yang berubah.
+        $this->sahkan($this->sa2, $v3, self::AKUI_SEMUA)->assertStatus(422)->assertJsonPath('kode', 'rentang_bentrok');
+        $this->assertSame(PaketAcuanVersi::STATUS_AKTIF, $v2->fresh()->status);
+
+        $besok = now()->addDay()->toDateString();
+        $this->sahkan($this->sa2, $v3, self::AKUI_SEMUA, $besok)->assertOk();
+
+        $v2->refresh();
+        $this->assertSame([PaketAcuanVersi::STATUS_PENSIUN, now()->toDateString()], [$v2->status, $v2->berlaku_sampai->toDateString()]);
+        $this->assertSame(1, PaketAcuanVersi::query()->where('paket_acuan_id', $v2->paket_acuan_id)->where('status', PaketAcuanVersi::STATUS_AKTIF)->count());
+        $this->assertSame([$v2->id], PaketAcuanLog::query()->where('paket_acuan_versi_id', $v3->id)->where('aksi', 'sahkan')->sole()->rincian['versi_dipensiunkan']);
+        $this->assertSame(['pensiun', 'pensiun'], [$this->v1->fresh()->status, $v2->status]);
+    }
+
+    public function test_log_dan_simulasi_tidak_bisa_diubah_atau_dihapus_massal(): void
+    {
+        $v2 = $this->drafV2();
+        $this->simulasi($this->admin, $v2)->assertCreated();
+        $this->assertGreaterThan(0, PaketAcuanLog::query()->count());
+        $this->assertGreaterThan(0, SimulasiAcuan::query()->count());
+
+        foreach ([
+            fn () => PaketAcuanLog::query()->update(['alasan' => 'diubah']),
+            fn () => PaketAcuanLog::query()->delete(),
+            fn () => SimulasiAcuan::query()->update(['status' => 'gagal']),
+            fn () => SimulasiAcuan::query()->delete(),
+            fn () => DB::table('paket_acuan_log')->delete(),
+        ] as $i => $aksi) {
+            try {
+                $aksi();
+                $this->fail("aksi massal #{$i} lolos");
+            } catch (QueryException) {
+                // ditahan trigger
+            }
+        }
+
+        $this->assertSame(['dibuat', 'simulasi'], PaketAcuanLog::query()->where('paket_acuan_versi_id', $v2->id)->orderBy('id')->pluck('aksi')->all());
+    }
+
+    public function test_simulasi_tidak_menulis_sesi_hasil_maupun_sertifikat(): void
+    {
+        $id = $this->simpanSesi($this->payloadMicrometer());
+        Certificate::factory()->create(['calibration_session_id' => $id, 'organization_id' => $this->org->id, 'status' => Certificate::STATUS_TERBIT]);
+        $v2 = $this->drafV2();
+
+        $keadaan = static fn (): array => collect(['calibration_sessions', 'uncertainty_calculations', 'certificates', 'raw_measurements'])
+            ->mapWithKeys(static fn (string $t): array => [$t => [DB::table($t)->count(), DB::table($t)->max('updated_at')]])
+            ->all();
+
+        $sebelum = $keadaan();
+        $this->travel(5)->minutes();
+        $this->simulasi($this->admin, $v2)->assertCreated()->assertJsonPath('data.ringkasan.sesi_berubah', fn ($n) => $n >= 1);
+        $this->assertSame($sebelum, $keadaan());
+    }
+
+    public function test_token_studio_ditolak_di_rute_tulis(): void
+    {
+        $v2 = $this->drafV2();
+
+        $this->sebagaiStudio($this->sa1)->postJson("/api/data-acuan/versi/{$v2->id}/ajukan", ['alasan' => self::ALASAN])->assertForbidden();
+        $this->sebagaiStudio($this->sa1)->postJson("/api/data-acuan/versi/{$v2->id}/simulasi")->assertForbidden();
+        $this->sebagaiStudio($this->sa1)->postJson("/api/data-acuan/versi/{$v2->id}/aktifkan", ['berlaku_mulai' => now()->toDateString(), 'password' => 'password'])->assertForbidden();
+        $this->assertSame(PaketAcuanVersi::STATUS_DRAF, $v2->fresh()->status);
+    }
+
+    public function test_sumber_acuan_dipulihkan_walau_simulasi_melempar(): void
+    {
+        $v2 = $this->drafV2();
+        config(['acuan.sumber' => 'json']);
+
+        CalibrationSession::retrieved(static function (): never {
+            throw new RuntimeException('galat uji di tengah simulasi');
+        });
+
+        try {
+            app(SimulasiVersiAcuan::class)->jalankan($v2);
+            $this->fail('simulasi seharusnya melempar');
+        } catch (RuntimeException $e) {
+            $this->assertSame('galat uji di tengah simulasi', $e->getMessage());
+        }
+
+        $this->assertSame('json', config('acuan.sumber'));
     }
 }
