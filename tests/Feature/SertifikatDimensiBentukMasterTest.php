@@ -10,6 +10,7 @@ use App\Support\TataLetakSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -27,6 +28,7 @@ use Tests\TestCase;
  */
 class SertifikatDimensiBentukMasterTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     public function test_tujuh_sertifikat_dimensi_ikut_lembar_sertifikat_master(): void
@@ -50,7 +52,7 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         // ---- Micrometer 25-50 mm (`166`) --------------------------------------
         [$s, $html] = $this->terbitkan('0106-CAL-1023');
         $this->assertSame('Standar Reading', $s->snapshot['judul_standar']);
-        $this->assertSame(['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.000', 'k' => '0'],
+        $this->assertSamaPetaJson(['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.000', 'k' => '0'],
             $s->snapshot['hasil'][0]['format']);
         // `166!D19:L19` 27.500 | 27.500 | 0.000, `J29` 0.001, `P30` 2.
         $this->assertMatchesRegularExpression('#<td>27[.,]500</td>\s*<td>27[.,]500</td>\s*<td>-?0[.,]000</td>#u', $html);
@@ -74,7 +76,7 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         [$s, $html] = $this->terbitkan('0392-CAL-324');
         $this->assertSame('Nominal Standard', $s->snapshot['judul_standar']);
         $this->assertSame('Pembacaan Alat', $s->snapshot['judul_uut']);
-        $this->assertSame(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0000', 'k' => '0'],
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0000', 'k' => '0'],
             $s->snapshot['hasil'][0]['format']);
         // `159!D23:L23` 12.00 | 12.01 | -0.01, `J28` 0.0088 (sesi contoh 0.0086 — angka hitung, bukan hook ini).
         $this->assertMatchesRegularExpression('#<td>12[.,]00</td>\s*<td>12[.,]01</td>\s*<td>-0[.,]01</td>#u', $html);
@@ -83,7 +85,7 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         // ---- Jangka Sorong (`153`) --------------------------------------------
         [$s, $html] = $this->terbitkan('001-CAL-126');
         $this->assertSame('Standar Reading', $s->snapshot['judul_standar']);
-        $this->assertSame(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'],
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'],
             $s->snapshot['hasil'][0]['format']);
         // `153!D27:L27` 100.00 | 100.05 | -0.05, `J35` 0.033, `O36` k General.
         $this->assertMatchesRegularExpression('#<td>100[.,]00</td>\s*<td>100[.,]05</td>\s*<td>-0[.,]05</td>#u', $html);

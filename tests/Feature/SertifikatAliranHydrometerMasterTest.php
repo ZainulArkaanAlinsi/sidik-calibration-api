@@ -13,6 +13,7 @@ use App\Support\FlowmeterMentah;
 use App\Support\TataLetakSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,7 @@ use Tests\TestCase;
  */
 class SertifikatAliranHydrometerMasterTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     private function siap(): void
@@ -228,7 +230,7 @@ class SertifikatAliranHydrometerMasterTest extends TestCase
             );
         }
 
-        $this->assertSame([[
+        $this->assertSamaPetaJson([[
             'posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL,
             'judul' => null,
             'baris' => [],

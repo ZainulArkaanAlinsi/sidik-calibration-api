@@ -12,6 +12,7 @@ use App\Support\TataLetakSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -22,6 +23,7 @@ use Tests\TestCase;
  */
 class SertifikatHookRonde3Test extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     /**
@@ -82,7 +84,7 @@ class SertifikatHookRonde3Test extends TestCase
             '#<td>0\.00</td>\s*<td>1\.00</td>\s*<td>0\.00</td>\s*<td>96</td>\s*<td>0\.00</td>\s*<td>1\.00</td>\s*<td>0\.00</td>\s*<td>137</td>\s*<td>0\.00</td>\s*<td>0\.00</td>\s*<td>0\.00</td>\s*<td>-41</td>#u',
             $html,
         );
-        $this->assertSame([[
+        $this->assertSamaPetaJson([[
             'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
             'judul' => 'Note :',
             'baris' => [],
@@ -201,7 +203,7 @@ class SertifikatHookRonde3Test extends TestCase
 
         [$s, $html] = $this->terbitkan('001-CAL-126');
 
-        $this->assertSame([[
+        $this->assertSamaPetaJson([[
             'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
             'judul' => 'Note :',
             'baris' => [],

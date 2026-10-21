@@ -9,6 +9,7 @@ use App\Services\DataTampilanSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -23,6 +24,7 @@ use Tests\TestCase;
  */
 class SertifikatPistonBentukMasterTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     public function test_sertifikat_piston_ikut_lembar_sertifikat_master(): void
@@ -46,14 +48,14 @@ class SertifikatPistonBentukMasterTest extends TestCase
 
         // ---- Fixed (`160`) ----------------------------------------------------
         [$s, $html] = $this->terbitkan('DEMO-PP-FIX-001');
-        $this->assertSame(['standar' => '0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.000', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
+        $this->assertSamaPetaJson(['standar' => '0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.000', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
         // `E21:S21` 10 | 10.0312 | 0.0312, `Q22` 0.019 (dulu 0.0188).
         $this->assertMatchesRegularExpression('#<td>10</td>\s*<td>10[.,]0312</td>\s*<td>0[.,]0312</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>0[.,]019 \S+</td>#u', $html);
 
         // ---- Graduated (`164`) ------------------------------------------------
         [$s, $html] = $this->terbitkan('DEMO-BD-GRD-001');
-        $this->assertSame(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
         // `E21:S23` 2.00 | 1.97 | -0.03; 4.00 | 3.98 | -0.02; 10.00 | 9.99 | -0.01.
         $this->assertMatchesRegularExpression('#<td>2[.,]00</td>\s*<td>1[.,]97</td>\s*<td>-0[.,]03</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>4[.,]00</td>\s*<td>3[.,]98</td>\s*<td>-0[.,]02</td>#u', $html);

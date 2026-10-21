@@ -9,6 +9,7 @@ use App\Services\DataTampilanSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,7 @@ use Tests\TestCase;
  */
 class SertifikatAnalitikBentukMasterTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     public function test_sertifikat_analitik_ikut_lembar_sertifikat_master(): void
@@ -34,7 +36,7 @@ class SertifikatAnalitikBentukMasterTest extends TestCase
 
         // ---- Chlorine (`156`) -------------------------------------------------
         [$s, $html] = $this->terbitkan('2406.32.C');
-        $this->assertSame(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.00', 'k' => '0'], $s->snapshot['hasil'][0]['format']);
         // `C16:W16` satu tabel, Remark jadi kolom; `C17:S17` satuan, Remark kosong.
         $this->assertSame(1, substr_count($html, '<th>Standard Value</th>'), 'Chlorine: satu tabel hasil.');
         $this->assertMatchesRegularExpression('#<th>Standard Value</th>\s*<th>Unit Under Test</th>\s*<th>Correction</th>\s*<th>U<sub>95%</sub> \(±\)</th>\s*<th>Remark</th>#u', $html);
@@ -99,7 +101,7 @@ class SertifikatAnalitikBentukMasterTest extends TestCase
         // ---- Conductivity (`157`) ---------------------------------------------
         foreach (['2405.32.A.NK', 'DEMO-COND-MSCM'] as $nomor) {
             [$s, $html] = $this->terbitkan($nomor);
-            $this->assertSame(['k' => '0'], $s->snapshot['hasil'][0]['format'], "{$nomor}: `U36`/`U42` k `0`.");
+            $this->assertSamaPetaJson(['k' => '0'], $s->snapshot['hasil'][0]['format'], "{$nomor}: `U36`/`U42` k `0`.");
             $this->assertStringContainsString('Standard Used :', $html, "{$nomor}: `B47`.");
             $this->assertSame(1, $this->halamanTerbaik($s), "{$nomor}: wajib satu halaman.");
         }

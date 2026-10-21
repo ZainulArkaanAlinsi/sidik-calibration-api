@@ -11,6 +11,7 @@ use App\Support\TataLetakSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -25,6 +26,7 @@ use Tests\TestCase;
  */
 class SertifikatGayaBentukMasterTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     public function test_tiga_sertifikat_gaya_ikut_lembar_sertifikat_master(): void
@@ -49,7 +51,7 @@ class SertifikatGayaBentukMasterTest extends TestCase
 
         // ---- UTM (`163`) ------------------------------------------------------
         [$s, $html] = $this->terbitkan('DEMO-UTM-001');
-        $this->assertSame(['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.0', 'k' => '0'],
+        $this->assertSamaPetaJson(['standar' => '0.0', 'uut' => '0.0', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.0', 'k' => '0'],
             $s->snapshot['hasil'][1]['format']);
         // `163!E22:V22` 100.4 | 100.0 | 0.38 | 0.00, `P35` 2.1, `T36` 2.
         $this->assertMatchesRegularExpression('#<td>100[.,]4</td>\s*<td>100[.,]0</td>\s*<td>0[.,]38</td>\s*<td>0[.,]00</td>#u', $html);
@@ -60,7 +62,7 @@ class SertifikatGayaBentukMasterTest extends TestCase
         $this->assertStringContainsString('RRPE : Relative Repeatability Error', $html);
         $this->assertMatchesRegularExpression('#Units Used:</div>.*?<td>kgf</td>\s*<td>:</td>\s*<td>Kilogram-force</td>#su', $html);
         $this->assertStringNotContainsString('Full Scale', $html, '`163` tidak punya baris FS.');
-        $this->assertSame(
+        $this->assertSamaPetaJson(
             ['Type of Force', 'RRPE', 'Units Used:'],
             array_map(static fn (array $b): string => $b['judul'] ?? (($b['baris'][0] ?? null) !== null ? strtok($b['baris'][0], ' ') : $b['tabel'][0][0]), $s->snapshot['catatan_blok']),
             'Urutan blok master: E18, E37, E39.',
@@ -68,7 +70,7 @@ class SertifikatGayaBentukMasterTest extends TestCase
 
         // ---- Load Cell (`161`) ------------------------------------------------
         [$s, $html] = $this->terbitkan('DEMO-LC-001');
-        $this->assertSame(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.00', 'k' => '0'],
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'sebaran' => '0.00', 'u95' => '0.00', 'k' => '0'],
             $s->snapshot['hasil'][1]['format']);
         // `161!E22:V22` 99.88 | 100.00 | -0.12 | 0.00, `P35` 0.30.
         $this->assertMatchesRegularExpression('#<td>99[.,]88</td>\s*<td>100[.,]00</td>\s*<td>-0[.,]12</td>\s*<td>0[.,]00</td>#u', $html);
@@ -78,7 +80,7 @@ class SertifikatGayaBentukMasterTest extends TestCase
 
         // ---- Proving Ring (`162`) ---------------------------------------------
         [$s, $html] = $this->terbitkan('DEMO-PR-001');
-        $this->assertSame(['standar' => '0.00', 'uut' => '0', 'koreksi' => '0.0', 'sebaran' => '0.0', 'u95' => '0.0', 'k' => '0'],
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0', 'koreksi' => '0.0', 'sebaran' => '0.0', 'u95' => '0.0', 'k' => '0'],
             $s->snapshot['hasil'][1]['format']);
         $this->assertMatchesRegularExpression('#<th>Standard Value</th>\s*<th>Unit Under Test</th>\s*<th>Calibration Factor</th>\s*<th>Repeatability</th>#u', $html);
         $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>kgf</th>\s*<th>\(1 Division x 0[.,]002 mm\)</th>\s*<th>kgf / Div</th>\s*<th>%</th>#u', $html);

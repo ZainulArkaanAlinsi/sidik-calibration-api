@@ -19,6 +19,7 @@ use App\Support\VolumetricGlasswareMentah as M;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\TestCase;
 
 /**
@@ -38,6 +39,7 @@ use Tests\TestCase;
  */
 class VolumetrikRev7AlurTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
 
     private Organization $org;
@@ -508,7 +510,7 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertSame(4, $baris['desimal']);
         $this->assertSame(4, $baris['desimal_u95']);
         // Format cetak = desimal layar (kolom UUT, Correction, U95).
-        $this->assertSame(
+        $this->assertSamaPetaJson(
             ['standar' => '0.0', 'uut' => '0.0000', 'koreksi' => '0.0000', 'u95' => '0.0000', 'k' => '0'],
             $baris['format'],
         );
@@ -552,8 +554,8 @@ class VolumetrikRev7AlurTest extends TestCase
         // (`143!O14:U14`) dan blok `Suhu Dasar Volume : 20 °C` (`143!E18:N18`)
         // di antara `Calibration Report :` dan tabel — letaknya seperti master.
         $this->assertNull($snapshot['catatan_atas_hasil']);
-        $this->assertSame(['kelas_toleransi' => 'A/±0.15 ml'], $snapshot['header_tambahan']);
-        $this->assertSame([[
+        $this->assertSamaPetaJson(['kelas_toleransi' => 'A/±0.15 ml'], $snapshot['header_tambahan']);
+        $this->assertSamaPetaJson([[
             'posisi' => 'atas_hasil', 'judul' => null, 'baris' => [], 'tabel' => [['Suhu Dasar Volume', ':', '20 °C']],
         ]], $snapshot['catatan_blok']);
         $this->assertSame('------------------ End of Certificate ------------------', $snapshot['tata_letak']['akhir_sertifikat']);
@@ -650,7 +652,7 @@ class VolumetrikRev7AlurTest extends TestCase
         $snapshot = $this->terbitkan($sesi)->snapshot;
 
         $this->assertNull($snapshot['catatan_atas_hasil']);
-        $this->assertSame(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
+        $this->assertSamaPetaJson(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
         $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
         $this->assertStringNotContainsString('hPa', (string) $snapshot['header']['env_condition']);
         $this->assertSame(['Analytical Balance'], array_column($snapshot['standar_digunakan'], 'name'));
