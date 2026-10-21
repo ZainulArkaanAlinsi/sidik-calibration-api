@@ -7,6 +7,9 @@ use App\Models\WorkbookMaster;
 use App\Models\WorkbookMasterLembar;
 use App\Services\Studio\Hitung\ModelHitung;
 use App\Services\Studio\Hitung\SumberModelHitung;
+use App\Services\Studio\PetaSel\DrafAcuanMaster;
+use App\Services\Studio\PetaSel\PemeriksaMaster;
+use App\Services\Studio\PetaSel\PetaSel;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -37,11 +40,13 @@ use Throwable;
  * ## `$ganti` (perintah `--ganti`) — ekstrak ulang SATU baris di tempat
  *
  * Dipakai sesudah `KanonikWorkbook::FORMAT` naik. Satu baris dengan sumber,
- * nama, dan organisasi yang sama dihapus di transaksi yang sama dengan
- * penulisan penggantinya (audit `dihapus` + catatan "Menggantikan …"), dan
- * penggantinya MEWARISI status jenisnya (kunci, aktif/riwayat/arsip, versi,
- * penunjuk riwayat). Versi lain di jenis yang sama tidak disentuh. Tidak
- * pernah menyeberang sumber:
+ * nama, dan organisasi yang sama DIGANTIKAN di transaksi yang sama dengan
+ * penulisan penggantinya — TIDAK dihapus (ADR-49-07, 22 Okt 2026): baris lama
+ * beserta lembarnya tetap ada sebagai riwayat (`aktif` NULL,
+ * `sha256_hidup` NULL, `digantikan_oleh_id` = pengganti, audit `diubah`), dan
+ * pengganti mencatat "Menggantikan …". Pengganti MEWARISI status jenisnya
+ * (kunci, aktif/riwayat/arsip, versi, penunjuk riwayat). Versi lain di jenis
+ * yang sama tidak disentuh. Tidak pernah menyeberang sumber:
  *  - csv: sha kanonik ikut berubah, jadi sha sama = hasil ekstraksi sama →
  *    tetap `sudah_ada`; yang diganti = baris csv bernama sama (di Studio dulu,
  *    lalu yang aktif, lalu terbaru).
@@ -73,6 +78,18 @@ use Throwable;
  *  - Model hitung `/hitung` dibangun dari muatan yang sama dan disimpan ke
  *    cache (`SumberModelHitung`) — workbook bersandi bisa dihitung tanpa
  *    meminta sandi lagi selama cache-nya hidup.
+ *
+ * ## Peta sel (22 Okt 2026, rencana studio-kendali-olah-data fase 1-2)
+ *
+ * Bila profil workbook punya `database/data/peta-sel/<kode>.json`, struktur
+ * master diperiksa SEBELUM apa pun ditulis (termasuk `kering`): lembar wajib,
+ * jangkar label, tipe sel angka. Tidak cocok → `GagalBacaWorkbook`
+ * `struktur_master_berubah` dengan daftar persis apa yang hilang/bergeser;
+ * tidak ada baris, berkas, maupun draf yang lahir. Lolos → master yang jadi
+ * AKTIF jenisnya diekstrak jadi DRAF `paket_acuan_versi` di transaksi yang
+ * sama (`DrafAcuanMaster`); draf tidak pernah menghitung sesi sebelum alur
+ * versi mengesahkannya. Profil tanpa peta: perilaku lama, ditandai
+ * `belum_terpetakan` di ringkasan & `catatan`.
  */
 final class ImporWorkbook
 {
@@ -96,6 +113,8 @@ final class ImporWorkbook
         private readonly PetaProfilWorkbook $peta,
         private readonly SumberModelHitung $sumberHitung,
         private readonly JenisWorkbook $jenis,
+        private readonly PemeriksaMaster $pemeriksa,
+        private readonly DrafAcuanMaster $draf,
     ) {}
 
     /**
@@ -216,17 +235,26 @@ final class ImporWorkbook
         // `--ganti`: SATU baris sumber sama, nama sama, lab sama — diekstrak ulang di tempat.
         $lama = $ganti ? $this->barisEkstrakUlang($organisasi, $meta, $ada) : null;
 
+        // Peta sel: struktur diperiksa sebelum apa pun ditulis (melempar bila berubah).
+        $peta = PetaSel::untuk($meta['kode_profil']);
+        $dasar = $peta !== null ? $this->draf->dasar((int) $organisasi->id, $peta) : null;
+        $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi']) : null;
+        $statusPeta = $peta !== null ? 'tervalidasi' : 'belum_terpetakan';
+        $meta['catatan'] = trim($meta['catatan'].($peta !== null
+            ? ' Peta sel '.$peta->kodeProfil.': struktur tervalidasi'.($hasilPeta['varian'] !== null ? ' (varian '.$hasilPeta['varian'].')' : '').'.'
+            : ' Peta sel: belum terpetakan — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.'));
+
         if ($kering) {
             $aktif = $lama === null
                 ? WorkbookMaster::query()->where('organization_id', $organisasi->id)->where('kunci_jenis', $meta['kunci_jenis'])->where('aktif', true)->first()
                 : null;
 
-            return $this->ringkasan('kering', $meta['nama'], $meta['sumber'], $meta['sha256'], $meta['kode_profil'], $meta['keluarga'], $lembar, null, $lama !== null ? 1 : 0, kunci: (string) ($lama->kunci_jenis ?? $meta['kunci_jenis']), menggantikan: $aktif?->id);
+            return $this->ringkasan('kering', $meta['nama'], $meta['sumber'], $meta['sha256'], $meta['kode_profil'], $meta['keluarga'], $lembar, null, $lama !== null ? 1 : 0, kunci: (string) ($lama->kunci_jenis ?? $meta['kunci_jenis']), menggantikan: $aktif?->id, petaSel: $statusPeta);
         }
 
         if ($lama !== null) {
-            // Jejak sebelum → sesudah: baris lama tercatat `dihapus` di audit
-            // (Diaudit), baris baru menyebut id & sha256 yang digantikannya.
+            // Jejak sebelum → sesudah: baris lama tercatat `diubah` (jadi
+            // riwayat, Diaudit), baris baru menyebut id & sha256 yang digantikannya.
             $meta['catatan'] = trim($meta['catatan'].' Menggantikan impor '.$meta['sumber'].' lama #'.$lama->id.' (sha256 '.$lama->sha256.') lewat --ganti (format kanonik '.KanonikWorkbook::FORMAT.').');
         }
 
@@ -256,9 +284,10 @@ final class ImporWorkbook
         }
 
         $menggantikan = null;
+        $acuan = null;
 
         try {
-            $workbook = DB::transaction(function () use ($organisasi, $userId, $meta, $lembar, $jalurDisk, $lama, &$menggantikan): WorkbookMaster {
+            $workbook = DB::transaction(function () use ($organisasi, $userId, $meta, $lembar, $jalurDisk, $lama, &$menggantikan, $peta, $dasar, $hasilPeta, &$acuan): WorkbookMaster {
                 $impor = null;
                 $penunjuk = [];
 
@@ -272,10 +301,13 @@ final class ImporWorkbook
                         'diarsipkan_pada' => $lama->diarsipkan_pada,
                     ];
                     $penunjuk = WorkbookMaster::query()->where('digantikan_oleh_id', $lama->id)->pluck('id')->all();
-                    // Lembar dulu (tidak bergantung pada PRAGMA foreign_keys
-                    // SQLite), lalu induknya lewat model supaya Diaudit mencatat.
-                    WorkbookMasterLembar::query()->where('workbook_master_id', $lama->id)->delete();
-                    $lama->delete();
+                    // TIDAK dihapus (ADR-49-07): baris lama + lembarnya jadi
+                    // riwayat pengganti. Dilepas dulu dari unik aktif-per-jenis
+                    // dan unik sha hidup supaya pengganti bisa ditulis; lewat
+                    // model supaya Diaudit mencatat `diubah` (sebelum → sesudah).
+                    $lama->aktif = null;
+                    $lama->sha256_hidup = null;
+                    $lama->save();
                 } else {
                     $impor = $this->jenis->untukImpor((int) $organisasi->id, (string) $meta['kunci_jenis'], (string) $meta['sumber']);
                     $jenis = ['kunci_jenis' => $meta['kunci_jenis'], 'aktif' => $impor['aktif'], 'versi' => $impor['versi']];
@@ -303,6 +335,12 @@ final class ImporWorkbook
                     $r->save();
                 }
 
+                if ($lama !== null) {
+                    $lama->digantikan_oleh_id = $workbook->id;
+                    $lama->catatan = trim((string) $lama->catatan.' Diekstrak ulang lewat --ganti → #'.$workbook->id.' (format kanonik '.KanonikWorkbook::FORMAT.'); baris ini riwayat, tidak dihapus.');
+                    $lama->save();
+                }
+
                 if ($impor !== null && $impor['lama'] !== null) {
                     $this->jenis->catatPengganti($impor['lama'], $workbook, $impor['aktif']);
                     $menggantikan = $impor['aktif'] ? $impor['lama']->id : null;
@@ -328,6 +366,14 @@ final class ImporWorkbook
                     ]);
                 }
 
+                // Hanya master AKTIF jenisnya yang mengendalikan data acuan;
+                // riwayat (mis. csv di bawah xlsm aktif) tidak membuat draf.
+                if ($peta !== null) {
+                    $acuan = $workbook->fresh()?->aktif === true
+                        ? $this->draf->buat($workbook, $peta, $hasilPeta, $dasar, $userId)
+                        : ['status' => 'bukan_master_aktif'];
+                }
+
                 return $workbook;
             });
         } catch (Throwable $e) {
@@ -348,7 +394,7 @@ final class ImporWorkbook
             $this->sumberHitung->simpan($meta['sha256'], $model);
         }
 
-        return $this->ringkasan($lama !== null ? 'diganti' : 'baru', $workbook->nama, $meta['sumber'], $meta['sha256'], $meta['kode_profil'], $meta['keluarga'], $lembar, $workbook->fresh() ?? $workbook, $lama !== null ? 1 : 0, kunci: (string) $workbook->kunci_jenis, menggantikan: $menggantikan);
+        return $this->ringkasan($lama !== null ? 'diganti' : 'baru', $workbook->nama, $meta['sumber'], $meta['sha256'], $meta['kode_profil'], $meta['keluarga'], $lembar, $workbook->fresh() ?? $workbook, $lama !== null ? 1 : 0, kunci: (string) $workbook->kunci_jenis, menggantikan: $menggantikan, petaSel: $statusPeta, acuan: $acuan);
     }
 
     /**
@@ -368,6 +414,7 @@ final class ImporWorkbook
             ->where('organization_id', $organisasi->id)
             ->where('sumber', $meta['sumber'])
             ->where('nama', $meta['nama'])
+            ->whereNotNull('sha256_hidup')
             ->orderByRaw('case when diarsipkan_pada is null then 0 else 1 end')
             ->orderByRaw('case when aktif = 1 then 0 else 1 end')
             ->orderByDesc('id')
@@ -485,9 +532,12 @@ final class ImporWorkbook
 
     private function cariAda(Organization $organisasi, string $sha): ?WorkbookMaster
     {
+        // Riwayat hasil `--ganti` (sha256_hidup NULL) bukan "isi yang sudah ada":
+        // penggantinya yang ber-sha sama yang dijawab.
         return WorkbookMaster::query()
             ->where('organization_id', $organisasi->id)
             ->where('sha256', $sha)
+            ->whereNotNull('sha256_hidup')
             ->first();
     }
 
@@ -495,7 +545,10 @@ final class ImporWorkbook
      * @param  list<array<string, mixed>>  $lembar
      * @return array<string, mixed>
      */
-    private function ringkasan(string $status, string $nama, string $sumber, string $sha, ?string $kode, ?string $keluarga, array $lembar, ?WorkbookMaster $workbook, int $diganti = 0, string $kunci = '', ?int $menggantikan = null): array
+    /**
+     * @param  array<string, mixed>|null  $acuan
+     */
+    private function ringkasan(string $status, string $nama, string $sumber, string $sha, ?string $kode, ?string $keluarga, array $lembar, ?WorkbookMaster $workbook, int $diganti = 0, string $kunci = '', ?int $menggantikan = null, ?string $petaSel = null, ?array $acuan = null): array
     {
         if ($lembar === [] && $workbook !== null) {
             $agregat = $workbook->lembar()
@@ -533,6 +586,10 @@ final class ImporWorkbook
             'status_jenis' => $workbook !== null ? JenisWorkbook::status($workbook) : null,
             // Master aktif yang jadi riwayat karena impor ini (kering: yang AKAN).
             'menggantikan' => $menggantikan,
+            // tervalidasi | belum_terpetakan (null: `sudah_ada`, tidak diperiksa ulang).
+            'peta_sel' => $petaSel,
+            // Draf data acuan dari master ini (DrafAcuanMaster::buat), null bila tidak berpeta.
+            'acuan' => $acuan,
         ] + $jumlah;
     }
 }

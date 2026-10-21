@@ -152,7 +152,8 @@ class StudioImporWorkbookCsvTest extends TestCase
 
     /**
      * `--ganti` (sesudah FORMAT kanonik naik): hanya baris csv lama di lab yang
-     * sama dengan nama sama yang dihapus & diganti; xlsm bernama sama dan lab
+     * sama dengan nama sama yang digantikan — TIDAK dihapus, jadi riwayat
+     * penggantinya (ADR-49-07, 22 Okt 2026); xlsm bernama sama dan lab
      * lain tidak tersentuh. `--kering --ganti` hanya melaporkan.
      */
     public function test_ganti_hanya_mengganti_csv_lama_bernama_sama_di_lab_sendiri(): void
@@ -183,10 +184,10 @@ class StudioImporWorkbookCsvTest extends TestCase
             ->expectsOutputToContain('(diganti 1, sudah_ada 1)')
             ->assertSuccessful();
 
-        $this->assertFalse(WorkbookMaster::query()->whereKey($lama->id)->exists());
-        $this->assertSame(0, WorkbookMasterLembar::query()->whereIn('id', $lembarLama)->count());
-
-        $pengganti = WorkbookMaster::query()->where('organization_id', $this->lab->id)->where('nama', $nama)->where('sumber', 'csv')->sole();
+        $pengganti = WorkbookMaster::query()->where('organization_id', $this->lab->id)->where('nama', $nama)->where('sumber', 'csv')->whereNotNull('sha256_hidup')->sole();
+        $riwayat = WorkbookMaster::query()->findOrFail($lama->id);
+        $this->assertSame([null, $pengganti->id, null], [$riwayat->sha256_hidup, $riwayat->digantikan_oleh_id, $riwayat->getRawOriginal('aktif')]);
+        $this->assertSame(count($lembarLama), WorkbookMasterLembar::query()->whereIn('id', $lembarLama)->count(), 'lembar riwayat tidak dihapus');
         $this->assertSame($shaBaru, $pengganti->sha256);
         $this->assertSame(5, $pengganti->lembar()->count());
         $this->assertStringContainsString("Menggantikan impor csv lama #{$lama->id}", (string) $pengganti->catatan);
@@ -198,8 +199,9 @@ class StudioImporWorkbookCsvTest extends TestCase
             ->where('organization_id', $this->lab->id)
             ->where('entity_type', 'workbook_master')
             ->where('entity_id', $lama->id)
-            ->where('action', AuditLog::ACTION_DIHAPUS)
+            ->where('action', AuditLog::ACTION_DIUBAH)
             ->exists());
+        $this->assertFalse(AuditLog::query()->where('entity_type', 'workbook_master')->where('action', AuditLog::ACTION_DIHAPUS)->exists(), '--ganti tidak menghapus apa pun');
     }
 
     /** Tinjau S1b #6: `--oleh` (id/email) mengisi `diimpor_oleh` dan pelaku audit; lab lain & pelanggan ditolak. */

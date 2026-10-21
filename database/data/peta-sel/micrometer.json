@@ -1,0 +1,66 @@
+{
+  "format": 1,
+  "kode_profil": "micrometer",
+  "sumber_json": "tabel-standar-micrometer.json",
+  "bukti": [
+    "Alamat ekstrak = alamat yang dibaca docs/skrip/gen-tabel-standar-micrometer.py (generator tabel-standar-micrometer.json, terbukti 8 Okt 2026 setara keempat .xlsm, lihat database/data/manifest-workbook-micrometer.json).",
+    "Alamat & teks jangkar dicek 22 Okt 2026 di ekspor CSV keempat master (Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_Olah_Data_Micrometer_{0-25,25-50,50-75,75-100}mm); ekstraksi peta ini dari keempat CSV itu = tabel-standar-micrometer.json (StudioPetaSelMicrometerTest).",
+    "Varian (pita A-D) dari NAMA workbook, seperti generator memetakan berkas -> varian; isi master tidak membawanya dengan andal (INPUT DATA!F5 master 0-25 berisi 'ISI KAPASITAS')."
+  ],
+  "lembar_wajib": ["DATABASE", "Standar_GB", "PERHITUNGAN"],
+  "jangkar": [
+    {"sel": "DATABASE!S3", "teks": "Jenis/Rentang"},
+    {"sel": "DATABASE!T3", "teks": "CMC (µm)"},
+    {"sel": "DATABASE!S12", "teks": "Standart Meter/Indikator"},
+    {"sel": "DATABASE!T12", "teks": "Merk/Type"},
+    {"sel": "DATABASE!U12", "teks": "S/N"},
+    {"sel": "DATABASE!V12", "teks": "Traceability"},
+    {"sel": "DATABASE!W12", "teks": "Calibration Date"},
+    {"sel": "Standar_GB!Q9", "teks": "Nominal GB (mm)"},
+    {"sel": "Standar_GB!R9", "teks": "Nilai UUT (mm)"},
+    {"sel": "PERHITUNGAN!C22", "teks": "Nominal Balok Ukur (mm)"},
+    {"sel": "PERHITUNGAN!C29", "teks": "Nominal Balok Ukur"},
+    {"sel": "PERHITUNGAN!H29", "teks": "Total Nominal"}
+  ],
+  "varian": {
+    "sumber": "nama",
+    "pola": {
+      "A": "(^| )0 ?25( ?mm)?( |$)",
+      "B": "(^| )25 ?50( ?mm)?( |$)",
+      "C": "(^| )50 ?75( ?mm)?( |$)",
+      "D": "(^| )75 ?100( ?mm)?( |$)"
+    }
+  },
+  "ekstrak": [
+    {"jalur": "standar.nama", "tipe": "teks", "sel": "DATABASE!S13"},
+    {"jalur": "standar.merk_tipe", "tipe": "teks", "sel": "DATABASE!T13"},
+    {"jalur": "standar.seri", "tipe": "teks", "sel": "DATABASE!U13"},
+    {"jalur": "standar.traceability", "tipe": "teks", "sel": "DATABASE!V13"},
+    {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "DATABASE!W13"},
+    {"jalur": "balok_ukur", "tipe": "peta_angka", "kunci": "Standar_GB!Q10:Q132", "nilai": "Standar_GB!R10:R132", "bulat": 10, "min_baris": 1},
+    {"jalur": "cmc[kode=A].label", "tipe": "teks", "sel": "DATABASE!S5"},
+    {"jalur": "cmc[kode=A].u95_um", "tipe": "angka", "sel": "DATABASE!T5", "bulat": 10},
+    {"jalur": "cmc[kode=B].label", "tipe": "teks", "sel": "DATABASE!S6"},
+    {"jalur": "cmc[kode=B].u95_um", "tipe": "angka", "sel": "DATABASE!T6", "bulat": 10},
+    {"jalur": "cmc[kode=C].label", "tipe": "teks", "sel": "DATABASE!S7"},
+    {"jalur": "cmc[kode=C].u95_um", "tipe": "angka", "sel": "DATABASE!T7", "bulat": 10},
+    {"jalur": "cmc[kode=D].label", "tipe": "teks", "sel": "DATABASE!S8"},
+    {"jalur": "cmc[kode=D].u95_um", "tipe": "angka", "sel": "DATABASE!T8", "bulat": 10},
+    {"jalur": "cmc[kode={varian}].balok_pra_evaluasi_mm", "tipe": "daftar_angka", "rentang": "PERHITUNGAN!H22:M22", "bulat": 10},
+    {"jalur": "cmc[kode={varian}].titik[{i}].tumpukan_mm", "tipe": "daftar_angka", "rentang": "PERHITUNGAN!C31:E33", "ulang": 11, "langkah_baris": 3, "buang_nol": true, "bulat": 10}
+  ],
+  "cek": [
+    {"tipe": "selisih_maks", "sel": "PERHITUNGAN!H31", "banding": "cmc[kode={varian}].titik[{i}].nominal_cetak_mm", "toleransi": 0.06, "ulang": 11, "langkah_baris": 3, "boleh_kosong": true}
+  ],
+  "tidak_dipetakan": [
+    "cmc[*].kode_dokumen, judul_rentang, kapasitas_min_mm, kapasitas_maks_mm — teks kertas SIDIK-FM-CAL-0522.{A-D}_Rev.1 & ambang di dalam rumus INPUT DATA!F5, bukan sel",
+    "cmc[*].titik[*].nominal_cetak_mm — dari kertas lembar kerja (dipakai sebagai pembanding cek, tidak diekstrak)",
+    "ketidakpastian_balok_um — tangga di dalam rumus PERHITUNGAN!H23 (fase 5: rumus)",
+    "konstanta — angka telanjang di dalam rumus master (fase 5: rumus)",
+    "cmc[varian lain].titik / balok_pra_evaluasi_mm — satu master hanya membawa titik variannya sendiri"
+  ],
+  "perlu_berkas_asli": [
+    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format; MicrometerProfile menyebut SERTIFIKAT!J29 '0.000' tapi alamat sel hasil per titik belum dicek di .xlsm.",
+    "Konfirmasi bahwa .xlsm asli (bukan cuma CSV ekspornya) menaruh jangkar di alamat yang sama — sha256 keempat berkas ada di manifest-workbook-micrometer.json."
+  ]
+}

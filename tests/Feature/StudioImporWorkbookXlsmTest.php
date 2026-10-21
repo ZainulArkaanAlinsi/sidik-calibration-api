@@ -338,10 +338,12 @@ class StudioImporWorkbookXlsmTest extends TestCase
             ->expectsOutputToContain('(diganti 1)')
             ->assertSuccessful();
 
-        $this->assertFalse(WorkbookMaster::query()->whereKey($lama->id)->exists());
-        $this->assertSame(0, WorkbookMasterLembar::query()->whereIn('id', $lembarLama)->count());
-
-        $baru = WorkbookMaster::query()->where('organization_id', $lab->id)->where('nama', $nama)->where('sumber', 'xlsm')->sole();
+        // ADR-49-07 (22 Okt 2026): baris lama + lembarnya TETAP ada sebagai riwayat.
+        $baru = WorkbookMaster::query()->where('organization_id', $lab->id)->where('nama', $nama)->where('sumber', 'xlsm')->whereNotNull('sha256_hidup')->sole();
+        $riwayat = WorkbookMaster::query()->findOrFail($lama->id);
+        $this->assertSame([null, $baru->id, $lama->sha256], [$riwayat->sha256_hidup, $riwayat->digantikan_oleh_id, $riwayat->sha256]);
+        $this->assertSame(count($lembarLama), WorkbookMasterLembar::query()->whereIn('id', $lembarLama)->count(), 'lembar riwayat tidak dihapus');
+        $this->assertTrue($riwayat->lembar()->where('nama', 'DATABASE')->sole()->dikecualikan, 'isi ekstraksi lama tetap seperti semula');
         $this->assertSame($lama->sha256, $baru->sha256);
         $this->assertSame($lama->berkas_path, $baru->berkas_path);
         $this->assertTrue(Storage::disk('local')->exists($baru->berkas_path), 'berkas asli tidak boleh ikut terhapus');
@@ -358,8 +360,9 @@ class StudioImporWorkbookXlsmTest extends TestCase
             ->where('organization_id', $lab->id)
             ->where('entity_type', 'workbook_master')
             ->where('entity_id', $lama->id)
-            ->where('action', AuditLog::ACTION_DIHAPUS)
+            ->where('action', AuditLog::ACTION_DIUBAH)
             ->exists());
+        $this->assertFalse(AuditLog::query()->where('entity_type', 'workbook_master')->where('action', AuditLog::ACTION_DIHAPUS)->exists(), '--ganti tidak menghapus apa pun');
         $this->assertSame([], $this->isiTemp());
     }
 

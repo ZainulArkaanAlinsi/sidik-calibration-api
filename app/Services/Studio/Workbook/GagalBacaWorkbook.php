@@ -21,6 +21,9 @@ final class GagalBacaWorkbook extends RuntimeException
 
     public const GAGAL_MUAT = 'gagal_muat';
 
+    /** Master yang punya peta sel tapi lembar/jangkar/tipe selnya tidak cocok (fase 2, 22 Okt 2026). */
+    public const STRUKTUR_BERUBAH = 'struktur_master_berubah';
+
     public function __construct(public readonly string $kode, string $pesan, ?Throwable $sebab = null)
     {
         parent::__construct($pesan, 0, $sebab);

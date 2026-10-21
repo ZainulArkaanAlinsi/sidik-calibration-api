@@ -42,6 +42,17 @@ return [
     'disk_berkas' => (string) env('STUDIO_DISK_BERKAS', 'arsip'),
 
     /*
+     * Peta sel per profil (rencana studio-kendali-olah-data, 22 Okt 2026):
+     * `<direktori>/<kode_profil>.json`. Master yang profilnya punya peta
+     * divalidasi strukturnya saat impor (ditolak bila berubah) dan
+     * diekstrak jadi draf `paket_acuan_versi`. SENGAJA tanpa env(): sumber
+     * kebenarannya berkas di repo, bukan setelan dashboard.
+     */
+    'peta_sel' => [
+        'direktori' => database_path('data/peta-sel'),
+    ],
+
+    /*
      * `POST /api/studio/workbook/impor` (unggah master lewat API; Render tanpa
      * shell). Pagar: ukuran berkas, memori & waktu request web (impor .xlsm
      * nyata ±0,3-1 GB RAM di CLI — di web dipatok supaya ledakan jadi PHP

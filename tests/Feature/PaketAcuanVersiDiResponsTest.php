@@ -114,8 +114,13 @@ class PaketAcuanVersiDiResponsTest extends TestCase
             ->doesntExpectOutputToContain('paket_acuan_versi')
             ->assertSuccessful();
 
-        // Tanpa --dry-run pun tidak ada yang ditulis.
-        $this->artisan('sertifikat:bangun-ulang', ['sesi' => [$tanpaStempel->nomor_sesi]])
+        // Dengan izin tulis (--termasuk-terbit, 22 Okt 2026) pun tidak ada yang ditulis.
+        $this->artisan('sertifikat:bangun-ulang', [
+            'sesi' => [$tanpaStempel->nomor_sesi],
+            '--termasuk-terbit' => true,
+            '--oleh' => User::where('organization_id', $tanpaStempel->organization_id)->where('role', User::ROLE_ADMIN)->valueOrFail('email'),
+            '--alasan' => 'uji kunci paket_acuan_versi',
+        ])
             ->expectsOutputToContain('0 sertifikat dibangun ulang, 0 dilewati, 0 gagal.')
             ->assertSuccessful();
         $this->assertEquals($lamaTanpa->snapshot, $lamaTanpa->fresh()->snapshot);

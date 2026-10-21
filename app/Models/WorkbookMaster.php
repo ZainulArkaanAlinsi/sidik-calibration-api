@@ -38,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'organization_id', 'kode_profil', 'keluarga', 'kunci_jenis', 'aktif', 'versi', 'digantikan_oleh_id',
-    'diarsipkan_pada', 'nama', 'sumber', 'sha256', 'ukuran',
+    'diarsipkan_pada', 'nama', 'sumber', 'sha256', 'sha256_hidup', 'ukuran',
     'jumlah_lembar', 'berkas_disk', 'berkas_path', 'berkas_terenkripsi', 'catatan', 'diimpor_oleh',
 ])]
 class WorkbookMaster extends Model
@@ -53,6 +53,21 @@ class WorkbookMaster extends Model
 
     protected static function booted(): void
     {
+        // `sha256_hidup` (22 Okt 2026): = sha256 selama baris hidup; NULL
+        // hanya untuk riwayat hasil `--ganti` (diisi ImporWorkbook). Unik
+        // `(organization_id, sha256_hidup)` menggantikan unik sha256 lama.
+        static::creating(static function (WorkbookMaster $w): void {
+            if (! array_key_exists('sha256_hidup', $w->getAttributes())) {
+                $w->sha256_hidup = $w->sha256;
+            }
+        });
+
+        static::updating(static function (WorkbookMaster $w): void {
+            if ($w->isDirty('sha256') && ! $w->isDirty('sha256_hidup') && $w->getOriginal('sha256_hidup') !== null) {
+                $w->sha256_hidup = $w->sha256;
+            }
+        });
+
         static::creating(static function (WorkbookMaster $w): void {
             $w->kunci_jenis ??= KunciJenisWorkbook::dari($w->kode_profil, $w->keluarga, (string) $w->nama);
 

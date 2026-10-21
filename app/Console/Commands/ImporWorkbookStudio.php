@@ -40,8 +40,10 @@ use Throwable;
  * jejak audit tanpa pelaku tidak diterima. Tidak pernah ditebak.
  *
  * `--ganti`: baris lama dengan SUMBER yang sama (csv↔csv, xlsm↔xlsm), nama
- * sama, dan lab yang sama dihapus dan diganti hasil impor baru, satu transaksi
- * per workbook — dipakai sesudah `KanonikWorkbook::FORMAT` naik. Untuk xlsm,
+ * sama, dan lab yang sama DIGANTIKAN hasil impor baru, satu transaksi per
+ * workbook — dipakai sesudah `KanonikWorkbook::FORMAT` naik. Baris lama dan
+ * lembarnya TIDAK dihapus (ADR-49-07): jadi riwayat penggantinya
+ * (`digantikan_oleh_id`), tercatat `diubah` di audit. Untuk xlsm,
  * berkas yang byte-nya sudah pernah diimpor ikut diekstrak ulang (sha xlsm =
  * byte berkas, tidak ikut format). Tidak pernah menyeberang sumber.
  *
@@ -217,6 +219,11 @@ class ImporWorkbookStudio extends Command
 
             try {
                 $baris[] = $impor->imporCsv($jalur, basename($jalur), $relatif, $organisasi, $userId, $kering, $ganti, $kunci);
+            } catch (GagalBacaWorkbook $e) {
+                // Utuh, tidak dipotong: pesan struktur_master_berubah menyebut
+                // satu per satu apa yang hilang/bergeser.
+                $gagal++;
+                $this->error("[{$relatif}] {$e->kode}: ".$e->getMessage());
             } catch (Throwable $e) {
                 $gagal++;
                 $this->error("[{$relatif}] gagal: ".mb_substr($e->getMessage(), 0, 200));
@@ -314,6 +321,22 @@ class ImporWorkbookStudio extends Command
                 $b['lembar'], $b['sel'], $b['rumus'], $b['dikecualikan'], $b['diganti'],
             ], $baris),
         );
+
+        foreach ($baris as $b) {
+            if (($b['peta_sel'] ?? null) === null) {
+                continue;
+            }
+
+            $acuan = $b['acuan'] ?? null;
+            $this->line(sprintf(
+                '  %s — peta sel: %s%s',
+                $b['nama'],
+                $b['peta_sel'],
+                $acuan === null ? '' : '; acuan: '.$acuan['status']
+                    .(isset($acuan['versi_id']) ? ' #'.$acuan['versi_id'] : '')
+                    .(isset($acuan['isi_sha256']) ? ' (isi sha256 '.$acuan['isi_sha256'].', dasar: '.$acuan['dasar'].')' : ''),
+            ));
+        }
 
         $jumlah = static fn (string $k): int => (int) array_sum(array_column($baris, $k));
         $perStatus = array_count_values(array_column($baris, 'status'));

@@ -42,6 +42,13 @@ trait WorkbookUji
         // bisa menghitung isinya persis dan tidak menyentuh storage kerja.
         config(['studio.temp_workbook' => $this->folderUji.DIRECTORY_SEPARATOR.'tmp-workbook']);
 
+        // Workbook di sini SINTETIS (nama "Micrometer" tanpa struktur master
+        // Micrometer), jadi peta sel repo diganti folder kosong: test ini
+        // menguji mekanik impor, bukan struktur master. Validasi struktur &
+        // ekstraksi dengan peta sungguhan dikunci StudioPetaSel*Test, yang
+        // TIDAK memakai siapkanFolderUji untuk petanya.
+        config(['studio.peta_sel.direktori' => $this->folderUji.DIRECTORY_SEPARATOR.'peta-sel-kosong']);
+
         return $this->folderUji;
     }
 
