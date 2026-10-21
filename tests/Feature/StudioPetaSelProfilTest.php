@@ -1,0 +1,121 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Services\Acuan\SumberAcuan;
+use App\Services\Studio\PetaSel\DataBersamaVarian;
+use App\Services\Studio\PetaSel\JalurIsi;
+use App\Services\Studio\PetaSel\PemeriksaMaster;
+use App\Services\Studio\PetaSel\PetaSel;
+use App\Services\Studio\Workbook\GagalBacaWorkbook;
+use App\Services\Studio\Workbook\PembacaCsvWorkbook;
+use App\Support\JsonKanonik;
+use Illuminate\Filesystem\Filesystem;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\TestCase;
+
+/**
+ * Paritas peta sel profil SESUDAH Micrometer (rencana studio-kendali-olah-data
+ * fase 4, 22 Okt 2026): ekstraksi peta dari ekspor CSV ASLI master di repo,
+ * di atas dasar JSON repo, = berkas JSON yang dulu dibangkitkan generator dari
+ * master yang sama (sha256 kanonik). Pola `StudioPetaSelMicrometerTest`.
+ */
+class StudioPetaSelProfilTest extends TestCase
+{
+    private const AKAR = 'Project-PT-Sidik/alat-alat-Pt-Sidik/';
+
+    private string $temp = '';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        SumberAcuan::lupakanCache();
+        config(['studio.peta_sel.direktori' => database_path('data/peta-sel')]);
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->temp !== '' && is_dir($this->temp)) {
+            (new Filesystem)->deleteDirectory($this->temp);
+        }
+
+        parent::tearDown();
+    }
+
+    /**
+     * kode profil => [list [folder master, varian harapan], jumlah jalur ditulis per master].
+     *
+     * @return array<string, array{string, list<array{string, ?string}>, int}>
+     */
+    public static function master(): array
+    {
+        return [
+            // 6 standar + 4 × (label, u95_mm).
+            'dial_indicator' => ['dial_indicator', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator', null]], 14],
+        ];
+    }
+
+    #[DataProvider('master')]
+    public function test_ekstraksi_master_asli_identik_dengan_json(string $kode, array $daftar, int $jumlahJalur): void
+    {
+        $peta = PetaSel::untuk($kode) ?? $this->fail("peta {$kode} tidak ada");
+        $this->assertSame([], PetaSel::validasi($kode, $peta->isi));
+        $json = json_decode((string) file_get_contents(database_path('data/'.$peta->isi['sumber_json'])), true);
+        $shaJson = JsonKanonik::sha256(JsonKanonik::serialisasi($json));
+
+        foreach ($daftar as [$folder, $varian]) {
+            $lembar = app(PembacaCsvWorkbook::class)->baca(base_path(self::AKAR.$folder))['lembar'];
+            $hasil = app(PemeriksaMaster::class)->periksa($peta, basename($folder), $lembar, $json);
+
+            $this->assertSame($varian, $hasil['varian'], $folder);
+            $this->assertSame($shaJson, JsonKanonik::sha256(JsonKanonik::serialisasi($hasil['isi'])), "{$folder}: isi ekstraksi beda dari JSON");
+            $this->assertCount($jumlahJalur, $hasil['jalur'], $folder);
+
+            // Ekstraksi memang MENULIS: tiap daun yang dipetakan dirusak di
+            // dasar, master memulihkannya.
+            $rusak = $json;
+
+            foreach ($hasil['jalur'] as $jalur) {
+                JalurIsi::tulis($rusak, $jalur, '__rusak__');
+            }
+
+            $pulih = app(PemeriksaMaster::class)->periksa($peta, basename($folder), $lembar, $rusak);
+            $this->assertSame($shaJson, JsonKanonik::sha256(JsonKanonik::serialisasi($pulih['isi'])), "{$folder}: dasar rusak tidak dipulihkan");
+        }
+
+        // (e) Data bersama antar varian diturunkan otomatis dari jalur tanpa {varian}.
+        $bersama = DataBersamaVarian::jalurBersama($peta);
+        $this->assertSame(isset($peta->isi['varian']) ? $bersama : [], $bersama);
+    }
+
+    public function test_bilangan_bulat_menolak_pecahan_dan_bagi_hanya_untuk_angka(): void
+    {
+        $peta = PetaSel::untuk('dial_indicator') ?? $this->fail('peta dial_indicator tidak ada');
+
+        $salah = $peta->isi;
+        $salah['ekstrak'][0]['bagi'] = 1000; // teks
+        $salah['ekstrak'][7]['bagi'] = 0;
+        $masalah = implode(' | ', PetaSel::validasi('dial_indicator', $salah));
+        $this->assertStringContainsString('ekstrak[0]: bagi hanya untuk tipe angka/daftar_angka', $masalah);
+        $this->assertStringContainsString('ekstrak[7]: bagi harus angka > 0', $masalah);
+
+        $this->temp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sidik-petasel-'.bin2hex(random_bytes(5));
+        (new Filesystem)->copyDirectory(base_path(self::AKAR.'Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator'), $this->temp);
+        $berkas = $this->temp.'/DATABASE.csv';
+        $isi = (string) file_get_contents($berkas);
+        $baru = str_replace('2024-01-24T00:00:00,3,', '2024-01-24T00:00:00,2.5,', $isi);
+        $this->assertNotSame($isi, $baru, 'prasyarat: X13 ditemukan');
+        file_put_contents($berkas, $baru);
+
+        $json = json_decode((string) file_get_contents(database_path('data/tabel-standar-dial-indicator.json')), true);
+        $lembar = app(PembacaCsvWorkbook::class)->baca($this->temp)['lembar'];
+
+        try {
+            app(PemeriksaMaster::class)->periksa($peta, 'Master_Olah_Data_Dial_Indicator', $lembar, $json);
+            $this->fail('X13 pecahan seharusnya ditolak');
+        } catch (GagalBacaWorkbook $e) {
+            $this->assertSame(GagalBacaWorkbook::STRUKTUR_BERUBAH, $e->kode);
+            $this->assertStringContainsString('DATABASE!X13 = 2.5, bukan bilangan bulat', $e->getMessage());
+        }
+    }
+}

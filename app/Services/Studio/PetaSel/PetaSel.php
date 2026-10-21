@@ -29,6 +29,8 @@ use JsonException;
  *       "ekstrak": [
  *         {"jalur": "standar.nama", "tipe": "teks", "sel": "DATABASE!S13"},
  *         {"jalur": "cmc[kode=A].u95_um", "tipe": "angka", "sel": "DATABASE!T5", "bulat": 10},
+ *         {"jalur": "cmc[kode=A].u95_mm", "tipe": "angka", "sel": "DATABASE!T5", "bagi": 1000},
+ *         {"jalur": "standar.interval_tahun", "tipe": "bilangan_bulat", "sel": "DATABASE!X13"},
  *         {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "DATABASE!W13"},
  *         {"jalur": "balok_ukur", "tipe": "peta_angka", "kunci": "S!Q10:Q132", "nilai": "S!R10:R132", "bulat": 10, "min_baris": 1},
  *         {"jalur": "cmc[kode={varian}].titik[{i}].tumpukan_mm", "tipe": "daftar_angka",
@@ -39,6 +41,10 @@ use JsonException;
  *       "perlu_berkas_asli": ["..."], "bukti": ["..."]                   // dokumentasi
  *     }
  *
+ * `bagi` (angka > 0, hanya `angka`/`daftar_angka`) membagi nilai sel SEBELUM
+ * `bulat` — meniru generator yang menyimpan `float(sel) / 1000` (µm → mm).
+ * `bilangan_bulat` memulangkan int (JSON `3`, bukan `3.0`); sel pecahan ditolak.
+ *
  * Jalur: segmen dipisah titik; segmen boleh `nama[kode=X]` (elemen list yang
  * `kode`-nya X) atau `nama[N]` (indeks list). `{varian}` dan `{i}` (0-basis,
  * hanya bersama `ulang`) diganti sebelum dipakai. Jalur yang TIDAK disebut
@@ -48,7 +54,7 @@ final class PetaSel
 {
     public const FORMAT = 1;
 
-    public const TIPE_EKSTRAK = ['teks', 'angka', 'tanggal', 'peta_angka', 'daftar_angka'];
+    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka'];
 
     /** @param  array<string, mixed>  $isi */
     private function __construct(
@@ -215,9 +221,18 @@ final class PetaSel
                 $m[] = "{$label}: bulat harus bilangan bulat 0..15";
             }
 
+            if (isset($e['bagi'])) {
+                if (! in_array($e['tipe'], ['angka', 'daftar_angka'], true)) {
+                    $m[] = "{$label}: bagi hanya untuk tipe angka/daftar_angka";
+                } elseif ((! is_int($e['bagi']) && ! is_float($e['bagi'])) || $e['bagi'] <= 0) {
+                    $m[] = "{$label}: bagi harus angka > 0";
+                }
+            }
+
             switch ($e['tipe']) {
                 case 'teks':
                 case 'angka':
+                case 'bilangan_bulat':
                 case 'tanggal':
                     if (($x = $selSah($e['sel'] ?? null)) !== null) {
                         $m[] = "{$label}: {$x}";

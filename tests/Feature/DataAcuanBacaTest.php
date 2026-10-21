@@ -12,6 +12,7 @@ use App\Support\JsonKanonik;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PaketAcuanBaca;
 use Tests\TestCase;
+use Tests\Unit\SkemaAcuanProfilTest;
 
 /**
  * Bentuk respons API baca Studio Data Acuan (CR-48 P1 B4) — FR-01, FR-03,
@@ -56,9 +57,10 @@ class DataAcuanBacaTest extends TestCase
             ->assertOk()
             ->json('data');
 
-        // Satu-satunya profil ber-skema hari ini; sudah diimpor → tidak ada
-        // baris "belum diimpor" tambahan.
-        $this->assertCount(1, $data);
+        // Satu baris per profil ber-skema; micrometer sudah diimpor, sisanya
+        // muncul sebagai baris "belum diimpor".
+        $this->assertEqualsCanonicalizing(SkemaAcuanProfilTest::BERSKEMA, array_column($data, 'kode'));
+        $data = array_values(array_filter($data, static fn (array $p): bool => $p['kode'] === 'micrometer'));
         $this->assertSame('micrometer', $data[0]['kode']);
         $this->assertSame('Micrometer', $data[0]['nama']);
         $this->assertTrue($data[0]['diimpor']);
@@ -84,7 +86,8 @@ class DataAcuanBacaTest extends TestCase
             ->assertOk()
             ->json('data');
 
-        $this->assertCount(1, $data);
+        $this->assertEqualsCanonicalizing(SkemaAcuanProfilTest::BERSKEMA, array_column($data, 'kode'));
+        $data = array_values(array_filter($data, static fn (array $p): bool => $p['kode'] === 'micrometer'));
         $this->assertSame('micrometer', $data[0]['kode']);
         $this->assertFalse($data[0]['diimpor']);
         $this->assertNull($data[0]['versi_aktif']);

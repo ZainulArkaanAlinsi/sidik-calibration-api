@@ -149,7 +149,7 @@ class StudioPetaSelMicrometerTest extends TestCase
 
     public function test_profil_tanpa_peta_belum_terpetakan(): void
     {
-        $this->assertNull(PetaSel::untuk('dial_indicator'));
+        $this->assertNull(PetaSel::untuk('ph_meter'));
         $this->assertNull(PetaSel::untuk(null));
         $this->assertNull(PetaSel::untuk('../micrometer'));
     }

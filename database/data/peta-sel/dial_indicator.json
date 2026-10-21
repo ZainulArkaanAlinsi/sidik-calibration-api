@@ -1,0 +1,48 @@
+{
+  "format": 1,
+  "kode_profil": "dial_indicator",
+  "sumber_json": "tabel-standar-dial-indicator.json",
+  "bukti": [
+    "Alamat ekstrak = alamat yang dibaca docs/skrip/gen-tabel-standar-dial-indicator.py (generator tabel-standar-dial-indicator.json): DATABASE!S13:X13 identitas standar, DATABASE!S5:T8 pita CMC (u95_mm = T/1000, tanpa pembulatan).",
+    "Alamat & teks jangkar dicek 22 Okt 2026 di ekspor CSV master (Project-PT-Sidik/alat-alat-Pt-Sidik/Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator); ekstraksi peta ini dari CSV itu = tabel-standar-dial-indicator.json (StudioPetaSelProfilTest).",
+    "Satu master, tanpa varian: keempat pita A-D dibaca dari master yang sama, jadi tidak ada data bersama antar varian (DataBersamaVarian::jalurBersama = [])."
+  ],
+  "lembar_wajib": ["DATABASE", "Standar_GB"],
+  "jangkar": [
+    {"sel": "DATABASE!S3", "teks": "Jenis"},
+    {"sel": "DATABASE!T3", "teks": "CMC (µm)"},
+    {"sel": "DATABASE!S12", "teks": "Standart Meter/Indikator"},
+    {"sel": "DATABASE!T12", "teks": "Merk/Type"},
+    {"sel": "DATABASE!U12", "teks": "S/N"},
+    {"sel": "DATABASE!V12", "teks": "Traceability"},
+    {"sel": "DATABASE!W12", "teks": "Calibration Date"},
+    {"sel": "DATABASE!X12", "teks": "Interval (tahun)"},
+    {"sel": "Standar_GB!Q9", "teks": "Nominal GB (mm)"},
+    {"sel": "Standar_GB!R9", "teks": "Nilai UUT (mm)"}
+  ],
+  "ekstrak": [
+    {"jalur": "standar.nama", "tipe": "teks", "sel": "DATABASE!S13"},
+    {"jalur": "standar.merk_tipe", "tipe": "teks", "sel": "DATABASE!T13"},
+    {"jalur": "standar.seri", "tipe": "teks", "sel": "DATABASE!U13"},
+    {"jalur": "standar.traceability", "tipe": "teks", "sel": "DATABASE!V13"},
+    {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "DATABASE!W13"},
+    {"jalur": "standar.interval_tahun", "tipe": "bilangan_bulat", "sel": "DATABASE!X13"},
+    {"jalur": "cmc[kode=A].label", "tipe": "teks", "sel": "DATABASE!S5"},
+    {"jalur": "cmc[kode=A].u95_mm", "tipe": "angka", "sel": "DATABASE!T5", "bagi": 1000},
+    {"jalur": "cmc[kode=B].label", "tipe": "teks", "sel": "DATABASE!S6"},
+    {"jalur": "cmc[kode=B].u95_mm", "tipe": "angka", "sel": "DATABASE!T6", "bagi": 1000},
+    {"jalur": "cmc[kode=C].label", "tipe": "teks", "sel": "DATABASE!S7"},
+    {"jalur": "cmc[kode=C].u95_mm", "tipe": "angka", "sel": "DATABASE!T7", "bagi": 1000},
+    {"jalur": "cmc[kode=D].label", "tipe": "teks", "sel": "DATABASE!S8"},
+    {"jalur": "cmc[kode=D].u95_mm", "tipe": "angka", "sel": "DATABASE!T8", "bagi": 1000}
+  ],
+  "tidak_dipetakan": [
+    "cmc[*].kapasitas_maks_mm — ambang 25/50/100/300 ditulis literal di generator (cabang rumus PERHITUNGAN U95%!AA20), bukan sel",
+    "konstanta.* (13 daun) — angka telanjang di dalam rumus master; sel rumus asalnya disebut di komentar generator (PERHITUNGAN!Q31/V22/W22/S31, PERHITUNGAN U95%!N5/N9/K10/K11/K12/K13/Q6:Q14) — tetap kode/JSON sampai fase 5 (rumus)",
+    "balok ukur Standar_GB!Q10:R132 — bukan isi tabel Dial Indicator: kalkulator membaca balok ukur paket micrometer (set fisik GB-9122-0 yang sama). Generator mengadu keduanya; peta ini TIDAK mengadunya, jadi master Dial dengan balok ukur berbeda tidak terdeteksi di sini"
+  ],
+  "perlu_berkas_asli": [
+    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format (pertanyaan lab Dial §13: '0.00').",
+    "Konfirmasi bahwa .xlsm asli (bukan cuma CSV ekspornya) menaruh jangkar di alamat yang sama — belum ada manifest sha256 workbook Dial Indicator."
+  ]
+}

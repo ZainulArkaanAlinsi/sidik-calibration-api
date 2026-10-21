@@ -200,10 +200,12 @@ final class PemeriksaMaster
     private function nilai(array $indeks, array $e, int $geser, array &$masalah): mixed
     {
         $bulat = isset($e['bulat']) ? (int) $e['bulat'] : null;
+        $bagi = isset($e['bagi']) ? (float) $e['bagi'] : null;
 
         switch ($e['tipe']) {
             case 'teks':
             case 'angka':
+            case 'bilangan_bulat':
             case 'tanggal':
                 $a = Alamat::urai((string) $e['sel']);
                 $alamat = Alamat::sel($a['lembar'], $a['k1'], $a['b1'] + $geser);
@@ -211,7 +213,8 @@ final class PemeriksaMaster
 
                 return match ($e['tipe']) {
                     'teks' => $this->teks($sel, $alamat, $masalah),
-                    'angka' => $this->angkaWajib($sel, $alamat, $bulat, $masalah),
+                    'angka' => $this->angkaWajib($sel, $alamat, $bulat, $masalah, $bagi),
+                    'bilangan_bulat' => $this->bilanganBulat($sel, $alamat, $masalah),
                     'tanggal' => $this->tanggal($sel, $alamat, $masalah),
                 };
 
@@ -221,7 +224,7 @@ final class PemeriksaMaster
 
                 for ($b = $r['b1'] + $geser; $b <= $r['b2'] + $geser; $b++) {
                     for ($k = $r['k1']; $k <= $r['k2']; $k++) {
-                        $x = $this->angkaBoleh($this->sel($indeks, $r['lembar'], $k, $b), Alamat::sel($r['lembar'], $k, $b), $bulat, $masalah);
+                        $x = $this->angkaBoleh($this->sel($indeks, $r['lembar'], $k, $b), Alamat::sel($r['lembar'], $k, $b), $bulat, $masalah, $bagi);
 
                         if ($x !== null && ! (($e['buang_nol'] ?? false) && $x == 0.0)) {
                             $daftar[] = $x;
@@ -364,9 +367,9 @@ final class PemeriksaMaster
      * @param  array<string, mixed>|null  $sel
      * @param  list<string>  $masalah
      */
-    private function angkaWajib(?array $sel, string $alamat, ?int $bulat, array &$masalah): ?float
+    private function angkaWajib(?array $sel, string $alamat, ?int $bulat, array &$masalah, ?float $bagi = null): ?float
     {
-        $x = $this->angkaBoleh($sel, $alamat, $bulat, $masalah);
+        $x = $this->angkaBoleh($sel, $alamat, $bulat, $masalah, $bagi);
 
         if ($x === null) {
             $masalah[] = "{$alamat} kosong, padahal wajib angka";
@@ -382,7 +385,7 @@ final class PemeriksaMaster
      * @param  array<string, mixed>|null  $sel
      * @param  list<string>  $masalah
      */
-    private function angkaBoleh(?array $sel, string $alamat, ?int $bulat, array &$masalah): ?float
+    private function angkaBoleh(?array $sel, string $alamat, ?int $bulat, array &$masalah, ?float $bagi = null): ?float
     {
         if ($sel === null) {
             return null;
@@ -391,7 +394,10 @@ final class PemeriksaMaster
         $n = $sel['n'] ?? null;
 
         if (is_int($n) || is_float($n)) {
-            return $bulat !== null ? round((float) $n, $bulat) : (float) $n;
+            // Urutan generator: bagi dulu (`float(T5) / 1000`), baru bulat.
+            $x = $bagi !== null ? (float) $n / $bagi : (float) $n;
+
+            return $bulat !== null ? round($x, $bulat) : $x;
         }
 
         $s = trim((string) ($sel['s'] ?? ''));
@@ -401,6 +407,30 @@ final class PemeriksaMaster
         }
 
         return null;
+    }
+
+    /**
+     * Bilangan bulat (`int(float(sel))` generator) — sel pecahan ditolak,
+     * bukan dipotong diam-diam.
+     *
+     * @param  array<string, mixed>|null  $sel
+     * @param  list<string>  $masalah
+     */
+    private function bilanganBulat(?array $sel, string $alamat, array &$masalah): ?int
+    {
+        $x = $this->angkaWajib($sel, $alamat, null, $masalah);
+
+        if ($x === null) {
+            return null;
+        }
+
+        if (floor($x) !== $x || abs($x) >= 1e15) {
+            $masalah[] = "{$alamat} = {$x}, bukan bilangan bulat";
+
+            return null;
+        }
+
+        return (int) $x;
     }
 
     /**

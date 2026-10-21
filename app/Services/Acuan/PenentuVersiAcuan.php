@@ -24,11 +24,12 @@ use DateTimeInterface;
  * pernah dicari dua kali dan tidak bisa menunjuk versi lain dari yang
  * menghitung angkanya.
  *
- * Lingkup cuma dibuka untuk sesi yang profilnya punya `skemaAcuan()` (hari ini
- * Micrometer). Dial Indicator memakai balok ukur Micrometer
- * (`TabelStandarDialIndicator`), tapi sesinya tidak pernah membuka lingkup
- * `micrometer`: dia tetap membaca JSON dan stempelnya null. Tanpa ini, versi 2
- * Micrometer diam-diam menggeser angka Dial Indicator tanpa satu pun stempel.
+ * Lingkup cuma dibuka untuk sesi yang profilnya punya `skemaAcuan()`, dan
+ * hanya untuk kode profil SESI itu. Dial Indicator memakai balok ukur
+ * Micrometer (`TabelStandarDialIndicator`): sesinya membuka lingkup
+ * `dial_indicator` (pita CMC & identitas standar), TIDAK PERNAH `micrometer`,
+ * jadi balok ukurnya tetap dari JSON. Tanpa ini, versi 2 Micrometer diam-diam
+ * menggeser angka Dial Indicator tanpa satu pun stempel.
  *
  * Bila `config('acuan.sumber') !== 'db'` tidak ada lingkup dan stempelnya null
  * — bukan "stempel tetap ditulis": stempel yang menunjuk versi yang tidak
