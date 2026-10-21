@@ -148,10 +148,11 @@ Respons mengikuti gaya repo (`{data: …}`, error `{message, kode, rincian?}`).
 | `PATCH /data-acuan/versi/{versi}/sel` | sunting | header `If-Match: <lock_versi>`; body `{perubahan:[{lembar,kunci,kolom,nilai,alasan?}]}` → `{diterima:[…], ditolak:[{…,kode,pesan}], lock_versi}`; 409 `draf_berubah` |
 | `POST /data-acuan/versi/{versi}/baris` / `DELETE …/baris/{lembar}/{kunci}` | sunting | FR-08 |
 | `POST /data-acuan/versi/{versi}/impor-workbook` | impor | multipart; FR-10 |
-| `POST /data-acuan/versi/{versi}/simulasi` | sunting | 202 `{simulasi_id}`; throttle |
-| `GET /data-acuan/simulasi/{simulasi}` | lihat | ringkasan + halaman sesi |
+| `POST /data-acuan/versi/{versi}/simulasi` | simulasi | **terlaksana 22 Okt: sinkron, 201** + ringkasan; throttle `data-acuan-simulasi` |
+| `GET /data-acuan/versi/{versi}/simulasi` | lihat | **terlaksana 22 Okt** (ganti `GET /simulasi/{simulasi}`): laporan simulasi terakhir utuh; teknisi 404 |
+| `GET /data-acuan/paket/{kode}/alur` | lihat | **terlaksana 22 Okt**: versi data + status simulasi + `wajib_diakui` + log metode; teknisi 404 |
 | `POST /data-acuan/versi/{versi}/ajukan` | ajukan | `{alasan, rujukan[]}` |
-| `POST /data-acuan/versi/{versi}/sahkan` | sahkan | `{berlaku_mulai, sandi}`; grup `role:super_admin` |
+| `POST /data-acuan/versi/{versi}/aktifkan` | aktifkan | `{berlaku_mulai, password, catatan?, pengakuan:{butir: alasan}}`; grup `role:super_admin`. **Dulu `/sahkan`** — diganti 22 Okt 2026: kata itu milik pengesahan sesi yang dicabut (K-50-07, `PengesahanDicabutTest`). Izin `data-acuan.aktifkan` |
 | `POST /data-acuan/versi/{versi}/tolak` · `/kembalikan` · `/tarik` | sahkan | `{alasan}` |
 | `DELETE /data-acuan/versi/{versi}` | sunting | hanya draf milik sendiri → `dibuang` |
 | `GET /data-acuan/paket/{kode}/rumus` | lihat | FR-26 |

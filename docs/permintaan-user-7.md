@@ -5329,6 +5329,47 @@ daftar izin → merah), `ViewerAkunBaruTest`, `MeIzinTest` (mencocokkan izin ke 
 menampilkan tombol Hapus alat untuk teknisi membaca `alat.hapus` dari `/me/permissions`, jadi
 tombolnya hilang tanpa rilis APK. Gate MySQL penuh belum dijalankan.
 
+## §54 — Alur versi data acuan lapis 1: ajukan → simulasi → aktifkan (T2.2/T2.3) — 22 Okt 2026
+
+Jalur resmi dari draf `paket_acuan_versi` (lahir dari impor master Studio, `DrafAcuanMaster`) ke
+versi `aktif` — AGENTS.md §Olah data butir 3. Rujukan: `docs/studio-data-acuan/02-SRS.md` §3/§4,
+`03-SDD-ADR.md` §3.
+
+### Keputusan 22 Okt 2026 (koordinator, atas izin pemilik "SEMUA GW SETUJUIN") — jangan ditanya ulang
+
+| Keputusan | Turunannya |
+|---|---|
+| Pengaktifan versi data acuan = **super admin saja**, orang KEDUA (BR-08: bukan pembuat draf, penyunting, pengaju, atau pengimpor master sumbernya). | Grup `role:super_admin`, konfirmasi sandi, `PemisahanWewenang::periksaPengesahanVersiAcuan()` → `422 pengesah_ikut_menyunting`. |
+| Path **`/aktifkan`**, bukan `/sahkan` (izin `data-acuan.aktifkan`). | Kata `sahkan` milik pengesahan SESI yang dicabut K-50-07; `PengesahanDicabutTest` tidak dilonggarkan. |
+| Simulasi kedaluwarsa bila isi versi berubah **atau** keadaan data berubah: jumlah & `updated_at` terakhir sesi profil itu, jumlah sertifikat terbitnya. | `ringkasan.jejak_data` di `simulasi_acuan`; aktifkan → `422 simulasi_kedaluwarsa`. |
+| Data bersama antar varian master (Micrometer: `balok_ukur`, `cmc[A-D].label/u95_um`, `standar.*`) yang berubah **tidak memblokir impor**, tapi wajib diakui saat aktifkan. | `DataBersamaVarian`: daun bersama yang berubah + master aktif varian lain yang tidak sepakat. |
+| Pengakuan tertulis (alasan ≥ 10 karakter per butir) wajib bila simulasi menunjukkan: angka cetak sertifikat TERBIT bergeser, daun bersama antar varian berubah, atau sesi gagal disimulasikan. | `pengakuan:{terbit_cetak_berubah, bersama_antar_varian, sesi_gagal}` → `422 pengakuan_wajib`; isinya tercatat di log. |
+| `berlaku_mulai` ≥ hari ini; versi aktif lama → `pensiun` (`berlaku_sampai` = sehari sebelumnya). Sesi berstempel tetap memakai versinya (BR-10/11). Status `terjadwal` + scheduler (T2.4) belum. | Berlaku mundur (FR-18) → `422 berlaku_mulai_lampau`. |
+
+### Endpoint (`/api/data-acuan`)
+
+| Endpoint | Siapa |
+|---|---|
+| `GET /paket/{kode}/alur` — versi data + status simulasi + `wajib_diakui` + log metode | admin, viewer, super admin; teknisi 404 |
+| `GET /versi/{versi}/simulasi` — laporan simulasi terakhir utuh | idem |
+| `POST /versi/{versi}/ajukan` `{alasan, rujukan[]}` — draf → diajukan, sha256 dikunci | admin, super admin |
+| `POST /versi/{versi}/simulasi` — semua sesi profil itu, tanpa menulis; laporan dibekukan | admin, super admin |
+| `POST /versi/{versi}/tolak` `{alasan}` — draf → dibuang; diajukan → ditolak (super admin) | admin, super admin |
+| `POST /versi/{versi}/aktifkan` `{berlaku_mulai, password, catatan?, pengakuan}` | super admin saja |
+
+Tiap transisi = satu baris `paket_acuan_log` (append-only): aksi, status dari → ke, isi sha256,
+pelaku, alasan, sumber (workbook master id + sha256, peta sel, varian), rincian. Tidak ada yang
+dihapus. Organisasi lain → 404.
+
+### Penjaga
+
+`AlurVersiAcuanTest` (alur penuh Micrometer, BR-08, kedaluwarsa isi & data, tolak/buang, peran,
+isolasi organisasi), `IzinDataAcuanTest`, `MeIzinTest`, `BatasAntarLabTest`, `PengesahanDicabutTest`.
+
+**Status:** **DIKERJAKAN** (22 Okt 2026, branch `feat/studio-kendali-olah-data`). Gate MySQL penuh
+belum dijalankan. Belum: Filament baca, `terjadwal`/scheduler, `kembalikan`/`tarik`, siaran
+`data_acuan`, simulasi sebagai job, nama izin di mobile.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
