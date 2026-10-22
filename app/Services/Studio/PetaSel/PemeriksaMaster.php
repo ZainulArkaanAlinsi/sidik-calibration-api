@@ -444,6 +444,13 @@ final class PemeriksaMaster
                 // Sel bukan angka (penanda '-' MPE Dispensette single stroke) =
                 // null, meniru `float(s) if isinstance(s, (int, float)) else None`.
                 'bukan_angka_null' => is_array($spek) && ($spek['bukan_angka_jadi_null'] ?? false),
+                'bagi' => is_array($spek) && isset($spek['bagi']) ? (float) $spek['bagi'] : null,
+                // Teks `2*` -> 2.0 (nominal keping kedua Timbangan); `bendera_akhiran` -> bool.
+                'buang_akhiran' => is_array($spek) && isset($spek['buang_akhiran']) ? (string) $spek['buang_akhiran'] : null,
+                'akhiran' => is_array($spek) && isset($spek['akhiran']) ? (string) $spek['akhiran'] : null,
+                // Sel kosong / galat Excel = kunci TIDAK ditulis (bukan null): tabel
+                // jarang suhu 3 alat menyimpan baris tanpa kolom yang tidak dikalibrasi.
+                'boleh_hilang' => is_array($spek) && ($spek['boleh_hilang'] ?? false),
             ];
         }
 
@@ -482,6 +489,10 @@ final class PemeriksaMaster
                 $c = $this->sel($indeks, $lb, $kk, $bb);
                 $alamat = Alamat::sel($lb, $kk, $bb);
 
+                if ($k['boleh_hilang'] && (self::kosong($c) || self::galat($c))) {
+                    continue;
+                }
+
                 if ($k['gabungan'] && self::kosong($c)) {
                     $c = $this->selGabungan($indeks, $lb, $kk, $bb) ?? $c;
                 }
@@ -492,11 +503,26 @@ final class PemeriksaMaster
                     continue;
                 }
 
+                if ($k['tipe'] === 'bendera_akhiran') {
+                    $s = trim((string) ($c['s'] ?? ''));
+                    $baris[$nama] = ! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null) && str_ends_with($s, (string) $k['akhiran']);
+
+                    continue;
+                }
+
+                if ($k['buang_akhiran'] !== null && ! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null)) {
+                    $s = trim((string) ($c['s'] ?? ''));
+
+                    if (str_ends_with($s, $k['buang_akhiran']) && is_numeric($angka = trim(substr($s, 0, -strlen($k['buang_akhiran']))))) {
+                        $c = ['n' => (float) $angka, 's' => $angka];
+                    }
+                }
+
                 $baris[$nama] = match ($k['tipe']) {
                     'teks' => $this->teks($c, $alamat, $masalah),
                     'bilangan_bulat' => $this->bilanganBulat($c, $alamat, $masalah),
                     'tanggal' => $this->tanggal($c, $alamat, $masalah),
-                    default => $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah),
+                    default => $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah, $k['bagi']),
                 };
             }
 
@@ -555,6 +581,18 @@ final class PemeriksaMaster
         if (abs($x - (float) $banding) > (float) $c['toleransi']) {
             $masalah[] = "{$alamat} = {$x} menyimpang dari {$jalur} = {$banding} (toleransi {$c['toleransi']})";
         }
+    }
+
+    /**
+     * Galat Excel (`#REF!`, `#N/A`, ...): pembaca .xlsm memberi `t=e`, ekspor
+     * CSV menulisnya sebagai teks.
+     *
+     * @param  array<string, mixed>|null  $c
+     */
+    private static function galat(?array $c): bool
+    {
+        return $c !== null && (($c['t'] ?? null) === 'e'
+            || preg_match('/^#(REF!|N\/A|VALUE!|DIV\/0!|NAME\?|NUM!|NULL!)$/', trim((string) ($c['s'] ?? ''))) === 1);
     }
 
     /** @param  array<string, mixed>|null  $c */

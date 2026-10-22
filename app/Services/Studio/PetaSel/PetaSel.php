@@ -49,7 +49,12 @@ use JsonException;
  * berisi (baris ber-kunci kosong dilewati, seperti generator). Kolom boleh
  * berbentuk `{"rentang", "tipe": angka|teks|bilangan_bulat|tanggal, "boleh_kosong",
  * "gabungan", "bukan_angka_jadi_null"}` — `gabungan: true` membaca sel kosong di dalam rentang merge
- * dari sel kiri-atasnya (xlsm; CSV tidak membawa merge):
+ * dari sel kiri-atasnya (xlsm; CSV tidak membawa merge). Kolom angka boleh
+ * `bagi` (master gram menyimpan g, JSON kg) dan `buang_akhiran: "*"` (sel teks
+ * `2*` = 2.0); kolom `{"tipe": "bendera_akhiran", "akhiran": "*"}` = bool teks
+ * sel berakhiran itu (keping kedua bernominal sama, Timbangan `STANDAR_AT!N10`).
+ * `boleh_hilang: true` = sel kosong/galat -> kunci TIDAK ditulis (bukan null;
+ * tabel jarang suhu 3 alat, baris tanpa tipe yang tidak dikalibrasi):
  * `{"jalur": "balok_ukur.keping", "tipe": "daftar_objek", "kunci": "nominal_mm",
  *   "kolom": {"nominal_mm": "S!Q10:Q132", "u95_mm": "S!S10:S132"}, "min_baris": 1}`.
  *
@@ -407,7 +412,9 @@ final class PetaSel
                     $jumlah = null;
 
                     foreach ($kolom as $nama => $spek) {
-                        if (preg_match('/^[a-z0-9_]+$/', (string) $nama) !== 1) {
+                        // Kunci objek JSON apa adanya: `koreksi_mm`, juga label data
+                        // seperti `RTD`, `Type K`, `TCK-01` (tabel suhu 3 alat).
+                        if (preg_match('/^[A-Za-z0-9_](?:[A-Za-z0-9_ \-]*[A-Za-z0-9_])?$/', (string) $nama) !== 1) {
                             $m[] = "{$label}: nama kolom '{$nama}' tidak sah";
                         }
 
@@ -423,11 +430,26 @@ final class PetaSel
 
                         $rentang = is_array($spek) ? ($spek['rentang'] ?? null) : $spek;
 
-                        if (is_array($spek) && ! in_array($spek['tipe'] ?? 'angka', ['angka', 'teks', 'bilangan_bulat', 'tanggal'], true)) {
-                            $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks/bilangan_bulat/tanggal";
+                        if (is_array($spek) && ! in_array($spek['tipe'] ?? 'angka', ['angka', 'teks', 'bilangan_bulat', 'tanggal', 'bendera_akhiran'], true)) {
+                            $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks/bilangan_bulat/tanggal/bendera_akhiran";
                         }
 
-                        foreach (['boleh_kosong', 'gabungan', 'bukan_angka_jadi_null'] as $bendera) {
+                        // `bendera_akhiran` (bool: teks sel berakhiran `akhiran`) &
+                        // `buang_akhiran` (angka dari teks `2*`) — nominal ber-bintang
+                        // keping kedua Timbangan (`STANDAR_AT!N10` '2*').
+                        if (is_array($spek) && ($spek['tipe'] ?? 'angka') === 'bendera_akhiran' && (! is_string($spek['akhiran'] ?? null) || $spek['akhiran'] === '')) {
+                            $m[] = "{$label}.{$nama}: bendera_akhiran butuh akhiran (teks)";
+                        }
+
+                        if (is_array($spek) && isset($spek['buang_akhiran']) && (($spek['tipe'] ?? 'angka') !== 'angka' || ! is_string($spek['buang_akhiran']) || $spek['buang_akhiran'] === '')) {
+                            $m[] = "{$label}.{$nama}: buang_akhiran hanya untuk kolom angka, teks tidak kosong";
+                        }
+
+                        if (is_array($spek) && isset($spek['bagi']) && (($spek['tipe'] ?? 'angka') !== 'angka' || (! is_int($spek['bagi']) && ! is_float($spek['bagi'])) || $spek['bagi'] <= 0)) {
+                            $m[] = "{$label}.{$nama}: bagi kolom hanya untuk kolom angka, angka > 0";
+                        }
+
+                        foreach (['boleh_kosong', 'gabungan', 'bukan_angka_jadi_null', 'boleh_hilang'] as $bendera) {
                             if (is_array($spek) && isset($spek[$bendera]) && ! is_bool($spek[$bendera])) {
                                 $m[] = "{$label}.{$nama}: {$bendera} harus boolean";
                             }

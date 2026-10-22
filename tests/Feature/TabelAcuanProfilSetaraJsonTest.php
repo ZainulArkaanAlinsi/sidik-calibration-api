@@ -12,6 +12,7 @@ use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
@@ -22,14 +23,21 @@ use App\Services\Calibration\TabelStandarPutaran;
 use App\Services\Calibration\TabelStandarSieve;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TabelStandarTids;
+use App\Services\Calibration\TabelStandarTimbangan;
 use App\Services\Calibration\TabelStandarVolumetric;
 use App\Services\Calibration\TabelStandarWaktu;
 use App\Services\Calibration\TekananCalculator;
+use App\Services\Calibration\ThermocoupleCalculator;
+use App\Services\Calibration\ThermohygroCalculator;
+use App\Services\Calibration\ThermometerGlassCalculator;
+use App\Services\Calibration\TimbanganCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use ReflectionClass;
 use Tests\TestCase;
 use Tests\Unit\DialIndicatorMasterTest;
 use Tests\Unit\HeightGaugeMasterTest;
 use Tests\Unit\JangkaSorongMasterTest;
+use Tests\Unit\Suhu3AlatMasterTest;
 
 /**
  * Paritas versi 1 untuk profil yang dipindah ke Studio sesudah Micrometer
@@ -529,6 +537,94 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         }
 
         $this->assertSame(['10' => ['ukuran_inch'], '1' => ['ukuran_um'], '0.08' => ['kawat_preferred_mm']], $tanda);
+    }
+
+    /** Suhu 3 alat (Thermocouple, Thermometer Glass, Thermohygro): tabel + sesi master ketiganya. */
+    public function test_suhu_3alat_v1_setara_json(): void
+    {
+        $v1 = $this->v1('suhu_3alat');
+        $c = new ReflectionClass(Suhu3AlatMasterTest::class);
+
+        [$a, $b] = $this->duaJalur('suhu_3alat', $v1, function () use ($c): array {
+            $t = new TabelKalibratorSuhu3Alat;
+            $h = ['th' => $t->thermohygro(), 'tipe' => $t->tipeThermometer(), 'dry' => [$t->dryblock('A'), $t->dryblock('B')], 'oil' => [$t->oilbath('satu'), $t->oilbath('dua')]];
+
+            foreach ([TabelKalibratorSuhu3Alat::ALAT_THERMOCOUPLE, TabelKalibratorSuhu3Alat::ALAT_GLASS] as $alat) {
+                $h[$alat]['cmc'] = $t->cmcMaster($alat);
+
+                foreach ([-100.0, -20.0, 0.0, 25.0, 148.6, 150.1, 600.0, 1700.0] as $n) {
+                    $i = (float) $t->indeksTerdekat($alat, $n);
+                    $h[$alat]['i'][] = $i;
+
+                    foreach (TabelKalibratorSuhu3Alat::MERK as $m) {
+                        foreach (['RTD', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S', 'Type J'] as $tipe) {
+                            $h[$alat]['k'][] = [$t->koreksiKalibrator($alat, $m, $tipe, $i), $t->u95Kalibrator($alat, $m, $tipe, $i), $t->driftKalibrator($alat, $m, $tipe)];
+                        }
+                    }
+
+                    foreach (['RTD', 'TCK-01', 'TCK-14', 'TCN3', 'TCN12'] as $p) {
+                        $h[$alat]['s'][] = [$t->koreksiSensor($alat, $p, $i), $t->u95Sensor($alat, $p, $i)];
+                    }
+                }
+
+                foreach (['RTD', 'Type K', 'Type N'] as $tipe) {
+                    $h[$alat]['ds'][] = $t->driftSensor($alat, $tipe);
+                    $h[$alat]['probe'][] = [$t->nomorProbeTersedia($alat, $tipe), $t->probe($alat, $tipe, 3), $t->probe($alat, $tipe, 17)];
+                }
+            }
+
+            foreach ([15.0, 33.0, 50.0] as $n) {
+                $h['koreksi_th'][] = [$t->koreksiThermohygro('suhu', $n), $t->koreksiThermohygro('kelembaban', $n)];
+            }
+
+            $h['hitung'] = [
+                (new ThermocoupleCalculator)->hitungSesi($c->getConstant('TITIK_THERMOCOUPLE'), $c->getConstant('SPEK_THERMOCOUPLE')),
+                (new ThermometerGlassCalculator)->hitungSesi($c->getConstant('TITIK_GELAS'), $c->getConstant('SPEK_GELAS')),
+                (new ThermohygroCalculator)->hitungSesi($c->getConstant('TITIK_THERMOHYGRO'), $c->getConstant('SPEK_THERMOHYGRO')),
+            ];
+
+            return $h;
+        });
+        $this->assertNotEmpty($a['hitung'][0]['titik']);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Timbangan (master gram, kg, substitusi): tabel + hitung sesi master ketiga varian. */
+    public function test_timbangan_v1_setara_json(): void
+    {
+        $v1 = $this->v1('timbangan');
+
+        [$a, $b] = $this->duaJalur('timbangan', $v1, function (): array {
+            $h = ['cmc' => TabelStandarTimbangan::semuaPitaCmc()];
+
+            foreach (TabelStandarTimbangan::varianTersedia() as $v) {
+                $h[$v]['basis'] = TabelStandarTimbangan::basis($v);
+                $h[$v]['semua'] = TabelStandarTimbangan::semuaMassa($v);
+
+                foreach ([0.0001, 0.002, 0.2, 1.0, 2.0, 20.0, 200.0, 20000.0] as $n) {
+                    foreach ([TabelStandarTimbangan::ANALYTICAL, TabelStandarTimbangan::NON_ANALYTICAL] as $tipe) {
+                        $h[$v]['cari'][] = TabelStandarTimbangan::cariMassa($n, $v, $tipe);
+                    }
+                }
+            }
+
+            foreach ([0.1, 0.2, 1.2005, 15.0, 2000.0, 2000.0005, 2500.0] as $kg) {
+                $h['pita'][] = TabelStandarTimbangan::pitaCmc($kg);
+                $h['drift'][] = TabelStandarTimbangan::driftKeluarga($kg);
+            }
+
+            // Sesi master (masukan `TimbanganMasterTest`), ketiga varian.
+            foreach (json_decode((string) file_get_contents(database_path('data/sesi-master-timbangan.json')), true) as $tag => $sesi) {
+                if (is_array($sesi) && ! str_starts_with((string) $tag, '_')) {
+                    unset($sesi['_harap'], $sesi['_budget']);
+                    $h['hitung'][$tag] = (new TimbanganCalculator)->hitung($sesi);
+                }
+            }
+
+            return $h;
+        });
+        $this->assertNotEmpty($a['hitung']);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 
     /** Urutkan kunci objek rekursif; urutan list dipertahankan. */

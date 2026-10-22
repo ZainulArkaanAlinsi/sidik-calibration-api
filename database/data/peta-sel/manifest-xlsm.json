@@ -218,6 +218,52 @@
    "sha256": "d8e43c46af57b7ac06d93671aba1a32b26008370ddf56e674ba755190f7e5688",
    "ukuran_byte": 293888,
    "terverifikasi": true
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(New) Master Olda Timbangan gram.xlsm",
+   "sha256": "ce1a3936a59d160d65c312b9034cffcfe2ebe6dc03ba318a9ccb13b5ff4666b1",
+   "ukuran_byte": 473088,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(New) Master Olda Timbangan kg.xlsm",
+   "sha256": "9c38b9bf339fa5160a6b8e5e9ac2bb6f16fb09c871832fa6d40e62912e775996",
+   "ukuran_byte": 467968,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(TERBARU) Master Olda Timbangan Subtitusi 291025.xlsm",
+   "sha256": "2a591844292b59499430b83376155feab21959933339321af416deec8ffeea34",
+   "ukuran_byte": 288768,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' dan '.xlsm2' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data_Suhu_Thermocouple.xlsm",
+   "sha256": "381e5000a8bb9d4e64b4a36f90d23657ae977846f29806d8ef7c74d8d12e4757",
+   "ukuran_byte": 725504,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data_Suhu_Thermometer Glass.xlsm",
+   "sha256": "b9614850813bc7ab05b26a49a836903a4418918246c2ff1c90d9f3efa93b7a76",
+   "ukuran_byte": 309248,
+   "terverifikasi": true
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data Suhu & Kelembapan.xlsm",
+   "sha256": "86951e44726504a4cdbd4c5976a6ca69d6c164a286424549705a1afcfb438b7f",
+   "ukuran_byte": 188928,
+   "terverifikasi": true
   }
  ]
 }

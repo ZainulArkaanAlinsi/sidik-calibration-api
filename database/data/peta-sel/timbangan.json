@@ -1,0 +1,262 @@
+{
+ "format": 1,
+ "kode_profil": "timbangan",
+ "sumber_json": "tabel-standar-timbangan.json",
+ "bukti": [
+  "Alamat dibuktikan langsung dari tiga master .xlsm asli (22 Okt 2026, docs/skrip/verifikasi-peta-xlsm.py; sha256 di manifest-xlsm.json): STANDAR_AT!N4:R45 = varian.<v>.basis/e2 (baris 5-19)/f1 (baris 20-45), kolom N nominal, O konvensional, P koreksi, Q ketidakpastian (u), R drift (u_drift); DATABASE!R5:T21 = cmc kode/rentang/cmc_gram; tabel 'LATEST RECORD DRIFT' = drift_keluarga (gram M50:P54 dalam g -> bagi 1000; kg M51:P55; substitusi M68:P72).",
+  "Nominal ber-bintang ('2*', '0.2*', '0.02*') = keping KEDUA bernominal sama: nominal = angka tanpa bintang (buang_akhiran), duplikat = teks berakhiran '*' (bendera_akhiran).",
+  "Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/Massa_Timbangan/{_New__Master_Olda_Timbangan_gram,_New__Master_Olda_Timbangan_kg,_TERBARU__Master_Olda_Timbangan_Subtitusi_291025} sebaris dengan .xlsm di sel yang dipetakan; ekstraksi dari ketiganya = tabel-standar-timbangan.json (StudioPetaSelProfilTest).",
+  "Tidak ada generator lama; JSON repo (a3b9c78) terbukti = sel master (nilai & urutan). Satu-satunya perubahan berkas: 0 bulat di kolom angka (u, u_drift) ditulis 0.0 — angka sama, tipe float seperti sel angka lain."
+ ],
+ "lembar_wajib": [
+  "STANDAR_AT",
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR_AT!N1",
+   "teks": "OVERALL STANDAR ANAK TIMBANGAN"
+  },
+  {
+   "sel": "STANDAR_AT!M3",
+   "teks": "Kelas"
+  },
+  {
+   "sel": "STANDAR_AT!N3",
+   "teks": "Massa Nominal"
+  },
+  {
+   "sel": "STANDAR_AT!O3",
+   "teks": "Massa Konvensional"
+  },
+  {
+   "sel": "STANDAR_AT!P3",
+   "teks": "Koreksi AT"
+  },
+  {
+   "sel": "STANDAR_AT!Q3",
+   "teks": "Ketidakpastian"
+  },
+  {
+   "sel": "STANDAR_AT!R3",
+   "teks": "Drift of Correction/Instability of mass"
+  },
+  {
+   "sel": "STANDAR_AT!M5",
+   "teks": "E2"
+  },
+  {
+   "sel": "STANDAR_AT!M19",
+   "teks": "E2"
+  },
+  {
+   "sel": "STANDAR_AT!M20",
+   "teks": "F1"
+  },
+  {
+   "sel": "STANDAR_AT!M45",
+   "teks": "M2 J"
+  },
+  {
+   "sel": "DATABASE!R3",
+   "teks": "Jenis Timbangan"
+  },
+  {
+   "sel": "DATABASE!S3",
+   "teks": "Range"
+  },
+  {
+   "sel": "DATABASE!T3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "STANDAR_AT!N49",
+   "teks": "Max Index Standar (g)",
+   "varian": [
+    "gram"
+   ]
+  },
+  {
+   "sel": "STANDAR_AT!P49",
+   "teks": "Udrift (g)",
+   "varian": [
+    "gram"
+   ]
+  },
+  {
+   "sel": "STANDAR_AT!N50",
+   "teks": "Max Index Standar (kg)",
+   "varian": [
+    "kg"
+   ]
+  },
+  {
+   "sel": "STANDAR_AT!P50",
+   "teks": "Udrift (kg)",
+   "varian": [
+    "kg"
+   ]
+  },
+  {
+   "sel": "STANDAR_AT!N67",
+   "teks": "Max Index Standar (kg)",
+   "varian": [
+    "substitusi"
+   ]
+  },
+  {
+   "sel": "STANDAR_AT!P67",
+   "teks": "Udrift (kg)",
+   "varian": [
+    "substitusi"
+   ]
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "gram": "(^| )timbangan gram( |$)",
+   "kg": "(^| )timbangan kg( |$)",
+   "substitusi": "(^| )subs?titusi( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "varian.{varian}.basis",
+   "tipe": "teks",
+   "sel": "STANDAR_AT!N4"
+  },
+  {
+   "jalur": "varian.{varian}.e2",
+   "tipe": "daftar_objek",
+   "kunci": "nominal",
+   "kolom": {
+    "nominal": {
+     "rentang": "STANDAR_AT!N5:N19",
+     "buang_akhiran": "*"
+    },
+    "duplikat": {
+     "rentang": "STANDAR_AT!N5:N19",
+     "tipe": "bendera_akhiran",
+     "akhiran": "*"
+    },
+    "konvensional": "STANDAR_AT!O5:O19",
+    "koreksi": "STANDAR_AT!P5:P19",
+    "u": "STANDAR_AT!Q5:Q19",
+    "u_drift": "STANDAR_AT!R5:R19"
+   },
+   "min_baris": 15
+  },
+  {
+   "jalur": "varian.{varian}.f1",
+   "tipe": "daftar_objek",
+   "kunci": "nominal",
+   "kolom": {
+    "nominal": {
+     "rentang": "STANDAR_AT!N20:N45",
+     "buang_akhiran": "*"
+    },
+    "duplikat": {
+     "rentang": "STANDAR_AT!N20:N45",
+     "tipe": "bendera_akhiran",
+     "akhiran": "*"
+    },
+    "konvensional": "STANDAR_AT!O20:O45",
+    "koreksi": "STANDAR_AT!P20:P45",
+    "u": "STANDAR_AT!Q20:Q45",
+    "u_drift": "STANDAR_AT!R20:R45"
+   },
+   "min_baris": 26
+  },
+  {
+   "jalur": "cmc[{i}].kode",
+   "tipe": "teks",
+   "sel": "DATABASE!R5",
+   "ulang": 17,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "cmc[{i}].cmc_gram",
+   "tipe": "angka",
+   "sel": "DATABASE!T5",
+   "ulang": 17,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "cmc[{i}].rentang",
+   "tipe": "teks",
+   "sel": "DATABASE!S5",
+   "ulang": 17,
+   "langkah_baris": 1,
+   "varian": [
+    "kg",
+    "substitusi"
+   ]
+  },
+  {
+   "jalur": "drift_keluarga",
+   "tipe": "daftar_objek",
+   "kunci": "maks_kg",
+   "kolom": {
+    "maks_kg": {
+     "rentang": "STANDAR_AT!N50:N54",
+     "bagi": 1000
+    },
+    "standar": {
+     "rentang": "STANDAR_AT!O50:O54",
+     "tipe": "teks"
+    },
+    "u_drift": {
+     "rentang": "STANDAR_AT!P50:P54",
+     "bagi": 1000
+    }
+   },
+   "min_baris": 5,
+   "varian": [
+    "gram"
+   ]
+  },
+  {
+   "jalur": "drift_keluarga",
+   "tipe": "daftar_objek",
+   "kunci": "maks_kg",
+   "kolom": {
+    "maks_kg": "STANDAR_AT!N51:N55",
+    "standar": {
+     "rentang": "STANDAR_AT!O51:O55",
+     "tipe": "teks"
+    },
+    "u_drift": "STANDAR_AT!P51:P55"
+   },
+   "min_baris": 5,
+   "varian": [
+    "kg"
+   ]
+  },
+  {
+   "jalur": "drift_keluarga",
+   "tipe": "daftar_objek",
+   "kunci": "maks_kg",
+   "kolom": {
+    "maks_kg": "STANDAR_AT!N68:N72",
+    "standar": {
+     "rentang": "STANDAR_AT!O68:O72",
+     "tipe": "teks"
+    },
+    "u_drift": "STANDAR_AT!P68:P72"
+   },
+   "min_baris": 5,
+   "varian": [
+    "substitusi"
+   ]
+  }
+ ],
+ "tidak_dipetakan": [
+  "cmc[*].maks_kg — bukan sel: ambang rantai IF rumus INPUT DATA!E4 (0.2, 1.201, ..., 2000), dibawa dari dasar. TEMUAN: pita Q di JSON 2000.001, rumus ketiga master '<=2000'.",
+  "cmc[*].rentang dari master gram — DATABASE!S5:S21 master gram bersatuan g ('0-200'), JSON memakai teks kg ('0-0.2'); diekstrak dari master kg & substitusi saja.",
+  "_sumber/_kenapa_tiga/_kolom/_pemilihan/_catatan_cmc — dokumentasi, bukan data master."
+ ],
+ "perlu_berkas_asli": [
+  "Format SERTIFIKAT Timbangan (dua U95 per titik) belum dicatat di format_sertifikat."
+ ]
+}

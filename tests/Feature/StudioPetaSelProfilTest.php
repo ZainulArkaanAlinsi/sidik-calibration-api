@@ -91,6 +91,19 @@ class StudioPetaSelProfilTest extends TestCase
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT', 'measure', 27],
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT', 'source', 27],
             ]],
+            // Suhu 3 alat: Thermocouple 5 tabel + 9 drift + 4 dryblock + 2 konstanta + CMC;
+            // Glass 7 tabel + 9 drift + 4 oilbath + tipe + CMC (22); Thermohygro 2 tabel + 10 angka + CMC.
+            'suhu_3alat' => ['suhu_3alat', [
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple', 'thermocouple', 21],
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass', 'thermometer_glass', 22],
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan', 'thermohygro', 13],
+            ]],
+            // Timbangan: basis + e2 + f1 + 17 kode + 17 CMC (+ 17 rentang kg/substitusi) + drift keluarga.
+            'timbangan' => ['timbangan', [
+                ['Massa_Timbangan/_New__Master_Olda_Timbangan_gram', 'gram', 38],
+                ['Massa_Timbangan/_New__Master_Olda_Timbangan_kg', 'kg', 55],
+                ['Massa_Timbangan/_TERBARU__Master_Olda_Timbangan_Subtitusi_291025', 'substitusi', 55],
+            ]],
             'volumetric' => ['volumetric', [
                 ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
                 ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],

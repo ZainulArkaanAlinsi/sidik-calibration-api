@@ -193,10 +193,14 @@ def gabungan(wb, spec, tambah, asal):
 
 def ekstrak_satu(wb, e, geser, masalah):
     t, bl = e['tipe'], e.get('bulat')
-    if t in ('teks', 'angka', 'bilangan_bulat', 'tanggal', 'angka_atau_teks'):
+    if t in ('teks', 'angka', 'bilangan_bulat', 'tanggal', 'angka_atau_teks', 'bendera_akhiran'):
         lb, k, b, _, _ = urai(e['sel'])
         v = nilai(wb, lb, k, b + geser)
         alamat = f"{lb}!{e['sel'].split('!')[-1]}+{geser}"
+        if t == 'bendera_akhiran':
+            return isinstance(v, str) and v.strip().endswith(e['akhiran'])
+        if e.get('buang_akhiran') and isinstance(v, str) and v.strip().endswith(e['buang_akhiran']):
+            v = float(v.strip()[:-len(e['buang_akhiran'])])
         if t == 'teks':
             if isinstance(v, str) and v.startswith('#'):
                 masalah.append(f"{alamat} galat {v}")
@@ -263,7 +267,8 @@ def ekstrak_satu(wb, e, geser, masalah):
             r = sp['rentang'] if isinstance(sp, dict) else sp
             kolom[nama] = ('sel', urai(r), (sp.get('tipe', 'angka') if isinstance(sp, dict) else 'angka'), isinstance(sp, dict) and sp.get('boleh_kosong', False),
                            isinstance(sp, dict) and sp.get('gabungan', False),
-                           isinstance(sp, dict) and sp.get('bukan_angka_jadi_null', False))
+                           isinstance(sp, dict) and sp.get('bukan_angka_jadi_null', False),
+                           sp if isinstance(sp, dict) else {})
         kunci = kolom[e['kunci']][1]
         n = kunci[4] - kunci[2]
         lewati = e.get('lewati_kolom', [e['kunci']])
@@ -288,6 +293,17 @@ def ekstrak_satu(wb, e, geser, masalah):
                 v = v_of(spec)
                 if spec[4] and kosong(v):
                     v = gabungan(wb, spec[1], geser + i, v)
+                ops = spec[6]
+                if ops.get('boleh_hilang') and (kosong(v) or (isinstance(v, str) and v.startswith('#'))):
+                    continue
+                if spec[2] == 'bendera_akhiran':
+                    baris[nama] = isinstance(v, str) and v.strip().endswith(ops['akhiran'])
+                    continue
+                if ops.get('buang_akhiran') and isinstance(v, str) and v.strip().endswith(ops['buang_akhiran']):
+                    try:
+                        v = float(v.strip()[:-len(ops['buang_akhiran'])])
+                    except ValueError:
+                        pass
                 if (spec[3] and kosong(v)) or (spec[5] and angka(v) is None):
                     baris[nama] = None
                 elif spec[2] == 'teks':
@@ -303,6 +319,8 @@ def ekstrak_satu(wb, e, geser, masalah):
                     x = angka(v)
                     if x is None:
                         masalah.append(f"{e['jalur']} baris {i}: {v!r} bukan angka")
+                    elif ops.get('bagi'):
+                        x = x / ops['bagi']
                     baris[nama] = bulat(x, bl)
             out.append(baris)
         if e.get('urut'):

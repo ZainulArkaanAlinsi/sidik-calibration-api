@@ -1714,7 +1714,8 @@ abstract class CalibrationProfile
      *
      * `tipe`: `teks`, `teks_kosong` (teks atau null), `tanggal`, `desimal`,
      * `desimal_kosong` (float atau null — sel yang memang tidak ada di master,
-     * bukan nol), `bulat` (int), `boolean`, `daftar_angka`, `daftar_teks` (list teks, mis. titik indeks Enclosure), `angka_atau_teks` (float atau teks penanda seperti `-`/`all` Tabel_MPE Sieve).
+     * bukan nol), `desimal_opsional` (float, atau KUNCI TIDAK ADA di baris itu —
+     * bukan null; tabel jarang suhu 3 alat), `bulat` (int), `boolean`, `daftar_angka`, `daftar_teks` (list teks, mis. titik indeks Enclosure), `angka_atau_teks` (float atau teks penanda seperti `-`/`all` Tabel_MPE Sieve).
      *
      * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}|null
      */

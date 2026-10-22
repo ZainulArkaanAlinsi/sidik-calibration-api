@@ -18,11 +18,11 @@ class SkemaAcuanProfilTest extends TestCase
     use PeriksaSkemaAcuan;
 
     /** Profil yang sudah dipindah ke Studio, urut registry (bukan urut migrasi). Menambah = keputusan yang terlihat di diff. */
-    public const BERSKEMA = ['kalibrator_suhu', 'tids', 'enclosure', 'timer_stopwatch', 'putaran', 'micrometer', 'height_gauge', 'flowmeter', 'dial_indicator', 'jangka_sorong', 'sieve', 'volumetric', 'gaya', 'tekanan', 'piston_volume'];
+    public const BERSKEMA = ['kalibrator_suhu', 'tids', 'enclosure', 'suhu_3alat', 'timbangan', 'timer_stopwatch', 'putaran', 'micrometer', 'height_gauge', 'flowmeter', 'dial_indicator', 'jangka_sorong', 'sieve', 'volumetric', 'gaya', 'tekanan', 'piston_volume'];
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 
-    private const TIPE = ['teks', 'teks_kosong', 'tanggal', 'desimal', 'desimal_kosong', 'bulat', 'boolean', 'daftar_angka', 'daftar_teks', 'angka_atau_teks'];
+    private const TIPE = ['teks', 'teks_kosong', 'tanggal', 'desimal', 'desimal_kosong', 'desimal_opsional', 'bulat', 'boolean', 'daftar_angka', 'daftar_teks', 'angka_atau_teks'];
 
     /** @return array<string, array{string}> */
     public static function profil(): array
@@ -89,7 +89,7 @@ class SkemaAcuanProfilTest extends TestCase
                 $this->assertContains($kolom['tipe'], self::TIPE, "{$lembar['kode']}.{$kolom['kode']}");
 
                 if ($kolom['asal'] !== null) {
-                    $this->assertMatchesRegularExpression('/^[A-Za-z][A-Za-z0-9 _%.]*![A-Z]{1,3}\d+(:[A-Z]{1,3}\d+)?$/', $kolom['asal']);
+                    $this->assertMatchesRegularExpression('/^[A-Za-z][A-Za-z0-9 _%.&]*![A-Z]{1,3}\d+(:[A-Z]{1,3}\d+)?$/', $kolom['asal']);
                 }
             }
         }
@@ -143,6 +143,10 @@ class SkemaAcuanProfilTest extends TestCase
 
                 foreach ($baris as $i => $b) {
                     foreach ($kolomNilai as $kolom) {
+                        if ($kolom['tipe'] === 'desimal_opsional' && ! property_exists($b, $kolom['kode'])) {
+                            continue;
+                        }
+
                         $this->assertTipe($kolom['tipe'], $b->{$kolom['kode']}, "{$jalur}/{$i}/{$kolom['kode']}");
                     }
                 }

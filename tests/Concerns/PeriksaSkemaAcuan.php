@@ -20,6 +20,7 @@ trait PeriksaSkemaAcuan
             'tanggal' => $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $nilai, $jalur),
             'desimal' => $this->assertIsFloat($nilai, $jalur),
             'desimal_kosong' => $this->assertTrue($nilai === null || is_float($nilai), "{$jalur} bukan float/null"),
+            'desimal_opsional' => $this->assertIsFloat($nilai, $jalur),
             'bulat' => $this->assertIsInt($nilai, $jalur),
             'daftar_angka' => $this->assertTrue(
                 is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_float') === $nilai,
@@ -75,6 +76,11 @@ trait PeriksaSkemaAcuan
                         $this->assertInstanceOf(stdClass::class, $baris, "{$jalur}/{$i} bukan objek");
 
                         foreach ($lembar['kolom'] as $kolom) {
+                            // `desimal_opsional`: kunci boleh tidak ada di baris itu (bukan null).
+                            if ($kolom['tipe'] === 'desimal_opsional' && ! property_exists($baris, $kolom['kode'])) {
+                                continue;
+                            }
+
                             $hasil[] = "{$jalur}/{$i}/{$kolom['kode']}";
                         }
                     }

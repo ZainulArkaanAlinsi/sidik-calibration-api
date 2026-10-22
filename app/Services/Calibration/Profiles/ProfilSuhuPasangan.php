@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\ThermocoupleCalculator;
 use App\Services\Calibration\ThermohygroCalculator;
 use App\Services\Calibration\ThermometerGlassCalculator;
@@ -72,6 +73,25 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
         ['label' => 'TH-2', 'grup' => 'Insitu'],
         ['label' => 'TH-6', 'grup' => 'Insitu'],
     ];
+
+    /**
+     * Ketiga alat membaca SATU berkas `tabel-master-suhu-3alat.json` (tiga
+     * master, satu bagian per alat): satu paket data acuan, satu riwayat versi.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'suhu_3alat';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Suhu 3 alat (Thermocouple, Thermometer Glass, Thermohygro)';
+    }
+
+    public function skemaAcuan(): ?array
+    {
+        return TabelKalibratorSuhu3Alat::skemaAcuan();
+    }
 
     /** Dua deret per titik — lihat docblock kelas. */
     public function butuhPasanganStandarUut(): bool
