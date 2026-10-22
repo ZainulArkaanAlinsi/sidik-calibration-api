@@ -914,7 +914,7 @@
   "drift.sel_master/rumus_master/metode/catatan dan cmc_master.*.rumus_master — dokumentasi (teks rumus), bukan angka; dibawa dari versi dasar."
  ],
  "format_sertifikat": {
-  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. BELUM dipakai render — TekananProfile tidak memberi formatKolomSertifikat() (desimal lama); paritas diadu StudioFormatSertifikatTest.",
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; sama dengan master, diadu StudioFormatSertifikatTest.",
   "entri": [
    {
     "kolom": "uut",

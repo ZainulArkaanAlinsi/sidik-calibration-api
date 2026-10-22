@@ -4674,7 +4674,7 @@
   "Tipe kalibrator yang seluruh kolomnya kosong/#REF! (Constant Type J, Yokogawa Type B/T/R/S) — tidak ada di JSON."
  ],
  "format_sertifikat": {
-  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli kedua master TIDS (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. BELUM dipakai render; paritas diadu StudioFormatSertifikatTest.",
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli kedua master TIDS (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; sama dengan master, diadu StudioFormatSertifikatTest.",
   "entri": [
    {
     "kolom": "standar",

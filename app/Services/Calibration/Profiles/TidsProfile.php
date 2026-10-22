@@ -511,6 +511,27 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
+     * Format sel SERTIFIKAT master per keluarga standar sesi (K-50-15,
+     * 22 Okt 2026), dari `format_sertifikat` peta sel `tids`: Recorder
+     * (Graptech) Standard/UUT/Correction `0.00`, U95 `0.0`, k `0`
+     * (`E20:L33`, `L34`, `O35`); Constant/Yokogawa (master Yokogawa K N)
+     * `0.0`, `0.0`, `0`. Keputusan pemilik: sertifikat = lembar SERTIFIKAT
+     * master persis — format SEL master menang atas desimal resolusi UUT
+     * ([desimalSertifikat] di atas tinggal cadangan untuk sesi tanpa standar
+     * yang dikenali).
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $keluarga = $this->keluargaStandar($sesi->standard);
+
+        if ($keluarga === null) {
+            return [];
+        }
+
+        return $this->formatSertifikatMaster($keluarga === TabelStandarTids::KELUARGA_BERKANAL ? 'recorder' : 'yokogawa', $titikUkur);
+    }
+
+    /**
      * `U95` SATU desimal — `SERTIFIKAT!L34` format `0.0` di KEDUA workbook,
      * termasuk yang kolom hasilnya dua desimal.
      *

@@ -1525,7 +1525,7 @@
             <tbody>
                 @foreach ($spE as $sp)
                     <tr>
-                        <td>{{ $nE($sp['set_point'] ?? null, 'setting') }}</td>
+                        <td>{{ array_key_exists('desimal_setting', $sp) ? (($sp['set_point'] ?? null) === null ? '—' : \App\Support\TataLetakSertifikat::angka(($sp['desimal_setting'] === null ? \App\Support\Angka::nilaiStandar((float) $sp['set_point'], 10) : \App\Support\Angka::hasil((float) $sp['set_point'], (int) $sp['desimal_setting'], tandaNol: $nolE)), $tataLetak)) : $nE($sp['set_point'] ?? null, 'setting') }}</td>
                         <td>{{ $nE($sp['indikator'] ?? null, 'indikator_kinerja') }}</td>
                         <td>{{ $nE($sp['keseragaman'] ?? null, 'kinerja') }}</td>
                         <td>{{ $nE($sp['kestabilan'] ?? null, 'kinerja') }}</td>

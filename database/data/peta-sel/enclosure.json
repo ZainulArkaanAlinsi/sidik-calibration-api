@@ -1354,8 +1354,23 @@
     "sel": [
      "SERTIFIKAT!C42:C45"
     ],
-    "format": "0.0",
-    "catatan": "C46:C47 (set point ke-5/6) berformat General di master — temuan, tidak dipetakan"
+    "format": "0.0"
+   },
+   {
+    "kolom": "setting_baris_5",
+    "sel": [
+     "SERTIFIKAT!C46"
+    ],
+    "format": "General",
+    "catatan": "Set point ke-5 berformat General di master (C42:C45 0.0) — K-50-15: dicetak General (EnclosureProfileBase::FORMAT_SETTING_PER_BARIS, 22 Okt 2026)"
+   },
+   {
+    "kolom": "setting_baris_6",
+    "sel": [
+     "SERTIFIKAT!C47"
+    ],
+    "format": "General",
+    "catatan": "Set point ke-6, sama dengan set point ke-5"
    },
    {
     "kolom": "indikator_kinerja",

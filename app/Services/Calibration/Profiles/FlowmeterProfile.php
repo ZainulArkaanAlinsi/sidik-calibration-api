@@ -1239,23 +1239,19 @@ abstract class FlowmeterProfile extends CalibrationProfile
      * - 150 `B21`/`D21`/`G21` & U95 `K21` `0.0000` (m3/h).
      * - 185 `E26`/`H26`/`K26` `0.000`.
      *
-     * U95 varian UFM (`149!O22`, `185!N26`) `null`: masternya mencetak U95
-     * RELATIF `%OR` (`= U95 / UUT × 100`, format `0.0`), sedangkan snapshot
-     * menyimpan U95 mutlak. Format `0.0` di atas angka mutlak L akan tercetak
-     * sebagai angka lain berlabel sama — jadi kolomnya tetap mutlak dengan
-     * desimal lama sampai builder punya kolom U95 relatif (dilaporkan, bukan
-     * diakali di sini).
+     * Varian UFM (149, 185) TIDAK lagi di sini: formatnya dibaca dari
+     * `format_sertifikat` peta sel `flowmeter` (22 Okt 2026, K-50-15) — U95
+     * master UFM adalah U95 RELATIF `%OR` (`149!O22`, `185!N26`, `0.0`),
+     * kolom `u95_relatif` template.
      *
      * @var array<string, array<string, array{0: string, 1: string|null}>>
      */
     private const FORMAT_SERTIFIKAT = [
         FlowmeterMentah::MODE_TOTALIZER => [
             'gravimetri' => ['0.00', '0.0'],
-            'ufm' => ['0.00', null],
         ],
         FlowmeterMentah::MODE_FLOWRATE => [
             'gravimetri' => ['0.0000', '0.0000'],
-            'ufm' => ['0.000', null],
         ],
     ];
 
@@ -1369,6 +1365,14 @@ abstract class FlowmeterProfile extends CalibrationProfile
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
         $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+
+        // UFM (Ultrasonic Totalizer/Flowrate): `format_sertifikat` peta sel
+        // `flowmeter` (K-50-15) — U95 master adalah U95 RELATIF `%OR`
+        // (`149!O22`, `185!N26`), kolom `u95_relatif`.
+        if ($blok !== null && $blok['mode'] === $this->mode() && ($blok['varian_metode'] ?? null) === VarianMetodeFlowmeter::UFM->value) {
+            return $this->formatSertifikatMaster($blok['mode'], $titikUkur);
+        }
+
         $format = $blok === null || $blok['mode'] !== $this->mode()
             ? null
             : (self::FORMAT_SERTIFIKAT[$blok['mode']][$blok['varian_metode'] ?? ''] ?? null);

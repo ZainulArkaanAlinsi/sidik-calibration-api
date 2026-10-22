@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
@@ -2172,6 +2173,21 @@ abstract class CalibrationProfile
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
         return [];
+    }
+
+    /**
+     * Format sel lembar SERTIFIKAT master (K-50-15, sertifikat = lembar
+     * SERTIFIKAT master persis) untuk varian master `$varian` di titik ini:
+     * `kolom => kode format`. Sumbernya [FormatSertifikatAcuan] (versi data
+     * acuan dalam lingkup, cadangan `format_sertifikat` peta sel paket ini).
+     * Tanpa entri = `[]` (aturan lama). Yang dibekukan ke snapshot sertifikat
+     * adalah JAWABAN ini waktu terbit — sertifikat terbit tidak berubah.
+     *
+     * @return array<string, string>
+     */
+    protected function formatSertifikatMaster(?string $varian, float $titikUkur): array
+    {
+        return FormatSertifikatAcuan::untuk($this->kodePaketAcuan(), $varian, $titikUkur);
     }
 
     /**

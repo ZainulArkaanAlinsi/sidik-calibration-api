@@ -401,9 +401,13 @@ class SertifikatBentukMasterTest extends TestCase
         $this->assertSame(1, preg_match('/([\d.]+) % of reading/', $jejak['keterangan'], $m));
         $baris = $ufm->snapshot['hasil'][0];
         $this->assertEqualsWithDelta((float) $m[1], abs($baris['u95'] / $baris['unit_under_test'] * 100), 0.0006);
+        // Format baris = sel master `149!O22` `0.0` (K-50-15, dari peta sel). Untuk
+        // mengadu NILAI relatifnya ke 3 desimal, format baris itu dilepas dulu.
+        $this->assertSame('0.0', $baris['format']['u95_relatif'] ?? null);
+        $tanpaFormat = ['format' => array_diff_key($baris['format'], ['u95_relatif' => true])] + $baris;
         $this->assertSame(
             Angka::keTitik(Angka::hasil((float) $m[1], 3)),
-            TataLetakSertifikat::teksSel($baris, 'u95_relatif', $ufm->snapshot, 2, ['format' => '0.000']),
+            TataLetakSertifikat::teksSel($tanpaFormat, 'u95_relatif', $ufm->snapshot, 2, ['format' => '0.000']),
         );
     }
 

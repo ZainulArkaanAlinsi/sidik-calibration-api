@@ -815,6 +815,15 @@ class CertificateSnapshotBuilder
             ->first(fn ($k): bool => is_array($k) && ($k['sumber'] ?? null) === 'konteks_sesi');
         $format = $profil->formatCetakSertifikat(is_array($konteks) ? ($konteks['merk_kalibrator'] ?? null) : null);
 
+        // Format `Suhu Setting` per baris yang beda dari kolomnya (CY
+        // `SERTIFIKAT!C46:C47` General). Kunci hanya ditulis di baris itu;
+        // snapshot lama tanpa kunci ini tetap dicetak bentuk lamanya.
+        foreach ($format['desimal_setting_baris'] ?? [] as $i => $d) {
+            if (isset($setPoint[$i])) {
+                $setPoint[$i]['desimal_setting'] = $d;
+            }
+        }
+
         return [
             'satuan' => EnclosureProfileBase::SATUAN,
             // Ikut DIBEKUKAN, sama alasannya seperti `desimal` di tabel hasil.

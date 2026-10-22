@@ -432,7 +432,7 @@ class CertificateExcelExporter
 
         foreach ($setPoint as $sp) {
             $writer->addRow(Row::fromValues([
-                $this->bulat($sp['set_point'] ?? null, $d('setting')),
+                $this->bulat($sp['set_point'] ?? null, array_key_exists('desimal_setting', $sp) ? $sp['desimal_setting'] : $d('setting')),
                 $this->bulat($sp['indikator'] ?? null, $d('indikator_kinerja')),
                 $this->bulat($sp['keseragaman'] ?? null, $d('kinerja')),
                 $this->bulat($sp['kestabilan'] ?? null, $d('kinerja')),

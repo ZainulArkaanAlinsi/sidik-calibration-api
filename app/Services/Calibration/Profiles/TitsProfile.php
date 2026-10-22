@@ -562,19 +562,18 @@ class TitsProfile extends CalibrationProfile
      * (`173!E20:L28`, `174!E16:L23` — `5.0`, bukan `5`). U95 beda per varian:
      * Measure `0.00` (`173!L29` `0.85`), Source `0.0` (`174!L24` `1.2`). `k`
      * `0` (`173!O30`, `174!O25`). Mode tidak terbaca = bentuk Measure, sama
-     * dengan [desimalU95] lama.
+     * dengan [desimalU95] lama. Dibaca dari `format_sertifikat` peta sel
+     * `kalibrator_suhu` (K-50-15), bukan konstanta.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return [
-            'standar' => '0.0',
-            'uut' => '0.0',
-            'koreksi' => '0.0',
-            'u95' => $this->modeSesi($sesi) === TabelKalibratorSuhu::MODE_SOURCE ? '0.0' : '0.00',
-            'k' => '0',
-        ];
+        // Dari `format_sertifikat` peta sel `kalibrator_suhu` (varian = mode master).
+        return $this->formatSertifikatMaster(
+            $this->modeSesi($sesi) === TabelKalibratorSuhu::MODE_SOURCE ? 'source' : 'measure',
+            $titikUkur,
+        );
     }
 
     /**

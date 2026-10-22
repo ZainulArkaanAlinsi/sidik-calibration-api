@@ -350,6 +350,11 @@ class StudioPetaSelMicrometerTest extends TestCase
      * secara langsung — satu-satunya pintu angka dari master adalah versi
      * `paket_acuan_versi` yang berlaku (`PenentuVersiAcuan`, status
      * aktif/pensiun saja).
+     *
+     * Pengecualian sempit yang disengaja (K-50-15, 22 Okt 2026): FORMAT TAMPIL
+     * sertifikat (`format_sertifikat`, kode number format — bukan angka)
+     * dibaca lewat `App\Services\Acuan\FormatSertifikatAcuan` saja; kelas itu
+     * tidak boleh membaca kunci peta selain `format_sertifikat`.
      */
     public function test_jalur_hitung_tidak_membaca_master_studio_maupun_draf(): void
     {
@@ -378,6 +383,12 @@ class StudioPetaSelMicrometerTest extends TestCase
                 $this->assertStringNotContainsString($terlarang, $isi, basename($f)." menyebut {$terlarang}");
             }
         }
+
+        // Jembatan format: hanya `format_sertifikat` yang dibaca dari peta.
+        $jembatan = (string) file_get_contents(app_path('Services/Acuan/FormatSertifikatAcuan.php'));
+        preg_match_all("/isi\\['([a-z_]+)'\\]/", $jembatan, $kunci);
+        $this->assertSame(['format_sertifikat'], array_values(array_unique($kunci[1])), 'FormatSertifikatAcuan hanya membaca format_sertifikat');
+        $this->assertStringNotContainsString('WorkbookMaster', $jembatan);
 
         // Status yang boleh menghitung: aktif & pensiun — draf/diajukan/terjadwal tidak.
         $sumber = (string) file_get_contents(app_path('Services/Acuan/PenentuVersiAcuan.php'));

@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\TabelStandarTekanan as Tabel;
 use App\Services\Calibration\TekananCalculator;
 use App\Support\LogMetodeTekananPiston as LogMetode;
+use App\Support\TataLetakSertifikat;
 use App\Support\TekananMentah as M;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
@@ -376,6 +377,19 @@ abstract class TekananProfile extends CalibrationProfile
         array $konteksTitik = [],
     ): ?array {
         return null;
+    }
+
+    /**
+     * Format sel SERTIFIKAT master varian kalibrator sesi ini (K-50-15) dari
+     * `format_sertifikat` peta sel `tekanan` — kolom UUT/Standard/Correction/
+     * Hysterisis/U95/k (`E22`, `I22:L34`, `N22:P34`, `R22:V34`, `P35`, `U36`).
+     * Varian belum dipilih = `[]` (aturan lama).
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        $varian = M::blokSesi($sesi->spesifikasi_alat)['varian'] ?? null;
+
+        return $varian === null ? [] : $this->formatSertifikatMaster($varian, $titikUkur);
     }
 
     /** Kolom sertifikat dicetak oleh blok `tekanan` sendiri; lihat [tabelSertifikatTekanan]. */
@@ -850,7 +864,7 @@ abstract class TekananProfile extends CalibrationProfile
             return null;
         }
 
-        $format = self::FORMAT_SERTIFIKAT[$blok['varian'] ?? ''] ?? null;
+        $format = $this->formatCetakVarian($blok['varian'] ?? null);
         $desimal = $format['nilai'] ?? self::desimalDari($blok['resolusi'] ?? null);
         // Master mencetak `ROUND(k;1)` di keempat sertifikat tekanan (`U36`).
         $kCetak = $k === null ? null : round((float) $k, 1);
@@ -870,39 +884,39 @@ abstract class TekananProfile extends CalibrationProfile
     }
 
     /**
-     * Format sel lembar `SERTIFIKAT` master per varian kalibrator (K-50-15).
-     * Alamat & format di bawah DISALIN TANGAN dari Studio (`workbook_master`
-     * aktif) saat ditulis — konstanta kode SEMENTARA, bukan dibaca dari Studio
-     * saat jalan. Master baru yang mengubah format TIDAK mengubah cetakan
-     * sampai konstanta ini dipindah ke peta sel (rencana studio-kendali-olah-data
-     * fase 3):
+     * Format sel lembar `SERTIFIKAT` master per varian kalibrator (K-50-15),
+     * dibaca dari `format_sertifikat` peta sel `tekanan` (number format sel
+     * .xlsm asli, diverifikasi `docs/skrip/verifikasi-peta-xlsm.py`) — dulu
+     * konstanta kode yang disalin tangan (`FORMAT_SERTIFIKAT`, nilainya sama):
      *
-     *   varian      master  Standard/Correction/Hysterisis  U95 `P35`  k `U36`
-     *   DRUCK07G    181     `I22:V27` `0.0`                 `0.000`    General
-     *   DRUCK13G    190     `I22:V27` `0.0`                 `0.0`      General
-     *   SPMK        192     `I22:V34` `0.00`                `0.00`     General
-     *   Differential 191    `I22:V27` `0.0`                 `0.00`     `0`
+     *   varian      master  Standard/Correction/Hysterisis  U95 `P35`  k `U36`  UUT `E22`
+     *   DRUCK07G    181     `0.0`                           `0.000`    General  `0`
+     *   DRUCK13G    190     `0.0`                           `0.0`      General  `0`
+     *   SPMK        192     `0.00`                          `0.00`     General  `0.000`
+     *   Differential 191    `0.0`                           `0.00`     `0`      `0.0`
      *
-     * Di 181/190/191 kolom Correction baris 28–34 (`N28:P34`) berformat
-     * `0.000`/`0.00`, beda dari enam baris di atasnya dan dari kolom Standard
-     * di sebelahnya — sel salin-tempel, tidak ditiru: satu titik tidak boleh
-     * tercetak lebih teliti hanya karena urutannya ke-7.
+     * `nilai`/`u95` = desimal format Standard/U95, `k_bulat` = k berformat `0`
+     * (`ROUND(k;1)` lalu tampil bulat), `setelan` = format kolom UUT. Varian
+     * yang tidak dikenal = null (aturan lama: desimal resolusi). Hanya cetak;
+     * nilai tersimpan tidak berubah.
      *
-     * Kolom UUT (`E22:E27`/`E22:E34`) berformat lain: `0` 181/190, `0.0`
-     * 191, `0.000` 192 (dibaca dari Studio 21 Okt 2026). Dicetak lewat
-     * `tekanan.format_setelan` (template K-50-15 putaran 3); snapshot lama
-     * tanpa `tata_letak` mengabaikannya.
-     * Varian yang tidak dikenal jatuh ke aturan lama (desimal resolusi).
-     * Hanya cetak; nilai tersimpan tidak berubah.
-     *
-     * @var array<string, array{nilai: int, u95: int, k_bulat: bool, setelan: string}>
+     * @return array{nilai: int, u95: int, k_bulat: bool, setelan: string}|null
      */
-    private const FORMAT_SERTIFIKAT = [
-        Tabel::DRUCK07G => ['nilai' => 1, 'u95' => 3, 'k_bulat' => false, 'setelan' => '0'],
-        Tabel::DRUCK13G => ['nilai' => 1, 'u95' => 1, 'k_bulat' => false, 'setelan' => '0'],
-        Tabel::SPMK => ['nilai' => 2, 'u95' => 2, 'k_bulat' => false, 'setelan' => '0.000'],
-        Tabel::DIFFERENTIAL => ['nilai' => 1, 'u95' => 2, 'k_bulat' => true, 'setelan' => '0.0'],
-    ];
+    private function formatCetakVarian(?string $varian): ?array
+    {
+        $f = $varian === null ? [] : $this->formatSertifikatMaster($varian, 0.0);
+
+        if (! isset($f['standar'], $f['u95'], $f['uut'])) {
+            return null;
+        }
+
+        return [
+            'nilai' => (int) TataLetakSertifikat::desimalFormat($f['standar']),
+            'u95' => (int) TataLetakSertifikat::desimalFormat($f['u95']),
+            'k_bulat' => ($f['k'] ?? null) === '0',
+            'setelan' => $f['uut'],
+        ];
+    }
 
     /** Desimal cetak = desimal resolusi alat (0,1 → 1; 0,05 → 2). */
     public static function desimalDari(mixed $resolusi): int
