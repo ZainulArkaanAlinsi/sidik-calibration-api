@@ -251,6 +251,12 @@ class HydrometerProfile extends CalibrationProfile
         return 'hydrometer';
     }
 
+    /** Lapis 1: surface tension, ketetapan rantai hitung & U standar (`tabel-standar-hydrometer.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarHydrometer::skemaAcuan();
+    }
+
     /** PERSIS nama lampiran LK-285-IDN no. 25. */
     public function namaAlatKemampuan(): string
     {
@@ -415,7 +421,10 @@ class HydrometerProfile extends CalibrationProfile
      * Format sel master: Nominal/Actual/Correction `0.000` (`E17`/`J17`/`O17`
      * — `0.610`, bukan `0,61`), U95 `0.00000` (`188!S17`) atau `0.0000`
      * (`189!S17`), `k` `0` (`U23`). Variannya dipilih seperti hitungannya
-     * sendiri: `pakai_beban_tambahan` blok sesi.
+     * sendiri: `pakai_beban_tambahan` blok sesi (varian peta `ringan`/`berat`).
+     * Dibaca dari `format_sertifikat` peta sel (K-50-15). Master berat
+     * `S20:S21` (U95 titik 4-5) `0.00000` tidak dirender — diduga salin-tempel,
+     * `docs/pertanyaan-lab-format-sertifikat.md` #7.
      *
      * @return array<string, string>
      */
@@ -423,13 +432,7 @@ class HydrometerProfile extends CalibrationProfile
     {
         $blok = HydrometerMentah::blokSesi($sesi->spesifikasi_alat);
 
-        return [
-            'standar' => '0.000',
-            'uut' => '0.000',
-            'koreksi' => '0.000',
-            'u95' => ($blok['pakai_beban_tambahan'] ?? true) ? '0.00000' : '0.0000',
-            'k' => '0',
-        ];
+        return $this->formatSertifikatMaster(($blok['pakai_beban_tambahan'] ?? true) ? 'ringan' : 'berat', $titikUkur);
     }
 
     /**

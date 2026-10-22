@@ -43,7 +43,7 @@ use App\Services\GumCalculator;
  * memutuskan berubah, itu **revisi metode** dengan catatan perubahan, bukan
  * patch diam-diam. Semuanya terdaftar di `docs/pertanyaan-lab-hydrometer.md`.
  *
- *  1. **π = 3,14**, bukan `M_PI` ([TabelStandarHydrometer::PHI]). Nilainya
+ *  1. **π = 3,14**, bukan `M_PI` ([TabelStandarHydrometer::konstanta] `phi`). Nilainya
  *     masuk ke `πDγ/g` yang ikut menentukan densitas akhir — `M_PI` menggeser
  *     hasil di digit yang justru dicetak sertifikat.
  *  2. **Satuan tekanan campur.** `κ` bersatuan 1/Pa, tapi faktor koreksi
@@ -259,12 +259,12 @@ class HydrometerCalculator
 
         // (2) Faktor koreksi densitas cairan terhadap tekanan. Satuan campur —
         //     temuan 2.
-        $fPress = 1 - ($T::KAPPA * ($tekanan - $T::TEKANAN_ACUAN_HPA));
+        $fPress = 1 - ($T::konstanta('kappa') * ($tekanan - $T::konstanta('tekanan_acuan_hpa')));
 
         // (3) Faktor koreksi suhu — dari titik PERTAMA saja, temuan 4.
         $suhuAcuanFaktor = (float) ($blok['suhu_acuan_faktor'] ?? $T::SUHU_ACUAN_FAKTOR_BAWAAN);
         $suhuTitik1 = array_sum($siap[0]['suhu']) / count($siap[0]['suhu']);
-        $fTemp = 1 + ($T::ALPHA * ($suhuTitik1 - $suhuAcuanFaktor));
+        $fTemp = 1 + ($T::konstanta('alpha') * ($suhuTitik1 - $suhuAcuanFaktor));
 
         // (11) Diameter stem rata-rata & tegangan permukaan.
         $d = array_sum($diameter) / count($diameter);
@@ -279,13 +279,13 @@ class HydrometerCalculator
 
         // (12) γ_L memakai tegangan permukaan TERBESAR lintas titik
         //      (`PERHITUNGAN!L53`), bukan milik titiknya sendiri.
-        $pidYx = ($T::PHI * $d * $yx) / $T::GRAVITASI_CM_S2;
-        $pidYl = ($T::PHI * $d * max($stPerTitik)) / $T::GRAVITASI_CM_S2;
+        $pidYx = ($T::konstanta('phi') * $d * $yx) / $T::konstanta('gravitasi_cm_s2');
+        $pidYl = ($T::konstanta('phi') * $d * max($stPerTitik)) / $T::konstanta('gravitasi_cm_s2');
 
         // (7) Massa konvensional hydrometer di udara. Dua suku nol master
         //     (`AF86`, `AF87 − AF88`) ditulis apa adanya supaya bentuknya tetap
         //     kebaca sebagai rumus yang sama.
-        $mAir = (($massaUdara - $T::ERR_TIMBANG) * (1 - ($rhoUdara / $T::DENSITAS_BEBAN_STANDAR))) - 0.0 - (0.0 - 0.0);
+        $mAir = (($massaUdara - $T::konstanta('err_timbang')) * (1 - ($rhoUdara / $T::konstanta('densitas_beban_standar')))) - 0.0 - (0.0 - 0.0);
 
         $rhoAirPerTitik = array_map(
             static fn (array $t): float => array_sum(array_map(
@@ -361,7 +361,7 @@ class HydrometerCalculator
 
         foreach ($t['massa'] as $u => $_) {
             // (4-5) Densitas air suling & densitas cairan terkoreksi ulangan ini.
-            $rhoLiq = ($T::densitasAirSuling($t['suhu'][$u]) / ($fTemp * $fPress)) - $T::ERR_DENSITAS;
+            $rhoLiq = ($T::densitasAirSuling($t['suhu'][$u]) / ($fTemp * $fPress)) - $T::konstanta('err_densitas');
 
             // (13) Rumus Cuckow.
             $densitas[] = ((($rhoLiq * $fTemp) - ($rhoUdara * $fTemp))
@@ -417,17 +417,17 @@ class HydrometerCalculator
         $ref = self::SUHU_ACUAN_BUDGET;
 
         // Ketidakpastian standar (`NILAI U95%!N43` & `PERHITUNGAN!P15`).
-        $uThermo = $T::U95_THERMOMETER / $T::K_THERMOMETER;
-        $uSensor = $T::U95_SENSOR / $T::K_SENSOR;
+        $uThermo = $T::standar('u95_thermometer') / $T::standar('k_thermometer');
+        $uSensor = $T::standar('u95_sensor') / $T::standar('k_sensor');
         $uTwater = (max($praolah['suhu_rata_titik']) - min($praolah['suhu_rata_titik'])) / (2 * sqrt(3));
         $ut = sqrt($uThermo ** 2 + $uSensor ** 2 + $uTwater ** 2);
 
         $deltaSuhu = abs((float) ($blok['suhu_akhir'] ?? 0.0) - (float) ($blok['suhu_awal'] ?? 0.0));
-        $uth = sqrt($deltaSuhu ** 2 + $T::U95_TH_SUHU ** 2);
+        $uth = sqrt($deltaSuhu ** 2 + $T::standar('u95_th_suhu') ** 2);
 
         // Suku antara `NILAI U95%` D43-D45 & J45/L45.
         $e43 = ($rhoAir1 * $d) / $fTemp;
-        $e44 = ($rhoAir1 * $d * $T::ALPHA) / $fTemp;
+        $e44 = ($rhoAir1 * $d * $T::konstanta('alpha')) / $fTemp;
         $e45 = ($rhoAir1 * $d * $yx) / $fTemp;
         $j45 = $e45 / $fTemp;
         $l45 = $e44 / $fTemp;
@@ -457,7 +457,7 @@ class HydrometerCalculator
         $cSuhuAir = $praolah['rho_air_maks'] * ($mAir + $e45) / $den;
         $cSuhuUdara = $rhoUdara - ($rhoUdara * ($mAir + $e45) / $den);
 
-        $a = $T::ALPHA;
+        $a = $T::konstanta('alpha');
         $resolusi = (float) ($blok['resolusi'] ?? 0.0);
 
         $komponen = [
@@ -465,12 +465,12 @@ class HydrometerCalculator
             $this->komponen('Resolution of Hydrometer', 'g/ml', 'Rectangular', $resolusi, sqrt(12), self::VI_RECTANGULAR, 1.0),
             $this->komponen('Liquid Temperature', '°C', 'Normal', ($a ** 2 * $ut ** 2) + (($suhuTitik - $ref) ** 2 * $a ** 2), 2.0, self::VI_NORMAL, $cSuhuAir),
             $this->komponen('Air Temperature', '°C', 'Normal', ($a ** 2 * $uth ** 2) + (($suhuRuang - $ref) ** 2 * $a ** 2), 2.0, self::VI_NORMAL, $cSuhuUdara),
-            $this->komponen('Density of Liquid Reference', 'g/ml', 'Normal', $T::U_DENSITAS_ACUAN, 2.0, self::VI_NORMAL, 1.0),
+            $this->komponen('Density of Liquid Reference', 'g/ml', 'Normal', $T::standar('u_densitas_acuan'), 2.0, self::VI_NORMAL, 1.0),
             $this->komponen('Density of Air', 'g/ml', 'Rectangular', 0.10 * $rhoUdara, sqrt(12), self::VI_RECTANGULAR, 1.0),
             $this->komponen('Mass of Hydrometer in the air', 'g', 'Normal', $T::uMassaAquadest(), 2.0, self::VI_NORMAL, $cMassaUdara),
             $this->komponen('Mass of Hydrometer in Liquid Ref', 'g', 'Normal', $T::uMassaAquadest(), 2.0, self::VI_NORMAL, $cMassaCair),
             $this->komponen('Stem Diameter', 'cm', 'Rectangular', $praolah['diameter_maks'] - $praolah['diameter_min'], sqrt(12), self::VI_RECTANGULAR, $cStem),
-            $this->komponen('Local Gravity', 'm/s2', 'Rectangular', $T::U_GRAVITASI, sqrt(12), self::VI_RECTANGULAR, $cGravitasi),
+            $this->komponen('Local Gravity', 'm/s2', 'Rectangular', $T::standar('u_gravitasi'), sqrt(12), self::VI_RECTANGULAR, $cGravitasi),
             $this->komponen('Surface Tension of liquid reference', 'dyne/cm', 'Rectangular', $praolah['st_maks'] - $praolah['st_min'], sqrt(12), self::VI_RECTANGULAR, $cTegangan),
         ];
 
@@ -528,14 +528,14 @@ class HydrometerCalculator
         $hasil = [];
 
         foreach ($t['massa'] as $u => $massa) {
-            $rhoLiq = ($T::densitasAirSuling($t['suhu'][$u]) / ($fTemp * $fPress)) - $T::ERR_DENSITAS;
+            $rhoLiq = ($T::densitasAirSuling($t['suhu'][$u]) / ($fTemp * $fPress)) - $T::konstanta('err_densitas');
 
             // Dua suku nol master (`AF86`, `AF87 − AF88`) ditulis apa adanya.
-            $semu = (($massa - $T::ERR_TIMBANG) * (1 - ($rhoUdara / $T::DENSITAS_BEBAN_STANDAR))) - 0.0 - (0.0 - 0.0);
+            $semu = (($massa - $T::konstanta('err_timbang')) * (1 - ($rhoUdara / $T::konstanta('densitas_beban_standar')))) - 0.0 - (0.0 - 0.0);
 
             $hasil[] = $sinker === null
                 ? $semu
-                : $semu - ($sinker * (1 - ($rhoLiq / $T::DENSITAS_SINKER)));
+                : $semu - ($sinker * (1 - ($rhoLiq / $T::konstanta('densitas_sinker'))));
         }
 
         return $hasil;

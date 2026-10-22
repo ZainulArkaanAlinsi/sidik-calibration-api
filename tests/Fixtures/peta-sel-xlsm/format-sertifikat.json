@@ -476,6 +476,66 @@
     }
    }
   },
+  "hydrometer": {
+   "varian": {
+    "berat": {
+     "berkas": "Hydrometer 1.800 - 2.000 gmL.xlsx",
+     "sha256": "1e9427d310e749599c0cccdd1c2cd0a6d6efeeed147626dc4f71cd46689f2d68",
+     "sha256_sama_manifest": true,
+     "sel": {
+      "SERTIFIKAT!E17": "0.000",
+      "SERTIFIKAT!J17": "0.000",
+      "SERTIFIKAT!O17": "0.000",
+      "SERTIFIKAT!S17": "0.0000",
+      "SERTIFIKAT!E18": "0.000",
+      "SERTIFIKAT!J18": "0.000",
+      "SERTIFIKAT!O18": "0.000",
+      "SERTIFIKAT!S18": "0.0000",
+      "SERTIFIKAT!E19": "0.000",
+      "SERTIFIKAT!J19": "0.000",
+      "SERTIFIKAT!O19": "0.000",
+      "SERTIFIKAT!S19": "0.0000",
+      "SERTIFIKAT!E20": "0.000",
+      "SERTIFIKAT!J20": "0.000",
+      "SERTIFIKAT!O20": "0.000",
+      "SERTIFIKAT!S20": "0.00000",
+      "SERTIFIKAT!E21": "0.000",
+      "SERTIFIKAT!J21": "0.000",
+      "SERTIFIKAT!O21": "0.000",
+      "SERTIFIKAT!S21": "0.00000",
+      "SERTIFIKAT!U23": "0"
+     }
+    },
+    "ringan": {
+     "berkas": "Hydrometer 0.600 - 0.650 gmL.xlsx",
+     "sha256": "3dac055eb0d6ac2f605d680e050e37ed4eba2b0ce02314212e748b9e602934b9",
+     "sha256_sama_manifest": true,
+     "sel": {
+      "SERTIFIKAT!E17": "0.000",
+      "SERTIFIKAT!J17": "0.000",
+      "SERTIFIKAT!O17": "0.000",
+      "SERTIFIKAT!S17": "0.00000",
+      "SERTIFIKAT!E18": "0.000",
+      "SERTIFIKAT!J18": "0.000",
+      "SERTIFIKAT!O18": "0.000",
+      "SERTIFIKAT!S18": "0.00000",
+      "SERTIFIKAT!E19": "0.000",
+      "SERTIFIKAT!J19": "0.000",
+      "SERTIFIKAT!O19": "0.000",
+      "SERTIFIKAT!S19": "0.00000",
+      "SERTIFIKAT!E20": "0.000",
+      "SERTIFIKAT!J20": "0.000",
+      "SERTIFIKAT!O20": "0.000",
+      "SERTIFIKAT!S20": "0.00000",
+      "SERTIFIKAT!E21": "0.000",
+      "SERTIFIKAT!J21": "0.000",
+      "SERTIFIKAT!O21": "0.000",
+      "SERTIFIKAT!S21": "0.00000",
+      "SERTIFIKAT!U23": "0"
+     }
+    }
+   }
+  },
   "jangka_sorong": {
    "varian": {
     "-": {

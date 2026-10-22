@@ -11,6 +11,7 @@ use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
+use App\Services\Calibration\HydrometerCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\Profiles\ChlorineProfile;
@@ -27,6 +28,7 @@ use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Services\Calibration\TabelStandarHeightGauge;
+use App\Services\Calibration\TabelStandarHydrometer;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarPistonVolume;
 use App\Services\Calibration\TabelStandarPutaran;
@@ -49,6 +51,7 @@ use Tests\TestCase;
 use Tests\Unit\AnakTimbanganMasterTest;
 use Tests\Unit\DialIndicatorMasterTest;
 use Tests\Unit\HeightGaugeMasterTest;
+use Tests\Unit\HydrometerMasterTest;
 use Tests\Unit\JangkaSorongMasterTest;
 use Tests\Unit\Suhu3AlatMasterTest;
 
@@ -708,6 +711,42 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         $this->assertSame($kanonik($tabelLama), $kanonik($b[0]));
         $this->assertSame($harap, $b[1]);
         $this->assertSame($kanonik($a), $kanonik($b));
+    }
+
+    /**
+     * Hydrometer: surface tension, ketetapan PERHITUNGAN & U standar lab pindah
+     * dari konstanta `TabelStandarHydrometer` ke data acuan. Tiap angka ===
+     * literal konstanta lama (double yang sama), dan hitung sesi kedua varian
+     * master (fixture HydrometerMasterTest) lewat berkas == lewat DB v1.
+     */
+    public function test_hydrometer_v1_setara_json_dan_konstanta_lama(): void
+    {
+        $lama = [
+            [[0.01, 75.64], [5.0, 74.95], [10.0, 74.23], [15.0, 73.50], [20.0, 72.75], [25.0, 71.99], [30.0, 71.20]],
+            ['phi' => 3.14, 'gravitasi_cm_s2' => 980.665, 'alpha' => 1.0e-5, 'kappa' => 2.5e-11, 'densitas_beban_standar' => 8.0,
+                'densitas_sinker' => 8.0, 'err_timbang' => 0.0002, 'err_densitas' => 0.0002, 'tekanan_acuan_hpa' => 1013.25],
+            ['u95_timbangan_lop' => 0.00074, 'k_timbangan_lop' => 2.0, 'stdev_timbang' => 0.0001, 'n_timbang' => 10,
+                'u95_thermometer' => 0.72, 'k_thermometer' => 2.0, 'u95_sensor' => 0.06, 'k_sensor' => 2.0,
+                'u_densitas_acuan' => 5.0e-5, 'u_gravitasi' => 0.0005, 'u95_th_suhu' => 1.2, 'u95_th_rh' => 3.0],
+        ];
+        $baca = static fn (): array => [
+            TabelStandarHydrometer::surfaceTension(),
+            array_map(static fn (string $k): float => TabelStandarHydrometer::konstanta($k), array_combine(array_keys($lama[1]), array_keys($lama[1]))),
+            array_map(static fn (string $k): float|int => TabelStandarHydrometer::standar($k), array_combine(array_keys($lama[2]), array_keys($lama[2]))),
+        ];
+        $this->assertSame($lama, $baca());
+
+        $m = new ReflectionClass(HydrometerMasterTest::class);
+        $hitung = fn (): array => [
+            $baca(),
+            (new HydrometerCalculator)->hitungSesi($m->getConstant('TITIK_RINGAN'), $m->getConstant('RINGAN')),
+            (new HydrometerCalculator)->hitungSesi($m->getConstant('TITIK_BERAT'), $m->getConstant('BERAT')),
+            TabelStandarHydrometer::teganganPermukaan(20.6),
+            TabelStandarHydrometer::uMassaAquadest(),
+        ];
+        [$a, $b] = $this->duaJalur('hydrometer', $this->v1('hydrometer'), $hitung);
+        $this->assertSame($a, $b);
+        $this->assertSame(72.6588, round($a[3], 10));
     }
 
     /** Anak Timbangan (workbook F2 IMTE-LQ-197): tabel + hitung sesi master (fixture AnakTimbanganMasterTest). */

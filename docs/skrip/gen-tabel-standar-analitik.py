@@ -43,6 +43,15 @@ Paket:
     `config/autoclave.php`. Nama standar ditulis dari kode (nama baris
     `standards` DB; master menulis "Pressure Disk", DB "Pressure Disk Logger").
     Koreksi DOWN (`F9:F15`) tidak dipakai rumus master, tidak dibawa.
+
+  hydrometer — `Hydrometer 0.600 - 0.650 gmL.xlsx` (ringan, bersinker) DAN
+    `Hydrometer 1.800 - 2.000 gmL.xlsx` (berat); berikan KEDUANYA, generator
+    menolak bila angkanya beda. `Tabel Surface Tension!A2:B8`, blok
+    "Uncertainty of Calibrator" `NILAI U95%` (E29/E30/E34/E35, N29/N30/N34/N35,
+    F67, F72), U95 thermohygro `DATABASE!F31`/`J31` (alamat sama di kedua
+    master) dan konstanta metode `PERHITUNGAN` (alamatnya bergeser dua baris di
+    master berat; sinker hanya di master ringan). Dulu konstanta
+    `TabelStandarHydrometer`.
 """
 import io
 import json
@@ -203,8 +212,71 @@ def autoclave():
     })
 
 
+HYDRO_PERHITUNGAN = {
+    # jalur: (sel ringan, label ringan, sel berat, label berat) — label = kolom E baris itu
+    "alpha": ("J83", "E83", "J85", "E85", "koefisien ekspansi volumetrik bahan"),
+    "kappa": ("J86", "E86", "J88", "E88", "isothermal compressibility coefficient of the fluid"),
+    "err_densitas": ("J87", "E87", "J89", "E89", "kesalahan densitas karena (kurangnya) stabilitas nilai densitas referensi (g/cm3)"),
+    "phi": ("J89", "E89", "J91", "E91", "phi"),
+    "gravitasi_cm_s2": ("J90", "E90", "J92", "E92", "percepatan gravitasi"),
+    "err_timbang": ("AF84", None, "AE86", None, None),
+    "densitas_beban_standar": ("AF85", None, "AE87", None, None),
+    "tekanan_acuan_hpa": ("AD29", None, "AC29", None, None),
+}
+
+
+def hydrometer_satu(path):
+    global WB
+    WB = buka(pathlib.Path(path))
+    nu, db, ts, ph = "NILAI U95%", "DATABASE", "Tabel Surface Tension", "PERHITUNGAN"
+    for a, h in [("C29", "LOP atau read."), ("C30", "k atau 31/2"), ("C34", "stdev timb"), ("C35", "n"),
+                 ("K29", "U95% Thermometer"), ("K34", "U95% Sensor"), ("C67", "Density of Liquid Reference"), ("C72", "Local Gravity")]:
+        label(nu, a, h)
+    label(ts, "A1", "toC")
+    berat = "1.800" in pathlib.Path(path).name
+    konst = {}
+    for k, (sr, lr, sb, lb, teks) in HYDRO_PERHITUNGAN.items():
+        a, l = (sb, lb) if berat else (sr, lr)
+        if l:
+            label(ph, l, teks)
+        konst[k] = angka(ph, a)
+    if not berat:
+        label(ph, "E91", "Densitas beban tambahan")
+        konst["densitas_sinker"] = angka(ph, "J91")
+    n = angka(nu, "E35")
+    if not n.is_integer():
+        sys.exit(f"MENOLAK: {nu}!E35 = {n}, bukan bilangan bulat")
+    return {
+        "surface_tension": [{"suhu_c": angka(ts, f"A{b}"), "dyne_cm": angka(ts, f"B{b}")} for b in range(2, 9)],
+        "konstanta": konst,
+        "standar": {
+            "u95_timbangan_lop": angka(nu, "E29"), "k_timbangan_lop": angka(nu, "E30"),
+            "stdev_timbang": angka(nu, "E34"), "n_timbang": int(n),
+            "u95_thermometer": angka(nu, "N29"), "k_thermometer": angka(nu, "N30"),
+            "u95_sensor": angka(nu, "N34"), "k_sensor": angka(nu, "N35"),
+            "u_densitas_acuan": angka(nu, "F67"), "u_gravitasi": angka(nu, "F72"),
+            "u95_th_suhu": angka(db, "F31"), "u95_th_rh": angka(db, "J31"),
+        },
+    }
+
+
+def hydrometer():
+    if len(sys.argv) != 4:
+        sys.exit("hydrometer butuh dua master: <ringan 0.600-0.650> <berat 1.800-2.000>")
+    ringan, berat = hydrometer_satu(sys.argv[2]), hydrometer_satu(sys.argv[3])
+    sinker = ringan["konstanta"].pop("densitas_sinker")
+    if ringan != berat:
+        sys.exit("MENOLAK: angka acuan master ringan & berat berbeda — satu JSON tidak bisa mewakili keduanya")
+    ringan["konstanta"]["densitas_sinker"] = sinker
+    tulis("tabel-standar-hydrometer.json", {
+        "_sumber": "Hydrometer 0.600 - 0.650 gmL.xlsx & Hydrometer 1.800 - 2.000 gmL.xlsx: Tabel Surface Tension, NILAI U95%, DATABASE!F31/J31, PERHITUNGAN (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+        **ringan,
+    })
+
+
 {
     "refractometer": refractometer,
+    "hydrometer": hydrometer,
     "autoclave": autoclave,
     "viscometer": viscometer,
     "spectrophotometer": spectrophotometer,

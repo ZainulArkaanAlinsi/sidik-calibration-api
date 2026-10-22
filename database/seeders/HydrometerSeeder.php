@@ -264,9 +264,9 @@ class HydrometerSeeder extends Seeder
                 'no_sertifikat' => HydrometerProfile::NERACA_SERI,
                 'tertelusur_ke' => 'LK-285-IDN',
                 'berlaku_sampai' => $this->berlakuSampaiDemo(HydrometerProfile::NERACA_NAMA, null),
-                'ketidakpastian' => TabelStandarHydrometer::U95_TIMBANGAN_LOP,
+                'ketidakpastian' => TabelStandarHydrometer::standar('u95_timbangan_lop'),
                 'satuan_ketidakpastian' => 'g',
-                'faktor_cakupan' => TabelStandarHydrometer::K_TIMBANGAN_LOP,
+                'faktor_cakupan' => TabelStandarHydrometer::standar('k_timbangan_lop'),
             ],
         );
     }

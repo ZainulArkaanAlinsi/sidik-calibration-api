@@ -2,6 +2,9 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use RuntimeException;
+
 /**
  * Data acuan **Hydrometer** — metode `SIDIK-IK-CAL-0525_Rev.3` (lampiran
  * akreditasi LK-285-IDN, baris no. 25, Lab. Volumetrik).
@@ -19,24 +22,13 @@ namespace App\Services\Calibration;
  */
 class TabelStandarHydrometer
 {
-    /**
-     * Tegangan permukaan air suling vs suhu, `Tabel Surface Tension` A2:B8.
-     * Satuan **dyne/cm**. Nilai di antara dua baris diinterpolasi LINEAR —
-     * master memakai `FORECAST` atas dua titik yang mengapit, jadi di luar
-     * 0,01-30 °C hasilnya ekstrapolasi garis dari pasangan terluar, bukan
-     * error. Ditiru apa adanya.
-     *
-     * @var list<array{float, float}>
-     */
-    public const SURFACE_TENSION = [
-        [0.01, 75.64],
-        [5.0, 74.95],
-        [10.0, 74.23],
-        [15.0, 73.50],
-        [20.0, 72.75],
-        [25.0, 71.99],
-        [30.0, 71.20],
-    ];
+    public const PAKET = 'hydrometer';
+
+    private const BERKAS = 'tabel-standar-hydrometer.json';
+
+    // Tegangan permukaan air suling vs suhu (`Tabel Surface Tension` A2:B8,
+    // dyne/cm) — dulu konstanta `SURFACE_TENSION` — kini data acuan lapis 1
+    // ([surfaceTension], paket `hydrometer`).
 
     /**
      * Faktor ke dyne/cm untuk satuan tegangan permukaan, tabel `Satuan_teg_muka`
@@ -68,28 +60,13 @@ class TabelStandarHydrometer
     /** Tepat tiga kali ukur diameter stem (`INPUT DATA` L33:N33). */
     public const UKUR_DIAMETER_STEM = 3;
 
-    /**
-     * Ketetapan yang dipakai rantai hitung, disalin dari sel masternya.
-     * Tidak satu pun boleh diganti "versi yang lebih benar" — lihat
-     * [HydrometerCalculator] dan `docs/pertanyaan-lab-hydrometer.md`.
-     */
-    public const PHI = 3.14;                 // PERHITUNGAN!J89 — lab memakai 3,14, bukan π
-
-    public const GRAVITASI_CM_S2 = 980.665;  // PERHITUNGAN!J90 = 9.80665 * 100
-
-    public const ALPHA = 1.0e-5;             // PERHITUNGAN!J83 — muai volumetrik bahan hydrometer
-
-    public const KAPPA = 2.5e-11;            // PERHITUNGAN!J86 — isothermal compressibility (1/Pa)
-
-    public const DENSITAS_BEBAN_STANDAR = 8.0;   // PERHITUNGAN!AF85 — ρ beban standar timbangan
-
-    public const DENSITAS_SINKER = 8.0;          // PERHITUNGAN!J91 — ρ beban tambahan
-
-    public const ERR_TIMBANG = 0.0002;           // PERHITUNGAN!AF84 — kesalahan indikasi alat timbang
-
-    public const ERR_DENSITAS = 0.0002;          // PERHITUNGAN!J87 — ketidakstabilan densitas acuan
-
-    public const TEKANAN_ACUAN_HPA = 1013.25;    // PERHITUNGAN!AD29 = 101.325 kPa * 10
+    // Ketetapan rantai hitung yang ada di SEL master `PERHITUNGAN` (phi J89
+    // 3,14; gravitasi J90 980,665; alpha J83; kappa J86; rho beban standar
+    // AF85; rho sinker J91; err timbang AF84; err densitas J87; tekanan acuan
+    // AD29 1013,25 hPa — alamat master ringan, master berat bergeser) kini data
+    // acuan lapis 1: [konstanta]. Tidak satu pun boleh diganti "versi yang
+    // lebih benar" — lihat [HydrometerCalculator] dan
+    // `docs/pertanyaan-lab-hydrometer.md`.
 
     /**
      * Suhu acuan faktor koreksi suhu — `PERHITUNGAN!AD39`/`AD75` menunjuk
@@ -115,43 +92,12 @@ class TabelStandarHydrometer
         0.000000006591795606,
     ];
 
-    /**
-     * Ketidakpastian baku standar lab, blok "Uncertainty of Calibrator" sheet
-     * `NILAI U95%` baris 27-45. IDENTIK di kedua master.
-     *
-     * Ini data kalibrasi ALAT STANDAR — begitu sertifikat timbangan /
-     * termometer / sensor diperbarui, angkanya berubah. Ditaruh di sini,
-     * bukan disebar di rumus, supaya satu tempat yang harus disunting.
-     */
-    public const U95_TIMBANGAN_LOP = 0.00074;    // E29, g
-
-    public const K_TIMBANGAN_LOP = 2.0;          // E30
-
-    public const STDEV_TIMBANG = 0.0001;         // E34, g
-
-    public const N_TIMBANG = 10;                 // E35
-
-    public const U95_THERMOMETER = 0.72;         // N29, °C
-
-    public const K_THERMOMETER = 2.0;            // N30
-
-    public const U95_SENSOR = 0.06;              // N34, °C
-
-    public const K_SENSOR = 2.0;                 // N35
-
-    /** U95% densitas cairan acuan, `NILAI U95%` F67 — diketik literal di master. */
-    public const U_DENSITAS_ACUAN = 5.0e-5;
-
-    /** U gravitasi lokal, `NILAI U95%` F72 — diketik literal di master. */
-    public const U_GRAVITASI = 0.0005;
-
-    /**
-     * U95% sertifikat thermohygro standar yang dipakai `PERHITUNGAN!P15`/`P16`
-     * (`DATABASE!F31`/`J31`). Suhu 1,2 °C, kelembaban 3 %RH.
-     */
-    public const U95_TH_SUHU = 1.2;
-
-    public const U95_TH_RH = 3.0;
+    // Ketidakpastian standar lab, blok "Uncertainty of Calibrator" `NILAI U95%`
+    // (timbangan E29/E30/E34/E35, termometer N29/N30, sensor N34/N35, densitas
+    // cairan acuan F67, gravitasi F72) dan U95 thermohygro `DATABASE!F31`/`J31`
+    // — IDENTIK di kedua master — kini data acuan lapis 1: [standar]. Sertifikat
+    // timbangan/termometer/sensor diperbarui = versi data acuan baru di
+    // Studio, bukan sunting kode.
 
     /**
      * Lantai CMC hydrometer TIDAK tinggal di kelas ini.
@@ -191,16 +137,18 @@ class TabelStandarHydrometer
     {
         $idx = 0;
 
-        foreach (self::SURFACE_TENSION as $i => [$suhu, $_]) {
+        $tabel = self::surfaceTension();
+
+        foreach ($tabel as $i => [$suhu, $_]) {
             if ($suhu <= $t) {
                 $idx = $i;
             }
         }
 
-        $idx = min($idx, count(self::SURFACE_TENSION) - 2);
+        $idx = min($idx, count($tabel) - 2);
 
-        [$x1, $y1] = self::SURFACE_TENSION[$idx];
-        [$x2, $y2] = self::SURFACE_TENSION[$idx + 1];
+        [$x1, $y1] = $tabel[$idx];
+        [$x2, $y2] = $tabel[$idx + 1];
 
         return $y1 + ($y2 - $y1) * ($t - $x1) / ($x2 - $x1);
     }
@@ -228,9 +176,132 @@ class TabelStandarHydrometer
     /** Ketidakpastian baku massa aquadest, `NILAI U95%!E39` = √(Utimb² + Urepeat²). */
     public static function uMassaAquadest(): float
     {
-        $uTimb = self::U95_TIMBANGAN_LOP / self::K_TIMBANGAN_LOP;
-        $uRepeat = self::STDEV_TIMBANG / sqrt(self::N_TIMBANG);
+        $uTimb = self::standar('u95_timbangan_lop') / self::standar('k_timbangan_lop');
+        $uRepeat = self::standar('stdev_timbang') / sqrt(self::standar('n_timbang'));
 
         return sqrt($uTimb ** 2 + $uRepeat ** 2);
+    }
+
+    /**
+     * Tegangan permukaan air suling vs suhu, `Tabel Surface Tension` A2:B8
+     * (dyne/cm), pasangan `[suhu °C, dyne/cm]` urut baris. Data acuan lapis 1.
+     *
+     * @return list<array{float, float}>
+     */
+    public static function surfaceTension(): array
+    {
+        $baris = self::isi()['surface_tension'] ?? null;
+
+        if (! is_array($baris) || count($baris) < 2 || ! array_is_list($baris)) {
+            throw new RuntimeException('Tabel hydrometer tanpa surface_tension (minimal dua baris).');
+        }
+
+        return array_map(static function (mixed $b): array {
+            if (! is_array($b) || ! is_numeric($b['suhu_c'] ?? null) || ! is_numeric($b['dyne_cm'] ?? null)) {
+                throw new RuntimeException('Tabel hydrometer: baris surface_tension rusak.');
+            }
+
+            return [(float) $b['suhu_c'], (float) $b['dyne_cm']];
+        }, $baris);
+    }
+
+    /** Ketetapan rantai hitung `konstanta.<kunci>` (sel `PERHITUNGAN` master). */
+    public static function konstanta(string $kunci): float
+    {
+        $x = self::isi()['konstanta'][$kunci] ?? null;
+
+        return is_int($x) || is_float($x) ? (float) $x
+            : throw new RuntimeException("Tabel hydrometer tanpa angka konstanta.{$kunci}.");
+    }
+
+    /**
+     * Ketidakpastian standar lab `standar.<kunci>`. `n_timbang` bilangan bulat
+     * (jumlah penimbangan, pembagi √n); selebihnya float.
+     */
+    public static function standar(string $kunci): float|int
+    {
+        $x = self::isi()['standar'][$kunci] ?? null;
+
+        if ($kunci === 'n_timbang') {
+            return is_int($x) && $x > 0 ? $x : throw new RuntimeException('Tabel hydrometer: standar.n_timbang harus bilangan bulat > 0.');
+        }
+
+        return is_int($x) || is_float($x) ? (float) $x
+            : throw new RuntimeException("Tabel hydrometer tanpa angka standar.{$kunci}.");
+    }
+
+    /** @return array<string, mixed> */
+    private static function isi(): array
+    {
+        $berkas = database_path('data/'.self::BERKAS);
+
+        if (! is_file($berkas)) {
+            throw new RuntimeException("Tabel hydrometer nggak ketemu: {$berkas}");
+        }
+
+        return app(SumberAcuan::class)->isi(self::PAKET, $berkas);
+    }
+
+    /**
+     * Skema Studio Data Acuan paket `hydrometer`.
+     *
+     * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}
+     */
+    public static function skemaAcuan(): array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal): array => [
+            'kode' => $kode, 'label' => $label, 'tipe' => $tipe, 'satuan' => $satuan, 'asal' => $asal, 'perlu_konfirmasi' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => self::BERKAS,
+            'lembar' => [
+                [
+                    'kode' => 'surface_tension', 'label' => 'Tegangan permukaan air suling', 'jalur' => 'surface_tension',
+                    'jenis' => 'daftar', 'kunci' => 'suhu_c',
+                    'kolom' => [
+                        $kolom('suhu_c', 'Suhu', 'desimal', '°C', 'Tabel Surface Tension!A2:A8'),
+                        $kolom('dyne_cm', 'Tegangan permukaan', 'desimal', 'dyne/cm', 'Tabel Surface Tension!B2:B8'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'konstanta', 'label' => 'Ketetapan rantai hitung (PERHITUNGAN, alamat master 0.600-0.650)', 'jalur' => 'konstanta',
+                    'jenis' => 'objek', 'kunci' => null,
+                    'kolom' => [
+                        $kolom('alpha', 'Koefisien ekspansi volumetrik bahan', 'desimal', '1/°C', 'PERHITUNGAN!J83'),
+                        $kolom('kappa', 'Isothermal compressibility cairan', 'desimal', '1/Pa', 'PERHITUNGAN!J86'),
+                        $kolom('err_densitas', 'Kesalahan stabilitas densitas acuan', 'desimal', 'g/cm3', 'PERHITUNGAN!J87'),
+                        $kolom('phi', 'phi (lab memakai 3,14)', 'desimal', null, 'PERHITUNGAN!J89'),
+                        $kolom('gravitasi_cm_s2', 'Percepatan gravitasi', 'desimal', 'cm/s2', 'PERHITUNGAN!J90'),
+                        $kolom('err_timbang', 'Kesalahan indikasi alat timbang', 'desimal', 'g', 'PERHITUNGAN!AF84'),
+                        $kolom('densitas_beban_standar', 'Densitas beban standar timbangan', 'desimal', 'g/ml', 'PERHITUNGAN!AF85'),
+                        $kolom('tekanan_acuan_hpa', 'Tekanan acuan', 'desimal', 'hPa', 'PERHITUNGAN!AD29'),
+                        $kolom('densitas_sinker', 'Densitas beban tambahan (sinker)', 'desimal', 'g/cm3', 'PERHITUNGAN!J91'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'standar', 'label' => 'Uncertainty of Calibrator (NILAI U95%) & thermohygro', 'jalur' => 'standar',
+                    'jenis' => 'objek', 'kunci' => null,
+                    'kolom' => [
+                        $kolom('u95_timbangan_lop', 'U95 timbangan (LOP/read.)', 'desimal', 'g', 'NILAI U95%!E29'),
+                        $kolom('k_timbangan_lop', 'k timbangan', 'desimal', null, 'NILAI U95%!E30'),
+                        $kolom('stdev_timbang', 'Stdev penimbangan', 'desimal', 'g', 'NILAI U95%!E34'),
+                        $kolom('n_timbang', 'n penimbangan', 'bulat', null, 'NILAI U95%!E35'),
+                        $kolom('u95_thermometer', 'U95 termometer', 'desimal', '°C', 'NILAI U95%!N29'),
+                        $kolom('k_thermometer', 'k termometer', 'desimal', null, 'NILAI U95%!N30'),
+                        $kolom('u95_sensor', 'U95 sensor', 'desimal', '°C', 'NILAI U95%!N34'),
+                        $kolom('k_sensor', 'k sensor', 'desimal', null, 'NILAI U95%!N35'),
+                        $kolom('u_densitas_acuan', 'U densitas cairan acuan', 'desimal', 'g/ml', 'NILAI U95%!F67'),
+                        $kolom('u_gravitasi', 'U gravitasi lokal', 'desimal', 'm/s2', 'NILAI U95%!F72'),
+                        $kolom('u95_th_suhu', 'U95 thermohygro suhu', 'desimal', '°C', 'DATABASE!F31'),
+                        $kolom('u95_th_rh', 'U95 thermohygro kelembaban', 'desimal', '%RH', 'DATABASE!J31'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
     }
 }

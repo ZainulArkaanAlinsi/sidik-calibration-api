@@ -1,0 +1,425 @@
+{
+ "format": 1,
+ "kode_profil": "hydrometer",
+ "sumber_json": "tabel-standar-hydrometer.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-analitik.py (hydrometer); dulu konstanta kode TabelStandarHydrometer (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/Hydrometer TIDAK sebaris dengan .xlsx (bentuk ekspor lain: sel berisi teks rumus, baris bergeser) — paritas lewat sel .xlsx yang dibekukan tests/Fixtures/peta-sel-xlsm/hydrometer (docs/skrip/bekukan-sel-peta-xlsm.py) + docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "Dua master, satu JSON: angka acuan kedua master identik (generator menolak bila beda); hanya alamat konstanta PERHITUNGAN yang bergeser dua baris di master berat, dan beban tambahan (sinker, J91) hanya ada di master ringan — di master berat jalurnya dibawa dari versi dasar.",
+  "PERHITUNGAN!J90 (=9.80665*100), J86 (=2.5/100000000000), AD29 (=101.325*10) berumus; nilai cache-nya yang dibaca, sama bit demi bit dengan konstanta lama."
+ ],
+ "lembar_wajib": [
+  "PERHITUNGAN",
+  "NILAI U95%",
+  "DATABASE",
+  "Tabel Surface Tension"
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "ringan": "(^| )0\\.600( |$)",
+   "berat": "(^| )1\\.800( |$)"
+  }
+ },
+ "jangkar": [
+  {
+   "sel": "NILAI U95%!C29",
+   "teks": "LOP atau read."
+  },
+  {
+   "sel": "NILAI U95%!C30",
+   "teks": "k atau 31/2"
+  },
+  {
+   "sel": "NILAI U95%!C34",
+   "teks": "stdev timb"
+  },
+  {
+   "sel": "NILAI U95%!C35",
+   "teks": "n"
+  },
+  {
+   "sel": "NILAI U95%!K29",
+   "teks": "U95% Thermometer"
+  },
+  {
+   "sel": "NILAI U95%!K34",
+   "teks": "U95% Sensor"
+  },
+  {
+   "sel": "NILAI U95%!C67",
+   "teks": "Density of Liquid Reference"
+  },
+  {
+   "sel": "NILAI U95%!C72",
+   "teks": "Local Gravity"
+  },
+  {
+   "sel": "DATABASE!F29",
+   "teks": "Uncertainty ±"
+  },
+  {
+   "sel": "Tabel Surface Tension!A1",
+   "teks": "toC"
+  },
+  {
+   "sel": "PERHITUNGAN!E83",
+   "teks": "koefisien ekspansi volumetrik bahan",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E85",
+   "teks": "koefisien ekspansi volumetrik bahan",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E86",
+   "teks": "isothermal compressibility coefficient of the fluid",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E88",
+   "teks": "isothermal compressibility coefficient of the fluid",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E87",
+   "teks": "kesalahan densitas karena (kurangnya) stabilitas nilai densitas referensi (g/cm3)",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E89",
+   "teks": "kesalahan densitas karena (kurangnya) stabilitas nilai densitas referensi (g/cm3)",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E89",
+   "teks": "phi",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E91",
+   "teks": "phi",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E90",
+   "teks": "percepatan gravitasi",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E92",
+   "teks": "percepatan gravitasi",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN!E91",
+   "teks": "Densitas beban tambahan",
+   "varian": [
+    "ringan"
+   ]
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "konstanta.alpha",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J83",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.alpha",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J85",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.kappa",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J86",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.kappa",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J88",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.err_densitas",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J87",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.err_densitas",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J89",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.phi",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J89",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.phi",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J91",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.gravitasi_cm_s2",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J90",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.gravitasi_cm_s2",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J92",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.err_timbang",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AF84",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.err_timbang",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AE86",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.densitas_beban_standar",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AF85",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.densitas_beban_standar",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AE87",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.tekanan_acuan_hpa",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AD29",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "konstanta.tekanan_acuan_hpa",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!AC29",
+   "varian": [
+    "berat"
+   ]
+  },
+  {
+   "jalur": "konstanta.densitas_sinker",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN!J91",
+   "varian": [
+    "ringan"
+   ]
+  },
+  {
+   "jalur": "standar.u95_timbangan_lop",
+   "tipe": "angka",
+   "sel": "NILAI U95%!E29"
+  },
+  {
+   "jalur": "standar.k_timbangan_lop",
+   "tipe": "angka",
+   "sel": "NILAI U95%!E30"
+  },
+  {
+   "jalur": "standar.stdev_timbang",
+   "tipe": "angka",
+   "sel": "NILAI U95%!E34"
+  },
+  {
+   "jalur": "standar.u95_thermometer",
+   "tipe": "angka",
+   "sel": "NILAI U95%!N29"
+  },
+  {
+   "jalur": "standar.k_thermometer",
+   "tipe": "angka",
+   "sel": "NILAI U95%!N30"
+  },
+  {
+   "jalur": "standar.u95_sensor",
+   "tipe": "angka",
+   "sel": "NILAI U95%!N34"
+  },
+  {
+   "jalur": "standar.k_sensor",
+   "tipe": "angka",
+   "sel": "NILAI U95%!N35"
+  },
+  {
+   "jalur": "standar.u_densitas_acuan",
+   "tipe": "angka",
+   "sel": "NILAI U95%!F67"
+  },
+  {
+   "jalur": "standar.u_gravitasi",
+   "tipe": "angka",
+   "sel": "NILAI U95%!F72"
+  },
+  {
+   "jalur": "standar.u95_th_suhu",
+   "tipe": "angka",
+   "sel": "DATABASE!F31"
+  },
+  {
+   "jalur": "standar.u95_th_rh",
+   "tipe": "angka",
+   "sel": "DATABASE!J31"
+  },
+  {
+   "jalur": "standar.n_timbang",
+   "tipe": "bilangan_bulat",
+   "sel": "NILAI U95%!E35"
+  },
+  {
+   "jalur": "surface_tension",
+   "tipe": "daftar_objek",
+   "kunci": "suhu_c",
+   "kolom": {
+    "suhu_c": "Tabel Surface Tension!A2:A8",
+    "dyne_cm": "Tabel Surface Tension!B2:B8"
+   },
+   "min_baris": 7
+  }
+ ],
+ "tidak_dipetakan": [
+  "POLINOM_DENSITAS_AIR — koefisien literal di rumus PERHITUNGAN!G56, lapis 2.",
+  "FAKTOR_TEGANGAN_KE_DYNE (DATABASE!V29:W31) & FAKTOR_DENSITAS_KE_G_PER_ML (DATABASE!V20:W21) — konversi satuan, lapis 2.",
+  "SUHU_ACUAN_SAH (catatan PERHITUNGAN!AE39), PENGULANGAN, UKUR_DIAMETER_STEM — bentuk lembar kerja, lapis 3.",
+  "SUHU_ACUAN_FAKTOR_BAWAAN 20 — INPUT DATA!E17 per alat (cadangan), bukan data acuan.",
+  "CMC_MASTER 0,0007 (NILAI U95%!L79) — HydrometerProfile, sudah diganti pita akreditasi (calibration_capabilities); dibiarkan sebagai pembanding master.",
+  "Faktor 10 % densitas udara (F68 = 10%*J78), pembagi SQRT(12), vi — struktur budget, lapis 2.",
+  "_sumber — dokumentasi."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsx asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; per sel dibekukan di tests/Fixtures/peta-sel-xlsm/format-sertifikat.json. Varian = master (ringan 0.600-0.650 bersinker, berat 1.800-2.000), dipilih render dari pakai_beban_tambahan blok sesi seperti hitungannya. Temuan: master berat S20:S21 (U95 titik 4-5) 0.00000, S17:S19 0.0000 — diduga salin-tempel; render tetap 0.0000 (StudioFormatSertifikatTest::BEDA_DIKETAHUI), pertanyaan lab format #7.",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E17:E21"
+    ],
+    "format": "0.000",
+    "catatan": "Nominal"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J17:J21"
+    ],
+    "format": "0.000",
+    "catatan": "Actual"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!O17:O21"
+    ],
+    "format": "0.000"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!S17:S21"
+    ],
+    "format": "0.00000",
+    "varian": [
+     "ringan"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!S17:S19"
+    ],
+    "format": "0.0000",
+    "varian": [
+     "berat"
+    ]
+   },
+   {
+    "kolom": "u95_baris_4_5",
+    "sel": [
+     "SERTIFIKAT!S20:S21"
+    ],
+    "format": "0.00000",
+    "varian": [
+     "berat"
+    ],
+    "catatan": "Diduga salin-tempel; TIDAK dirender (pertanyaan lab format #7)."
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U23"
+    ],
+    "format": "0"
+   }
+  ]
+ }
+}

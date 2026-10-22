@@ -165,8 +165,12 @@ class VolumetricGlasswareMasterTest extends TestCase
     public function test_densitas_anak_timbangan_bukan_milik_hydrometer(): void
     {
         $this->assertSame(7.95, V::DENSITAS_ANAK_TIMBANGAN);
+        // Unit test tanpa aplikasi: dibaca langsung dari berkas data acuan
+        // Hydrometer (TabelStandarHydrometer::konstanta butuh SumberAcuan).
+        $hydrometer = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/database/data/tabel-standar-hydrometer.json'), true);
+        $this->assertSame(8.0, $hydrometer['konstanta']['densitas_beban_standar']);
         $this->assertNotSame(
-            TabelStandarHydrometer::DENSITAS_BEBAN_STANDAR,
+            $hydrometer['konstanta']['densitas_beban_standar'],
             V::DENSITAS_ANAK_TIMBANGAN,
             'ρ anak timbangan tertukar dengan milik Hydrometer — seluruh V20 bergeser tanpa error.',
         );

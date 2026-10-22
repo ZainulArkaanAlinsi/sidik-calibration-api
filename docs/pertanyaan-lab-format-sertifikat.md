@@ -86,3 +86,18 @@ kapasitas 2000,0001–2000,001 kg masuk band Q di sistem tetapi ditolak master.
 Praktis mustahil terjadi; dicatat supaya tidak ditemukan ulang.
 
 **Pertanyaan:** batas atas band Q = tepat 2000 kg (ikut master)?
+
+## 7. Hydrometer 1.800–2.000 g/mL: U95 titik 4–5 `0.00000` (DITAHAN, belum dicetak)
+
+Master berat (`Hydrometer 1.800 - 2.000 gmL.xlsx`) memformat U95 titik 1–3
+(`SERTIFIKAT!S17:S19`) `0.0000`, tetapi titik 4–5 (`S20:S21`) `0.00000`. Master
+ringan (`0.600 - 0.650`) memformat kelima baris `0.00000`. Polanya mirip
+format yang hanya diganti di baris contoh terisi (contoh master hanya tiga
+titik) — diduga salin-tempel dari master ringan. Sistem TETAP mencetak
+`0.0000` untuk seluruh baris sesi tanpa beban tambahan; bedanya dipatok di
+`StudioFormatSertifikatTest::BEDA_DIKETAHUI` (`hydrometer/berat/u95_baris_4_5`)
+dan dipetakan per baris di `peta-sel/hydrometer.json`. Hanya berdampak pada
+sesi hydrometer berat 4–5 titik.
+
+**Pertanyaan:** U95 titik ke-4 dan ke-5 master berat memang 5 desimal, atau
+seharusnya `0.0000` seperti titik 1–3?

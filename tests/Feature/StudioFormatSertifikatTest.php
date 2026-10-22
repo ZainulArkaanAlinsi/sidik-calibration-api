@@ -11,6 +11,7 @@ use App\Services\Calibration\TabelStandarTids;
 use App\Services\Studio\PetaSel\Alamat;
 use App\Services\Studio\PetaSel\PetaSel;
 use App\Support\FlowmeterMentah;
+use App\Support\HydrometerMentah;
 use App\Support\PistonVolumeMentah;
 use App\Support\TekananMentah;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -32,7 +33,8 @@ use Tests\TestCase;
  * Peta = render tidak membuktikan peta = master per sel (temuan F-3, 22 Okt
  * 2026): `test_entri_peta_sama_dengan_format_tiap_sel_master` mengadu tiap sel
  * ke number_format master yang dibekukan. Satu-satunya beda master vs render
- * yang tersisa dipatok di [BEDA_DIKETAHUI] (Tekanan baris 7-13, menunggu lab).
+ * yang tersisa dipatok di [BEDA_DIKETAHUI] (Tekanan baris 7-13, Hydrometer berat
+ * U95 titik 4-5; menunggu lab).
  */
 class StudioFormatSertifikatTest extends TestCase
 {
@@ -66,6 +68,7 @@ class StudioFormatSertifikatTest extends TestCase
         $tits = static fn (string $mode): callable => static fn (): CalibrationSession => self::sesi(atribut: ['mode_kalibrasi' => $mode]);
         $tids = static fn (string $keluarga): callable => static fn (): CalibrationSession => self::sesi(standar: new Standard(['serial_number' => TabelStandarTids::KELUARGA_SERTIFIKAT[$keluarga]['serial']]));
         $tekanan = static fn (string $varian): callable => static fn (): CalibrationSession => self::sesi([TekananMentah::KUNCI_SESI => ['varian' => $varian]]);
+        $hydro = static fn (bool $sinker): callable => static fn (): CalibrationSession => self::sesi([HydrometerMentah::KUNCI_SESI => ['pakai_beban_tambahan' => $sinker]]);
 
         return [
             'micrometer' => ['micrometer', [['A', 'micrometer', 10.0, $mikro(25.0)], ['B', 'micrometer', 30.0, $mikro(50.0)], ['C', 'micrometer', 60.0, $mikro(75.0)], ['D', 'micrometer', 80.0, $mikro(100.0)]]],
@@ -82,6 +85,7 @@ class StudioFormatSertifikatTest extends TestCase
             'tids' => ['tids', [['yokogawa', 'tids', 100.0, $tids('yokogawa')], ['yokogawa', 'tids', 100.0, $tids('constant')], ['recorder', 'tids', 100.0, $tids('recorder')]]],
             'sieve' => ['sieve', [[null, 'sieve', 19.0, $kosong]]],
             'refractometer' => ['refractometer', [[null, 'refractometer', 1.33659, $kosong], [null, 'refractometer', 1.39986, $kosong]]],
+            'hydrometer' => ['hydrometer', [['ringan', 'hydrometer', 0.61, $hydro(true)], ['berat', 'hydrometer', 1.8, $hydro(false)]]],
             'spectrophotometer' => ['spectrophotometer', [[null, 'spectrophotometer', 279.6, $kosong], [null, 'spectrophotometer', 475.2, $kosong], [null, 'spectrophotometer', 9.9, $kosong]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, $tekanan('druck07g')], ['druck13g', 'pressure_gauge', 100.0, $tekanan('druck13g')], ['spmk', 'pressure_gauge', 5.0, $tekanan('spmk')], ['differential', 'differential_pressure', 2.0, $tekanan('differential')]]],
         ];
@@ -183,6 +187,10 @@ class StudioFormatSertifikatTest extends TestCase
         'tekanan/differential/uut_baris_8_13' => ['0.000', '0.0'],
         'tekanan/differential/koreksi_baris_7' => ['0.000', '0.0'],
         'tekanan/differential/koreksi_baris_8_13' => ['0.00', '0.0'],
+        // Master Hydrometer 1.800-2.000: U95 titik 4-5 (`S20:S21`) `0.00000`,
+        // titik 1-3 (`S17:S19`) `0.0000` — diduga salin-tempel. Render tetap
+        // `0.0000` sampai lab menjawab pertanyaan format #7.
+        'hydrometer/berat/u95_baris_4_5' => ['0.00000', '0.0000'],
     ];
 
     /** Satu berkas, bukan subdirektori: `StudioPetaSelXlsmTest` membaca `peta-sel-xlsm/<paket>/*.json`. */

@@ -341,6 +341,20 @@
    "sha256": "a638317fd0a16d9aac69e8568a255e1201080cd5d0c9e954812392de22ebb0c0",
    "ukuran_byte": 767488,
    "terverifikasi": true
+  },
+  {
+   "paket": "hydrometer",
+   "berkas": "Hydrometer 0.600 - 0.650 gmL.xlsx",
+   "sha256": "3dac055eb0d6ac2f605d680e050e37ed4eba2b0ce02314212e748b9e602934b9",
+   "ukuran_byte": 732160,
+   "terverifikasi": true
+  },
+  {
+   "paket": "hydrometer",
+   "berkas": "Hydrometer 1.800 - 2.000 gmL.xlsx",
+   "sha256": "1e9427d310e749599c0cccdd1c2cd0a6d6efeeed147626dc4f71cd46689f2d68",
+   "ukuran_byte": 712704,
+   "terverifikasi": true
   }
  ]
 }

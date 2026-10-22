@@ -1,0 +1,58 @@
+{
+ "_sumber": "Hydrometer 0.600 - 0.650 gmL.xlsx & Hydrometer 1.800 - 2.000 gmL.xlsx: Tabel Surface Tension, NILAI U95%, DATABASE!F31/J31, PERHITUNGAN (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+ "surface_tension": [
+  {
+   "suhu_c": 0.01,
+   "dyne_cm": 75.64
+  },
+  {
+   "suhu_c": 5.0,
+   "dyne_cm": 74.95
+  },
+  {
+   "suhu_c": 10.0,
+   "dyne_cm": 74.23
+  },
+  {
+   "suhu_c": 15.0,
+   "dyne_cm": 73.5
+  },
+  {
+   "suhu_c": 20.0,
+   "dyne_cm": 72.75
+  },
+  {
+   "suhu_c": 25.0,
+   "dyne_cm": 71.99
+  },
+  {
+   "suhu_c": 30.0,
+   "dyne_cm": 71.2
+  }
+ ],
+ "konstanta": {
+  "alpha": 1e-05,
+  "kappa": 2.5e-11,
+  "err_densitas": 0.0002,
+  "phi": 3.14,
+  "gravitasi_cm_s2": 980.665,
+  "err_timbang": 0.0002,
+  "densitas_beban_standar": 8.0,
+  "tekanan_acuan_hpa": 1013.25,
+  "densitas_sinker": 8.0
+ },
+ "standar": {
+  "u95_timbangan_lop": 0.00074,
+  "k_timbangan_lop": 2.0,
+  "stdev_timbang": 0.0001,
+  "n_timbang": 10,
+  "u95_thermometer": 0.72,
+  "k_thermometer": 2.0,
+  "u95_sensor": 0.06,
+  "k_sensor": 2.0,
+  "u_densitas_acuan": 5e-05,
+  "u_gravitasi": 0.0005,
+  "u95_th_suhu": 1.2,
+  "u95_th_rh": 3.0
+ }
+}
