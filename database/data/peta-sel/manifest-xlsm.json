@@ -173,6 +173,22 @@
    "ukuran_byte": 314880,
    "terverifikasi": true,
    "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "kalibrator_suhu",
+   "berkas": "Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm",
+   "sha256": "f6ae739443127616ce47d9d0d1690f0a8176a7b6e9b671584e7d66a53fb92324",
+   "ukuran_byte": 455680,
+   "terverifikasi": true,
+   "catatan": "Salinan 'Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "kalibrator_suhu",
+   "berkas": "Master Olah Data_Suhu_TITS fungsi Source utk UUT.xlsm",
+   "sha256": "dc8daf25f809b44489609b4e4ef426eb7ae420163d409cc0c43501124af9430d",
+   "ukuran_byte": 453632,
+   "terverifikasi": true,
+   "catatan": "Salinan 'Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm1' di folder yang sama ber-sha256 identik."
   }
  ]
 }

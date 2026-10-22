@@ -10,6 +10,7 @@ use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
+use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
@@ -386,6 +387,36 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
             return $h;
         });
         $this->assertSame([$a['nama'], $a['indeks']], [$b['nama'], $b['indeks']]);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Kalibrator suhu (TITS Measure & Source), dibaca juga TIDS/Enclosure/3 alat suhu. */
+    public function test_kalibrator_suhu_v1_setara_json(): void
+    {
+        $v1 = $this->v1('kalibrator_suhu');
+
+        [$a, $b] = $this->duaJalur('kalibrator_suhu', $v1, function (): array {
+            $t = new TabelKalibratorSuhu;
+            $h = [];
+
+            foreach ([TabelKalibratorSuhu::MODE_MEASURE, TabelKalibratorSuhu::MODE_SOURCE] as $mode) {
+                foreach (TabelKalibratorSuhu::MERK as $merk) {
+                    $h[$mode][$merk]['tipe'] = $t->tipeSensorTersedia($mode, $merk);
+
+                    foreach (['RTD', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S', 'Type J'] as $tipe) {
+                        $h[$mode][$merk][$tipe] = ['drift' => $t->drift($mode, $merk, $tipe), 'u95_maks' => $t->u95Maksimum($mode, $merk, $tipe)];
+
+                        foreach ([-100.0, -20.0, 1.0, 37.5, 250.0, 1100.0, 1500.0] as $titik) {
+                            $h[$mode][$merk][$tipe]['titik'][] = [$t->koreksi($mode, $merk, $tipe, $titik), $t->u95($mode, $merk, $tipe, $titik)];
+                        }
+                    }
+                }
+            }
+
+            return $h;
+        });
+        // Urutan tipe (dropdown) identik apa adanya; isi lain tanpa memandang urutan kunci objek.
+        $this->assertSame(array_map(static fn (array $m): array => array_column($m, 'tipe'), $a), array_map(static fn (array $m): array => array_column($m, 'tipe'), $b));
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 

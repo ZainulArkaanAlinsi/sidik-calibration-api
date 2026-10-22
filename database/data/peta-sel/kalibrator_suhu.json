@@ -1,0 +1,724 @@
+{
+ "format": 1,
+ "kode_profil": "kalibrator_suhu",
+ "sumber_json": "tabel-kalibrator-suhu.json",
+ "bukti": [
+  "Alamat = `_sumber` JSON (blok B8:J27 & B30:J49 Constant, M8:U27 & M30:U49 Yokogawa, drift X5:AA13) di lembar 'STANDAR KALIBRATOR'; tidak ada generator di repo, aturan baris diturunkan & dibuktikan 22 Okt 2026: baris ikut bila titik DAN koreksi berangka (koreksi #REF!/kosong = lewati), U95 bukan angka = null, nilai dibulatkan 10 desimal (membuang derau float Excel) — hasilnya = JSON repo untuk keempat (mode × kalibrator).",
+  "Ekstraksi dari ekspor CSV kedua master TITS (Project-PT-Sidik/alat-alat-Pt-Sidik/suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_{Measure,Source}_utk_UUT) = tabel-kalibrator-suhu.json (StudioPetaSelProfilTest); baris CSV = baris .xlsm (tanpa bagian `xlsm`).",
+  "Diverifikasi terhadap kedua .xlsm asli dengan docs/skrip/verifikasi-peta-xlsm.py 22 Okt 2026 (sha256 di peta-sel/manifest-xlsm.json)."
+ ],
+ "lembar_wajib": [
+  "STANDAR KALIBRATOR"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR KALIBRATOR!B7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B8",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M8",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B30",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M30",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D4",
+   "teks": "Constant"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O4",
+   "teks": "Yokogawa"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X2",
+   "teks": "TABEL RECORD DRIFT"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X5",
+   "teks": "Constant"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z5",
+   "teks": "Yokogawa"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C9",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C31",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D31",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E9",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E31",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F9",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F31",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G9",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G31",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H9",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H31",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I9",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I31",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J9",
+   "teks": "Type J"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J31",
+   "teks": "Type J"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N9",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N31",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O31",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P9",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P31",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q9",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q31",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R9",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R31",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S9",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S31",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T9",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T31",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U9",
+   "teks": "Type J"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U31",
+   "teks": "Type J"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X7",
+   "teks": "RTD"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X8",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X11",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X12",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X13",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z7",
+   "teks": "RTD"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z8",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z10",
+   "teks": "Type J"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z11",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z12",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z13",
+   "teks": "Type R"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "measure": "(^| )measure( |$)",
+   "source": "(^| )source( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "mode.{varian}.constant.titik.RTD",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!C10:C27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!C32:C49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type K",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!D10:D27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!D32:D49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type N",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!E10:E27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!E32:E49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type B",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!F10:F27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!F32:F49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type T",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!G10:G27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!G32:G49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type R",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!H10:H27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!H32:H49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.titik.Type S",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "koreksi": "STANDAR KALIBRATOR!I10:I27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!I32:I49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y7",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y8",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y9",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.Type T",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y11",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.Type S",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y12",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.constant.drift.Type R",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y13",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.RTD",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!N10:N27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!N32:N49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type K",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!O10:O27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!O32:O49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type N",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!P10:P27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!P32:P49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type T",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!R10:R27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!R32:R49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type R",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!S10:S27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!S32:S49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type S",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!T10:T27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!T32:T49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.titik.Type J",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "bulat": 10,
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!M10:M27",
+    "koreksi": "STANDAR KALIBRATOR!U10:U27",
+    "u95": {
+     "rentang": "STANDAR KALIBRATOR!U32:U49",
+     "bukan_angka_jadi_null": true
+    }
+   },
+   "lewati_kolom": [
+    "titik",
+    "koreksi"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA7",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA8",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA9",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type J",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA10",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type T",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA11",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type S",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA12",
+   "bulat": 10
+  },
+  {
+   "jalur": "mode.{varian}.yokogawa.drift.Type R",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA13",
+   "bulat": 10
+  }
+ ],
+ "tidak_dipetakan": [
+  "Kolom tipe yang SELURUHNYA kosong/#REF! di master (Constant Type J, Yokogawa Type B) — JSON tidak memuat kuncinya; bila lab mengisinya, peta perlu baris ekstrak baru (PR), bukan diam-diam.",
+  "Constant Type B drift (X10 tanpa nilai) — tidak ada di JSON.",
+  "Identitas kalibrator (nama, merek, S/N, tanggal) — tidak disimpan di JSON ini (dipakai dari tabel standar/DB)."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Tata letak SERTIFIKAT Measure & Source beda baris. BELUM dipakai render — kode memakai BentukSertifikatSuhu; paritas diadu StudioFormatSertifikatTest.",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E20:E28"
+    ],
+    "format": "0.0",
+    "varian": [
+     "measure"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J20:J28"
+    ],
+    "format": "0.0",
+    "varian": [
+     "measure"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!L20:L28"
+    ],
+    "format": "0.0",
+    "varian": [
+     "measure"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!L29"
+    ],
+    "format": "0.00",
+    "varian": [
+     "measure"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!O30"
+    ],
+    "format": "0",
+    "varian": [
+     "measure"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E16:E23"
+    ],
+    "format": "0.0",
+    "varian": [
+     "source"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J16:J23"
+    ],
+    "format": "0.0",
+    "varian": [
+     "source"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!L16:L23"
+    ],
+    "format": "0.0",
+    "varian": [
+     "source"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!L24"
+    ],
+    "format": "0.0",
+    "varian": [
+     "source"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!O25"
+    ],
+    "format": "0",
+    "varian": [
+     "source"
+    ]
+   }
+  ]
+ }
+}

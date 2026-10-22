@@ -100,6 +100,87 @@ class TitsProfile extends CalibrationProfile
     use BentukSertifikatSuhu;
 
     /**
+     * Paket `kalibrator_suhu`: tabel koreksi/U95/drift kalibrator suhu
+     * (`tabel-kalibrator-suhu.json`, master TITS Measure & Source). TITS
+     * pemiliknya; TIDS, Enclosure, dan tiga alat suhu ikut membacanya lewat
+     * `TabelKalibratorSuhu`.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'kalibrator_suhu';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Kalibrator suhu (TITS Measure & Source)';
+    }
+
+    /**
+     * Skema `tabel-kalibrator-suhu.json` untuk Studio Data Acuan. Alamat dari
+     * `_sumber` JSON (lembar 'STANDAR KALIBRATOR'), dibuktikan peta sel
+     * `database/data/peta-sel/kalibrator_suhu.json` pada CSV dan .xlsm asli
+     * kedua master.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $L = 'STANDAR KALIBRATOR';
+        // kalibrator => [kolom titik, tipe => kolom koreksi/U95, kolom label & nilai drift]
+        $kalibrator = [
+            'constant' => ['B', ['RTD' => 'C', 'Type K' => 'D', 'Type N' => 'E', 'Type B' => 'F', 'Type T' => 'G', 'Type R' => 'H', 'Type S' => 'I'], ['X', 'Y']],
+            'yokogawa' => ['M', ['RTD' => 'N', 'Type K' => 'O', 'Type N' => 'P', 'Type T' => 'R', 'Type R' => 'S', 'Type S' => 'T', 'Type J' => 'U'], ['Z', 'AA']],
+        ];
+        $lembar = [];
+
+        foreach (['measure' => 'Measure', 'source' => 'Source'] as $mode => $labelMode) {
+            foreach ($kalibrator as $kal => [$kT, $tipe, [$kLabel, $kNilai]]) {
+                foreach ($tipe as $jenis => $k) {
+                    $lembar[] = [
+                        'kode' => "{$mode}_{$kal}_".strtolower(str_replace(' ', '_', $jenis)),
+                        'label' => "{$labelMode} — ".ucfirst($kal)." — {$jenis}",
+                        'jalur' => "mode/{$mode}/{$kal}/titik/{$jenis}",
+                        'jenis' => 'daftar',
+                        'kunci' => 'titik',
+                        'kolom' => [
+                            $kolom('titik', 'Titik', 'desimal', '°C', "{$L}!{$kT}10:{$kT}27"),
+                            $kolom('koreksi', 'Koreksi', 'desimal', '°C', "{$L}!{$k}10:{$k}27"),
+                            // Sel U95 kosong/#REF! = null (bukan nol); TitsCalculator jatuh ke lantai CMC.
+                            $kolom('u95', 'U95', 'desimal_kosong', '°C', "{$L}!{$k}32:{$k}49"),
+                        ],
+                        'boleh_tambah_baris' => false,
+                    ];
+                }
+
+                $lembar[] = [
+                    'kode' => "{$mode}_{$kal}_drift",
+                    'label' => "{$labelMode} — ".ucfirst($kal).' — drift',
+                    'jalur' => "mode/{$mode}/{$kal}/drift",
+                    'jenis' => 'baris',
+                    'kunci' => 'tipe',
+                    'kolom' => [
+                        $kolom('tipe', 'Tipe sensor', 'teks', null, "{$L}!{$kLabel}7:{$kLabel}13"),
+                        $kolom('nilai', 'U drift', 'desimal', '°C', "{$L}!{$kNilai}7:{$kNilai}13"),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ];
+            }
+        }
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-kalibrator-suhu.json',
+            'lembar' => $lembar,
+        ];
+    }
+
+    /**
      * Nomor formulir lembar kerja, dari footer PDF-nya sendiri:
      * `Page 1 of 1   Revise : 3   SIDIK-FM-CAL-0505`.
      *

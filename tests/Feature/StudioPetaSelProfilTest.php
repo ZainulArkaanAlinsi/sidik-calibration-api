@@ -75,6 +75,11 @@ class StudioPetaSelProfilTest extends TestCase
                 ['Waktu_/Master_Olda_Centrifuge', 'centrifuge', 5],
             ]],
             'timer_stopwatch' => ['timer_stopwatch', [['Waktu_/Master_Olda_Timer_dan_Stopwatch', null, 6]]],
+            // TITS: per mode 14 tabel titik (7 tipe × 2 kalibrator) + 13 drift.
+            'kalibrator_suhu' => ['kalibrator_suhu', [
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT', 'measure', 27],
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT', 'source', 27],
+            ]],
             'volumetric' => ['volumetric', [
                 ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
                 ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],
