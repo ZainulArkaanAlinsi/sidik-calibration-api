@@ -392,6 +392,126 @@ class JangkaSorongProfile extends CalibrationProfile
         return self::SATUAN;
     }
 
+    /**
+     * Skema `tabel-standar-jangka-sorong.json` untuk Studio Data Acuan.
+     *
+     * Alamat sel dari `docs/skrip/gen-tabel-standar-jangka-sorong.py` (peta
+     * sel: `database/data/peta-sel/jangka_sorong.json`). Caliper Checker TIDAK
+     * di sini — dibaca dari tabel Height Gauge. `perlu_konfirmasi` = pertanyaan
+     * lab terbuka (`docs/pertanyaan-lab-jangka-sorong.md` §1, §6, §11).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (
+            string $kode,
+            string $label,
+            string $tipe,
+            ?string $satuan,
+            ?string $asal,
+            bool $perluKonfirmasi = false,
+        ): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perluKonfirmasi,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-jangka-sorong.json',
+            'lembar' => [
+                [
+                    'kode' => 'balok_ukur',
+                    'label' => 'Identitas balok ukur',
+                    'jalur' => 'balok_ukur',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'DATABASE!S13'),
+                        $kolom('merk_tipe', 'Merk/tipe', 'teks', null, 'DATABASE!T13'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'DATABASE!U13'),
+                        $kolom('traceability', 'Ketertelusuran', 'teks', null, 'DATABASE!V13'),
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi standar', 'tanggal', null, 'DATABASE!W13'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'keping',
+                    'label' => 'Balok ukur — keping',
+                    'jalur' => 'balok_ukur/keping',
+                    'jenis' => 'daftar',
+                    'kunci' => 'nominal_mm',
+                    'kolom' => [
+                        $kolom('nominal_mm', 'Nominal', 'desimal', 'mm', 'Standar_GB!Q10:Q132'),
+                        $kolom('nilai_terkoreksi_mm', 'Nilai terkoreksi', 'desimal', 'mm', 'Standar_GB!R10:R132'),
+                        // Kolom master berlabel "(m)" tapi isinya mm (generator).
+                        $kolom('u95_mm', 'U95 keping', 'desimal', 'mm', 'Standar_GB!S10:S132'),
+                    ],
+                    // 123 slot master, 32 terisi.
+                    'boleh_tambah_baris' => true,
+                ],
+                [
+                    'kode' => 'cmc',
+                    'label' => 'CMC (lampiran LK-285-IDN no. 35)',
+                    'jalur' => 'cmc',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('label', 'Label pita', 'teks', null, 'DATABASE!S5'),
+                        $kolom('kapasitas_maks_mm', 'Kapasitas maksimum', 'desimal', 'mm', null),
+                        // µm di DATABASE!T5, dibagi 1000.
+                        $kolom('u95_mm', 'CMC (U95)', 'desimal', 'mm', 'DATABASE!T5'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'tumpukan_depth',
+                    'label' => 'Tumpukan balok ukur Depth',
+                    'jalur' => 'tumpukan_depth_mm',
+                    'jenis' => 'baris',
+                    // Posisi = baris Depth ke-n.
+                    'kunci' => 'posisi',
+                    'kolom' => [
+                        $kolom('posisi', 'Baris Depth', 'bulat', null, null),
+                        // Isian sesi contoh master, dipatok server (pertanyaan lab §11).
+                        $kolom('tumpukan_mm', 'Tumpukan keping', 'daftar_angka', 'mm', 'INPUT DATA!C111:C123', true),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'konstanta',
+                    'label' => 'Konstanta metode',
+                    'jalur' => 'konstanta',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('suhu_acuan_c', 'Suhu acuan', 'desimal', '°C', null),
+                        $kolom('alpha_per_c', 'α standar & UUT', 'desimal', '/°C', null),
+                        $kolom('u_alpha_caliper_checker_per_c', 'Uα Caliper Checker', 'desimal', '/°C', null),
+                        $kolom('u_alpha_balok_ukur_per_c', 'Uα balok ukur', 'desimal', '/°C', null),
+                        $kolom('pembagi_muai', 'Pembagi komponen muai', 'desimal', null, null, true),
+                        $kolom('drift_a_um', 'Drift — suku tetap', 'desimal', 'µm', null),
+                        $kolom('drift_b_um_per_mm', 'Drift — suku per panjang', 'desimal', 'µm/mm', null),
+                        $kolom('drift_pembagi_umur', 'Pembagi umur drift', 'bulat', null, null, true),
+                        $kolom('wringing_um_per_keping', 'Wringing per keping', 'desimal', 'µm', null),
+                        $kolom('geometri_mm', 'Kesalahan geometri', 'desimal', 'mm', null),
+                        $kolom('efek_mekanik_mm', 'Efek mekanik', 'desimal', 'mm', null),
+                        $kolom('meja_granit_mm', 'Kerataan meja granit (Depth)', 'desimal', 'mm', null),
+                        $kolom('vi_type_b', 'Derajat kebebasan Type B', 'bulat', null, null),
+                        $kolom('vi_resolusi', 'Derajat kebebasan resolusi', 'desimal', null, null),
+                        $kolom('pengulangan_pembagi_n', 'Pembagi n pengulangan', 'bulat', null, null),
+                        $kolom('depth_ci_suhu_panjang_mm', 'Depth — panjang ci suhu', 'desimal', 'mm', 'Perhitungan koef. Sensitivitas!E4', true),
+                        $kolom('depth_ci_suhu_cte_per_c', 'Depth — CTE ci suhu', 'desimal', '/°C', 'Perhitungan koef. Sensitivitas!E1', true),
+                        $kolom('depth_ci_muai', 'Depth — ci muai (diketik)', 'desimal', null, null, true),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public function desimalSertifikat(): ?int
     {
         // Lima desimal mm — nilai terkoreksi Caliper Checker (25,00080) dan

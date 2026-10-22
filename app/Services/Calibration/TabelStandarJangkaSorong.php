@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use RuntimeException;
 
 /**
@@ -30,9 +32,6 @@ use RuntimeException;
  */
 class TabelStandarJangkaSorong
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     private ?TabelStandarHeightGauge $caliperChecker = null;
 
     /** Nilai terkoreksi (mm) Caliper Checker sisi Outside, atau `null` kalau tidak terdaftar. */
@@ -177,26 +176,30 @@ class TabelStandarJangkaSorong
         return $this->caliperChecker ??= new TabelStandarHeightGauge;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Isi tabel dari [SumberAcuan]: versi DB kalau jalur pemanggilnya membuka
+     * lingkup versi `jangka_sorong` (dan `DATA_ACUAN_SUMBER=db`), berkas JSON
+     * di luar itu. Caliper Checker tetap dari tabel Height Gauge — sesi Jangka
+     * Sorong tidak pernah membuka lingkup `height_gauge`, jadi baginya JSON.
+     * Tidak di-cache di kelas ini (pola [TabelStandarMicrometer]).
+     *
+     * @return array<string, mixed>
+     */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-jangka-sorong.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar jangka sorong nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        $isi = app(SumberAcuan::class)->isi((new JangkaSorongProfile)->kode(), $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['cmc'], $isi['konstanta'], $isi['tumpukan_depth_mm'], $isi['balok_ukur']['keping'])) {
             throw new RuntimeException("Tabel standar jangka sorong rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

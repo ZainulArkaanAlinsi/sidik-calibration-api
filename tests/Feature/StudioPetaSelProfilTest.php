@@ -54,6 +54,8 @@ class StudioPetaSelProfilTest extends TestCase
             'dial_indicator' => ['dial_indicator', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator', null]], 14],
             // 9 standar + 10 × (terkoreksi, koreksi) Outside + 10 × 3 Inside; nominal Outside cuma dicek.
             'height_gauge' => ['height_gauge', [['Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026', null]], 59],
+            // 5 identitas + keping + 2 cmc + 2 konstanta Depth.
+            'jangka_sorong' => ['jangka_sorong', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_', null]], 10],
         ];
     }
 
@@ -133,6 +135,14 @@ class StudioPetaSelProfilTest extends TestCase
         $masalah = implode(' | ', PetaSel::validasi('dial_indicator', $salah));
         $this->assertStringContainsString('ekstrak[0]: bagi hanya untuk tipe angka/daftar_angka', $masalah);
         $this->assertStringContainsString('ekstrak[7]: bagi harus angka > 0', $masalah);
+
+        // daftar_objek: kunci wajib salah satu kolom, kolom sebaris.
+        $js = PetaSel::untuk('jangka_sorong')?->isi ?? $this->fail('peta jangka_sorong tidak ada');
+        $js['ekstrak'][5]['kunci'] = 'tidak_ada';
+        $js['ekstrak'][5]['kolom']['u95_mm'] = 'Standar_GB!S11:S132';
+        $masalah = implode(' | ', PetaSel::validasi('jangka_sorong', $js));
+        $this->assertStringContainsString('ekstrak[5]: kunci harus salah satu nama di kolom', $masalah);
+        $this->assertStringContainsString('ekstrak[5]: tiap kolom harus satu kolom dengan baris yang sama', $masalah);
 
         $this->temp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sidik-petasel-'.bin2hex(random_bytes(5));
         (new Filesystem)->copyDirectory(base_path(self::AKAR.'Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator'), $this->temp);

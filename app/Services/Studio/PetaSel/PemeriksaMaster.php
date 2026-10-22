@@ -267,6 +267,36 @@ final class PemeriksaMaster
                 }
 
                 return $peta;
+
+            case 'daftar_objek':
+                $rentang = array_map(static fn (string $r): array => Alamat::urai($r), $e['kolom']);
+                $rk = $rentang[$e['kunci']];
+                $daftar = [];
+
+                for ($b = $rk['b1'] + $geser; $b <= $rk['b2'] + $geser; $b++) {
+                    $alamatKunci = Alamat::sel($rk['lembar'], $rk['k1'], $b);
+
+                    // Baris ber-kunci kosong dilewati (generator: `if n == "": continue`).
+                    if ($this->angkaBoleh($this->sel($indeks, $rk['lembar'], $rk['k1'], $b), $alamatKunci, $bulat, $masalah, $bagi) === null) {
+                        continue;
+                    }
+
+                    $baris = [];
+
+                    foreach ($rentang as $nama => $r) {
+                        $baris[$nama] = $this->angkaWajib($this->sel($indeks, $r['lembar'], $r['k1'], $b), Alamat::sel($r['lembar'], $r['k1'], $b), $bulat, $masalah, $bagi);
+                    }
+
+                    $daftar[] = $baris;
+                }
+
+                $min = (int) ($e['min_baris'] ?? 1);
+
+                if (count($daftar) < $min) {
+                    $masalah[] = "{$e['jalur']}: hanya ".count($daftar)." baris berisi, minimal {$min}";
+                }
+
+                return $daftar;
         }
 
         return null;

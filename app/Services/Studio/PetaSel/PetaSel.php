@@ -44,6 +44,10 @@ use JsonException;
  * `bagi` (angka > 0, hanya `angka`/`daftar_angka`) membagi nilai sel SEBELUM
  * `bulat` — meniru generator yang menyimpan `float(sel) / 1000` (µm → mm).
  * `bilangan_bulat` memulangkan int (JSON `3`, bukan `3.0`); sel pecahan ditolak.
+ * `daftar_objek` menulis list objek dari baris rentang yang sel `kunci`-nya
+ * berisi (baris ber-kunci kosong dilewati, seperti generator):
+ * `{"jalur": "balok_ukur.keping", "tipe": "daftar_objek", "kunci": "nominal_mm",
+ *   "kolom": {"nominal_mm": "S!Q10:Q132", "u95_mm": "S!S10:S132"}, "min_baris": 1}`.
  *
  * Jalur: segmen dipisah titik; segmen boleh `nama[kode=X]` (elemen list yang
  * `kode`-nya X) atau `nama[N]` (indeks list). `{varian}` dan `{i}` (0-basis,
@@ -54,7 +58,7 @@ final class PetaSel
 {
     public const FORMAT = 1;
 
-    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka'];
+    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek'];
 
     /** @param  array<string, mixed>  $isi */
     private function __construct(
@@ -260,6 +264,46 @@ final class PetaSel
 
                     if ($k['b1'] !== $n['b1'] || $k['b2'] !== $n['b2'] || $k['k1'] !== $k['k2'] || $n['k1'] !== $n['k2']) {
                         $m[] = "{$label}: kunci & nilai harus satu kolom masing-masing dengan baris yang sama";
+                    }
+
+                    if (isset($e['min_baris']) && (! is_int($e['min_baris']) || $e['min_baris'] < 0)) {
+                        $m[] = "{$label}: min_baris harus bilangan bulat >= 0";
+                    }
+
+                    break;
+                case 'daftar_objek':
+                    $kolom = $e['kolom'] ?? null;
+
+                    if (! is_array($kolom) || $kolom === [] || array_is_list($kolom)) {
+                        $m[] = "{$label}: kolom harus objek {kunci_objek: rentang satu kolom}";
+
+                        break;
+                    }
+
+                    if (! is_string($e['kunci'] ?? null) || ! array_key_exists($e['kunci'], $kolom)) {
+                        $m[] = "{$label}: kunci harus salah satu nama di kolom";
+                    }
+
+                    $baris = null;
+
+                    foreach ($kolom as $nama => $rentang) {
+                        if (preg_match('/^[a-z0-9_]+$/', (string) $nama) !== 1) {
+                            $m[] = "{$label}: nama kolom '{$nama}' tidak sah";
+                        }
+
+                        if (($x = $selSah($rentang, true)) !== null) {
+                            $m[] = "{$label}.{$nama}: {$x}";
+
+                            continue;
+                        }
+
+                        $r = Alamat::urai($rentang);
+
+                        if ($r['k1'] !== $r['k2'] || ($baris !== null && $baris !== [$r['b1'], $r['b2']])) {
+                            $m[] = "{$label}: tiap kolom harus satu kolom dengan baris yang sama";
+                        }
+
+                        $baris ??= [$r['b1'], $r['b2']];
                     }
 
                     if (isset($e['min_baris']) && (! is_int($e['min_baris']) || $e['min_baris'] < 0)) {

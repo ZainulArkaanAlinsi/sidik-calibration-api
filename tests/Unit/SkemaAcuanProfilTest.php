@@ -18,7 +18,7 @@ class SkemaAcuanProfilTest extends TestCase
     use PeriksaSkemaAcuan;
 
     /** Profil yang sudah dipindah ke Studio, urut registry (bukan urut migrasi). Menambah = keputusan yang terlihat di diff. */
-    public const BERSKEMA = ['micrometer', 'height_gauge', 'dial_indicator'];
+    public const BERSKEMA = ['micrometer', 'height_gauge', 'dial_indicator', 'jangka_sorong'];
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 
@@ -116,7 +116,7 @@ class SkemaAcuanProfilTest extends TestCase
                 $baris = match ($lembar['jenis']) {
                     'objek' => [$simpul],
                     'daftar' => $simpul,
-                    'baris' => array_map(static fn ($v): stdClass => (object) [$kolomNilai[0]['kode'] => $v], get_object_vars($simpul)),
+                    'baris' => array_map(static fn ($v): stdClass => (object) [$kolomNilai[0]['kode'] => $v], is_array($simpul) ? $simpul : get_object_vars($simpul)),
                 };
 
                 foreach ($baris as $i => $b) {

@@ -49,9 +49,12 @@ trait PeriksaSkemaAcuan
                     break;
 
                 case 'baris':
-                    $this->assertInstanceOf(stdClass::class, $simpul, "{$jalur} bukan peta");
+                    // Peta `kunci => nilai`, atau list yang kuncinya POSISI
+                    // (kolom kunci bertipe `bulat`, mis. tumpukan_depth_mm).
+                    $posisi = is_array($simpul) && array_is_list($simpul);
+                    $this->assertTrue($simpul instanceof stdClass || $posisi, "{$jalur} bukan peta/list");
 
-                    foreach (array_keys(get_object_vars($simpul)) as $k) {
+                    foreach (array_keys($posisi ? $simpul : get_object_vars($simpul)) as $k) {
                         $hasil[] = "{$jalur}/{$k}";
                     }
 

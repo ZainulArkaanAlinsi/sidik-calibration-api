@@ -1701,6 +1701,8 @@ abstract class CalibrationProfile
      *               `kunci` null.
      *  - `baris`  — objek peta `kunci baris => nilai`; `kunci` menamai kolom
      *               yang memegang kunci objek, kolom lain memegang nilainya.
+     *               Boleh juga list nilai (kunci = POSISI, kolom kuncinya
+     *               bertipe `bulat`) — `SelAcuan` membacanya sama.
      *  - `daftar` — list objek; tiap kolom = satu kunci objek baris. `kunci`
      *               menamai kolom pengenal baris, atau null kalau barisnya
      *               dikenali dari POSISI (urutan list itu data).

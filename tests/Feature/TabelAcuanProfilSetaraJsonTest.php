@@ -8,12 +8,15 @@ use App\Models\PaketAcuanVersi;
 use App\Services\Acuan\SumberAcuan;
 use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
+use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarHeightGauge;
+use App\Services\Calibration\TabelStandarJangkaSorong;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Unit\DialIndicatorMasterTest;
 use Tests\Unit\HeightGaugeMasterTest;
+use Tests\Unit\JangkaSorongMasterTest;
 
 /**
  * Paritas versi 1 untuk profil yang dipindah ke Studio sesudah Micrometer
@@ -111,6 +114,31 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         [$json, $db] = $this->duaJalur('height_gauge', $v1, fn () => (new HeightGaugeCalculator)->hitungSesi($titik, $konteks));
         $this->assertNotEmpty($json['titik']);
         // Identik bit & tipe; hanya urutan kunci objek yang boleh lain (pita_cmc dari isi kanonik).
+        $this->assertSame(self::urutKunci($json), self::urutKunci($db));
+    }
+
+    public function test_jangka_sorong_v1_setara_json(): void
+    {
+        $v1 = $this->v1('jangka_sorong');
+        $berkas = database_path('data/tabel-standar-jangka-sorong.json');
+
+        $dalam = app(SumberAcuan::class)->denganVersi($v1, fn () => app(SumberAcuan::class)->isi('jangka_sorong', $berkas));
+        $this->assertEquals($v1->isiTerurai(), $dalam);
+
+        [$a, $b] = $this->duaJalur('jangka_sorong', $v1, function (): array {
+            $t = new TabelStandarJangkaSorong;
+
+            return [
+                $t->standarBalokUkur(), $t->konstanta(), $t->tumpukanDepth(),
+                array_map(fn (float $n) => [$t->nilaiKeping($n), $t->u95Keping($n)], [1.0, 2.5, 7.5, 50.0, 3.3]),
+                array_map(fn (float $k) => $t->pitaCmc($k), [0.0, 150.0, 300.0, 300.1]),
+            ];
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+
+        [$titik, $konteks] = self::masukan(JangkaSorongMasterTest::class);
+        [$json, $db] = $this->duaJalur('jangka_sorong', $v1, fn () => (new JangkaSorongCalculator)->hitungSesi($titik, $konteks));
+        $this->assertNotEmpty($json);
         $this->assertSame(self::urutKunci($json), self::urutKunci($db));
     }
 
