@@ -101,6 +101,53 @@ final class PemeriksaMaster
     }
 
     /**
+     * Ekstraksi `paket_lain[]` peta (data milik PAKET LAIN yang ikut dibawa
+     * master ini, mis. balok ukur Micrometer di master Dial Indicator) di atas
+     * isi paket lain itu — untuk diadu, TIDAK pernah ditulis ke paket lain.
+     * Struktur master sudah divalidasi [periksa] lebih dulu.
+     *
+     * @param  list<array<string, mixed>>  $lembar
+     * @param  list<array<string, mixed>>  $ekstrak
+     * @param  array<array-key, mixed>  $dasarLain
+     * @return array{isi: array<array-key, mixed>, jalur: list<string>}
+     *
+     * @throws GagalBacaWorkbook sel tidak sesuai tipe
+     */
+    public function ekstrakLain(PetaSel $peta, array $lembar, array $ekstrak, array $dasarLain): array
+    {
+        $masalah = [];
+        $indeks = $this->indeksLembar($lembar, $peta->isi['lembar_wajib'], $masalah);
+        $isi = $dasarLain;
+        $jalurDitulis = [];
+
+        foreach ($ekstrak as $e) {
+            foreach ($this->ulangan($e) as [$i, $geser]) {
+                $jalur = PetaSel::isiJalur((string) $e['jalur'], null, $i);
+
+                try {
+                    $nilai = $this->nilai($indeks, $e, $geser, $masalah);
+
+                    if ($nilai !== null) {
+                        JalurIsi::tulis($isi, $jalur, $nilai);
+                        $jalurDitulis[] = $jalur;
+                    }
+                } catch (RuntimeException $ex) {
+                    $masalah[] = $ex->getMessage();
+                }
+            }
+        }
+
+        if ($masalah !== []) {
+            throw new GagalBacaWorkbook(
+                GagalBacaWorkbook::STRUKTUR_BERUBAH,
+                "Master ditolak: data paket lain di peta sel '{$peta->kodeProfil}' tidak bisa dibaca. ".implode(' ', $masalah),
+            );
+        }
+
+        return ['isi' => $isi, 'jalur' => $jalurDitulis];
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $lembar
      * @param  list<string>  $wajib
      * @param  list<string>  $masalah

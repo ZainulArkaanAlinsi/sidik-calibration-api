@@ -209,9 +209,45 @@ final class PetaSel
             $ekstrak = [];
         }
 
-        foreach ($ekstrak as $i => $e) {
-            $label = "ekstrak[{$i}]";
+        // `paket_lain`: data milik paket LAIN yang ikut dibawa master ini
+        // (balok ukur Micrometer di master Dial). Diekstrak untuk DIADU dengan
+        // versi berlaku paket itu (DataBersamaPaket), tidak pernah ditulis.
+        $semuaEkstrak = [];
 
+        foreach ($ekstrak as $i => $e) {
+            $semuaEkstrak["ekstrak[{$i}]"] = $e;
+        }
+
+        $paketLain = $p['paket_lain'] ?? [];
+
+        if (! is_array($paketLain) || ! array_is_list($paketLain)) {
+            $m[] = 'paket_lain harus list {paket, ekstrak}';
+            $paketLain = [];
+        }
+
+        foreach ($paketLain as $j => $pl) {
+            $kode = is_array($pl) ? ($pl['paket'] ?? null) : null;
+
+            if (! is_string($kode) || $kode === $kodeProfil || app(CalibrationProfileRegistry::class)->untukPaketAcuan($kode) === null) {
+                $m[] = "paket_lain[{$j}]: paket harus kode paket ber-skema lain";
+            }
+
+            if (! is_array($pl) || ! is_array($pl['ekstrak'] ?? null) || $pl['ekstrak'] === []) {
+                $m[] = "paket_lain[{$j}]: ekstrak wajib ada";
+
+                continue;
+            }
+
+            foreach ($pl['ekstrak'] as $i => $e) {
+                if (is_array($e) && str_contains((string) ($e['jalur'] ?? ''), '{varian}')) {
+                    $m[] = "paket_lain[{$j}].ekstrak[{$i}]: {varian} tidak berlaku untuk paket lain";
+                }
+
+                $semuaEkstrak["paket_lain[{$j}].ekstrak[{$i}]"] = $e;
+            }
+        }
+
+        foreach ($semuaEkstrak as $label => $e) {
             if (! is_array($e) || ! in_array($e['tipe'] ?? null, self::TIPE_EKSTRAK, true)) {
                 $m[] = "{$label}: tipe harus salah satu ".implode('/', self::TIPE_EKSTRAK);
 

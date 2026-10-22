@@ -37,11 +37,22 @@
     {"jalur": "konstanta.depth_ci_suhu_cte_per_c", "tipe": "angka", "sel": "Perhitungan koef. Sensitivitas!E1"},
     {"jalur": "konstanta.depth_ci_suhu_panjang_mm", "tipe": "angka", "sel": "Perhitungan koef. Sensitivitas!E4"}
   ],
+  "paket_lain": [
+    {"paket": "height_gauge", "ekstrak": [
+      {"jalur": "outside[{i}].nominal_mm", "tipe": "angka", "sel": "Std_CaliperCek!C10", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "outside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F10", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "inside[{i}].nominal_mm", "tipe": "angka", "sel": "Std_CaliperCek!C23", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "inside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F23", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "standar.u95_um", "tipe": "angka", "sel": "Std_CaliperCek!J10"},
+      {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "Std_CaliperCek!O2"},
+      {"jalur": "standar.seri", "tipe": "teks", "sel": "Std_CaliperCek!C3"}
+    ]}
+  ],
   "tidak_dipetakan": [
     "tumpukan_depth_mm — generator membacanya dari isian SESI contoh master (INPUT DATA!C111:C123), bukan tabel standar (pertanyaan lab Jangka Sorong §11). SENGAJA tidak diekstrak: master dengan isian sesi lain/kosong akan diam-diam menggeser atau mengosongkan tumpukan Depth; jangkar INPUT DATA!C109 tetap memastikan lembarnya berbentuk sama",
     "cmc.kapasitas_maks_mm — 300 ditulis literal di generator (lampiran LK-285-IDN no. 35), bukan sel",
     "konstanta.* selain depth_ci_suhu_* (15 daun) — angka telanjang di dalam rumus master (PERHITUNGAN!X37/Y37/Z24/Z28, U95!N9/K10/K11/K12/K13/K53/Q6:Q14/N5, U95!V48 diketik 50); tetap kode/JSON sampai fase 5 (rumus)",
-    "Caliper Checker (Std_CaliperCek!C10:J32, O2, C3) — bukan isi tabel ini: kalkulator membaca tabel-standar-height-gauge.json (keping fisik yang sama). Generator mengadu keduanya; peta ini TIDAK, jadi master Caliper dengan Caliper Checker berbeda tidak terdeteksi di sini",
+    "Caliper Checker (Std_CaliperCek!C10:J32, O2, C3) — bukan isi tabel ini: kalkulator membaca paket height_gauge (keping fisik yang sama). Seperti generator (C, F, J, O2, C3), peta MENGADUNYA lewat paket_lain; beda = bersama_antar_paket, wajib diakui saat pengesahan. Generator menuntut J10:J32 seragam; peta hanya mengadu J10",
     "DATABASE!S14:W14 — identitas Caliper Checker, duplikat; tidak dipakai tabel ini"
   ],
   "perlu_berkas_asli": [
