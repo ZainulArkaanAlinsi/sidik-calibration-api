@@ -457,7 +457,7 @@
   "lewati_jika bukan_angka meniru angka(..) is None generator: sel CMC/diameter/kalibrator/PRT yang berisi TEKS (mis. '0,5' salah ketik) dilewati diam-diam seperti di generator — risiko yang sama dengan generator, dijaga min_baris & simulasi."
  ],
  "perlu_berkas_asli": [
-  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
+  "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
  ],
  "xlsm": {
   "bukti": "Penyelarasan baris ekspor CSV <-> .xlsm asli (docs/skrip/verifikasi-peta-xlsm.py, 22 Okt 2026): ekspor membuang sebagian baris kosong. Fixed sha256 ebb810974c11..., Graduated b0355579c014...",
@@ -557,5 +557,6 @@
     ]
    }
   ]
- }
+ },
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!E21"], "format": "0.0", "varian": ["fixed"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!N21"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!S21"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!Q22"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "k", "sel": ["SERTIFIKAT!V23"], "format": "0", "varian": ["fixed"]}, {"kolom": "standar", "sel": ["SERTIFIKAT!E21:E23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!N21:N23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!S21:S23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!Q26"], "format": "0.00", "varian": ["graduated"]}, {"kolom": "k", "sel": ["SERTIFIKAT!V27"], "format": "0", "varian": ["graduated"]}]}
 }

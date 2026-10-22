@@ -314,7 +314,26 @@ def periksa(wb, nama, peta, dasar):
                     continue
                 if abs(x - ban) > c['toleransi']:
                     masalah.append(f"cek {c['sel']}+{geser} = {x} vs {jalur} = {ban}")
-    return {'varian': var, 'lembar_hilang': hilang, 'jangkar_gagal': jg, 'beda': beda, 'masalah': masalah[:20]}
+    # Format SERTIFIKAT (fase 3): tiap sel ANGKA di rentang harus ber-number_format itu.
+    fmt = []
+    for f in untuk_varian((peta.get('format_sertifikat') or {}).get('entri', []), var):
+        n = 0
+        for rentang in f['sel']:
+            lb, k1, b1, k2, b2 = urai(rentang)
+            if lb not in wb.sheetnames:
+                fmt.append({'kolom': f['kolom'], 'sel': rentang, 'masalah': 'lembar tidak ada'})
+                continue
+            for b in range(b1, b2 + 1):
+                for k in range(k1, k2 + 1):
+                    c = wb[lb].cell(row=b, column=k)
+                    if angka(c.value) is None:
+                        continue
+                    n += 1
+                    if c.number_format != f['format']:
+                        fmt.append({'kolom': f['kolom'], 'sel': c.coordinate, 'harap': f['format'], 'ada': c.number_format})
+        if n == 0:
+            fmt.append({'kolom': f['kolom'], 'sel': f['sel'], 'masalah': 'tidak ada sel angka'})
+    return {'varian': var, 'lembar_hilang': hilang, 'jangkar_gagal': jg, 'beda': beda, 'masalah': masalah[:20], 'format_beda': fmt}
 
 
 peta = json.load(open(f"{REPO}/database/data/peta-sel/{PETA}.json", encoding='utf-8'))

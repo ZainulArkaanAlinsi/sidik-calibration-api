@@ -72,6 +72,7 @@
     "outside[*].nominal_mm — SENGAJA tidak diekstrak: sepuluh nominal Outside = titik pra-cetak lembar kerja, generator menolak daftar yang berubah ('periksa Instruksi Kerja dulu'). Peta meniru itu lewat cek Std_CaliperCek!C10:C19 = nominal versi dasar (master dengan nominal lain DITOLAK)"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format."
-  ]
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D24:D33"], "format": "0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!I24:I33"], "format": "0.00"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L24:L33"], "format": "0.00"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J34"], "format": "0.000"}, {"kolom": "k", "sel": ["SERTIFIKAT!O35"], "format": "General"}]}
 }

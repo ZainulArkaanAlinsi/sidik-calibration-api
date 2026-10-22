@@ -606,6 +606,7 @@
   "drift.titik[*].rentang_ms, drift.rentang_maks_*, dihitung_master, nominal_detik — TURUNAN generator, dijaga lewat cek/jangkar sel sumber"
  ],
  "perlu_berkas_asli": [
-  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
- ]
+  "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+ ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "u95", "sel": ["SERTIFIKAT!X19"], "format": "0.0"}, {"kolom": "k", "sel": ["SERTIFIKAT!V29"], "format": "General"}]}
 }

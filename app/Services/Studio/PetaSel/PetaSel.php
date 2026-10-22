@@ -428,6 +428,28 @@ final class PetaSel
             }
         }
 
+        // Fase 3: number format sel SERTIFIKAT .xlsm per kolom cetak. Belum
+        // dipakai render; bentuknya tetap dijaga supaya tidak diam-diam rusak.
+        if (isset($p['format_sertifikat'])) {
+            $entri = $p['format_sertifikat']['entri'] ?? null;
+
+            if (! is_array($entri) || $entri === [] || ! array_is_list($entri)) {
+                $m[] = 'format_sertifikat.entri harus list';
+                $entri = [];
+            }
+
+            foreach ($entri as $i => $f) {
+                $alamatSah = is_array($f) && is_array($f['sel'] ?? null) && $f['sel'] !== []
+                    && array_filter($f['sel'], static fn ($a): bool => ! is_string($a) || Alamat::urai($a) === null) === [];
+
+                if (! $alamatSah || ! is_string($f['kolom'] ?? null) || ! is_string($f['format'] ?? null) || $f['format'] === '') {
+                    $m[] = "format_sertifikat.entri[{$i}]: harus {kolom, sel: [alamat], format}";
+                } elseif (($e = $varianSah($f, "format_sertifikat.entri[{$i}]")) !== null) {
+                    $m[] = $e;
+                }
+            }
+        }
+
         if (isset($p['xlsm'])) {
             $x = $p['xlsm'];
 

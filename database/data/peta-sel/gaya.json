@@ -580,7 +580,7 @@
   "CMC — sengaja tidak di tabel ini; sumbernya kemampuan-kalibrasi.json (lampiran LK-285-IDN)"
  ],
  "perlu_berkas_asli": [
-  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
+  "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
  ],
  "xlsm": {
   "bukti": "Penyelarasan baris ekspor CSV <-> .xlsm asli (docs/skrip/verifikasi-peta-xlsm.py, 22 Okt 2026): ekspor membuang sebagian baris kosong; nama lembar sama. UTM 9285b867bc36..., Load Cell 2324bc8982b8..., Profing Ring c346c0193fef...",
@@ -660,5 +660,6 @@
     ]
    }
   ]
- }
+ },
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!E22:E26"], "format": "0.0", "varian": ["utm"], "catatan": "E21 (titik nol) berformat 0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!L22:L26"], "format": "0.0", "varian": ["utm"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!Q21:Q26"], "format": "0.00", "varian": ["utm"]}, {"kolom": "sebaran", "sel": ["SERTIFIKAT!V22:V26"], "format": "0.00", "varian": ["utm"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!P35"], "format": "0.0", "varian": ["utm"]}, {"kolom": "k", "sel": ["SERTIFIKAT!T36"], "format": "0", "varian": ["utm"]}, {"kolom": "standar", "sel": ["SERTIFIKAT!E21:E30"], "format": "0.00", "varian": ["load_cell"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!L21:L30"], "format": "0.00", "varian": ["load_cell"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!Q21:Q30"], "format": "0.00", "varian": ["load_cell"]}, {"kolom": "sebaran", "sel": ["SERTIFIKAT!V22:V30"], "format": "0.00", "varian": ["load_cell"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!P35"], "format": "0.00", "varian": ["load_cell"]}, {"kolom": "k", "sel": ["SERTIFIKAT!T36"], "format": "0", "varian": ["load_cell"]}, {"kolom": "standar", "sel": ["SERTIFIKAT!E23:E31"], "format": "0.00", "varian": ["proving_ring"], "catatan": "E22 (titik nol) berformat 0.0"}, {"kolom": "uut", "sel": ["SERTIFIKAT!L23:L31"], "format": "0", "varian": ["proving_ring"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!Q23:Q31"], "format": "0.0", "varian": ["proving_ring"]}, {"kolom": "sebaran", "sel": ["SERTIFIKAT!V23:V31"], "format": "0.0", "varian": ["proving_ring"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!P38"], "format": "0.0", "varian": ["proving_ring"]}, {"kolom": "k", "sel": ["SERTIFIKAT!U39"], "format": "0", "varian": ["proving_ring"]}]}
 }

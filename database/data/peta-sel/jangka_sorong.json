@@ -57,6 +57,7 @@
     "DATABASE!S14:W14 — identitas Caliper Checker, duplikat; tidak dipakai tabel ini"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT/SERTIFIKAT (2) untuk fase 3 — CSV tidak membawa format."
-  ]
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D25:D34", "SERTIFIKAT!D41:D50", "SERTIFIKAT!D57:D61"], "format": "0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!I25:I34", "SERTIFIKAT!I41:I50", "SERTIFIKAT!I57:I61"], "format": "0.00"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L25:L34", "SERTIFIKAT!L41:L50", "SERTIFIKAT!L57:L61"], "format": "0.00"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J35", "SERTIFIKAT!J51", "SERTIFIKAT!J62"], "format": "0.000"}, {"kolom": "k", "sel": ["SERTIFIKAT!O36", "SERTIFIKAT!O52", "SERTIFIKAT!O63"], "format": "General"}]}
 }

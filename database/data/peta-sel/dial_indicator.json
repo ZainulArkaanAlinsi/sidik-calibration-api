@@ -48,6 +48,7 @@
     "balok ukur Standar_GB!Q10:R132 — bukan isi tabel Dial Indicator: kalkulator membaca balok ukur paket micrometer (set fisik GB-9122-0 yang sama). Seperti generator, peta MENGADUNYA (paket_lain) ke versi berlaku micrometer; beda = bersama_antar_paket, wajib diakui saat pengesahan, tidak ditulis ke paket micrometer"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format (pertanyaan lab Dial §13: '0.00')."
-  ]
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D18:D27"], "format": "0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!G18:G27"], "format": "0.00"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L18:L27"], "format": "0.00"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J28"], "format": "0.0000"}, {"kolom": "k", "sel": ["SERTIFIKAT!O29"], "format": "0"}]}
 }
