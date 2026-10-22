@@ -26,7 +26,24 @@ import msoffcrypto
 import openpyxl
 import mpmath as mp
 
-PASSWORD = "spirit285"
+PASSWORD = None  # override opsional (uji-paralel --kata-sandi); default dari SIDIK_MASTER_SANDI
+
+
+def kata_sandi():
+    """Sandi master dari env SIDIK_MASTER_SANDI, lalu HKCU Environment (Windows). Tidak pernah dicetak."""
+    if PASSWORD:
+        return PASSWORD
+    nilai = os.environ.get("SIDIK_MASTER_SANDI")
+    if not nilai and sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                nilai = winreg.QueryValueEx(k, "SIDIK_MASTER_SANDI")[0]
+        except OSError:
+            nilai = None
+    if not nilai:
+        sys.exit("SIDIK_MASTER_SANDI belum diset (env atau HKCU Environment). Sandi master tidak ditulis di skrip.")
+    return nilai
 TOL = 1e-12
 mp.mp.dps = 40
 
@@ -57,7 +74,7 @@ def buka(path):
     buf = io.BytesIO()
     with open(path, "rb") as fh:
         off = msoffcrypto.OfficeFile(fh)
-        off.load_key(password=PASSWORD)
+        off.load_key(password=kata_sandi())
         off.decrypt(buf)
     buf.seek(0)
     wf = openpyxl.load_workbook(buf)
