@@ -197,6 +197,20 @@
    "ukuran_byte": 680448,
    "terverifikasi": true,
    "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik. Master Recorder (sha256 c39a81233fe2...) BELUM dipetakan: JSON repo tanpa titik -20 °C yang ada di master."
+  },
+  {
+   "paket": "tids",
+   "berkas": "Master Olah Data_Suhu_TIDS - Yokogawa K N.xlsm",
+   "sha256": "78b6eb128650a535818b824dfdfe78142ad8bb082b91b427ae9f71d8d5826436",
+   "ukuran_byte": 438784,
+   "terverifikasi": true
+  },
+  {
+   "paket": "tids",
+   "berkas": "Master Olah Data_Suhu_TIDS - Recorder (Graptech).xlsm",
+   "sha256": "db5209443c4c14b634f3d6dad0910a708588e8c6b5c75c1edbe203300d42bd5e",
+   "ukuran_byte": 471552,
+   "terverifikasi": true
   }
  ]
 }

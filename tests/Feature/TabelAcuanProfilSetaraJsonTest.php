@@ -20,6 +20,7 @@ use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarPistonVolume;
 use App\Services\Calibration\TabelStandarPutaran;
 use App\Services\Calibration\TabelStandarTekanan;
+use App\Services\Calibration\TabelStandarTids;
 use App\Services\Calibration\TabelStandarVolumetric;
 use App\Services\Calibration\TabelStandarWaktu;
 use App\Services\Calibration\TekananCalculator;
@@ -445,6 +446,42 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
 
                         foreach ([1, 3, 12, 16] as $no) {
                             $h[$merk][$tipe]['sensor'][] = [$t->koreksiSensor($merk, $tipe, $no, $idx), $t->u95Sensor($merk, $tipe, $no, $idx)];
+                        }
+                    }
+                }
+            }
+
+            return $h;
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** TIDS (Yokogawa K N & Recorder Graptech). */
+    public function test_tids_v1_setara_json(): void
+    {
+        $v1 = $this->v1('tids');
+
+        [$a, $b] = $this->duaJalur('tids', $v1, function (): array {
+            $t = new TabelStandarTids;
+            $h = ['cmc' => $t->cmcMaster(), 'dryblock' => [$t->dryblock('A'), $t->dryblock('B'), $t->dryblock('C')]];
+
+            foreach (TabelStandarTids::KELUARGA as $kel) {
+                $h[$kel]['indeks'] = $t->indeks($kel);
+
+                foreach ([-30.0, 12.0, 37.5, 160.0, 650.0] as $n) {
+                    $h[$kel]['terdekat'][] = $t->indeksTerdekat($kel, $n);
+                }
+
+                foreach (['RTD', 'Type N', 'Type K', 'Type J'] as $tipe) {
+                    $h[$kel][$tipe] = ['drift_meter' => $t->driftMeter($kel, $tipe), 'drift_sensor' => $t->driftSensor($kel, $tipe), 'nomor' => $t->nomorSensorTersedia($kel, $tipe)];
+
+                    foreach ([-20.0, 0.0, 25.0, 150.0, 400.0] as $idx) {
+                        foreach ($kel === TabelStandarTids::KELUARGA_BERKANAL ? [1, 9, 20] : [null] as $kanal) {
+                            $h[$kel][$tipe]['meter'][] = [$t->koreksiMeter($kel, $tipe, $idx, $kanal), $t->u95Meter($kel, $tipe, $idx, $kanal)];
+                        }
+
+                        foreach ([1, 3, 12, 16, 17] as $no) {
+                            $h[$kel][$tipe]['sensor'][] = [$t->koreksiSensor($kel, $tipe, $no, $idx), $t->u95Sensor($kel, $tipe, $no, $idx), $t->kanalRecorder($tipe, $no)];
                         }
                     }
                 }

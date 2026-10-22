@@ -78,6 +78,12 @@ class StudioPetaSelProfilTest extends TestCase
             // Enclosure Constant_Yokogawa: 20 tabel meter + 52 tabel sensor + 9 drift + index_temps.
             // Master Recorder DITAHAN (lihat test_enclosure_recorder_dilewati_peta).
             'enclosure' => ['enclosure', [['suhu_&_kelembapan/Master_Olah_Data_Suhu_Enclosure_Constant_Yokogawa', 'constant_yokogawa', 82]]],
+            // TIDS Yokogawa: 22 tabel meter + 54 sensor kalibrator + 9 drift + index + 3 CMC;
+            // Recorder: 80 meter + 52 sensor + 4 drift + index + 3 CMC.
+            'tids' => ['tids', [
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N', 'yokogawa', 89],
+                ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_', 'recorder', 140],
+            ]],
             // TITS: per mode 14 tabel titik (7 tipe × 2 kalibrator) + 13 drift.
             'kalibrator_suhu' => ['kalibrator_suhu', [
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT', 'measure', 27],

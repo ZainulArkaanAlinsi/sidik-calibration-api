@@ -60,6 +60,17 @@ class StudioFormatSertifikatTest extends TestCase
         'tekanan/differential/uut' => ['0.0', null],
         // TITS (BentukSertifikatSuhu): master Source mencetak U95 `L24` 0.0, kode 0.00 untuk kedua mode.
         'kalibrator_suhu/source/u95' => ['0.0', '0.00'],
+        // TIDS: TidsProfile tidak memberi formatKolomSertifikat() (desimal lama); master Recorder 0.00, Yokogawa 0.0.
+        'tids/recorder/k' => ['0', null],
+        'tids/recorder/koreksi' => ['0.00', null],
+        'tids/recorder/standar' => ['0.00', null],
+        'tids/recorder/u95' => ['0.0', null],
+        'tids/recorder/uut' => ['0.00', null],
+        'tids/yokogawa/k' => ['0', null],
+        'tids/yokogawa/koreksi' => ['0.0', null],
+        'tids/yokogawa/standar' => ['0.0', null],
+        'tids/yokogawa/u95' => ['0.0', null],
+        'tids/yokogawa/uut' => ['0.0', null],
     ];
 
     /**
@@ -84,6 +95,7 @@ class StudioFormatSertifikatTest extends TestCase
             'timer_stopwatch' => ['timer_stopwatch', [[null, 'timer_stopwatch', 60.0, []]]],
             'piston_volume' => ['piston_volume', [['fixed', 'piston_pipette', 1.0, $piston('fixed')], ['fixed', 'dispensett', 10.0, $piston('fixed')], ['graduated', 'buret_digital', 10.0, $piston('graduated')]]],
             'kalibrator_suhu' => ['kalibrator_suhu', [['measure', 'tits', 100.0, []], ['source', 'tits', 100.0, []]]],
+            'tids' => ['tids', [['yokogawa', 'tids', 100.0, []], ['recorder', 'tids', 100.0, []]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, []], ['druck13g', 'pressure_gauge', 100.0, []], ['spmk', 'pressure_gauge', 5.0, []], ['differential', 'differential_pressure', 2.0, []]]],
         ];
     }

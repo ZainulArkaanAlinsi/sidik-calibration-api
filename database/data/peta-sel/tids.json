@@ -1,0 +1,4781 @@
+{
+ "format": 1,
+ "kode_profil": "tids",
+ "sumber_json": "tabel-standar-tids.json",
+ "bukti": [
+  "Tidak ada generator di repo. Aturan diturunkan dari kedua .xlsm asli & dibuktikan sama dengan JSON 22 Okt 2026: tata letak STANDAR KALIBRATOR sama dengan master Enclosure/TITS (meter B/C:J 10:27 & 32:49, M/N:U; sensor D:AC 64:78 & 85:99, kolom C = PRT PT100 'RTD.17'; drift X6:AA8, X12:Y14); Standar_Recorder: meter D:AQ 9:25 & 29:45, sensor D:M & T:AI 52:66 & 71:85, drift AT8:AU9 & AT15:AU16; CMC DATABASE S5:S7. Kunci suhu teks, sel #REF! dilewati, |x| < 1e-9 = 0 (derau Excel), TANPA pembulatan lain. Ejaan 'PT100' master = 'RTD' di JSON.",
+  "Ekstraksi dari ekspor CSV kedua master TIDS di repo = tabel-standar-tids.json (StudioPetaSelProfilTest); baris CSV = baris .xlsm. Diverifikasi terhadap .xlsm asli (sha256 di peta-sel/manifest-xlsm.json)."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  {
+   "nama": "STANDAR KALIBRATOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "nama": "Standar_Recorder",
+   "varian": [
+    "recorder"
+   ]
+  }
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR KALIBRATOR!X6",
+   "teks": "PRT PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z6",
+   "teks": "PRT PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X12",
+   "teks": "PRT PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X13",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X14",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A59",
+   "teks": "TABEL KOREKSI SENSOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A80",
+   "teks": "TABEL U95% SENSOR",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C61",
+   "teks": "PRT PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C82",
+   "teks": "PRT PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D61",
+   "teks": "Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T61",
+   "teks": "Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X4",
+   "teks": "Constant",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z4",
+   "teks": "Yokogawa",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X10",
+   "teks": "Sensor TC",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C9",
+   "teks": "PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D9",
+   "teks": "Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E9",
+   "teks": "Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F9",
+   "teks": "Type B",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G9",
+   "teks": "Type T",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H9",
+   "teks": "Type R",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I9",
+   "teks": "Type S",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J9",
+   "teks": "Type J",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N9",
+   "teks": "PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O9",
+   "teks": "Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P9",
+   "teks": "Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q9",
+   "teks": "Type B",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R9",
+   "teks": "Type T",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S9",
+   "teks": "Type R",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T9",
+   "teks": "Type S",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U9",
+   "teks": "Type J",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C31",
+   "teks": "PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D31",
+   "teks": "Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E31",
+   "teks": "Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F31",
+   "teks": "Type B",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G31",
+   "teks": "Type T",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H31",
+   "teks": "Type R",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I31",
+   "teks": "Type S",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J31",
+   "teks": "Type J",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N31",
+   "teks": "PT100",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O31",
+   "teks": "Type K",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P31",
+   "teks": "Type N",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q31",
+   "teks": "Type B",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R31",
+   "teks": "Type T",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S31",
+   "teks": "Type R",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T31",
+   "teks": "Type S",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U31",
+   "teks": "Type J",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D62",
+   "teks": "TCK-01",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D83",
+   "teks": "TCK-01",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E62",
+   "teks": "TCK-02",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E83",
+   "teks": "TCK-02",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F62",
+   "teks": "TCK-03",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F83",
+   "teks": "TCK-03",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G62",
+   "teks": "TCK-04",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G83",
+   "teks": "TCK-04",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H62",
+   "teks": "TCK-05",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H83",
+   "teks": "TCK-05",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I62",
+   "teks": "TCK-06",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I83",
+   "teks": "TCK-06",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J62",
+   "teks": "TCK-07",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J83",
+   "teks": "TCK-07",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!K62",
+   "teks": "TCK-08",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!K83",
+   "teks": "TCK-08",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L62",
+   "teks": "TCK-09",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L83",
+   "teks": "TCK-09",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M62",
+   "teks": "TCK-10",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M83",
+   "teks": "TCK-10",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N62",
+   "teks": "TCK-11",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N83",
+   "teks": "TCK-11",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O62",
+   "teks": "TCK-12",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O83",
+   "teks": "TCK-12",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P62",
+   "teks": "TCK-13",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P83",
+   "teks": "TCK-13",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q62",
+   "teks": "TCK-14",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q83",
+   "teks": "TCK-14",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R62",
+   "teks": "TCK-15",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R83",
+   "teks": "TCK-15",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S62",
+   "teks": "TCK-16",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S83",
+   "teks": "TCK-16",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T62",
+   "teks": "TCN3",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T83",
+   "teks": "TCN3",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U62",
+   "teks": "TCN4",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U83",
+   "teks": "TCN4",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!V62",
+   "teks": "TCN5",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!V83",
+   "teks": "TCN5",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!W62",
+   "teks": "TCN6",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!W83",
+   "teks": "TCN6",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X62",
+   "teks": "TCN7",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X83",
+   "teks": "TCN7",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Y62",
+   "teks": "TCN8",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Y83",
+   "teks": "TCN8",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z62",
+   "teks": "TCN9",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z83",
+   "teks": "TCN9",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AA62",
+   "teks": "TCN10",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AA83",
+   "teks": "TCN10",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AB62",
+   "teks": "TCN11",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AB83",
+   "teks": "TCN11",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC62",
+   "teks": "TCN12",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC83",
+   "teks": "TCN12",
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D8",
+   "teks": "CH1",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D28",
+   "teks": "CH1",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X8",
+   "teks": "CH1",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X28",
+   "teks": "CH1",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!E8",
+   "teks": "CH2",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!E28",
+   "teks": "CH2",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Y8",
+   "teks": "CH2",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Y28",
+   "teks": "CH2",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!F8",
+   "teks": "CH3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!F28",
+   "teks": "CH3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Z8",
+   "teks": "CH3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Z28",
+   "teks": "CH3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!G8",
+   "teks": "CH4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!G28",
+   "teks": "CH4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AA8",
+   "teks": "CH4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AA28",
+   "teks": "CH4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!H8",
+   "teks": "CH5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!H28",
+   "teks": "CH5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AB8",
+   "teks": "CH5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AB28",
+   "teks": "CH5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!I8",
+   "teks": "CH6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!I28",
+   "teks": "CH6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AC8",
+   "teks": "CH6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AC28",
+   "teks": "CH6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!J8",
+   "teks": "CH7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!J28",
+   "teks": "CH7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AD8",
+   "teks": "CH7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AD28",
+   "teks": "CH7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!K8",
+   "teks": "CH8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!K28",
+   "teks": "CH8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AE8",
+   "teks": "CH8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AE28",
+   "teks": "CH8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!L8",
+   "teks": "CH9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!L28",
+   "teks": "CH9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AF8",
+   "teks": "CH9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AF28",
+   "teks": "CH9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!M8",
+   "teks": "CH10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!M28",
+   "teks": "CH10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AG8",
+   "teks": "CH10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AG28",
+   "teks": "CH10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!N8",
+   "teks": "CH11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!N28",
+   "teks": "CH11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AH8",
+   "teks": "CH11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AH28",
+   "teks": "CH11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!O8",
+   "teks": "CH12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!O28",
+   "teks": "CH12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AI8",
+   "teks": "CH12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AI28",
+   "teks": "CH12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!P8",
+   "teks": "CH13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!P28",
+   "teks": "CH13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AJ8",
+   "teks": "CH13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AJ28",
+   "teks": "CH13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Q8",
+   "teks": "CH14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Q28",
+   "teks": "CH14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AK8",
+   "teks": "CH14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AK28",
+   "teks": "CH14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!R8",
+   "teks": "CH15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!R28",
+   "teks": "CH15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AL8",
+   "teks": "CH15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AL28",
+   "teks": "CH15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!S8",
+   "teks": "CH16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!S28",
+   "teks": "CH16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AM8",
+   "teks": "CH16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AM28",
+   "teks": "CH16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!T8",
+   "teks": "CH17",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!T28",
+   "teks": "CH17",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AN8",
+   "teks": "CH17",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AN28",
+   "teks": "CH17",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!U8",
+   "teks": "CH18",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!U28",
+   "teks": "CH18",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AO8",
+   "teks": "CH18",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AO28",
+   "teks": "CH18",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!V8",
+   "teks": "CH19",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!V28",
+   "teks": "CH19",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AP8",
+   "teks": "CH19",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AP28",
+   "teks": "CH19",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!W8",
+   "teks": "CH20",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!W28",
+   "teks": "CH20",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AQ8",
+   "teks": "CH20",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AQ28",
+   "teks": "CH20",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT8",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT9",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D51",
+   "teks": "TCN3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!E51",
+   "teks": "TCN4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!F51",
+   "teks": "TCN5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!G51",
+   "teks": "TCN6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!H51",
+   "teks": "TCN7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!I51",
+   "teks": "TCN8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!J51",
+   "teks": "TCN9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!K51",
+   "teks": "TCN10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!L51",
+   "teks": "TCN11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!M51",
+   "teks": "TCN12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!T51",
+   "teks": "TCK-01",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!U51",
+   "teks": "TCK-02",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!V51",
+   "teks": "TCK-03",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!W51",
+   "teks": "TCK-04",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X51",
+   "teks": "TCK-05",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Y51",
+   "teks": "TCK-06",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Z51",
+   "teks": "TCK-07",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AA51",
+   "teks": "TCK-08",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AB51",
+   "teks": "TCK-09",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AC51",
+   "teks": "TCK-10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AD51",
+   "teks": "TCK-11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AE51",
+   "teks": "TCK-12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AF51",
+   "teks": "TCK-13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AG51",
+   "teks": "TCK-14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AH51",
+   "teks": "TCK-15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AI51",
+   "teks": "TCK-16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D70",
+   "teks": "TCN3",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!E70",
+   "teks": "TCN4",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!F70",
+   "teks": "TCN5",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!G70",
+   "teks": "TCN6",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!H70",
+   "teks": "TCN7",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!I70",
+   "teks": "TCN8",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!J70",
+   "teks": "TCN9",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!K70",
+   "teks": "TCN10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!L70",
+   "teks": "TCN11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!M70",
+   "teks": "TCN12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!T70",
+   "teks": "TCK-01",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!U70",
+   "teks": "TCK-02",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!V70",
+   "teks": "TCK-03",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!W70",
+   "teks": "TCK-04",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X70",
+   "teks": "TCK-05",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Y70",
+   "teks": "TCK-06",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!Z70",
+   "teks": "TCK-07",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AA70",
+   "teks": "TCK-08",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AB70",
+   "teks": "TCK-09",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AC70",
+   "teks": "TCK-10",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AD70",
+   "teks": "TCK-11",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AE70",
+   "teks": "TCK-12",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AF70",
+   "teks": "TCK-13",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AG70",
+   "teks": "TCK-14",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AH70",
+   "teks": "TCK-15",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AI70",
+   "teks": "TCK-16",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT15",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT16",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!B6",
+   "teks": "TABEL NILAI KOREKSI TEMPERATURE RECORDER",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D7",
+   "teks": "Correction (oC) Type N",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X7",
+   "teks": "Correction (oC) Type K",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!B26",
+   "teks": "TABEL NILAI U95% TEMPERATURE RECORDER",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!D27",
+   "teks": "Correction (oC) Type N",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!X27",
+   "teks": "Correction (oC) Type K",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!B49",
+   "teks": "TABEL NILAI KOREKSI SENSOR TERMOKOPEL",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!B68",
+   "teks": "TABEL NILAI U95% TERMOKOPEL",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT6",
+   "teks": "Recorder",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "Standar_Recorder!AT13",
+   "teks": "Sensor TC",
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "-20 ~ 150"
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "150~400"
+  },
+  {
+   "sel": "DATABASE!R7",
+   "teks": "400~600"
+  },
+  {
+   "sel": "DATABASE!S3",
+   "teks": "CMC"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "yokogawa": "tids yokogawa",
+   "recorder": "tids recorder"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "meter.constant.koreksi.RTD",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!C10:C27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.RTD",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!C32:C49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!D10:D27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!D32:D49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!E10:E27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!E32:E49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type B",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!F10:F27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type B",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!F32:F49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type T",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!G10:G27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type T",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!G32:G49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type R",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!H10:H27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type R",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!H32:H49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type S",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!I10:I27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.u95.Type S",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!I32:I49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.RTD",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!N10:N27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.u95.RTD",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!N32:N49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!O10:O27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.u95.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!O32:O49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!P10:P27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.u95.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!P32:P49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.Type J",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!U10:U27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.u95.Type J",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!U32:U49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.drift.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y6",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y7",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.constant.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y8",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.drift.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA6",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA7",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.yokogawa.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA8",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.RTD.17",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!C64:C78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!D64:D78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!E64:E78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!F64:F78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!G64:G78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!H64:H78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!I64:I78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!J64:J78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!K64:K78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!L64:L78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!M64:M78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!N64:N78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!O64:O78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!P64:P78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Q64:Q78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!R64:R78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!S64:S78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!T64:T78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!U64:U78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!V64:V78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!W64:W78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!X64:X78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Y64:Y78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Z64:Z78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AA64:AA78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AB64:AB78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.koreksi.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AC64:AC78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.RTD.17",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!C85:C99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!D85:D99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!E85:E99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!F85:F99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!G85:G99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!H85:H99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!I85:I99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!J85:J99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!K85:K99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!L85:L99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!M85:M99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!N85:N99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!O85:O99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!P85:P99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Q85:Q99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!R85:R99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!S85:S99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!T85:T99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!U85:U99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!V85:V99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!W85:W99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!X85:X99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Y85:Y99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Z85:Z99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AA85:AA99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AB85:AB99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.u95.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AC85:AC99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.drift.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y12",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y13",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "sensor.kalibrator.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y14",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "index_titik.kalibrator",
+   "tipe": "daftar_kunci",
+   "rentang": [
+    "STANDAR KALIBRATOR!B10:B27"
+   ],
+   "varian": [
+    "yokogawa"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!D9:D25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!E9:E25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!F9:F25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!G9:G25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!H9:H25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!I9:I25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!J9:J25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!K9:K25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!L9:L25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!M9:M25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!N9:N25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!O9:O25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!P9:P25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!Q9:Q25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!R9:R25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!S9:S25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.17",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!T9:T25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.18",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!U9:U25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.19",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!V9:V25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type N.20",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!W9:W25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!X9:X25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!Y9:Y25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!Z9:Z25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AA9:AA25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AB9:AB25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AC9:AC25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AD9:AD25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AE9:AE25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AF9:AF25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AG9:AG25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AH9:AH25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AI9:AI25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AJ9:AJ25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AK9:AK25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AL9:AL25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AM9:AM25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.17",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AN9:AN25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.18",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AO9:AO25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.19",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AP9:AP25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.koreksi.Type K.20",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B9:B25",
+   "nilai": "Standar_Recorder!AQ9:AQ25",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!D29:D45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!E29:E45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!F29:F45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!G29:G45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!H29:H45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!I29:I45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!J29:J45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!K29:K45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!L29:L45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!M29:M45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!N29:N45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!O29:O45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!P29:P45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!Q29:Q45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!R29:R45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!S29:S45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.17",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!T29:T45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.18",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!U29:U45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.19",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!V29:V45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type N.20",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!W29:W45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!X29:X45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!Y29:Y45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!Z29:Z45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AA29:AA45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AB29:AB45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AC29:AC45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AD29:AD45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AE29:AE45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AF29:AF45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AG29:AG45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AH29:AH45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AI29:AI45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AJ29:AJ45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AK29:AK45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AL29:AL45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AM29:AM45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.17",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AN29:AN45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.18",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AO29:AO45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.19",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AP29:AP45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.u95.Type K.20",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B29:B45",
+   "nilai": "Standar_Recorder!AQ29:AQ45",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.drift.Type N",
+   "tipe": "angka",
+   "sel": "Standar_Recorder!AU8",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "meter.recorder.drift.Type K",
+   "tipe": "angka",
+   "sel": "Standar_Recorder!AU9",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!D52:D66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!E52:E66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!F52:F66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!G52:G66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!H52:H66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!I52:I66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!J52:J66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!K52:K66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!L52:L66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!M52:M66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!T52:T66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!U52:U66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!V52:V66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!W52:W66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!X52:X66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!Y52:Y66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!Z52:Z66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AA52:AA66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AB52:AB66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AC52:AC66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AD52:AD66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AE52:AE66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AF52:AF66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AG52:AG66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AH52:AH66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.koreksi.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B52:B66",
+   "nilai": "Standar_Recorder!AI52:AI66",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!D71:D85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!E71:E85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!F71:F85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!G71:G85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!H71:H85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!I71:I85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!J71:J85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!K71:K85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!L71:L85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!M71:M85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!T71:T85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!U71:U85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!V71:V85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!W71:W85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!X71:X85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!Y71:Y85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!Z71:Z85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AA71:AA85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AB71:AB85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AC71:AC85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AD71:AD85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AE71:AE85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AF71:AF85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AG71:AG85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AH71:AH85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.u95.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "Standar_Recorder!B71:B85",
+   "nilai": "Standar_Recorder!AI71:AI85",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "min_baris": 1,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.drift.Type N",
+   "tipe": "angka",
+   "sel": "Standar_Recorder!AU15",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "sensor.recorder.drift.Type K",
+   "tipe": "angka",
+   "sel": "Standar_Recorder!AU16",
+   "nol_di_bawah": 1e-09,
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "index_titik.recorder",
+   "tipe": "daftar_kunci",
+   "rentang": [
+    "Standar_Recorder!B9:B24"
+   ],
+   "varian": [
+    "recorder"
+   ]
+  },
+  {
+   "jalur": "cmc[0].u95",
+   "tipe": "angka",
+   "sel": "DATABASE!S5"
+  },
+  {
+   "jalur": "cmc[1].u95",
+   "tipe": "angka",
+   "sel": "DATABASE!S6"
+  },
+  {
+   "jalur": "cmc[2].u95",
+   "tipe": "angka",
+   "sel": "DATABASE!S7"
+  }
+ ],
+ "tidak_dipetakan": [
+  "dryblock A/B (nama, serial, rentang, stabilitas, keseragaman) — tidak berasal dari satu sel master: nama gabungan merek+tipe ('PERHITUNGAN U95%'!Z9:AD10), dan serial B '1777952.1' di JSON vs 'DB-B-2' di master (AH10), serial A '321486.1' vs '321486-1' — temuan, dibawa dari versi dasar.",
+  "cmc[*].min/maks — diturunkan dari teks rentang DATABASE!R5:R7; teksnya dijaga jangkar.",
+  "Tipe kalibrator yang seluruh kolomnya kosong/#REF! (Constant Type J, Yokogawa Type B/T/R/S) — tidak ada di JSON."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli kedua master TIDS (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. BELUM dipakai render; paritas diadu StudioFormatSertifikatTest.",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E20:E33"
+    ],
+    "format": "0.0",
+    "varian": [
+     "yokogawa"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J20:J33"
+    ],
+    "format": "0.0",
+    "varian": [
+     "yokogawa"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!L20:L33"
+    ],
+    "format": "0.0",
+    "varian": [
+     "yokogawa"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!L34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "yokogawa"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!O35"
+    ],
+    "format": "0",
+    "varian": [
+     "yokogawa"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E20:E33"
+    ],
+    "format": "0.00",
+    "varian": [
+     "recorder"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J20:J33"
+    ],
+    "format": "0.00",
+    "varian": [
+     "recorder"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!L20:L33"
+    ],
+    "format": "0.00",
+    "varian": [
+     "recorder"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!L34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "recorder"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!O35"
+    ],
+    "format": "0",
+    "varian": [
+     "recorder"
+    ]
+   }
+  ]
+ }
+}

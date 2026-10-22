@@ -10,6 +10,7 @@ use App\Models\Standard;
 use App\Services\Calibration\TabelStandarTids;
 use App\Services\Calibration\TidsCalculator;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 /**
  * Profil TIDS — **Temperatur Indikator dengan Sensor** (alat ke-17). Metode
@@ -101,6 +102,159 @@ use Carbon\Carbon;
 class TidsProfile extends CalibrationProfile
 {
     use BentukSertifikatSuhu;
+
+    /** TIDS membaca `tabel-standar-tids.json` (master Yokogawa K N & Recorder Graptech). */
+    public function kodePaketAcuan(): string
+    {
+        return 'tids';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'TIDS (Yokogawa K N & Recorder Graptech)';
+    }
+
+    /**
+     * Skema `tabel-standar-tids.json` untuk Studio Data Acuan. Alamat dibuktikan
+     * peta sel `database/data/peta-sel/tids.json` (CSV & .xlsm kedua master).
+     * Tiap tabel `titik => nilai` = satu lembar `baris` (kunci suhu teks).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $huruf = static fn (int $k): string => Coordinate::stringFromColumnIndex($k);
+        $kode = static fn (string $s): string => strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '_', $s));
+        $SK = 'STANDAR KALIBRATOR';
+        $SR = 'Standar_Recorder';
+        $lembar = [];
+        $tabel = static function (string $jalur, string $label, string $L, string $kSuhu, int $k, int $b0, int $b1, string $labelNilai) use (&$lembar, $kolom, $huruf, $kode): void {
+            $lembar[] = [
+                'kode' => $kode($jalur),
+                'label' => $label,
+                'jalur' => $jalur,
+                'jenis' => 'baris',
+                'kunci' => 'titik',
+                'kolom' => [
+                    $kolom('titik', 'Titik', 'teks', '°C', "{$L}!{$kSuhu}{$b0}:{$kSuhu}{$b1}"),
+                    $kolom('nilai', $labelNilai, 'desimal', '°C', "{$L}!{$huruf($k)}{$b0}:{$huruf($k)}{$b1}"),
+                ],
+                'boleh_tambah_baris' => false,
+            ];
+        };
+        $drift = static function (string $jalur, string $label, string $L, string $kl, string $kv, int $b0, int $b1) use (&$lembar, $kolom, $kode): void {
+            $lembar[] = [
+                'kode' => $kode($jalur),
+                'label' => $label,
+                'jalur' => $jalur,
+                'jenis' => 'baris',
+                'kunci' => 'tipe',
+                'kolom' => [
+                    $kolom('tipe', 'Tipe sensor', 'teks', null, "{$L}!{$kl}{$b0}:{$kl}{$b1}"),
+                    $kolom('nilai', 'U drift', 'desimal', '°C', "{$L}!{$kv}{$b0}:{$kv}{$b1}"),
+                ],
+                'boleh_tambah_baris' => false,
+            ];
+        };
+
+        $lembar[] = [
+            'kode' => 'index_titik',
+            'label' => 'Titik indeks',
+            'jalur' => 'index_titik',
+            'jenis' => 'objek',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('recorder', 'Recorder', 'daftar_teks', '°C', "{$SR}!B9:B24"),
+                $kolom('kalibrator', 'Kalibrator (Constant/Yokogawa)', 'daftar_teks', '°C', "{$SK}!B10:B27"),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        // Meter Recorder: 20 kanal per tipe.
+        foreach (['Type N' => 3, 'Type K' => 23] as $t => $k0) {
+            for ($ch = 1; $ch <= 20; $ch++) {
+                $tabel("meter/recorder/koreksi/{$t}/{$ch}", "Meter Recorder — koreksi {$t} CH{$ch}", $SR, 'B', $k0 + $ch, 9, 25, 'Koreksi');
+                $tabel("meter/recorder/u95/{$t}/{$ch}", "Meter Recorder — U95 {$t} CH{$ch}", $SR, 'B', $k0 + $ch, 29, 45, 'U95');
+            }
+        }
+
+        $drift('meter/recorder/drift', 'Meter Recorder — drift', $SR, 'AT', 'AU', 8, 9);
+
+        // Meter Constant / Yokogawa: tipe => kolom (urutan kolom master).
+        foreach ([
+            'constant' => ['Constant', 'B', 3, ['RTD', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S'], ['X', 'Y']],
+            'yokogawa' => ['Yokogawa', 'M', 14, ['RTD', 'Type K', 'Type N', 'Type J' => 7], ['Z', 'AA']],
+        ] as $merk => [$nama, $kSuhu, $k0, $tipe, [$kl, $kv]]) {
+            foreach ($tipe as $i => $t) {
+                // 'Type J' Yokogawa di kolom ke-8 (U), bukan sesudah Type N.
+                [$posisi, $t] = is_string($i) ? [$t, $i] : [$i, $t];
+                $tabel("meter/{$merk}/koreksi/{$t}", "Meter {$nama} — koreksi {$t}", $SK, $kSuhu, $k0 + $posisi, 10, 27, 'Koreksi');
+                $tabel("meter/{$merk}/u95/{$t}", "Meter {$nama} — U95 {$t}", $SK, $kSuhu, $k0 + $posisi, 32, 49, 'U95');
+            }
+
+            $drift("meter/{$merk}/drift", "Meter {$nama} — drift", $SK, $kl, $kv, 6, 8);
+        }
+
+        // Sensor termokopel: [kanal pertama, terakhir, kolom kanal pertama].
+        foreach ([
+            'recorder' => ['Recorder', $SR, ['Type N' => [3, 12, 4], 'Type K' => [1, 16, 20]], [52, 66], [71, 85], ['AT', 'AU', 15, 16]],
+            'kalibrator' => ['Kalibrator', $SK, ['RTD' => [17, 17, 3], 'Type K' => [1, 16, 4], 'Type N' => [3, 12, 20]], [64, 78], [85, 99], ['X', 'Y', 12, 14]],
+        ] as $meja => [$nama, $L, $tipe, [$kb0, $kb1], [$ub0, $ub1], [$kl, $kv, $db0, $db1]]) {
+            foreach ($tipe as $t => [$c0, $c1, $k0]) {
+                for ($ch = $c0; $ch <= $c1; $ch++) {
+                    $tabel("sensor/{$meja}/koreksi/{$t}/{$ch}", "Sensor {$nama} — koreksi {$t} #{$ch}", $L, 'B', $k0 + $ch - $c0, $kb0, $kb1, 'Koreksi');
+                    $tabel("sensor/{$meja}/u95/{$t}/{$ch}", "Sensor {$nama} — U95 {$t} #{$ch}", $L, 'B', $k0 + $ch - $c0, $ub0, $ub1, 'U95');
+                }
+            }
+
+            $drift("sensor/{$meja}/drift", "Sensor {$nama} — drift", $L, $kl, $kv, $db0, $db1);
+        }
+
+        foreach (['A' => 'Dryblock A (-20 ~ 150 °C)', 'B' => 'Dryblock B (150 ~ 600 °C)'] as $db => $label) {
+            $lembar[] = [
+                'kode' => 'dryblock_'.strtolower($db),
+                'label' => $label,
+                'jalur' => "dryblock/{$db}",
+                'jenis' => 'objek',
+                'kunci' => null,
+                'kolom' => [
+                    // Bukan satu sel master (nama = merek+tipe, serial beda dari master) — lihat peta sel.
+                    $kolom('nama', 'Nama', 'teks', null, null, true),
+                    $kolom('serial', 'Nomor seri', 'teks', null, null, true),
+                    $kolom('rentang', 'Rentang', 'teks', null, null),
+                    $kolom('stabilitas', 'Stabilitas', 'desimal', '°C', null),
+                    $kolom('keseragaman', 'Keseragaman', 'desimal', '°C', null),
+                ],
+                'boleh_tambah_baris' => false,
+            ];
+        }
+
+        $lembar[] = [
+            'kode' => 'cmc',
+            'label' => 'CMC master',
+            'jalur' => 'cmc',
+            'jenis' => 'daftar',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('min', 'Batas bawah', 'desimal', '°C', 'DATABASE!R5:R7'),
+                $kolom('maks', 'Batas atas', 'desimal', '°C', 'DATABASE!R5:R7'),
+                $kolom('u95', 'CMC', 'desimal', '°C', 'DATABASE!S5:S7'),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-tids.json',
+            'lembar' => $lembar,
+        ];
+    }
 
     /** Nomor formulir lembar kerja — tercetak di footer PDF-nya. */
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0506_Rev.4';
