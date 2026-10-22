@@ -17,8 +17,8 @@ class SkemaAcuanProfilTest extends TestCase
 {
     use PeriksaSkemaAcuan;
 
-    /** Profil yang sudah dipindah ke Studio, urut registry. Menambah = keputusan yang terlihat di diff. */
-    public const BERSKEMA = ['micrometer', 'dial_indicator'];
+    /** Profil yang sudah dipindah ke Studio, urut registry (bukan urut migrasi). Menambah = keputusan yang terlihat di diff. */
+    public const BERSKEMA = ['micrometer', 'height_gauge', 'dial_indicator'];
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 

@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use RuntimeException;
 
 /**
@@ -43,9 +45,6 @@ use RuntimeException;
  */
 class TabelStandarHeightGauge
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /**
      * Nilai terkoreksi (mm) Caliper Checker pada `$nominal`, atau `null` kalau
      * nominal itu tidak ada di tabel Outside.
@@ -137,20 +136,24 @@ class TabelStandarHeightGauge
         return self::muat()['inside'];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Isi tabel dari [SumberAcuan]: versi DB kalau jalur pemanggilnya membuka
+     * lingkup versi `height_gauge` (dan `DATA_ACUAN_SUMBER=db`), berkas JSON di
+     * luar itu. Jangka Sorong ikut membaca tabel ini, tapi sesinya tidak pernah
+     * membuka lingkup `height_gauge` — jadi baginya tetap JSON. Tidak di-cache
+     * di kelas ini (pola [TabelStandarMicrometer]).
+     *
+     * @return array<string, mixed>
+     */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-height-gauge.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar height gauge nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        $isi = app(SumberAcuan::class)->isi((new HeightGaugeProfile)->kode(), $berkas);
 
         // `standar.tanggal_kalibrasi` ikut diperiksa: dia titik nol umur drift,
         // dan tanpa penjagaan ini berkas yang kehilangan blok itu meledak jauh
@@ -162,6 +165,6 @@ class TabelStandarHeightGauge
             throw new RuntimeException("Tabel standar height gauge rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

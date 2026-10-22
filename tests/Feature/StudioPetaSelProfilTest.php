@@ -52,6 +52,8 @@ class StudioPetaSelProfilTest extends TestCase
         return [
             // 6 standar + 4 × (label, u95_mm).
             'dial_indicator' => ['dial_indicator', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator', null]], 14],
+            // 9 standar + 10 × (terkoreksi, koreksi) Outside + 10 × 3 Inside; nominal Outside cuma dicek.
+            'height_gauge' => ['height_gauge', [['Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026', null]], 59],
         ];
     }
 
@@ -86,6 +88,39 @@ class StudioPetaSelProfilTest extends TestCase
         // (e) Data bersama antar varian diturunkan otomatis dari jalur tanpa {varian}.
         $bersama = DataBersamaVarian::jalurBersama($peta);
         $this->assertSame(isset($peta->isi['varian']) ? $bersama : [], $bersama);
+    }
+
+    /**
+     * Height Gauge: dua penjagaan generator ditiru lewat `cek` — sepuluh
+     * nominal Outside (titik pra-cetak) tidak boleh berubah, dan U95 kedua
+     * tabel wajib satu angka (= standar.u95_um).
+     */
+    public function test_height_gauge_nominal_outside_dan_u95_berbeda_ditolak(): void
+    {
+        $peta = PetaSel::untuk('height_gauge') ?? $this->fail('peta height_gauge tidak ada');
+        $json = json_decode((string) file_get_contents(database_path('data/tabel-standar-height-gauge.json')), true);
+        $asal = base_path(self::AKAR.'Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026');
+
+        foreach ([
+            [',1,25,,,25.0008,', ',1,30,,,25.0008,', 'Std_CaliperCek!C10 = 30'],
+            ['-0.0011,-1.1,4.1', '-0.0011,-1.1,4.2', 'Std_CaliperCek!J32 = 4.2'],
+        ] as [$cari, $ganti, $harap]) {
+            $this->temp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sidik-petasel-'.bin2hex(random_bytes(5));
+            (new Filesystem)->copyDirectory($asal, $this->temp);
+            $berkas = $this->temp.'/Std_CaliperCek.csv';
+            $isi = (string) file_get_contents($berkas);
+            $this->assertSame(1, substr_count($isi, $cari), "prasyarat: {$cari}");
+            file_put_contents($berkas, str_replace($cari, $ganti, $isi));
+
+            try {
+                app(PemeriksaMaster::class)->periksa($peta, basename($asal), app(PembacaCsvWorkbook::class)->baca($this->temp)['lembar'], $json);
+                $this->fail("{$harap} seharusnya ditolak");
+            } catch (GagalBacaWorkbook $e) {
+                $this->assertStringContainsString($harap, $e->getMessage());
+            } finally {
+                (new Filesystem)->deleteDirectory($this->temp);
+            }
+        }
     }
 
     public function test_bilangan_bulat_menolak_pecahan_dan_bagi_hanya_untuk_angka(): void
