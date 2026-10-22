@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarAutoclave;
 
 /**
  * Profil Autoklaf (alat ke-8). Metode `SIDIK-IK-CAL-0531_Rev.4`, form
@@ -66,7 +67,7 @@ class AutoclaveProfile extends CalibrationProfile
     public const SATUAN_SUHU = '°C';
 
     /**
-     * Rentang suhu yang masih punya koreksi kalibrator (`config/autoclave.php`
+     * Rentang suhu yang masih punya koreksi kalibrator (`tabel-standar-autoclave.json`
      * — tabel ketiga disk berhenti di 21 °C dan 140 °C). Dipakai OCR buat nolak
      * bacaan yang mustahil; di luar rentang ini angkanya nggak bisa dikoreksi,
      * jadi lebih baik teknisi yang ngetik.
@@ -160,6 +161,12 @@ class AutoclaveProfile extends CalibrationProfile
     public function kode(): string
     {
         return 'autoclave';
+    }
+
+    /** Lapis 1: CMC + tabel koreksi kalibrator (`tabel-standar-autoclave.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarAutoclave::skemaAcuan();
     }
 
     public function namaAlatKemampuan(): string

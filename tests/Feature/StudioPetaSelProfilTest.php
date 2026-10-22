@@ -103,6 +103,8 @@ class StudioPetaSelProfilTest extends TestCase
                 ['instrument-analiitk/5__Viscometer_86068360_terbaru_', null, 2],
                 ['instrument-analiitk/Master_Olah_Data_Viscometer', null, 2],
             ]],
+            // Autoklaf: 2 CMC + 3 × (S/N, resolusi, tabel) kalibrator suhu + S/N, resolusi, tabel Pressure Disk.
+            'autoclave' => ['autoclave', [['instrument-analiitk/Master_Olah_Data_Autoclave', null, 14]]],
             // Suhu 3 alat: Thermocouple 5 tabel + 9 drift + 4 dryblock + 2 konstanta + CMC;
             // Glass 7 tabel + 9 drift + 4 oilbath + tipe + CMC (22); Thermohygro 2 tabel + 10 angka + CMC.
             'suhu_3alat' => ['suhu_3alat', [

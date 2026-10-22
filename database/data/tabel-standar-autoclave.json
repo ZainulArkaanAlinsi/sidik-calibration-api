@@ -1,0 +1,162 @@
+{
+ "_sumber": "Master Olah Data_Autoclave.xlsm DATABASE!S5:S6 & 'STANDAR KALIBRATOR' (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+ "cmc": {
+  "suhu": 0.34,
+  "tekanan": 0.059
+ },
+ "suhu": [
+  {
+   "nama": "Temperature Calibrator 1",
+   "serial": "1011001961",
+   "resolusi": 0.01,
+   "tabel": [
+    {
+     "set": 21.0,
+     "koreksi": -0.18,
+     "u95": 0.43
+    },
+    {
+     "set": 50.0,
+     "koreksi": -0.1,
+     "u95": 0.43
+    },
+    {
+     "set": 75.0,
+     "koreksi": -0.05,
+     "u95": 0.43
+    },
+    {
+     "set": 100.0,
+     "koreksi": -0.08,
+     "u95": 0.43
+    },
+    {
+     "set": 120.0,
+     "koreksi": 0.13,
+     "u95": 0.43
+    },
+    {
+     "set": 140.0,
+     "koreksi": 0.19,
+     "u95": 0.43
+    }
+   ]
+  },
+  {
+   "nama": "Temperature Calibrator 2",
+   "serial": "1011004038",
+   "resolusi": 0.01,
+   "tabel": [
+    {
+     "set": 23.0,
+     "koreksi": -0.16,
+     "u95": 0.44
+    },
+    {
+     "set": 50.0,
+     "koreksi": -0.15,
+     "u95": 0.44
+    },
+    {
+     "set": 75.0,
+     "koreksi": -0.1,
+     "u95": 0.44
+    },
+    {
+     "set": 100.0,
+     "koreksi": 0.11,
+     "u95": 0.44
+    },
+    {
+     "set": 120.0,
+     "koreksi": 0.2,
+     "u95": 0.44
+    },
+    {
+     "set": 140.0,
+     "koreksi": 0.23,
+     "u95": 0.44
+    }
+   ]
+  },
+  {
+   "nama": "Temperature Calibrator 3",
+   "serial": "1011004063",
+   "resolusi": 0.01,
+   "tabel": [
+    {
+     "set": 23.0,
+     "koreksi": -0.23,
+     "u95": 0.44
+    },
+    {
+     "set": 50.0,
+     "koreksi": -0.11,
+     "u95": 0.44
+    },
+    {
+     "set": 75.0,
+     "koreksi": -0.07,
+     "u95": 0.44
+    },
+    {
+     "set": 100.0,
+     "koreksi": 0.1,
+     "u95": 0.44
+    },
+    {
+     "set": 120.0,
+     "koreksi": 0.15,
+     "u95": 0.44
+    },
+    {
+     "set": 140.0,
+     "koreksi": 0.18,
+     "u95": 0.44
+    }
+   ]
+  }
+ ],
+ "tekanan": {
+  "nama": "Pressure Disk Logger",
+  "serial": "3501009550",
+  "resolusi": 0.001,
+  "tabel": [
+   {
+    "set": 1.5,
+    "koreksi_up": 0.0,
+    "u95": 0.0046
+   },
+   {
+    "set": 2.0,
+    "koreksi_up": -0.0006,
+    "u95": 0.0046
+   },
+   {
+    "set": 2.5,
+    "koreksi_up": -0.001145618125302228,
+    "u95": 0.0046
+   },
+   {
+    "set": 3.0,
+    "koreksi_up": -0.0014,
+    "u95": 0.0046
+   },
+   {
+    "set": 3.5,
+    "koreksi_up": -0.0015,
+    "u95": 0.0046
+   },
+   {
+    "set": 4.0,
+    "koreksi_up": -0.0018,
+    "u95": 0.0046
+   },
+   {
+    "set": 4.5,
+    "koreksi_up": -0.0013,
+    "u95": 0.0046
+   }
+  ]
+ }
+}

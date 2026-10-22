@@ -1,0 +1,167 @@
+{
+ "format": 1,
+ "kode_profil": "autoclave",
+ "sumber_json": "tabel-standar-autoclave.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-analitik.py (autoclave); dulu config/autoclave.php (cmc, suhu, tekanan) (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/instrument-analiitk/Master_Olah_Data_Autoclave sebaris dengan .xlsm di sel ini; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "Nama standar (suhu[*].nama, tekanan.nama) TIDAK dipetakan: itu nama baris standards DB yang dicocokkan seeder/test; master menulis 'Pressure Disk' (STANDAR KALIBRATOR!D2), DB 'Pressure Disk Logger'. Dibawa dari versi dasar.",
+  "Koreksi DOWN (F9:F15) tidak dipakai rumus master (koreksi standar tekanan = kolom UP), tidak dibawa."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  "STANDAR KALIBRATOR"
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!R3",
+   "teks": "Jenis CMC"
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "Autoclave Suhu ~105 oC"
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "Autoclave Pressure"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D7",
+   "teks": "Set Point (bar)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E8",
+   "teks": "UP"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G7",
+   "teks": "U95% (bar)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D22",
+   "teks": "Temperature Calibrator 1"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D36",
+   "teks": "Temperature Calibrator 2"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D50",
+   "teks": "Temperature Calibrator 3"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D27",
+   "teks": "Set Point (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D41",
+   "teks": "Set Point (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D55",
+   "teks": "Set Point (oC)"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "cmc.suhu",
+   "tipe": "angka",
+   "sel": "DATABASE!S5"
+  },
+  {
+   "jalur": "cmc.tekanan",
+   "tipe": "angka",
+   "sel": "DATABASE!S6"
+  },
+  {
+   "jalur": "suhu[0].serial",
+   "tipe": "teks",
+   "sel": "STANDAR KALIBRATOR!D25"
+  },
+  {
+   "jalur": "suhu[0].resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!J25"
+  },
+  {
+   "jalur": "suhu[0].tabel",
+   "tipe": "daftar_objek",
+   "kunci": "set",
+   "kolom": {
+    "set": "STANDAR KALIBRATOR!D28:D33",
+    "koreksi": "STANDAR KALIBRATOR!E28:E33",
+    "u95": "STANDAR KALIBRATOR!F28:F33"
+   },
+   "min_baris": 6
+  },
+  {
+   "jalur": "suhu[1].serial",
+   "tipe": "teks",
+   "sel": "STANDAR KALIBRATOR!D39"
+  },
+  {
+   "jalur": "suhu[1].resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!J39"
+  },
+  {
+   "jalur": "suhu[1].tabel",
+   "tipe": "daftar_objek",
+   "kunci": "set",
+   "kolom": {
+    "set": "STANDAR KALIBRATOR!D42:D47",
+    "koreksi": "STANDAR KALIBRATOR!E42:E47",
+    "u95": "STANDAR KALIBRATOR!F42:F47"
+   },
+   "min_baris": 6
+  },
+  {
+   "jalur": "suhu[2].serial",
+   "tipe": "teks",
+   "sel": "STANDAR KALIBRATOR!D53"
+  },
+  {
+   "jalur": "suhu[2].resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!J53"
+  },
+  {
+   "jalur": "suhu[2].tabel",
+   "tipe": "daftar_objek",
+   "kunci": "set",
+   "kolom": {
+    "set": "STANDAR KALIBRATOR!D56:D61",
+    "koreksi": "STANDAR KALIBRATOR!E56:E61",
+    "u95": "STANDAR KALIBRATOR!F56:F61"
+   },
+   "min_baris": 6
+  },
+  {
+   "jalur": "tekanan.serial",
+   "tipe": "teks",
+   "sel": "STANDAR KALIBRATOR!D5"
+  },
+  {
+   "jalur": "tekanan.resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!J5"
+  },
+  {
+   "jalur": "tekanan.tabel",
+   "tipe": "daftar_objek",
+   "kunci": "set",
+   "kolom": {
+    "set": "STANDAR KALIBRATOR!D9:D15",
+    "koreksi_up": "STANDAR KALIBRATOR!E9:E15",
+    "u95": "STANDAR KALIBRATOR!G9:G15"
+   },
+   "min_baris": 7
+  }
+ ],
+ "tidak_dipetakan": [
+  "resolusi_alat (config/autoclave.php, INPUT DATA!E16/H16) — cadangan resolusi alat pelanggan, bukan data acuan; tetap config.",
+  "Tanggal kalibrasi & due date kalibrator (STANDAR KALIBRATOR!J2/J22/J36/J50) — identitas standar di tabel standards (DB), tidak dibaca jalur hitung.",
+  "PITA_SUHU_KALIBRATOR 21–140 °C (AutoclaveProfile) — pita pindai OCR turunan tabel, lapis 3.",
+  "Pembagi/vi/0,1·U95 drift & polinom k (AutoclaveCalculator) — struktur budget, lapis 2.",
+  "_sumber — dokumentasi."
+ ]
+}

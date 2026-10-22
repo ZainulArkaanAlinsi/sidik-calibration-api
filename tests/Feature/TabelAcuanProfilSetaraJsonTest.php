@@ -7,6 +7,8 @@ use App\Models\Organization;
 use App\Models\PaketAcuan;
 use App\Models\PaketAcuanVersi;
 use App\Services\Acuan\SumberAcuan;
+use App\Services\Calibration\AutoclaveCalculator;
+use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
@@ -20,6 +22,7 @@ use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
+use App\Services\Calibration\TabelStandarAutoclave;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
@@ -655,6 +658,56 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         [$a, $b] = $this->duaJalur('viscometer', $this->v1('viscometer'), $hitung);
         $this->assertSame($harap, $b);
         $this->assertSame($a, $b);
+    }
+
+    /**
+     * Autoklaf: CMC + tabel koreksi tiga Temperature Calibrator & Pressure
+     * Disk pindah dari `config/autoclave.php` ke data acuan. Isi tabel sama
+     * dengan config lama (set point bulat kini float — kalkulator selalu
+     * meng-cast), dan hasil hitung sesi contoh lewat input config lama ==
+     * lewat berkas == lewat DB v1, bit demi bit.
+     */
+    public function test_autoclave_v1_setara_json_dan_config_lama(): void
+    {
+        $lama = ['cmc' => ['suhu' => 0.34, 'tekanan' => 0.059], 'suhu' => [['nama' => 'Temperature Calibrator 1', 'serial' => '1011001961', 'resolusi' => 0.01, 'tabel' => [['set' => 21, 'koreksi' => -0.18, 'u95' => 0.43], ['set' => 50, 'koreksi' => -0.1, 'u95' => 0.43], ['set' => 75, 'koreksi' => -0.05, 'u95' => 0.43], ['set' => 100, 'koreksi' => -0.08, 'u95' => 0.43], ['set' => 120, 'koreksi' => 0.13, 'u95' => 0.43], ['set' => 140, 'koreksi' => 0.19, 'u95' => 0.43]]], ['nama' => 'Temperature Calibrator 2', 'serial' => '1011004038', 'resolusi' => 0.01, 'tabel' => [['set' => 23, 'koreksi' => -0.16, 'u95' => 0.44], ['set' => 50, 'koreksi' => -0.15, 'u95' => 0.44], ['set' => 75, 'koreksi' => -0.1, 'u95' => 0.44], ['set' => 100, 'koreksi' => 0.11, 'u95' => 0.44], ['set' => 120, 'koreksi' => 0.2, 'u95' => 0.44], ['set' => 140, 'koreksi' => 0.23, 'u95' => 0.44]]], ['nama' => 'Temperature Calibrator 3', 'serial' => '1011004063', 'resolusi' => 0.01, 'tabel' => [['set' => 23, 'koreksi' => -0.23, 'u95' => 0.44], ['set' => 50, 'koreksi' => -0.11, 'u95' => 0.44], ['set' => 75, 'koreksi' => -0.07, 'u95' => 0.44], ['set' => 100, 'koreksi' => 0.1, 'u95' => 0.44], ['set' => 120, 'koreksi' => 0.15, 'u95' => 0.44], ['set' => 140, 'koreksi' => 0.18, 'u95' => 0.44]]]], 'tekanan' => ['nama' => 'Pressure Disk Logger', 'serial' => '3501009550', 'resolusi' => 0.001, 'tabel' => [['set' => 1.5, 'koreksi_up' => 0.0, 'u95' => 0.0046], ['set' => 2.0, 'koreksi_up' => -0.0006, 'u95' => 0.0046], ['set' => 2.5, 'koreksi_up' => -0.001145618125302228, 'u95' => 0.0046], ['set' => 3.0, 'koreksi_up' => -0.0014, 'u95' => 0.0046], ['set' => 3.5, 'koreksi_up' => -0.0015, 'u95' => 0.0046], ['set' => 4.0, 'koreksi_up' => -0.0018, 'u95' => 0.0046], ['set' => 4.5, 'koreksi_up' => -0.0013, 'u95' => 0.0046]]]];
+        $float = static function (array $x) use (&$float): array {
+            return array_map(static fn ($v) => is_array($v) ? $float($v) : (is_int($v) ? (float) $v : $v), $x);
+        };
+        $data = [
+            'set_point' => 121.0,
+            'suhu' => [
+                'disk' => [[121.27, 121.26, 121.26, 121.26, 121.28], [121.30, 121.26, 121.26, 121.25, 121.25], [121.26, 121.26, 121.28, 121.35, 121.28]],
+                'indikator' => [121, 121, 121, 121, 121],
+                'suhu_ruang' => [25, 25, 25, 25, 25],
+            ],
+            'tekanan' => ['uut_setting' => 0.112, 'satuan' => 'MPa', 'display' => 'Digital', 'pembacaan_standar' => [1.233, 1.231, 1.225, 1.224, 1.242]],
+        ];
+        $baru = (new AutoclaveInputBuilder)->dari($data);
+        $inputLama = $baru;
+        $inputLama['cmc'] = $lama['cmc'];
+        $inputLama['suhu']['standar'] = array_map(static fn (array $k): array => ['resolusi' => $k['resolusi'], 'tabel' => $k['tabel']], $lama['suhu']);
+        $inputLama['tekanan']['standar'] = ['resolusi' => $lama['tekanan']['resolusi'], 'tabel' => $lama['tekanan']['tabel']];
+        $harap = (new AutoclaveCalculator)->hitung($inputLama);
+
+        $hitung = fn (): array => [
+            [TabelStandarAutoclave::cmc(), TabelStandarAutoclave::suhu(), TabelStandarAutoclave::tekanan()],
+            (new AutoclaveCalculator)->hitung((new AutoclaveInputBuilder)->dari($data)),
+        ];
+        $tabelLama = [$float($lama['cmc']), $float($lama['suhu']), $float($lama['tekanan'])];
+
+        $this->assertSame([$tabelLama, $harap], $hitung());
+        [$a, $b] = $this->duaJalur('autoclave', $this->v1('autoclave'), $hitung);
+        // Isi versi DB kanonik: urutan kunci objek lain (SumberAcuan::isi), nilai & tipe sama.
+        $kanonik = static function (array $x) use (&$kanonik): array {
+            if (! array_is_list($x)) {
+                ksort($x);
+            }
+
+            return array_map(static fn ($v) => is_array($v) ? $kanonik($v) : $v, $x);
+        };
+        $this->assertSame($kanonik($tabelLama), $kanonik($b[0]));
+        $this->assertSame($harap, $b[1]);
+        $this->assertSame($kanonik($a), $kanonik($b));
     }
 
     /** Anak Timbangan (workbook F2 IMTE-LQ-197): tabel + hitung sesi master (fixture AnakTimbanganMasterTest). */

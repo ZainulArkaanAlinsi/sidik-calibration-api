@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
+use App\Services\Calibration\TabelStandarAutoclave;
 use Database\Seeders\AutoclaveSeeder;
 use Database\Seeders\CalibrationCapabilitySeeder;
 use Database\Seeders\ThermohygroSeeder;
@@ -119,24 +120,22 @@ class AutoclaveSeederTest extends TestCase
 
     public function test_nama_dan_serial_kalibrator_cocok_config_dan_profil(): void
     {
-        $config = config('autoclave');
-
         $harusAda = [
             ...array_map(
                 static fn (array $k): array => [$k['nama'], $k['serial']],
-                $config['suhu'],
+                TabelStandarAutoclave::suhu(),
             ),
-            [$config['tekanan']['nama'], $config['tekanan']['serial']],
+            [TabelStandarAutoclave::tekanan()['nama'], TabelStandarAutoclave::tekanan()['serial']],
         ];
 
         foreach ($harusAda as [$nama, $serial]) {
             $std = Standard::where('nama', $nama)->first();
 
-            $this->assertNotNull($std, "Standar `{$nama}` (config/autoclave.php) nggak diseed.");
+            $this->assertNotNull($std, "Standar `{$nama}` (tabel-standar-autoclave.json) nggak diseed.");
             $this->assertSame(
                 $serial,
                 $std->serial_number,
-                "Serial `{$nama}` beda dari config/autoclave.php — ketertelusuran sertifikatnya nunjuk alat lain.",
+                "Serial `{$nama}` beda dari tabel-standar-autoclave.json — ketertelusuran sertifikatnya nunjuk alat lain.",
             );
         }
 

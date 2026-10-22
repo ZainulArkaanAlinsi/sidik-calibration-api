@@ -334,6 +334,13 @@
    "ukuran_byte": 349184,
    "terverifikasi": true,
    "catatan": "Lembar MPE Visco identik dengan master terbaru."
+  },
+  {
+   "paket": "autoclave",
+   "berkas": "Master Olah Data_Autoclave.xlsm",
+   "sha256": "a638317fd0a16d9aac69e8568a255e1201080cd5d0c9e954812392de22ebb0c0",
+   "ukuran_byte": 767488,
+   "terverifikasi": true
   }
  ]
 }

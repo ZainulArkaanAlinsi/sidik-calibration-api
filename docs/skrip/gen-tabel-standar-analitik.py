@@ -34,6 +34,15 @@ Paket:
     (lapis 3 — kode menulis `SC4-18`/`CPE/CPA`, master `sc4-18`/`CPE or CPA`),
     dipasangkan per posisi. Label master diadu ke label kode (abaikan
     huruf besar/kecil) supaya posisi tidak bergeser diam-diam.
+
+  autoclave — `Master Olah Data_Autoclave.xlsm`: CMC `DATABASE!S5` (suhu, °C)
+    & `S6` (tekanan, bar); lembar `STANDAR KALIBRATOR`: tiga Temperature
+    Calibrator (S/N `D25`/`D39`/`D53`, resolusi `J25`/`J39`/`J53`, tabel
+    set/koreksi/U95 `D28:F33`, `D42:F47`, `D56:F61`) dan Pressure Disk (S/N
+    `D5`, resolusi `J5`, tabel set/koreksi UP/U95 `D9:E15` + `G9:G15`) — dulu
+    `config/autoclave.php`. Nama standar ditulis dari kode (nama baris
+    `standards` DB; master menulis "Pressure Disk", DB "Pressure Disk Logger").
+    Koreksi DOWN (`F9:F15`) tidak dipakai rumus master, tidak dibawa.
 """
 import io
 import json
@@ -162,8 +171,41 @@ def viscometer():
     })
 
 
+def autoclave():
+    db, sk = "DATABASE", "STANDAR KALIBRATOR"
+    for a, h in [("D7", "Set Point (bar)"), ("E7", "Correction (bar)"), ("G7", "U95% (bar)"), ("E8", "UP"),
+                 ("D27", "Set Point (oC)"), ("D41", "Set Point (oC)"), ("D55", "Set Point (oC)"),
+                 ("D22", "Temperature Calibrator 1"), ("D36", "Temperature Calibrator 2"), ("D50", "Temperature Calibrator 3")]:
+        label(sk, a, h)
+
+    def serial(a):
+        v = sel(sk, a)
+        return str(int(v)) if isinstance(v, (int, float)) and float(v).is_integer() else str(v).strip()
+
+    suhu = []
+    for n, (nama, s_, r_, b0) in enumerate([("D22", "D25", "J25", 28), ("D36", "D39", "J39", 42), ("D50", "D53", "J53", 56)], 1):
+        suhu.append({
+            "nama": f"Temperature Calibrator {n}",
+            "serial": serial(s_),
+            "resolusi": angka(sk, r_),
+            "tabel": [{"set": angka(sk, f"D{b}"), "koreksi": angka(sk, f"E{b}"), "u95": angka(sk, f"F{b}")} for b in range(b0, b0 + 6)],
+        })
+    tulis("tabel-standar-autoclave.json", {
+        "_sumber": "Master Olah Data_Autoclave.xlsm DATABASE!S5:S6 & 'STANDAR KALIBRATOR' (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+        "cmc": {"suhu": angka(db, "S5"), "tekanan": angka(db, "S6")},
+        "suhu": suhu,
+        "tekanan": {
+            "nama": "Pressure Disk Logger",
+            "serial": serial("D5"),
+            "resolusi": angka(sk, "J5"),
+            "tabel": [{"set": angka(sk, f"D{b}"), "koreksi_up": angka(sk, f"E{b}"), "u95": angka(sk, f"G{b}")} for b in range(9, 16)],
+        },
+    })
+
+
 {
     "refractometer": refractometer,
+    "autoclave": autoclave,
     "viscometer": viscometer,
     "spectrophotometer": spectrophotometer,
 }.get(PAKET, lambda: sys.exit(f"paket tak dikenal: {PAKET}"))()

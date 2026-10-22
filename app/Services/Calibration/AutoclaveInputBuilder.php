@@ -6,7 +6,8 @@ use InvalidArgumentException;
 
 /**
  * Rakit input `AutoclaveCalculator` dari data ukur teknisi + tabel kalibrator &
- * CMC server-side (`config/autoclave.php`).
+ * CMC server-side (data acuan lapis 1 [TabelStandarAutoclave], dulu
+ * `config/autoclave.php`; resolusi alat cadangan tetap di config).
  *
  * Dipisah dari controller supaya jalur PREVIEW (tanpa simpan) dan jalur SIMPAN
  * (sesi tersimpan) merakit input yang SAMA PERSIS — kalau logikanya kesalin dua
@@ -28,7 +29,7 @@ class AutoclaveInputBuilder
             // kalau draft). Yang kosong diteruskan null — TIDAK dikarang jadi 0
             // atau angka bawaan; kalkulator yang memutuskan apa artinya.
             'set_point' => isset($data['set_point']) ? (float) $data['set_point'] : null,
-            'cmc' => $config['cmc'],
+            'cmc' => TabelStandarAutoclave::cmc(),
         ];
 
         if (isset($data['suhu'])) {
@@ -42,7 +43,7 @@ class AutoclaveInputBuilder
                 // Disk ke-i pakai Temperature Calibrator ke-i (config sudah urut).
                 'standar' => array_map(
                     fn (array $kal): array => ['resolusi' => $kal['resolusi'], 'tabel' => $kal['tabel']],
-                    array_slice($config['suhu'], 0, count($disk)),
+                    array_slice(TabelStandarAutoclave::suhu(), 0, count($disk)),
                 ),
             ];
         }
@@ -65,8 +66,8 @@ class AutoclaveInputBuilder
                 'indikator_pressure' => $data['tekanan']['indikator_pressure'] ?? [],
                 'tekanan_atm_awal' => $data['tekanan']['tekanan_atm_awal'] ?? null,
                 'standar' => [
-                    'resolusi' => $config['tekanan']['resolusi'],
-                    'tabel' => $config['tekanan']['tabel'],
+                    'resolusi' => TabelStandarAutoclave::tekanan()['resolusi'],
+                    'tabel' => TabelStandarAutoclave::tekanan()['tabel'],
                 ],
             ];
         }
