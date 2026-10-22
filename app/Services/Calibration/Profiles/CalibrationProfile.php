@@ -1712,6 +1712,10 @@ abstract class CalibrationProfile
      * `perlu_konfirmasi` (satuan atau maknanya belum bisa dipastikan dari kode
      * dan wajib dikonfirmasi Lab sebelum disunting lewat Studio).
      *
+     * `tipe`: `teks`, `teks_kosong` (teks atau null), `tanggal`, `desimal`,
+     * `desimal_kosong` (float atau null — sel yang memang tidak ada di master,
+     * bukan nol), `bulat` (int), `boolean`, `daftar_angka`.
+     *
      * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}|null
      */
     public function skemaAcuan(): ?array
