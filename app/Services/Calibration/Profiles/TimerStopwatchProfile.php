@@ -536,6 +536,41 @@ class TimerStopwatchProfile extends CalibrationProfile
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0512_Rev.4';
 
     /**
+     * Titik sesi Timer/Stopwatch: nominal SARAN (`TITIK_SARAN`), paling banyak
+     * `BARIS_KERTAS` set point aktif — sepuluh blok set point master
+     * (`WaktuFrekuensiSeeder`). Tiap titik dihitung sendiri oleh
+     * `WaktuCalculator` (n = jumlah ulangan terisi, min. 2), jadi menonaktifkan
+     * satu titik tidak menggeser titik lain.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        return [
+            'didukung' => true,
+            'alasan' => null,
+            'tabel' => [[
+                'kode' => 'utama',
+                'judul' => 'Set point',
+                'min' => 1,
+                'maks' => self::BARIS_KERTAS,
+                'boleh_tambah' => true,
+                'boleh_nonaktif' => true,
+                'nominal' => 'saran',
+                'bawaan' => self::TITIK_SARAN,
+                'fase' => ['sesudah'],
+                'satuan' => self::SATUAN,
+                'pengulangan' => [
+                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'maks' => self::MAKS_KOLOM_PENGULANGAN,
+                    'bawaan' => self::PENGULANGAN,
+                ],
+            ]],
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array

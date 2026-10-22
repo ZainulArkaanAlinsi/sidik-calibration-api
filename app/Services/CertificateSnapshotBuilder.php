@@ -15,6 +15,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\TekananProfile;
+use App\Services\Calibration\TitikUkurSesi;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
@@ -86,6 +87,11 @@ class CertificateSnapshotBuilder
         $catatanBaku = $tataLetak['catatan'] ?? self::CATATAN_HASIL;
         unset($tataLetak['catatan']);
         $blokCatatan = $profil === null ? [] : TataLetakSertifikat::normalisasiBlok($profil->catatanSertifikat($sesi));
+        // Titik atas permintaan pelanggan (titik ukur sesi, §55): dicetak
+        // seperti titik lain, plus satu catatan kaki di bawah tabel hasil.
+        // Catatan kaki — bukan kolom Remarks — karena tidak semua tata letak
+        // master punya kolom itu, dan isinya di lembar yang punya sudah dipakai.
+        $blokCatatan = [...$blokCatatan, ...$this->catatanTitikPelanggan($sesi)];
         // Teks berangka yang DIBEKUKAN sebagai teks (kepala, catatan) ikut
         // pemisah desimal tata letaknya (P3, pemilik 20 Okt 2026: titik seperti
         // master). Aplikasi HP membaca teks ini apa adanya, jadi dikonversi di
@@ -1490,5 +1496,29 @@ class CertificateSnapshotBuilder
         // Tekanan Udara di baris sendiri-sendiri (`SERTIFIKAT!N12:T14`). Yang
         // merender wajib menghormati baris baru (`white-space: pre-line`).
         return $bagian === [] ? null : implode($bertumpuk ? "\n" : ' — ', $bagian);
+    }
+
+    /**
+     * Catatan kaki titik permintaan pelanggan yang AKTIF di sesi ini.
+     *
+     * @return list<array{posisi: string, judul: ?string, baris: list<string>, tabel: list<list<string>>}>
+     */
+    private function catatanTitikPelanggan(CalibrationSession $sesi): array
+    {
+        $titik = collect(TitikUkurSesi::dariSesi($sesi)['titik'] ?? [])
+            ->filter(fn (array $t): bool => $t['aktif'] && $t['asal'] === TitikUkurSesi::ASAL_PELANGGAN)
+            ->sortBy('nominal')
+            ->map(fn (array $t): string => TitikUkurSesi::label($t));
+
+        if ($titik->isEmpty()) {
+            return [];
+        }
+
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => null,
+            'baris' => ['Titik atas permintaan pelanggan: '.$titik->implode('; ').'.'],
+            'tabel' => [],
+        ]];
     }
 }

@@ -878,6 +878,199 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Batas titik ukur SESI (`App\Services\Calibration\TitikUkurSesi`) —
+     * lapis 3 AGENTS.md §Olah data. Bentuk:
+     *
+     *     didukung: bool, alasan: ?string,
+     *     tabel: list<{kode, judul, min, maks, boleh_tambah, boleh_nonaktif,
+     *                  nominal: dipatok|saran|bebas, bawaan: list<float>,
+     *                  fase: list<sebelum|sesudah>, satuan: ?string,
+     *                  pengulangan: {min, maks, bawaan}|null,
+     *                  alasan_tambah?: string, alasan_nonaktif?: string}>
+     *
+     * Bawaannya diturunkan dari bentuk lembar, dan HANYA untuk lembar jalur
+     * DATAR (satu deret per titik, `titik_ukur` mentah = nominal baris). Lembar
+     * berblok (`butuhBlok*`, grid, pasangan) menyimpan `titik_ukur` dengan arti
+     * yang berbeda-beda, jadi penghubung titik ↔ pembacaan lewat nominal belum
+     * terbukti di sana — mereka `didukung: false` sampai profilnya menimpa
+     * method ini sendiri (pilot: Timer, Timbangan, Micrometer, Tekanan).
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        $blok = [
+            'butuhGridSensor', 'butuhPasanganStandarUut', 'butuhBlokTimbangan', 'butuhBlokWaktu',
+            'butuhBlokMicrometer', 'butuhBlokHeightGauge', 'butuhBlokDialIndicator', 'butuhBlokSieve',
+            'butuhBlokJangkaSorong', 'butuhBlokFlowmeter', 'butuhBlokAnakTimbangan', 'butuhBlokHydrometer',
+            'butuhBlokVolumetric', 'butuhBlokGaya', 'butuhBlokTekanan', 'butuhBlokPiston',
+        ];
+
+        foreach ($blok as $m) {
+            if ($this->{$m}()) {
+                return self::batasTidakDidukung('lembar berblok ('.$m.') — penghubung titik ↔ pembacaan lewat '
+                    .'nominal belum diverifikasi untuk bentuk ini.');
+            }
+        }
+
+        try {
+            $bentuk = $this->bentukLembarKerja(false, $equipment);
+        } catch (\Throwable) {
+            return self::batasTidakDidukung('bentuk lembar tidak bisa disusun tanpa data alat.');
+        }
+
+        $tabel = [];
+
+        foreach ($bentuk['bagian'] ?? [] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $t) {
+                if (! is_array($t['baris'] ?? null) || $t['baris'] === []
+                    || str_starts_with((string) ($t['simpan_ke'] ?? ''), 'spesifikasi_alat')) {
+                    continue;
+                }
+
+                $tabel[] = $t;
+            }
+        }
+
+        if ($tabel === []) {
+            return self::batasTidakDidukung('lembar ini tidak punya tabel titik ukur.');
+        }
+
+        $nominal = static fn (array $t): array => array_map(
+            static fn (array $b): ?float => isset($b['titik_ukur']) && is_numeric($b['titik_ukur']) ? (float) $b['titik_ukur'] : null,
+            $t['baris'],
+        );
+
+        $tanda = array_unique(array_map(static fn (array $t): string => (string) json_encode($nominal($t)), $tabel));
+
+        if (count($tanda) > 1) {
+            return self::batasTidakDidukung('lembar ini punya lebih dari satu blok titik dengan nominal berbeda; '
+                .'baris mentah tidak menyimpan bloknya.');
+        }
+
+        foreach ($tabel as $t) {
+            foreach ($t['baris'] as $b) {
+                if (($b['eksklusif_dengan'] ?? null) !== null) {
+                    return self::batasTidakDidukung('baris titik bervarian satuan (`eksklusif_dengan`).');
+                }
+            }
+        }
+
+        $daftar = $nominal($tabel[0]);
+        $terisi = array_values(array_filter($daftar, static fn (?float $n): bool => $n !== null));
+
+        if (count($terisi) !== count(array_unique(array_map('strval', $terisi)))) {
+            return self::batasTidakDidukung('nominal baris lembar ini kembar.');
+        }
+
+        $bisaDiubah = collect($tabel)->contains(fn (array $t): bool => (bool) ($t['titik_bisa_diubah'] ?? false));
+        $jenis = $terisi === [] ? 'bebas' : ($bisaDiubah ? 'saran' : 'dipatok');
+        $tahap = collect($tabel)->pluck('tahap')->filter()->unique();
+        $kolomUlang = count((array) ($tabel[0]['pengulangan'] ?? []));
+
+        return [
+            'didukung' => true,
+            'alasan' => null,
+            'tabel' => [[
+                'kode' => 'utama',
+                'judul' => (string) ($tabel[0]['judul'] ?? 'Titik ukur'),
+                'min' => 1,
+                'maks' => count($daftar),
+                'boleh_tambah' => $jenis !== 'dipatok',
+                'boleh_nonaktif' => true,
+                'nominal' => $jenis,
+                'bawaan' => $terisi,
+                'fase' => $tahap->contains('sebelum_adjustment') ? ['sebelum', 'sesudah'] : ['sesudah'],
+                'satuan' => $tabel[0]['satuan'] ?? ($tabel[0]['baris'][0]['satuan'] ?? null),
+                'pengulangan' => $kolomUlang === 0 ? null : [
+                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'maks' => self::MAKS_KOLOM_PENGULANGAN,
+                    'bawaan' => $this->pengulanganLembarBawaan() ?? $kolomUlang,
+                ],
+            ]],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    protected static function batasTidakDidukung(string $alasan): array
+    {
+        return ['didukung' => false, 'alasan' => $alasan, 'tabel' => []];
+    }
+
+    /**
+     * Set titik bawaan — titik yang ditawarkan lembar sebelum teknisi
+     * menyesuaikannya. `id` deterministik `profil-<tabel>-<n>` supaya dua
+     * perangkat yang membangun set dari bawaan yang sama tidak bentrok.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<array<string, mixed>>
+     */
+    public function titikSesiBawaan(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        $titik = [];
+
+        foreach ($this->batasTitik($equipment, $spesifikasi)['tabel'] as $t) {
+            foreach (array_values($t['bawaan'] ?? []) as $i => $n) {
+                $titik[] = [
+                    'id' => 'profil-'.$t['kode'].'-'.($i + 1),
+                    'tabel' => $t['kode'],
+                    'nominal' => (float) $n,
+                    'satuan' => $t['satuan'] ?? null,
+                    'fase' => ['sesudah'],
+                    'aktif' => true,
+                    'asal' => 'profil',
+                    'alasan' => null,
+                    'justifikasi_cmc' => null,
+                    'tambahan' => false,
+                ];
+            }
+        }
+
+        return $titik;
+    }
+
+    /**
+     * Cakupan CMC lampiran akreditasi (LK-285-IDN) dalam SATUAN TITIK, sebagai
+     * daftar pita `{min, maks}`; `null` = tidak bisa ditentukan (validator
+     * diam, bukan menebak — peringatan palsu melatih orang menekan "setujui
+     * tetap").
+     *
+     * Bawaannya baris `calibration_capabilities` alat ini (organisasi alat,
+     * kategori, nama kemampuan, ber-CMC) yang SATUANNYA sama dengan satuan
+     * titik. Satuan beda tidak dikonversi di sini — profil yang tahu
+     * konversinya menimpa method ini (Timbangan, Tekanan, Micrometer).
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<array{min: float, maks: float}>|null
+     */
+    public function cakupanCmcTitik(Equipment $equipment, array $spesifikasi = [], ?string $satuan = null): ?array
+    {
+        $satuan = trim((string) ($satuan ?? $equipment->satuan ?? ''));
+
+        if ($satuan === '' || $equipment->organization_id === null) {
+            return null;
+        }
+
+        $pita = CalibrationCapability::query()
+            ->where('nama_alat', $equipment->nama_alat_kemampuan ?? $this->namaAlatKemampuan())
+            ->when(
+                $equipment->equipment_category_id !== null,
+                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->milikOrganisasi($equipment->organization_id)
+            ->get()
+            ->filter(fn (CalibrationCapability $k): bool => $k->punyaCmc()
+                && $k->range_min !== null && $k->range_max !== null
+                && strcasecmp(trim((string) $k->satuan), $satuan) === 0)
+            ->map(fn (CalibrationCapability $k): array => ['min' => (float) $k->range_min, 'maks' => (float) $k->range_max])
+            ->values()
+            ->all();
+
+        return $pita === [] ? null : $pita;
+    }
+
+    /**
      * Penanda TAMPIL-BERSYARAT di kontrak field — `['kode' => ..., 'nilai' =>
      * [...]]`, dibaca "tampilkan field ini cuma kalau field `kode` isinya salah
      * satu dari `nilai`". `null` (bawaan tiap field) artinya selalu tampil.

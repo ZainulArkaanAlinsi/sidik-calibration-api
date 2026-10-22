@@ -546,6 +546,95 @@ abstract class TekananProfile extends CalibrationProfile
     }
 
     /**
+     * Titik sesi keluarga Tekanan: nominal BEBAS (setelan diketik teknisi),
+     * paling banyak `TITIK_MAKS` (baris 24–37 master). Pengulangan dipatok
+     * TEPAT 3 UP + 3 DOWN — [penghalangSesi] memblokir jumlah lain.
+     *
+     * Budget-nya tingkat SESI (uc bersama, zero error dari titik PERTAMA), jadi
+     * titik yang dinonaktifkan ikut keluar dari budget bersama — sama dengan
+     * master yang barisnya tidak diisi. Menonaktifkan titik pertama memunculkan
+     * temuan zero error yang sudah ada ([temuanSesi]).
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        $blok = M::blokSesi($spesifikasi);
+
+        return [
+            'didukung' => true,
+            'alasan' => null,
+            'tabel' => [[
+                'kode' => 'utama',
+                'judul' => 'Set point',
+                'min' => 1,
+                'maks' => self::TITIK_MAKS,
+                'boleh_tambah' => true,
+                'boleh_nonaktif' => true,
+                'nominal' => 'bebas',
+                'bawaan' => [],
+                'fase' => ['sesudah'],
+                'satuan' => $blok['satuan'] ?? $equipment?->satuan,
+                'pengulangan' => [
+                    'min' => TekananCalculator::PENGULANGAN,
+                    'maks' => TekananCalculator::PENGULANGAN,
+                    'bawaan' => TekananCalculator::PENGULANGAN,
+                ],
+            ]],
+        ];
+    }
+
+    /**
+     * Cakupan CMC = rentang baris lampiran varian ini ([CMC_LAMPIRAN]),
+     * dikonversi ke satuan sesi lewat faktor kalibrator yang SAMA dengan yang
+     * dipakai hitungan (`TabelStandarTekanan::faktor`). `null` bila varian,
+     * satuan, atau barisnya belum ada.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<array{min: float, maks: float}>|null
+     */
+    public function cakupanCmcTitik(Equipment $equipment, array $spesifikasi = [], ?string $satuan = null): ?array
+    {
+        $blok = M::blokSesi($spesifikasi);
+        $varian = $blok['varian'] ?? null;
+        $satuan ??= $blok['satuan'] ?? null;
+
+        if ($varian === null || $satuan === null || ! isset(self::CMC_LAMPIRAN[$varian])) {
+            return null;
+        }
+
+        [$nama, $satuanPita] = self::CMC_LAMPIRAN[$varian][$this->jenisTekanan()]
+            ?? self::CMC_LAMPIRAN[$varian][M::JENIS_NON_VAKUM];
+
+        $fPita = Tabel::faktor($varian, $satuanPita);
+        $fSesi = Tabel::faktor($varian, $satuan);
+
+        if ($fPita === null || $fSesi === null || $fSesi == 0.0) {
+            return null;
+        }
+
+        $pita = CalibrationCapability::query()
+            ->where('nama_alat', $nama)
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
+            ->get()
+            ->filter(static fn (CalibrationCapability $p): bool => $p->punyaCmc()
+                && $p->range_min !== null && $p->range_max !== null
+                && strcasecmp((string) $p->satuan, $satuanPita) === 0)
+            ->map(static fn (CalibrationCapability $p): array => [
+                'min' => min((float) $p->range_min, (float) $p->range_max) * $fPita / $fSesi,
+                'maks' => max((float) $p->range_min, (float) $p->range_max) * $fPita / $fSesi,
+            ])
+            ->values()
+            ->all();
+
+        return $pita === [] ? null : $pita;
+    }
+
+    /**
      * CMC dalam SATUAN KERJA varian, dari baris lampiran LK-285-IDN.
      *
      * `null` kalau barisnya tidak ada di `calibration_capabilities` lab ini —
