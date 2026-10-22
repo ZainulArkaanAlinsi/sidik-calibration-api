@@ -38,14 +38,14 @@ final class DataBersamaPaket
      * @param  list<array<string, mixed>>  $lembar  keluaran pembaca master (sudah lolos [PemeriksaMaster::periksa])
      * @return list<array{paket: string, dasar: string, jalur: string, acuan: ?string, master: ?string}>
      */
-    public function periksa(PetaSel $peta, array $lembar, int $organisasiId): array
+    public function periksa(PetaSel $peta, array $lembar, int $organisasiId, string $format = PemeriksaMaster::FORMAT_CSV): array
     {
         $beda = [];
 
         foreach ($peta->isi['paket_lain'] ?? [] as $pl) {
             $kode = (string) $pl['paket'];
             [$dasar, $label] = $this->dasar($organisasiId, $kode);
-            $hasil = $this->pemeriksa->ekstrakLain($peta, $lembar, $pl['ekstrak'], $dasar);
+            $hasil = $this->pemeriksa->ekstrakLain($peta, $lembar, $pl['ekstrak'], $dasar, $format);
 
             foreach (array_values(array_unique($hasil['jalur'])) as $jalur) {
                 foreach (self::bandingJalur($dasar, $hasil['isi'], $jalur) as $b) {
@@ -80,7 +80,7 @@ final class DataBersamaPaket
                 ->map(static fn (WorkbookMasterLembar $l): array => ['nama' => $l->nama, 'sel_kanonik' => (string) $l->sel])
                 ->all();
 
-            return $this->periksa($peta, $lembar, (int) $draf->organization_id);
+            return $this->periksa($peta, $lembar, (int) $draf->organization_id, (string) $w->sumber);
         } catch (Throwable $e) {
             return [['paket' => '*', 'dasar' => '-', 'jalur' => '-', 'acuan' => null, 'master' => null, 'galat' => mb_substr($e->getMessage(), 0, 500)]];
         }

@@ -4,7 +4,8 @@
  "sumber_json": "tabel-standar-waktu.json",
  "bukti": [
   "Alamat = gen-tabel-standar-waktu-frekuensi.py bagian WAKTU (SERTIFIKAT KALIBRATOR!C1:C5 & C9:F21, Drift Stopwatch!B12:J25, F8:J9, L7, Human Reaction) atas ekspor CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Waktu_/Master_Olda_Timer_dan_Stopwatch (22 Okt 2026); ekstraksi = tabel-standar-waktu.json (StudioPetaSelProfilTest).",
-  "Drift & Human Reaction TIDAK diekstrak (rentang, rata-rata, stdev, maks = turunan generator); koreksi drift baris 12,13,14,15,16,17,18,19,20,21,22,23,25 dan hari_master L7 dijaga cek, sel J/M/s nominal drift dipatok jangkar — master dengan data drift lain DITOLAK."
+  "Drift & Human Reaction TIDAK diekstrak (rentang, rata-rata, stdev, maks = turunan generator); koreksi drift baris 12,13,14,15,16,17,18,19,20,21,22,23,25 dan hari_master L7 dijaga cek, sel J/M/s nominal drift dipatok jangkar — master dengan data drift lain DITOLAK.",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
  ],
  "lembar_wajib": [
   "SERTIFIKAT KALIBRATOR",
@@ -605,7 +606,6 @@
   "drift.titik[*].rentang_ms, drift.rentang_maks_*, dihitung_master, nominal_detik — TURUNAN generator, dijaga lewat cek/jangkar sel sumber"
  ],
  "perlu_berkas_asli": [
-  "Konfirmasi alamat di .xlsm (terenkripsi; SIDIK_MASTER_SANDI belum disetel).",
   "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
  ]
 }

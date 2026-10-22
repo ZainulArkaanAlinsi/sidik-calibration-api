@@ -428,6 +428,28 @@ final class PetaSel
             }
         }
 
+        if (isset($p['xlsm'])) {
+            $x = $p['xlsm'];
+
+            if (! is_array($x) || ! is_array($x['lembar'] ?? []) || ! is_array($x['geser'] ?? [])) {
+                $m[] = 'xlsm harus {lembar: {peta: asli}, geser: [{lembar, dari, geser, varian?}]}';
+            } else {
+                foreach (($x['lembar'] ?? []) as $dari => $ke) {
+                    if (! in_array($dari, $lembar, true) || ! is_string($ke) || $ke === '') {
+                        $m[] = "xlsm.lembar.{$dari}: harus lembar_wajib -> nama lembar .xlsm";
+                    }
+                }
+
+                foreach (($x['geser'] ?? []) as $i => $g) {
+                    if (! is_array($g) || ! in_array($g['lembar'] ?? null, $lembar, true) || ! is_int($g['dari'] ?? null) || $g['dari'] < 1 || ! is_int($g['geser'] ?? null)) {
+                        $m[] = "xlsm.geser[{$i}]: harus {lembar (lembar_wajib), dari >= 1, geser bilangan bulat}";
+                    } elseif (($e = $varianSah($g, "xlsm.geser[{$i}]")) !== null) {
+                        $m[] = $e;
+                    }
+                }
+            }
+        }
+
         foreach (($p['cek'] ?? []) as $i => $c) {
             $label = "cek[{$i}]";
 
@@ -492,6 +514,39 @@ final class PetaSel
         return isset($this->isi['varian'])
             && ($this->isi['varian']['lainnya'] ?? 'tolak') === 'lewati'
             && self::varianDariPola($this->isi['varian']['pola'], $nama) === null;
+    }
+
+    /**
+     * Terjemahan alamat untuk master `.xlsm`. Alamat peta adalah alamat
+     * EKSPOR CSV (bukti di repo); ekspor itu membuang sebagian baris kosong
+     * dan mengganti spasi nama lembar, jadi `.xlsm` asli bisa beda. Bagian
+     * `xlsm` peta (diturunkan dari penyelarasan baris CSV<->.xlsm asli,
+     * `docs/skrip/verifikasi-peta-xlsm.py`) memuat nama lembar asli dan geser
+     * baris per rentang: `{lembar, dari, geser, varian?}` — baris peta >=
+     * `dari` digeser `geser`; aturan dengan `dari` terbesar yang berlaku menang.
+     *
+     * @return array{lembar: array<string, string>, geser: array<string, list<array{0: int, 1: int}>>}
+     */
+    public function alihXlsm(string $format, ?string $varian): array
+    {
+        $x = $this->isi['xlsm'] ?? null;
+
+        if ($format !== 'xlsm' || ! is_array($x)) {
+            return ['lembar' => [], 'geser' => []];
+        }
+
+        $geser = [];
+
+        foreach (self::untukVarian($x['geser'] ?? [], $varian) as $g) {
+            $geser[(string) $g['lembar']][] = [(int) $g['dari'], (int) $g['geser']];
+        }
+
+        foreach ($geser as $l => $daftar) {
+            usort($daftar, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
+            $geser[$l] = $daftar;
+        }
+
+        return ['lembar' => array_map('strval', (array) ($x['lembar'] ?? [])), 'geser' => $geser];
     }
 
     /**

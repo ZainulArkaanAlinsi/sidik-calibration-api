@@ -5,7 +5,8 @@
  "bukti": [
   "Alamat = gen-tabel-standar-waktu-frekuensi.py bagian PUTARAN (SERTIFIKAT KALIBRATOR!C1:C5 & C9:F21, Drift Std Kalibrator!C13:J34, D9:J10, L8) atas ekspor CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Waktu_/Master_Olda_{Tachometer,Centrifuge} (22 Okt 2026). Generator membaca .xlsm Tachometer (data_only); kedua CSV identik di sel yang dipetakan kecuali label & isi baris 3 (Res/Accuration).",
   "Ekstraksi dari kedua CSV = tabel-standar-putaran.json (StudioPetaSelProfilTest). Satu paket 'putaran' untuk centrifuge & tachometer.",
-  "Drift TIDAK diekstrak (rentang/rentang_maks/dihitung_master = turunan generator) tetapi DIJAGA: tiap sel koreksi & nominal baris drift yang jadi titik (15 baris: 13,14,15,16,17,18,20,23,26,27,28,29,30,31,32) dan hari_master L8 diadu ke versi dasar — master dengan data drift lain DITOLAK sampai generator/kode diperbarui."
+  "Drift TIDAK diekstrak (rentang/rentang_maks/dihitung_master = turunan generator) tetapi DIJAGA: tiap sel koreksi & nominal baris drift yang jadi titik (15 baris: 13,14,15,16,17,18,20,23,26,27,28,29,30,31,32) dan hari_master L8 diadu ke versi dasar — master dengan data drift lain DITOLAK sampai generator/kode diperbarui.",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
  ],
  "lembar_wajib": [
   "SERTIFIKAT KALIBRATOR",
@@ -768,7 +769,6 @@
   "drift.titik[*].rentang, drift.rentang_maks_*, drift.titik[*].dihitung_master — TURUNAN (rumus generator), dijaga lewat cek sel sumbernya"
  ],
  "perlu_berkas_asli": [
-  "Konfirmasi alamat di .xlsm (terenkripsi; SIDIK_MASTER_SANDI belum disetel).",
   "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
  ]
 }

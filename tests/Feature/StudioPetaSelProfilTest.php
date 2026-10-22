@@ -178,6 +178,61 @@ class StudioPetaSelProfilTest extends TestCase
         }
     }
 
+    /**
+     * Master .xlsm memakai alamat lain dari ekspor CSV (baris kosong dibuang
+     * ekspor, nama lembar berspasi). Bagian `xlsm` peta menerjemahkannya:
+     * lembar CSV yang digeser & diganti nama PERSIS menurut aturan peta —
+     * tiruan bentuk .xlsm — diekstrak dengan format xlsm memulangkan JSON yang
+     * sama, dan dengan format csv ditolak. (Paritas terhadap .xlsm asli
+     * dibuktikan `docs/skrip/verifikasi-peta-xlsm.py`; berkasnya tidak di repo.)
+     */
+    #[DataProvider('peta_xlsm')]
+    public function test_alamat_xlsm_diterjemahkan(string $kode, string $folder, string $varian): void
+    {
+        $peta = PetaSel::untuk($kode) ?? $this->fail("peta {$kode}");
+        $json = json_decode((string) file_get_contents(database_path('data/'.$peta->isi['sumber_json'])), true);
+        $lembar = app(PembacaCsvWorkbook::class)->baca(base_path(self::AKAR.$folder))['lembar'];
+        $alih = $peta->alihXlsm('xlsm', $varian);
+        $this->assertNotSame([], $alih['geser']);
+
+        $tiruan = array_map(static function (array $l) use ($alih): array {
+            $geser = $alih['geser'][$l['nama']] ?? [];
+            $sel = array_map(static function (array $s) use ($geser): array {
+                $g = 0;
+
+                foreach ($geser as [$dari, $n]) {
+                    $g = $s['b'] >= $dari ? $n : $g;
+                }
+
+                $s['b'] += $g;
+                $s['a'] = preg_replace('/\d+$/', (string) $s['b'], $s['a']);
+
+                return $s;
+            }, json_decode((string) $l['sel_kanonik'], true));
+
+            return ['nama' => $alih['lembar'][$l['nama']] ?? $l['nama'], 'sel_kanonik' => json_encode($sel)] + $l;
+        }, $lembar);
+
+        $nama = basename($folder);
+        $hasil = app(PemeriksaMaster::class)->periksa($peta, $nama, $tiruan, $json, PemeriksaMaster::FORMAT_XLSM);
+        $this->assertSame($varian, $hasil['varian']);
+        $this->assertSame(JsonKanonik::sha256(JsonKanonik::serialisasi($json)), JsonKanonik::sha256(JsonKanonik::serialisasi($hasil['isi'])));
+
+        $this->expectException(GagalBacaWorkbook::class);
+        app(PemeriksaMaster::class)->periksa($peta, $nama, $tiruan, $json, PemeriksaMaster::FORMAT_CSV);
+    }
+
+    /** @return array<string, array{string, string, string}> */
+    public static function peta_xlsm(): array
+    {
+        return [
+            'gaya proving ring' => ['gaya', 'Alat_Gaya/Gaya_Proving_Ring', 'proving_ring'],
+            'gaya utm' => ['gaya', 'Alat_Gaya/Gaya_UTM', 'utm'],
+            'volumetric fixed' => ['volumetric', 'Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed'],
+            'volumetric graduated' => ['volumetric', 'Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated'],
+        ];
+    }
+
     public function test_bilangan_bulat_menolak_pecahan_dan_bagi_hanya_untuk_angka(): void
     {
         $peta = PetaSel::untuk('dial_indicator') ?? $this->fail('peta dial_indicator tidak ada');

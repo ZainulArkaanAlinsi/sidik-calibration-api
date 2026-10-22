@@ -6,7 +6,8 @@
   "Alamat = alamat docs/skrip/gen-tabel-standar-flowmeter.py: STANDAR KALIBRATOR!D10:H21 (std_totalizer) & Q10:U18 (std_flowrate), baris standard kosong dibuang; DATABASE!R5:S6 pita CMC; DATABASE!T14:U17 + V15:V16 (Totalizer), STANDAR KALIBRATOR!E43/R43/Q39 (Totalizer), DATABASE!T19 (Flowrate), cek E32/R32 Flowrate = Totalizer.",
   "Jalur generator memakai Aliran_CSV/; ekspor yang sama ada di Project-PT-Sidik/alat-alat-Pt-Sidik/Aliran_2/ (1_3_..._Ultrasonic_Totalizer..., Master_olda_Ultrasonic_Flowrate...). Ekstraksi dari keduanya = tabel-standar-flowmeter.json (StudioPetaSelProfilTest).",
   "Paket flowmeter = tabel Ultrasonic, dipakai profil flowmeter_totalizer & flowmeter_flowrate. Master Gravimetri (1_2 Totalizer dini, 2_1 Flowrate 100-980) masuk profil yang sama tapi tabelnya lain: varian.lainnya = lewati -> belum terpetakan, tidak ditolak.",
-  "Data bersama antar varian otomatis: std_totalizer & std_flowrate (generator menuntut kedua master identik)."
+  "Data bersama antar varian otomatis: std_totalizer & std_flowrate (generator menuntut kedua master identik).",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
  ],
  "lembar_wajib": [
   "STANDAR KALIBRATOR",
@@ -367,7 +368,6 @@
   "tabel-standar-flowmeter-gravimetri.json — tabel lain (TabelStandarFlowmeterGravimetri), dibaca profil yang sama; belum dipindah: satu profil membaca dua paket, lingkup sesi baru membuka satu paket (perlu desain)"
  ],
  "perlu_berkas_asli": [
-  "Konfirmasi alamat di .xlsm asli (terenkripsi; SIDIK_MASTER_SANDI belum disetel).",
   "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
  ]
 }

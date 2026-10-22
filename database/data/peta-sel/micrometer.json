@@ -5,7 +5,8 @@
   "bukti": [
     "Alamat ekstrak = alamat yang dibaca docs/skrip/gen-tabel-standar-micrometer.py (generator tabel-standar-micrometer.json, terbukti 8 Okt 2026 setara keempat .xlsm, lihat database/data/manifest-workbook-micrometer.json).",
     "Alamat & teks jangkar dicek 22 Okt 2026 di ekspor CSV keempat master (Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_Olah_Data_Micrometer_{0-25,25-50,50-75,75-100}mm); ekstraksi peta ini dari keempat CSV itu = tabel-standar-micrometer.json (StudioPetaSelMicrometerTest).",
-    "Varian (pita A-D) dari NAMA workbook, seperti generator memetakan berkas -> varian; isi master tidak membawanya dengan andal (INPUT DATA!F5 master 0-25 berisi 'ISI KAPASITAS')."
+    "Varian (pita A-D) dari NAMA workbook, seperti generator memetakan berkas -> varian; isi master tidak membawanya dengan andal (INPUT DATA!F5 master 0-25 berisi 'ISI KAPASITAS').",
+    "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
   ],
   "lembar_wajib": ["DATABASE", "Standar_GB", "PERHITUNGAN"],
   "jangkar": [
@@ -60,7 +61,6 @@
     "cmc[varian lain].titik / balok_pra_evaluasi_mm — satu master hanya membawa titik variannya sendiri"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format; MicrometerProfile menyebut SERTIFIKAT!J29 '0.000' tapi alamat sel hasil per titik belum dicek di .xlsm.",
-    "Konfirmasi bahwa .xlsm asli (bukan cuma CSV ekspornya) menaruh jangkar di alamat yang sama — sha256 keempat berkas ada di manifest-workbook-micrometer.json."
+    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format; MicrometerProfile menyebut SERTIFIKAT!J29 '0.000' tapi alamat sel hasil per titik belum dicek di .xlsm."
   ]
 }

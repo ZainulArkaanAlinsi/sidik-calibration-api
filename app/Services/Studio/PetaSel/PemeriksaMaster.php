@@ -26,6 +26,32 @@ use Throwable;
  */
 final class PemeriksaMaster
 {
+    public const FORMAT_CSV = 'csv';
+
+    public const FORMAT_XLSM = 'xlsm';
+
+    /**
+     * Terjemahan alamat CSV peta -> master yang sedang diperiksa
+     * ([PetaSel::alihXlsm]); kosong = CSV apa adanya.
+     *
+     * @var array{lembar: array<string, string>, geser: array<string, list<array{0: int, 1: int}>>}
+     */
+    private array $alih = ['lembar' => [], 'geser' => []];
+
+    /** Geser baris untuk sel baris `$baris` (alamat peta) di lembar peta `$lembar`. */
+    private function geserBaris(string $lembar, int $baris): int
+    {
+        $geser = 0;
+
+        foreach ($this->alih['geser'][$lembar] ?? [] as [$dari, $g]) {
+            if ($baris >= $dari) {
+                $geser = $g;
+            }
+        }
+
+        return $geser;
+    }
+
     /**
      * @param  list<array<string, mixed>>  $lembar  keluaran pembaca
      * @param  array<array-key, mixed>  $dasar  isi versi dasar (untuk cek & jalur yang tidak dipetakan)
@@ -33,7 +59,7 @@ final class PemeriksaMaster
      *
      * @throws GagalBacaWorkbook struktur master tidak cocok dengan peta
      */
-    public function periksa(PetaSel $peta, string $namaWorkbook, array $lembar, array $dasar): array
+    public function periksa(PetaSel $peta, string $namaWorkbook, array $lembar, array $dasar, string $format = self::FORMAT_CSV): array
     {
         $p = $peta->isi;
         $masalah = [];
@@ -47,6 +73,10 @@ final class PemeriksaMaster
                     .implode(', ', array_map(static fn (string $k, string $r): string => "{$k}={$r}", array_keys($p['varian']['pola']), $p['varian']['pola'])).')';
             }
         }
+
+        // Alamat peta = alamat ekspor CSV; master .xlsm diterjemahkan lewat
+        // `xlsm` peta (nama lembar + geser baris per rentang, per varian).
+        $this->alih = $peta->alihXlsm($format, $varian);
 
         // Butir ber-`varian` (lembar/jangkar/ekstrak/cek yang cuma ada di satu
         // varian master) disaring dulu; varian tak dikenali = butir umum saja.
@@ -114,9 +144,10 @@ final class PemeriksaMaster
      *
      * @throws GagalBacaWorkbook sel tidak sesuai tipe
      */
-    public function ekstrakLain(PetaSel $peta, array $lembar, array $ekstrak, array $dasarLain): array
+    public function ekstrakLain(PetaSel $peta, array $lembar, array $ekstrak, array $dasarLain, string $format = self::FORMAT_CSV): array
     {
         $masalah = [];
+        $this->alih = $peta->alihXlsm($format, null);
         $indeks = $this->indeksLembar($lembar, PetaSel::lembarUntukVarian($peta->isi['lembar_wajib'], null), $masalah);
         $isi = $dasarLain;
         $jalurDitulis = [];
@@ -165,14 +196,17 @@ final class PemeriksaMaster
         $indeks = [];
 
         foreach ($wajib as $nama) {
-            if (! isset($per[$nama])) {
-                $masalah[] = "lembar wajib '{$nama}' tidak ada (lembar yang ada: ".implode(', ', array_keys($per)).')';
+            // Indeks tetap berkunci nama lembar PETA (CSV); isinya lembar asli.
+            $asli = $this->alih['lembar'][$nama] ?? $nama;
+
+            if (! isset($per[$asli])) {
+                $masalah[] = "lembar wajib '{$asli}'".($asli !== $nama ? " (peta: {$nama})" : '').' tidak ada (lembar yang ada: '.implode(', ', array_keys($per)).')';
 
                 continue;
             }
 
             try {
-                $sel = json_decode((string) ($per[$nama]['sel_kanonik'] ?? '[]'), true, 512, JSON_THROW_ON_ERROR);
+                $sel = json_decode((string) ($per[$asli]['sel_kanonik'] ?? '[]'), true, 512, JSON_THROW_ON_ERROR);
             } catch (JsonException) {
                 $masalah[] = "lembar '{$nama}' tidak bisa diurai";
 
@@ -472,6 +506,7 @@ final class PemeriksaMaster
      */
     private function sel(array $indeks, string $lembar, int $kolom, int $baris): ?array
     {
+        $baris += $this->geserBaris($lembar, $baris);
         $alamat = substr(Alamat::sel($lembar, $kolom, $baris), strlen($lembar) + 1);
 
         return $indeks[$lembar][$alamat] ?? null;

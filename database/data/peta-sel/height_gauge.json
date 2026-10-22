@@ -5,7 +5,8 @@
   "bukti": [
     "Tabel Outside/Inside = alamat yang dibaca docs/skrip/gen-tabel-standar-height-gauge.py: Std_CaliperCek!C10:J19 (Outside) & C23:J32 (Inside); kolom C nominal, F nilai terkoreksi, I koreksi (um), J U95 (um) — float() tanpa pembulatan.",
     "Identitas standar DITULIS LITERAL di generator (bukan dibaca sel). Alamatnya diambil dari ekspor CSV master 22 Okt 2026: nilai JSON berada di sel berlabel Std_CaliperCek!C2:C6 (Nama Alat/No Seri/Merk/Tipe/Rentang Ukur), O2 (Tanggal Kalibrasi), O3 (Tertelusur), dan DATABASE!T13 (Merk/Type, satu-satunya tempat 'Metrology/CMG-9060C'). u95_um = Std_CaliperCek!J10; generator menuntut keduapuluh baris J = 4,1 (dijaga cek di bawah).",
-    "Ekstraksi peta dari CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026 = tabel-standar-height-gauge.json (StudioPetaSelProfilTest). Satu master, tanpa varian."
+    "Ekstraksi peta dari CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026 = tabel-standar-height-gauge.json (StudioPetaSelProfilTest). Satu master, tanpa varian.",
+    "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
   ],
   "lembar_wajib": ["Std_CaliperCek", "DATABASE"],
   "jangkar": [
@@ -71,7 +72,6 @@
     "outside[*].nominal_mm — SENGAJA tidak diekstrak: sepuluh nominal Outside = titik pra-cetak lembar kerja, generator menolak daftar yang berubah ('periksa Instruksi Kerja dulu'). Peta meniru itu lewat cek Std_CaliperCek!C10:C19 = nominal versi dasar (master dengan nominal lain DITOLAK)"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format.",
-    "Konfirmasi .xlsm asli (Master_olda_Height_Gauge_600_mm_2026.xlsm) menaruh jangkar di alamat yang sama — belum ada manifest sha256 workbook."
+    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format."
   ]
 }

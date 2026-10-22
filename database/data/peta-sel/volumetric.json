@@ -5,7 +5,8 @@
  "bukti": [
   "Alamat = aturan docs/skrip/gen-tabel-standar-volumetric.py diterapkan ke ekspor CSV kedua master (Project-PT-Sidik/alat-alat-Pt-Sidik/Volumetric_Glassware_2026/{Fixed,Graduated}_Volumetric_Glassware_2026) 22 Okt 2026: CMC DATABASE!V5:AG16 (6 pasang kolom, urutan kategori dipastikan jangkar baris 2), neraca baris 18-20 (kolom dari judul baris 17: Fixed Res.=AD Stdev=AE, Graduated stdev=AD, tanpa Res), U95 suhu DATABASE!AB21:AB22, diameter Tabel_Maximum_Internal_Diameter!A2:B46, kalibrator STANDARD_KALIBRATOR!B8:C25 + U95 C29:C46, sensor PRT FC_Prt_Pt100!A11:M60 (diurutkan titik, seperti generator), koefisien muai Tabel_Koefisien_Muai_Bahan!A3:B16.",
   "Ekstraksi dari kedua CSV = tabel-standar-volumetric.json (StudioPetaSelProfilTest). Satu paket untuk enam profil (labu_ukur, pipet_volume, picnometer, buret, gelas_ukur, pipet_ukur; kodePaketAcuan = volumetric).",
-  "Data bersama antar varian otomatis = jalur tanpa {varian} dan tanpa filter varian: cmc.* dan koreksi_suhu.u95.* (generator menuntut kedua master identik di sini)."
+  "Data bersama antar varian otomatis = jalur tanpa {varian} dan tanpa filter varian: cmc.* dan koreksi_suhu.u95.* (generator menuntut kedua master identik di sini).",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
  ],
  "lembar_wajib": [
   "DATABASE",
@@ -456,8 +457,105 @@
   "lewati_jika bukan_angka meniru angka(..) is None generator: sel CMC/diameter/kalibrator/PRT yang berisi TEKS (mis. '0,5' salah ketik) dilewati diam-diam seperti di generator — risiko yang sama dengan generator, dijaga min_baris & simulasi."
  ],
  "perlu_berkas_asli": [
-  "ALAMAT BARIS CSV ≠ BARIS EXCEL di sebagian lembar: rumus ekspor menunjuk baris lain (Fixed DATABASE!AA18 '=Z19+365' — offset 1; FC_Prt_Pt100 rekaman 11 '=A14-L14' — offset 3; Graduated DATABASE offset 0). Peta ini sah untuk ekspor CSV repo; impor .xlsm akan ditolak (jangkar bergeser) sampai alamat .xlsm diverifikasi — .xlsm terenkripsi, SIDIK_MASTER_SANDI belum disetel.",
-  "Nama lembar CSV memakai garis bawah (Tabel_Maximum_Internal_Diameter, FC_Prt_Pt100, PERHITUNGAN_U95pct); nama lembar .xlsm belum diverifikasi.",
   "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
- ]
+ ],
+ "xlsm": {
+  "bukti": "Penyelarasan baris ekspor CSV <-> .xlsm asli (docs/skrip/verifikasi-peta-xlsm.py, 22 Okt 2026): ekspor membuang sebagian baris kosong. Fixed sha256 ebb810974c11..., Graduated b0355579c014...",
+  "lembar": {
+   "Tabel_Maximum_Internal_Diameter": "Tabel_Maximum Internal Diameter",
+   "STANDARD_KALIBRATOR": "STANDARD KALIBRATOR",
+   "FC_Prt_Pt100": "FC Prt Pt100",
+   "Tabel_Koefisien_Muai_Bahan": "Tabel Koefisien Muai Bahan"
+  },
+  "geser": [
+   {
+    "lembar": "DATABASE",
+    "dari": 16,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 41,
+    "geser": 3,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 76,
+    "geser": 5,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 41,
+    "geser": 1,
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 76,
+    "geser": 3,
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "lembar": "STANDARD_KALIBRATOR",
+    "dari": 1,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "STANDARD_KALIBRATOR",
+    "dari": 26,
+    "geser": 2,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 1,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 6,
+    "geser": 2,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 10,
+    "geser": 3,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "Tabel_Koefisien_Muai_Bahan",
+    "dari": 2,
+    "geser": 1,
+    "varian": [
+     "graduated"
+    ]
+   }
+  ]
+ }
 }

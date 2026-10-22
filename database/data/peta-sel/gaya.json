@@ -5,7 +5,8 @@
  "bukti": [
   "Alamat = hasil aturan docs/skrip/gen-tabel-standar-gaya.py (blok 'Nama Alat'/Merek/Type/S/N kolom D, tanggal & tertelusur kolom L, 'Temp cal. Certificate' L, penanda arah '(Tekan)'/'(Tarik)' kolom C, judul tabel baris 'No.', baris data bernomor, tabel drift Q:S, Tabel_Satuan DATABASE!R:S) diterapkan ke ekspor CSV ketiga master (Project-PT-Sidik/alat-alat-Pt-Sidik/Alat_Gaya/Gaya_{UTM,Load_Cell,Proving_Ring}) 22 Okt 2026 — tata letak STANDAR_LOADCELL identik di ketiganya.",
   "Ekstraksi dari ketiga CSV = tabel-standar-gaya.json (StudioPetaSelProfilTest). Satu paket 'gaya' untuk utm, load_cell, proving_ring.",
-  "Data bersama antar varian otomatis: seluruh standar.* & faktor_satuan.* (generator: blok standar identik antar workbook). drift.*.*.{varian} per workbook, seperti generator (ketiganya tidak sepakat untuk 5 kN Tarik)."
+  "Data bersama antar varian otomatis: seluruh standar.* & faktor_satuan.* (generator: blok standar identik antar workbook). drift.*.*.{varian} per workbook, seperti generator (ketiganya tidak sepakat untuk 5 kN Tarik).",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
  ],
  "lembar_wajib": [
   "STANDAR_LOADCELL",
@@ -579,8 +580,85 @@
   "CMC — sengaja tidak di tabel ini; sumbernya kemampuan-kalibrasi.json (lampiran LK-285-IDN)"
  ],
  "perlu_berkas_asli": [
-  "faktor_set_point_kg_ke_kn ditulis literal 0.00980665 oleh generator; peta membacanya dari STANDAR_LOADCELL!E18 (label D18 'kg -> kN') — nilai sel sama, konfirmasi di .xlsm.",
-  "Konfirmasi alamat di .xlsm asli (terenkripsi; SIDIK_MASTER_SANDI belum disetel). Nama lembar CSV 'STANDAR_LOADCELL' mungkin 'STANDAR LOADCELL' di .xlsm.",
   "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
- ]
+ ],
+ "xlsm": {
+  "bukti": "Penyelarasan baris ekspor CSV <-> .xlsm asli (docs/skrip/verifikasi-peta-xlsm.py, 22 Okt 2026): ekspor membuang sebagian baris kosong; nama lembar sama. UTM 9285b867bc36..., Load Cell 2324bc8982b8..., Profing Ring c346c0193fef...",
+  "geser": [
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 19,
+    "geser": 1
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 30,
+    "geser": 3
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 34,
+    "geser": 4
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 47,
+    "geser": 8
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 51,
+    "geser": 9
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 62,
+    "geser": 11,
+    "varian": [
+     "utm",
+     "load_cell"
+    ]
+   },
+   {
+    "lembar": "STANDAR_LOADCELL",
+    "dari": 62,
+    "geser": 10,
+    "varian": [
+     "proving_ring"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 16,
+    "geser": 1
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 25,
+    "geser": 3
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 63,
+    "geser": 4
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 98,
+    "geser": 7,
+    "varian": [
+     "utm",
+     "load_cell"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 98,
+    "geser": 6,
+    "varian": [
+     "proving_ring"
+    ]
+   }
+  ]
+ }
 }

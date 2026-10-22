@@ -246,11 +246,11 @@ final class ImporWorkbook
         $petaDilewati = $peta !== null && $peta->tidakBerlakuUntuk((string) $meta['nama']) ? $peta->kodeProfil : null;
         $peta = $petaDilewati !== null ? null : $peta;
         $dasar = $peta !== null ? $this->draf->dasar((int) $organisasi->id, $peta) : null;
-        $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi']) : null;
+        $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi'], (string) $meta['sumber']) : null;
         $statusPeta = $peta !== null ? 'tervalidasi' : 'belum_terpetakan';
         // Data paket lain yang ikut dibawa master (balok ukur Micrometer di
         // master Dial, ...): diadu, tidak ditulis; beda = ditandai, tidak diam.
-        $bedaPaket = $peta !== null ? app(DataBersamaPaket::class)->periksa($peta, $lembar, (int) $organisasi->id) : [];
+        $bedaPaket = $peta !== null ? app(DataBersamaPaket::class)->periksa($peta, $lembar, (int) $organisasi->id, (string) $meta['sumber']) : [];
         $meta['catatan'] = trim($meta['catatan'].($peta !== null
             ? ' Peta sel '.$peta->kodeProfil.': struktur tervalidasi'.($hasilPeta['varian'] !== null ? ' (varian '.$hasilPeta['varian'].')' : '').'.'
             : ' Peta sel: belum terpetakan'.($petaDilewati !== null ? " (bukan varian peta {$petaDilewati})" : '').' — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.')
