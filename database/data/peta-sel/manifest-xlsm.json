@@ -1,0 +1,13 @@
+{
+  "dicatat": "2026-10-22",
+  "catatan": "sha256 + nama berkas master .xlsm asli yang dirujuk peta sel (berkas TIDAK ada di repo; dibaca di tempat di mesin kerja pemilik). Semua berkas di bawah TERENKRIPSI (kepala OLE d0cf11e0) dan SIDIK_MASTER_SANDI belum disetel, jadi jangkar & sel peta BELUM diverifikasi terhadap .xlsm — `terverifikasi` = false. Peta saat ini terbukti terhadap ekspor CSV di repo (StudioPetaSelProfilTest / StudioPetaSelMicrometerTest).",
+  "berkas": [
+    {"paket": "micrometer", "berkas": "Master Olah Data_Micrometer 0-25mm.xlsm", "sha256": "fc2ddcf7135212ec3abe6ee051588dd6e327aff1280fcb30112b8ee4d4aa0957", "ukuran_byte": 336384, "terverifikasi": false, "sama_dengan": "manifest-workbook-micrometer.json"},
+    {"paket": "micrometer", "berkas": "Master Olah Data_Micrometer 25-50mm.xlsm", "sha256": "9bcd9cc5fe8e4fa7bca58c98739244e5d2ebb744d012a70bee3184b6f140586b", "ukuran_byte": 311808, "terverifikasi": false, "sama_dengan": "manifest-workbook-micrometer.json", "catatan": "salinan di folder 'EXEL CALIBRATION SIDIK' BEDA (sha256 7e962f68dd000b60fa1b185e791ea2f3807d7958b25d81b247798ca0f95f2bcb, 311296 byte); yang dicatat = salinan yang dibuktikan setara JSON 8 Okt 2026"},
+    {"paket": "micrometer", "berkas": "Master Olah Data_Micrometer 50-75mm.xlsm", "sha256": "6b4ca0ed427b1c5e99a499ffdede7e11447e060c4b9ef4c83b5a6ba66d508ed6", "ukuran_byte": 311296, "terverifikasi": false, "sama_dengan": "manifest-workbook-micrometer.json"},
+    {"paket": "micrometer", "berkas": "Master Olah Data_Micrometer 75-100mm.xlsm", "sha256": "7712b33db74aec314eaabd164e29d744e7f266f629516784d829cdaf0d1f2cec", "ukuran_byte": 310784, "terverifikasi": false, "sama_dengan": "manifest-workbook-micrometer.json"},
+    {"paket": "dial_indicator", "berkas": "Master Olah Data_Dial Indicator.xlsm", "sha256": "dadd9ab0a54cdd983cd30925d0bb62fd147a49b6897f061906aa61adb2ab48a2", "ukuran_byte": 203264, "terverifikasi": false},
+    {"paket": "height_gauge", "berkas": "Master olda Height Gauge 600 mm 2026.xlsm", "sha256": "9192f2da5b742a3c1bb986b1b3ffbfc63b7c41c58f2f30505c59b5333f3c9ff6", "ukuran_byte": 573440, "terverifikasi": false},
+    {"paket": "jangka_sorong", "berkas": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm", "sha256": "0360c8d5b2336d480f00932b938f235b3663c040d8fd8a43f906ffa31530efc6", "ukuran_byte": 644608, "terverifikasi": false}
+  ]
+}
