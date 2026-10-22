@@ -23,7 +23,16 @@
 # 13), dan kelas `Pdo\Mysql` itu baru ada sejak PHP 8.4. Di PHP 8.3 berkas
 # config-nya fatal waktu dimuat — `php artisan package:discover` di bawah mati,
 # jadi build-nya gagal sebelum sempat deploy. Laptop dev juga jalan di 8.4.
-FROM dunglas/frankenphp:1-php8.4-bookworm AS php-dasar
+#
+# Dikunci ke rilis tambalan (22 Okt 2026): PHP 8.4.27 menutup CVE-2026-109618 dan
+# CVE-2026-109619 (RCE tanpa login, php.net 21 Okt 2026). Tag mengambang
+# `1-php8.4-bookworm` sempat aman karena Render membangun tanpa cache, tapi tag
+# terkunci + penjaga di bawah memastikan image rentan tidak pernah bisa naik.
+# Naikkan tag ini dengan sengaja (cek https://www.php.net/ untuk rilis keamanan).
+FROM dunglas/frankenphp:1.13.2-php8.4.27-bookworm AS php-dasar
+
+# Build gagal kalau PHP di image lebih tua dari rilis tambalan.
+RUN php -r 'exit(version_compare(PHP_VERSION, "8.4.27", "<") ? 1 : 0);'
 
 # pdo_mysql : koneksi ke MySQL Aiven
 # gd        : dompdf butuh ini buat gambar (logo & QR di sertifikat)

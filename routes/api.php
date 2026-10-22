@@ -277,6 +277,10 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // model tetap jalan apa pun nilainya. Satu query, dicache 5 menit; galat
     // baca dijawab false. Pemasang ulang: `php artisan acuan:pasang-trigger`.
     'append_only_db' => TriggerAppendOnlyAcuan::terpasangTercache(),
+
+    // Versi PHP yang benar-benar jalan — supaya status tambalan keamanan PHP
+    // (mis. CVE-2026-109618/109619, butuh >= 8.4.27) bisa dicek tanpa Shell.
+    'php_versi' => PHP_VERSION,
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
