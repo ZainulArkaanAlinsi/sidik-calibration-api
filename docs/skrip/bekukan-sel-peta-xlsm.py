@@ -124,8 +124,9 @@ for path in BERKAS:
             for i in range(e.get('ulang') or 1):
                 langkah = i * e.get('langkah_baris', 0)
                 for kunci in ('sel', 'rentang', 'kunci', 'nilai'):
-                    if isinstance(e.get(kunci), str) and '!' in e[kunci]:
-                        tambah(e[kunci], langkah)
+                    for alamat in (e[kunci] if isinstance(e.get(kunci), list) else [e.get(kunci)]):
+                        if isinstance(alamat, str) and '!' in alamat:
+                            tambah(alamat, langkah)
                 for sp in (e.get('kolom') or {}).values():
                     r = sp.get('rentang') if isinstance(sp, dict) else sp
                     if isinstance(r, str):

@@ -189,6 +189,14 @@
    "ukuran_byte": 453632,
    "terverifikasi": true,
    "catatan": "Salinan 'Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "enclosure",
+   "berkas": "Master Olah Data_Suhu_Enclosure_Constant Yokogawa.xlsm",
+   "sha256": "1633940b2dd917b159d4d8f5e2000836ce062defda6c9ad5af4cae1e17626d77",
+   "ukuran_byte": 680448,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik. Master Recorder (sha256 c39a81233fe2...) BELUM dipetakan: JSON repo tanpa titik -20 °C yang ada di master."
   }
  ]
 }

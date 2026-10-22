@@ -312,7 +312,7 @@ final class PemeriksaMaster
 
                 return match ($e['tipe']) {
                     'teks' => $this->teks($sel, $alamat, $masalah),
-                    'angka' => $this->angkaWajib($sel, $alamat, $bulat, $masalah, $bagi),
+                    'angka' => self::transformasi($this->angkaWajib($sel, $alamat, $bulat, $masalah, $bagi), $e),
                     'bilangan_bulat' => $this->bilanganBulat($sel, $alamat, $masalah),
                     'tanggal' => $this->tanggal($sel, $alamat, $masalah),
                 };
@@ -338,9 +338,21 @@ final class PemeriksaMaster
                 $nr = Alamat::urai((string) $e['nilai']);
                 $peta = [];
 
+                $lewatiGalat = (bool) ($e['lewati_galat'] ?? false);
+                $baca = function (string $lembar, int $kolom, int $b) use ($indeks, $bulat, $lewatiGalat, &$masalah): ?float {
+                    $c = $this->sel($indeks, $lembar, $kolom, $b);
+
+                    // `lewati_galat`: sel teks (`#REF!`) = kosong, seperti `ambil_nilai()` generator Enclosure.
+                    if ($lewatiGalat && ! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null)) {
+                        return null;
+                    }
+
+                    return $this->angkaBoleh($c, Alamat::sel($lembar, $kolom, $b), $bulat, $masalah);
+                };
+
                 for ($b = $kr['b1'] + $geser; $b <= $kr['b2'] + $geser; $b++) {
-                    $kunci = $this->angkaBoleh($this->sel($indeks, $kr['lembar'], $kr['k1'], $b), Alamat::sel($kr['lembar'], $kr['k1'], $b), $bulat, $masalah);
-                    $nilai = $this->angkaBoleh($this->sel($indeks, $nr['lembar'], $nr['k1'], $b), Alamat::sel($nr['lembar'], $nr['k1'], $b), $bulat, $masalah);
+                    $kunci = $baca($kr['lembar'], $kr['k1'], $b);
+                    $nilai = self::transformasi($baca($nr['lembar'], $nr['k1'], $b), $e);
 
                     // Baris ber-kunci kosong dilewati (meniru generator: slot
                     // kosong master terbaca 0 dan BUKAN balok ukur).
@@ -348,7 +360,7 @@ final class PemeriksaMaster
                         continue;
                     }
 
-                    $k = self::kunciAngka($kunci);
+                    $k = ($e['kunci_teks'] ?? false) ? self::kunciTeks($kunci) : self::kunciAngka($kunci);
 
                     if (array_key_exists($k, $peta)) {
                         $masalah[] = "kunci {$k} ganda di ".Alamat::sel($kr['lembar'], $kr['k1'], $b);
@@ -369,6 +381,23 @@ final class PemeriksaMaster
 
             case 'daftar_objek':
                 return $this->daftarObjek($indeks, $e, $geser, $masalah);
+
+            case 'daftar_kunci':
+                $daftar = [];
+
+                foreach ((array) $e['rentang'] as $rentang) {
+                    $r = Alamat::urai((string) $rentang);
+
+                    for ($b = $r['b1'] + $geser; $b <= $r['b2'] + $geser; $b++) {
+                        $n = $this->sel($indeks, $r['lembar'], $r['k1'], $b)['n'] ?? null;
+
+                        if (is_int($n) || is_float($n)) {
+                            $daftar[self::kunciTeks((float) $n)] = true;
+                        }
+                    }
+                }
+
+                return array_map('strval', array_keys($daftar));
         }
 
         return null;
@@ -706,6 +735,31 @@ final class PemeriksaMaster
     private static function normalTeks(string $s): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', $s));
+    }
+
+    /**
+     * `nol_di_bawah` lalu `angka_penting` (generator Enclosure: derau |x| < 1e-9
+     * = 0, lalu `float(f"{x:.10g}")`). Tanpa opsi itu nilai tidak disentuh.
+     *
+     * @param  array<string, mixed>  $e
+     */
+    private static function transformasi(?float $x, array $e): ?float
+    {
+        if ($x === null) {
+            return null;
+        }
+
+        if (isset($e['nol_di_bawah']) && abs($x) < (float) $e['nol_di_bawah']) {
+            return 0.0;
+        }
+
+        return isset($e['angka_penting']) ? (float) sprintf('%.'.(int) $e['angka_penting'].'g', $x) : $x;
+    }
+
+    /** Kunci teks suhu seperti `kunci_suhu()` generator: `25`, `-100`, `0.5` (bukan `25.0`). */
+    public static function kunciTeks(float $x): string
+    {
+        return floor($x) === $x && abs($x) < 1e15 ? (string) (int) $x : (string) json_encode($x);
     }
 
     /** Kunci angka seperti `repr(float)` Python generator: `1.0`, `76.2`, `200.0`. */

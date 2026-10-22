@@ -13,6 +13,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 /**
  * Induk profil kalibrasi ENCLOSURE — logika bersama untuk kelima jenis enclosure
@@ -54,6 +55,116 @@ use Illuminate\Support\Collection;
 abstract class EnclosureProfileBase extends CalibrationProfile
 {
     use BentukSertifikatSuhu;
+
+    /**
+     * Oven, Furnace, Bath, Inkubator, Refrigerator membaca SATU tabel
+     * (`tabel-kalibrator-enclosure.json`, master Constant_Yokogawa & Recorder).
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'enclosure';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Enclosure (Oven, Furnace, Bath, Inkubator, Refrigerator)';
+    }
+
+    /**
+     * Skema `tabel-kalibrator-enclosure.json` untuk Studio Data Acuan — sama
+     * untuk kelima profil. Alamat dari `docs/skrip/gen-tabel-kalibrator-enclosure.py`
+     * (peta sel `database/data/peta-sel/enclosure.json`; master Recorder belum
+     * dipetakan — selisih titik -20 °C antara JSON dan master, lihat peta).
+     * Tiap tabel `titik => nilai` = satu lembar `baris` (kunci suhu teks).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => false,
+        ];
+        $baris = static fn (string $kode, string $label, string $jalur, string $kunci, string $labelNilai, ?string $asalKunci, ?string $asalNilai): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => 'baris',
+            'kunci' => $kunci,
+            'kolom' => [
+                $kolom($kunci, $kunci === 'titik' ? 'Titik' : 'Tipe sensor', 'teks', $kunci === 'titik' ? '°C' : null, $asalKunci),
+                $kolom('nilai', $labelNilai, 'desimal', '°C', $asalNilai),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+        $kode = static fn (string $s): string => strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '_', $s));
+        $huruf = static fn (int $k): string => Coordinate::stringFromColumnIndex($k);
+        $CY = 'STANDAR KALIBRATOR';
+        $RC = 'Standar_Kalibrator';
+        $lembar = [];
+        $tabel = static function (string $jalur, string $label, string $L, int $kNilai, int $b0, int $b1, string $jenisNilai) use (&$lembar, $baris, $kode, $huruf): void {
+            $lembar[] = $baris($kode($jalur), $label, $jalur, 'titik', $jenisNilai, "{$L}!B{$b0}:B{$b1}", "{$L}!{$huruf($kNilai)}{$b0}:{$huruf($kNilai)}{$b1}");
+        };
+
+        // Meter Constant / Yokogawa (master Constant_Yokogawa): tipe => kolom pertama.
+        foreach (['constant' => ['Constant', 3, ['PT100', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S']], 'yokogawa' => ['Yokogawa', 14, ['PT100', 'Type K', 'Type N']]] as $merk => [$nama, $k0, $tipe]) {
+            foreach ($tipe as $i => $t) {
+                $tabel("meter/{$merk}/koreksi/{$t}", "Meter {$nama} — koreksi {$t}", $CY, $k0 + $i, 10, 27, 'Koreksi');
+                $tabel("meter/{$merk}/u95/{$t}", "Meter {$nama} — U95 {$t}", $CY, $k0 + $i, 32, 49, 'U95');
+            }
+
+            $kl = $merk === 'constant' ? 'X' : 'Z';
+            $kv = $merk === 'constant' ? 'Y' : 'AA';
+            $lembar[] = $baris("meter_{$merk}_drift", "Meter {$nama} — drift", "meter/{$merk}/drift", 'tipe', 'U drift', "{$CY}!{$kl}6:{$kl}8", "{$CY}!{$kv}6:{$kv}8");
+        }
+
+        // Meter Recorder (master Recorder): 20 kanal per tipe.
+        foreach (['Type N' => 3, 'Type K' => 23] as $t => $k0) {
+            for ($ch = 1; $ch <= 20; $ch++) {
+                $tabel("meter/recorder/koreksi/{$t}/{$ch}", "Meter Recorder — koreksi {$t} CH{$ch}", $RC, $k0 + $ch, 9, 24, 'Koreksi');
+                $tabel("meter/recorder/u95/{$t}/{$ch}", "Meter Recorder — U95 {$t} CH{$ch}", $RC, $k0 + $ch, 30, 45, 'U95');
+            }
+        }
+
+        $lembar[] = $baris('meter_recorder_drift', 'Meter Recorder — drift', 'meter/recorder/drift', 'tipe', 'U drift', "{$RC}!AT8:AT9", "{$RC}!AU8:AU9");
+
+        // Sensor termokopel: [kanal pertama, kanal terakhir, kolom kanal pertama].
+        foreach ([
+            'yoko' => ['Constant_Yokogawa', $CY, ['Type K' => [1, 16, 4], 'Type N' => [3, 12, 20]], [64, 78], [85, 99], ['X', 'Y', 12, 14]],
+            'recorder' => ['Recorder', $RC, ['Type K' => [1, 16, 24], 'Type N' => [3, 12, 4]], [53, 67], [72, 86], ['AT', 'AU', 15, 16]],
+        ] as $wb => [$nama, $L, $tipe, [$kb0, $kb1], [$ub0, $ub1], [$kl, $kv, $db0, $db1]]) {
+            foreach ($tipe as $t => [$c0, $c1, $k0]) {
+                for ($ch = $c0; $ch <= $c1; $ch++) {
+                    $tabel("sensor/{$wb}/koreksi/{$t}/{$ch}", "Sensor {$nama} — koreksi {$t} #{$ch}", $L, $k0 + $ch - $c0, $kb0, $kb1, 'Koreksi');
+                    $tabel("sensor/{$wb}/u95/{$t}/{$ch}", "Sensor {$nama} — U95 {$t} #{$ch}", $L, $k0 + $ch - $c0, $ub0, $ub1, 'U95');
+                }
+            }
+
+            $lembar[] = $baris("sensor_{$wb}_drift", "Sensor {$nama} — drift", "sensor/{$wb}/drift", 'tipe', 'U drift', "{$L}!{$kl}{$db0}:{$kl}{$db1}", "{$L}!{$kv}{$db0}:{$kv}{$db1}");
+        }
+
+        // Titik indeks kalibrator = gabungan kolom suhu tabel koreksi lalu U95 (urutan = data).
+        $lembar[] = [
+            'kode' => 'index_temps',
+            'label' => 'Titik indeks kalibrator',
+            'jalur' => 'index_temps',
+            'jenis' => 'objek',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('yoko', 'Constant_Yokogawa', 'daftar_teks', '°C', null),
+                $kolom('recorder', 'Recorder', 'daftar_teks', '°C', null),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-kalibrator-enclosure.json',
+            'lembar' => $lembar,
+        ];
+    }
 
     /** Metode kalibrasi enclosure — `DATABASE!C68` master. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0501_Rev.6';

@@ -10,6 +10,7 @@ use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
+use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
@@ -417,6 +418,40 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         });
         // Urutan tipe (dropdown) identik apa adanya; isi lain tanpa memandang urutan kunci objek.
         $this->assertSame(array_map(static fn (array $m): array => array_column($m, 'tipe'), $a), array_map(static fn (array $m): array => array_column($m, 'tipe'), $b));
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Enclosure (Oven, Furnace, Bath, Inkubator, Refrigerator). */
+    public function test_enclosure_v1_setara_json(): void
+    {
+        $v1 = $this->v1('enclosure');
+
+        [$a, $b] = $this->duaJalur('enclosure', $v1, function (): array {
+            $t = new TabelKalibratorEnclosure;
+            $h = [];
+
+            foreach (['constant', 'yokogawa', 'recorder'] as $merk) {
+                foreach ([-30.0, 0.0, 37.5, 75.0, 151.0, 1100.0] as $rata) {
+                    $h[$merk]['index'][] = $t->index($merk, $rata);
+                }
+
+                foreach (['PT100', 'Type N', 'Type K'] as $tipe) {
+                    $h[$merk][$tipe] = ['drift_meter' => $t->driftMeter($merk, $tipe), 'drift_sensor' => $t->driftSensor($merk, $tipe)];
+
+                    foreach ([-20.0, 0.0, 25.0, 75.0, 200.0, 1200.0] as $idx) {
+                        foreach ($merk === 'recorder' ? [1, 7, 20] : [null] as $kanal) {
+                            $h[$merk][$tipe]['meter'][] = [$t->koreksiMeter($merk, $tipe, $idx, $kanal), $t->u95Meter($merk, $tipe, $idx, $kanal)];
+                        }
+
+                        foreach ([1, 3, 12, 16] as $no) {
+                            $h[$merk][$tipe]['sensor'][] = [$t->koreksiSensor($merk, $tipe, $no, $idx), $t->u95Sensor($merk, $tipe, $no, $idx)];
+                        }
+                    }
+                }
+            }
+
+            return $h;
+        });
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 

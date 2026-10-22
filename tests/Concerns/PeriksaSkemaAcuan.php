@@ -25,6 +25,10 @@ trait PeriksaSkemaAcuan
                 is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_float') === $nilai,
                 "{$jalur} bukan list float",
             ),
+            'daftar_teks' => $this->assertTrue(
+                is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_string') === $nilai,
+                "{$jalur} bukan list teks",
+            ),
         };
     }
 

@@ -165,6 +165,19 @@ def untuk_varian(butir, var):
     return [b for b in butir if 'varian' not in b or (var is not None and var in b['varian'])]
 
 
+def transformasi(x, e):
+    """nol_di_bawah lalu angka_penting (generator Enclosure)."""
+    if x is None:
+        return None
+    if e.get('nol_di_bawah') and abs(x) < e['nol_di_bawah']:
+        return 0.0
+    return float(f"{x:.{e['angka_penting']}g}") if e.get('angka_penting') else x
+
+
+def kunci_teks(x):
+    return str(int(x)) if float(x).is_integer() else str(x)
+
+
 def gabungan(wb, spec, tambah, asal):
     """Sel kosong di dalam rentang merge -> nilai sel kiri-atasnya (seperti generator tekanan)."""
     lb, k, b0, _, _ = spec
@@ -198,7 +211,16 @@ def ekstrak_satu(wb, e, geser, masalah):
             return int(x)
         if e.get('bagi'):
             x = x / e['bagi']
-        return bulat(x, bl)
+        return transformasi(bulat(x, bl), e)
+    if t == 'daftar_kunci':
+        out = []
+        for r in e['rentang']:
+            lb, k1, b1, _, b2 = urai(r)
+            for b in range(b1 + geser, b2 + geser + 1):
+                x = angka(nilai(wb, lb, k1, b))
+                if x is not None and kunci_teks(x) not in out:
+                    out.append(kunci_teks(x))
+        return out
     if t == 'daftar_angka':
         lb, k1, b1, k2, b2 = urai(e['rentang'])
         out = []
@@ -216,9 +238,15 @@ def ekstrak_satu(wb, e, geser, masalah):
         out = {}
         for b in range(b1 + geser, b2 + geser + 1):
             a, v = angka(nilai(wb, lk, kk, b)), angka(nilai(wb, ln, kn, b))
+            if not e.get('lewati_galat'):
+                for x, kol in ((a, kk), (v, kn)):
+                    mentah = nilai(wb, lk if kol == kk else ln, kol, b)
+                    if x is None and not kosong(mentah):
+                        masalah.append(f"{e['jalur']} baris {b}: {mentah!r} bukan angka")
             if a is None or v is None:
                 continue
-            out[json.dumps(bulat(a, bl))] = bulat(v, bl)
+            kunci = kunci_teks(a) if e.get('kunci_teks') else json.dumps(bulat(a, bl))
+            out[kunci] = transformasi(bulat(v, bl), e)
         return out
     if t == 'daftar_objek':
         kolom = {}

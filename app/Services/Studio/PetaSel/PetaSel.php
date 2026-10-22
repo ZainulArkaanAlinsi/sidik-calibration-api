@@ -53,6 +53,15 @@ use JsonException;
  * `{"jalur": "balok_ukur.keping", "tipe": "daftar_objek", "kunci": "nominal_mm",
  *   "kolom": {"nominal_mm": "S!Q10:Q132", "u95_mm": "S!S10:S132"}, "min_baris": 1}`.
  *
+ * Meniru generator Enclosure (`gen-tabel-kalibrator-enclosure.py`):
+ * `nol_di_bawah: 1e-9` (angka/peta_angka) menjadikan derau float Excel
+ * |x| < ambang = 0.0, lalu `angka_penting: 10` membulatkan ke 10 angka
+ * penting (`float(f"{x:.10g}")`). `peta_angka` boleh `kunci_teks: true`
+ * (kunci `25`, `-100` — bukan `25.0`) dan `lewati_galat: true` (sel bernilai
+ * teks seperti `#REF!` dilewati seperti sel kosong, bukan galat).
+ * `daftar_kunci` menulis list kunci teks unik (urutan kemunculan) dari
+ * beberapa rentang satu kolom: `{"tipe": "daftar_kunci", "rentang": [..]}`.
+ *
  * Jalur: segmen dipisah titik; segmen boleh `nama[kode=X]` (elemen list yang
  * `kode`-nya X) atau `nama[N]` (indeks list). `{varian}` dan `{i}` (0-basis,
  * hanya bersama `ulang`) diganti sebelum dipakai. Jalur yang TIDAK disebut
@@ -62,7 +71,7 @@ final class PetaSel
 {
     public const FORMAT = 1;
 
-    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek'];
+    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek', 'daftar_kunci'];
 
     /** @param  array<string, mixed>  $isi */
     private function __construct(
@@ -304,6 +313,14 @@ final class PetaSel
                 $m[] = "{$label}: bulat harus bilangan bulat 0..15";
             }
 
+            if (isset($e['angka_penting']) && (! in_array($e['tipe'], ['angka', 'peta_angka'], true) || ! is_int($e['angka_penting']) || $e['angka_penting'] < 1 || $e['angka_penting'] > 17)) {
+                $m[] = "{$label}: angka_penting hanya untuk angka/peta_angka, bilangan bulat 1..17";
+            }
+
+            if (isset($e['nol_di_bawah']) && (! in_array($e['tipe'], ['angka', 'peta_angka'], true) || (! is_int($e['nol_di_bawah']) && ! is_float($e['nol_di_bawah'])) || $e['nol_di_bawah'] <= 0)) {
+                $m[] = "{$label}: nol_di_bawah hanya untuk angka/peta_angka, angka > 0";
+            }
+
             if (isset($e['bagi'])) {
                 if (! in_array($e['tipe'], ['angka', 'daftar_angka'], true)) {
                     $m[] = "{$label}: bagi hanya untuk tipe angka/daftar_angka";
@@ -347,6 +364,30 @@ final class PetaSel
 
                     if (isset($e['min_baris']) && (! is_int($e['min_baris']) || $e['min_baris'] < 0)) {
                         $m[] = "{$label}: min_baris harus bilangan bulat >= 0";
+                    }
+
+                    foreach (['kunci_teks', 'lewati_galat'] as $bendera) {
+                        if (isset($e[$bendera]) && ! is_bool($e[$bendera])) {
+                            $m[] = "{$label}: {$bendera} harus boolean";
+                        }
+                    }
+
+                    break;
+                case 'daftar_kunci':
+                    $r = $e['rentang'] ?? null;
+
+                    if (! is_array($r) || $r === [] || ! array_is_list($r)) {
+                        $m[] = "{$label}: rentang harus list rentang satu kolom";
+
+                        break;
+                    }
+
+                    foreach ($r as $i => $a) {
+                        if (($x = $selSah($a, true)) !== null) {
+                            $m[] = "{$label}.rentang[{$i}]: {$x}";
+                        } elseif (($u = Alamat::urai($a))['k1'] !== $u['k2']) {
+                            $m[] = "{$label}.rentang[{$i}]: harus satu kolom";
+                        }
                     }
 
                     break;

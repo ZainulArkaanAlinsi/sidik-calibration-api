@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Studio\PetaSel\PetaSel;
 use App\Support\FlowmeterMentah;
 use App\Support\PistonVolumeMentah;
@@ -85,6 +86,28 @@ class StudioFormatSertifikatTest extends TestCase
             'kalibrator_suhu' => ['kalibrator_suhu', [['measure', 'tits', 100.0, []], ['source', 'tits', 100.0, []]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, []], ['druck13g', 'pressure_gauge', 100.0, []], ['spmk', 'pressure_gauge', 5.0, []], ['differential', 'differential_pressure', 2.0, []]]],
         ];
+    }
+
+    /**
+     * Enclosure tidak memakai formatKolomSertifikat(): desimal cetaknya
+     * `EnclosureProfileBase::FORMAT_CETAK` per varian. Peta mencatat varian
+     * Constant_Yokogawa (Recorder belum dipetakan) — wajib sama persis.
+     */
+    public function test_format_master_enclosure_lawan_format_cetak(): void
+    {
+        $entri = PetaSel::untuk('enclosure')?->isi['format_sertifikat']['entri'] ?? $this->fail('enclosure tanpa format_sertifikat');
+        $kode = EnclosureProfileBase::FORMAT_CETAK['constant_yokogawa'];
+        $format = static fn (?int $n): string => $n === null ? 'General' : ($n === 0 ? '0' : '0.'.str_repeat('0', $n));
+        $master = [];
+
+        foreach ($entri as $f) {
+            $master[$f['kolom']] = $f['format'];
+        }
+
+        ksort($master);
+        $harap = array_map($format, $kode);
+        ksort($harap);
+        $this->assertSame($harap, $master);
     }
 
     /** @param  list<array{?string, string, float, array<string, mixed>}>  $daftar */

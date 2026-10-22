@@ -75,6 +75,9 @@ class StudioPetaSelProfilTest extends TestCase
                 ['Waktu_/Master_Olda_Centrifuge', 'centrifuge', 5],
             ]],
             'timer_stopwatch' => ['timer_stopwatch', [['Waktu_/Master_Olda_Timer_dan_Stopwatch', null, 6]]],
+            // Enclosure Constant_Yokogawa: 20 tabel meter + 52 tabel sensor + 9 drift + index_temps.
+            // Master Recorder DITAHAN (lihat test_enclosure_recorder_dilewati_peta).
+            'enclosure' => ['enclosure', [['suhu_&_kelembapan/Master_Olah_Data_Suhu_Enclosure_Constant_Yokogawa', 'constant_yokogawa', 82]]],
             // TITS: per mode 14 tabel titik (7 tipe × 2 kalibrator) + 13 drift.
             'kalibrator_suhu' => ['kalibrator_suhu', [
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT', 'measure', 27],
@@ -236,6 +239,29 @@ class StudioPetaSelProfilTest extends TestCase
             'volumetric fixed' => ['volumetric', 'Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed'],
             'volumetric graduated' => ['volumetric', 'Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated'],
         ];
+    }
+
+    /**
+     * Master Enclosure Recorder sengaja BELUM dipetakan: tabel-kalibrator-
+     * enclosure.json tidak memuat titik -20 °C (U95 meter recorder 40 kanal,
+     * koreksi & U95 sensor Type N 10 kanal) yang ada di ekspor CSV repo dan di
+     * .xlsm aslinya. Peta melewatinya (`lainnya: lewati`) sampai pemilik/lab
+     * memutuskan; test ini memaku selisih itu supaya tidak hilang diam-diam.
+     */
+    public function test_enclosure_recorder_dilewati_peta_dan_selisih_minus_20_dipaku(): void
+    {
+        $peta = PetaSel::untuk('enclosure') ?? $this->fail('peta enclosure');
+        $this->assertTrue($peta->tidakBerlakuUntuk('Master Olah Data_Suhu_Enclosure_Recorder.xlsm'));
+        $this->assertFalse($peta->tidakBerlakuUntuk('Master Olah Data_Suhu_Enclosure_Constant Yokogawa.xlsm'));
+
+        $json = json_decode((string) file_get_contents(database_path('data/tabel-kalibrator-enclosure.json')), true);
+        $this->assertArrayNotHasKey('-20', $json['meter']['recorder']['u95']['Type N']['1']);
+        $this->assertArrayNotHasKey('-20', $json['sensor']['recorder']['koreksi']['Type N']['3']);
+
+        $csv = (string) file_get_contents(base_path(self::AKAR.'suhu_&_kelembapan/Master_Olah_Data_Suhu_Enclosure_Recorder/Standar_Kalibrator.csv'));
+        $baris = preg_split('/\R/', $csv);
+        $this->assertStringStartsWith(',-20,,0.83,', (string) $baris[29], 'U95 meter recorder -20 °C ada di master');
+        $this->assertStringStartsWith(',-20,,-0.15,', (string) $baris[52], 'koreksi sensor recorder TCN3 -20 °C ada di master');
     }
 
     public function test_bilangan_bulat_menolak_pecahan_dan_bagi_hanya_untuk_angka(): void
