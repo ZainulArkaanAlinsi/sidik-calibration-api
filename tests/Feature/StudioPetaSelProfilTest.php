@@ -94,6 +94,8 @@ class StudioPetaSelProfilTest extends TestCase
             // Chlorine Meter & DO Meter: U95 micropipette + labu ukur (faktor pengenceran).
             'chlorine_meter' => ['chlorine_meter', [['instrument-analiitk/Master_Olah_Data_Chlorine_Meter', null, 2]]],
             'do_meter' => ['do_meter', [['instrument-analiitk/Master_Olah_Data_DO_Meter', null, 2]]],
+            // Refractometer: 2 koefisien + 2 batas Tab Konversi Temperatur.
+            'refractometer' => ['refractometer', [['instrument-analiitk/Master_Olah_Data_Refractometer', null, 4]]],
             // Suhu 3 alat: Thermocouple 5 tabel + 9 drift + 4 dryblock + 2 konstanta + CMC;
             // Glass 7 tabel + 9 drift + 4 oilbath + tipe + CMC (22); Thermohygro 2 tabel + 10 angka + CMC.
             'suhu_3alat' => ['suhu_3alat', [

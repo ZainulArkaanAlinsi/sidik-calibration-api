@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarRefractometer;
 
 /**
  * Profil Refractometer (alat ke-4). Metode `SIDIK-IK-CAL-0516_Rev.4`
@@ -29,7 +30,7 @@ use App\Models\Standard;
  * **Sheet "Tab Konversi Temperatur" itu linear murni.** 113 baris (19,0–30,2 °C
  * step 0,1) dicek numerik ulang waktu bikin profil ini: selisih maksimum
  * terhadap model linear `1,8e-15` — itu galat pembulatan IEEE, bukan kurva.
- * Jadi tabelnya NGGAK diseed ke DB; yang disimpen dua konstanta di [KOEF_SUHU].
+ * Jadi tabelnya NGGAK diseed ke DB; yang disimpen dua koefisien di [TabelStandarRefractometer].
  * Kalau lab ganti tabelnya jadi beneran non-linear, di sinilah tempatnya
  * berubah — bukan bikin tabel lookup baru.
  *
@@ -86,7 +87,7 @@ use App\Models\Standard;
  * jatuh ke jalur CMC lama (`GumCalculator::hitungDariKemampuan`). Itu disengaja:
  * ngelaporin CMC apa adanya jauh lebih jujur daripada ngarang lima komponen.
  *
- * [KOEF_SUHU] & [rataRataPadaSuhuAcuan] SUDAH nanganin °Brix (0,07/°C) — yang
+ * [koefSuhu] & [rataRataPadaSuhuAcuan] SUDAH nanganin °Brix (0,07/°C) — yang
  * belum cuma daftar komponen budget-nya.
  *
  * Engine budget dicocokin ke sheet `PERHITUNGAN U95%` (titik 1,33659 → uc =
@@ -120,19 +121,11 @@ class RefractometerProfile extends CalibrationProfile
      */
     public const SUHU_ACUAN = 20.0;
 
-    /**
-     * Kemiringan "Tab Konversi Temperatur" per satuan, dalam satuan-per-°C.
-     * Diturunin dari 113 baris tabelnya (lihat docblock kelas).
-     */
-    public const KOEF_SUHU = [
-        self::SATUAN_N20D => 0.00045,
-        self::SATUAN_BRIX => 0.07,
-    ];
-
-    /** Batas atas-bawah "Tab Konversi Temperatur" — dipakai [deviasiSuhu]. */
-    public const SUHU_TABEL_MIN = 19.0;
-
-    public const SUHU_TABEL_MAKS = 30.2;
+    // Kemiringan "Tab Konversi Temperatur" per satuan (n20D 0,00045/°C, °Brix
+    // 0,07/°C) dan batas tabel 19,0–30,2 °C — dulu konstanta `KOEF_SUHU`,
+    // `SUHU_TABEL_MIN`, `SUHU_TABEL_MAKS` — kini data acuan lapis 1:
+    // [TabelStandarRefractometer] (paket `refractometer`, generator
+    // `gen-tabel-standar-analitik.py`).
 
     /**
      * Resolusi alat — sheet `PERHITUNGAN U95%`, "Ketelitian Baca : 0.0001 n20D".
@@ -256,6 +249,12 @@ class RefractometerProfile extends CalibrationProfile
         return 'refractometer';
     }
 
+    /** Lapis 1: tabel koreksi suhu (`tabel-standar-refractometer.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarRefractometer::skemaAcuan();
+    }
+
     public function namaAlatKemampuan(): string
     {
         return 'Refractometer';
@@ -316,7 +315,7 @@ class RefractometerProfile extends CalibrationProfile
             return $rataRata;
         }
 
-        return $rataRata + self::KOEF_SUHU[$this->satuan($equipment)] * ($suhuLarutan - self::SUHU_ACUAN);
+        return $rataRata + self::koefSuhu($this->satuan($equipment)) * ($suhuLarutan - self::SUHU_ACUAN);
     }
 
     /**
@@ -339,10 +338,25 @@ class RefractometerProfile extends CalibrationProfile
      */
     public function deviasiSuhu(float $suhuRuang, string $satuan): float
     {
-        $t = max(self::SUHU_TABEL_MIN, min(self::SUHU_TABEL_MAKS, $suhuRuang));
+        $t = max(
+            TabelStandarRefractometer::koreksiSuhu('suhu_tabel_min_c'),
+            min(TabelStandarRefractometer::koreksiSuhu('suhu_tabel_maks_c'), $suhuRuang),
+        );
         $t = floor(round($t * 10, 6)) / 10;
 
-        return -(self::KOEF_SUHU[$satuan] ?? self::KOEF_SUHU[self::SATUAN_N20D]) * ($t - self::SUHU_ACUAN);
+        return -self::koefSuhu($satuan) * ($t - self::SUHU_ACUAN);
+    }
+
+    /**
+     * Kemiringan "Tab Konversi Temperatur" (satuan-per-°C) untuk satuan alat;
+     * satuan lain jatuh ke n20D, seperti `KOEF_SUHU[$satuan] ?? KOEF_SUHU[n20D]`
+     * dulu. Data acuan lapis 1 ([TabelStandarRefractometer]).
+     */
+    public static function koefSuhu(?string $satuan): float
+    {
+        return TabelStandarRefractometer::koreksiSuhu(
+            $satuan === self::SATUAN_BRIX ? 'koef_brix_per_c' : 'koef_n20d_per_c',
+        );
     }
 
     /**
@@ -836,12 +850,12 @@ class RefractometerProfile extends CalibrationProfile
      * Format sel `168!C18:R19` `0.00000` di keempat kolom (`1.33659`,
      * `-0.00276`, `0.00053`) — sama dengan [desimalSertifikat], ditulis
      * eksplisit supaya Standard Value tidak membuang nol di belakang. `U21`
-     * k `0`. Hanya cetak.
+     * k `0`. Dibaca dari `format_sertifikat` peta sel (K-50-15). Hanya cetak.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.00000', 'uut' => '0.00000', 'koreksi' => '0.00000', 'u95' => '0.00000', 'k' => '0'];
+        return $this->formatSertifikatMaster(null, $titikUkur);
     }
 }

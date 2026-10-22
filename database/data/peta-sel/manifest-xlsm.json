@@ -303,6 +303,14 @@
    "sha256": "11eed0b113ac915573a468a8552a73ee83fe2ef26682801ffd69f48eff801ec9",
    "ukuran_byte": 133632,
    "terverifikasi": true
+  },
+  {
+   "paket": "refractometer",
+   "berkas": "Master Olah Data_Refractometer.xlsm",
+   "sha256": "c634ded9e7e688914c086db6a07b8978fdedd98c4166c0725182aecb8defd69a",
+   "ukuran_byte": 183296,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' dan '.xlsm2' di folder yang sama ber-sha256 identik."
   }
  ]
 }

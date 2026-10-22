@@ -1,0 +1,9 @@
+{
+ "_sumber": "Master Olah Data_Refractometer.xlsm 'Tab Konversi Temperatur'!B4:H116 (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+ "koreksi_suhu": {
+  "koef_n20d_per_c": 0.00045,
+  "koef_brix_per_c": 0.07,
+  "suhu_tabel_min_c": 19.0,
+  "suhu_tabel_maks_c": 30.2
+ }
+}

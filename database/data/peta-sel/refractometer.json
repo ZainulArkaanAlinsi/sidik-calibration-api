@@ -1,0 +1,106 @@
+{
+ "format": 1,
+ "kode_profil": "refractometer",
+ "sumber_json": "tabel-standar-refractometer.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-analitik.py (refractometer); dulu konstanta kode RefractometerProfile::KOEF_SUHU/SUHU_TABEL_MIN/SUHU_TABEL_MAKS (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/instrument-analiitk/Master_Olah_Data_Refractometer sebaris dengan .xlsm di sel ini; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "Koefisien = deviasi baris T = 19 °C (B4, 1 °C di bawah suhu acuan 20 °C): E4 = C4-D4 = 0,07 °Brix, H4 = F4-G4 = 0,00045 n20D; master menulis koefisiennya sebagai literal di rumus D4/G4 (=C4+((B4-20)*0.07)), jadi sel deviasi ini yang dibaca. round 10 desimal membuang derau float Excel (0.07000000000000028). Jangkar B4 = 19 menjaga baris itu tetap 1 °C di bawah 20 °C; generator juga mengadu ke-113 baris ke garis lurus dan menolak tabel tak linear.",
+  "B116 = 30.2000000000002 (kolom T menumpuk derau langkah 0,1) — round 10 desimal = 30.2."
+ ],
+ "lembar_wajib": [
+  "Tab Konversi Temperatur"
+ ],
+ "jangkar": [
+  {
+   "sel": "Tab Konversi Temperatur!B2",
+   "teks": "T"
+  },
+  {
+   "sel": "Tab Konversi Temperatur!C3",
+   "teks": "oBrix"
+  },
+  {
+   "sel": "Tab Konversi Temperatur!F3",
+   "teks": "n20D"
+  },
+  {
+   "sel": "Tab Konversi Temperatur!B4",
+   "teks": "19"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "koreksi_suhu.koef_n20d_per_c",
+   "tipe": "angka",
+   "sel": "Tab Konversi Temperatur!H4",
+   "bulat": 10
+  },
+  {
+   "jalur": "koreksi_suhu.koef_brix_per_c",
+   "tipe": "angka",
+   "sel": "Tab Konversi Temperatur!E4",
+   "bulat": 10
+  },
+  {
+   "jalur": "koreksi_suhu.suhu_tabel_min_c",
+   "tipe": "angka",
+   "sel": "Tab Konversi Temperatur!B4",
+   "bulat": 10
+  },
+  {
+   "jalur": "koreksi_suhu.suhu_tabel_maks_c",
+   "tipe": "angka",
+   "sel": "Tab Konversi Temperatur!B116",
+   "bulat": 10
+  }
+ ],
+ "tidak_dipetakan": [
+  "Suhu acuan 20 °C (RefractometerProfile::SUHU_ACUAN) — definisi n20D, literal di rumus G4 = F4+((B4-20)*k), lapis 2.",
+  "Resolusi cadangan 0,0001 n20D (RefractometerProfile::RESOLUSI) — INPUT DATA!E16 milik alat pelanggan, bukan data acuan; ci komponen suhu = resolusi (PERHITUNGAN U95%!X12) adalah bentuk budget, lapis 2.",
+  "Titik 1,33659/1,39986 n20D & 2,5/40 °Brix (TITIK, TITIK_BRIX) — titik pra-cetak lembar kerja, lapis 3; nilai larutan & U95-nya di tabel standards (DB).",
+  "u_temperature & CMC — calibration_capabilities (RefractometerCapabilitySeeder), DB.",
+  "Divisor 1 larutan standar & vi per komponen — struktur budget, lapis 2.",
+  "_sumber — dokumentasi."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; per sel dibekukan di tests/Fixtures/peta-sel-xlsm/format-sertifikat.json. Sama dengan render RefractometerProfile::formatKolomSertifikat() sebelumnya (StudioFormatSertifikatTest). Baris 20 (sisa tautan luar [3], #REF!) tidak dicetak.",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!C18:C19"
+    ],
+    "format": "0.00000",
+    "catatan": "Standard Value"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!I18:I19"
+    ],
+    "format": "0.00000"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!O18:O19"
+    ],
+    "format": "0.00000"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!R18:R19"
+    ],
+    "format": "0.00000"
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U21"
+    ],
+    "format": "0"
+   }
+  ]
+ }
+}

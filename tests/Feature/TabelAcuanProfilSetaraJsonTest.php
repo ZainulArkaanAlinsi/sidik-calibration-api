@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\PaketAcuan;
 use App\Models\PaketAcuanVersi;
@@ -12,6 +13,7 @@ use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
+use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
@@ -562,6 +564,49 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         $vD = $this->v1('do_meter');
         [$a, $b] = $this->duaJalur('do_meter', $vD, fn (): float => DoMeterProfile::ucPengenceran());
         $this->assertSame($lama[1], $b);
+        $this->assertSame($a, $b);
+    }
+
+    /**
+     * Refractometer: koefisien & batas `Tab Konversi Temperatur` pindah dari
+     * konstanta kode (`KOEF_SUHU` n20D 0.00045 / °Brix 0.07, `SUHU_TABEL_MIN`
+     * 19.0, `SUHU_TABEL_MAKS` 30.2) ke data acuan. Deviasi budget & normalisasi
+     * 20 °C lewat berkas == lewat DB v1 == rumus konstanta lama, bit demi bit,
+     * termasuk clamp di kedua ujung tabel.
+     */
+    public function test_refractometer_v1_setara_json_dan_konstanta_lama(): void
+    {
+        $koef = ['n20D' => 0.00045, '°Brix' => 0.07];
+        $suhu = [10.0, 18.99, 19.0, 21.05, 21.1, 25.0, 27.0, 30.19, 30.2, 30.25, 45.0];
+        $profil = new RefractometerProfile;
+        $lama = [];
+
+        foreach ($koef as $satuan => $k) {
+            foreach ($suhu as $t) {
+                $tt = floor(round(max(19.0, min(30.2, $t)) * 10, 6)) / 10;
+                $lama[] = -$k * ($tt - 20.0);
+                $lama[] = 1.3362 + $k * ($t - 20.0);
+            }
+        }
+
+        $hitung = function () use ($koef, $suhu, $profil): array {
+            $hasil = [];
+
+            foreach (array_keys($koef) as $satuan) {
+                $alat = new Equipment(['satuan' => $satuan]);
+
+                foreach ($suhu as $t) {
+                    $hasil[] = $profil->deviasiSuhu($t, $satuan);
+                    $hasil[] = $profil->rataRataPadaSuhuAcuan(1.3362, $t, $alat);
+                }
+            }
+
+            return $hasil;
+        };
+
+        $this->assertSame($lama, $hitung());
+        [$a, $b] = $this->duaJalur('refractometer', $this->v1('refractometer'), $hitung);
+        $this->assertSame($lama, $b);
         $this->assertSame($a, $b);
     }
 

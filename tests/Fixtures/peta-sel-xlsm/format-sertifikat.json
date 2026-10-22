@@ -999,6 +999,26 @@
     }
    }
   },
+  "refractometer": {
+   "varian": {
+    "-": {
+     "berkas": "Master Olah Data_Refractometer.xlsm",
+     "sha256": "c634ded9e7e688914c086db6a07b8978fdedd98c4166c0725182aecb8defd69a",
+     "sha256_sama_manifest": true,
+     "sel": {
+      "SERTIFIKAT!C18": "0.00000",
+      "SERTIFIKAT!I18": "0.00000",
+      "SERTIFIKAT!O18": "0.00000",
+      "SERTIFIKAT!R18": "0.00000",
+      "SERTIFIKAT!C19": "0.00000",
+      "SERTIFIKAT!I19": "0.00000",
+      "SERTIFIKAT!O19": "0.00000",
+      "SERTIFIKAT!R19": "0.00000",
+      "SERTIFIKAT!U21": "0"
+     }
+    }
+   }
+  },
   "sieve": {
    "varian": {
     "-": {
