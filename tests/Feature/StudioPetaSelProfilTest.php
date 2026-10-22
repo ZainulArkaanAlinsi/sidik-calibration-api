@@ -43,31 +43,37 @@ class StudioPetaSelProfilTest extends TestCase
     }
 
     /**
-     * kode profil => [list [folder master, varian harapan], jumlah jalur ditulis per master].
+     * kode paket => [list [folder master, varian harapan, jumlah jalur ditulis]].
      *
-     * @return array<string, array{string, list<array{string, ?string}>, int}>
+     * @return array<string, array{string, list<array{string, ?string, int}>}>
      */
     public static function master(): array
     {
         return [
             // 6 standar + 4 × (label, u95_mm).
-            'dial_indicator' => ['dial_indicator', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator', null]], 14],
+            'dial_indicator' => ['dial_indicator', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator', null, 14]]],
             // 9 standar + 10 × (terkoreksi, koreksi) Outside + 10 × 3 Inside; nominal Outside cuma dicek.
-            'height_gauge' => ['height_gauge', [['Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026', null]], 59],
+            'height_gauge' => ['height_gauge', [['Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026', null, 59]]],
             // 5 identitas + keping + 2 cmc + 2 konstanta Depth.
-            'jangka_sorong' => ['jangka_sorong', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_', null]], 10],
+            'jangka_sorong' => ['jangka_sorong', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_', null, 10]]],
+            // Satu paket, dua master. Fixed: 6 CMC + 2 U95 suhu + neraca + diameter + kalibrator + PRT;
+            // Graduated: 6 CMC + 2 U95 suhu + neraca + koefisien muai.
+            'volumetric' => ['volumetric', [
+                ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
+                ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],
+            ]],
         ];
     }
 
     #[DataProvider('master')]
-    public function test_ekstraksi_master_asli_identik_dengan_json(string $kode, array $daftar, int $jumlahJalur): void
+    public function test_ekstraksi_master_asli_identik_dengan_json(string $kode, array $daftar): void
     {
         $peta = PetaSel::untuk($kode) ?? $this->fail("peta {$kode} tidak ada");
         $this->assertSame([], PetaSel::validasi($kode, $peta->isi));
         $json = json_decode((string) file_get_contents(database_path('data/'.$peta->isi['sumber_json'])), true);
         $shaJson = JsonKanonik::sha256(JsonKanonik::serialisasi($json));
 
-        foreach ($daftar as [$folder, $varian]) {
+        foreach ($daftar as [$folder, $varian, $jumlahJalur]) {
             $lembar = app(PembacaCsvWorkbook::class)->baca(base_path(self::AKAR.$folder))['lembar'];
             $hasil = app(PemeriksaMaster::class)->periksa($peta, basename($folder), $lembar, $json);
 

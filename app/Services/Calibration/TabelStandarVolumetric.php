@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -29,9 +30,6 @@ use RuntimeException;
  */
 class TabelStandarVolumetric
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /**
      * CMC (mL) untuk jenis alat dan nominalnya, lewat nominal TERDEKAT.
      *
@@ -183,10 +181,19 @@ class TabelStandarVolumetric
         return array_values(self::muat()['neraca'][$keluarga] ?? []);
     }
 
+    /**
+     * Urutan kategori master (`DATABASE!V2:AG2`, indeks `Type_Alat`).
+     * Dipatok di sini karena isi versi DB kanonik mengurutkan ulang kunci
+     * objek `cmc` — urutan tidak boleh bergantung sumber isi.
+     */
+    private const URUTAN_JENIS = ['Gelas Ukur', 'Labu Ukur', 'Buret', 'Picnometer', 'Pipet Volume', 'Pipet Ukur'];
+
     /** @return list<string> */
     public function jenisAlat(): array
     {
-        return array_keys(self::muat()['cmc']);
+        $ada = array_keys(self::muat()['cmc']);
+
+        return [...array_values(array_intersect(self::URUTAN_JENIS, $ada)), ...array_values(array_diff($ada, self::URUTAN_JENIS))];
     }
 
     /**
@@ -217,17 +224,16 @@ class TabelStandarVolumetric
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-volumetric.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar volumetric nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Satu paket untuk keenam profil Volumetric (`kodePaketAcuan()`); versi
+        // DB hanya di lingkup yang dibuka sesi profil sepaket. Tidak di-cache di
+        // kelas ini — cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('volumetric', $berkas);
 
         // Diperiksa SEMUA bagian, bukan cuma yang dipakai pemanggil pertama.
         // Berkas yang kehilangan satu blok akan meledak jauh dari sini — di
@@ -240,6 +246,6 @@ class TabelStandarVolumetric
             throw new RuntimeException("Tabel standar volumetric rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

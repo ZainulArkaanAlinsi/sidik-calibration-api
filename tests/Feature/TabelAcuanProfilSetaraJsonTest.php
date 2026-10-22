@@ -12,6 +12,7 @@ use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
+use App\Services\Calibration\TabelStandarVolumetric;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Unit\DialIndicatorMasterTest;
@@ -140,6 +141,47 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         [$json, $db] = $this->duaJalur('jangka_sorong', $v1, fn () => (new JangkaSorongCalculator)->hitungSesi($titik, $konteks));
         $this->assertNotEmpty($json);
         $this->assertSame(self::urutKunci($json), self::urutKunci($db));
+    }
+
+    /**
+     * Volumetric: SATU paket (`volumetric`) untuk enam profil. Semua pembaca
+     * publik TabelStandarVolumetric, di sapuan masukan, identik antara jalur
+     * berkas dan versi 1 DB; dan lingkupnya dibuka dengan kode PAKET.
+     */
+    public function test_volumetric_v1_setara_json(): void
+    {
+        $v1 = $this->v1('volumetric');
+        $this->assertSame('volumetric', $v1->paketAcuan?->kode_profil);
+
+        [$a, $b] = $this->duaJalur('volumetric', $v1, function (): array {
+            $t = new TabelStandarVolumetric;
+            $hasil = ['jenis' => $t->jenisAlat(), 'u95' => $t->u95Suhu()];
+
+            foreach ($t->jenisAlat() as $jenis) {
+                foreach ([0.4, 1.0, 5.0, 25.0, 50.0, 100.0, 1000.0, 2500.0] as $n) {
+                    $hasil['cmc'][$jenis][] = [$t->cmc($jenis, $n), $t->nominalTerindeks($jenis, $n)];
+                }
+            }
+
+            foreach ([0.0001, 0.0007, 0.02, 1.0, 10.0, 20.0] as $g) {
+                $hasil['diameter'][] = $t->diameterMaksimum($g);
+            }
+
+            foreach ([-45.0, -40.0, -12.5, 0.0, 20.0, 27.0, 199.0, 850.0] as $c) {
+                $hasil['suhu'][] = $t->koreksiSuhu($c);
+            }
+
+            foreach (['fixed', 'graduated'] as $k) {
+                $hasil['neraca'][$k] = $t->semuaNeraca($k);
+
+                foreach ($t->semuaNeraca($k) as $n) {
+                    $hasil['neraca_satu'][$k][] = $t->neraca($k, (string) $n['nama']);
+                }
+            }
+
+            return $hasil;
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 
     /** Urutkan kunci objek rekursif; urutan list dipertahankan. */

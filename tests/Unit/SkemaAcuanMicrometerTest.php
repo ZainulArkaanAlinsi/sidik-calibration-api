@@ -28,7 +28,7 @@ class SkemaAcuanMicrometerTest extends TestCase
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 
-    private const TIPE = ['teks', 'tanggal', 'desimal', 'bulat', 'daftar_angka'];
+    private const TIPE = ['teks', 'tanggal', 'desimal', 'desimal_kosong', 'bulat', 'daftar_angka'];
 
     /** @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>} */
     private static function skema(): array

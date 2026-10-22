@@ -17,6 +17,7 @@ trait PeriksaSkemaAcuan
             'teks' => $this->assertIsString($nilai, $jalur),
             'tanggal' => $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $nilai, $jalur),
             'desimal' => $this->assertIsFloat($nilai, $jalur),
+            'desimal_kosong' => $this->assertTrue($nilai === null || is_float($nilai), "{$jalur} bukan float/null"),
             'bulat' => $this->assertIsInt($nilai, $jalur),
             'daftar_angka' => $this->assertTrue(
                 is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_float') === $nilai,
