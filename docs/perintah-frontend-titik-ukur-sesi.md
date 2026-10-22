@@ -28,9 +28,10 @@ Aturan yang ditegakkan server (bukan cuma disembunyikan di UI):
 | Timer/Stopwatch | `saran` (60, 300, … s) | 10 | ya | ya | 2–10 (bawaan 3) |
 | Timbangan (blok Accuracy, tabel `akurasi`) | `saran` (tangga 10–100 % rentang) | jumlah baris tangga (10) | ya | ya, **kecuali varian substitusi** | dipatok (`null`) |
 | Micrometer | `dipatok` (11 nominal kertas) | 11 | **tidak** | ya | 2–10 (bawaan 5) |
-| Tekanan (Pressure / Vacuum / Differential) | `bebas` | 14 | ya | ya | dipatok 3 (min=maks=3) |
-| Lembar jalur datar: pH, Turbidimeter, Chlorine, Refractometer, Conductivity, Viscometer, DO, Gas Detector, TITS, Centrifuge, Tachometer | dari bentuk lembar | jumlah baris lembar | kalau baris `titik_bisa_diubah` | ya | 2–10 |
+| Tekanan (Pressure / Vacuum / Differential) | `bebas` | 14 | ya | ya, **kecuali titik pertama** (zero error dibaca dari titik pertama; `pertama_wajib_aktif`) | dipatok 3 (min=maks=3) |
+| Lembar jalur datar: pH, Turbidimeter, Chlorine, Refractometer, Conductivity, Viscometer, DO, Gas Detector | dari bentuk lembar | jumlah baris lembar | kalau baris `titik_bisa_diubah` | ya | 2–10 |
 
+TITS, Centrifuge, dan Tachometer sengaja `didukung: false` sampai diverifikasi per profil.
 Profil lain pulang `didukung: false` + `alasan` — tampilkan alasan itu, jangan tawarkan
 pengaturan titik. Server menolak `titik_sesi` untuk profil itu (422).
 
@@ -129,14 +130,20 @@ Aturan yang wajib dipatuhi HP (server menolak 422 `errors.titik_sesi` / `errors.
    tak terdaftar → 422.
 4. Baris pembacaan titik nonaktif dikirim **persis sama** dengan yang tersimpan (ambil dari
    `pembacaan_mentah` / draf). Diubah atau dihilangkan → 422. Mau mengoreksi? Aktifkan dulu.
-5. `dipatok`: nominal titik `asal: profil` tidak bisa diubah; titik di luar `bawaan` ditolak
+5. **Nominal titik yang sudah punya pembacaan tersimpan tidak bisa diubah** (aktif maupun
+   nonaktif) — nonaktifkan titik itu lalu tambah titik baru. Nominal titik yang belum punya
+   pembacaan boleh diubah (kecuali `dipatok`).
+   `dipatok`: nominal titik `asal: profil` tidak bisa diubah; titik di luar `bawaan` ditolak
    bila `boleh_tambah=false`.
 6. Jumlah titik **aktif** per tabel di `[min, maks]`; total titik ≤ 60.
 7. Nominal titik aktif wajib di dalam rentang ukur alat (aturan yang sama dengan pemeriksa
    pembacaan: `range_min − toleransi … range_max + toleransi`).
 8. `pengulangan` di `[min, maks]`; tidak boleh lebih kecil dari pembacaan tersimpan
    (pembacaan tidak pernah dibuang), dan baris yang dikirim tidak boleh melebihi jumlahnya.
-9. Kiriman tanpa kunci `titik_sesi` (APK lama) **tidak mengubah** set tersimpan; titik nonaktif
+9. Tabel dengan `pertama_wajib_aktif: true` (Tekanan): titik pertama set tidak bisa dinonaktifkan
+   (`alasan_pertama` menjelaskan kenapa), dan baris pertama `measurements` wajib titik itu.
+   Kirim `measurements` mengikuti urutan set.
+10. Kiriman tanpa kunci `titik_sesi` (APK lama) **tidak mengubah** set tersimpan; titik nonaktif
    tetap tidak dihitung.
 
 `preview`: kirim `titik_sesi` yang sedang dipegang layar (revisi tidak diperiksa) supaya angka

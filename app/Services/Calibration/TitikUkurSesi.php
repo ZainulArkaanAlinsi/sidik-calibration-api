@@ -251,6 +251,16 @@ final class TitikUkurSesi
                 }
             }
 
+            // Nominal adalah penghubung titik ↔ baris mentah. Mengganti nominal
+            // titik yang SUDAH punya pembacaan tersimpan memutus barisnya dari
+            // titik mana pun — lalu dihapus-tulis-ulang tanpa jejak. Jalannya:
+            // nonaktifkan titik lama (pembacaannya dibekukan), tambah titik baru.
+            if ($sebelumnya !== null && ! self::cocok((float) $sebelumnya['nominal'], $t['nominal'])
+                && self::punyaPembacaan($mentahLama, (float) $sebelumnya['nominal'])) {
+                self::tolak('Nominal '.self::label($sebelumnya).' sudah punya pembacaan tersimpan dan tidak bisa '
+                    .'diubah. Nonaktifkan titik itu (pembacaannya tetap tersimpan), lalu tambah titik baru.');
+            }
+
             $t['tambahan'] = ! $diBawaan;
 
             if ($t['tambahan'] && ! $b['boleh_tambah'] && $t['aktif']) {
@@ -287,6 +297,15 @@ final class TitikUkurSesi
                     $b['min'],
                     $b['maks'],
                 ));
+            }
+
+            // Lembar yang membaca besaran tingkat-sesi dari titik PERTAMA
+            // (Tekanan: zero error `Q39` = titik pertama) tidak boleh
+            // kehilangan titik itu — menonaktifkannya menggeser besaran itu ke
+            // baris lain, dan perilaku itu belum diadu ke master.
+            if (($b['pertama_wajib_aktif'] ?? false) && $diTabel !== [] && ! $diTabel[0]['aktif']) {
+                self::tolak('Titik pertama tabel "'.($b['judul'] ?? $kode).'" ('.self::label($diTabel[0]).') tidak bisa '
+                    .'dinonaktifkan: '.($b['alasan_pertama'] ?? 'besaran sesi dibaca dari titik pertama.'));
             }
 
             for ($i = 0; $i < count($diTabel); $i++) {
@@ -339,13 +358,36 @@ final class TitikUkurSesi
      * @param  list<array<string, mixed>>  $mentahBaru
      * @param  Collection<int, RawMeasurement>  $mentahLama
      * @param  bool  $bekukanNonaktif  false hanya untuk sesi yang baru dibuat di request ini
+     * @param  array<string, mixed>|null  $batas  `batasTitik()` profil, untuk aturan titik pertama
      *
      * @throws ValidationException
      */
-    public static function periksaSusunan(?array $set, array $mentahBaru, Collection $mentahLama, bool $bekukanNonaktif = true): void
-    {
+    public static function periksaSusunan(
+        ?array $set,
+        array $mentahBaru,
+        Collection $mentahLama,
+        bool $bekukanNonaktif = true,
+        ?array $batas = null,
+    ): void {
         if ($set === null) {
             return;
+        }
+
+        // Titik pertama yang wajib aktif juga wajib jadi baris PERTAMA kiriman
+        // (`titik_ke` terkecil) — itu yang dibaca hitungan sebagai titik pertama.
+        foreach ($batas['tabel'] ?? [] as $b) {
+            if (! ($b['pertama_wajib_aktif'] ?? false)) {
+                continue;
+            }
+
+            $pertama = collect($set['titik'])->firstWhere('tabel', $b['kode']);
+            $barisAwal = collect($mentahBaru)->sortBy('titik_ke')->first();
+
+            if ($pertama !== null && $barisAwal !== null
+                && (! is_numeric($barisAwal['titik_ukur'] ?? null) || ! self::cocok((float) $barisAwal['titik_ukur'], (float) $pertama['nominal']))) {
+                throw ValidationException::withMessages(['measurements' => 'Baris pertama tabel pembacaan wajib titik '
+                    .self::label($pertama).' (titik pertama set) — besaran sesi dibaca dari titik pertama.']);
+            }
         }
 
         foreach ($mentahBaru as $b) {
@@ -606,6 +648,14 @@ final class TitikUkurSesi
         ksort($hasil);
 
         return $hasil;
+    }
+
+    /** @param  Collection<int, RawMeasurement>|null  $mentah */
+    private static function punyaPembacaan(?Collection $mentah, float $nominal): bool
+    {
+        return collect($mentah ?? [])->contains(
+            fn ($b): bool => is_numeric($b->titik_ukur) && self::cocok((float) $b->titik_ukur, $nominal),
+        );
     }
 
     /** @param  array<string, mixed>  $t */

@@ -194,12 +194,47 @@ class TitikUkurSesiTest extends TestCase
             ->putJson("/api/calibrations/{$id}", $this->payloadTimer($alat, $std, array_slice($ukur, 0, 2), self::setTitik(2, array_slice($nonaktif, 0, 2))))
             ->assertStatus(422)->assertJsonValidationErrors('titik_sesi');
 
+        // Nominal titik yang SUDAH punya pembacaan tidak bisa diganti — aktif
+        // (60 s) maupun nonaktif (300 s). Barisnya tidak boleh lepas dari titik.
+        $mentahSebelum = RawMeasurement::where('calibration_session_id', $id)->orderBy('id')
+            ->get(['titik_ukur', 'peran_sensor', 'sensor_ke', 'pembacaan'])->toArray();
+        foreach ([0 => 61.0, 2 => 301.0] as $i => $nominalBaru) {
+            $ganti = $nonaktif;
+            $ganti[$i]['nominal'] = $nominalBaru;
+            $ukurGanti = $ukur;
+            $ukurGanti[$i]['titik_ukur'] = $nominalBaru;
+            $this->actingAs($this->teknisi)
+                ->putJson("/api/calibrations/{$id}", $this->payloadTimer($alat, $std, $ukurGanti, self::setTitik(2, $ganti)))
+                ->assertStatus(422)->assertJsonValidationErrors('titik_sesi');
+        }
+        $this->assertSame($mentahSebelum, RawMeasurement::where('calibration_session_id', $id)->orderBy('id')
+            ->get(['titik_ukur', 'peran_sensor', 'sensor_ke', 'pembacaan'])->toArray(), 'Pembacaan tersimpan berubah.');
+
+        // Perubahan set tanpa `measurements` → 422 (hasil hitung harus ikut).
+        $justifikasi = $nonaktif;
+        $justifikasi[1]['alasan'] = 'Permintaan pelanggan PO-123 rev. 2';
+        $tanpaUkur = $this->payloadTimer($alat, $std, $ukur, self::setTitik(2, $justifikasi));
+        unset($tanpaUkur['measurements']);
+        $this->actingAs($this->teknisi)->putJson("/api/calibrations/{$id}", $tanpaUkur)
+            ->assertStatus(422)->assertJsonValidationErrors('measurements');
+
+        // Dua penulis berurutan dari revisi yang sama: yang pertama 200
+        // (revisi 3), yang kedua 409 — dan set tidak ditimpa.
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$id}", $this->payloadTimer($alat, $std, $ukur, self::setTitik(2, $justifikasi)))
+            ->assertOk()->assertJsonPath('meta.titik_sesi.set.revisi', 3);
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$id}", $this->payloadTimer($alat, $std, $ukur, self::setTitik(2, $nonaktif)))
+            ->assertStatus(409)->assertJsonPath('titik_sesi.revisi', 3);
+        $this->assertSame('Permintaan pelanggan PO-123 rev. 2',
+            TitikUkurSesi::dariSesi($sesi->fresh())['titik'][1]['alasan']);
+
         // Simpan tanpa `titik_sesi` (APK lama) tidak menyentuh set.
         $this->actingAs($this->teknisi)
             ->putJson("/api/calibrations/{$id}", $this->payloadTimer($alat, $std, $ukur, null))
             ->assertOk();
         $sesi->refresh();
-        $this->assertSame(2, TitikUkurSesi::dariSesi($sesi)['revisi']);
+        $this->assertSame(3, TitikUkurSesi::dariSesi($sesi)['revisi']);
         $this->assertCount(2, $sesi->uncertaintyCalculations()->get());
 
         // Jalur hitung ulang & validator melihat titik aktif saja.
@@ -553,6 +588,29 @@ class TitikUkurSesiTest extends TestCase
         $this->assertNotContains('hitung_ulang_beda', $kode);
         $this->assertNotContains('titik_tidak_terhitung', $kode);
 
+        // Titik pertama Tekanan dikunci aktif (zero error dibaca darinya).
+        $pertamaMati = $titik;
+        $pertamaMati[0]['aktif'] = false;
+        $pertamaMati[0]['alasan'] = 'Coba matikan titik nol';
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$id}", $this->payloadTekanan($alat, self::setTitik(2, $pertamaMati)))
+            ->assertStatus(422)->assertJsonValidationErrors('titik_sesi');
+
+        // ...dan wajib jadi baris pertama kiriman.
+        $tertukar = $this->payloadTekanan($alat, self::setTitik(2, $titik));
+        $tertukar['measurements'] = array_reverse($tertukar['measurements']);
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$id}", $tertukar)
+            ->assertStatus(422)->assertJsonValidationErrors('measurements');
+
+        // PUT tanpa `equipment_id`: ditolak di validasi request (kolom wajib),
+        // bukan 404/500 dari pencarian alat titik sesi.
+        $tanpaAlat = $this->payloadTekanan($alat, self::setTitik(2, $titik));
+        unset($tanpaAlat['equipment_id']);
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$id}", $tanpaAlat)
+            ->assertStatus(422)->assertJsonValidationErrors('equipment_id');
+
         $limaBelas = array_map(fn (int $i): array => self::t("t{$i}", (float) $i, ['asal' => 'teknisi']), range(0, 14));
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $this->payloadTekanan($alat, self::setTitik(0, $limaBelas)))
@@ -636,6 +694,10 @@ class TitikUkurSesiTest extends TestCase
             $batas = $profil->batasTitik(new Equipment(['organization_id' => $alat->organization_id]), []);
 
             $this->assertIsBool($batas['didukung'], $profil->kode());
+
+            if (in_array($profil->kode(), ['tits', 'centrifuge', 'tachometer'], true)) {
+                $this->assertFalse($batas['didukung'], $profil->kode().' belum diverifikasi — harus tidak didukung');
+            }
 
             if (! $batas['didukung']) {
                 $this->assertNotEmpty($batas['alasan'], $profil->kode().': tidak didukung tanpa alasan');

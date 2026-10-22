@@ -5443,7 +5443,8 @@ dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup
   `PerubahanDataOrganisasi` yang sudah ada.
 - Hasil sapuan registry (22 Okt 2026) — `didukung: true`: Timer, Timbangan, Micrometer, Pressure /
   Vacuum / Differential (pilot) + turunan generik jalur datar: pH, Turbidimeter, Chlorine,
-  Refractometer, Conductivity, Viscometer, DO Meter, Gas Detector, TITS, Centrifuge, Tachometer.
+  Refractometer, Conductivity, Viscometer, DO Meter, Gas Detector. TITS, Centrifuge, dan
+  Tachometer sengaja `didukung: false` sampai diverifikasi per profil (review 22 Okt 2026).
   `didukung: false` (alasan terbaca di `batas.alasan`): Spectrophotometer (tiga blok titik
   bernominal beda), Autoklaf (nominal kembar), dan semua lembar berblok — TIDS, kelima Enclosure,
   Thermocouple, Termometer Gelas, Thermohygro, Height Gauge, Flowmeter ×2, Anak Timbangan, Dial
@@ -5451,10 +5452,14 @@ dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup
   Piston Pipette, Dispensett, Buret Digital. Untuk lembar berblok `titik_ukur` mentahnya tidak
   selalu = nominal titik (mis. Anak Timbangan per keping, Sieve per opening, Gaya/Piston per
   setelan berderet), jadi penghubung lewat nominal perlu dibuktikan per profil dulu.
-- Turunan generik baru diuji di pH (`test_jalur_datar_ph_nonaktif_dan_fase_sebelum`); sepuluh
-  profil datar lain didukung lewat aturan yang sama tanpa test khusus — TITS (titik tercetak =
-  setpoint + koreksi kalibrator) dan Centrifuge/Tachometer (18 baris) paling layak diuji duluan.
-- Dijaga `TitikUkurSesiTest` (12 test, 318 asersi).
+- Turunan generik baru diuji di pH (`test_jalur_datar_ph_nonaktif_dan_fase_sebelum`); tujuh
+  profil datar lain didukung lewat aturan yang sama tanpa test khusus.
+- Perbaikan review (22 Okt 2026): revisi diperiksa ATOMIK di dalam transaksi atas baris sesi
+  yang dikunci (`lockForUpdate`); nominal titik yang sudah punya pembacaan tidak bisa diganti
+  (nonaktifkan + tambah titik baru); titik pertama Tekanan dikunci aktif dan wajib baris
+  pertama (zero error master `Q39` dibaca dari titik pertama — menggesernya belum diverifikasi
+  penjaga angka); alat titik sesi jatuh ke alat sesi bila `equipment_id` tidak dikirim.
+- Dijaga `TitikUkurSesiTest` (12 test, 330 asersi).
 
 ### Pertanyaan terbuka
 
@@ -5816,7 +5821,7 @@ berkas profil.
 | G16 | **Data pelanggan disapu + riwayat git ditulis ulang** — §27 & K27 | **BERES** (10 Sep 2026) — dua pekerjaan yang saling mengunci. **(1) Sanitasi:** 81 berkas, commit `c0645f6`, empat gelombang — dan tiap gelombang menemukan yang tidak terlihat dari sebelumnya, termasuk **enam nama pelanggan yang tidak ada di daftar `.gitignore`** (jadi daftar itu sendiri tidak lengkap) dan `Puskesad` yang dieja panjang. Celah yang bisa membatalkan semuanya dalam sekali jalan ikut ditutup: dua generator menyalin sel identitas pelanggan langsung ke `database/data/*.json` yang ter-commit. **(2) Rewrite:** 686 commit, 91 branch. Jejaknya empat bentuk, bukan satu — 440 trailer `Co-Authored-By`, 164 `Claude-Session`, **143 commit ber-AUTHOR Claude** (ini yang menentukan daftar Contributors, dan `--message-callback` tidak menyentuhnya), 137 deskripsi PR (tidak ada di git sama sekali), dan 37 branch `claude/*` (yang paling kelihatan). Gerbang sebelum push: tree `main` sebelum/sesudah diadu dan **identik byte-per-byte** — nol byte kode berubah. Branch **diganti nama, bukan dihapus**, karena 32 dari 37 bukan leluhur `main`. Tag ikut dipindah — tanpa itu seluruh riwayat lama tetap terjangkau lewat tag. Hasil: Contributors tinggal dua orang. **Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri:** `~/.claude/settings.json` menyimpan Personal Access Token GitHub polos — dilaporkan, dicabut, dihapus |
 | G17 | Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** untuk alat ke-27 & ke-28 — §27 | **BERES di server** (10 Sep 2026) — bukan alat ke-29: dua workbook master baru mengukur alat, besaran, dan pita CMC yang SAMA dengan varian UFM, dengan metode yang sama sekali lain. Yang dibangun sumbu `varian_metode` di dua profil yang sudah ada, presedennya TimbanganProfile / TITS / TIDS. Rumusnya dibuktikan di Python SEBELUM PHP: **107 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶ — termasuk tabel densitas yang ternyata BUKAN rumus melainkan piknometer 50,3139 ml di empat suhu plus interpolasi linier. Delapan penyimpangan master dibetulkan dengan arah yang ditegakkan test, sepuluh ditiru + diangkat jadi 23 pertanyaan lab. Yang paling menentukan: koreksi timer yang dihitung lalu dibuang **membalik TANDA** deviasi Flowrate titik 2 (+0,0299 → −0,0012 Lpm), dan lantai CMC yang tidak pernah dipasang membuat keempat titik terbit di bawah pita — titik 3 mengklaim ketidakpastian sebelas kali lebih baik dari yang diakui KAN. **Nol kolom baru** di `raw_measurements`. Satu bug LAMA ikut ketemu: `peringatanSesi()` memulangkan deret string sementara `CalibrationValidator` menuntut `['kode','pesan']`, jadi endpoint `/validasi` pulang **500** untuk sesi UFM mana pun yang geometri pipanya kosong — hidup diam-diam sejak 8 Sep karena kedua sesi contoh selalu punya geometri pipa. **Sisi mobile BELUM** — `docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: sapuan mock registry dulu, baru cabang varian |
 | G18 | **Alur verifikasi lembar kerja & peran Super Admin** — §35 | **PRD DITULIS** (17 Sep 2026), nol baris kode. Yang menentukan ukurannya: sebagian besar kerangkanya SUDAH ADA — alur `draft`→`menunggu_approval`→`disetujui`/`perlu_revisi`, aksi tolak berikut `catatan_revisi`, jalur teknisi mengerjakan ulang, tujuh kelas `Notification`, dan pengirim push FCM. Yang benar-benar baru cuma enam: penandaan per titik (tabel `tanda_revisi`, isi lembar TIDAK dihapus), suntingan pemeriksa berikut jejaknya, peran `super_admin` dihidupkan, pencatatan akses lintas-organisasi, revisi sertifikat bernomor, dan notifikasi sertifikat diunduh. Dua keputusan diambil pemilik proyek SESUDAH risikonya disebutkan dan itu tertulis di §35: super admin menembus `organization_id` (ISO/IEC 17025 §4.2 — karena itu tiap akses lintas-lab wajib tercatat), dan edit sesudah sertifikat terbit menembus kebekuan `uncertainty_calculations` (karena itu tiap edit melahirkan revisi bernomor, bukan menimpa). Prasyarat di luar urutan sudah **SELESAI 23 Sep 2026**: `super_admin` kini bisa login, buka panel, dan membaca seluruh rute `GET` — menulis masih ditahan sampai K4 turun, dan lintas organisasi belum dibuka. Delapan pertanyaan terbuka di `docs/pertanyaan-lab-alur-verifikasi.md` |
-| G19 | **Titik ukur sesi** — tambah/ubah/nonaktifkan titik, sinkron lintas perangkat — §55 | **Sisi API selesai di branch `feat/titik-ukur-sesi`** (22 Okt 2026, belum push): pilot Timer/Timbangan/Micrometer/Tekanan + 11 lembar jalur datar, `TitikUkurSesiTest` 12 test. **Gate MySQL belum. Sisi HP BELUM** — kontrak `docs/perintah-frontend-titik-ukur-sesi.md`. Lima pertanyaan terbuka di §55 |
+| G19 | **Titik ukur sesi** — tambah/ubah/nonaktifkan titik, sinkron lintas perangkat — §55 | **Sisi API selesai di branch `feat/titik-ukur-sesi`** (22 Okt 2026, belum push): pilot Timer/Timbangan/Micrometer/Tekanan + 8 lembar jalur datar, `TitikUkurSesiTest` 12 test. **Gate MySQL belum. Sisi HP BELUM** — kontrak `docs/perintah-frontend-titik-ukur-sesi.md`. Lima pertanyaan terbuka di §55 |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 

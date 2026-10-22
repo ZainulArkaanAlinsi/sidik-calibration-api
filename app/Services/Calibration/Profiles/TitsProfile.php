@@ -100,6 +100,21 @@ class TitsProfile extends CalibrationProfile
     use BentukSertifikatSuhu;
 
     /**
+     * Titik ukur sesi BELUM dibuka untuk TITS (review §55, 22 Okt 2026): titik
+     * tercetak = setpoint + koreksi kalibrator, dua mode (Measure/Source)
+     * menukar sisi hitungan, dan penghubung titik ↔ pembacaan lewat nominal
+     * belum diuji per profil.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        return self::batasTidakDidukung('TITS belum diverifikasi untuk titik ukur sesi (titik tercetak = setpoint + '
+            .'koreksi kalibrator, dua mode hitung).');
+    }
+
+    /**
      * Nomor formulir lembar kerja, dari footer PDF-nya sendiri:
      * `Page 1 of 1   Revise : 3   SIDIK-FM-CAL-0505`.
      *

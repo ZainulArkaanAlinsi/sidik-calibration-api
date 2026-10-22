@@ -550,10 +550,13 @@ abstract class TekananProfile extends CalibrationProfile
      * paling banyak `TITIK_MAKS` (baris 24–37 master). Pengulangan dipatok
      * TEPAT 3 UP + 3 DOWN — [penghalangSesi] memblokir jumlah lain.
      *
-     * Budget-nya tingkat SESI (uc bersama, zero error dari titik PERTAMA), jadi
-     * titik yang dinonaktifkan ikut keluar dari budget bersama — sama dengan
-     * master yang barisnya tidak diisi. Menonaktifkan titik pertama memunculkan
-     * temuan zero error yang sudah ada ([temuanSesi]).
+     * Budget-nya tingkat SESI (uc bersama, zero error dari titik PERTAMA —
+     * `$perTitik[0]`, master `Q39`). Titik selain yang pertama boleh
+     * dinonaktifkan: dia keluar dari budget bersama seperti baris master yang
+     * tidak diisi. Titik PERTAMA dikunci aktif (`pertama_wajib_aktif`) dan wajib
+     * jadi baris pertama kiriman: menonaktifkannya menggeser zero error ke
+     * baris lain, dan perilaku itu belum diadu ke master — tunggu verifikasi
+     * penjaga angka sebelum dibuka.
      *
      * @param  array<string, mixed>  $spesifikasi
      * @return array<string, mixed>
@@ -572,6 +575,9 @@ abstract class TekananProfile extends CalibrationProfile
                 'maks' => self::TITIK_MAKS,
                 'boleh_tambah' => true,
                 'boleh_nonaktif' => true,
+                'pertama_wajib_aktif' => true,
+                'alasan_pertama' => 'zero error sesi tekanan dibaca dari titik pertama (master `Q39`); menggesernya '
+                    .'belum diverifikasi terhadap master.',
                 'nominal' => 'bebas',
                 'bawaan' => [],
                 'fase' => ['sesudah'],
