@@ -91,6 +91,9 @@ class StudioPetaSelProfilTest extends TestCase
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT', 'measure', 27],
                 ['suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT', 'source', 27],
             ]],
+            // Chlorine Meter & DO Meter: U95 micropipette + labu ukur (faktor pengenceran).
+            'chlorine_meter' => ['chlorine_meter', [['instrument-analiitk/Master_Olah_Data_Chlorine_Meter', null, 2]]],
+            'do_meter' => ['do_meter', [['instrument-analiitk/Master_Olah_Data_DO_Meter', null, 2]]],
             // Suhu 3 alat: Thermocouple 5 tabel + 9 drift + 4 dryblock + 2 konstanta + CMC;
             // Glass 7 tabel + 9 drift + 4 oilbath + tipe + CMC (22); Thermohygro 2 tabel + 10 angka + CMC.
             'suhu_3alat' => ['suhu_3alat', [

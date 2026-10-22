@@ -1,0 +1,7 @@
+{
+ "_sumber": "Master Olah Data_Chlorine Meter.xlsm DATABASE!W20:W21 (docs/skrip/gen-tabel-standar-pengenceran.py). JANGAN diedit tangan.",
+ "pengenceran": {
+  "u95_micropipette_ml": 0.00089,
+  "u95_labu_ukur_ml": 0.033
+ }
+}

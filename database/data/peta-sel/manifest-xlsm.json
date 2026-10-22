@@ -288,6 +288,21 @@
    "ukuran_byte": 791724,
    "terverifikasi": true,
    "catatan": "Sel yang dipetakan identik dengan hal 1."
+  },
+  {
+   "paket": "chlorine_meter",
+   "berkas": "Master Olah Data_Chlorine Meter.xlsm",
+   "sha256": "1a4203d90cf21683ad921a5509720b2d5777c29bc0c9101290c978851ed6ee6b",
+   "ukuran_byte": 133632,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm2' dan '.xlsm3' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "do_meter",
+   "berkas": "Master Olah Data_DO Meter.xlsm",
+   "sha256": "11eed0b113ac915573a468a8552a73ee83fe2ef26682801ffd69f48eff801ec9",
+   "ukuran_byte": 133632,
+   "terverifikasi": true
   }
  ]
 }

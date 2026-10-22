@@ -10,6 +10,8 @@ use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\PistonVolumeCalculator;
+use App\Services\Calibration\Profiles\ChlorineProfile;
+use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
@@ -540,6 +542,27 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         }
 
         $this->assertSame(['10' => ['ukuran_inch'], '1' => ['ukuran_um'], '0.08' => ['kawat_preferred_mm']], $tanda);
+    }
+
+    /**
+     * Chlorine Meter & DO Meter: U95 micropipette & labu ukur pindah dari
+     * konstanta kode ke data acuan. Uc pengenceran lewat DB == lewat berkas ==
+     * rumus konstanta lama (angka tidak berubah).
+     */
+    public function test_chlorine_dan_do_meter_v1_setara_json_dan_konstanta_lama(): void
+    {
+        $lama = [sqrt((0.00089 / 2) ** 2 + (0.033 / 2) ** 2) / 1000, sqrt((0.89 / 2 / 1000) ** 2 + (0.033 / 2) ** 2)];
+        $this->assertSame($lama, [ChlorineProfile::ucPengenceran(), DoMeterProfile::ucPengenceran()]);
+
+        $vC = $this->v1('chlorine_meter');
+        [$a, $b] = $this->duaJalur('chlorine_meter', $vC, fn (): float => ChlorineProfile::ucPengenceran());
+        $this->assertSame($lama[0], $b);
+        $this->assertSame($a, $b);
+
+        $vD = $this->v1('do_meter');
+        [$a, $b] = $this->duaJalur('do_meter', $vD, fn (): float => DoMeterProfile::ucPengenceran());
+        $this->assertSame($lama[1], $b);
+        $this->assertSame($a, $b);
     }
 
     /** Anak Timbangan (workbook F2 IMTE-LQ-197): tabel + hitung sesi master (fixture AnakTimbanganMasterTest). */

@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarPengenceran;
 
 /**
  * Profil Chlorin Meter (alat ke-3). Metode `SIDIK-IK-CAL-0524_Rev.1`, form
@@ -130,13 +131,9 @@ class ChlorineProfile extends CalibrationProfile
      */
     public const CI_PENGENCERAN = 0.00028720439420210824;
 
-    /**
-     * U95% micropipette & labu ukur dari kepala sheet `PERHITUNGAN U95%`
-     * (dua-duanya k=2), dipakai [ucPengenceran].
-     */
-    public const U95_MICROPIPETTE_ML = 0.00089;
-
-    public const U95_LABU_UKUR_ML = 0.033;
+    // U95% micropipette & labu ukur (k=2) dipakai [ucPengenceran] kini data
+    // acuan lapis 1: `TabelStandarPengenceran` (paket `chlorine_meter`,
+    // `DATABASE!W20:W21`, generator `gen-tabel-standar-pengenceran.py`).
 
     /**
      * Baris tabel STANDARD. Dua larutan chlorine namanya diambil apa adanya
@@ -205,6 +202,12 @@ class ChlorineProfile extends CalibrationProfile
         return 'chlorine_meter';
     }
 
+    /** Lapis 1: U95 micropipette & labu ukur (`tabel-standar-chlorine-meter.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarPengenceran::skemaAcuan(TabelStandarPengenceran::CHLORINE);
+    }
+
     /**
      * Lampiran akreditasi nulisnya "Chlorin Meter" (tanpa 'e') — itu yang
      * dicocokin `CalibrationProfileRegistry::untukNamaAlat()`, dan itu juga
@@ -252,9 +255,10 @@ class ChlorineProfile extends CalibrationProfile
      */
     public static function ucPengenceran(): float
     {
-        return sqrt(
-            (self::U95_MICROPIPETTE_ML / 2) ** 2 + (self::U95_LABU_UKUR_ML / 2) ** 2
-        ) / 1000;
+        $mikro = TabelStandarPengenceran::nilai(TabelStandarPengenceran::CHLORINE, 'u95_micropipette_ml');
+        $labu = TabelStandarPengenceran::nilai(TabelStandarPengenceran::CHLORINE, 'u95_labu_ukur_ml');
+
+        return sqrt(($mikro / 2) ** 2 + ($labu / 2) ** 2) / 1000;
     }
 
     /**

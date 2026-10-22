@@ -18,7 +18,7 @@ class SkemaAcuanProfilTest extends TestCase
     use PeriksaSkemaAcuan;
 
     /** Profil yang sudah dipindah ke Studio, urut registry (bukan urut migrasi). Menambah = keputusan yang terlihat di diff. */
-    public const BERSKEMA = ['kalibrator_suhu', 'tids', 'enclosure', 'suhu_3alat', 'timbangan', 'timer_stopwatch', 'putaran', 'micrometer', 'height_gauge', 'flowmeter', 'anak_timbangan', 'dial_indicator', 'jangka_sorong', 'sieve', 'volumetric', 'gaya', 'tekanan', 'piston_volume'];
+    public const BERSKEMA = ['chlorine_meter', 'do_meter', 'kalibrator_suhu', 'tids', 'enclosure', 'suhu_3alat', 'timbangan', 'timer_stopwatch', 'putaran', 'micrometer', 'height_gauge', 'flowmeter', 'anak_timbangan', 'dial_indicator', 'jangka_sorong', 'sieve', 'volumetric', 'gaya', 'tekanan', 'piston_volume'];
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 

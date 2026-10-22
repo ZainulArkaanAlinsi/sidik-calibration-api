@@ -1,0 +1,40 @@
+{
+ "format": 1,
+ "kode_profil": "chlorine_meter",
+ "sumber_json": "tabel-standar-chlorine-meter.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-pengenceran.py (chlorine_meter); dulu konstanta kode profil (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/instrument-analiitk/Master_Olah_Data_Chlorine_Meter sebaris dengan .xlsm di sel ini; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "W20 = 0,89 µL; master memakai PERHITUNGAN U95%!Q12 = W20/1000 (mL, Excel 0.0008900000000000001) — dibagi 1000 lalu dibulatkan 10 desimal = 0.00089, angka kode lama."
+ ],
+ "lembar_wajib": [
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!S20",
+   "teks": "Micropippete"
+  },
+  {
+   "sel": "DATABASE!S21",
+   "teks": "Labu Ukur"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "pengenceran.u95_micropipette_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!W20",
+   "bagi": 1000,
+   "bulat": 10
+  },
+  {
+   "jalur": "pengenceran.u95_labu_ukur_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!W21"
+  }
+ ],
+ "tidak_dipetakan": [
+  "CI faktor pengenceran (ChlorineProfile::CI_PENGENCERAN = PERHITUNGAN U95%!W25 = AE11/100*C20) — turunan rumus dari Uc dan titik contoh sesi master (C20 = 1,74; W40 menyalin W25), lapis 2, tetap kode.",
+  "_sumber — dokumentasi."
+ ]
+}

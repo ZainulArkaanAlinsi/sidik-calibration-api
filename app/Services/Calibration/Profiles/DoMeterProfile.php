@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarPengenceran;
 
 /**
  * Profil DO Meter (alat ke-9). Metode `SIDIK-IK-CAL-0530_Rev.2`, form
@@ -84,18 +85,9 @@ class DoMeterProfile extends CalibrationProfile
      */
     private const TOLERANSI_TITIK = 0.05;
 
-    /**
-     * U95% micropipette & labu ukur dari kepala sheet `PERHITUNGAN U95%`
-     * (DATABASE `V17`/`V18`, dua-duanya k=2), dipakai [ucPengenceran].
-     *
-     * CATATAN satuan: `V17` di sheet = 0,89 dan dibagi 1000 di dalam rumus
-     * (`Q16 = V17/2/1000`), jadi kontribusi micropipette-nya 0,000445. Ditulis
-     * apa adanya (0,89) biar sejajar sama sheet; pembagian /1000-nya di
-     * [ucPengenceran].
-     */
-    public const U95_MICROPIPETTE = 0.89;
-
-    public const U95_LABU_UKUR = 0.033;
+    // U95% micropipette (µL, `V17`; dibagi 1000 di dalam rumus `Q16 = V17/2/1000`)
+    // & labu ukur (mL, `V18`), k=2, dipakai [ucPengenceran] — kini data acuan
+    // lapis 1: `TabelStandarPengenceran` (paket `do_meter`).
 
     /**
      * Satu titik DO yang lab BENERAN punya CMC-nya (DATABASE `S5`). Lihat
@@ -149,6 +141,12 @@ class DoMeterProfile extends CalibrationProfile
     public function kode(): string
     {
         return 'do_meter';
+    }
+
+    /** Lapis 1: U95 micropipette & labu ukur (`tabel-standar-do-meter.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarPengenceran::skemaAcuan(TabelStandarPengenceran::DO_METER);
     }
 
     public function namaAlatKemampuan(): string
@@ -278,9 +276,10 @@ class DoMeterProfile extends CalibrationProfile
      */
     public static function ucPengenceran(): float
     {
-        return sqrt(
-            (self::U95_MICROPIPETTE / 2 / 1000) ** 2 + (self::U95_LABU_UKUR / 2) ** 2
-        );
+        $mikro = TabelStandarPengenceran::nilai(TabelStandarPengenceran::DO_METER, 'u95_micropipette_ul');
+        $labu = TabelStandarPengenceran::nilai(TabelStandarPengenceran::DO_METER, 'u95_labu_ukur_ml');
+
+        return sqrt(($mikro / 2 / 1000) ** 2 + ($labu / 2) ** 2);
     }
 
     /**
