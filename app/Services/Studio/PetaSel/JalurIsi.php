@@ -22,7 +22,8 @@ final class JalurIsi
         $segmen = [];
 
         foreach (explode('.', $jalur) as $s) {
-            if (preg_match('/^([a-z0-9_]+)(?:\[(?:kode=([A-Za-z0-9_\-]+)|(\d+))\])?$/', $s, $m) !== 1) {
+            // Kunci objek boleh berspasi & huruf besar (`cmc.Labu Ukur`); titik tetap pemisah.
+            if (preg_match('/^([A-Za-z0-9_](?:[A-Za-z0-9_ ]*[A-Za-z0-9_])?)(?:\[(?:kode=([A-Za-z0-9_\-]+)|(\d+))\])?$/', $s, $m) !== 1) {
                 return null;
             }
 

@@ -38,12 +38,6 @@ final class PemeriksaMaster
     {
         $p = $peta->isi;
         $masalah = [];
-        $indeks = $this->indeksLembar($lembar, $p['lembar_wajib'], $masalah);
-
-        foreach ($p['jangkar'] as $j) {
-            $this->periksaJangkar($indeks, (string) $j['sel'], (string) $j['teks'], $masalah);
-        }
-
         $varian = null;
 
         if (isset($p['varian'])) {
@@ -55,6 +49,14 @@ final class PemeriksaMaster
             }
         }
 
+        // Butir ber-`varian` (lembar/jangkar/ekstrak/cek yang cuma ada di satu
+        // varian master) disaring dulu; varian tak dikenali = butir umum saja.
+        $indeks = $this->indeksLembar($lembar, PetaSel::lembarUntukVarian($p['lembar_wajib'], $varian), $masalah);
+
+        foreach (PetaSel::untukVarian($p['jangkar'], $varian) as $j) {
+            $this->periksaJangkar($indeks, (string) $j['sel'], (string) $j['teks'], $masalah);
+        }
+
         $isi = $dasar;
         $jalurDitulis = [];
 
@@ -62,7 +64,7 @@ final class PemeriksaMaster
         // di lembar yang hilang atau sesudah jangkar bergeser cuma menambah
         // pesan turunan yang menutupi penyebabnya.
         if ($masalah === []) {
-            foreach ($p['ekstrak'] as $e) {
+            foreach (PetaSel::untukVarian($p['ekstrak'], $varian) as $e) {
                 foreach ($this->ulangan($e) as [$i, $geser]) {
                     $jalur = PetaSel::isiJalur((string) $e['jalur'], $varian, $i);
 
@@ -81,7 +83,7 @@ final class PemeriksaMaster
                 }
             }
 
-            foreach (($p['cek'] ?? []) as $c) {
+            foreach (PetaSel::untukVarian($p['cek'] ?? [], $varian) as $c) {
                 foreach ($this->ulangan($c) as [$i, $geser]) {
                     $this->cekSelisih($indeks, $c, $geser, PetaSel::isiJalur((string) $c['banding'], $varian, $i), $isi, $masalah);
                 }
@@ -116,7 +118,7 @@ final class PemeriksaMaster
     public function ekstrakLain(PetaSel $peta, array $lembar, array $ekstrak, array $dasarLain): array
     {
         $masalah = [];
-        $indeks = $this->indeksLembar($lembar, $peta->isi['lembar_wajib'], $masalah);
+        $indeks = $this->indeksLembar($lembar, PetaSel::lembarUntukVarian($peta->isi['lembar_wajib'], null), $masalah);
         $isi = $dasarLain;
         $jalurDitulis = [];
 
@@ -316,37 +318,98 @@ final class PemeriksaMaster
                 return $peta;
 
             case 'daftar_objek':
-                $rentang = array_map(static fn (string $r): array => Alamat::urai($r), $e['kolom']);
-                $rk = $rentang[$e['kunci']];
-                $daftar = [];
-
-                for ($b = $rk['b1'] + $geser; $b <= $rk['b2'] + $geser; $b++) {
-                    $alamatKunci = Alamat::sel($rk['lembar'], $rk['k1'], $b);
-
-                    // Baris ber-kunci kosong dilewati (generator: `if n == "": continue`).
-                    if ($this->angkaBoleh($this->sel($indeks, $rk['lembar'], $rk['k1'], $b), $alamatKunci, $bulat, $masalah, $bagi) === null) {
-                        continue;
-                    }
-
-                    $baris = [];
-
-                    foreach ($rentang as $nama => $r) {
-                        $baris[$nama] = $this->angkaWajib($this->sel($indeks, $r['lembar'], $r['k1'], $b), Alamat::sel($r['lembar'], $r['k1'], $b), $bulat, $masalah, $bagi);
-                    }
-
-                    $daftar[] = $baris;
-                }
-
-                $min = (int) ($e['min_baris'] ?? 1);
-
-                if (count($daftar) < $min) {
-                    $masalah[] = "{$e['jalur']}: hanya ".count($daftar)." baris berisi, minimal {$min}";
-                }
-
-                return $daftar;
+                return $this->daftarObjek($indeks, $e, $geser, $masalah);
         }
 
         return null;
+    }
+
+    /**
+     * List objek dari baris rentang ([PetaSel] `daftar_objek`). Kolom sejajar
+     * per POSISI baris (awal boleh beda, jumlah sama). Baris dilewati bila
+     * kolom `lewati_kolom` (bawaan: kunci) kosong — atau, dengan
+     * `lewati_jika: bukan_angka`, bukan angka (meniru `angka(..) is None`
+     * generator, mis. label "Now date :" di tabel CMC Volumetric). Kolom lain
+     * wajib terisi sesuai tipenya. `urut` mengurutkan naik (stabil).
+     *
+     * @param  array<string, array<string, array<string, mixed>>>  $indeks
+     * @param  array<string, mixed>  $e
+     * @param  list<string>  $masalah
+     * @return list<array<string, mixed>>
+     */
+    private function daftarObjek(array $indeks, array $e, int $geser, array &$masalah): array
+    {
+        $kolom = [];
+
+        foreach ($e['kolom'] as $nama => $spek) {
+            if (is_array($spek) && array_key_exists('nilai_tetap', $spek)) {
+                $kolom[$nama] = ['tetap' => true, 'nilai' => $spek['nilai_tetap']];
+
+                continue;
+            }
+
+            $kolom[$nama] = [
+                'tetap' => false,
+                'r' => Alamat::urai((string) (is_array($spek) ? $spek['rentang'] : $spek)),
+                'tipe' => is_array($spek) ? ($spek['tipe'] ?? 'angka') : 'angka',
+            ];
+        }
+
+        $lewati = (array) ($e['lewati_kolom'] ?? [$e['kunci']]);
+        $bukanAngka = ($e['lewati_jika'] ?? 'kosong') === 'bukan_angka';
+        $jumlah = $kolom[$e['kunci']]['r']['b2'] - $kolom[$e['kunci']]['r']['b1'];
+        $daftar = [];
+
+        for ($n = 0; $n <= $jumlah; $n++) {
+            $sel = static fn (array $k): array => [
+                $k['r']['lembar'],
+                $k['r']['k1'],
+                $k['r']['b1'] + $geser + $n,
+            ];
+
+            foreach ($lewati as $l) {
+                [$lb, $kk, $bb] = $sel($kolom[$l]);
+                $c = $this->sel($indeks, $lb, $kk, $bb);
+                $angka = is_int($c['n'] ?? null) || is_float($c['n'] ?? null);
+
+                if ($bukanAngka ? ! $angka : ($c === null || (! $angka && trim((string) ($c['s'] ?? '')) === ''))) {
+                    continue 2;
+                }
+            }
+
+            $baris = [];
+
+            foreach ($kolom as $nama => $k) {
+                if ($k['tetap']) {
+                    $baris[$nama] = $k['nilai'];
+
+                    continue;
+                }
+
+                [$lb, $kk, $bb] = $sel($k);
+                $c = $this->sel($indeks, $lb, $kk, $bb);
+                $alamat = Alamat::sel($lb, $kk, $bb);
+                $baris[$nama] = $k['tipe'] === 'teks'
+                    ? $this->teks($c, $alamat, $masalah)
+                    : $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah);
+            }
+
+            $daftar[] = $baris;
+        }
+
+        if (isset($e['urut'])) {
+            $u = (string) $e['urut'];
+            // usort PHP 8 stabil: baris bernilai sama mempertahankan urutan sel.
+            usort($daftar, static fn (array $a, array $b): int => ($a[$u] ?? 0) <=> ($b[$u] ?? 0));
+        }
+
+        $min = (int) ($e['min_baris'] ?? 1);
+
+        if (count($daftar) < $min) {
+            $masalah[] = "{$e['jalur']}: hanya ".count($daftar)." baris berisi, minimal {$min}";
+        }
+
+        return $daftar;
     }
 
     /**
@@ -437,7 +500,9 @@ final class PemeriksaMaster
             return null;
         }
 
-        return $s;
+        // Spasi tepi dibuang, seperti `.strip()` semua generator
+        // (`'SIDIK/134/2024   '` di neraca Volumetric).
+        return trim($s);
     }
 
     /**

@@ -145,12 +145,42 @@ final class PetaSel
             $m[] = "sumber_json harus '{$skema['sumber_json']}' (skemaAcuan profil)";
         }
 
-        $lembar = $p['lembar_wajib'] ?? null;
+        // Kode varian yang sah untuk filter `varian` per butir (lihat [untukVarian]).
+        $kodeVarian = is_array($p['varian']['pola'] ?? null) ? array_map('strval', array_keys($p['varian']['pola'])) : [];
+        $varianSah = static function (mixed $butir, string $label) use ($kodeVarian): ?string {
+            if (! is_array($butir) || ! array_key_exists('varian', $butir)) {
+                return null;
+            }
 
-        if (! is_array($lembar) || $lembar === [] || ! array_is_list($lembar)
-            || array_filter($lembar, static fn ($l): bool => ! is_string($l) || $l === '') !== []) {
+            $v = $butir['varian'];
+
+            return is_array($v) && $v !== [] && array_is_list($v) && array_diff($v, $kodeVarian) === []
+                ? null
+                : "{$label}: varian harus list kode dari varian.pola (".implode(', ', $kodeVarian).')';
+        };
+
+        $lembarMentah = $p['lembar_wajib'] ?? null;
+        $lembar = [];
+
+        if (! is_array($lembarMentah) || $lembarMentah === [] || ! array_is_list($lembarMentah)) {
             $m[] = 'lembar_wajib harus list nama lembar yang tidak kosong';
-            $lembar = [];
+        } else {
+            foreach ($lembarMentah as $i => $l) {
+                // String, atau {nama, varian} untuk lembar yang cuma ada di varian tertentu.
+                $nama = is_array($l) ? ($l['nama'] ?? null) : $l;
+
+                if (! is_string($nama) || $nama === '') {
+                    $m[] = 'lembar_wajib harus list nama lembar yang tidak kosong';
+
+                    continue;
+                }
+
+                if (($x = $varianSah($l, "lembar_wajib[{$i}]")) !== null) {
+                    $m[] = $x;
+                }
+
+                $lembar[] = $nama;
+            }
         }
 
         $selSah = static function (mixed $alamat, bool $rentang = false) use ($lembar): ?string {
@@ -181,6 +211,10 @@ final class PetaSel
 
                 if (($e = $selSah($j['sel'] ?? null)) !== null) {
                     $m[] = "jangkar[{$i}]: {$e}";
+                }
+
+                if (($e = $varianSah($j, "jangkar[{$i}]")) !== null) {
+                    $m[] = $e;
                 }
             }
         }
@@ -248,6 +282,10 @@ final class PetaSel
         }
 
         foreach ($semuaEkstrak as $label => $e) {
+            if (($x = $varianSah($e, $label)) !== null) {
+                $m[] = $x;
+            }
+
             if (! is_array($e) || ! in_array($e['tipe'] ?? null, self::TIPE_EKSTRAK, true)) {
                 $m[] = "{$label}: tipe harus salah satu ".implode('/', self::TIPE_EKSTRAK);
 
@@ -316,15 +354,28 @@ final class PetaSel
                         break;
                     }
 
-                    if (! is_string($e['kunci'] ?? null) || ! array_key_exists($e['kunci'], $kolom)) {
-                        $m[] = "{$label}: kunci harus salah satu nama di kolom";
-                    }
+                    $rentangKolom = [];
+                    $jumlah = null;
 
-                    $baris = null;
-
-                    foreach ($kolom as $nama => $rentang) {
+                    foreach ($kolom as $nama => $spek) {
                         if (preg_match('/^[a-z0-9_]+$/', (string) $nama) !== 1) {
                             $m[] = "{$label}: nama kolom '{$nama}' tidak sah";
+                        }
+
+                        // `{"nilai_tetap": x}`: kolom yang di varian ini tidak punya sel
+                        // (mis. resolusi neraca Graduated = null) — ditulis apa adanya.
+                        if (is_array($spek) && array_key_exists('nilai_tetap', $spek)) {
+                            if (! is_scalar($spek['nilai_tetap']) && $spek['nilai_tetap'] !== null) {
+                                $m[] = "{$label}.{$nama}: nilai_tetap harus skalar atau null";
+                            }
+
+                            continue;
+                        }
+
+                        $rentang = is_array($spek) ? ($spek['rentang'] ?? null) : $spek;
+
+                        if (is_array($spek) && ! in_array($spek['tipe'] ?? 'angka', ['angka', 'teks'], true)) {
+                            $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks";
                         }
 
                         if (($x = $selSah($rentang, true)) !== null) {
@@ -334,12 +385,33 @@ final class PetaSel
                         }
 
                         $r = Alamat::urai($rentang);
+                        $rentangKolom[(string) $nama] = true;
 
-                        if ($r['k1'] !== $r['k2'] || ($baris !== null && $baris !== [$r['b1'], $r['b2']])) {
-                            $m[] = "{$label}: tiap kolom harus satu kolom dengan baris yang sama";
+                        // Tiap kolom satu kolom sel; baris SEJAJAR (jumlah sama, awal boleh beda —
+                        // dua blok di lembar yang sama, mis. koreksi & U95 kalibrator).
+                        if ($r['k1'] !== $r['k2'] || ($jumlah !== null && $jumlah !== $r['b2'] - $r['b1'])) {
+                            $m[] = "{$label}: tiap kolom harus satu kolom dengan jumlah baris yang sama";
                         }
 
-                        $baris ??= [$r['b1'], $r['b2']];
+                        $jumlah ??= $r['b2'] - $r['b1'];
+                    }
+
+                    if (! is_string($e['kunci'] ?? null) || ! isset($rentangKolom[$e['kunci']])) {
+                        $m[] = "{$label}: kunci harus salah satu nama di kolom";
+                    }
+
+                    if (isset($e['lewati_jika']) && ! in_array($e['lewati_jika'], ['kosong', 'bukan_angka'], true)) {
+                        $m[] = "{$label}: lewati_jika harus kosong/bukan_angka";
+                    }
+
+                    foreach ((array) ($e['lewati_kolom'] ?? []) as $k) {
+                        if (! isset($rentangKolom[$k])) {
+                            $m[] = "{$label}: lewati_kolom '{$k}' bukan kolom bersel";
+                        }
+                    }
+
+                    if (isset($e['urut']) && ! isset($rentangKolom[$e['urut']])) {
+                        $m[] = "{$label}: urut harus nama kolom bersel";
                     }
 
                     if (isset($e['min_baris']) && (! is_int($e['min_baris']) || $e['min_baris'] < 0)) {
@@ -352,6 +424,10 @@ final class PetaSel
 
         foreach (($p['cek'] ?? []) as $i => $c) {
             $label = "cek[{$i}]";
+
+            if (($x = $varianSah($c, $label)) !== null) {
+                $m[] = $x;
+            }
 
             if (! is_array($c) || ($c['tipe'] ?? null) !== 'selisih_maks') {
                 $m[] = "{$label}: tipe harus selisih_maks";
@@ -377,6 +453,36 @@ final class PetaSel
     /**
      * Ganti `{varian}`/`{i}` di jalur.
      */
+    /**
+     * Butir (jangkar/ekstrak/cek) yang berlaku untuk `$varian`: butir tanpa
+     * kunci `varian` berlaku untuk semua; butir ber-`varian` hanya untuk kode
+     * yang disebut — mis. tabel diameter yang cuma ada di master Volumetric
+     * Fixed. Varian tak dikenali (null) = hanya butir umum.
+     *
+     * @param  list<array<string, mixed>>  $butir
+     * @return list<array<string, mixed>>
+     */
+    public static function untukVarian(array $butir, ?string $varian): array
+    {
+        return array_values(array_filter(
+            $butir,
+            static fn (array $b): bool => ! isset($b['varian']) || ($varian !== null && in_array($varian, $b['varian'], true)),
+        ));
+    }
+
+    /**
+     * Nama lembar wajib untuk `$varian` (aturan [untukVarian]).
+     *
+     * @param  list<string|array{nama: string, varian?: list<string>}>  $lembarWajib
+     * @return list<string>
+     */
+    public static function lembarUntukVarian(array $lembarWajib, ?string $varian): array
+    {
+        $butir = array_map(static fn (string|array $l): array => is_array($l) ? $l : ['nama' => $l], $lembarWajib);
+
+        return array_column(self::untukVarian($butir, $varian), 'nama');
+    }
+
     public static function isiJalur(string $jalur, ?string $varian, ?int $i): string
     {
         return str_replace(['{varian}', '{i}'], [(string) $varian, (string) $i], $jalur);

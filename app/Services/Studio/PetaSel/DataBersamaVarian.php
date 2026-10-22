@@ -49,7 +49,8 @@ final class DataBersamaVarian
         foreach ($peta->isi['ekstrak'] as $e) {
             $jalur = (string) $e['jalur'];
 
-            if (! str_contains($jalur, '{varian}') && ! str_contains($jalur, '{i}')) {
+            // Butir ber-`varian` milik varian tertentu saja — bukan data bersama.
+            if (! str_contains($jalur, '{varian}') && ! str_contains($jalur, '{i}') && ! isset($e['varian'])) {
                 $hasil[] = $jalur;
             }
         }

@@ -142,7 +142,7 @@ class StudioPetaSelProfilTest extends TestCase
         $js['ekstrak'][5]['kolom']['u95_mm'] = 'Standar_GB!S11:S132';
         $masalah = implode(' | ', PetaSel::validasi('jangka_sorong', $js));
         $this->assertStringContainsString('ekstrak[5]: kunci harus salah satu nama di kolom', $masalah);
-        $this->assertStringContainsString('ekstrak[5]: tiap kolom harus satu kolom dengan baris yang sama', $masalah);
+        $this->assertStringContainsString('ekstrak[5]: tiap kolom harus satu kolom dengan jumlah baris yang sama', $masalah);
 
         $this->temp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sidik-petasel-'.bin2hex(random_bytes(5));
         (new Filesystem)->copyDirectory(base_path(self::AKAR.'Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator'), $this->temp);
