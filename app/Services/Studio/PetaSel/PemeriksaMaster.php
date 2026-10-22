@@ -408,6 +408,9 @@ final class PemeriksaMaster
                 // Sel kosong di dalam rentang gabungan (merge) = nilai sel
                 // kiri-atasnya, seperti generator (U95 DRUCK07G G10:G17).
                 'gabungan' => is_array($spek) && ($spek['gabungan'] ?? false),
+                // Sel bukan angka (penanda '-' MPE Dispensette single stroke) =
+                // null, meniru `float(s) if isinstance(s, (int, float)) else None`.
+                'bukan_angka_null' => is_array($spek) && ($spek['bukan_angka_jadi_null'] ?? false),
             ];
         }
 
@@ -450,7 +453,7 @@ final class PemeriksaMaster
                     $c = $this->selGabungan($indeks, $lb, $kk, $bb) ?? $c;
                 }
 
-                if ($k['boleh_kosong'] && ($c === null || (! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null) && trim((string) ($c['s'] ?? '')) === ''))) {
+                if (($k['boleh_kosong'] && self::kosong($c)) || ($k['bukan_angka_null'] && ! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null))) {
                     $baris[$nama] = null;
 
                     continue;
@@ -459,6 +462,7 @@ final class PemeriksaMaster
                 $baris[$nama] = match ($k['tipe']) {
                     'teks' => $this->teks($c, $alamat, $masalah),
                     'bilangan_bulat' => $this->bilanganBulat($c, $alamat, $masalah),
+                    'tanggal' => $this->tanggal($c, $alamat, $masalah),
                     default => $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah),
                 };
             }

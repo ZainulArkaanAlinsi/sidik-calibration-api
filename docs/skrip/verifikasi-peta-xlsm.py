@@ -228,7 +228,8 @@ def ekstrak_satu(wb, e, geser, masalah):
                 continue
             r = sp['rentang'] if isinstance(sp, dict) else sp
             kolom[nama] = ('sel', urai(r), (sp.get('tipe', 'angka') if isinstance(sp, dict) else 'angka'), isinstance(sp, dict) and sp.get('boleh_kosong', False),
-                           isinstance(sp, dict) and sp.get('gabungan', False))
+                           isinstance(sp, dict) and sp.get('gabungan', False),
+                           isinstance(sp, dict) and sp.get('bukan_angka_jadi_null', False))
         kunci = kolom[e['kunci']][1]
         n = kunci[4] - kunci[2]
         lewati = e.get('lewati_kolom', [e['kunci']])
@@ -253,10 +254,12 @@ def ekstrak_satu(wb, e, geser, masalah):
                 v = v_of(spec)
                 if spec[4] and kosong(v):
                     v = gabungan(wb, spec[1], geser + i, v)
-                if spec[3] and kosong(v):
+                if (spec[3] and kosong(v)) or (spec[5] and angka(v) is None):
                     baris[nama] = None
                 elif spec[2] == 'teks':
                     baris[nama] = teks(v)
+                elif spec[2] == 'tanggal':
+                    baris[nama] = tanggal(v)
                 elif spec[2] == 'bilangan_bulat':
                     x = angka(v)
                     if x is None or not x.is_integer():

@@ -9,11 +9,13 @@ use App\Services\Acuan\SumberAcuan;
 use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
+use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
+use App\Services\Calibration\TabelStandarPistonVolume;
 use App\Services\Calibration\TabelStandarPutaran;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TabelStandarVolumetric;
@@ -333,6 +335,57 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
             $this->assertSame($a[$v]['satuan'], $b[$v]['satuan'], $v);
         }
 
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Piston Volume: satu paket untuk Piston Pipette, Dispensett, Buret Digital. */
+    public function test_piston_volume_v1_setara_json(): void
+    {
+        $v1 = $this->v1('piston_volume');
+
+        [$a, $b] = $this->duaJalur('piston_volume', $v1, function (): array {
+            $t = TabelStandarPistonVolume::class;
+            $h = [
+                'nama' => $t::namaTimbangan(),
+                'indeks' => $t::indeksSuhu(),
+                'termometer' => $t::termometer(),
+                'u95' => [$t::u95Termometer(), $t::u95Sensor()],
+                'konstanta' => $t::konstanta(),
+            ];
+
+            foreach ($t::namaTimbangan() as $n) {
+                $h['timbangan'][$n] = $t::timbangan($n);
+            }
+
+            foreach ([-20.0, 0.0, 21.4, 25.0, 50.0, 199.0] as $suhu) {
+                $i = $t::indeksSuhuTerdekat($suhu);
+                $h['suhu'][] = [$i, $t::koreksiMeter($i), $t::koreksiSensor($i)];
+            }
+
+            foreach (['buret_digital', 'piston_pipette', 'dispensett'] as $jenis) {
+                $h['cmc_maks'][$jenis] = $t::kapasitasMaksCmc($jenis);
+
+                foreach ([0.5, 1.0, 5.0, 10.0, 50.0, 100.0] as $ml) {
+                    $h['cmc'][$jenis][] = $t::cmc($jenis, $ml);
+                }
+            }
+
+            foreach ([['piston_pipette', null], ['buret_digital', 'hand_driven'], ['buret_digital', 'motor_driven'], ['dispensett', 'single_stroke'], ['dispensett', 'multi_stroke']] as [$jenis, $sub]) {
+                foreach ([0.001, 0.01, 1.0, 10.0, 100.0] as $ml) {
+                    $h['mpe'][] = $t::mpe($jenis, $sub, $ml);
+                }
+            }
+
+            // Sesi master (masukan `PistonVolumeMasterTest`), kedua mode.
+            foreach (json_decode((string) file_get_contents(database_path('data/sesi-master-piston-volume.json')), true)['sesi'] as $kel => $s) {
+                foreach ([PistonVolumeCalculator::MODE_MASTER, PistonVolumeCalculator::MODE_BENAR] as $mode) {
+                    $h['hitung'][$kel][$mode] = (new PistonVolumeCalculator)->hitungSesi($s['masukan'], $mode);
+                }
+            }
+
+            return $h;
+        });
+        $this->assertSame([$a['nama'], $a['indeks']], [$b['nama'], $b['indeks']]);
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 

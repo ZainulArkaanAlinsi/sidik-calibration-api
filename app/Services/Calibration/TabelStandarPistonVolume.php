@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -28,9 +29,6 @@ class TabelStandarPistonVolume
     public const MOTOR_DRIVEN = 'motor_driven';
 
     public const HAND_DRIVEN = 'hand_driven';
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /** @return array<string, mixed>|null */
     public static function timbangan(string $nama): ?array
@@ -192,27 +190,25 @@ class TabelStandarPistonVolume
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-piston-volume.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar piston volume nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `piston_volume`: tidak di-cache di kelas ini — cache-nya di
+        // SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('piston_volume', $berkas);
 
         if (! is_array($isi) || ! isset($isi['timbangan'], $isi['koreksi_meter_suhu'], $isi['cmc'], $isi['mpe'], $isi['konstanta'])) {
             throw new RuntimeException("Tabel standar piston volume rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 
     public static function lupakan(): void
     {
-        self::$data = null;
+        SumberAcuan::lupakanCache();
     }
 }

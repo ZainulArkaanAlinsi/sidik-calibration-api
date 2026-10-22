@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Studio\PetaSel\PetaSel;
 use App\Support\FlowmeterMentah;
+use App\Support\PistonVolumeMentah;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -66,6 +67,7 @@ class StudioFormatSertifikatTest extends TestCase
     public static function kasus(): array
     {
         $flow = static fn (string $mode): array => [FlowmeterMentah::KUNCI_SESI => ['mode' => $mode, 'varian_metode' => 'ufm']];
+        $piston = static fn (string $keluarga): array => [PistonVolumeMentah::KUNCI_SESI => ['keluarga' => $keluarga]];
 
         return [
             'micrometer' => ['micrometer', [['A', 'micrometer', 10.0, []], ['B', 'micrometer', 30.0, []], ['C', 'micrometer', 60.0, []], ['D', 'micrometer', 80.0, []]]],
@@ -77,6 +79,7 @@ class StudioFormatSertifikatTest extends TestCase
             'gaya' => ['gaya', [['utm', 'utm', 10.0, []], ['load_cell', 'load_cell', 10.0, []], ['proving_ring', 'proving_ring', 10.0, []]]],
             'putaran' => ['putaran', [['tachometer', 'tachometer', 500.0, []], ['tachometer', 'tachometer', 20000.0, []], ['centrifuge', 'centrifuge', 500.0, []]]],
             'timer_stopwatch' => ['timer_stopwatch', [[null, 'timer_stopwatch', 60.0, []]]],
+            'piston_volume' => ['piston_volume', [['fixed', 'piston_pipette', 1.0, $piston('fixed')], ['fixed', 'dispensett', 10.0, $piston('fixed')], ['graduated', 'buret_digital', 10.0, $piston('graduated')]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, []], ['druck13g', 'pressure_gauge', 100.0, []], ['spmk', 'pressure_gauge', 5.0, []], ['differential', 'differential_pressure', 2.0, []]]],
         ];
     }

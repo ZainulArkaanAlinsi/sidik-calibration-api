@@ -157,6 +157,22 @@
    "ukuran_byte": 1175552,
    "terverifikasi": true,
    "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "piston_volume",
+   "berkas": "Master Olah Data_Fixed Piston Volume.xlsm",
+   "sha256": "228991d120343995d2a6c70a79739230bf1a7a203845a30970ae864f86e90491",
+   "ukuran_byte": 321536,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "piston_volume",
+   "berkas": "Master Olah Data_Graduated Piston Volume.xlsm",
+   "sha256": "c09a6efdb172a730eb47108812a463c8dbd19f65ed40b092e5de22035238b036",
+   "ukuran_byte": 314880,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
   }
  ]
 }
