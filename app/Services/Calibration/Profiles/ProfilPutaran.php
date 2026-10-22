@@ -65,6 +65,123 @@ abstract class ProfilPutaran extends CalibrationProfile
             .'(baris lembar dibaca per blok rentang).');
     }
 
+    public function kodePaketAcuan(): string
+    {
+        return 'putaran';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Putaran (Centrifuge & Tachometer)';
+    }
+
+    /**
+     * Skema `tabel-standar-putaran.json` — sama untuk Centrifuge & Tachometer
+     * (satu tabel, satu paket `putaran`). Alamat dari
+     * `docs/skrip/gen-tabel-standar-waktu-frekuensi.py` (peta sel
+     * `database/data/peta-sel/putaran.json`). Kolom turunan generator (rentang,
+     * maks, dihitung_master) ber-`asal` null; sel sumbernya dijaga `cek` peta.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-putaran.json',
+            'lembar' => [
+                [
+                    'kode' => 'standar',
+                    'label' => 'Identitas tachometer standar',
+                    'jalur' => 'standar',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'SERTIFIKAT KALIBRATOR!C1'),
+                        $kolom('merk', 'Merk', 'teks', null, 'SERTIFIKAT KALIBRATOR!C2'),
+                        $kolom('resolusi', 'Resolusi', 'teks', 'rpm', 'SERTIFIKAT KALIBRATOR!C3'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'SERTIFIKAT KALIBRATOR!C4'),
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, 'SERTIFIKAT KALIBRATOR!C5'),
+                        $kolom('traceability', 'Ketertelusuran', 'teks', null, null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'sertifikat',
+                    'label' => 'Sertifikat standar',
+                    'jalur' => 'sertifikat',
+                    'jenis' => 'daftar',
+                    'kunci' => 'nominal',
+                    'kolom' => [
+                        $kolom('nominal', 'Nominal', 'desimal', 'rpm', 'SERTIFIKAT KALIBRATOR!C9:C21'),
+                        $kolom('uut', 'Penunjukan', 'desimal', 'rpm', 'SERTIFIKAT KALIBRATOR!D9:D21'),
+                        $kolom('koreksi', 'Koreksi', 'desimal', 'rpm', 'SERTIFIKAT KALIBRATOR!E9:E21'),
+                        $kolom('u95', 'U95', 'desimal_kosong', 'rpm', 'SERTIFIKAT KALIBRATOR!F9:F21'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift',
+                    'label' => 'Drift — ringkasan (turunan)',
+                    'jalur' => 'drift',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('hari_master', 'Jumlah hari master', 'bulat', 'hari', 'Drift Std Kalibrator!L8'),
+                        $kolom('rentang_maks_master', 'Rentang maks (baris dihitung master)', 'desimal', 'rpm', null),
+                        $kolom('rentang_maks_lengkap', 'Rentang maks (semua baris)', 'desimal', 'rpm', null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_snapshot',
+                    'label' => 'Drift — riwayat kalibrasi standar',
+                    'jalur' => 'drift/snapshot',
+                    'jenis' => 'daftar',
+                    'kunci' => 'kolom',
+                    'kolom' => [
+                        $kolom('kolom', 'Kolom master', 'teks', null, null),
+                        $kolom('tanggal', 'Tanggal', 'tanggal', null, 'Drift Std Kalibrator!D10:J10'),
+                        $kolom('lab', 'Laboratorium', 'teks', null, 'Drift Std Kalibrator!D9:J9'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_titik',
+                    'label' => 'Drift — titik',
+                    'jalur' => 'drift/titik',
+                    'jenis' => 'daftar',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nominal', 'Nominal', 'desimal', 'rpm', 'Drift Std Kalibrator!C13:C34'),
+                        $kolom('rentang', 'Rentang koreksi (turunan)', 'desimal', 'rpm', null),
+                        $kolom('dihitung_master', 'Dihitung master', 'boolean', null, null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_koreksi',
+                    'label' => 'Drift — koreksi per riwayat',
+                    'jalur' => 'drift/titik/*/koreksi',
+                    'jenis' => 'baris',
+                    'kunci' => 'kolom',
+                    'kolom' => [
+                        $kolom('kolom', 'Kolom master', 'teks', null, null),
+                        $kolom('koreksi', 'Koreksi', 'desimal', 'rpm', 'Drift Std Kalibrator!D13:J34'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public const KODE_METODE = 'SIDIK-IK-CAL-0511_Rev.6';
 
     public const SATUAN = 'rpm';

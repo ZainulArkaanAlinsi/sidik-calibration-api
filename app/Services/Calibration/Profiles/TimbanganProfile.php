@@ -84,6 +84,76 @@ class TimbanganProfile extends CalibrationProfile
         return 'timbangan';
     }
 
+    public function namaPaketAcuan(): string
+    {
+        return 'Timbangan (master gram, kg & substitusi)';
+    }
+
+    /**
+     * Skema `tabel-standar-timbangan.json` untuk Studio Data Acuan. Alamat
+     * dibuktikan peta sel `database/data/peta-sel/timbangan.json` terhadap
+     * ketiga master .xlsm asli dan ekspor CSV-nya. Tiap varian (gram/kg/
+     * substitusi) = tabel anak timbangan SENDIRI (snapshot sertifikat yang
+     * berbeda untuk keping fisik yang sama — lihat [TabelStandarTimbangan]).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+        $S = 'STANDAR_AT';
+        $daftar = [];
+
+        foreach (['gram' => 'g', 'kg' => 'kg', 'substitusi' => 'kg'] as $varian => $basis) {
+            $daftar[] = $lembar("{$varian}_basis", "Master {$varian} — satuan basis", "varian/{$varian}", 'objek', null, [
+                $kolom('basis', 'Satuan basis', 'teks', null, "{$S}!N4"),
+            ]);
+
+            foreach (['e2' => [5, 19, 'E2'], 'f1' => [20, 45, 'F1/F2/M2']] as $blok => [$b0, $b1, $kelas]) {
+                $r = static fn (string $k): string => "{$S}!{$k}{$b0}:{$k}{$b1}";
+                // Kolom `u` di master bersatuan seperseribu basis (mg untuk g, g untuk kg).
+                $daftar[] = $lembar("{$varian}_{$blok}", "Master {$varian} — anak timbangan {$kelas}", "varian/{$varian}/{$blok}", 'daftar', null, [
+                    $kolom('nominal', 'Massa nominal', 'desimal', $basis, $r('N')),
+                    $kolom('duplikat', 'Keping kedua (nominal ber-bintang)', 'boolean', null, $r('N')),
+                    $kolom('konvensional', 'Massa konvensional', 'desimal', $basis, $r('O')),
+                    $kolom('koreksi', 'Koreksi', 'desimal', $basis, $r('P')),
+                    $kolom('u', 'Ketidakpastian', 'desimal', $basis === 'g' ? 'mg' : 'g', $r('Q')),
+                    $kolom('u_drift', 'Drift', 'desimal', $basis, $r('R')),
+                ]);
+            }
+        }
+
+        $daftar[] = $lembar('cmc', 'Pita CMC (A..Q)', 'cmc', 'daftar', 'kode', [
+            $kolom('kode', 'Kode pita', 'teks', null, 'DATABASE!R5:R21'),
+            $kolom('rentang', 'Rentang', 'teks', 'kg', 'DATABASE!S5:S21'),
+            $kolom('cmc_gram', 'CMC', 'desimal', 'g', 'DATABASE!T5:T21'),
+            // Ambang rantai IF `INPUT DATA!E4`, bukan sel tabel; pita Q JSON 2000.001
+            // lawan rumus master `<=2000` — dikonfirmasi lab sebelum disunting.
+            $kolom('maks_kg', 'Batas atas pita', 'desimal', 'kg', 'INPUT DATA!E4', true),
+        ]);
+        $daftar[] = $lembar('drift_keluarga', 'Drift keluarga anak timbangan (latest record)', 'drift_keluarga', 'daftar', 'maks_kg', [
+            $kolom('maks_kg', 'Nominal maks indeks standar', 'desimal', 'kg', "{$S}!N51:N55"),
+            $kolom('standar', 'Kelompok standar', 'teks', null, "{$S}!O51:O55"),
+            $kolom('u_drift', 'U drift', 'desimal', 'kg', "{$S}!P51:P55"),
+        ]);
+
+        return ['skema_versi' => 1, 'sumber_json' => 'tabel-standar-timbangan.json', 'lembar' => $daftar];
+    }
+
     /**
      * Ejaan PERSIS baris lampiran akreditasi no. 12 — termasuk kurungnya.
      *

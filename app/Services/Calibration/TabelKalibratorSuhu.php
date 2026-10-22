@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+
 /**
  * Tabel koreksi & U95 kalibrator suhu standar lab, dibaca dari
  * `database/data/tabel-kalibrator-suhu.json`.
@@ -75,8 +77,11 @@ class TabelKalibratorSuhu
         'yokogawa' => 'Yokogawa',
     ];
 
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
+    /**
+     * Urutan tipe sensor = urutan kolom master (`C9:J9`). Isi versi DB kanonik
+     * mengurutkan kunci objek; urutan dropdown tidak boleh bergantung sumber isi.
+     */
+    private const URUTAN_TIPE = ['RTD', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S', 'Type J'];
 
     /**
      * Koreksi kalibrator di titik TERDEKAT, plus titik tabel yang menang.
@@ -156,7 +161,9 @@ class TabelKalibratorSuhu
      */
     public function tipeSensorTersedia(string $mode, string $merk): array
     {
-        return array_values(array_keys(self::muat()['mode'][$mode][$merk]['titik'] ?? []));
+        $ada = array_map('strval', array_keys(self::muat()['mode'][$mode][$merk]['titik'] ?? []));
+
+        return [...array_values(array_intersect(self::URUTAN_TIPE, $ada)), ...array_values(array_diff($ada, self::URUTAN_TIPE))];
     }
 
     /**
@@ -270,20 +277,14 @@ class TabelKalibratorSuhu
     }
 
     /**
-     * Isi berkas data, dibaca sekali per proses.
-     *
-     * Statis karena tabel ini konstanta lab, bukan status: satu request bisa
-     * menghitung sembilan titik dan tiap titik memanggil tiga lookup — membaca
-     * ulang 20 KB JSON 27 kali itu pemborosan yang tidak beli apa-apa.
+     * Isi paket `kalibrator_suhu` (kodePaketAcuan TITS). Cache-nya di
+     * SumberAcuan, dikunci (versi, sha256) — bukan statis di kelas ini, supaya
+     * worker panjang tidak menghitung dengan versi lama.
      *
      * @return array<string, mixed>
      */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $path = database_path('data/tabel-kalibrator-suhu.json');
 
         if (! is_file($path)) {
@@ -293,12 +294,18 @@ class TabelKalibratorSuhu
             );
         }
 
-        $isi = json_decode((string) file_get_contents($path), true);
+        $isi = app(SumberAcuan::class)->isi('kalibrator_suhu', $path);
 
         if (! is_array($isi) || ! isset($isi['mode'])) {
             throw new \RuntimeException("Tabel kalibrator suhu di {$path} rusak — kunci `mode` nggak ada.");
         }
 
-        return self::$data = $isi;
+        return $isi;
+    }
+
+    /** Dipakai test yang menukar berkas tabelnya. */
+    public static function lupakan(): void
+    {
+        SumberAcuan::lupakanCache();
     }
 }

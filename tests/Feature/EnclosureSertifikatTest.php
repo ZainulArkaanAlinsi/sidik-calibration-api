@@ -331,6 +331,73 @@ class EnclosureSertifikatTest extends TestCase
     }
 
     /**
+     * K-50-15, temuan F-1 paritas format (22 Okt 2026): master
+     * Constant/Yokogawa memformat Pembacaan Indikator set point ke-5 & ke-6
+     * (`SERTIFIKAT!B33`, `B35`) `0.00` sementara `B25:B31` `0.0`, dan Suhu
+     * Setting ke-5 & ke-6 (`C46:C47`) General sementara `C42:C45` `0.0`.
+     * Format per sel dibekukan di `tests/Fixtures/peta-sel-xlsm/format-sertifikat.json`.
+     * Sesi contoh hanya 4 set point, jadi baris SP4 diduplikasi jadi SP5/SP6.
+     */
+    public function test_set_point_5_dan_6_ikut_format_baris_master(): void
+    {
+        $sesi = $this->sesi('2405.03.AV');
+        $sp4 = $sesi->uncertaintyCalculations()->orderByDesc('titik_ke')->firstOrFail();
+
+        foreach ([5 => [120.0, 120.126], 6 => [140.0, 140.124]] as $ke => [$setting, $indikator]) {
+            $baris = $sp4->replicate();
+            $baris->fill(['titik_ke' => $ke, 'titik_ukur' => $setting, 'rata_rata' => $indikator])->save();
+        }
+
+        $sertifikat = $this->terbitkan($sesi->fresh());
+        $sp = $sertifikat->snapshot['enclosure']['set_point'];
+        $this->assertCount(6, $sp);
+
+        foreach ([0, 1, 2, 3] as $i) {
+            $this->assertArrayNotHasKey('desimal_indikator', $sp[$i], 'SP'.($i + 1).' ikut format kolom (B25 `0.0`)');
+            $this->assertArrayNotHasKey('desimal_setting', $sp[$i]);
+        }
+
+        foreach ([4, 5] as $i) {
+            $this->assertSame(2, $sp[$i]['desimal_indikator'], 'SP'.($i + 1).' B33/B35 `0.00`');
+            $this->assertNull($sp[$i]['desimal_setting'], 'SP'.($i + 1).' C46/C47 General');
+        }
+
+        $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
+        // Sebaran: indikator SP1 `0.0` → `15.0`; SP5/SP6 `0.00` → `120.13` / `140.12`.
+        $this->assertStringContainsString('<td rowspan="2">15.0</td>', $html);
+        $this->assertStringContainsString('<td rowspan="2">120.13</td>', $html);
+        $this->assertStringContainsString('<td rowspan="2">140.12</td>', $html);
+        // Kinerja: setting General `120`, indikator kinerja tetap `E46/E47` `0.0` → `120.1`.
+        $this->assertStringContainsString('<td>120</td>', $html);
+        $this->assertStringContainsString('<td>120.1</td>', $html);
+        $this->assertStringNotContainsString('<td>120.13</td>', $html);
+
+        $berkas = tempnam(sys_get_temp_dir(), 'enc-').'.xlsx';
+
+        try {
+            app(CertificateExcelExporter::class)->satu($sertifikat, $berkas);
+            $reader = new Reader;
+            $reader->open($berkas);
+            $baris = [];
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    $baris[] = $row->toArray();
+                }
+            }
+
+            $reader->close();
+        } finally {
+            @unlink($berkas);
+        }
+
+        $terukur = collect($baris)->filter(fn (array $r): bool => ($r[1] ?? null) === 'Terukur (°C)')->values();
+        $this->assertEqualsWithDelta(15.0, $terukur[0][0], self::TOL);
+        $this->assertEqualsWithDelta(120.13, $terukur[4][0], self::TOL);
+        $this->assertEqualsWithDelta(140.12, $terukur[5][0], self::TOL);
+    }
+
+    /**
      * Termokopel bernomor terkecil kosong di SATU set point: kolomnya kosong
      * di baris itu, angka di kanannya tidak bergeser ke posisi yang salah, dan
      * kepala kolom berhenti mengaku "No. 1 Sensor Acuan".

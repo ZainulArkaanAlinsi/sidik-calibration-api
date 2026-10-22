@@ -143,6 +143,148 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
     }
 
     /** Nominal / Actual / Correction 4 desimal. */
+    /**
+     * Keenam profil Volumetric membaca SATU tabel
+     * (`tabel-standar-volumetric.json`, dua master Fixed & Graduated), jadi
+     * satu paket data acuan — bukan enam salinan yang bisa saling menyimpang.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'volumetric';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Volumetric Glassware (Fixed & Graduated)';
+    }
+
+    /**
+     * Skema `tabel-standar-volumetric.json` untuk Studio Data Acuan — sama
+     * untuk keenam profil (dijaga `SkemaAcuanProfilTest`). Alamat dari
+     * `docs/skrip/gen-tabel-standar-volumetric.py` atas ekspor CSV kedua
+     * master (peta sel `database/data/peta-sel/volumetric.json`; lembar
+     * khusus Fixed/Graduated memakai filter `varian` di peta).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+
+        $cmc = static fn (string $kode, string $nama, string $kNominal, string $kCmc): array => [
+            'kode' => 'cmc_'.$kode,
+            'label' => "CMC {$nama}",
+            'jalur' => "cmc/{$nama}",
+            'jenis' => 'daftar',
+            'kunci' => 'nominal_ml',
+            'kolom' => [
+                $kolom('nominal_ml', 'Kapasitas', 'desimal', 'ml', "DATABASE!{$kNominal}5:{$kNominal}16"),
+                $kolom('cmc_ml', 'CMC', 'desimal', 'ml', "DATABASE!{$kCmc}5:{$kCmc}16"),
+            ],
+            // 12 baris tersedia di master; lampiran akreditasi yang menentukan isinya.
+            'boleh_tambah_baris' => true,
+        ];
+
+        $neraca = static fn (string $varian, ?string $kRes, string $kStdev): array => [
+            'kode' => 'neraca_'.$varian,
+            'label' => 'Neraca standar — '.ucfirst($varian),
+            'jalur' => "neraca/{$varian}",
+            'jenis' => 'daftar',
+            'kunci' => 'nama',
+            'kolom' => [
+                $kolom('nama', 'Nama', 'teks', null, 'DATABASE!V18:V20'),
+                $kolom('merk_type', 'Merk/tipe', 'teks', null, 'DATABASE!W18:W20'),
+                $kolom('serial', 'Nomor seri', 'teks', null, 'DATABASE!X18:X20'),
+                $kolom('u95_g', 'U95', 'desimal', 'g', 'DATABASE!AB18:AB20'),
+                // Master Graduated tidak punya kolom Res. — null, bukan nol.
+                $kolom('resolusi_g', 'Resolusi', 'desimal_kosong', 'g', $kRes),
+                $kolom('stdev_g', 'Simpangan baku', 'desimal', 'g', $kStdev),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-volumetric.json',
+            'lembar' => [
+                $cmc('gelas_ukur', 'Gelas Ukur', 'V', 'W'),
+                $cmc('labu_ukur', 'Labu Ukur', 'X', 'Y'),
+                $cmc('buret', 'Buret', 'Z', 'AA'),
+                $cmc('picnometer', 'Picnometer', 'AB', 'AC'),
+                $cmc('pipet_volume', 'Pipet Volume', 'AD', 'AE'),
+                $cmc('pipet_ukur', 'Pipet Ukur', 'AF', 'AG'),
+                [
+                    'kode' => 'diameter_iso4787',
+                    'label' => 'Diameter internal maksimum tabung (ISO 4787)',
+                    'jalur' => 'diameter_iso4787',
+                    'jenis' => 'daftar',
+                    'kunci' => 'batas_galat_ml',
+                    'kolom' => [
+                        $kolom('batas_galat_ml', 'Batas galat volumetrik', 'desimal', 'ml', 'Tabel_Maximum_Internal_Diameter!A2:A46'),
+                        $kolom('diameter_maks_mm', 'Diameter maksimum', 'desimal', 'mm', 'Tabel_Maximum_Internal_Diameter!B2:B46'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'koefisien_muai',
+                    'label' => 'Koefisien muai bahan',
+                    'jalur' => 'koefisien_muai',
+                    'jenis' => 'daftar',
+                    'kunci' => 'material',
+                    'kolom' => [
+                        $kolom('material', 'Material', 'teks', null, 'Tabel_Koefisien_Muai_Bahan!A3:A16'),
+                        $kolom('gamma_per_c', 'Koefisien muai kubik', 'desimal', '/°C', 'Tabel_Koefisien_Muai_Bahan!B3:B16'),
+                    ],
+                    'boleh_tambah_baris' => true,
+                ],
+                [
+                    'kode' => 'koreksi_kalibrator',
+                    'label' => 'Koreksi & U95 kalibrator suhu (PT100)',
+                    'jalur' => 'koreksi_suhu/kalibrator',
+                    'jenis' => 'daftar',
+                    'kunci' => 'titik_c',
+                    'kolom' => [
+                        $kolom('titik_c', 'Titik', 'desimal', '°C', 'STANDARD_KALIBRATOR!B8:B25'),
+                        $kolom('koreksi_c', 'Koreksi', 'desimal', '°C', 'STANDARD_KALIBRATOR!C8:C25'),
+                        $kolom('u95_c', 'U95', 'desimal_kosong', '°C', 'STANDARD_KALIBRATOR!C29:C46'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'koreksi_sensor_prt',
+                    'label' => 'Koreksi sensor PRT Pt-100',
+                    'jalur' => 'koreksi_suhu/sensor_prt',
+                    'jenis' => 'daftar',
+                    'kunci' => 'titik_c',
+                    'kolom' => [
+                        $kolom('titik_c', 'Titik', 'desimal', '°C', 'FC_Prt_Pt100!A11:A60'),
+                        $kolom('koreksi_c', 'Koreksi', 'desimal', '°C', 'FC_Prt_Pt100!M11:M60'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'u95_suhu',
+                    'label' => 'U95 termometer & sensor',
+                    'jalur' => 'koreksi_suhu/u95',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('termometer_c', 'U95 termometer', 'desimal', '°C', 'DATABASE!AB21'),
+                        $kolom('sensor_c', 'U95 sensor', 'desimal', '°C', 'DATABASE!AB22'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                $neraca('fixed', 'DATABASE!AD18:AD20', 'DATABASE!AE18:AE20'),
+                $neraca('graduated', null, 'DATABASE!AD18:AD20'),
+            ],
+        ];
+    }
+
     public function desimalSertifikat(): ?int
     {
         return 4;

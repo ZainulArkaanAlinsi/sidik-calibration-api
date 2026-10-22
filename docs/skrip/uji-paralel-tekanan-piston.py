@@ -29,7 +29,7 @@ Minimal 5 sesi per alat dengan data yang bervariasi (satuan, rentang, varian,
 tampilan/rasio jarum, sub-jenis); ringkasan akhir memperingatkan kalau kurang.
 
 Pakai:
-    python docs/skrip/uji-paralel-tekanan-piston.py <folder-xlsm> [--kata-sandi spirit285]
+    python docs/skrip/uji-paralel-tekanan-piston.py <folder-xlsm> [--kata-sandi <sandi>]  (default: env SIDIK_MASTER_SANDI)
 
 Keluaran: laporan-uji-paralel-<YYYY-MM-DD>.json & .md di folder masukan.
 Identitas pelanggan TIDAK dibaca dan tidak masuk laporan.

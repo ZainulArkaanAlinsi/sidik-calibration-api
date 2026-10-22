@@ -12,8 +12,8 @@ use UnexpectedValueException;
 /**
  * Satu pintu baca data acuan lapis 1 (Studio Data Acuan, 03-SDD §4, ADR-04).
  *
- * Pemakai hari ini HANYA `TabelStandarMicrometer` (satu-satunya profil yang
- * punya `skemaAcuan()`). Kelas `Tabel*` lain masih membaca
+ * Pemakai: kelas `Tabel*` milik profil yang punya `skemaAcuan()` (daftarnya
+ * dipatok `SkemaAcuanProfilTest::BERSKEMA`). Kelas `Tabel*` lain masih membaca
  * `database/data/*.json` sendiri — angkanya konstanta berkas/kode sampai
  * profilnya dimigrasikan (skemaAcuan + peta sel), bukan "dari Studio".
  * Pemakai kelas ini bertanya dengan kode profil dan path berkasnya.

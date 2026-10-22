@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -62,9 +63,6 @@ class TabelStandarFlowmeter
      * supaya jawabannya cukup diubah di satu tempat.
      */
     public const AMBANG_JARAK_TABEL = 0.10;
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /**
      * Baris tabel standar yang PALING DEKAT ke `$nilai`, atau `null` kalau
@@ -189,10 +187,24 @@ class TabelStandarFlowmeter
         return array_key_exists($satuan, $daftar) && $daftar[$satuan] === null;
     }
 
+    /**
+     * Urutan satuan generator (`gen-tabel-standar-flowmeter.py`) — tampil di
+     * lembar kerja. Dipatok karena isi versi DB kanonik mengurutkan ulang
+     * kunci objek; urutan tidak boleh bergantung sumber isi.
+     */
+    private const URUTAN_SATUAN = [
+        self::MODE_TOTALIZER => ['L', 'm3', 'usg', 'ml', 'kg'],
+        self::MODE_FLOWRATE => ['LPM', 'm3/h', 'usg/min', 'm3/min', 'kg/h', 'kg/min'],
+    ];
+
     /** @return list<string> */
     public function satuanDikenal(string $mode): array
     {
-        return array_keys(self::muat()['satuan'][$this->mode($mode)]);
+        $mode = $this->mode($mode);
+        $ada = array_map('strval', array_keys(self::muat()['satuan'][$mode]));
+        $urutan = self::URUTAN_SATUAN[$mode];
+
+        return [...array_values(array_intersect($urutan, $ada)), ...array_values(array_diff($ada, $urutan))];
     }
 
     /**
@@ -252,17 +264,15 @@ class TabelStandarFlowmeter
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-flowmeter.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar flowmeter nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `flowmeter` (kodePaketAcuan kedua profil Flowmeter). Tidak di-cache
+        // di kelas ini — cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('flowmeter', $berkas);
 
         // Kelimanya diperiksa di sini, bukan di tempat pakai: berkas yang
         // kehilangan salah satu blok meledak di tengah perhitungan satu sesi —
@@ -274,6 +284,6 @@ class TabelStandarFlowmeter
             throw new RuntimeException("Tabel standar flowmeter rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

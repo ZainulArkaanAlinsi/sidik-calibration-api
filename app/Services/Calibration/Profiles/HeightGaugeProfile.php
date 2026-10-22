@@ -522,6 +522,104 @@ class HeightGaugeProfile extends CalibrationProfile
         return self::SATUAN;
     }
 
+    /**
+     * Skema `tabel-standar-height-gauge.json` untuk Studio Data Acuan.
+     *
+     * Alamat sel dari `docs/skrip/gen-tabel-standar-height-gauge.py` (tabel
+     * Outside/Inside) dan ekspor CSV master (identitas standar yang generator
+     * tulis literal) — peta sel: `database/data/peta-sel/height_gauge.json`.
+     * Nominal Outside dipatok kertas (titik pra-cetak), jadi tidak boleh tambah
+     * baris. `perlu_konfirmasi` = pertanyaan lab terbuka
+     * (`docs/pertanyaan-lab-height-gauge.md` §1, §2, §3).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (
+            string $kode,
+            string $label,
+            string $tipe,
+            ?string $satuan,
+            ?string $asal,
+            bool $perluKonfirmasi = false,
+        ): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perluKonfirmasi,
+        ];
+
+        $tabel = static fn (string $kode, string $label, int $baris): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $kode,
+            'jenis' => 'daftar',
+            // Posisi = nomor baris sertifikat Caliper Checker.
+            'kunci' => null,
+            'kolom' => [
+                $kolom('nominal_mm', 'Nominal', 'desimal', 'mm', 'Std_CaliperCek!C'.$baris.':C'.($baris + 9)),
+                $kolom('nilai_terkoreksi_mm', 'Nilai terkoreksi', 'desimal', 'mm', 'Std_CaliperCek!F'.$baris.':F'.($baris + 9)),
+                $kolom('koreksi_um', 'Koreksi', 'desimal', 'µm', 'Std_CaliperCek!I'.$baris.':I'.($baris + 9)),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-height-gauge.json',
+            'lembar' => [
+                [
+                    'kode' => 'standar',
+                    'label' => 'Identitas Caliper Checker',
+                    'jalur' => 'standar',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'Std_CaliperCek!C2'),
+                        $kolom('merk', 'Merk', 'teks', null, 'Std_CaliperCek!C4'),
+                        $kolom('tipe', 'Tipe', 'teks', null, 'Std_CaliperCek!C5'),
+                        $kolom('merk_tipe', 'Merk/tipe', 'teks', null, 'DATABASE!T13'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'Std_CaliperCek!C3'),
+                        // Titik nol umur drift (PERHITUNGAN U95%!K10).
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi standar', 'tanggal', null, 'Std_CaliperCek!O2'),
+                        $kolom('tertelusur', 'Ketertelusuran', 'teks', null, 'Std_CaliperCek!O3'),
+                        $kolom('rentang', 'Rentang ukur', 'teks', null, 'Std_CaliperCek!C6'),
+                        $kolom('u95_um', 'U95 Caliper Checker', 'desimal', 'µm', 'Std_CaliperCek!J10'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                $tabel('outside', 'Caliper Checker — Outside', 10),
+                // Disalin, TIDAK tersambung ke mesin hitung (pertanyaan lab §9).
+                $tabel('inside', 'Caliper Checker — Inside', 23),
+                [
+                    'kode' => 'konstanta',
+                    'label' => 'Konstanta metode',
+                    'jalur' => 'konstanta',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    // Angka telanjang di dalam rumus master — tidak punya sel sendiri.
+                    'kolom' => [
+                        $kolom('suhu_acuan_c', 'Suhu acuan', 'desimal', '°C', null),
+                        $kolom('alpha_per_c', 'α balok & UUT', 'desimal', '/°C', null, true),
+                        $kolom('delta_alpha_per_c', 'Δα rentang muai', 'desimal', '/°C', null, true),
+                        $kolom('drift_a_mm', 'Drift — suku tetap', 'desimal', 'mm', null),
+                        $kolom('drift_b_mm_per_mm', 'Drift — suku per panjang', 'desimal', 'mm/mm', null),
+                        $kolom('drift_pembagi_umur', 'Pembagi umur drift', 'bulat', null, null, true),
+                        $kolom('geometri_mm', 'Kesalahan geometri', 'desimal', 'mm', null),
+                        $kolom('meja_granit_mm', 'Kerataan meja granit', 'desimal', 'mm', null),
+                        $kolom('batas_paralelisme_mm', 'Batas paralelisme', 'desimal', 'mm', null),
+                        $kolom('vi_type_b_normal', 'Derajat kebebasan Type B normal', 'bulat', null, null),
+                        $kolom('vi_type_b_rect', 'Derajat kebebasan Type B rect.', 'bulat', null, null),
+                        $kolom('vi_repeatability', 'Derajat kebebasan pengulangan', 'bulat', null, null),
+                        $kolom('pembagi_muai', 'Pembagi komponen muai', 'desimal', null, null, true),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public function desimalSertifikat(): ?int
     {
         // Lima desimal mm — nilai terkoreksi Caliper Checker master

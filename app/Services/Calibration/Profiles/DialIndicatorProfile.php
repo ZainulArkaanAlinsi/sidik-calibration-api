@@ -354,6 +354,102 @@ class DialIndicatorProfile extends CalibrationProfile
         return self::SATUAN;
     }
 
+    /**
+     * Skema `tabel-standar-dial-indicator.json` untuk Studio Data Acuan.
+     *
+     * Alamat sel dari `docs/skrip/gen-tabel-standar-dial-indicator.py`
+     * (peta sel: `database/data/peta-sel/dial_indicator.json`). Balok ukur
+     * TIDAK di sini: [TabelStandarDialIndicator] membaca balok ukur Micrometer
+     * dari berkas JSON-nya, dan sesi Dial tidak pernah membuka lingkup
+     * `micrometer` (PenentuVersiAcuan).
+     *
+     * `perlu_konfirmasi` = konstanta yang masih pertanyaan lab terbuka
+     * (`docs/pertanyaan-lab-dial-indicator.md` §1, §2, §3, §4, §12).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (
+            string $kode,
+            string $label,
+            string $tipe,
+            ?string $satuan,
+            ?string $asal,
+            bool $perluKonfirmasi = false,
+        ): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perluKonfirmasi,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-dial-indicator.json',
+            'lembar' => [
+                [
+                    'kode' => 'standar',
+                    'label' => 'Identitas standar balok ukur',
+                    'jalur' => 'standar',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'DATABASE!S13'),
+                        $kolom('merk_tipe', 'Merk/tipe', 'teks', null, 'DATABASE!T13'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'DATABASE!U13'),
+                        $kolom('traceability', 'Ketertelusuran', 'teks', null, 'DATABASE!V13'),
+                        // Titik nol umur drift (PERHITUNGAN U95%!K10).
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi standar', 'tanggal', null, 'DATABASE!W13'),
+                        $kolom('interval_tahun', 'Interval kalibrasi', 'bulat', 'tahun', 'DATABASE!X13'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'pita_cmc',
+                    'label' => 'Pita CMC',
+                    'jalur' => 'cmc',
+                    'jenis' => 'daftar',
+                    'kunci' => 'kode',
+                    'kolom' => [
+                        $kolom('kode', 'Kode pita', 'teks', null, null),
+                        $kolom('label', 'Label pita', 'teks', null, 'DATABASE!S5:S8'),
+                        // Ambang `<=` pemilih pita — literal generator, cabang rumus `PERHITUNGAN U95%!AA20`.
+                        $kolom('kapasitas_maks_mm', 'Kapasitas maksimum', 'desimal', 'mm', null),
+                        // µm di DATABASE!T, dibagi 1000 (`PERHITUNGAN U95%!AA20`).
+                        $kolom('u95_mm', 'CMC (U95)', 'desimal', 'mm', 'DATABASE!T5:T8'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'konstanta',
+                    'label' => 'Konstanta metode',
+                    'jalur' => 'konstanta',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    // Angka telanjang di dalam rumus master — sel rumusnya
+                    // disebut di generator, tapi nilainya bukan sel sendiri.
+                    'kolom' => [
+                        $kolom('suhu_acuan_c', 'Suhu acuan', 'desimal', '°C', null),
+                        $kolom('delta_alpha_per_c', 'Δα koefisien muai', 'desimal', '/°C', null),
+                        $kolom('u_alpha_pengali', 'Pengali Uα (2·Δα)', 'desimal', null, null, true),
+                        $kolom('pembagi_muai', 'Pembagi komponen muai', 'desimal', null, null, true),
+                        $kolom('alpha_per_c', 'α standar & UUT', 'desimal', '/°C', null, true),
+                        $kolom('pengulangan_pembagi_n', 'Pembagi n pengulangan', 'bulat', null, null, true),
+                        $kolom('drift_a_um', 'Drift — suku tetap', 'desimal', 'µm', null),
+                        $kolom('drift_b_um_per_mm', 'Drift — suku per panjang', 'desimal', 'µm/mm', null),
+                        $kolom('drift_pembagi_umur', 'Pembagi umur drift', 'bulat', null, null, true),
+                        $kolom('wringing_um_per_keping', 'Wringing per keping', 'desimal', 'µm', null),
+                        $kolom('tegak_lurus_mm', 'Ketegaklurusan', 'desimal', 'mm', null),
+                        $kolom('meja_granit_mm', 'Kerataan meja granit', 'desimal', 'mm', null),
+                        $kolom('vi_type_b', 'Derajat kebebasan Type B', 'bulat', null, null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public function desimalSertifikat(): ?int
     {
         // Lima desimal mm, bukan `0.00` sel master: nilai standar terkoreksi

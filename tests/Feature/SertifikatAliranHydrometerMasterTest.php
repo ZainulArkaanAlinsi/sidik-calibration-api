@@ -98,6 +98,13 @@ class SertifikatAliranHydrometerMasterTest extends TestCase
                     $harapan['u95'] = $u95;
                 }
 
+                // UFM: format U95 relatif dibaca dari `format_sertifikat` peta sel
+                // (K-50-15, 22 Okt 2026) dan ikut dibekukan per baris — sama `0.0`
+                // dengan spesifikasi kolom template, angka cetak tidak berubah.
+                if (in_array('u95_relatif', $kolom, true)) {
+                    $harapan['u95_relatif'] = '0.0';
+                }
+
                 $this->assertEquals($harapan, $baris['format'], "{$nomorSesi}: format sel master {$master}.");
             }
 

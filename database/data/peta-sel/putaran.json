@@ -1,0 +1,775 @@
+{
+ "format": 1,
+ "kode_profil": "putaran",
+ "sumber_json": "tabel-standar-putaran.json",
+ "bukti": [
+  "Alamat = gen-tabel-standar-waktu-frekuensi.py bagian PUTARAN (SERTIFIKAT KALIBRATOR!C1:C5 & C9:F21, Drift Std Kalibrator!C13:J34, D9:J10, L8) atas ekspor CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Waktu_/Master_Olda_{Tachometer,Centrifuge} (22 Okt 2026). Generator membaca .xlsm Tachometer (data_only); kedua CSV identik di sel yang dipetakan kecuali label & isi baris 3 (Res/Accuration).",
+  "Ekstraksi dari kedua CSV = tabel-standar-putaran.json (StudioPetaSelProfilTest). Satu paket 'putaran' untuk centrifuge & tachometer.",
+  "Drift TIDAK diekstrak (rentang/rentang_maks/dihitung_master = turunan generator) tetapi DIJAGA: tiap sel koreksi & nominal baris drift yang jadi titik (15 baris: 13,14,15,16,17,18,20,23,26,27,28,29,30,31,32) dan hari_master L8 diadu ke versi dasar — master dengan data drift lain DITOLAK sampai generator/kode diperbarui.",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
+ ],
+ "lembar_wajib": [
+  "SERTIFIKAT KALIBRATOR",
+  "Drift Std Kalibrator"
+ ],
+ "jangkar": [
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A1",
+   "teks": "Name"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A2",
+   "teks": "Manufacturer"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A4",
+   "teks": "Serial Number"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A5",
+   "teks": "Calibration Date"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!C8",
+   "teks": "Nominal STD"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!D8",
+   "teks": "UUT"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!E8",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!F8",
+   "teks": "Uncertainty"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A3",
+   "teks": "Res",
+   "varian": [
+    "tachometer"
+   ]
+  },
+  {
+   "sel": "Drift Std Kalibrator!K8",
+   "teks": "Jumlah Hari:"
+  },
+  {
+   "sel": "Drift Std Kalibrator!K9",
+   "teks": "Perbedaan Koreksi"
+  },
+  {
+   "sel": "Drift Std Kalibrator!D10",
+   "teks": "2019-05-13T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!E10",
+   "teks": "2020-06-22T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!F10",
+   "teks": "2021-04-05T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!G10",
+   "teks": "2022-05-30T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!H10",
+   "teks": "2023-05-30T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!I10",
+   "teks": "2024-06-14T00:00:00"
+  },
+  {
+   "sel": "Drift Std Kalibrator!J10",
+   "teks": "2025-07-04T00:00:00"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "tachometer": "(^| )tachometer( |$)",
+   "centrifuge": "(^| )centrifuge( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "standar.nama",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C1"
+  },
+  {
+   "jalur": "standar.merk",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C2"
+  },
+  {
+   "jalur": "standar.resolusi",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C3",
+   "varian": [
+    "tachometer"
+   ]
+  },
+  {
+   "jalur": "standar.seri",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C4"
+  },
+  {
+   "jalur": "standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "SERTIFIKAT KALIBRATOR!C5"
+  },
+  {
+   "jalur": "sertifikat",
+   "tipe": "daftar_objek",
+   "kunci": "nominal",
+   "bulat": 10,
+   "kolom": {
+    "nominal": "SERTIFIKAT KALIBRATOR!C9:C21",
+    "uut": "SERTIFIKAT KALIBRATOR!D9:D21",
+    "koreksi": "SERTIFIKAT KALIBRATOR!E9:E21",
+    "u95": {
+     "rentang": "SERTIFIKAT KALIBRATOR!F9:F21",
+     "boleh_kosong": true
+    }
+   },
+   "min_baris": 1
+  }
+ ],
+ "cek": [
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C13",
+   "banding": "drift.titik[0].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D13",
+   "banding": "drift.titik[0].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F13",
+   "banding": "drift.titik[0].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G13",
+   "banding": "drift.titik[0].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C14",
+   "banding": "drift.titik[1].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F14",
+   "banding": "drift.titik[1].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G14",
+   "banding": "drift.titik[1].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H14",
+   "banding": "drift.titik[1].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I14",
+   "banding": "drift.titik[1].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J14",
+   "banding": "drift.titik[1].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C15",
+   "banding": "drift.titik[2].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D15",
+   "banding": "drift.titik[2].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E15",
+   "banding": "drift.titik[2].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F15",
+   "banding": "drift.titik[2].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G15",
+   "banding": "drift.titik[2].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H15",
+   "banding": "drift.titik[2].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I15",
+   "banding": "drift.titik[2].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J15",
+   "banding": "drift.titik[2].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C16",
+   "banding": "drift.titik[3].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E16",
+   "banding": "drift.titik[3].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F16",
+   "banding": "drift.titik[3].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G16",
+   "banding": "drift.titik[3].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H16",
+   "banding": "drift.titik[3].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I16",
+   "banding": "drift.titik[3].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J16",
+   "banding": "drift.titik[3].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C17",
+   "banding": "drift.titik[4].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E17",
+   "banding": "drift.titik[4].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F17",
+   "banding": "drift.titik[4].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G17",
+   "banding": "drift.titik[4].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H17",
+   "banding": "drift.titik[4].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I17",
+   "banding": "drift.titik[4].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J17",
+   "banding": "drift.titik[4].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C18",
+   "banding": "drift.titik[5].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D18",
+   "banding": "drift.titik[5].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E18",
+   "banding": "drift.titik[5].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F18",
+   "banding": "drift.titik[5].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G18",
+   "banding": "drift.titik[5].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H18",
+   "banding": "drift.titik[5].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I18",
+   "banding": "drift.titik[5].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J18",
+   "banding": "drift.titik[5].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C20",
+   "banding": "drift.titik[6].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D20",
+   "banding": "drift.titik[6].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E20",
+   "banding": "drift.titik[6].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C23",
+   "banding": "drift.titik[7].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E23",
+   "banding": "drift.titik[7].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F23",
+   "banding": "drift.titik[7].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G23",
+   "banding": "drift.titik[7].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H23",
+   "banding": "drift.titik[7].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I23",
+   "banding": "drift.titik[7].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J23",
+   "banding": "drift.titik[7].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C26",
+   "banding": "drift.titik[8].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D26",
+   "banding": "drift.titik[8].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E26",
+   "banding": "drift.titik[8].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F26",
+   "banding": "drift.titik[8].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G26",
+   "banding": "drift.titik[8].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H26",
+   "banding": "drift.titik[8].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I26",
+   "banding": "drift.titik[8].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J26",
+   "banding": "drift.titik[8].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C27",
+   "banding": "drift.titik[9].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E27",
+   "banding": "drift.titik[9].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F27",
+   "banding": "drift.titik[9].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G27",
+   "banding": "drift.titik[9].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H27",
+   "banding": "drift.titik[9].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I27",
+   "banding": "drift.titik[9].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J27",
+   "banding": "drift.titik[9].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C28",
+   "banding": "drift.titik[10].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D28",
+   "banding": "drift.titik[10].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E28",
+   "banding": "drift.titik[10].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F28",
+   "banding": "drift.titik[10].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G28",
+   "banding": "drift.titik[10].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H28",
+   "banding": "drift.titik[10].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I28",
+   "banding": "drift.titik[10].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J28",
+   "banding": "drift.titik[10].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C29",
+   "banding": "drift.titik[11].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E29",
+   "banding": "drift.titik[11].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F29",
+   "banding": "drift.titik[11].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G29",
+   "banding": "drift.titik[11].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H29",
+   "banding": "drift.titik[11].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I29",
+   "banding": "drift.titik[11].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J29",
+   "banding": "drift.titik[11].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C30",
+   "banding": "drift.titik[12].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E30",
+   "banding": "drift.titik[12].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F30",
+   "banding": "drift.titik[12].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G30",
+   "banding": "drift.titik[12].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H30",
+   "banding": "drift.titik[12].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I30",
+   "banding": "drift.titik[12].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J30",
+   "banding": "drift.titik[12].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C31",
+   "banding": "drift.titik[13].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E31",
+   "banding": "drift.titik[13].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F31",
+   "banding": "drift.titik[13].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G31",
+   "banding": "drift.titik[13].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H31",
+   "banding": "drift.titik[13].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I31",
+   "banding": "drift.titik[13].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J31",
+   "banding": "drift.titik[13].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!C32",
+   "banding": "drift.titik[14].nominal",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!D32",
+   "banding": "drift.titik[14].koreksi.D",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!E32",
+   "banding": "drift.titik[14].koreksi.E",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!F32",
+   "banding": "drift.titik[14].koreksi.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!G32",
+   "banding": "drift.titik[14].koreksi.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!H32",
+   "banding": "drift.titik[14].koreksi.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!I32",
+   "banding": "drift.titik[14].koreksi.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!J32",
+   "banding": "drift.titik[14].koreksi.J",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Std Kalibrator!L8",
+   "banding": "drift.hari_master",
+   "toleransi": 1e-09
+  }
+ ],
+ "tidak_dipetakan": [
+  "standar.traceability — literal generator ('LK-305-IDN'), bukan sel",
+  "standar.resolusi dari master Centrifuge — sel C3 berlabel 'Accuration' berisi '0.1' (Tachometer: 'Res' '0.1 & 1'); generator membaca Tachometer saja",
+  "drift.snapshot[*].lab — nama lab di Drift Std Kalibrator!D9:J9 DIREDAKSI di ekspor CSV repo; tanggal D10:J10 dipatok jangkar",
+  "drift.titik[*].rentang, drift.rentang_maks_*, drift.titik[*].dihitung_master — TURUNAN (rumus generator), dijaga lewat cek sel sumbernya"
+ ],
+ "perlu_berkas_asli": [
+  "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+ ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!C19:C30"], "format": "0.0", "varian": ["tachometer"], "titik_di_bawah": 10000}, {"kolom": "standar", "sel": ["SERTIFIKAT!C31:C36"], "format": "0", "varian": ["tachometer"], "catatan": "titik >= 10000 rpm", "titik_min": 10000}, {"kolom": "uut", "sel": ["SERTIFIKAT!J19:J30"], "format": "0.0", "varian": ["tachometer"], "titik_di_bawah": 10000}, {"kolom": "uut", "sel": ["SERTIFIKAT!J31:J36"], "format": "0", "varian": ["tachometer"], "catatan": "titik >= 10000 rpm", "titik_min": 10000}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!P19:P36"], "format": "0.0", "varian": ["tachometer"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!S19:S36"], "format": "0.0", "varian": ["tachometer"]}, {"kolom": "k", "sel": ["SERTIFIKAT!U37"], "format": "0", "varian": ["tachometer"]}, {"kolom": "standar", "sel": ["SERTIFIKAT!C19:C33"], "format": "0.0", "varian": ["centrifuge"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!J19:J33"], "format": "0.0", "varian": ["centrifuge"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!P19:P33"], "format": "0.0", "varian": ["centrifuge"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!S19:S33"], "format": "0.0", "varian": ["centrifuge"]}, {"kolom": "k", "sel": ["SERTIFIKAT!U34"], "format": "0", "varian": ["centrifuge"]}]}
+}

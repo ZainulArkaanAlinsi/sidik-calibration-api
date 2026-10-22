@@ -15,6 +15,7 @@ use App\Support\JsonKanonik;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
+use Tests\Unit\SkemaAcuanProfilTest;
 
 /**
  * `php artisan acuan:impor-awal` — rollout Studio Data Acuan tahap 2
@@ -112,7 +113,7 @@ class ImporAwalAcuanTest extends TestCase
 
         $this->artisan('acuan:impor-awal')->assertExitCode(0);
 
-        $this->assertSame(['micrometer'], PaketAcuan::query()->pluck('kode_profil')->all());
+        $this->assertSame(SkemaAcuanProfilTest::BERSKEMA, PaketAcuan::query()->pluck('kode_profil')->all());
     }
 
     public function test_jalan_kedua_tidak_menambah_baris(): void

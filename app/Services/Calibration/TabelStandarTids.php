@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -133,9 +134,6 @@ class TabelStandarTids
         'constant' => 'kalibrator',
         'yokogawa' => 'kalibrator',
     ];
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /**
      * Kanal recorder untuk sebuah (tipe sensor, No. Termokopel).
@@ -356,10 +354,6 @@ class TabelStandarTids
      */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-tids.json');
 
         if (! is_file($berkas)) {
@@ -368,12 +362,20 @@ class TabelStandarTids
             );
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `tids`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini.
+        $isi = app(SumberAcuan::class)->isi('tids', $berkas);
 
         if (! is_array($isi)) {
             throw new RuntimeException("Tabel standar TIDS di {$berkas} bukan JSON yang sah.");
         }
 
-        return self::$data = $isi;
+        return $isi;
+    }
+
+    /** Dipakai test yang menukar berkas tabelnya. */
+    public static function lupakan(): void
+    {
+        SumberAcuan::lupakanCache();
     }
 }

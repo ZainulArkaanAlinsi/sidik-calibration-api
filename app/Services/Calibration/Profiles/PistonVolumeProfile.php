@@ -52,6 +52,121 @@ use InvalidArgumentException;
 abstract class PistonVolumeProfile extends CalibrationProfile
 {
     /**
+     * Piston Pipette, Dispensett, dan Buret Digital membaca SATU tabel
+     * (`tabel-standar-piston-volume.json`, master Fixed & Graduated yang
+     * membawa tabel yang sama) — satu paket data acuan.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'piston_volume';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Piston Volume (Piston Pipette, Dispensett, Buret Digital)';
+    }
+
+    /**
+     * Skema `tabel-standar-piston-volume.json` untuk Studio Data Acuan — sama
+     * untuk ketiga profil. Alamat dari `baca_tabel()` di
+     * `docs/skrip/gen-tabel-standar-piston-volume.py` (peta sel
+     * `database/data/peta-sel/piston_volume.json`, diverifikasi pada kedua
+     * .xlsm asli).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+        $cmc = static fn (string $jenis, string $label, string $k, int $n): array => $lembar("cmc_{$jenis}", "CMC {$label}", "cmc/{$jenis}", 'daftar', null, [
+            $kolom('maks_ml', 'Kapasitas maks pita', 'bulat', 'ml', null),
+            $kolom('nilai_ml', 'CMC', 'desimal', 'ml', "DATABASE!{$k}6:{$k}".(5 + $n)),
+        ]);
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-piston-volume.json',
+            'lembar' => [
+                $lembar('tanaka', 'Densitas air (Tanaka)', 'konstanta/tanaka', 'objek', null, [
+                    $kolom('a1', 'a1', 'desimal', '°C', null),
+                    $kolom('a2', 'a2', 'desimal', '°C', null),
+                    $kolom('a3', 'a3', 'desimal', '°C²', null),
+                    $kolom('a4', 'a4', 'desimal', '°C', null),
+                    $kolom('a5', 'a5', 'desimal', 'kg/m³', null),
+                ]),
+                $lembar('konstanta', 'Konstanta metode', 'konstanta', 'objek', null, [
+                    $kolom('densitas_anak_timbangan', 'Densitas anak timbangan', 'desimal', 'g/cm³', null),
+                    $kolom('koefisien_muai', 'Koefisien muai', 'desimal', '/°C', null),
+                    $kolom('u_operator', 'u operator', 'desimal', null, null, true),
+                ]),
+                $lembar('timbangan', 'Timbangan standar', 'timbangan', 'daftar', 'nomor', [
+                    $kolom('nomor', 'Nomor', 'bulat', null, 'DATABASE!U13:U15'),
+                    $kolom('nama', 'Nama', 'teks', null, 'DATABASE!V13:V15'),
+                    $kolom('merk_tipe', 'Merek/tipe', 'teks', null, 'DATABASE!W13:W15'),
+                    $kolom('nomor_seri', 'Nomor seri', 'teks', null, 'DATABASE!X13:X15'),
+                    $kolom('tertelusur', 'Ketertelusuran', 'teks', null, 'DATABASE!Y13:Y15'),
+                    $kolom('jatuh_tempo', 'Jatuh tempo', 'tanggal', null, 'DATABASE!Z13:Z15'),
+                    $kolom('u95', 'U95', 'desimal', 'g', 'DATABASE!AB13:AB15'),
+                    $kolom('resolusi', 'Resolusi', 'desimal', 'g', 'DATABASE!AD13:AD15'),
+                    $kolom('stdev', 'Stdev', 'desimal', 'g', 'DATABASE!AE13:AE15'),
+                ]),
+                $lembar('termometer', 'Termometer standar', 'termometer', 'objek', null, [
+                    $kolom('nama', 'Nama', 'teks', null, 'DATABASE!V16'),
+                    $kolom('merk_tipe', 'Merek/tipe', 'teks', null, 'DATABASE!W16'),
+                    $kolom('nomor_seri', 'Nomor seri', 'teks', null, 'DATABASE!X16'),
+                    $kolom('tertelusur', 'Ketertelusuran', 'teks', null, 'DATABASE!Y16'),
+                    $kolom('jatuh_tempo', 'Jatuh tempo', 'tanggal', null, 'DATABASE!Z16'),
+                    $kolom('u95', 'U95', 'desimal', '°C', 'DATABASE!AB16'),
+                ]),
+                $lembar('sensor', 'Sensor suhu PRT PT100', 'sensor', 'objek', null, [
+                    $kolom('nama', 'Nama', 'teks', null, null),
+                    $kolom('jatuh_tempo', 'Jatuh tempo', 'tanggal', null, 'DATABASE!Z17'),
+                    $kolom('u95', 'U95', 'desimal', '°C', 'DATABASE!AB17'),
+                ]),
+                $lembar('koreksi_meter_suhu', 'Koreksi meter suhu', 'koreksi_meter_suhu', 'daftar', 'indeks', [
+                    $kolom('indeks', 'Titik', 'desimal', '°C', 'STANDARD KALIBRATOR!B10:B21'),
+                    $kolom('koreksi', 'Koreksi', 'desimal', '°C', 'STANDARD KALIBRATOR!C10:C21'),
+                ]),
+                $lembar('koreksi_sensor_suhu', 'Koreksi sensor PT100', 'koreksi_sensor_suhu', 'daftar', 'indeks', [
+                    $kolom('indeks', 'Titik', 'desimal', '°C', 'SENSOR PT100!D9:D15'),
+                    $kolom('koreksi', 'Koreksi', 'desimal', '°C', 'SENSOR PT100!E9:E15'),
+                ]),
+                $cmc('buret_digital', 'Buret Digital', 'W', 2),
+                $cmc('piston_pipette', 'Piston Pipette', 'Y', 3),
+                $cmc('dispensett', 'Dispensette', 'AA', 3),
+                $lembar('mpe_piston_pipette', 'MPE Piston Pipette', 'mpe/piston_pipette', 'daftar', 'nominal_ml', [
+                    $kolom('nominal_ml', 'Nominal', 'desimal', 'ml', 'Tabel MPE!C4:C16'),
+                    $kolom('mpe_ul', 'MPE', 'desimal', 'µl', 'Tabel MPE!D4:D16'),
+                ]),
+                $lembar('mpe_buret_digital', 'MPE Buret Digital', 'mpe/buret_digital', 'daftar', 'nominal_ml', [
+                    $kolom('nominal_ml', 'Nominal', 'desimal', 'ml', 'Tabel MPE!B20:B27'),
+                    $kolom('hand_driven_ul', 'MPE hand-driven', 'desimal', 'µl', 'Tabel MPE!C20:C27'),
+                    $kolom('motor_driven_ul', 'MPE piston/motor-driven', 'desimal', 'µl', 'Tabel MPE!D20:D27'),
+                ]),
+                $lembar('mpe_dispensett', 'MPE Dispensette', 'mpe/dispensett', 'daftar', 'nominal_ml', [
+                    $kolom('nominal_ml', 'Nominal', 'desimal', 'ml', 'Tabel MPE!B31:B47'),
+                    $kolom('single_stroke_ul', 'MPE single stroke', 'desimal_kosong', 'µl', 'Tabel MPE!C31:C47'),
+                    $kolom('multi_stroke_ul', 'MPE multi stroke', 'desimal', 'µl', 'Tabel MPE!D31:D47'),
+                ]),
+            ],
+        ];
+    }
+
+    /**
      * Blok STANDARD kertas FM-0528/0529, plus Fujitsu FSR-A yang dipakai
      * workbook Graduated tapi TIDAK tercetak di kertas (pertanyaan lab V-4).
      */

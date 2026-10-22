@@ -49,7 +49,8 @@ final class DataBersamaVarian
         foreach ($peta->isi['ekstrak'] as $e) {
             $jalur = (string) $e['jalur'];
 
-            if (! str_contains($jalur, '{varian}') && ! str_contains($jalur, '{i}')) {
+            // Butir ber-`varian` milik varian tertentu saja — bukan data bersama.
+            if (! str_contains($jalur, '{varian}') && ! str_contains($jalur, '{i}') && ! isset($e['varian'])) {
                 $hasil[] = $jalur;
             }
         }
@@ -113,7 +114,7 @@ final class DataBersamaVarian
                     ->map(static fn (WorkbookMasterLembar $l): array => ['nama' => $l->nama, 'sel_kanonik' => (string) $l->sel])
                     ->all();
 
-                $hasil = $this->pemeriksa->periksa($peta, (string) $w->nama, $lembar, $isiDraf);
+                $hasil = $this->pemeriksa->periksa($peta, (string) $w->nama, $lembar, $isiDraf, (string) $w->sumber);
                 $baris['varian'] = $hasil['varian'];
 
                 if ($hasil['varian'] !== null && $hasil['varian'] === ($sumber['varian'] ?? null)) {

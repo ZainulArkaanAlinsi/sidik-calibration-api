@@ -46,6 +46,138 @@ use Carbon\Carbon;
  */
 class TimerStopwatchProfile extends CalibrationProfile
 {
+    /**
+     * Skema `tabel-standar-waktu.json` (Timer & Stopwatch). Alamat dari
+     * `docs/skrip/gen-tabel-standar-waktu-frekuensi.py` (peta sel
+     * `database/data/peta-sel/timer_stopwatch.json`). Kolom turunan generator
+     * (rentang, rata-rata, stdev, maks, nominal J/M/s) ber-`asal` null.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-waktu.json',
+            'lembar' => [
+                [
+                    'kode' => 'standar',
+                    'label' => 'Identitas stopwatch standar',
+                    'jalur' => 'standar',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nama', 'Nama', 'teks', null, 'SERTIFIKAT KALIBRATOR!C1'),
+                        $kolom('merk', 'Merk', 'teks', null, 'SERTIFIKAT KALIBRATOR!C2'),
+                        $kolom('resolusi', 'Resolusi', 'desimal', 's', 'SERTIFIKAT KALIBRATOR!C3'),
+                        $kolom('seri', 'Nomor seri', 'teks', null, 'SERTIFIKAT KALIBRATOR!C4'),
+                        $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, 'SERTIFIKAT KALIBRATOR!C5'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'sertifikat',
+                    'label' => 'Sertifikat standar',
+                    'jalur' => 'sertifikat',
+                    'jenis' => 'daftar',
+                    'kunci' => 'nominal_detik',
+                    'kolom' => [
+                        $kolom('nominal_detik', 'Nominal', 'desimal', 's', 'SERTIFIKAT KALIBRATOR!C9:C21'),
+                        $kolom('koreksi_ms', 'Koreksi', 'desimal', 'ms', 'SERTIFIKAT KALIBRATOR!E9:E21'),
+                        $kolom('u95_detik', 'U95', 'desimal_kosong', 's', 'SERTIFIKAT KALIBRATOR!F9:F21'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift',
+                    'label' => 'Drift — ringkasan (turunan)',
+                    'jalur' => 'drift',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('hari_master', 'Jumlah hari master', 'bulat', 'hari', 'Drift Stopwatch!L7'),
+                        $kolom('rentang_maks_master_ms', 'Rentang maks (baris dihitung master)', 'desimal', 'ms', null),
+                        $kolom('rentang_maks_lengkap_ms', 'Rentang maks (semua baris)', 'desimal', 'ms', null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_snapshot',
+                    'label' => 'Drift — riwayat kalibrasi standar',
+                    'jalur' => 'drift/snapshot',
+                    'jenis' => 'daftar',
+                    'kunci' => 'kolom',
+                    'kolom' => [
+                        $kolom('kolom', 'Kolom master', 'teks', null, null),
+                        $kolom('tanggal', 'Tanggal', 'tanggal', null, 'Drift Stopwatch!F9:J9'),
+                        $kolom('lab', 'Laboratorium', 'teks', null, 'Drift Stopwatch!F8:J8'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_titik',
+                    'label' => 'Drift — titik',
+                    'jalur' => 'drift/titik',
+                    'jenis' => 'daftar',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('nominal_detik', 'Nominal (turunan J/M/s)', 'desimal', 's', null),
+                        $kolom('rentang_ms', 'Rentang koreksi (turunan)', 'desimal', 'ms', null),
+                        $kolom('dihitung_master', 'Dihitung master', 'boolean', null, null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'drift_koreksi',
+                    'label' => 'Drift — koreksi per riwayat',
+                    'jalur' => 'drift/titik/*/koreksi_ms',
+                    'jenis' => 'baris',
+                    'kunci' => 'kolom',
+                    'kolom' => [
+                        $kolom('kolom', 'Kolom master', 'teks', null, null),
+                        $kolom('koreksi_ms', 'Koreksi', 'desimal', 'ms', 'Drift Stopwatch!F12:J25'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'human_reaction',
+                    'label' => 'Human reaction — ringkasan (turunan)',
+                    'jalur' => 'human_reaction',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('rata_maks_master', 'Rata-rata maks (master)', 'desimal', 's', null),
+                        $kolom('rata_maks_lengkap', 'Rata-rata maks (semua)', 'desimal', 's', null),
+                        $kolom('stdev_maks', 'Simpangan baku maks', 'desimal', 's', null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'human_reaction_operator',
+                    'label' => 'Human reaction — operator (turunan)',
+                    'jalur' => 'human_reaction/operator',
+                    'jenis' => 'daftar',
+                    'kunci' => 'inisial',
+                    'kolom' => [
+                        $kolom('inisial', 'Inisial', 'teks', null, 'Human Reaction!C19:C22'),
+                        $kolom('nominal_detik', 'Nominal', 'desimal', 's', null),
+                        $kolom('beda', 'Beda pembacaan', 'daftar_angka', 's', null),
+                        $kolom('rata_rata', 'Rata-rata', 'desimal', 's', null),
+                        $kolom('stdev', 'Simpangan baku', 'desimal', 's', null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+            ],
+        ];
+    }
+
     public const KODE_METODE = 'SIDIK-IK-CAL-0509_Rev.6';
 
     public const SATUAN = 's';

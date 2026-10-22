@@ -60,6 +60,27 @@ class WorkbookPetaDanPengecualianTest extends TestCase
         }
     }
 
+    /**
+     * Workbook → kode PAKET data acuan: profil tunggal = kodePaketAcuan()
+     * profilnya; keluarga = PAKET_KELUARGA; tak terpetakan = null.
+     */
+    public function test_kode_paket_dari_nama_workbook(): void
+    {
+        $registry = app(CalibrationProfileRegistry::class);
+        $peta = new PetaProfilWorkbook;
+        $paket = static fn (string $nama): ?string => PetaProfilWorkbook::kodePaket($peta->cocokkan($nama), $registry);
+
+        $this->assertSame('micrometer', $paket('Master Olah Data_Micrometer 0-25mm.xlsm'));
+        $this->assertSame('volumetric', $paket('(NEW) Master Olah Data_Fixed Volumetric Glassware_2026.xlsm'));
+        $this->assertSame('volumetric', $paket('Graduated_Volumetric_Glassware_2026'));
+        $this->assertSame('tekanan', $paket('Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm'));
+        $this->assertNull($paket('berkas tak dikenal'));
+
+        foreach (PetaProfilWorkbook::kodeDipakai() as $kode) {
+            $this->assertSame($registry->untukKode($kode)?->kodePaketAcuan(), PetaProfilWorkbook::kodePaket(['kode_profil' => $kode, 'keluarga' => null], $registry), $kode);
+        }
+    }
+
     public function test_semua_kode_peta_ada_di_registry(): void
     {
         $kodeRegistry = array_map(static fn ($p): string => $p->kode(), app(CalibrationProfileRegistry::class)->semua());

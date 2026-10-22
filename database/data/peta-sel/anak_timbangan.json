@@ -1,0 +1,722 @@
+{
+ "format": 1,
+ "kode_profil": "anak_timbangan",
+ "sumber_json": "tabel-standar-anak-timbangan.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-anak-timbangan.py (generator BERALAMAT sejak 22 Okt 2026; sebelumnya angka diketik tangan). Sumber: 'Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx' (folder master, tidak di repo). Keluaran generator = JSON lama (nilai identik; angka bulat kini float) — semua baris termasuk Fujitsu (Deviasi D59:AC60, Data Sens Fujitsu) ada di sel workbook ini.",
+  "Diverifikasi .xlsx asli hal 1, 2, 3 (docs/skrip/verifikasi-peta-xlsm.py, sha256 di manifest-xlsm.json); sel yang dirujuk dibekukan di tests/Fixtures/peta-sel-xlsm/anak_timbangan (StudioPetaSelXlsmTest). Ekspor CSV F1 lama di repo TIDAK dipakai: baris Fujitsu-nya versi sebelum 7 Okt 2026."
+ ],
+ "lembar_wajib": [
+  "STD AT",
+  "DATABASE",
+  "MPE AT",
+  "Deviasi Standard Timbangan",
+  "Data Sens Semi Micro",
+  "Data Sens Analytical Balance",
+  "Data Sens Fujitsu",
+  "Data Sens Excellent",
+  "Data Sens Mettler Toledo"
+ ],
+ "jangkar": [
+  {
+   "sel": "STD AT!N1",
+   "teks": "OVERALL STANDAR ANAK TIMBANGAN"
+  },
+  {
+   "sel": "STD AT!M3",
+   "teks": "Kelas"
+  },
+  {
+   "sel": "STD AT!N3",
+   "teks": "Massa Nominal"
+  },
+  {
+   "sel": "STD AT!O3",
+   "teks": "Massa Konvensional"
+  },
+  {
+   "sel": "STD AT!P3",
+   "teks": "Koreksi AT"
+  },
+  {
+   "sel": "STD AT!Q3",
+   "teks": "Ketidakpastian"
+  },
+  {
+   "sel": "STD AT!R3",
+   "teks": "Drift of Correction/Instability of mass"
+  },
+  {
+   "sel": "STD AT!M40",
+   "teks": "LATEST RECORD DRIFT of WEIGHING"
+  },
+  {
+   "sel": "STD AT!N41",
+   "teks": "Max Index Standar (g)"
+  },
+  {
+   "sel": "STD AT!N70",
+   "teks": "Kelas Anak Timbang OIML (kg/m3)"
+  },
+  {
+   "sel": "STD AT!N71",
+   "teks": "E2"
+  },
+  {
+   "sel": "STD AT!R71",
+   "teks": "M2"
+  },
+  {
+   "sel": "STD AT!M84",
+   "teks": "Nama Standard"
+  },
+  {
+   "sel": "STD AT!P84",
+   "teks": "Standard Deviasi (mg)"
+  },
+  {
+   "sel": "STD AT!Q84",
+   "teks": "Usens (mg)"
+  },
+  {
+   "sel": "DATABASE!W18",
+   "teks": "Standar Anak Timbangan"
+  },
+  {
+   "sel": "DATABASE!AC18",
+   "teks": "Interval (year)"
+  },
+  {
+   "sel": "DATABASE!AD18",
+   "teks": "Due Date"
+  },
+  {
+   "sel": "DATABASE!W29",
+   "teks": "Standart Meter/Indikator"
+  },
+  {
+   "sel": "DATABASE!AC29",
+   "teks": "U95%"
+  },
+  {
+   "sel": "DATABASE!AE29",
+   "teks": "Res. (g)"
+  },
+  {
+   "sel": "DATABASE!B29",
+   "teks": "Environmental Meter"
+  },
+  {
+   "sel": "DATABASE!B32",
+   "teks": "Thermobarometer"
+  },
+  {
+   "sel": "DATABASE!C30",
+   "teks": "Standart Indication"
+  },
+  {
+   "sel": "DATABASE!K29",
+   "teks": "Tekanan Udara"
+  },
+  {
+   "sel": "MPE AT!A3",
+   "teks": "Value"
+  },
+  {
+   "sel": "MPE AT!C3",
+   "teks": "F1"
+  },
+  {
+   "sel": "MPE AT!I3",
+   "teks": "M3"
+  },
+  {
+   "sel": "Deviasi Standard Timbangan!B4",
+   "teks": "Nominal AT"
+  },
+  {
+   "sel": "Deviasi Standard Timbangan!B24",
+   "teks": "Nominal AT"
+  },
+  {
+   "sel": "Deviasi Standard Timbangan!B44",
+   "teks": "Nominal AT"
+  },
+  {
+   "sel": "Deviasi Standard Timbangan!B63",
+   "teks": "Nominal AT"
+  },
+  {
+   "sel": "Data Sens Semi Micro!F33",
+   "teks": "usens ="
+  },
+  {
+   "sel": "Data Sens Analytical Balance!F33",
+   "teks": "usens ="
+  },
+  {
+   "sel": "Data Sens Fujitsu!F33",
+   "teks": "usens ="
+  },
+  {
+   "sel": "Data Sens Excellent!F33",
+   "teks": "usens ="
+  },
+  {
+   "sel": "Data Sens Mettler Toledo!F33",
+   "teks": "usens ="
+  },
+  {
+   "sel": "STD AT!B3",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B35",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B44",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B53",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B80",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B62",
+   "teks": "Type"
+  },
+  {
+   "sel": "STD AT!B71",
+   "teks": "Type"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "standar_at.keping[{i}].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!M5",
+   "ulang": 29,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.keping[{i}].nominal_g",
+   "tipe": "angka",
+   "sel": "STD AT!N5",
+   "ulang": 29,
+   "langkah_baris": 1,
+   "buang_akhiran": "*"
+  },
+  {
+   "jalur": "standar_at.keping[{i}].bintang",
+   "tipe": "bendera_akhiran",
+   "sel": "STD AT!N5",
+   "ulang": 29,
+   "langkah_baris": 1,
+   "akhiran": "*"
+  },
+  {
+   "jalur": "standar_at.keping[{i}].konvensional_g",
+   "tipe": "angka",
+   "sel": "STD AT!O5",
+   "ulang": 29,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.keping[{i}].koreksi_g",
+   "tipe": "angka",
+   "sel": "STD AT!P5",
+   "ulang": 29,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.keping[{i}].u_mg",
+   "tipe": "angka",
+   "sel": "STD AT!Q5",
+   "ulang": 29,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.keping[{i}].drift_mg",
+   "tipe": "angka",
+   "sel": "STD AT!R5",
+   "ulang": 29,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].nama",
+   "tipe": "teks",
+   "sel": "DATABASE!W19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].kapasitas",
+   "tipe": "teks",
+   "sel": "DATABASE!X19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!Y19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].no_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!Z19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!AA19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!AB19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!AC19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[{i}].due_date",
+   "tipe": "tanggal",
+   "sel": "DATABASE!AD19",
+   "ulang": 7,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar_at.set[0].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D3"
+  },
+  {
+   "jalur": "standar_at.set[1].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D35"
+  },
+  {
+   "jalur": "standar_at.set[2].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D44"
+  },
+  {
+   "jalur": "standar_at.set[3].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D53"
+  },
+  {
+   "jalur": "standar_at.set[4].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D80"
+  },
+  {
+   "jalur": "standar_at.set[5].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D62"
+  },
+  {
+   "jalur": "standar_at.set[6].kelas",
+   "tipe": "teks",
+   "sel": "STD AT!D71"
+  },
+  {
+   "jalur": "standar_at.set[0].no_sertifikat",
+   "tipe": "teks",
+   "sel": "STD AT!J4"
+  },
+  {
+   "jalur": "standar_at.set[1].no_sertifikat",
+   "tipe": "teks",
+   "sel": "STD AT!J36"
+  },
+  {
+   "jalur": "timbangan[{i}].nama",
+   "tipe": "teks",
+   "sel": "DATABASE!W30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!X30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].no_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!Y30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!Z30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].tanggal_database",
+   "tipe": "tanggal",
+   "sel": "DATABASE!AA30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].u95_g",
+   "tipe": "angka",
+   "sel": "DATABASE!AC30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].resolusi_g",
+   "tipe": "angka",
+   "sel": "DATABASE!AE30",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].kapasitas_g",
+   "tipe": "angka",
+   "sel": "STD AT!O85",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].std_dev_mg",
+   "tipe": "angka",
+   "sel": "STD AT!P85",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[{i}].u_sens_mg",
+   "tipe": "angka",
+   "sel": "STD AT!Q85",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "timbangan[0].sensitivitas.delta1_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Semi Micro!G17"
+  },
+  {
+   "jalur": "timbangan[0].sensitivitas.delta2_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Semi Micro!G18"
+  },
+  {
+   "jalur": "timbangan[0].sensitivitas.de_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Semi Micro!D17"
+  },
+  {
+   "jalur": "timbangan[0].sensitivitas.u_msens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Semi Micro!D24"
+  },
+  {
+   "jalur": "timbangan[0].sensitivitas.m_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Semi Micro!D21"
+  },
+  {
+   "jalur": "timbangan[1].sensitivitas.delta1_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Analytical Balance!G17"
+  },
+  {
+   "jalur": "timbangan[1].sensitivitas.delta2_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Analytical Balance!G18"
+  },
+  {
+   "jalur": "timbangan[1].sensitivitas.de_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Analytical Balance!D17"
+  },
+  {
+   "jalur": "timbangan[1].sensitivitas.u_msens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Analytical Balance!D24"
+  },
+  {
+   "jalur": "timbangan[1].sensitivitas.m_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Analytical Balance!D21"
+  },
+  {
+   "jalur": "timbangan[2].sensitivitas.delta1_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Fujitsu!G17"
+  },
+  {
+   "jalur": "timbangan[2].sensitivitas.delta2_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Fujitsu!G18"
+  },
+  {
+   "jalur": "timbangan[2].sensitivitas.de_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Fujitsu!D17"
+  },
+  {
+   "jalur": "timbangan[2].sensitivitas.u_msens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Fujitsu!D24"
+  },
+  {
+   "jalur": "timbangan[2].sensitivitas.m_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Fujitsu!D21"
+  },
+  {
+   "jalur": "timbangan[3].sensitivitas.delta1_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Excellent!G17"
+  },
+  {
+   "jalur": "timbangan[3].sensitivitas.delta2_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Excellent!G18"
+  },
+  {
+   "jalur": "timbangan[3].sensitivitas.de_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Excellent!D17"
+  },
+  {
+   "jalur": "timbangan[3].sensitivitas.u_msens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Excellent!D24"
+  },
+  {
+   "jalur": "timbangan[3].sensitivitas.m_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Excellent!D21"
+  },
+  {
+   "jalur": "timbangan[4].sensitivitas.delta1_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Mettler Toledo!G17"
+  },
+  {
+   "jalur": "timbangan[4].sensitivitas.delta2_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Mettler Toledo!G18"
+  },
+  {
+   "jalur": "timbangan[4].sensitivitas.de_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Mettler Toledo!D17"
+  },
+  {
+   "jalur": "timbangan[4].sensitivitas.u_msens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Mettler Toledo!D24"
+  },
+  {
+   "jalur": "timbangan[4].sensitivitas.m_sens_mg",
+   "tipe": "angka",
+   "sel": "Data Sens Mettler Toledo!D21"
+  },
+  {
+   "jalur": "timbangan[0].nominal_at_uji_g",
+   "tipe": "angka",
+   "sel": "Deviasi Standard Timbangan!D4"
+  },
+  {
+   "jalur": "timbangan[1].nominal_at_uji_g",
+   "tipe": "angka",
+   "sel": "Deviasi Standard Timbangan!D24"
+  },
+  {
+   "jalur": "timbangan[2].nominal_at_uji_g",
+   "tipe": "angka",
+   "sel": "Deviasi Standard Timbangan!D44"
+  },
+  {
+   "jalur": "timbangan[3].nominal_at_uji_g",
+   "tipe": "angka",
+   "sel": "Deviasi Standard Timbangan!D63"
+  },
+  {
+   "jalur": "densitas.baris",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_g",
+   "min_baris": 12,
+   "kolom": {
+    "nominal_g": "STD AT!M72:M83",
+    "E2": {
+     "rentang": "STD AT!N72:N83",
+     "boleh_kosong": true
+    },
+    "F1": {
+     "rentang": "STD AT!O72:O83",
+     "boleh_kosong": true
+    },
+    "F2": {
+     "rentang": "STD AT!P72:P83",
+     "boleh_kosong": true
+    },
+    "M1": {
+     "rentang": "STD AT!Q72:Q83",
+     "boleh_kosong": true
+    },
+    "M2": {
+     "rentang": "STD AT!R72:R83",
+     "boleh_kosong": true
+    }
+   }
+  },
+  {
+   "jalur": "mpe.baris",
+   "tipe": "daftar_objek",
+   "kunci": "label",
+   "min_baris": 23,
+   "kolom": {
+    "label": {
+     "rentang": "MPE AT!A4:A26",
+     "tipe": "teks"
+    },
+    "nominal_g": "MPE AT!B4:B26",
+    "F1": {
+     "rentang": "MPE AT!C4:C26",
+     "boleh_kosong": true
+    },
+    "F2": {
+     "rentang": "MPE AT!D4:D26",
+     "boleh_kosong": true
+    },
+    "M1": {
+     "rentang": "MPE AT!E4:E26",
+     "boleh_kosong": true
+    },
+    "M1-2": {
+     "rentang": "MPE AT!F4:F26",
+     "boleh_kosong": true
+    },
+    "M2": {
+     "rentang": "MPE AT!G4:G26",
+     "boleh_kosong": true
+    },
+    "M2-3": {
+     "rentang": "MPE AT!H4:H26",
+     "boleh_kosong": true
+    },
+    "M3": {
+     "rentang": "MPE AT!I4:I26",
+     "boleh_kosong": true
+    }
+   }
+  },
+  {
+   "jalur": "drift_penimbangan",
+   "tipe": "daftar_objek",
+   "kunci": "maks_index_standar_g",
+   "min_baris": 7,
+   "kolom": {
+    "maks_index_standar_g": "STD AT!N42:N48",
+    "kelompok": {
+     "rentang": "STD AT!O42:O48",
+     "tipe": "teks"
+    },
+    "u_drift_g": "STD AT!P42:P48"
+   }
+  },
+  {
+   "jalur": "meter_lingkungan[0].nama",
+   "tipe": "teks",
+   "sel": "DATABASE!B32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].lokasi",
+   "tipe": "teks",
+   "sel": "DATABASE!O32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!P32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].due_date",
+   "tipe": "tanggal",
+   "sel": "DATABASE!Q32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!R32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].suhu.u95",
+   "tipe": "angka",
+   "sel": "DATABASE!F32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].kelembaban.u95",
+   "tipe": "angka",
+   "sel": "DATABASE!J32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].tekanan.u95",
+   "tipe": "angka",
+   "sel": "DATABASE!N32"
+  },
+  {
+   "jalur": "meter_lingkungan[0].suhu.titik[{i}]",
+   "tipe": "daftar_angka",
+   "rentang": "DATABASE!C32:E32",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "meter_lingkungan[0].kelembaban.titik[{i}]",
+   "tipe": "daftar_angka",
+   "rentang": "DATABASE!G32:I32",
+   "ulang": 5,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "meter_lingkungan[0].tekanan.titik[{i}]",
+   "tipe": "daftar_angka",
+   "rentang": "DATABASE!K32:M32",
+   "ulang": 9,
+   "langkah_baris": 1
+  }
+ ],
+ "tidak_dipetakan": [
+  "standar_at.keping[*].nominal_teks & pola_drift — turunan generator (teks nominal; 'U/2' kecuali 10 kg '4/sqrt(3)').",
+  "timbangan[*].stdev_harian_mg (sel Deviasi Standard Timbangan baris STDev, g x 1000), gabungan_harian_mg (akar rata-rata kuadrat), sensitivitas.u_relatif (sqrt; sel Data Sens *!I30 Semi Micro beda 1 ulp) — kolom TURUNAN, dihitung generator (kode), dibawa dari dasar.",
+  "timbangan[4].nominal_at_uji_g (Mettler) — master menulis Deviasi!D82 = 20 + E82 'kg'; generator mengalikan 1000.",
+  "standar_at.set[2..6].no_sertifikat — sel STD AT!J45/J54/J81/J63/J72 KOSONG di master (JSON '').",
+  "konstanta.* — angka telanjang di rumus PERHITUNGAN U95%/FC (pembagi 1,73/1,414, vi), bukan sel tabel; sumber.* — dokumentasi."
+ ],
+ "perlu_berkas_asli": [
+  "Format SERTIFIKAT Anak Timbangan belum dicatat di format_sertifikat."
+ ]
+}

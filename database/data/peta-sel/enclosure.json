@@ -1,0 +1,1409 @@
+{
+ "format": 1,
+ "kode_profil": "enclosure",
+ "sumber_json": "tabel-kalibrator-enclosure.json",
+ "bukti": [
+  "Alamat = aturan docs/skrip/gen-tabel-kalibrator-enclosure.py (indeks 0-based CSV -> alamat Excel 1-based): meter Constant B/C:I 10:27 & 32:49, Yokogawa M/N:T, drift X6:AA8, sensor Yoko D:AC 64:78 & 85:99, drift X12:Y14; Recorder D:AQ 9:24 & 30:45, drift AT8:AU9, sensor D:M & X:AM 53:67 & 72:86, drift AT15:AU16. Transform generator ditiru: kunci suhu teks (`kunci_teks`), sel #REF!/teks dilewati (`lewati_galat`), |x| < 1e-9 = 0 lalu 10 angka penting.",
+  "Ekstraksi dari ekspor CSV master Enclosure Constant_Yokogawa di repo = tabel-kalibrator-enclosure.json (StudioPetaSelProfilTest). Label tanpa satu pun nilai (mis. Yokogawa Type B/T/R/S) tidak ada di JSON dan tidak dipetakan — seperti generator.",
+  "Diverifikasi terhadap .xlsm asli dengan docs/skrip/verifikasi-peta-xlsm.py 22 Okt 2026 (sha256 di peta-sel/manifest-xlsm.json)."
+ ],
+ "lembar_wajib": [
+  "STANDAR KALIBRATOR"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR KALIBRATOR!X6",
+   "teks": "PRT PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X7",
+   "teks": "Thermocouple Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X8",
+   "teks": "Thermocouple Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z6",
+   "teks": "PRT PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z7",
+   "teks": "Thermocouple Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z8",
+   "teks": "Thermocouple Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X12",
+   "teks": "PRT PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X13",
+   "teks": "Thermocouple Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X14",
+   "teks": "Thermocouple Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L7",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A59",
+   "teks": "TABEL KOREKSI SENSOR"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B60",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D61",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T61",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B81",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D82",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T82",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X4",
+   "teks": "Constant"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z4",
+   "teks": "Yokogawa"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X10",
+   "teks": "Sensor TC"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C9",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E9",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F9",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G9",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H9",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I9",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N9",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O9",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P9",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q9",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R9",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S9",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T9",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C31",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D31",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E31",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F31",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G31",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H31",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I31",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N31",
+   "teks": "PT100"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O31",
+   "teks": "Type K"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P31",
+   "teks": "Type N"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q31",
+   "teks": "Type B"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R31",
+   "teks": "Type T"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S31",
+   "teks": "Type R"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T31",
+   "teks": "Type S"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D62",
+   "teks": "TCK-01"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D83",
+   "teks": "TCK-01"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E62",
+   "teks": "TCK-02"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E83",
+   "teks": "TCK-02"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F62",
+   "teks": "TCK-03"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F83",
+   "teks": "TCK-03"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G62",
+   "teks": "TCK-04"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G83",
+   "teks": "TCK-04"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H62",
+   "teks": "TCK-05"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!H83",
+   "teks": "TCK-05"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I62",
+   "teks": "TCK-06"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!I83",
+   "teks": "TCK-06"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J62",
+   "teks": "TCK-07"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J83",
+   "teks": "TCK-07"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!K62",
+   "teks": "TCK-08"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!K83",
+   "teks": "TCK-08"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L62",
+   "teks": "TCK-09"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!L83",
+   "teks": "TCK-09"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M62",
+   "teks": "TCK-10"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!M83",
+   "teks": "TCK-10"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N62",
+   "teks": "TCK-11"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N83",
+   "teks": "TCK-11"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O62",
+   "teks": "TCK-12"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!O83",
+   "teks": "TCK-12"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P62",
+   "teks": "TCK-13"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!P83",
+   "teks": "TCK-13"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q62",
+   "teks": "TCK-14"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q83",
+   "teks": "TCK-14"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R62",
+   "teks": "TCK-15"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R83",
+   "teks": "TCK-15"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S62",
+   "teks": "TCK-16"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S83",
+   "teks": "TCK-16"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T62",
+   "teks": "TCN3"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T83",
+   "teks": "TCN3"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U62",
+   "teks": "TCN4"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U83",
+   "teks": "TCN4"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!V62",
+   "teks": "TCN5"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!V83",
+   "teks": "TCN5"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!W62",
+   "teks": "TCN6"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!W83",
+   "teks": "TCN6"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X62",
+   "teks": "TCN7"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X83",
+   "teks": "TCN7"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Y62",
+   "teks": "TCN8"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Y83",
+   "teks": "TCN8"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z62",
+   "teks": "TCN9"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z83",
+   "teks": "TCN9"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AA62",
+   "teks": "TCN10"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AA83",
+   "teks": "TCN10"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AB62",
+   "teks": "TCN11"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AB83",
+   "teks": "TCN11"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC62",
+   "teks": "TCN12"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC83",
+   "teks": "TCN12"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "constant_yokogawa": "enclosure constant yokogawa"
+  },
+  "lainnya": "lewati"
+ },
+ "ekstrak": [
+  {
+   "jalur": "meter.constant.koreksi.PT100",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!C10:C27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.PT100",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!C32:C49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!D10:D27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!D32:D49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!E10:E27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!E32:E49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type B",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!F10:F27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type B",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!F32:F49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type T",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!G10:G27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type T",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!G32:G49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type R",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!H10:H27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type R",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!H32:H49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.koreksi.Type S",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B10:B27",
+   "nilai": "STANDAR KALIBRATOR!I10:I27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.u95.Type S",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B32:B49",
+   "nilai": "STANDAR KALIBRATOR!I32:I49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.PT100",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!N10:N27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.u95.PT100",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!N32:N49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!O10:O27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.u95.Type K",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!O32:O49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.koreksi.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M10:M27",
+   "nilai": "STANDAR KALIBRATOR!P10:P27",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.yokogawa.u95.Type N",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!M32:M49",
+   "nilai": "STANDAR KALIBRATOR!P32:P49",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "meter.constant.drift.PT100",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y6",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "meter.constant.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y7",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "meter.constant.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y8",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "meter.yokogawa.drift.PT100",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA6",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "meter.yokogawa.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA7",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "meter.yokogawa.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA8",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!D64:D78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.1",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!D85:D99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!E64:E78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.2",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!E85:E99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!F64:F78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!F85:F99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!G64:G78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!G85:G99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!H64:H78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!H85:H99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!I64:I78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!I85:I99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!J64:J78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!J85:J99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!K64:K78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!K85:K99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!L64:L78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!L85:L99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!M64:M78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!M85:M99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!N64:N78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!N85:N99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!O64:O78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!O85:O99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!P64:P78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.13",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!P85:P99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Q64:Q78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.14",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Q85:Q99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!R64:R78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.15",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!R85:R99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!S64:S78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type K.16",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!S85:S99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!T64:T78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.3",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!T85:T99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!U64:U78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.4",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!U85:U99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!V64:V78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.5",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!V85:V99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!W64:W78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.6",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!W85:W99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!X64:X78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.7",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!X85:X99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Y64:Y78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.8",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Y85:Y99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!Z64:Z78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.9",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!Z85:Z99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AA64:AA78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.10",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AA85:AA99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AB64:AB78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.11",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AB85:AB99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.koreksi.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B64:B78",
+   "nilai": "STANDAR KALIBRATOR!AC64:AC78",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.u95.Type N.12",
+   "tipe": "peta_angka",
+   "kunci": "STANDAR KALIBRATOR!B85:B99",
+   "nilai": "STANDAR KALIBRATOR!AC85:AC99",
+   "kunci_teks": true,
+   "lewati_galat": true,
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10,
+   "min_baris": 1
+  },
+  {
+   "jalur": "sensor.yoko.drift.PT100",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y12",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "sensor.yoko.drift.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y13",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "sensor.yoko.drift.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y14",
+   "nol_di_bawah": 1e-09,
+   "angka_penting": 10
+  },
+  {
+   "jalur": "index_temps.yoko",
+   "tipe": "daftar_kunci",
+   "rentang": [
+    "STANDAR KALIBRATOR!B10:B27",
+    "STANDAR KALIBRATOR!B32:B49"
+   ]
+  }
+ ],
+ "tidak_dipetakan": [
+  "Kolom PRT PT100 per-titik tabel koreksi/U95 SENSOR — generator sengaja tidak mengekspornya (catatan #3); hanya drift PT100.",
+  "Tipe kalibrator yang seluruh kolomnya kosong/#REF! (Yokogawa Type B/T/R/S, Type J kedua kalibrator) — tidak ada di JSON; mengisinya di master butuh PR peta.",
+  "SELURUH master Recorder (meter.recorder, sensor.recorder, index_temps.recorder) — DITAHAN: JSON repo tidak memuat titik -20 °C di meter.recorder.u95 (20 kanal × Type N/K) dan sensor.recorder.koreksi/u95 Type N (10 kanal), sedangkan CSV repo (generator dijalankan ulang 22 Okt 2026) dan .xlsm asli memuatnya. Master Recorder dilewati peta (`lainnya: lewati`) sampai pemilik/lab memutuskan JSON mana yang benar."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli Enclosure Constant_Yokogawa (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Rentang dipecah per baris di mana format master beda (indikator B33/B35, setting C46/C47); tiap sel diadu ke format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json; sel bagian merge dilewati). Enclosure tidak memakai formatKolomSertifikat(): kolom di sini = kunci EnclosureProfileBase::FORMAT_CETAK['constant_yokogawa'] + FORMAT_SETTING_PER_BARIS + FORMAT_INDIKATOR_PER_BARIS (desimal), diadu StudioFormatSertifikatTest::test_format_master_enclosure_lawan_format_cetak. Recorder belum dipetakan; .xlsm Recorder memformat baris Koreksi F26:S30 `0.00` = asumsi FORMAT_CETAK (pertanyaan lab #14 terjawab oleh master).",
+  "entri": [
+   {
+    "kolom": "indikator",
+    "sel": [
+     "SERTIFIKAT!B25:B31"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "indikator_baris_5",
+    "sel": [
+     "SERTIFIKAT!B33"
+    ],
+    "format": "0.00",
+    "catatan": "Pembacaan Indikator set point ke-5 berformat 0.00 di master (B25:B31 0.0) — K-50-15: dicetak 0.00 (EnclosureProfileBase::FORMAT_INDIKATOR_PER_BARIS, 22 Okt 2026); pertanyaan lab format sertifikat #2"
+   },
+   {
+    "kolom": "indikator_baris_6",
+    "sel": [
+     "SERTIFIKAT!B35"
+    ],
+    "format": "0.00",
+    "catatan": "Set point ke-6, sama dengan set point ke-5"
+   },
+   {
+    "kolom": "terukur",
+    "sel": [
+     "SERTIFIKAT!F25:S25",
+     "SERTIFIKAT!F27:S27",
+     "SERTIFIKAT!F29:S29",
+     "SERTIFIKAT!F31:S31",
+     "SERTIFIKAT!F33:S33",
+     "SERTIFIKAT!F35:S35"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!F26:S26",
+     "SERTIFIKAT!F28:S28",
+     "SERTIFIKAT!F30:S30",
+     "SERTIFIKAT!F32:S32",
+     "SERTIFIKAT!F34:S34",
+     "SERTIFIKAT!F36:S36"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!U25:U35"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!P37"
+    ],
+    "format": "0"
+   },
+   {
+    "kolom": "setting",
+    "sel": [
+     "SERTIFIKAT!C42:C45"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "setting_baris_5",
+    "sel": [
+     "SERTIFIKAT!C46"
+    ],
+    "format": "General",
+    "catatan": "Set point ke-5 berformat General di master (C42:C45 0.0) — K-50-15: dicetak General (EnclosureProfileBase::FORMAT_SETTING_PER_BARIS, 22 Okt 2026)"
+   },
+   {
+    "kolom": "setting_baris_6",
+    "sel": [
+     "SERTIFIKAT!C47"
+    ],
+    "format": "General",
+    "catatan": "Set point ke-6, sama dengan set point ke-5"
+   },
+   {
+    "kolom": "indikator_kinerja",
+    "sel": [
+     "SERTIFIKAT!E42:E46"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "kinerja",
+    "sel": [
+     "SERTIFIKAT!J42:J46",
+     "SERTIFIKAT!L42:L46",
+     "SERTIFIKAT!O42:O46"
+    ],
+    "format": "0.0"
+   }
+  ]
+ }
+}

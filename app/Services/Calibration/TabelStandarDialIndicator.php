@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use RuntimeException;
 
 /**
@@ -28,9 +30,6 @@ use RuntimeException;
  */
 class TabelStandarDialIndicator
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     private ?TabelStandarMicrometer $balok = null;
 
     /** Nilai terkoreksi (mm) satu keping, atau `null` kalau nominalnya tidak terdaftar. */
@@ -104,20 +103,23 @@ class TabelStandarDialIndicator
         return $this->balok ??= new TabelStandarMicrometer;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Isi tabel dari [SumberAcuan]: versi DB kalau jalur pemanggilnya membuka
+     * lingkup versi `dial_indicator` (dan `DATA_ACUAN_SUMBER=db`), berkas JSON
+     * di luar itu. Tidak di-cache di kelas ini — cache-nya di SumberAcuan,
+     * dikunci (versi, sha256), pola [TabelStandarMicrometer].
+     *
+     * @return array<string, mixed>
+     */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-dial-indicator.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar dial indicator nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        $isi = app(SumberAcuan::class)->isi((new DialIndicatorProfile)->kodePaketAcuan(), $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['cmc'], $isi['konstanta'])
@@ -125,6 +127,6 @@ class TabelStandarDialIndicator
             throw new RuntimeException("Tabel standar dial indicator rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

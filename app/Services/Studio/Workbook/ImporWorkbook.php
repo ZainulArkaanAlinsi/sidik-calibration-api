@@ -5,8 +5,10 @@ namespace App\Services\Studio\Workbook;
 use App\Models\Organization;
 use App\Models\WorkbookMaster;
 use App\Models\WorkbookMasterLembar;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Studio\Hitung\ModelHitung;
 use App\Services\Studio\Hitung\SumberModelHitung;
+use App\Services\Studio\PetaSel\DataBersamaPaket;
 use App\Services\Studio\PetaSel\DrafAcuanMaster;
 use App\Services\Studio\PetaSel\PemeriksaMaster;
 use App\Services\Studio\PetaSel\PetaSel;
@@ -236,13 +238,24 @@ final class ImporWorkbook
         $lama = $ganti ? $this->barisEkstrakUlang($organisasi, $meta, $ada) : null;
 
         // Peta sel: struktur diperiksa sebelum apa pun ditulis (melempar bila berubah).
-        $peta = PetaSel::untuk($meta['kode_profil']);
+        // Peta per PAKET data acuan: workbook keluarga (Volumetric Fixed/Graduated,
+        // DRUCK, ...) memetakan ke paket profil-profil yang berbagi satu tabel.
+        $peta = PetaSel::untuk(PetaProfilWorkbook::kodePaket($meta, app(CalibrationProfileRegistry::class)));
+        // Peta ber-`varian.lainnya = lewati` tidak berlaku untuk master di luar
+        // variannya (mis. Flowmeter Gravimetri vs peta Ultrasonic): belum terpetakan, bukan ditolak.
+        $petaDilewati = $peta !== null && $peta->tidakBerlakuUntuk((string) $meta['nama']) ? $peta->kodeProfil : null;
+        $peta = $petaDilewati !== null ? null : $peta;
         $dasar = $peta !== null ? $this->draf->dasar((int) $organisasi->id, $peta) : null;
-        $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi']) : null;
+        $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi'], (string) $meta['sumber']) : null;
         $statusPeta = $peta !== null ? 'tervalidasi' : 'belum_terpetakan';
+        // Data paket lain yang ikut dibawa master (balok ukur Micrometer di
+        // master Dial, ...): diadu, tidak ditulis; beda = ditandai, tidak diam.
+        $bedaPaket = $peta !== null ? app(DataBersamaPaket::class)->periksa($peta, $lembar, (int) $organisasi->id, (string) $meta['sumber']) : [];
         $meta['catatan'] = trim($meta['catatan'].($peta !== null
             ? ' Peta sel '.$peta->kodeProfil.': struktur tervalidasi'.($hasilPeta['varian'] !== null ? ' (varian '.$hasilPeta['varian'].')' : '').'.'
-            : ' Peta sel: belum terpetakan — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.'));
+            : ' Peta sel: belum terpetakan'.($petaDilewati !== null ? " (bukan varian peta {$petaDilewati})" : '').' — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.')
+            .($bedaPaket === [] ? '' : ' PERINGATAN bersama_antar_paket: '.count($bedaPaket).' daun data paket lain ('
+                .implode(', ', array_unique(array_column($bedaPaket, 'paket'))).') di master ini beda dari versi berlakunya.'));
 
         if ($kering) {
             $aktif = $lama === null
@@ -287,7 +300,7 @@ final class ImporWorkbook
         $acuan = null;
 
         try {
-            $workbook = DB::transaction(function () use ($organisasi, $userId, $meta, $lembar, $jalurDisk, $lama, &$menggantikan, $peta, $dasar, $hasilPeta, &$acuan): WorkbookMaster {
+            $workbook = DB::transaction(function () use ($organisasi, $userId, $meta, $lembar, $jalurDisk, $lama, &$menggantikan, $peta, $dasar, $hasilPeta, $bedaPaket, &$acuan): WorkbookMaster {
                 $impor = null;
                 $penunjuk = [];
 
@@ -369,9 +382,10 @@ final class ImporWorkbook
                 // Hanya master AKTIF jenisnya yang mengendalikan data acuan;
                 // riwayat (mis. csv di bawah xlsm aktif) tidak membuat draf.
                 if ($peta !== null) {
-                    $acuan = $workbook->fresh()?->aktif === true
+                    $acuan = ($workbook->fresh()?->aktif === true
                         ? $this->draf->buat($workbook, $peta, $hasilPeta, $dasar, $userId)
-                        : ['status' => 'bukan_master_aktif'];
+                        : ['status' => 'bukan_master_aktif'])
+                        + ['bersama_antar_paket' => $bedaPaket];
                 }
 
                 return $workbook;

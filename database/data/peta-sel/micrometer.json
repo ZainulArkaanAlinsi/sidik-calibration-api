@@ -5,7 +5,8 @@
   "bukti": [
     "Alamat ekstrak = alamat yang dibaca docs/skrip/gen-tabel-standar-micrometer.py (generator tabel-standar-micrometer.json, terbukti 8 Okt 2026 setara keempat .xlsm, lihat database/data/manifest-workbook-micrometer.json).",
     "Alamat & teks jangkar dicek 22 Okt 2026 di ekspor CSV keempat master (Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_Olah_Data_Micrometer_{0-25,25-50,50-75,75-100}mm); ekstraksi peta ini dari keempat CSV itu = tabel-standar-micrometer.json (StudioPetaSelMicrometerTest).",
-    "Varian (pita A-D) dari NAMA workbook, seperti generator memetakan berkas -> varian; isi master tidak membawanya dengan andal (INPUT DATA!F5 master 0-25 berisi 'ISI KAPASITAS')."
+    "Varian (pita A-D) dari NAMA workbook, seperti generator memetakan berkas -> varian; isi master tidak membawanya dengan andal (INPUT DATA!F5 master 0-25 berisi 'ISI KAPASITAS').",
+    "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
   ],
   "lembar_wajib": ["DATABASE", "Standar_GB", "PERHITUNGAN"],
   "jangkar": [
@@ -60,7 +61,7 @@
     "cmc[varian lain].titik / balok_pra_evaluasi_mm — satu master hanya membawa titik variannya sendiri"
   ],
   "perlu_berkas_asli": [
-    "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3 — CSV tidak membawa format; MicrometerProfile menyebut SERTIFIKAT!J29 '0.000' tapi alamat sel hasil per titik belum dicek di .xlsm.",
-    "Konfirmasi bahwa .xlsm asli (bukan cuma CSV ekspornya) menaruh jangkar di alamat yang sama — sha256 keempat berkas ada di manifest-workbook-micrometer.json."
-  ]
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), dan render sertifikat MEMAKAINYA lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan (K-50-15, 22 Okt 2026); tiap sel sama dengan format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json); render diadu StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; tiap sel sama dengan format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json); render diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D18:D28"], "format": "0.000"}, {"kolom": "uut", "sel": ["SERTIFIKAT!I18:I28"], "format": "0.000"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L18:L28"], "format": "0.000"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J29"], "format": "0.0000", "varian": ["A"], "catatan": "master 0-25 mm: contoh sesi inch"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J29"], "format": "0.000", "varian": ["B", "C", "D"]}, {"kolom": "k", "sel": ["SERTIFIKAT!P30"], "format": "0"}]}
 }

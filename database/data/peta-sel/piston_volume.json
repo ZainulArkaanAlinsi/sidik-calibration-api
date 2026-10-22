@@ -1,0 +1,432 @@
+{
+ "format": 1,
+ "kode_profil": "piston_volume",
+ "sumber_json": "tabel-standar-piston-volume.json",
+ "bukti": [
+  "Alamat = baca_tabel() docs/skrip/gen-tabel-standar-piston-volume.py (DATABASE U13:AE17, W/Y/AA6:8; 'STANDARD KALIBRATOR' B10:C21; 'SENSOR PT100' D9:E15; 'Tabel MPE' B4:D47). Tidak ada ekspor CSV di repo: alamat peta = alamat .xlsm asli.",
+  "Diverifikasi terhadap kedua .xlsm asli (Fixed & Graduated; sha256 = manifest-workbook-tekanan-piston.json) dengan docs/skrip/verifikasi-peta-xlsm.py 22 Okt 2026; sel yang dirujuk dibekukan di tests/Fixtures/peta-sel-xlsm/piston_volume/. Kedua master membawa tabel yang SAMA (generator mengadunya) — semua jalur data bersama antar varian."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  "STANDARD KALIBRATOR",
+  "SENSOR PT100",
+  "Tabel MPE"
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!V3",
+   "teks": "Buret Digital"
+  },
+  {
+   "sel": "DATABASE!X3",
+   "teks": "Piston Pipette"
+  },
+  {
+   "sel": "DATABASE!Z3",
+   "teks": "Dispensette"
+  },
+  {
+   "sel": "DATABASE!W4",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!Y4",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!AA4",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!V12",
+   "teks": "Standart Meter/Indikator"
+  },
+  {
+   "sel": "DATABASE!W12",
+   "teks": "Merk/Type"
+  },
+  {
+   "sel": "DATABASE!X12",
+   "teks": "S/N"
+  },
+  {
+   "sel": "DATABASE!Y12",
+   "teks": "Traceability"
+  },
+  {
+   "sel": "DATABASE!Z12",
+   "teks": "Due Date Calibration"
+  },
+  {
+   "sel": "DATABASE!AD12",
+   "teks": "Res."
+  },
+  {
+   "sel": "DATABASE!AE12",
+   "teks": "Stdev"
+  },
+  {
+   "sel": "STANDARD KALIBRATOR!B6",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR"
+  },
+  {
+   "sel": "STANDARD KALIBRATOR!B7",
+   "teks": "Titik Kalibrasi (oC)"
+  },
+  {
+   "sel": "STANDARD KALIBRATOR!C7",
+   "teks": "Correction oC"
+  },
+  {
+   "sel": "STANDARD KALIBRATOR!C8",
+   "teks": "PT100"
+  },
+  {
+   "sel": "SENSOR PT100!D7",
+   "teks": "Titik Kalibrasi"
+  },
+  {
+   "sel": "SENSOR PT100!E7",
+   "teks": "Correction"
+  },
+  {
+   "sel": "Tabel MPE!B2",
+   "teks": "Piston Pipette (Mikropipet)"
+  },
+  {
+   "sel": "Tabel MPE!C3",
+   "teks": "Nominal Value (ml)"
+  },
+  {
+   "sel": "Tabel MPE!D3",
+   "teks": "MPE (µl) ±"
+  },
+  {
+   "sel": "Tabel MPE!B18",
+   "teks": "Buret Digital"
+  },
+  {
+   "sel": "Tabel MPE!C18",
+   "teks": "(Hand-Driven)"
+  },
+  {
+   "sel": "Tabel MPE!D18",
+   "teks": "(Piston-Driven)"
+  },
+  {
+   "sel": "Tabel MPE!B19",
+   "teks": "Nominal Value (ml)"
+  },
+  {
+   "sel": "Tabel MPE!B29",
+   "teks": "Dispenset"
+  },
+  {
+   "sel": "Tabel MPE!C29",
+   "teks": "(Single-Stroke)"
+  },
+  {
+   "sel": "Tabel MPE!D29",
+   "teks": "(Multi-Stroke)"
+  },
+  {
+   "sel": "Tabel MPE!B30",
+   "teks": "Nominal Value (ml)"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "fixed": "(^| )fixed piston",
+   "graduated": "(^| )graduated piston"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "timbangan",
+   "tipe": "daftar_objek",
+   "kunci": "nomor",
+   "min_baris": 3,
+   "kolom": {
+    "nomor": {
+     "rentang": "DATABASE!U13:U15",
+     "tipe": "bilangan_bulat"
+    },
+    "nama": {
+     "rentang": "DATABASE!V13:V15",
+     "tipe": "teks"
+    },
+    "merk_tipe": {
+     "rentang": "DATABASE!W13:W15",
+     "tipe": "teks"
+    },
+    "nomor_seri": {
+     "rentang": "DATABASE!X13:X15",
+     "tipe": "teks"
+    },
+    "tertelusur": {
+     "rentang": "DATABASE!Y13:Y15",
+     "tipe": "teks"
+    },
+    "jatuh_tempo": {
+     "rentang": "DATABASE!Z13:Z15",
+     "tipe": "tanggal"
+    },
+    "u95": "DATABASE!AB13:AB15",
+    "resolusi": "DATABASE!AD13:AD15",
+    "stdev": "DATABASE!AE13:AE15"
+   }
+  },
+  {
+   "jalur": "termometer.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!V16"
+  },
+  {
+   "jalur": "termometer.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!W16"
+  },
+  {
+   "jalur": "termometer.nomor_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!X16"
+  },
+  {
+   "jalur": "termometer.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!Y16"
+  },
+  {
+   "jalur": "termometer.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!Z16"
+  },
+  {
+   "jalur": "termometer.u95",
+   "tipe": "angka",
+   "sel": "DATABASE!AB16"
+  },
+  {
+   "jalur": "sensor.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!Z17"
+  },
+  {
+   "jalur": "sensor.u95",
+   "tipe": "angka",
+   "sel": "DATABASE!AB17"
+  },
+  {
+   "jalur": "koreksi_meter_suhu",
+   "tipe": "daftar_objek",
+   "kunci": "indeks",
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1,
+   "kolom": {
+    "indeks": "STANDARD KALIBRATOR!B10:B21",
+    "koreksi": "STANDARD KALIBRATOR!C10:C21"
+   }
+  },
+  {
+   "jalur": "koreksi_sensor_suhu",
+   "tipe": "daftar_objek",
+   "kunci": "indeks",
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1,
+   "kolom": {
+    "indeks": "SENSOR PT100!D9:D15",
+    "koreksi": "SENSOR PT100!E9:E15"
+   }
+  },
+  {
+   "jalur": "mpe.piston_pipette",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "min_baris": 13,
+   "kolom": {
+    "nominal_ml": "Tabel MPE!C4:C16",
+    "mpe_ul": "Tabel MPE!D4:D16"
+   }
+  },
+  {
+   "jalur": "mpe.buret_digital",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "min_baris": 8,
+   "kolom": {
+    "nominal_ml": "Tabel MPE!B20:B27",
+    "hand_driven_ul": "Tabel MPE!C20:C27",
+    "motor_driven_ul": "Tabel MPE!D20:D27"
+   }
+  },
+  {
+   "jalur": "mpe.dispensett",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "min_baris": 17,
+   "kolom": {
+    "nominal_ml": "Tabel MPE!B31:B47",
+    "single_stroke_ul": {
+     "rentang": "Tabel MPE!C31:C47",
+     "bukan_angka_jadi_null": true
+    },
+    "multi_stroke_ul": "Tabel MPE!D31:D47"
+   }
+  },
+  {
+   "jalur": "cmc.buret_digital[0].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!W6"
+  },
+  {
+   "jalur": "cmc.buret_digital[1].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!W7"
+  },
+  {
+   "jalur": "cmc.piston_pipette[0].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!Y6"
+  },
+  {
+   "jalur": "cmc.piston_pipette[1].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!Y7"
+  },
+  {
+   "jalur": "cmc.piston_pipette[2].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!Y8"
+  },
+  {
+   "jalur": "cmc.dispensett[0].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!AA6"
+  },
+  {
+   "jalur": "cmc.dispensett[1].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!AA7"
+  },
+  {
+   "jalur": "cmc.dispensett[2].nilai_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!AA8"
+  }
+ ],
+ "tidak_dipetakan": [
+  "konstanta (Tanaka a1..a5, densitas anak timbangan, koefisien muai, u_operator) — literal generator, bukan sel acuan.",
+  "sensor.nama — literal generator ('Sensor Suhu PRT PT100'); baris DATABASE 17 tidak berlabel nama.",
+  "cmc.*.maks_ml — batas pita literal generator (label 'Range/Capacity' master berupa teks '1-10', '0.101 - 1')."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. Sama dengan PistonVolumeProfile::formatKolomSertifikat() (StudioFormatSertifikatTest).",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E21:E21"
+    ],
+    "format": "0",
+    "varian": [
+     "fixed"
+    ],
+    "catatan": "Nominal Value"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!N21:N21"
+    ],
+    "format": "0.0000",
+    "varian": [
+     "fixed"
+    ],
+    "catatan": "Actual Volume"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!S21:S21"
+    ],
+    "format": "0.0000",
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!Q22"
+    ],
+    "format": "0.000",
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!V23"
+    ],
+    "format": "0",
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E21:E23"
+    ],
+    "format": "0.00",
+    "varian": [
+     "graduated"
+    ],
+    "catatan": "Nominal Value"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!N21:N23"
+    ],
+    "format": "0.00",
+    "varian": [
+     "graduated"
+    ],
+    "catatan": "Actual Volume"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!S21:S23"
+    ],
+    "format": "0.00",
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!Q24"
+    ],
+    "format": "0.00",
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!V25"
+    ],
+    "format": "0",
+    "varian": [
+     "graduated"
+    ]
+   }
+  ]
+ }
+}

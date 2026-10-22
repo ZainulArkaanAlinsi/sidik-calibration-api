@@ -142,6 +142,38 @@ class StempelAcuanTest extends TestCase
     }
 
     /**
+     * Paritas versi 1 Dial Indicator (22 Okt 2026): sesudah paketnya diimpor,
+     * sesi Dial berstempel versi dial_indicator dan angkanya IDENTIK dengan
+     * jalur JSON — pindah ke SumberAcuan tidak menggeser angka apa pun.
+     */
+    public function test_dial_indicator_v1_db_identik_dengan_json(): void
+    {
+        $this->artisan('acuan:impor-awal', ['profil' => 'dial_indicator', '--organisasi' => $this->teknisi->organization_id])
+            ->assertSuccessful();
+        $v1Dial = PaketAcuanVersi::query()
+            ->whereHas('paketAcuan', fn ($q) => $q->where('kode_profil', 'dial_indicator'))
+            ->sole();
+
+        config(['acuan.sumber' => 'json']);
+        $json = $this->simpanSesi($this->payloadDialIndicator());
+
+        config(['acuan.sumber' => 'db']);
+        $db = $this->simpanSesi($this->payloadDialIndicator());
+
+        $this->assertSame([null, null, null], $this->stempelSesi($json));
+        $this->assertSame([$v1Dial->id, $v1Dial->id, $v1Dial->id], $this->stempelSesi($db));
+        $this->assertSame($this->angkaSesi($json), $this->angkaSesi($db));
+
+        config(['acuan.sumber' => 'json']);
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$json]])->assertSuccessful();
+
+        config(['acuan.sumber' => 'db']);
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$db]])->assertSuccessful();
+        $this->assertSame([$v1Dial->id, $v1Dial->id, $v1Dial->id], $this->stempelSesi($db));
+        $this->assertSame($this->angkaSesi($json), $this->angkaSesi($db));
+    }
+
+    /**
      * Versi 2 Micrometer yang berbeda AKTIF pada tanggal sesi Dial Indicator:
      * sesi Dial tetap membaca JSON, stempel null, angka sama persis.
      */
@@ -176,7 +208,7 @@ class StempelAcuanTest extends TestCase
 
         config(['acuan.sumber' => 'db']);
         $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$db]])
-            ->doesntExpectOutputToContain('data acuan:')
+            ->expectsOutputToContain('data acuan: berkas JSON') // Dial ber-skema (22 Okt 2026), paketnya belum diimpor
             ->assertSuccessful();
         $this->assertSame([null, null, null], $this->stempelSesi($db));
         $this->assertSame($this->angkaSesi($json), $this->angkaSesi($db));

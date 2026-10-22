@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "kode_profil": "jangka_sorong",
+  "sumber_json": "tabel-standar-jangka-sorong.json",
+  "bukti": [
+    "Alamat ekstrak = alamat yang dibaca docs/skrip/gen-tabel-standar-jangka-sorong.py: DATABASE!S13:W13 (identitas balok ukur), Standar_GB!Q10:S132 (keping, baris ber-nominal kosong dibuang), DATABASE!S5:T5 (CMC, u95_mm = T5/1000), 'Perhitungan koef. Sensitivitas'!E1 & E4.",
+    "Alamat & teks jangkar dicek 22 Okt 2026 di ekspor CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_; ekstraksi dari CSV itu = tabel-standar-jangka-sorong.json (StudioPetaSelProfilTest). Satu master, tanpa varian.",
+    "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
+  ],
+  "lembar_wajib": ["DATABASE", "Standar_GB", "Std_CaliperCek", "INPUT DATA", "Perhitungan koef. Sensitivitas"],
+  "jangkar": [
+    {"sel": "DATABASE!S3", "teks": "Jenis"},
+    {"sel": "DATABASE!T3", "teks": "CMC (µm)"},
+    {"sel": "DATABASE!S12", "teks": "Standart Meter/Indikator"},
+    {"sel": "DATABASE!T12", "teks": "Merk/Type"},
+    {"sel": "DATABASE!U12", "teks": "S/N"},
+    {"sel": "DATABASE!V12", "teks": "Traceability"},
+    {"sel": "DATABASE!W12", "teks": "Calibration Date"},
+    {"sel": "Standar_GB!Q9", "teks": "Nominal GB (mm)"},
+    {"sel": "Standar_GB!R9", "teks": "Nilai UUT (mm)"},
+    {"sel": "Standar_GB!S9", "teks": "U 95% (k=2) (m)"},
+    {"sel": "Std_CaliperCek!C2", "teks": "Caliper Checker"},
+    {"sel": "Std_CaliperCek!C9", "teks": "Outside (mm)"},
+    {"sel": "Std_CaliperCek!C22", "teks": "Inside (mm)"},
+    {"sel": "INPUT DATA!C109", "teks": "Nominal Gauge Block"},
+    {"sel": "Perhitungan koef. Sensitivitas!D1", "teks": "CTE"},
+    {"sel": "Perhitungan koef. Sensitivitas!E3", "teks": "L (mm)"}
+  ],
+  "ekstrak": [
+    {"jalur": "balok_ukur.nama", "tipe": "teks", "sel": "DATABASE!S13"},
+    {"jalur": "balok_ukur.merk_tipe", "tipe": "teks", "sel": "DATABASE!T13"},
+    {"jalur": "balok_ukur.seri", "tipe": "teks", "sel": "DATABASE!U13"},
+    {"jalur": "balok_ukur.traceability", "tipe": "teks", "sel": "DATABASE!V13"},
+    {"jalur": "balok_ukur.tanggal_kalibrasi", "tipe": "tanggal", "sel": "DATABASE!W13"},
+    {"jalur": "balok_ukur.keping", "tipe": "daftar_objek", "kunci": "nominal_mm", "kolom": {"nominal_mm": "Standar_GB!Q10:Q132", "nilai_terkoreksi_mm": "Standar_GB!R10:R132", "u95_mm": "Standar_GB!S10:S132"}, "min_baris": 1},
+    {"jalur": "cmc.label", "tipe": "teks", "sel": "DATABASE!S5"},
+    {"jalur": "cmc.u95_mm", "tipe": "angka", "sel": "DATABASE!T5", "bagi": 1000},
+    {"jalur": "konstanta.depth_ci_suhu_cte_per_c", "tipe": "angka", "sel": "Perhitungan koef. Sensitivitas!E1"},
+    {"jalur": "konstanta.depth_ci_suhu_panjang_mm", "tipe": "angka", "sel": "Perhitungan koef. Sensitivitas!E4"}
+  ],
+  "paket_lain": [
+    {"paket": "height_gauge", "ekstrak": [
+      {"jalur": "outside[{i}].nominal_mm", "tipe": "angka", "sel": "Std_CaliperCek!C10", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "outside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F10", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "inside[{i}].nominal_mm", "tipe": "angka", "sel": "Std_CaliperCek!C23", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "inside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F23", "ulang": 10, "langkah_baris": 1},
+      {"jalur": "standar.u95_um", "tipe": "angka", "sel": "Std_CaliperCek!J10"},
+      {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "Std_CaliperCek!O2"},
+      {"jalur": "standar.seri", "tipe": "teks", "sel": "Std_CaliperCek!C3"}
+    ]}
+  ],
+  "tidak_dipetakan": [
+    "tumpukan_depth_mm — generator membacanya dari isian SESI contoh master (INPUT DATA!C111:C123), bukan tabel standar (pertanyaan lab Jangka Sorong §11). SENGAJA tidak diekstrak: master dengan isian sesi lain/kosong akan diam-diam menggeser atau mengosongkan tumpukan Depth; jangkar INPUT DATA!C109 tetap memastikan lembarnya berbentuk sama",
+    "cmc.kapasitas_maks_mm — 300 ditulis literal di generator (lampiran LK-285-IDN no. 35), bukan sel",
+    "konstanta.* selain depth_ci_suhu_* (15 daun) — angka telanjang di dalam rumus master (PERHITUNGAN!X37/Y37/Z24/Z28, U95!N9/K10/K11/K12/K13/K53/Q6:Q14/N5, U95!V48 diketik 50); tetap kode/JSON sampai fase 5 (rumus)",
+    "Caliper Checker (Std_CaliperCek!C10:J32, O2, C3) — bukan isi tabel ini: kalkulator membaca paket height_gauge (keping fisik yang sama). Seperti generator (C, F, J, O2, C3), peta MENGADUNYA lewat paket_lain; beda = bersama_antar_paket, wajib diakui saat pengesahan. Generator menuntut J10:J32 seragam; peta hanya mengadu J10",
+    "DATABASE!S14:W14 — identitas Caliper Checker, duplikat; tidak dipakai tabel ini"
+  ],
+  "perlu_berkas_asli": [
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D25:D34", "SERTIFIKAT!D41:D50", "SERTIFIKAT!D57:D61"], "format": "0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!I25:I34", "SERTIFIKAT!I41:I50", "SERTIFIKAT!I57:I61"], "format": "0.00"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L25:L34", "SERTIFIKAT!L41:L50", "SERTIFIKAT!L57:L61"], "format": "0.00"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J35", "SERTIFIKAT!J51", "SERTIFIKAT!J62"], "format": "0.000"}, {"kolom": "k", "sel": ["SERTIFIKAT!O36", "SERTIFIKAT!O52", "SERTIFIKAT!O63"], "format": "General"}]}
+}

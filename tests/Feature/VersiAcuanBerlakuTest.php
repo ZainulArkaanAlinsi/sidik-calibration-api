@@ -212,12 +212,14 @@ class VersiAcuanBerlakuTest extends TestCase
     {
         $registry = app(CalibrationProfileRegistry::class);
 
-        // pH Meter tidak punya skemaAcuan(); Dial Indicator memakai balok ukur
-        // Micrometer tapi TIDAK boleh membuka lingkup micrometer.
+        // pH Meter tidak punya skemaAcuan(). Dial Indicator punya (22 Okt 2026)
+        // tapi paketnya belum diimpor di sini — dan walau memakai balok ukur
+        // Micrometer, sesinya TIDAK boleh membuka lingkup micrometer.
+        $this->assertNull($registry->untukKode('ph_meter')?->skemaAcuan(), 'ph_meter belum punya skemaAcuan()');
+
         foreach (['ph_meter', 'dial_indicator'] as $kode) {
             $profil = $registry->untukKode($kode);
             $this->assertNotNull($profil, $kode);
-            $this->assertNull($profil->skemaAcuan(), "{$kode} belum punya skemaAcuan()");
 
             $sesi = $this->sesi($profil->namaAlatKemampuan(), '2025-05-02');
 

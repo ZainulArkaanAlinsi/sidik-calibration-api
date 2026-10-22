@@ -401,7 +401,7 @@ class CertificateExcelExporter
             $sensor = $sp['sensor'] ?? [];
 
             $writer->addRow(Row::fromValues(array_merge(
-                [$this->bulat($sp['indikator'] ?? null, $d('indikator')), 'Terukur (°C)'],
+                [$this->bulat($sp['indikator'] ?? null, array_key_exists('desimal_indikator', $sp) ? $sp['desimal_indikator'] : $d('indikator')), 'Terukur (°C)'],
                 array_map(fn (int $i): ?float => $this->bulat($sensor[$i]['terukur'] ?? null, $d('terukur')), array_keys($posisi)),
                 [$this->bulat($sp['u95'] ?? null, $d('u95'))],
             )));
@@ -432,7 +432,7 @@ class CertificateExcelExporter
 
         foreach ($setPoint as $sp) {
             $writer->addRow(Row::fromValues([
-                $this->bulat($sp['set_point'] ?? null, $d('setting')),
+                $this->bulat($sp['set_point'] ?? null, array_key_exists('desimal_setting', $sp) ? $sp['desimal_setting'] : $d('setting')),
                 $this->bulat($sp['indikator'] ?? null, $d('indikator_kinerja')),
                 $this->bulat($sp['keseragaman'] ?? null, $d('kinerja')),
                 $this->bulat($sp['kestabilan'] ?? null, $d('kinerja')),

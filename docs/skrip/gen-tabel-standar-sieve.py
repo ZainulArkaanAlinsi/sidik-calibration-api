@@ -6,16 +6,18 @@ sheet `STANDAR_KALIBRATOR` dan `DATABASE`. Seluruh sel yang dibaca di sini
 KONSTANTA (bukan array formula), jadi nilai CSV-nya sama dengan yang tersimpan
 di workbook — xlsm tidak perlu dibuka.
 
-## Tabel_MPE disalin APA ADANYA, lalu DITANDAI
+## Tabel_MPE disalin APA ADANYA; tandanya DITURUNKAN kode
 
 `STANDAR_KALIBRATOR!B41:N136` (96 baris, ASTM E11 / ISO 3310-1) memuat salah
 ketik: 0,080 mm Ø kawat preferred 0,56 (di luar pita max/min miliknya sendiri),
 1 mm tertulis 18000 µm, 10 mm tertulis 0,279 inch. Salah ketik itu TIDAK
 dibetulkan di sini — membetulkannya diam-diam berarti JSON menyimpang dari
 master tanpa jejak, dan yang berhak memutuskan angka yang benar itu lab
-(`docs/pertanyaan-lab-sieve.md`). Yang ditulis: nilainya apa adanya + daftar
-`tanda` berisi kolom mana yang janggal. `TabelStandarSieve` memblokir baris yang
-kolom JANGGALNYA dipakai hitungan.
+(`docs/pertanyaan-lab-sieve.md`). Yang ditulis: nilainya apa adanya. Daftar
+kolom janggal (`tanda`) TIDAK disimpan di JSON sejak 22 Okt 2026 — diturunkan
+`TabelStandarSieve::tanda()` dengan aturan yang sama di bawah (data acuan Studio
+hanya berisi sel master; turunan tidak boleh basi saat master diimpor ulang).
+Skrip ini tetap mencetak baris yang ditandai sebagai pemeriksaan.
 
 Aturan tandanya mekanis, bukan penilaian satu per satu:
   - `ukuran_um`   : |µm − mm×1000| > 1 %           (kolom tampilan)
@@ -82,6 +84,7 @@ pastikan(DB, "S13", "Digital Caliper")
 pastikan(DB, "S14", "Digital Microscope")
 
 mpe = []
+DITANDAI = []
 for r in range(41, 137):
     ukuran = float(sel(K, f"B{r}"))
     baris = {
@@ -100,19 +103,21 @@ for r in range(41, 137):
         "kawat_preferred_mm": angka_atau_teks(sel(K, f"L{r}")),
         "kawat_max_mm": angka_atau_teks(sel(K, f"M{r}")),
         "kawat_min_mm": angka_atau_teks(sel(K, f"N{r}")),
-        "tanda": [],
     }
+    tanda = []
     um, inch = baris["ukuran_um"], baris["ukuran_inch"]
     if isinstance(um, float) and abs(um - ukuran * 1000) > 0.01 * ukuran * 1000:
-        baris["tanda"].append("ukuran_um")
+        tanda.append("ukuran_um")
     if isinstance(inch, float) and abs(inch - ukuran / 25.4) > 0.10 * (ukuran / 25.4):
-        baris["tanda"].append("ukuran_inch")
+        tanda.append("ukuran_inch")
     pref, mx, mn = baris["kawat_preferred_mm"], baris["kawat_max_mm"], baris["kawat_min_mm"]
     if all(isinstance(x, float) for x in (pref, mx, mn)):
         if mn > mx:
-            baris["tanda"].append("kawat_min_max")
+            tanda.append("kawat_min_max")
         elif not (mn <= pref <= mx):
-            baris["tanda"].append("kawat_preferred_mm")
+            tanda.append("kawat_preferred_mm")
+    if tanda:
+        DITANDAI.append((ukuran, tanda))
     mpe.append(baris)
 
 ukuran_semua = [b["ukuran_mm"] for b in mpe]
@@ -149,7 +154,7 @@ def standar(r, kol_resolusi):
 
 isi = {
     "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. "
-               "Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
+               "Tabel_MPE disalin apa adanya; kolom yang janggal tidak dibetulkan; tandanya DITURUNKAN kode (TabelStandarSieve::tanda), bukan data.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-sieve.py",
     "standar": {
         # DATABASE!R13:Z14 + resolusi STANDAR_KALIBRATOR!C7 / K7.
@@ -201,5 +206,4 @@ isi = {
 }
 
 KELUARAN.write_text(json.dumps(isi, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
-ditandai = [(b["ukuran_mm"], b["tanda"]) for b in mpe if b["tanda"]]
-print(f"Tulis {KELUARAN.relative_to(AKAR)} — {len(mpe)} baris Tabel_MPE, ditandai: {ditandai}")
+print(f"Tulis {KELUARAN.relative_to(AKAR)} — {len(mpe)} baris Tabel_MPE, ditandai (diturunkan kode): {DITANDAI}")

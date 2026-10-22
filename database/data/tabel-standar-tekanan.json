@@ -94,50 +94,43 @@
           "set_point": -70.0,
           "koreksi_up": 0.0,
           "koreksi_down": 0.0,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -60.0,
           "koreksi_up": 0.0,
           "koreksi_down": 0.0,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -50.0,
           "koreksi_up": 0.0,
           "koreksi_down": 0.0,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -40.0,
           "koreksi_up": -0.01,
           "koreksi_down": -0.01,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -30.0,
           "koreksi_up": 0.09,
           "koreksi_down": 0.09,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -20.0,
           "koreksi_up": 0.09,
           "koreksi_down": 0.09,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": -10.0,
           "koreksi_up": 0.09,
           "koreksi_down": 0.09,
-          "u95": 0.06,
-          "u95_dari_sel_gabungan": "G10:G17"
+          "u95": 0.06
         },
         {
           "set_point": 0.0,

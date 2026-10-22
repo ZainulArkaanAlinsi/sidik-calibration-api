@@ -204,6 +204,12 @@ class SelAcuan
     {
         $simpul = ['' => $isi];
 
+        // Jalur kosong = akar isi: lembar `objek` untuk daun tingkat atas
+        // (mis. `faktor_set_point_kg_ke_kn` Gaya).
+        if ($jalur === '') {
+            return $simpul;
+        }
+
         foreach (explode('/', $jalur) as $segmen) {
             $lanjut = [];
 

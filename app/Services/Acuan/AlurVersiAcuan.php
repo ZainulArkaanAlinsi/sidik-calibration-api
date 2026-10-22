@@ -10,6 +10,7 @@ use App\Models\SimulasiAcuan;
 use App\Models\User;
 use App\Models\WorkbookMaster;
 use App\Services\PemisahanWewenang;
+use App\Services\Studio\PetaSel\DataBersamaPaket;
 use App\Services\Studio\PetaSel\DataBersamaVarian;
 use App\Support\JsonKanonik;
 use Carbon\CarbonImmutable;
@@ -43,9 +44,13 @@ final class AlurVersiAcuan
 
     public const AKUI_SESI_GAGAL = 'sesi_gagal';
 
+    /** Data paket lain di master sumber draf beda dari versi berlakunya (DataBersamaPaket). */
+    public const AKUI_BERSAMA_PAKET = 'bersama_antar_paket';
+
     public function __construct(
         private readonly SimulasiVersiAcuan $simulasi,
         private readonly DataBersamaVarian $bersama,
+        private readonly DataBersamaPaket $bersamaPaket,
         private readonly PemisahanWewenang $pemisahan,
     ) {}
 
@@ -140,6 +145,7 @@ final class AlurVersiAcuan
         $sumber = self::sumber($v);
         $dasar = $v->dasar_versi_id === null ? null : PaketAcuanVersi::query()->find($v->dasar_versi_id);
         $bersama = $this->bersama->periksa($v, (string) $v->paketAcuan?->kode_profil, $dasar?->isiTerurai(), $sumber);
+        $bedaPaket = $this->bersamaPaket->periksaSumberDraf($v, isset($sumber['workbook_master_id']) ? (int) $sumber['workbook_master_id'] : null);
 
         $ringkasan = $hasil['ringkasan'] + [
             'bersama_antar_varian' => count($bersama['berubah']),
@@ -147,9 +153,10 @@ final class AlurVersiAcuan
                 $bersama['master_lain'],
                 static fn (array $m): bool => ($m['beda'] ?? []) !== [] || isset($m['galat']),
             )),
+            'bersama_antar_paket' => count($bedaPaket),
         ];
 
-        return DB::transaction(function () use ($v, $oleh, $sha, $mulai, $hasil, $bersama, $ringkasan): SimulasiAcuan {
+        return DB::transaction(function () use ($v, $oleh, $sha, $mulai, $hasil, $bersama, $bedaPaket, $ringkasan): SimulasiAcuan {
             // Simulasi berjalan di luar transaksi (lama); status bisa berubah
             // selama itu — diperiksa ulang di bawah kunci paket.
             $v = $this->kunci($v);
@@ -164,6 +171,7 @@ final class AlurVersiAcuan
                 'laporan' => json_encode([
                     'sesi' => $hasil['sesi'],
                     'bersama_antar_varian' => $bersama,
+                    'bersama_antar_paket' => $bedaPaket,
                 ], JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'dijalankan_oleh' => $oleh->id,
                 'mulai' => $mulai,
@@ -222,6 +230,10 @@ final class AlurVersiAcuan
 
         if ((int) ($r['bersama_antar_varian'] ?? 0) > 0) {
             $wajib[] = self::AKUI_BERSAMA;
+        }
+
+        if ((int) ($r['bersama_antar_paket'] ?? 0) > 0) {
+            $wajib[] = self::AKUI_BERSAMA_PAKET;
         }
 
         if ((int) ($r['sesi_gagal'] ?? 0) > 0) {

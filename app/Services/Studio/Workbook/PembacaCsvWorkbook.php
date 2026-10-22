@@ -113,6 +113,15 @@ final class PembacaCsvWorkbook
         $panjang = [];
 
         try {
+            // BOM UTF-8 dilompati SEBELUM fgetcsv: kalau dibuang sesudahnya,
+            // sel pertama yang berpetik (BOM lalu `"teks ber-enter"`) tidak
+            // dikenali sebagai berpetik, garis barunya memecah rekaman, dan
+            // nomor baris seluruh lembar bergeser dari `csv.reader` generator
+            // (Tabel_Maximum_Internal_Diameter Volumetric Fixed, 22 Okt 2026).
+            if (fread($h, 3) !== "\xEF\xBB\xBF") {
+                rewind($h);
+            }
+
             // escape '' = RFC 4180 murni; bawaan "\\" usang di PHP 8.4 dan
             // salah membaca teks yang berakhir garis miring terbalik.
             while (($rekaman = fgetcsv($h, null, ',', '"', '')) !== false) {

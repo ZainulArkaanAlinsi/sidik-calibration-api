@@ -1,0 +1,78 @@
+{
+  "format": 1,
+  "kode_profil": "height_gauge",
+  "sumber_json": "tabel-standar-height-gauge.json",
+  "bukti": [
+    "Tabel Outside/Inside = alamat yang dibaca docs/skrip/gen-tabel-standar-height-gauge.py: Std_CaliperCek!C10:J19 (Outside) & C23:J32 (Inside); kolom C nominal, F nilai terkoreksi, I koreksi (um), J U95 (um) — float() tanpa pembulatan.",
+    "Identitas standar DITULIS LITERAL di generator (bukan dibaca sel). Alamatnya diambil dari ekspor CSV master 22 Okt 2026: nilai JSON berada di sel berlabel Std_CaliperCek!C2:C6 (Nama Alat/No Seri/Merk/Tipe/Rentang Ukur), O2 (Tanggal Kalibrasi), O3 (Tertelusur), dan DATABASE!T13 (Merk/Type, satu-satunya tempat 'Metrology/CMG-9060C'). u95_um = Std_CaliperCek!J10; generator menuntut keduapuluh baris J = 4,1 (dijaga cek di bawah).",
+    "Ekstraksi peta dari CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026 = tabel-standar-height-gauge.json (StudioPetaSelProfilTest). Satu master, tanpa varian.",
+    "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
+  ],
+  "lembar_wajib": ["Std_CaliperCek", "DATABASE"],
+  "jangkar": [
+    {"sel": "Std_CaliperCek!A2", "teks": "Nama Alat"},
+    {"sel": "Std_CaliperCek!A3", "teks": "No Seri"},
+    {"sel": "Std_CaliperCek!A4", "teks": "Merk"},
+    {"sel": "Std_CaliperCek!A5", "teks": "Tipe"},
+    {"sel": "Std_CaliperCek!A6", "teks": "Rentang Ukur"},
+    {"sel": "Std_CaliperCek!N2", "teks": "Tanggal Kalibrasi"},
+    {"sel": "Std_CaliperCek!N3", "teks": "Tertelusur"},
+    {"sel": "Std_CaliperCek!C8", "teks": "Nominal Caliper Checker"},
+    {"sel": "Std_CaliperCek!F8", "teks": "UUT Reading"},
+    {"sel": "Std_CaliperCek!J8", "teks": "U95"},
+    {"sel": "Std_CaliperCek!C9", "teks": "Outside (mm)"},
+    {"sel": "Std_CaliperCek!I9", "teks": "(um)"},
+    {"sel": "Std_CaliperCek!C21", "teks": "Nominal Caliper Checker"},
+    {"sel": "Std_CaliperCek!C22", "teks": "Inside (mm)"},
+    {"sel": "DATABASE!T12", "teks": "Merk/Type"}
+  ],
+  "ekstrak": [
+    {"jalur": "standar.nama", "tipe": "teks", "sel": "Std_CaliperCek!C2"},
+    {"jalur": "standar.seri", "tipe": "teks", "sel": "Std_CaliperCek!C3"},
+    {"jalur": "standar.merk", "tipe": "teks", "sel": "Std_CaliperCek!C4"},
+    {"jalur": "standar.tipe", "tipe": "teks", "sel": "Std_CaliperCek!C5"},
+    {"jalur": "standar.rentang", "tipe": "teks", "sel": "Std_CaliperCek!C6"},
+    {"jalur": "standar.tanggal_kalibrasi", "tipe": "tanggal", "sel": "Std_CaliperCek!O2"},
+    {"jalur": "standar.tertelusur", "tipe": "teks", "sel": "Std_CaliperCek!O3"},
+    {"jalur": "standar.merk_tipe", "tipe": "teks", "sel": "DATABASE!T13"},
+    {"jalur": "standar.u95_um", "tipe": "angka", "sel": "Std_CaliperCek!J10"},
+    {"jalur": "outside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F10", "ulang": 10, "langkah_baris": 1},
+    {"jalur": "outside[{i}].koreksi_um", "tipe": "angka", "sel": "Std_CaliperCek!I10", "ulang": 10, "langkah_baris": 1},
+    {"jalur": "inside[{i}].nominal_mm", "tipe": "angka", "sel": "Std_CaliperCek!C23", "ulang": 10, "langkah_baris": 1},
+    {"jalur": "inside[{i}].nilai_terkoreksi_mm", "tipe": "angka", "sel": "Std_CaliperCek!F23", "ulang": 10, "langkah_baris": 1},
+    {"jalur": "inside[{i}].koreksi_um", "tipe": "angka", "sel": "Std_CaliperCek!I23", "ulang": 10, "langkah_baris": 1}
+  ],
+  "cek": [
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!C10", "banding": "outside[{i}].nominal_mm", "toleransi": 1e-9, "ulang": 10, "langkah_baris": 1},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J10", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J11", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J12", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J13", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J14", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J15", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J16", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J17", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J18", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J19", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J23", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J24", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J25", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J26", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J27", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J28", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J29", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J30", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J31", "banding": "standar.u95_um", "toleransi": 1e-9},
+    {"tipe": "selisih_maks", "sel": "Std_CaliperCek!J32", "banding": "standar.u95_um", "toleransi": 1e-9}
+  ],
+  "tidak_dipetakan": [
+    "konstanta.* (13 daun) — angka telanjang di dalam rumus master (P35/Q35, S24, PERHITUNGAN U95%!K10, N9, ...); tetap kode/JSON sampai fase 5 (rumus)",
+    "Std_CaliperCek!H10:H32 koreksi (mm) — turunan F−C, tidak disimpan generator",
+    "DATABASE!S13,U13:X13 — duplikat identitas standar (nama/seri/traceability/tanggal/interval 2 tahun); peta membaca Std_CaliperCek, duplikat DATABASE tidak diadu",
+    "outside[*].nominal_mm — SENGAJA tidak diekstrak: sepuluh nominal Outside = titik pra-cetak lembar kerja, generator menolak daftar yang berubah ('periksa Instruksi Kerja dulu'). Peta meniru itu lewat cek Std_CaliperCek!C10:C19 = nominal versi dasar (master dengan nominal lain DITOLAK)"
+  ],
+  "perlu_berkas_asli": [
+    "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+  ],
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!D24:D33"], "format": "0.00"}, {"kolom": "uut", "sel": ["SERTIFIKAT!I24:I33"], "format": "0.00"}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!L24:L33"], "format": "0.00"}, {"kolom": "u95", "sel": ["SERTIFIKAT!J34"], "format": "0.000"}, {"kolom": "k", "sel": ["SERTIFIKAT!O35"], "format": "General"}]}
+}

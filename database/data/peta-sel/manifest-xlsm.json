@@ -1,0 +1,308 @@
+{
+ "dicatat": "2026-10-22",
+ "catatan": "sha256 + nama berkas master .xlsm asli yang dirujuk peta sel (berkas TIDAK ada di repo; dibaca di tempat, didekripsi ke memori). 'terverifikasi' = docs/skrip/verifikasi-peta-xlsm.py 22 Okt 2026: lembar wajib, semua jangkar, semua ekstrak (= JSON repo) dan semua cek lolos pada berkas itu (alamat .xlsm lewat bagian `xlsm` peta bila ada).",
+ "berkas": [
+  {
+   "paket": "micrometer",
+   "berkas": "Master Olah Data_Micrometer 0-25mm.xlsm",
+   "sha256": "fc2ddcf7135212ec3abe6ee051588dd6e327aff1280fcb30112b8ee4d4aa0957",
+   "ukuran_byte": 336384,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-micrometer.json"
+  },
+  {
+   "paket": "micrometer",
+   "berkas": "Master Olah Data_Micrometer 25-50mm.xlsm",
+   "sha256": "9bcd9cc5fe8e4fa7bca58c98739244e5d2ebb744d012a70bee3184b6f140586b",
+   "ukuran_byte": 311808,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-micrometer.json",
+   "catatan": "salinan di folder 'EXEL CALIBRATION SIDIK' BEDA (sha256 7e962f68dd000b60fa1b185e791ea2f3807d7958b25d81b247798ca0f95f2bcb, 311296 byte) — keduanya lolos verifikasi peta dengan isi acuan identik; yang dicatat = salinan yang dibuktikan setara JSON 8 Okt 2026"
+  },
+  {
+   "paket": "micrometer",
+   "berkas": "Master Olah Data_Micrometer 50-75mm.xlsm",
+   "sha256": "6b4ca0ed427b1c5e99a499ffdede7e11447e060c4b9ef4c83b5a6ba66d508ed6",
+   "ukuran_byte": 311296,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-micrometer.json"
+  },
+  {
+   "paket": "micrometer",
+   "berkas": "Master Olah Data_Micrometer 75-100mm.xlsm",
+   "sha256": "7712b33db74aec314eaabd164e29d744e7f266f629516784d829cdaf0d1f2cec",
+   "ukuran_byte": 310784,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-micrometer.json"
+  },
+  {
+   "paket": "dial_indicator",
+   "berkas": "Master Olah Data_Dial Indicator.xlsm",
+   "sha256": "dadd9ab0a54cdd983cd30925d0bb62fd147a49b6897f061906aa61adb2ab48a2",
+   "ukuran_byte": 203264,
+   "terverifikasi": true
+  },
+  {
+   "paket": "height_gauge",
+   "berkas": "Master olda Height Gauge 600 mm 2026.xlsm",
+   "sha256": "9192f2da5b742a3c1bb986b1b3ffbfc63b7c41c58f2f30505c59b5333f3c9ff6",
+   "ukuran_byte": 573440,
+   "terverifikasi": true
+  },
+  {
+   "paket": "jangka_sorong",
+   "berkas": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm",
+   "sha256": "0360c8d5b2336d480f00932b938f235b3663c040d8fd8a43f906ffa31530efc6",
+   "ukuran_byte": 644608,
+   "terverifikasi": true
+  },
+  {
+   "paket": "volumetric",
+   "berkas": "(NEW) Master Olah Data_Fixed Volumetric Glassware_2026.xlsm",
+   "sha256": "ebb810974c11bac1af11ed3ced738ffa6d290e1cdaaf751907cce07b549eff6f",
+   "ukuran_byte": 287744,
+   "terverifikasi": true
+  },
+  {
+   "paket": "volumetric",
+   "berkas": "(New) Master Olah Data_Graduated Volumetric Glassware _ 2026.xlsm",
+   "sha256": "b0355579c0147f4cd1721b98b0f88869fcd4b80506e571619f6513e55425bfa1",
+   "ukuran_byte": 306176,
+   "terverifikasi": true
+  },
+  {
+   "paket": "flowmeter",
+   "berkas": "1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer (1000-1900L) 2026.xlsm",
+   "sha256": "0131d11e7db82a2c540fad1be2944d7390a7690383b1a8af8a5eb858724adb56",
+   "ukuran_byte": 1070080,
+   "terverifikasi": true
+  },
+  {
+   "paket": "flowmeter",
+   "berkas": "Master olda Ultrasonic Flowrate (100-300 lpm) 2026.xlsm",
+   "sha256": "cfe74b4f1df374a6d09cb4426b06f13ff2209d6490e2f134b5373c3275603a7e",
+   "ukuran_byte": 738304,
+   "terverifikasi": true
+  },
+  {
+   "paket": "gaya",
+   "berkas": "Master Olah Data_Gaya_UTM.xlsm",
+   "sha256": "9285b867bc369c2a387435d89015e7150af5be479eb9abbac9d0bd2652ebc817",
+   "ukuran_byte": 157184,
+   "terverifikasi": true
+  },
+  {
+   "paket": "gaya",
+   "berkas": "Master Olah Data_Gaya_Load Cell.xlsm",
+   "sha256": "2324bc8982b81f77c24d7b0d5e3579f3f2406b3f8ca4095dd83f07a6dac8a0a9",
+   "ukuran_byte": 156672,
+   "terverifikasi": true
+  },
+  {
+   "paket": "gaya",
+   "berkas": "Master Olah Data_Gaya_Profing Ring.xlsm",
+   "sha256": "c346c0193fefb6cfe580d9ee9c5da387b02a1bc6c5990aeaecc6f6000278f492",
+   "ukuran_byte": 159232,
+   "terverifikasi": true
+  },
+  {
+   "paket": "putaran",
+   "berkas": "Master Olda Tachometer.xlsm",
+   "sha256": "95adba50d0801fdb3df40429fc97f853fb5a4b8c032e1a73212e049aa70ea15c",
+   "ukuran_byte": 289792,
+   "terverifikasi": true
+  },
+  {
+   "paket": "putaran",
+   "berkas": "Master Olda Centrifuge.xlsm",
+   "sha256": "78889407b2c387c96596871439284cace686e7e9dab536e2f471809ab870df99",
+   "ukuran_byte": 270848,
+   "terverifikasi": true
+  },
+  {
+   "paket": "timer_stopwatch",
+   "berkas": "Master Olda_Timer dan Stopwatch.xlsm",
+   "sha256": "a17dc15ad711f0e5d455e58cb0070555a092370811a52d1624e07c45d1b3a895",
+   "ukuran_byte": 179712,
+   "terverifikasi": true
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm",
+   "sha256": "a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3ce1669fa939301fb88",
+   "ukuran_byte": 556544,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure DRUCK13G 0~20bar.xlsm",
+   "sha256": "5ccb64f527c7547fd61a8b3b0291451a16e79edce93f576df31c02e534452dd3",
+   "ukuran_byte": 553472,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure SPMK.xlsm",
+   "sha256": "27cce61b06fb4dec1ab714d5494433b954c9e14a02771a600745d3d21b30bbaf",
+   "ukuran_byte": 1169920,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure Differential.xlsm",
+   "sha256": "91564b56c246e643cacb9c0a32f5eaa6613e499b4db9e99cd71dbfe5ac424596",
+   "ukuran_byte": 1175552,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "piston_volume",
+   "berkas": "Master Olah Data_Fixed Piston Volume.xlsm",
+   "sha256": "228991d120343995d2a6c70a79739230bf1a7a203845a30970ae864f86e90491",
+   "ukuran_byte": 321536,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "piston_volume",
+   "berkas": "Master Olah Data_Graduated Piston Volume.xlsm",
+   "sha256": "c09a6efdb172a730eb47108812a463c8dbd19f65ed40b092e5de22035238b036",
+   "ukuran_byte": 314880,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "kalibrator_suhu",
+   "berkas": "Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm",
+   "sha256": "f6ae739443127616ce47d9d0d1690f0a8176a7b6e9b671584e7d66a53fb92324",
+   "ukuran_byte": 455680,
+   "terverifikasi": true,
+   "catatan": "Salinan 'Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "kalibrator_suhu",
+   "berkas": "Master Olah Data_Suhu_TITS fungsi Source utk UUT.xlsm",
+   "sha256": "dc8daf25f809b44489609b4e4ef426eb7ae420163d409cc0c43501124af9430d",
+   "ukuran_byte": 453632,
+   "terverifikasi": true,
+   "catatan": "Salinan 'Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "enclosure",
+   "berkas": "Master Olah Data_Suhu_Enclosure_Constant Yokogawa.xlsm",
+   "sha256": "1633940b2dd917b159d4d8f5e2000836ce062defda6c9ad5af4cae1e17626d77",
+   "ukuran_byte": 680448,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik. Master Recorder (sha256 c39a81233fe2...) BELUM dipetakan: JSON repo tanpa titik -20 °C yang ada di master."
+  },
+  {
+   "paket": "tids",
+   "berkas": "Master Olah Data_Suhu_TIDS - Yokogawa K N.xlsm",
+   "sha256": "78b6eb128650a535818b824dfdfe78142ad8bb082b91b427ae9f71d8d5826436",
+   "ukuran_byte": 438784,
+   "terverifikasi": true
+  },
+  {
+   "paket": "tids",
+   "berkas": "Master Olah Data_Suhu_TIDS - Recorder (Graptech).xlsm",
+   "sha256": "db5209443c4c14b634f3d6dad0910a708588e8c6b5c75c1edbe203300d42bd5e",
+   "ukuran_byte": 471552,
+   "terverifikasi": true
+  },
+  {
+   "paket": "sieve",
+   "berkas": "Master Olah Data_Sieve Mesh.xlsm",
+   "sha256": "d8e43c46af57b7ac06d93671aba1a32b26008370ddf56e674ba755190f7e5688",
+   "ukuran_byte": 293888,
+   "terverifikasi": true
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(New) Master Olda Timbangan gram.xlsm",
+   "sha256": "ce1a3936a59d160d65c312b9034cffcfe2ebe6dc03ba318a9ccb13b5ff4666b1",
+   "ukuran_byte": 473088,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(New) Master Olda Timbangan kg.xlsm",
+   "sha256": "9c38b9bf339fa5160a6b8e5e9ac2bb6f16fb09c871832fa6d40e62912e775996",
+   "ukuran_byte": 467968,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "timbangan",
+   "berkas": "(TERBARU) Master Olda Timbangan Subtitusi 291025.xlsm",
+   "sha256": "2a591844292b59499430b83376155feab21959933339321af416deec8ffeea34",
+   "ukuran_byte": 288768,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' dan '.xlsm2' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data_Suhu_Thermocouple.xlsm",
+   "sha256": "381e5000a8bb9d4e64b4a36f90d23657ae977846f29806d8ef7c74d8d12e4757",
+   "ukuran_byte": 725504,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data_Suhu_Thermometer Glass.xlsm",
+   "sha256": "b9614850813bc7ab05b26a49a836903a4418918246c2ff1c90d9f3efa93b7a76",
+   "ukuran_byte": 309248,
+   "terverifikasi": true
+  },
+  {
+   "paket": "suhu_3alat",
+   "berkas": "Master Olah Data Suhu & Kelembapan.xlsm",
+   "sha256": "86951e44726504a4cdbd4c5976a6ca69d6c164a286424549705a1afcfb438b7f",
+   "ukuran_byte": 188928,
+   "terverifikasi": true
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx",
+   "sha256": "9e7a71fa344a804c5da57a99dc532dd834e29719c86355d8a672a2a5b9c9b93c",
+   "ukuran_byte": 792735,
+   "terverifikasi": true,
+   "catatan": "Sumber generator gen-tabel-standar-anak-timbangan.py (xlsx, tidak terenkripsi)."
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 2.xlsx",
+   "sha256": "ac11c88ad9d73e5360eaa479e805788a032011198cd0bcb97a7a6545e0394cac",
+   "ukuran_byte": 791898,
+   "terverifikasi": true,
+   "catatan": "Sel yang dipetakan identik dengan hal 1."
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 3.xlsx",
+   "sha256": "a36655d6b8e134986aae36b1e9c39826b465f666b7f167aab28f9e8c3fedf866",
+   "ukuran_byte": 791724,
+   "terverifikasi": true,
+   "catatan": "Sel yang dipetakan identik dengan hal 1."
+  },
+  {
+   "paket": "chlorine_meter",
+   "berkas": "Master Olah Data_Chlorine Meter.xlsm",
+   "sha256": "1a4203d90cf21683ad921a5509720b2d5777c29bc0c9101290c978851ed6ee6b",
+   "ukuran_byte": 133632,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm2' dan '.xlsm3' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "do_meter",
+   "berkas": "Master Olah Data_DO Meter.xlsm",
+   "sha256": "11eed0b113ac915573a468a8552a73ee83fe2ef26682801ffd69f48eff801ec9",
+   "ukuran_byte": 133632,
+   "terverifikasi": true
+  }
+ ]
+}

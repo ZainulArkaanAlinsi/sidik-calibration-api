@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -38,9 +39,6 @@ use RuntimeException;
  */
 class TabelStandarPutaran
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /**
      * Koreksi standar (rpm) di satu nominal sertifikat, atau `null` kalau
      * nominal itu tidak ada di tabel — meniru `VLOOKUP(...; 0)` master.
@@ -191,22 +189,20 @@ class TabelStandarPutaran
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-putaran.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar putaran nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `putaran` (kodePaketAcuan). Tidak di-cache di kelas ini —
+        // cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('putaran', $berkas);
 
         if (! is_array($isi) || ! isset($isi['sertifikat'], $isi['drift'])) {
             throw new RuntimeException("Tabel standar putaran rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

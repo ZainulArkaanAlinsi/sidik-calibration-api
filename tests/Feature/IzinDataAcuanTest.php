@@ -12,6 +12,7 @@ use Illuminate\Routing\Route as RuteTerdaftar;
 use Illuminate\Support\Facades\Route as Router;
 use Tests\Concerns\PaketAcuanBaca;
 use Tests\TestCase;
+use Tests\Unit\SkemaAcuanProfilTest;
 
 /**
  * Matriks izin Studio Data Acuan baris "lihat" (02-SRS §4), diuji lewat HTTP —
@@ -239,7 +240,7 @@ class IzinDataAcuanTest extends TestCase
 
         $daftar = $this->actingAs($admin)->getJson('/api/data-acuan/paket')->assertOk();
         $this->assertStringNotContainsString(self::PENANDA_LAB2, (string) $daftar->getContent());
-        $this->assertSame(['micrometer'], array_column($daftar->json('data'), 'kode'));
+        $this->assertEqualsCanonicalizing(SkemaAcuanProfilTest::BERSKEMA, array_column($daftar->json('data'), 'kode'));
 
         // Percobaan membuka versi lab lain tercatat di lab pemanggil.
         $this->assertTrue(

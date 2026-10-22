@@ -681,16 +681,22 @@ class MicrometerProfile extends CalibrationProfile
      *
      * - Standard · UUT · Correction `0.000` (`165!D18:L28`, `166!D18:L28`,
      *   `167!D18:L28`);
-     * - U95 `0.000` — `166!J29`, `167!J29` (sesi mm). `165!J29` berformat
-     *   `0.0000` karena contoh di workbook itu inch; sertifikat ini selalu mm
-     *   ([satuanTitik]);
+     * - U95 `0.000` — `166!J29`, `167!J29`; `165!J29` (0-25 mm) `0.0000`.
+     *   Contoh di workbook 0-25 itu inch, tetapi keputusan pemilik K-50-15
+     *   (sertifikat = lembar SERTIFIKAT master persis) berlaku: varian A
+     *   mencetak `0.0000` (22 Okt 2026, dulu `0.000`);
      * - `k` `0` (`165!P30`, `166!P30`, `167!P30`).
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.000', 'k' => '0'];
+        // K-50-15: persis lembar SERTIFIKAT master varian alat ini (`format_sertifikat`
+        // peta sel `micrometer`), termasuk U95 `0.0000` master 0-25 mm (`165!J29`).
+        // Varian tak diketahui (alat tanpa rentang) = bentuk varian B/C/D.
+        $kode = $this->varian($sesi->equipment)['kode'] ?? 'B';
+
+        return $this->formatSertifikatMaster((string) $kode, $titikUkur);
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array

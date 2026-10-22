@@ -174,6 +174,149 @@ class AnakTimbanganProfile extends CalibrationProfile
     }
 
     /**
+     * Skema `tabel-standar-anak-timbangan.json` untuk Studio Data Acuan. Alamat
+     * = generator beralamat `gen-tabel-standar-anak-timbangan.py` dan peta sel
+     * `database/data/peta-sel/anak_timbangan.json` (workbook
+     * `Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx`). Kolom TURUNAN generator
+     * (`stdev_harian_mg`, `gabungan_harian_mg`, `u_relatif`, `nominal_teks`,
+     * `pola_drift`) dan konstanta rumus tidak punya sel (`asal` null).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+        $SA = 'STD AT';
+        $DB = 'DATABASE';
+        $teks = static fn (string $kode, string $label): array => $kolom($kode, $label, 'teks', null, null);
+        $daftar = [];
+
+        $daftar[] = $lembar('sumber', 'Sumber & dokumen', 'sumber', 'objek', null, [
+            $teks('workbook', 'Workbook'), $teks('workbook_sebelumnya', 'Workbook sebelumnya'),
+            $teks('lembar_kerja', 'Lembar kerja'), $teks('metode', 'Metode'), $teks('acuan', 'Acuan'),
+            $teks('revisi_master', 'Revisi master'),
+            $kolom('dalam_lingkup_akreditasi', 'Dalam lingkup akreditasi', 'boolean', null, null),
+            $teks('catatan', 'Catatan'), $teks('digenerate_oleh', 'Digenerate oleh'),
+        ]);
+        // Angka telanjang di rumus PERHITUNGAN U95%/FC — bukan sel tabel.
+        $daftar[] = $lembar('konstanta', 'Konstanta metode', 'konstanta', 'objek', null, [
+            $kolom('rho_udara_referensi_kg_m3', 'Densitas udara referensi', 'desimal', 'kg/m3', null),
+            $kolom('u_bouyancy_kg_m3', 'u bouyancy', 'desimal', 'kg/m3', null),
+            $kolom('pembagi_rectangular', 'Pembagi rectangular', 'desimal', null, null),
+            $kolom('pembagi_normal', 'Pembagi normal', 'desimal', null, null),
+            $kolom('faktor_resolusi_ganda', 'Faktor resolusi ganda', 'desimal', null, null),
+            $teks('catatan_pembagi', 'Catatan pembagi'), $teks('rumus_densitas_udara', 'Rumus densitas udara'),
+        ]);
+        $daftar[] = $lembar('konstanta_vi', 'Derajat kebebasan komponen', 'konstanta/vi', 'objek', null, array_map(
+            static fn (string $k): array => $kolom($k, $k, 'bulat', null, null),
+            ['repeatability', 'sertifikat_calibrator_at', 'resolusi_timbangan_standard', 'instability', 'bouyancy', 'sensitivity'],
+        ));
+        $daftar[] = $lembar('set_standar', 'Set anak timbangan standar', 'standar_at/set', 'daftar', 'nama', [
+            $kolom('nama', 'Nama', 'teks', null, "{$DB}!W19:W25"),
+            $kolom('kapasitas', 'Kapasitas', 'teks', null, "{$DB}!X19:X25"),
+            $kolom('kelas', 'Kelas', 'teks', null, "{$SA}!D3"),
+            $kolom('merk_tipe', 'Merek/tipe', 'teks', null, "{$DB}!Y19:Y25"),
+            $kolom('no_seri', 'Nomor seri', 'teks', null, "{$DB}!Z19:Z25"),
+            $kolom('tertelusur', 'Ketertelusuran', 'teks', null, "{$DB}!AA19:AA25"),
+            $kolom('no_sertifikat', 'No. sertifikat', 'teks', null, "{$SA}!J4"),
+            $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, "{$DB}!AB19:AB25"),
+            $kolom('due_date', 'Jatuh tempo', 'tanggal', null, "{$DB}!AD19:AD25"),
+            $kolom('interval_tahun', 'Interval', 'bulat', 'tahun', "{$DB}!AC19:AC25"),
+        ]);
+        $daftar[] = $lembar('keping', 'Keping standar', 'standar_at/keping', 'daftar', 'nominal_teks', [
+            $kolom('kelas', 'Kelas', 'teks', null, "{$SA}!M5:M33"),
+            $kolom('nominal_teks', 'Nominal (teks)', 'teks', 'g', null),
+            $kolom('nominal_g', 'Nominal', 'desimal', 'g', "{$SA}!N5:N33"),
+            $kolom('bintang', 'Keping kedua (ber-bintang)', 'boolean', null, "{$SA}!N5:N33"),
+            $kolom('konvensional_g', 'Massa konvensional', 'desimal', 'g', "{$SA}!O5:O33"),
+            $kolom('koreksi_g', 'Koreksi', 'desimal', 'g', "{$SA}!P5:P33"),
+            $kolom('u_mg', 'Ketidakpastian', 'desimal', 'mg', "{$SA}!Q5:Q33"),
+            $kolom('drift_mg', 'Drift', 'desimal', 'mg', "{$SA}!R5:R33"),
+            $kolom('pola_drift', 'Pola drift', 'teks', null, null),
+        ]);
+        $daftar[] = $lembar('neraca', 'Neraca pembanding', 'timbangan', 'daftar', 'nama', [
+            $kolom('nama', 'Nama', 'teks', null, "{$DB}!W30:W34"),
+            $kolom('merk_tipe', 'Merek/tipe', 'teks', null, "{$DB}!X30:X34"),
+            $kolom('no_seri', 'Nomor seri', 'teks', null, "{$DB}!Y30:Y34"),
+            $kolom('tertelusur', 'Ketertelusuran', 'teks', null, "{$DB}!Z30:Z34"),
+            $kolom('tanggal_database', 'Tanggal', 'tanggal', null, "{$DB}!AA30:AA34"),
+            $kolom('kapasitas_g', 'Kapasitas', 'desimal', 'g', "{$SA}!O85:O89"),
+            $kolom('resolusi_g', 'Resolusi', 'desimal', 'g', "{$DB}!AE30:AE34"),
+            $kolom('u95_g', 'U95', 'desimal', 'g', "{$DB}!AC30:AC34"),
+            $kolom('nominal_at_uji_g', 'Nominal AT uji', 'desimal', 'g', 'Deviasi Standard Timbangan!D4'),
+            $kolom('stdev_harian_mg', 'Simpangan baku harian', 'daftar_angka', 'mg', null),
+            $kolom('std_dev_mg', 'Keterulangan (Rata-rata STDev)', 'desimal', 'mg', "{$SA}!P85:P89"),
+            $kolom('gabungan_harian_mg', 'Gabungan harian', 'desimal', 'mg', null),
+            $kolom('u_sens_mg', 'u sensitivitas', 'desimal', 'mg', "{$SA}!Q85:Q89"),
+        ]);
+        $daftar[] = $lembar('neraca_sensitivitas', 'Neraca — rantai sensitivitas', 'timbangan/*/sensitivitas', 'objek', null, [
+            $kolom('delta1_mg', 'Delta 1', 'desimal', 'mg', 'Data Sens Semi Micro!G17'),
+            $kolom('delta2_mg', 'Delta 2', 'desimal', 'mg', 'Data Sens Semi Micro!G18'),
+            $kolom('de_sens_mg', 'dE sens', 'desimal', 'mg', 'Data Sens Semi Micro!D17'),
+            $kolom('u_msens_mg', 'u Msens', 'desimal', 'mg', 'Data Sens Semi Micro!D24'),
+            $kolom('m_sens_mg', 'Msens', 'desimal', 'mg', 'Data Sens Semi Micro!D21'),
+            $kolom('u_relatif', 'u relatif', 'desimal', null, null),
+        ]);
+        $daftar[] = $lembar('densitas', 'Densitas (disengketakan)', 'densitas', 'objek', null, [
+            $teks('status', 'Status'), $teks('satuan', 'Satuan'), $teks('pertanyaan_lab', 'Pertanyaan lab'), $teks('catatan', 'Catatan'),
+            $kolom('kelas', 'Kelas', 'daftar_teks', null, "{$SA}!N71:R71"),
+            $teks('aturan_diatas_100g', 'Aturan di atas 100 g'),
+        ]);
+        $daftar[] = $lembar('densitas_baris', 'Densitas per nominal', 'densitas/baris', 'daftar', 'nominal_g', [
+            $kolom('nominal_g', 'Nominal', 'desimal', 'g', "{$SA}!M72:M83"),
+            ...array_map(static fn (string $k, string $c): array => $kolom($k, $k, 'desimal_kosong', 'kg/m3', "{$SA}!{$c}72:{$c}83"), ['E2', 'F1', 'F2', 'M1', 'M2'], ['N', 'O', 'P', 'Q', 'R']),
+        ]);
+        $daftar[] = $lembar('mpe', 'MPE OIML R111', 'mpe', 'objek', null, [
+            $teks('satuan', 'Satuan'), $teks('acuan', 'Acuan'),
+            $kolom('kelas', 'Kelas', 'daftar_teks', null, 'MPE AT!C3:I3'),
+        ]);
+        $daftar[] = $lembar('mpe_baris', 'MPE per nominal', 'mpe/baris', 'daftar', 'label', [
+            $kolom('label', 'Nominal', 'teks', null, 'MPE AT!A4:A26'),
+            $kolom('nominal_g', 'Nominal (g)', 'desimal', 'g', 'MPE AT!B4:B26'),
+            ...array_map(static fn (string $k, string $c): array => $kolom($k, $k, 'desimal_kosong', 'mg', "MPE AT!{$c}4:{$c}26"), ['F1', 'F2', 'M1', 'M1-2', 'M2', 'M2-3', 'M3'], ['C', 'D', 'E', 'F', 'G', 'H', 'I']),
+        ]);
+        $daftar[] = $lembar('meter_lingkungan', 'Meter lingkungan', 'meter_lingkungan', 'daftar', 'nama', [
+            $kolom('nama', 'Nama', 'teks', null, "{$DB}!B32"),
+            $kolom('lokasi', 'Lokasi', 'teks', null, "{$DB}!O32"),
+            $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, "{$DB}!P32"),
+            $kolom('due_date', 'Jatuh tempo', 'tanggal', null, "{$DB}!Q32"),
+            $kolom('tertelusur', 'Ketertelusuran', 'teks', null, "{$DB}!R32"),
+        ]);
+
+        foreach (['suhu' => ['°C', 'F32', 'C32:E36'], 'kelembaban' => ['%RH', 'J32', 'G32:I36'], 'tekanan' => ['hPa', 'N32', 'K32:M40']] as $b => [$sat, $u95, $titik]) {
+            $daftar[] = $lembar("meter_{$b}", "Meter lingkungan — {$b}", "meter_lingkungan/*/{$b}", 'objek', null, [
+                $kolom('u95', 'U95', 'desimal', $sat, "{$DB}!{$u95}"),
+            ]);
+            $daftar[] = $lembar("meter_{$b}_titik", "Meter lingkungan — {$b} [standar, instrumen, koreksi]", "meter_lingkungan/*/{$b}/titik", 'baris', 'urutan', [
+                $kolom('urutan', 'Urutan', 'bulat', null, null),
+                $kolom('nilai', 'Standar, instrumen, koreksi', 'daftar_angka', $sat, "{$DB}!{$titik}"),
+            ]);
+        }
+
+        $daftar[] = $lembar('drift_penimbangan', 'Drift penimbangan (latest record)', 'drift_penimbangan', 'daftar', 'maks_index_standar_g', [
+            $kolom('maks_index_standar_g', 'Maks indeks standar', 'desimal', 'g', "{$SA}!N42:N48"),
+            $kolom('kelompok', 'Kelompok standar', 'teks', null, "{$SA}!O42:O48"),
+            $kolom('u_drift_g', 'U drift', 'desimal', 'g', "{$SA}!P42:P48"),
+        ]);
+
+        return ['skema_versi' => 1, 'sumber_json' => 'tabel-standar-anak-timbangan.json', 'lembar' => $daftar];
+    }
+
+    /**
      * `Anak Timbangan` — dan ini SENGAJA tidak dicocokkan ke baris lampiran
      * akreditasi mana pun, karena kalibrasi anak timbangan memang tidak ada di
      * LK-285-IDN. Namanya masuk `CmcSemuaProfilTest::DILUAR_LAMPIRAN`.

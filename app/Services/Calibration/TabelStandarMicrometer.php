@@ -194,7 +194,7 @@ class TabelStandarMicrometer
             throw new RuntimeException("Tabel standar micrometer nggak ketemu: {$berkas}");
         }
 
-        $isi = app(SumberAcuan::class)->isi((new MicrometerProfile)->kode(), $berkas);
+        $isi = app(SumberAcuan::class)->isi((new MicrometerProfile)->kodePaketAcuan(), $berkas);
 
         // `standar` ikut diperiksa: [umurStandarHari] membaca
         // `standar.tanggal_kalibrasi` sebagai titik nol umur drift, dan tanpa

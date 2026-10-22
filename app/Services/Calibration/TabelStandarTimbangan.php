@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -77,9 +78,6 @@ class TabelStandarTimbangan
     public const ANALYTICAL = 'Analytical';
 
     public const NON_ANALYTICAL = 'Non-Analytical';
-
-    /** @var array<string, mixed>|null */
-    private static ?array $cache = null;
 
     /**
      * Baris massa untuk satu nominal, dibaca dari tabel milik `$varian` dan
@@ -244,28 +242,26 @@ class TabelStandarTimbangan
     /** @return array<string, mixed> */
     private static function data(): array
     {
-        if (self::$cache !== null) {
-            return self::$cache;
-        }
-
         $berkas = database_path('data/tabel-standar-timbangan.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar Timbangan nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `timbangan`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini (worker panjang tidak tertinggal versi).
+        $isi = app(SumberAcuan::class)->isi('timbangan', $berkas);
 
-        if (! is_array($isi) || ! isset($isi['varian'], $isi['cmc'])) {
+        if (! isset($isi['varian'], $isi['cmc'])) {
             throw new RuntimeException("Tabel standar Timbangan rusak: {$berkas}");
         }
 
-        return self::$cache = $isi;
+        return $isi;
     }
 
     /** Buat test yang menukar isi berkas. */
     public static function lupakanCache(): void
     {
-        self::$cache = null;
+        SumberAcuan::lupakanCache();
     }
 }

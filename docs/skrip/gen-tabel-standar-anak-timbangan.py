@@ -2,418 +2,321 @@
 # -*- coding: utf-8 -*-
 """Generator `database/data/tabel-standar-anak-timbangan.json` (alat ke-29).
 
-Sumbernya `1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx` — sheet
-`STD AT`, `DATABASE`, `MPE AT`, `Deviasi Standard Timbangan`, dan kelima sheet
-`Data Sens *`.
+    python -I docs/skrip/gen-tabel-standar-anak-timbangan.py "<Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx>"
 
-Angka mentah di bawah disalin apa adanya dari master. Skrip ini **menurunkan
-ulang** tiap besaran turunan lalu mengadunya ke nilai yang tersimpan di master:
+**Dibaca dari ALAMAT SEL master** (22 Okt 2026), bukan lagi angka yang diketik
+tangan. Sumbernya workbook lab terbaru `Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx`
+(berkas TIDAK masuk repo — data pelanggan; dibaca di tempat). Alamat yang sama
+dipakai peta sel Studio `database/data/peta-sel/anak_timbangan.json`, jadi
+generator dan impor Studio membaca sel yang sama. Sheet: `STD AT`, `DATABASE`,
+`MPE AT`, `Deviasi Standard Timbangan`, dan kelima `Data Sens *`.
+
+Sejarah: sampai 22 Okt 2026 angka disalin tangan dari `1.1 Anak Timbangan F1
+1mg-500 g 202501022 imp.xlsx` (ekspor CSV-nya di
+`Project-PT-Sidik/alat-alat-Pt-Sidik/Massa_Timbangan/`), dengan baris Fujitsu
+diperbarui 7 Okt 2026 dari workbook F2 ini. Workbook F2 hal 1 memuat SEMUA angka
+itu di sel (dibuktikan: keluaran generator ini = JSON lama, kecuali tipe angka
+bulat yang kini ditulis float — nilainya sama).
+
+Skrip ini **menurunkan ulang** tiap besaran turunan lalu mengadunya ke nilai
+yang tersimpan di master:
 
   * keterulangan tiap neraca dari enam simpangan baku hariannya;
   * ketidakpastian sensitivitas tiap neraca dari rantai percobaan Msens;
-  * kolom drift tiap keping standar dari kolom ketidakpastiannya.
+  * kolom drift tiap keping standar dari kolom ketidakpastiannya;
+  * koreksi meter lingkungan dari pasangan indikasinya.
 
-Kalau ada yang menyimpang di luar toleransi, dia **menolak menulis** — JSON yang
-separuh benar jauh lebih berbahaya daripada tidak ada JSON, karena angkanya
-tetap terlihat wajar di sertifikat.
+Kalau ada yang menyimpang di luar toleransi, dia **menolak menulis**.
 
-Jangan mengetik JSON-nya dengan tangan. Menyunting hasilnya berarti berkasnya
-menyimpang diam-diam dari master, dan itu sudah tiga kali meloloskan bug (TIDS,
-Timbangan, Micrometer).
-
-    python docs/skrip/gen-tabel-standar-anak-timbangan.py
+Kolom TURUNAN tetap dihitung di sini (kode), bukan diambil dari sel:
+`stdev_harian_mg` (sel g x 1000), `gabungan_harian_mg` (akar rata-rata kuadrat),
+`sensitivitas.u_relatif` (sqrt; sel `Data Sens *!I30` beda 1 ulp di Semi Micro),
+`nominal_teks`, `pola_drift`, dan `nominal_at_uji_g` Mettler (master menulis
+`20` + satuan `kg`).
 
 ## Tiga hal yang SENGAJA tidak "dibetulkan" di sini
 
 **1. Keterulangan neraca.** Sel master berlabel `Rata-rata STDev` sebenarnya
-berisi SIMPANGAN BAKU dari keenam simpangan baku harian, bukan rata-ratanya —
-terbukti untuk kelima neraca sampai epsilon mesin. Nilainya lebih kecil daripada
-keterulangan hari mana pun, dan dia komponen terbesar di budget. Kalau diganti
-gabungan kuadrat harian, U95 seluruh sertifikat naik ~1,9x. Ditiru apa adanya;
-`gabungan_harian_mg` ikut disimpan supaya dampaknya bisa dihitung tanpa
-menjalankan skrip ini lagi. Pertanyaan lab **§1**.
+berisi SIMPANGAN BAKU dari keenam simpangan baku harian, bukan rata-ratanya.
+Ditiru apa adanya; `gabungan_harian_mg` ikut disimpan. Pertanyaan lab **§1**.
 
 **2. Tabel densitas.** Memuat nilai yang mustahil untuk anak timbangan (10650
-kg/m3 = timbal; 14400 kg/m3), kolom-kolomnya saling meminjam angka dengan pola
-geser yang putus-putus, dan kolom E2/F1 tertukar antara 0,1 g dan 0,2 g.
-Disalin apa adanya supaya sesi lama bisa dihitung ulang jadi angka yang sama
-dengan kertas yang menerbitkannya, TAPI ditandai `"status": "disengketakan"` —
-profil wajib menaikkan peringatan sesi selama lab belum menjawab. Pertanyaan
-lab **§6**.
+kg/m3 = timbal; 14400 kg/m3). Disalin apa adanya, ditandai
+`"status": "disengketakan"`. Pertanyaan lab **§6**.
 
 **3. Keping ber-bintang.** `0.02*`, `0.2*`, `2*`, `20*`, `200*` adalah keping
-KEDUA bernominal sama. Pencarian exact master selalu mendarat di baris pertama,
-jadi yang ber-bintang tidak pernah terpilih. Keduanya tetap disimpan supaya
-jejaknya tidak hilang. Pertanyaan lab **§8**.
+KEDUA bernominal sama. Keduanya disimpan. Pertanyaan lab **§8**.
 
-## Yang TIDAK ikut ke JSON, dan alasannya
-
-Kolom `Stdev` di sheet `DATABASE` (Analytical Balance 8,5e-5 g) berbeda dari
-keterulangan yang dipakai budget (4,636e-5 g). Tidak ada rumus hasil kalibrasi
-yang membacanya, jadi tidak disalin — kalau ikut, dia jadi angka kedua yang
-kelihatan berwenang untuk hal yang sama. Dicatat di pertanyaan lab §18.
+Kolom `Stdev` di sheet `DATABASE` (AF30:AF34) tidak disalin — tidak ada rumus
+hasil kalibrasi yang membacanya (pertanyaan lab §18). Meter `TH-7` tidak
+disalin — kolom koreksinya tidak rekonsiliasi (pertanyaan lab §19).
 """
 from __future__ import annotations
 
+import datetime
+import io
 import json
 import math
 import pathlib
 import statistics
 import sys
 
+import openpyxl
+
 TOL = 5e-6
 KELUARAN = (
     pathlib.Path(__file__).resolve().parents[2]
     / "database/data/tabel-standar-anak-timbangan.json"
 )
+BERKAS = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else None
+if BERKAS is None:
+    sys.exit("pakai: gen-tabel-standar-anak-timbangan.py <Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx>")
 
+
+def buka(path: pathlib.Path):
+    data = path.read_bytes()
+    buf = io.BytesIO(data)
+    if data[:4] == b"\xd0\xcf\x11\xe0":  # terenkripsi: sandi dari env, dekripsi ke memori
+        import msoffcrypto
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+            sandi = winreg.QueryValueEx(k, "SIDIK_MASTER_SANDI")[0]
+        out = io.BytesIO()
+        f = msoffcrypto.OfficeFile(buf)
+        f.load_key(password=sandi)
+        f.decrypt(out)
+        buf = out
+    buf.seek(0)
+    return openpyxl.load_workbook(buf, data_only=True)
+
+
+WB = buka(BERKAS)
 menyimpang: list[str] = []
 
 
-def adu(
-    nama: str,
-    hitung: float,
-    master: float,
-    tol: float = TOL,
-    tol_rel: float | None = None,
-) -> float:
-    """Adu nilai turunan ke nilai tersimpan master. Balik nilai MASTER.
+def sel(alamat: str):
+    lembar, a = alamat.rsplit("!", 1)
+    return WB[lembar][a].value
 
-    `tol` mutlak, `tol_rel` relatif (default: sama dengan `tol`). Lolos kalau
-    salah satu di bawah ambang.
 
-    Besaran yang nilainya kecil-kecil — keterulangan neraca dalam gram, orde
-    10⁻⁵ — WAJIB memakai `tol=0.0` dan `tol_rel` tersendiri. Dengan ambang
-    mutlak 10⁻¹⁵, angka sekecil itu lolos meski digitnya tertukar di posisi
-    signifikan ke-12, dan penjaga ini jadi hiasan.
-    """
+def angka(alamat: str) -> float:
+    v = sel(alamat)
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        menyimpang.append(f"{alamat} bukan angka: {v!r}")
+        return float("nan")
+    return float(v)
+
+
+def angka_boleh(alamat: str) -> float | None:
+    v = sel(alamat)
+    return None if v is None or (isinstance(v, str) and v.strip() == "") else angka(alamat)
+
+
+def teks(alamat: str, boleh_kosong: bool = False) -> str:
+    v = sel(alamat)
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and float(v).is_integer():
+        return str(int(v))
+    if v is None or str(v).strip() == "":
+        if not boleh_kosong:
+            menyimpang.append(f"{alamat} kosong, padahal wajib teks")
+        return ""
+    return str(v).strip()
+
+
+def tanggal(alamat: str) -> str:
+    v = sel(alamat)
+    if isinstance(v, datetime.datetime):
+        return v.date().isoformat()
+    if isinstance(v, datetime.date):
+        return v.isoformat()
+    menyimpang.append(f"{alamat} bukan tanggal: {v!r}")
+    return ""
+
+
+def adu(nama: str, hitung: float, master: float, tol: float = TOL, tol_rel: float | None = None) -> float:
+    """Adu nilai turunan ke nilai tersimpan master. Balik nilai MASTER."""
     if tol_rel is None:
         tol_rel = tol
     beda = abs(hitung - master)
     rel = beda / abs(master) if master else beda
     if beda > tol and rel > tol_rel:
-        menyimpang.append(
-            f"{nama}: turunan={hitung!r} master={master!r} "
-            f"beda={beda:.3e} rel={rel:.3e}"
-        )
+        menyimpang.append(f"{nama}: turunan={hitung!r} master={master!r} beda={beda:.3e} rel={rel:.3e}")
     return master
 
 
 # ===================================================================== 1. Keping standar
-# `STD AT` blok OVERALL STANDAR ANAK TIMBANGAN. Satuan: nominal & konvensional
-# gram; ketidakpastian & drift miligram. Bintang = keping kedua bernominal sama.
-#
-#   (kelas, nominal_teks, konvensional_g, koreksi_g, u_mg, drift_mg)
-KEPING = [
-    ("E2", "0.001", 0.00100015, 1.4999999999997654e-07, 0.0008, 0.0004),
-    ("E2", "0.002", 0.00200127, 1.2699999999998303e-06, 0.0009, 0.00045),
-    ("E2", "0.002*", 0.00200133, 1.3299999999999076e-06, 0.0009, 0.00045),
-    ("E2", "0.005", 0.0050016, 1.6000000000000389e-06, 0.0009, 0.00045),
-    ("E2", "0.01", 0.010005100000000001, 5.100000000000937e-06, 0.001, 0.0005),
-    ("E2", "0.02", 0.0200027, 2.7000000000013125e-06, 0.001, 0.0005),
-    ("E2", "0.02*", 0.020000900000000002, 9.00000000001594e-07, 0.001, 0.0005),
-    ("E2", "0.05", 0.0500026, 2.599999999998437e-06, 0.0013, 0.00065),
-    ("E2", "0.1", 0.100006, 5.999999999992123e-06, 0.0015, 0.00075),
-    ("E2", "0.2", 0.2000033, 3.2999999999838714e-06, 0.0016, 0.0008),
-    ("E2", "0.2*", 0.2000078, 7.80000000000225e-06, 0.0016, 0.0008),
-    ("E2", "0.5", 0.4999991, -9.000000000258801e-07, 0.0023, 0.00115),
-    ("E2", "1", 1.0000136, 1.3599999999946988e-05, 0.0033, 0.00165),
-    ("E2", "2", 2.0000192, 1.920000000010802e-05, 0.0036, 0.0018),
-    ("E2", "2*", 2.0000185, 1.8499999999921357e-05, 0.0036, 0.0018),
-    ("E2", "5", 5.0000284, 2.8399999999706438e-05, 0.0046, 0.0023),
-    ("E2", "10", 10.000075, 7.500000000071338e-05, 0.0059, 0.00295),
-    ("E2", "20", 20.0000948, 9.479999999939537e-05, 0.0071, 0.00355),
-    ("E2", "20*", 20.0000812, 8.120000000033656e-05, 0.0071, 0.00355),
-    ("E2", "50", 50.000212, 0.0002119999999976585, 0.011, 0.0055),
-    ("E2", "100", 100.000144, 0.00014400000000591717, 0.023, 0.0115),
-    ("E2", "200", 200.000149, 0.00014899999999329339, 0.03, 0.015),
-    ("E2", "200*", 200.000104, 0.00010399999999322063, 0.03, 0.015),
-    ("E2", "500", 500.00051, 0.0005100000000197724, 0.07, 0.035),
-    ("E2", "1000", 1000.00053, 0.0005300000000261207, 0.28, 0.14),
-    ("F1", "2000", 2000.00437, 0.004370000000108121, 0.34, 0.17),
-    ("F1", "5000", 5000.01, 0.010000000000218279, 0.7, 0.35),
-    ("F1", "10000", 10000.007, 0.006999999999607098, 15, 2.3094010767038933),
-    ("F1", "20000", 20000.0275, 0.02750000000014552, 8.1, 4.05),
-]
-
-# Baris 10 kg memutus pola `drift = U/2`: dia memakai 4/sqrt(3). Baris itu juga
-# satu-satunya yang tertelusur ke LK-022-IDN. Dicatat, bukan diperbaiki (§18).
-DRIFT_KECUALI = {"10000": 4 / math.sqrt(3)}
+# `STD AT!M5:R33` (OVERALL STANDAR ANAK TIMBANGAN): kelas, nominal (g; teks
+# ber-bintang = keping kedua), konvensional (g), koreksi (g), U (mg), drift (mg).
+KEPING_BARIS = range(5, 34)
+DRIFT_KECUALI = {"10000": 4 / math.sqrt(3)}  # baris 10 kg memakai 4/sqrt(3) (§18)
 
 keping_json = []
-for kelas, teks, konv, koreksi, u_mg, drift_mg in KEPING:
-    nominal = float(teks.rstrip("*"))
-    adu(f"keping {teks} koreksi", konv - nominal, koreksi, tol=0.0, tol_rel=1e-9)
-    if teks in DRIFT_KECUALI:
-        adu(f"keping {teks} drift (pola 4/sqrt3)", DRIFT_KECUALI[teks], drift_mg)
+for b in KEPING_BARIS:
+    mentah = sel(f"STD AT!N{b}")
+    bintang = isinstance(mentah, str) and mentah.strip().endswith("*")
+    if isinstance(mentah, str):
+        nominal = float(mentah.strip().rstrip("*"))
+        nominal_teks = mentah.strip()
     else:
-        adu(f"keping {teks} drift (pola U/2)", u_mg / 2, drift_mg, tol=1e-12)
-    keping_json.append(
-        {
-            "kelas": kelas,
-            "nominal_teks": teks,
-            "nominal_g": nominal,
-            "bintang": teks.endswith("*"),
-            "konvensional_g": konv,
-            "koreksi_g": koreksi,
-            "u_mg": u_mg,
-            "drift_mg": drift_mg,
-            "pola_drift": "4/sqrt(3)" if teks in DRIFT_KECUALI else "U/2",
-        }
-    )
+        nominal = float(mentah)
+        nominal_teks = str(int(nominal)) if nominal.is_integer() else repr(nominal)
+    konv = angka(f"STD AT!O{b}")
+    koreksi = angka(f"STD AT!P{b}")
+    u_mg = angka(f"STD AT!Q{b}")
+    drift_mg = angka(f"STD AT!R{b}")
+    adu(f"keping {nominal_teks} koreksi", konv - nominal, koreksi, tol=0.0, tol_rel=1e-9)
+    if nominal_teks in DRIFT_KECUALI:
+        adu(f"keping {nominal_teks} drift (pola 4/sqrt3)", DRIFT_KECUALI[nominal_teks], drift_mg)
+    else:
+        adu(f"keping {nominal_teks} drift (pola U/2)", u_mg / 2, drift_mg, tol=1e-12)
+    keping_json.append({
+        "kelas": teks(f"STD AT!M{b}"),
+        "nominal_teks": nominal_teks,
+        "nominal_g": nominal,
+        "bintang": bintang,
+        "konvensional_g": konv,
+        "koreksi_g": koreksi,
+        "u_mg": u_mg,
+        "drift_mg": drift_mg,
+        "pola_drift": "4/sqrt(3)" if nominal_teks in DRIFT_KECUALI else "U/2",
+    })
 
-# Tujuh set fisik yang menyusun tabel di atas (`STD AT` + `DATABASE`).
-SET_STANDAR = [
-    ("Anak Timbangan E2 200 g", "1 mg - 200 g", "E2", "Accurate/Stainless", "75870",
-     "LK-045-IDN", "0518/25/KAL/01/2026", "2026-01-22", "2029-01-22", 3),
-    ("Anak Timbangan E2 500 g", "500 g", "E2", "Accurate/Stainless", "100636",
-     "LK-045-IDN", "0221/25/KAL/01/2026", "2026-01-13", "2029-01-13", 3),
-    ("Anak Timbangan E2 1 kg", "1000 g", "E2", "Want Ballance/E2", "120015",
-     "LK-045-IDN", "", "2026-02-23", "2029-02-23", 3),
-    ("Anak Timbangan F1-2", "2000 g", "F1", "Accurate/F1", "45723",
-     "LK-045-IDN", "", "2026-02-04", "2028-02-04", 2),
-    ("Anak Timbangan F1-5", "5000 g", "F1", "Accurate/F1", "111962",
-     "LK-045-IDN", "", "2026-02-04", "2028-02-04", 2),
-    ("Anak Timbangan F1-10", "10 kg", "F1", "Excellent/F1", "4321",
-     "LK-022-IDN", "", "2024-10-21", "2026-10-21", 2),
-    ("Anak Timbangan F1-20", "20 kg", "F1", "Want Ballance/F1", "130016",
-     "LK-045-IDN", "", "2026-02-23", "2028-02-23", 2),
-]
+# Tujuh set fisik: `DATABASE!W19:AD25` + kelas & no. sertifikat dari blok kepala
+# tiap set di `STD AT` (baris kepala: urutan DATABASE).
+KEPALA_SET = [1, 33, 42, 51, 78, 60, 69]
+set_json = []
+for i, k in enumerate(KEPALA_SET):
+    b = 19 + i
+    set_json.append({
+        "nama": teks(f"DATABASE!W{b}"),
+        "kapasitas": teks(f"DATABASE!X{b}"),
+        "kelas": teks(f"STD AT!D{k + 2}"),
+        "merk_tipe": teks(f"DATABASE!Y{b}"),
+        "no_seri": teks(f"DATABASE!Z{b}"),
+        "tertelusur": teks(f"DATABASE!AA{b}"),
+        "no_sertifikat": teks(f"STD AT!J{k + 3}", boleh_kosong=True),
+        "tanggal_kalibrasi": tanggal(f"DATABASE!AB{b}"),
+        "due_date": tanggal(f"DATABASE!AD{b}"),
+        "interval_tahun": int(angka(f"DATABASE!AC{b}")),
+    })
 
 # ===================================================================== 2. Neraca
-# `Deviasi Standard Timbangan` (enam hari x sepuluh ulangan ABBA) dan kelima
-# sheet `Data Sens *`. Semua simpangan baku harian dalam GRAM.
-#
-#   nama: (merk_tipe, sn, tertelusur, tanggal_database, kapasitas_g, resolusi_g,
-#          u95_g, nominal_at_uji_g, [stdev harian], rata_rata_stdev_master_g)
-NERACA = {
-    "Semi Micro Balance": (
-        "OHAUS PIONEER/PX85", "C543502629", "LK-064-IDN", "2026-01-26",
-        80.0, 1e-05, 9.7e-05, 50.0,
-        [8.959786704781921e-06, 7.149203529406107e-06, 6.146362971424353e-06,
-         5.868938953596891e-06, 1.0749676997214277e-05, 9.143911150739058e-06],
-        1.923103720334314e-06,
-    ),
-    "Analytical Balance": (
-        "Mettler Toledo/XS204", "1129063525", "LK-305-IDN", "2026-01-19",
-        220.0, 0.0001, 0.0011, 200.0,
-        [5.3748384990441254e-05, 4.9721446302238236e-05, 0.00011547005384175837,
-         0.00012122064364381199, 0.00011167910378871372, 0.00017320508076263755],
-        4.636297841870652e-05,
-    ),
-    "Electronic Balance Fujitsu": (
-        "Fujitsu/FSR-A", "SIDIK/134/2024", "LK-305-IDN", "2026-01-19",
-        1200.0, 0.001, 0.0019, 1000.0,
-        # Diperbarui 7 Okt 2026 dari workbook lab terbaru (Pak Rohman,
-        # `Anak timbangan F2_IMTE-LQ-197`, sheet `Deviasi Standard Timbangan`
-        # D59:AC60): tiga dari enam simpangan harian (5, 7, 11 Mei 2026)
-        # berbeda dari salinan lama, keterulangan 0,194 -> 0,348 mg.
-        [0.000437797517875104, 0.0009368979548148584, 0.00040824829046194464,
-         0.0008432740426946229, 0.0009204467514105059, 0.0013363403591500009],
-        0.00034822229419560654,
-    ),
-    "Electronic Balance Excellent": (
-        "Excellent/DJ", "HSEX1403752", "LK-305-IDN", "2026-01-19",
-        3100.0, 0.01, 0.007, 2000.0,
-        [0.0036893239368597525, 0.00745355992499252, 0.006258327785167171,
-         0.004216370213554004, 0.003374742788549695, 0.006146362971523002],
-        0.0016537714466089547,
-    ),
-    "Electronic Balance  Mettler": (
-        "Mettler Toledo/IND690", "3127471", "LK-305-IDN", "2026-01-19",
-        30000.0, 0.01, 0.32, 20000.0,
-        [0.00316227765966219, 0.006433419687839654, 0.007090682462051761,
-         0.005163977794547142, 0.006433419688248057, 0.005676462121778928],
-        0.0013948572862164344,
-    ),
-}
-
-# Rantai percobaan sensitivitas, semua dalam MILIGRAM kecuali yang disebut lain.
-#   nama: (delta1_mg, delta2_mg, de_sens_mg, u_msens_mg, m_sens_mg, usens_master_mg)
-#
-# `delta1`/`delta2` = selisih rata-rata pembacaan dengan dan tanpa keping Msens,
-# satu lewat sisi T dan satu lewat sisi S. Urutannya TIDAK konsisten antar sheet
-# (Analytical menyimpan sisi-T dulu, Mettler menyimpan sisi-S dulu) — yang selalu
-# jadi penyebut cuma `delta1`, apa pun sisinya. Ditiru apa adanya.
-#
-# Excellent: `delta1 = delta2 = 1000` padahal pembacaannya sendiri memberi 995
-# dan 1005. Karena itu suku keterulangannya nol dan `usens`-nya lahir dari
-# `u_msens/m_sens` saja. Dicatat di pertanyaan lab §18.
-SENSITIVITAS = {
-    "Semi Micro Balance": (
-        2.0050000000004786, 2.0000000000024443, -0.014999999997655777,
-        0.001, 20.0027, -2.6461006446691237e-05,
-    ),
-    "Analytical Balance": (
-        20.050000000004786, 20.09999999999934, -0.14999999999076863,
-        0.001, 20.0027, -0.00026461006456712755,
-    ),
-    "Electronic Balance Fujitsu": (
-        99.50000000000614, 99.99999999999432, -3.0000000000143245,
-        0.0015, 100.006, -0.010659996194014476,
-    ),
-    "Electronic Balance Excellent": (
-        1000.0, 1000.0, -14.999999999986358,
-        0.0033, 1000.0136, -4.9499326809110374e-05,
-    ),
-    "Electronic Balance  Mettler": (
-        5000.0, 4989.999999999782, -5.000000000109139,
-        0.0046, 5000.0284, -0.007071069308394962,
-    ),
-}
-
+# `DATABASE!W30:AE34`, `STD AT!O85:Q89`, `Deviasi Standard Timbangan` (baris
+# STDev harian & Rata-rata STDev per blok), `Data Sens *` (rantai Msens).
+NERACA = [
+    # (baris DATABASE, baris STD AT, baris STDev harian, sel nominal AT, sheet Data Sens)
+    (30, 85, 19, "D4", "Data Sens Semi Micro"),
+    (31, 86, 39, "D24", "Data Sens Analytical Balance"),
+    (32, 87, 59, "D44", "Data Sens Fujitsu"),
+    (33, 88, 78, "D63", "Data Sens Excellent"),
+    (34, 89, 97, "D82", "Data Sens Mettler Toledo"),
+]
+DEV = "Deviasi Standard Timbangan"
 neraca_json = []
-for nama, (merk, sn, tertelusur, tanggal, kap, res, u95, nominal_uji,
-           stdev_harian, rata_master) in NERACA.items():
-    # Sel master berlabel "Rata-rata STDev" sebenarnya SIMPANGAN BAKU dari
-    # keenam angka harian. Diturunkan ulang, bukan disalin (pertanyaan lab §1).
-    std_dev_g = adu(
-        f"{nama} keterulangan (stdev dari 6 stdev harian)",
-        statistics.stdev(stdev_harian),
-        rata_master,
-        tol=0.0,
-        tol_rel=1e-12,
-    )
-    d1, d2, de_sens, u_msens, m_sens, usens_master = SENSITIVITAS[nama]
+for bd, bs, bh, sel_nominal, sens in NERACA:
+    nama = teks(f"DATABASE!W{bd}")
+    harian = [angka(f"{DEV}!{k}{bh}") for k in ("D", "I", "N", "S", "X", "AC")]
+    rata_master = angka(f"{DEV}!D{bh + 1}")
+    adu(f"{nama} keterulangan (stdev dari 6 stdev harian)", statistics.stdev(harian), rata_master, tol=0.0, tol_rel=1e-12)
+    std_dev_mg = angka(f"STD AT!P{bs}")
+    adu(f"{nama} std_dev_mg = Rata-rata STDev x 1000", rata_master * 1000, std_dev_mg, tol=0.0, tol_rel=1e-12)
+
+    d1, d2 = angka(f"{sens}!G17"), angka(f"{sens}!G18")
+    de_sens, u_msens, m_sens = angka(f"{sens}!D17"), angka(f"{sens}!D24"), angka(f"{sens}!D21")
     s_sens = abs(d1 - d2) / math.sqrt(2)
     u_rel = math.sqrt((s_sens / d1) ** 2 + (u_msens / m_sens) ** 2)
-    u_sens_mg = adu(
-        f"{nama} usens", de_sens * u_rel, usens_master, tol=0.0, tol_rel=1e-12
-    )
+    u_sens_mg = angka(f"STD AT!Q{bs}")
+    adu(f"{nama} usens", de_sens * u_rel, u_sens_mg, tol=0.0, tol_rel=1e-12)
+    adu(f"{nama} usens = {sens}!G33", angka(f"{sens}!G33"), u_sens_mg, tol=0.0, tol_rel=0.0)
 
-    neraca_json.append(
-        {
-            "nama": nama,
-            "merk_tipe": merk,
-            "no_seri": sn,
-            "tertelusur": tertelusur,
-            "tanggal_database": tanggal,
-            "kapasitas_g": kap,
-            "resolusi_g": res,
-            "u95_g": u95,
-            "nominal_at_uji_g": nominal_uji,
-            "stdev_harian_mg": [x * 1000 for x in stdev_harian],
-            "std_dev_mg": std_dev_g * 1000,
-            "gabungan_harian_mg": math.sqrt(
-                sum(x * x for x in stdev_harian) / len(stdev_harian)
-            ) * 1000,
-            "u_sens_mg": u_sens_mg,
-            "sensitivitas": {
-                "delta1_mg": d1,
-                "delta2_mg": d2,
-                "de_sens_mg": de_sens,
-                "u_msens_mg": u_msens,
-                "m_sens_mg": m_sens,
-                "u_relatif": u_rel,
-            },
-        }
-    )
+    # Nominal AT uji: sel blok Deviasi (g); Mettler menulis `20` + `kg`.
+    nominal_uji = angka(f"{DEV}!{sel_nominal}")
+    satuan_uji = teks(f"{DEV}!E{sel_nominal[1:]}", boleh_kosong=True)
+    if satuan_uji == "kg":
+        nominal_uji *= 1000
+
+    neraca_json.append({
+        "nama": nama,
+        "merk_tipe": teks(f"DATABASE!X{bd}"),
+        "no_seri": teks(f"DATABASE!Y{bd}"),
+        "tertelusur": teks(f"DATABASE!Z{bd}"),
+        "tanggal_database": tanggal(f"DATABASE!AA{bd}"),
+        "kapasitas_g": angka(f"STD AT!O{bs}"),
+        "resolusi_g": angka(f"DATABASE!AE{bd}"),
+        "u95_g": angka(f"DATABASE!AC{bd}"),
+        "nominal_at_uji_g": nominal_uji,
+        "stdev_harian_mg": [x * 1000 for x in harian],
+        "std_dev_mg": std_dev_mg,
+        "gabungan_harian_mg": math.sqrt(sum(x * x for x in harian) / len(harian)) * 1000,
+        "u_sens_mg": u_sens_mg,
+        "sensitivitas": {
+            "delta1_mg": d1,
+            "delta2_mg": d2,
+            "de_sens_mg": de_sens,
+            "u_msens_mg": u_msens,
+            "m_sens_mg": m_sens,
+            "u_relatif": u_rel,
+        },
+    })
 
 # ===================================================================== 3. Densitas
-# `STD AT` blok "Kelas Anak Timbang OIML (kg/m3)". DISENGKETAKAN — lihat §6.
-DENSITAS = [
-    (100.0, 8010, 8060.000000000001, 8550, 4400, 2300),
-    (50.0, 8010, 8080, 9000, 4000, None),
-    (20.0, 8035, 8350, 14400, 2600, None),
-    (10.0, 8080, 9000, 4000, 2000, None),
-    (5.0, 8250, 10650, 3000, 4000, None),
-    (2.0, 9000, 4000, 2000, 3000, None),
-    (1.0, 10650, 3000, 4000, 2000, None),
-    (0.5, 4400, 2200, 3000, None, None),
-    (0.2, 3000, 4400, 2200, None, None),
-    (0.1, 4400, 3000, None, None, None),
-    (0.05, 3400, None, None, None, None),
-    (0.01, 2300, None, None, None, None),
+# `STD AT!M72:R83` "Kelas Anak Timbang OIML (kg/m3)". DISENGKETAKAN — lihat §6.
+densitas = [
+    {"nominal_g": angka(f"STD AT!M{b}"), **{k: angka_boleh(f"STD AT!{c}{b}") for k, c in zip(["E2", "F1", "F2", "M1", "M2"], "NOPQR")}}
+    for b in range(72, 84)
 ]
 
 # ===================================================================== 4. MPE
-# `MPE AT` — OIML R111 Tabel 1, satuan miligram. Kolom kosong = kelas itu tidak
-# didefinisikan untuk nominal tersebut.
-MPE = [
-    ("20 kg", 20000, 100, 300, 1000, None, 3000, None, 10000),
-    ("10 kg", 10000, 50, 160, 500, None, 1600, None, 5000),
-    ("5 kg", 5000, 25, 80, 250, None, 800, None, 2500),
-    ("2 kg", 2000, 10, 30, 100, None, 300, None, 1000),
-    ("1 kg", 1000, 5, 16, 50, None, 160, None, 500),
-    ("500 g", 500, 2.5, 8, 25, None, 80, None, 250),
-    ("200 g", 200, 1, 3, 10, None, 30, None, 100),
-    ("100 g", 100, 0.5, 1.6, 5, None, 16, None, 50),
-    ("50 g", 50, 0.3, 1, 3, None, 10, None, 30),
-    ("20 g", 20, 0.25, 0.8, 2.5, None, 8, None, 25),
-    ("10 g", 10, 0.2, 0.6, 2, None, 6, None, 20),
-    ("5 g", 5, 0.16, 0.5, 1.6, None, 5, None, 16),
-    ("2 g", 2, 0.12, 0.4, 1.2, None, 4, None, 12),
-    ("1 g", 1, 0.1, 0.3, 1, None, 3, None, 10),
-    ("500 mg", 0.5, 0.08, 0.25, 0.8, None, 2.5, None, None),
-    ("200 mg", 0.2, 0.06, 0.2, 0.6, None, 2, None, None),
-    ("100 mg", 0.1, 0.05, 0.16, 0.5, None, 1.6, None, None),
-    ("50 mg", 0.05, 0.04, 0.12, 0.4, None, None, None, None),
-    ("20 mg", 0.02, 0.03, 0.1, 0.3, None, None, None, None),
-    ("10 mg", 0.01, 0.025, 0.08, 0.25, None, None, None, None),
-    ("5 mg", 0.005, 0.02, 0.06, 0.2, None, None, None, None),
-    ("2 mg", 0.002, 0.02, 0.06, 0.2, None, None, None, None),
-    ("1 mg", 0.001, 0.02, 0.06, 0.2, None, None, None, None),
-]
+# `MPE AT!A4:I26` — OIML R111 Tabel 1, mg. Kolom kosong = tidak didefinisikan.
 KELAS_MPE = ["F1", "F2", "M1", "M1-2", "M2", "M2-3", "M3"]
-
-# MPE OIML tidak pernah turun waktu nominalnya naik. Kalau tabelnya pernah
-# tergeser, monotonisitas itu yang pertama patah.
-for kelas_ke, kelas in enumerate(KELAS_MPE):
-    deret = [(b[1], b[2 + kelas_ke]) for b in MPE if b[2 + kelas_ke] is not None]
+mpe = [
+    {"label": teks(f"MPE AT!A{b}"), "nominal_g": angka(f"MPE AT!B{b}"),
+     **{k: angka_boleh(f"MPE AT!{c}{b}") for k, c in zip(KELAS_MPE, "CDEFGHI")}}
+    for b in range(4, 27)
+]
+for kelas in KELAS_MPE:
+    deret = [(m["nominal_g"], m[kelas]) for m in mpe if m[kelas] is not None]
     for (n_besar, v_besar), (n_kecil, v_kecil) in zip(deret, deret[1:]):
         if v_besar < v_kecil:
-            menyimpang.append(
-                f"MPE {kelas}: {n_kecil} g ({v_kecil} mg) > {n_besar} g ({v_besar} mg)"
-            )
+            menyimpang.append(f"MPE {kelas}: {n_kecil} g ({v_kecil} mg) > {n_besar} g ({v_besar} mg)")
 
 # ===================================================================== 5. Meter lingkungan
-# `DATABASE` blok Environmental Meter. Titik indeks dipilih TERDEKAT dari
-# "Standart Indication"; seri memilih yang lebih rendah (§13).
-METER = [
-    {
-        "nama": "Thermobarometer",
-        "lokasi": "Inlab (Lab. Volumetrik)",
-        "tanggal_kalibrasi": "2024-06-26",
-        "due_date": "2026-06-27",
-        "tertelusur": "LK-172-IDN",
-        "suhu": {"u95": 1.2, "titik": [[20.1, 20, 0.1], [26, 25, 1], [29.7, 30, -0.3],
-                                       [34.7, 35, -0.3], [39.8, 40, -0.2]]},
-        "kelembaban": {"u95": 3, "titik": [[38, 40, -2], [48.5, 50, -1.5], [59.2, 60, -0.8],
-                                           [70, 70, 0], [81.1, 80, 1.1]]},
-        "tekanan": {"u95": 2, "titik": [[931, 930, 1], [941.1, 940, 1.1], [950.9, 950, 0.9],
-                                        [961.2, 960, 1.2], [971, 970, 1], [981.1, 980, 1.1],
-                                        [990.6, 990, 0.6], [1001, 1000, 1], [1006, 1005, 1]]},
-    },
-    # Meter kedua `TH-7` SENGAJA tidak disalin. Kolom Correction-nya tidak
-    # rekonsiliasi dengan pasangan indikasinya sendiri:
-    #
-    #   suhu 15,32 vs 15  -> selisih 0,32, tertulis 0,36  (+0,04)
-    #   suhu 20,36 vs 20  -> selisih 0,36, tertulis 0,40  (+0,04)
-    #   suhu 30,27 vs 30  -> selisih 0,27, tertulis 0,31  (+0,04)
-    #   suhu 40,78 vs 40  -> selisih 0,78, tertulis 0,78  (cocok)
-    #   RH   48,72 vs 50  -> selisih -1,28, tertulis -0,88 (+0,40)
-    #   RH   69,06 vs 70  -> selisih -0,94, tertulis -0,54 (+0,40)
-    #
-    # Offsetnya tetap (0,04 untuk suhu, 0,40 untuk RH) dan meleset di empat dari
-    # lima baris — pola yang tidak bisa dijelaskan dari nilainya saja.
-    # Thermobarometer, yang dipakai sesi anak timbangan, rekonsiliasi sempurna.
-    # Menyalin tabel yang tidak rekonsiliasi berarti menaruh angka yang belum
-    # terverifikasi di server dengan tampang berwenang. Pertanyaan lab §19.
-]
+# `DATABASE!B32:R40` Thermobarometer: [standar, instrumen, koreksi] per titik.
 
+
+def titik(kolom: str, baris: range) -> list:
+    k1, k2, k3 = kolom
+    return [[angka(f"DATABASE!{k1}{b}"), angka(f"DATABASE!{k2}{b}"), angka(f"DATABASE!{k3}{b}")] for b in baris]
+
+
+METER = [{
+    "nama": teks("DATABASE!B32"),
+    "lokasi": teks("DATABASE!O32"),
+    "tanggal_kalibrasi": tanggal("DATABASE!P32"),
+    "due_date": tanggal("DATABASE!Q32"),
+    "tertelusur": teks("DATABASE!R32"),
+    "suhu": {"u95": angka("DATABASE!F32"), "titik": titik(("C", "D", "E"), range(32, 37))},
+    "kelembaban": {"u95": angka("DATABASE!J32"), "titik": titik(("G", "H", "I"), range(32, 37))},
+    "tekanan": {"u95": angka("DATABASE!N32"), "titik": titik(("K", "L", "M"), range(32, 41))},
+}]
 for m in METER:
     for besaran in ("suhu", "kelembaban", "tekanan"):
-        blok = m[besaran]
-        if blok is None:
-            continue
-        for standar, instrumen, koreksi in blok["titik"]:
-            adu(f"{m['nama']} {besaran} koreksi @{instrumen}",
-                standar - instrumen, koreksi, tol=1e-9)
+        for standar, instrumen, koreksi in m[besaran]["titik"]:
+            adu(f"{m['nama']} {besaran} koreksi @{instrumen}", standar - instrumen, koreksi, tol=1e-9)
 
-# ===================================================================== 6. Susun
+# ===================================================================== 6. Drift penimbangan
+# `STD AT!N42:P48` LATEST RECORD DRIFT of WEIGHING.
+drift = [
+    {"maks_index_standar_g": angka(f"STD AT!N{b}"), "kelompok": teks(f"STD AT!O{b}"), "u_drift_g": angka(f"STD AT!P{b}")}
+    for b in range(42, 49)
+]
+
+# ===================================================================== 7. Susun
 data = {
     "sumber": {
-        "workbook": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx",
+        "workbook": "Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx",
+        "workbook_sebelumnya": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx (angka identik kecuali baris Fujitsu yang diperbarui 7 Okt 2026)",
         "lembar_kerja": "SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN)",
         "metode": "SIDIK-IK-CAL-0535_Rev.0",
         "acuan": "OIML R111-1",
@@ -426,6 +329,8 @@ data = {
         ),
         "digenerate_oleh": "docs/skrip/gen-tabel-standar-anak-timbangan.py",
     },
+    # Konstanta metode = angka telanjang di rumus PERHITUNGAN U95% / FC (bukan
+    # sel tabel); tetap kode, bukan data master.
     "konstanta": {
         "rho_udara_referensi_kg_m3": 1.2,
         "u_bouyancy_kg_m3": 0.12,
@@ -450,14 +355,7 @@ data = {
             "OIML R111 Lampiran E; T, RH, P memakai rata-rata MENTAH (§13)"
         ),
     },
-    "standar_at": {"set": [
-        {
-            "nama": nama, "kapasitas": kap, "kelas": kelas, "merk_tipe": merk,
-            "no_seri": sn, "tertelusur": tert, "no_sertifikat": cert,
-            "tanggal_kalibrasi": tgl, "due_date": due, "interval_tahun": interval,
-        }
-        for nama, kap, kelas, merk, sn, tert, cert, tgl, due, interval in SET_STANDAR
-    ], "keping": keping_json},
+    "standar_at": {"set": set_json, "keping": keping_json},
     "timbangan": neraca_json,
     "densitas": {
         "status": "disengketakan",
@@ -470,10 +368,7 @@ data = {
             "peringatan sesi selama lab belum menjawab."
         ),
         "kelas": ["E2", "F1", "F2", "M1", "M2"],
-        "baris": [
-            {"nominal_g": b[0], "E2": b[1], "F1": b[2], "F2": b[3], "M1": b[4], "M2": b[5]}
-            for b in DENSITAS
-        ],
+        "baris": densitas,
         "aturan_diatas_100g": (
             "Nominal >= 100 g memakai baris 100 g ('Note : Diatas 100 g nilainya =')"
         ),
@@ -482,34 +377,19 @@ data = {
         "satuan": "mg",
         "acuan": "OIML R111-1 Tabel 1",
         "kelas": KELAS_MPE,
-        "baris": [
-            {"label": b[0], "nominal_g": b[1],
-             **{k: b[2 + i] for i, k in enumerate(KELAS_MPE)}}
-            for b in MPE
-        ],
+        "baris": mpe,
     },
     "meter_lingkungan": METER,
-    "drift_penimbangan": [
-        {"maks_index_standar_g": 200, "kelompok": "E2 0.1-200 g", "u_drift_g": 0},
-        {"maks_index_standar_g": 500, "kelompok": "E2 500 g", "u_drift_g": 0},
-        {"maks_index_standar_g": 1000, "kelompok": "E2 1000 g", "u_drift_g": 0},
-        {"maks_index_standar_g": 2000, "kelompok": "F1 2 kg", "u_drift_g": 0},
-        {"maks_index_standar_g": 5000, "kelompok": "F1 5 kg", "u_drift_g": 0},
-        {"maks_index_standar_g": 10000, "kelompok": "F1 10 kg",
-         "u_drift_g": 0.0023094010767038932},
-        {"maks_index_standar_g": 20000, "kelompok": "F1 20 kg", "u_drift_g": 0},
-    ],
+    "drift_penimbangan": drift,
 }
 
 if menyimpang:
-    print("MENOLAK MENULIS — turunan tidak cocok dengan master:", file=sys.stderr)
+    print("MENOLAK MENULIS — sel/turunan tidak cocok:", file=sys.stderr)
     for baris in menyimpang:
         print("  -", baris, file=sys.stderr)
     sys.exit(1)
 
-KELUARAN.write_text(
-    json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-)
+KELUARAN.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 print(f"Ditulis {KELUARAN}")
 print(f"  {len(keping_json)} keping standar, {len(neraca_json)} neraca, "
-      f"{len(DENSITAS)} baris densitas, {len(MPE)} baris MPE, {len(METER)} meter")
+      f"{len(densitas)} baris densitas, {len(mpe)} baris MPE, {len(METER)} meter")

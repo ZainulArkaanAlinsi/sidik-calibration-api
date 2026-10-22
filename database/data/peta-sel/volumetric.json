@@ -1,0 +1,562 @@
+{
+ "format": 1,
+ "kode_profil": "volumetric",
+ "sumber_json": "tabel-standar-volumetric.json",
+ "bukti": [
+  "Alamat = aturan docs/skrip/gen-tabel-standar-volumetric.py diterapkan ke ekspor CSV kedua master (Project-PT-Sidik/alat-alat-Pt-Sidik/Volumetric_Glassware_2026/{Fixed,Graduated}_Volumetric_Glassware_2026) 22 Okt 2026: CMC DATABASE!V5:AG16 (6 pasang kolom, urutan kategori dipastikan jangkar baris 2), neraca baris 18-20 (kolom dari judul baris 17: Fixed Res.=AD Stdev=AE, Graduated stdev=AD, tanpa Res), U95 suhu DATABASE!AB21:AB22, diameter Tabel_Maximum_Internal_Diameter!A2:B46, kalibrator STANDARD_KALIBRATOR!B8:C25 + U95 C29:C46, sensor PRT FC_Prt_Pt100!A11:M60 (diurutkan titik, seperti generator), koefisien muai Tabel_Koefisien_Muai_Bahan!A3:B16.",
+  "Ekstraksi dari kedua CSV = tabel-standar-volumetric.json (StudioPetaSelProfilTest). Satu paket untuk enam profil (labu_ukur, pipet_volume, picnometer, buret, gelas_ukur, pipet_ukur; kodePaketAcuan = volumetric).",
+  "Data bersama antar varian otomatis = jalur tanpa {varian} dan tanpa filter varian: cmc.* dan koreksi_suhu.u95.* (generator menuntut kedua master identik di sini).",
+  "Diverifikasi terhadap .xlsm asli 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo) dan cek lolos — sha256 berkas di peta-sel/manifest-xlsm.json, skrip docs/skrip/verifikasi-peta-xlsm.py."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  {
+   "nama": "Tabel_Maximum_Internal_Diameter",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "nama": "STANDARD_KALIBRATOR",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "nama": "FC_Prt_Pt100",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "nama": "Tabel_Koefisien_Muai_Bahan",
+   "varian": [
+    "graduated"
+   ]
+  }
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!V2",
+   "teks": "Gelas Ukur"
+  },
+  {
+   "sel": "DATABASE!V3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!W3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!X2",
+   "teks": "Labu Ukur"
+  },
+  {
+   "sel": "DATABASE!X3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!Y3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!Z2",
+   "teks": "Buret"
+  },
+  {
+   "sel": "DATABASE!Z3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!AA3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!AB2",
+   "teks": "Picnometer"
+  },
+  {
+   "sel": "DATABASE!AB3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!AC3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!AD2",
+   "teks": "Pipet Volume"
+  },
+  {
+   "sel": "DATABASE!AD3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!AE3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!AF2",
+   "teks": "Pipet Ukur"
+  },
+  {
+   "sel": "DATABASE!AF3",
+   "teks": "Range/Capacity Alat (ml)"
+  },
+  {
+   "sel": "DATABASE!AG3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!V17",
+   "teks": "Standart Meter/Indikator"
+  },
+  {
+   "sel": "DATABASE!W17",
+   "teks": "Merk/Type"
+  },
+  {
+   "sel": "DATABASE!X17",
+   "teks": "S/N"
+  },
+  {
+   "sel": "DATABASE!AB17",
+   "teks": "U95%"
+  },
+  {
+   "sel": "DATABASE!V21",
+   "teks": "Termometer & Sensor Std."
+  },
+  {
+   "sel": "DATABASE!AD17",
+   "teks": "Res.",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "DATABASE!AE17",
+   "teks": "Stdev",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "DATABASE!AD17",
+   "teks": "stdev",
+   "varian": [
+    "graduated"
+   ]
+  },
+  {
+   "sel": "Tabel_Maximum_Internal_Diameter!A1",
+   "teks": "Limit of Volumetric Error, ±µL",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "STANDARD_KALIBRATOR!B5",
+   "teks": "TABEL KOREKSI TEMPERATURE KALIBRATOR",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "STANDARD_KALIBRATOR!C7",
+   "teks": "PT100",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "STANDARD_KALIBRATOR!B26",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "STANDARD_KALIBRATOR!C28",
+   "teks": "PT100",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "FC_Prt_Pt100!A10",
+   "teks": "Set point (0C)",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "FC_Prt_Pt100!M10",
+   "teks": "Koreksi (0C)",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "FC_Prt_Pt100!A52",
+   "teks": "Set point (0C)",
+   "varian": [
+    "fixed"
+   ]
+  },
+  {
+   "sel": "Tabel_Koefisien_Muai_Bahan!A2",
+   "teks": "Material",
+   "varian": [
+    "graduated"
+   ]
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "fixed": "(^| )fixed volumetric( |$)",
+   "graduated": "(^| )graduated volumetric( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "cmc.Gelas Ukur",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!V5:V16",
+    "cmc_ml": "DATABASE!W5:W16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.Labu Ukur",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!X5:X16",
+    "cmc_ml": "DATABASE!Y5:Y16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.Buret",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!Z5:Z16",
+    "cmc_ml": "DATABASE!AA5:AA16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.Picnometer",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!AB5:AB16",
+    "cmc_ml": "DATABASE!AC5:AC16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.Pipet Volume",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!AD5:AD16",
+    "cmc_ml": "DATABASE!AE5:AE16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.Pipet Ukur",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_ml",
+   "kolom": {
+    "nominal_ml": "DATABASE!AF5:AF16",
+    "cmc_ml": "DATABASE!AG5:AG16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "nominal_ml",
+    "cmc_ml"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "koreksi_suhu.u95.termometer_c",
+   "tipe": "angka",
+   "sel": "DATABASE!AB21"
+  },
+  {
+   "jalur": "koreksi_suhu.u95.sensor_c",
+   "tipe": "angka",
+   "sel": "DATABASE!AB22"
+  },
+  {
+   "jalur": "neraca.fixed",
+   "varian": [
+    "fixed"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "nama",
+   "kolom": {
+    "nama": {
+     "rentang": "DATABASE!V18:V20",
+     "tipe": "teks"
+    },
+    "merk_type": {
+     "rentang": "DATABASE!W18:W20",
+     "tipe": "teks"
+    },
+    "serial": {
+     "rentang": "DATABASE!X18:X20",
+     "tipe": "teks"
+    },
+    "u95_g": "DATABASE!AB18:AB20",
+    "resolusi_g": "DATABASE!AD18:AD20",
+    "stdev_g": "DATABASE!AE18:AE20"
+   },
+   "min_baris": 1
+  },
+  {
+   "jalur": "neraca.graduated",
+   "varian": [
+    "graduated"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "nama",
+   "kolom": {
+    "nama": {
+     "rentang": "DATABASE!V18:V20",
+     "tipe": "teks"
+    },
+    "merk_type": {
+     "rentang": "DATABASE!W18:W20",
+     "tipe": "teks"
+    },
+    "serial": {
+     "rentang": "DATABASE!X18:X20",
+     "tipe": "teks"
+    },
+    "u95_g": "DATABASE!AB18:AB20",
+    "resolusi_g": {
+     "nilai_tetap": null
+    },
+    "stdev_g": "DATABASE!AD18:AD20"
+   },
+   "min_baris": 1
+  },
+  {
+   "jalur": "diameter_iso4787",
+   "varian": [
+    "fixed"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "batas_galat_ml",
+   "kolom": {
+    "batas_galat_ml": "Tabel_Maximum_Internal_Diameter!A2:A46",
+    "diameter_maks_mm": "Tabel_Maximum_Internal_Diameter!B2:B46"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "batas_galat_ml",
+    "diameter_maks_mm"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "koreksi_suhu.kalibrator",
+   "varian": [
+    "fixed"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "titik_c",
+   "kolom": {
+    "titik_c": "STANDARD_KALIBRATOR!B8:B25",
+    "koreksi_c": "STANDARD_KALIBRATOR!C8:C25",
+    "u95_c": "STANDARD_KALIBRATOR!C29:C46"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "titik_c",
+    "koreksi_c"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "koreksi_suhu.sensor_prt",
+   "varian": [
+    "fixed"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "titik_c",
+   "kolom": {
+    "titik_c": "FC_Prt_Pt100!A11:A60",
+    "koreksi_c": "FC_Prt_Pt100!M11:M60"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "titik_c",
+    "koreksi_c"
+   ],
+   "urut": "titik_c",
+   "min_baris": 1
+  },
+  {
+   "jalur": "koefisien_muai",
+   "varian": [
+    "graduated"
+   ],
+   "tipe": "daftar_objek",
+   "kunci": "material",
+   "kolom": {
+    "material": {
+     "rentang": "Tabel_Koefisien_Muai_Bahan!A3:A16",
+     "tipe": "teks"
+    },
+    "gamma_per_c": "Tabel_Koefisien_Muai_Bahan!B3:B16"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "gamma_per_c"
+   ],
+   "min_baris": 1
+  }
+ ],
+ "tidak_dipetakan": [
+  "Tidak ada daun JSON yang tidak dipetakan; semua daun tabel-standar-volumetric.json diekstrak.",
+  "lewati_jika bukan_angka meniru angka(..) is None generator: sel CMC/diameter/kalibrator/PRT yang berisi TEKS (mis. '0,5' salah ketik) dilewati diam-diam seperti di generator — risiko yang sama dengan generator, dijaga min_baris & simulasi."
+ ],
+ "perlu_berkas_asli": [
+  "Format SERTIFIKAT sudah diekstrak dari .xlsm ke format_sertifikat (fase 3), tetapi render sertifikat BELUM memakainya — kode masih memakai formatKolomSertifikat(); beda dicatat StudioFormatSertifikatTest."
+ ],
+ "xlsm": {
+  "bukti": "Penyelarasan baris ekspor CSV <-> .xlsm asli (docs/skrip/verifikasi-peta-xlsm.py, 22 Okt 2026): ekspor membuang sebagian baris kosong. Fixed sha256 ebb810974c11..., Graduated b0355579c014...",
+  "lembar": {
+   "Tabel_Maximum_Internal_Diameter": "Tabel_Maximum Internal Diameter",
+   "STANDARD_KALIBRATOR": "STANDARD KALIBRATOR",
+   "FC_Prt_Pt100": "FC Prt Pt100",
+   "Tabel_Koefisien_Muai_Bahan": "Tabel Koefisien Muai Bahan"
+  },
+  "geser": [
+   {
+    "lembar": "DATABASE",
+    "dari": 16,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 41,
+    "geser": 3,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 76,
+    "geser": 5,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 41,
+    "geser": 1,
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "lembar": "DATABASE",
+    "dari": 76,
+    "geser": 3,
+    "varian": [
+     "graduated"
+    ]
+   },
+   {
+    "lembar": "STANDARD_KALIBRATOR",
+    "dari": 1,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "STANDARD_KALIBRATOR",
+    "dari": 26,
+    "geser": 2,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 1,
+    "geser": 1,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 6,
+    "geser": 2,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "FC_Prt_Pt100",
+    "dari": 10,
+    "geser": 3,
+    "varian": [
+     "fixed"
+    ]
+   },
+   {
+    "lembar": "Tabel_Koefisien_Muai_Bahan",
+    "dari": 2,
+    "geser": 1,
+    "varian": [
+     "graduated"
+    ]
+   }
+  ]
+ },
+ "format_sertifikat": {"bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; CSV tidak membawa format. BELUM dipakai render — kode masih memakai formatKolomSertifikat(); paritas diadu StudioFormatSertifikatTest.", "entri": [{"kolom": "standar", "sel": ["SERTIFIKAT!E21"], "format": "0.0", "varian": ["fixed"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!N21"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!S21"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!Q22"], "format": "0.0000", "varian": ["fixed"]}, {"kolom": "k", "sel": ["SERTIFIKAT!V23"], "format": "0", "varian": ["fixed"]}, {"kolom": "standar", "sel": ["SERTIFIKAT!E21:E23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "uut", "sel": ["SERTIFIKAT!N21:N23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "koreksi", "sel": ["SERTIFIKAT!S21:S23"], "format": "0.0000", "varian": ["graduated"]}, {"kolom": "u95", "sel": ["SERTIFIKAT!Q26"], "format": "0.00", "varian": ["graduated"]}, {"kolom": "k", "sel": ["SERTIFIKAT!V27"], "format": "0", "varian": ["graduated"]}]}
+}

@@ -1,0 +1,440 @@
+{
+ "format": 1,
+ "kode_profil": "sieve",
+ "sumber_json": "tabel-standar-sieve.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-sieve.py (Tabel_MPE STANDAR_KALIBRATOR!B41:N136 — 96 baris tetap, dipetakan per sel dengan `ulang`; identitas DATABASE!S13:Y14 + resolusi K7/C7; koreksi K/L/N 12:21, C/D/F 12:22 & 26:36; U95 O12/G12/G26; CMC master DATABASE!S5:T6). '-'/'all' disimpan sebagai teks (`angka_atau_teks`), seperti generator.",
+  "`tanda` (kolom MPE janggal) TIDAK lagi data: diturunkan TabelStandarSieve::tanda() dengan aturan generator (22 Okt 2026), jadi impor ulang master tidak meninggalkan tanda basi.",
+  "Ekstraksi dari ekspor CSV di repo (Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh) = tabel-standar-sieve.json (StudioPetaSelProfilTest); diverifikasi pada .xlsm asli (sha256 di manifest-xlsm.json)."
+ ],
+ "lembar_wajib": [
+  "STANDAR_KALIBRATOR",
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR_KALIBRATOR!B39",
+   "teks": "Sieve Standard Size"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!B40",
+   "teks": "Size (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!C40",
+   "teks": "Sieve No."
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!D40",
+   "teks": "Size (µm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!E40",
+   "teks": "Size (inch)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!I40",
+   "teks": "+X (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!J40",
+   "teks": "±Y (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!K40",
+   "teks": "Max. Stdev (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!L40",
+   "teks": "Preferred Size (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!M40",
+   "teks": "Max. Size (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!N40",
+   "teks": "Min. Size (mm)"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!F39",
+   "teks": "Σ Sample Opening"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!B7",
+   "teks": "Resolusi"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!J7",
+   "teks": "Resolusi"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!B10",
+   "teks": "X-Axis"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!B24",
+   "teks": "Y-Axis"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!C10",
+   "teks": "Nilai Standar"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!F10",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!G10",
+   "teks": "U95%"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!K10",
+   "teks": "Nilai Standar"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!N10",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!O10",
+   "teks": "U95%"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!C24",
+   "teks": "Nilai Standar"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!F24",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!G24",
+   "teks": "U95%"
+  },
+  {
+   "sel": "DATABASE!S3",
+   "teks": "Jenis/Rentang"
+  },
+  {
+   "sel": "DATABASE!T3",
+   "teks": "CMC (mm)"
+  },
+  {
+   "sel": "DATABASE!S12",
+   "teks": "Standart Meter/Indikator"
+  },
+  {
+   "sel": "DATABASE!T12",
+   "teks": "Merk/Type"
+  },
+  {
+   "sel": "DATABASE!U12",
+   "teks": "S/N"
+  },
+  {
+   "sel": "DATABASE!V12",
+   "teks": "Traceability"
+  },
+  {
+   "sel": "DATABASE!W12",
+   "teks": "Calibration Date"
+  },
+  {
+   "sel": "DATABASE!X12",
+   "teks": "Interval (tahun)"
+  },
+  {
+   "sel": "DATABASE!Y12",
+   "teks": "Due Date"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "mpe[{i}].ukuran_mm",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!B41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].sieve_no",
+   "tipe": "teks",
+   "sel": "STANDAR_KALIBRATOR!C41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].ukuran_um",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!D41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].ukuran_inch",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!E41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].min_opening.compliance",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!F41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].min_opening.inspection",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!G41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].min_opening.calibration",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!H41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].x_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!I41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].y_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!J41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].max_stdev_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!K41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].kawat_preferred_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!L41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].kawat_max_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!M41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "mpe[{i}].kawat_min_mm",
+   "tipe": "angka_atau_teks",
+   "sel": "STANDAR_KALIBRATOR!N41",
+   "ulang": 96,
+   "langkah_baris": 1
+  },
+  {
+   "jalur": "standar.caliper.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!S13"
+  },
+  {
+   "jalur": "standar.caliper.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!T13"
+  },
+  {
+   "jalur": "standar.caliper.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!U13"
+  },
+  {
+   "jalur": "standar.caliper.traceability",
+   "tipe": "teks",
+   "sel": "DATABASE!V13"
+  },
+  {
+   "jalur": "standar.caliper.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!W13"
+  },
+  {
+   "jalur": "standar.caliper.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!X13"
+  },
+  {
+   "jalur": "standar.caliper.berlaku_sampai",
+   "tipe": "tanggal",
+   "sel": "DATABASE!Y13"
+  },
+  {
+   "jalur": "standar.caliper.resolusi_mm",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!K7"
+  },
+  {
+   "jalur": "standar.mikroskop.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!S14"
+  },
+  {
+   "jalur": "standar.mikroskop.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!T14"
+  },
+  {
+   "jalur": "standar.mikroskop.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!U14"
+  },
+  {
+   "jalur": "standar.mikroskop.traceability",
+   "tipe": "teks",
+   "sel": "DATABASE!V14"
+  },
+  {
+   "jalur": "standar.mikroskop.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!W14"
+  },
+  {
+   "jalur": "standar.mikroskop.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!X14"
+  },
+  {
+   "jalur": "standar.mikroskop.berlaku_sampai",
+   "tipe": "tanggal",
+   "sel": "DATABASE!Y14"
+  },
+  {
+   "jalur": "standar.mikroskop.resolusi_mm",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!C7"
+  },
+  {
+   "jalur": "koreksi.caliper",
+   "tipe": "daftar_objek",
+   "kunci": "nilai_standar_mm",
+   "min_baris": 1,
+   "kolom": {
+    "nilai_standar_mm": "STANDAR_KALIBRATOR!K12:K21",
+    "penunjukan_mm": "STANDAR_KALIBRATOR!L12:L21",
+    "koreksi_mm": "STANDAR_KALIBRATOR!N12:N21"
+   }
+  },
+  {
+   "jalur": "koreksi.mikroskop_x",
+   "tipe": "daftar_objek",
+   "kunci": "nilai_standar_mm",
+   "min_baris": 1,
+   "kolom": {
+    "nilai_standar_mm": "STANDAR_KALIBRATOR!C12:C22",
+    "penunjukan_mm": "STANDAR_KALIBRATOR!D12:D22",
+    "koreksi_mm": "STANDAR_KALIBRATOR!F12:F22"
+   }
+  },
+  {
+   "jalur": "koreksi.mikroskop_y",
+   "tipe": "daftar_objek",
+   "kunci": "nilai_standar_mm",
+   "min_baris": 1,
+   "kolom": {
+    "nilai_standar_mm": "STANDAR_KALIBRATOR!C26:C36",
+    "penunjukan_mm": "STANDAR_KALIBRATOR!D26:D36",
+    "koreksi_mm": "STANDAR_KALIBRATOR!F26:F36"
+   }
+  },
+  {
+   "jalur": "u95_sertifikat_mm.caliper",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!O12"
+  },
+  {
+   "jalur": "u95_sertifikat_mm.mikroskop_x",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!G12"
+  },
+  {
+   "jalur": "u95_sertifikat_mm.mikroskop_y",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!G26"
+  },
+  {
+   "jalur": "cmc_master[0].label",
+   "tipe": "teks",
+   "sel": "DATABASE!S5"
+  },
+  {
+   "jalur": "cmc_master[0].u95_mm",
+   "tipe": "angka",
+   "sel": "DATABASE!T5"
+  },
+  {
+   "jalur": "cmc_master[1].label",
+   "tipe": "teks",
+   "sel": "DATABASE!S6"
+  },
+  {
+   "jalur": "cmc_master[1].u95_mm",
+   "tipe": "angka",
+   "sel": "DATABASE!T6"
+  }
+ ],
+ "tidak_dipetakan": [
+  "cmc_master[*].standar/ukuran_min_mm/ukuran_min_mm_eksklusif/ukuran_maks_mm — pita literal generator (pemilih master 'PERHITUNGAN U95%'!AC22).",
+  "cmc_lampiran — dari kemampuan-kalibrasi.json (lampiran LK-285-IDN), bukan master.",
+  "konstanta — angka telanjang di rumus master (sel asal dicatat di generator)."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Sama dengan SieveProfile::formatKolomSertifikat() (StudioFormatSertifikatTest).",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!E20:E22"
+    ],
+    "format": "0.0000",
+    "catatan": "Nominal Value"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!H20:H22"
+    ],
+    "format": "0.0000",
+    "catatan": "Standard Indication"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!K20:K22"
+    ],
+    "format": "0.0000"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!N20:N22"
+    ],
+    "format": "0.0000"
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!O23"
+    ],
+    "format": "0"
+   }
+  ]
+ }
+}

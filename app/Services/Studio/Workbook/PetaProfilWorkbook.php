@@ -2,6 +2,8 @@
 
 namespace App\Services\Studio\Workbook;
 
+use App\Services\Calibration\CalibrationProfileRegistry;
+
 /**
  * Nama workbook (folder CSV atau nama berkas `.xlsm`) → kode profil.
  *
@@ -114,6 +116,36 @@ final class PetaProfilWorkbook
             'keluarga' => null,
             'catatan' => 'Belum terpetakan ke profil mana pun (nama tidak cocok aturan PetaProfilWorkbook).',
         ];
+    }
+
+    /**
+     * Keluarga workbook → kode PAKET data acuan (`kodePaketAcuan()` profil
+     * keluarga itu). Satu workbook keluarga melayani beberapa profil yang
+     * berbagi satu tabel acuan, jadi peta selnya per paket, bukan per profil.
+     * Keluarga yang belum dipindah ke Studio tetap tercantum: tanpa berkas
+     * peta `PetaSel::untuk()` memulangkan null dan impornya "belum terpetakan".
+     */
+    public const PAKET_KELUARGA = [
+        'piston_volume' => 'piston_volume',
+        'tekanan_druck' => 'tekanan',
+        'volumetric_fixed' => 'volumetric',
+        'volumetric_graduated' => 'volumetric',
+        'enclosure' => 'enclosure',
+    ];
+
+    /**
+     * Kode paket data acuan untuk hasil [cocokkan]: profil → `kodePaketAcuan()`
+     * profilnya; keluarga → [PAKET_KELUARGA]; selain itu null.
+     *
+     * @param  array{kode_profil: ?string, keluarga: ?string}  $cocok
+     */
+    public static function kodePaket(array $cocok, CalibrationProfileRegistry $registry): ?string
+    {
+        if ($cocok['kode_profil'] !== null) {
+            return $registry->untukKode($cocok['kode_profil'])?->kodePaketAcuan() ?? $cocok['kode_profil'];
+        }
+
+        return self::PAKET_KELUARGA[$cocok['keluarga'] ?? ''] ?? null;
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+
 /**
  * Tabel koreksi, U95, & drift kalibrator suhu untuk kalibrasi ENCLOSURE
  * (Oven/Furnace/Bath/Inkubator/Refrigerator), dibaca dari
@@ -74,9 +76,6 @@ class TabelKalibratorEnclosure
 
     /** Tipe sensor yang dipakai enclosure (lampiran akreditasi + master). */
     public const TIPE_SENSOR = ['Type N', 'Type K'];
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /** Workbook (kelompok tabel sensor + index) untuk merk ini. */
     public function workbook(string $merk): string
@@ -254,10 +253,6 @@ class TabelKalibratorEnclosure
      */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $path = database_path('data/tabel-kalibrator-enclosure.json');
 
         if (! is_file($path)) {
@@ -267,12 +262,20 @@ class TabelKalibratorEnclosure
             );
         }
 
-        $isi = json_decode((string) file_get_contents($path), true);
+        // Paket `enclosure`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini.
+        $isi = app(SumberAcuan::class)->isi('enclosure', $path);
 
         if (! is_array($isi) || ! isset($isi['meter'], $isi['sensor'])) {
             throw new \RuntimeException("Tabel kalibrator enclosure di {$path} rusak — kunci `meter`/`sensor` nggak ada.");
         }
 
-        return self::$data = $isi;
+        return $isi;
+    }
+
+    /** Dipakai test yang menukar berkas tabelnya. */
+    public static function lupakan(): void
+    {
+        SumberAcuan::lupakanCache();
     }
 }

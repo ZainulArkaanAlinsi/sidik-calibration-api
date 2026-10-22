@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use RuntimeException;
 
 /**
@@ -92,9 +94,6 @@ class TabelKalibratorSuhu3Alat
      * `Ketidakpastian Baku Indikator Standar` (`Q20 = 2`).
      */
     public const K_SERTIFIKAT = 2.0;
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /**
      * Titik tabel TERDEKAT ke sebuah nilai — `MATCH(MIN(ABS(…)))` master.
@@ -334,9 +333,7 @@ class TabelKalibratorSuhu3Alat
      */
     private function bagian(string $alat): array
     {
-        $data = self::$data ??= $this->muat();
-
-        return $data[$alat] ?? [];
+        return $this->muat()[$alat] ?? [];
     }
 
     /**
@@ -353,12 +350,196 @@ class TabelKalibratorSuhu3Alat
             );
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `suhu_3alat`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini.
+        $isi = app(SumberAcuan::class)->isi('suhu_3alat', $berkas);
 
-        if (! is_array($isi)) {
+        if ($isi === []) {
             throw new RuntimeException("Tabel standar suhu 3 alat di {$berkas} bukan JSON yang sah.");
         }
 
         return $isi;
+    }
+
+    /** Dipakai test yang menukar berkas tabelnya. */
+    public static function lupakan(): void
+    {
+        SumberAcuan::lupakanCache();
+    }
+
+    /**
+     * Skema `tabel-master-suhu-3alat.json` untuk Studio Data Acuan (paket
+     * `suhu_3alat`, dipakai ketiga profil lewat `ProfilSuhuPasangan`). Alamat
+     * dibuktikan peta sel `database/data/peta-sel/suhu_3alat.json` terhadap
+     * ketiga master .xlsm asli & ekspor CSV. Kolom tipe sensor/probe bertipe
+     * `desimal_opsional`: tabel master JARANG — baris tanpa tipe yang tidak
+     * dikalibrasi di titik itu tidak membawa kuncinya (bukan null, bukan nol).
+     *
+     * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}
+     */
+    public static function skemaAcuan(): array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+        $huruf = static fn (int $k): string => Coordinate::stringFromColumnIndex($k);
+        $SK = 'STANDAR KALIBRATOR';
+        $tipe = ['RTD', 'Type K', 'Type N', 'Type B', 'Type T', 'Type R', 'Type S', 'Type J'];
+        $probe = ['RTD'];
+
+        for ($i = 1; $i <= 16; $i++) {
+            $probe[] = sprintf('TCK-%02d', $i);
+        }
+
+        for ($i = 3; $i <= 12; $i++) {
+            $probe[] = "TCN{$i}";
+        }
+
+        $daftar = [];
+        $nama = [self::ALAT_THERMOCOUPLE => 'Thermocouple', self::ALAT_GLASS => 'Thermometer Glass'];
+
+        foreach ($nama as $alat => $n) {
+            $kolIndeks = [$kolom('index_kalibrator', 'Titik indeks kalibrator', 'daftar_angka', '°C', "{$SK}!B10:B27"),
+                $kolom('_sumber', 'Catatan sumber', 'teks', null, null)];
+
+            if ($alat === self::ALAT_THERMOCOUPLE) {
+                $kolIndeks[] = $kolom('_yokogawa_dari_tautan_luar', 'Catatan tautan luar Yokogawa', 'teks', null, null);
+                $kolIndeks[] = $kolom('stabilitas_cold_junction', 'Stabilitas cold junction', 'desimal', '°C', 'PERHITUNGAN U95%!N22');
+                $kolIndeks[] = $kolom('ac_pick_up', 'AC pick-up', 'desimal', '°C', 'PERHITUNGAN U95%!N25');
+            }
+
+            $daftar[] = $lembar("{$alat}_umum", "{$n} — indeks & konstanta", $alat, 'objek', null, $kolIndeks);
+
+            foreach (['koreksi_kalibrator' => ['Koreksi', 10, 27], 'u95_kalibrator' => ['U95', 32, 49]] as $bagian => [$lb, $b0, $b1]) {
+                foreach (['constant' => ['Constant 40T', 3], 'yokogawa' => ['Yokogawa CA 150', 14]] as $merk => [$labelMerk, $k0]) {
+                    // Thermocouple: tabel Yokogawa = nama rentang ke TAUTAN LUAR
+                    // ('[4]STANDAR KALIBRATOR'), bukan sel lembar ini — tidak dipetakan.
+                    $luar = $alat === self::ALAT_THERMOCOUPLE && $merk === 'yokogawa';
+                    $kol = [$kolom('titik', 'Titik kalibrasi', 'desimal', '°C', $luar ? null : "{$SK}!B{$b0}:B{$b1}")];
+
+                    foreach ($tipe as $j => $t) {
+                        $h = $huruf($k0 + $j);
+                        $kol[] = $kolom($t, $t, 'desimal_opsional', '°C', $luar ? null : "{$SK}!{$h}{$b0}:{$h}{$b1}");
+                    }
+
+                    $daftar[] = $lembar("{$alat}_{$bagian}_{$merk}", "{$n} — {$lb} kalibrator {$labelMerk}", "{$alat}/{$bagian}/{$merk}", 'daftar', 'titik', $kol);
+                }
+            }
+
+            foreach (['koreksi_sensor' => ['Koreksi', 64, 78], 'u95_sensor' => ['U95', 85, 99]] as $bagian => [$lb, $b0, $b1]) {
+                $kol = [$kolom('titik', 'Titik kalibrasi', 'desimal', '°C', "{$SK}!B{$b0}:B{$b1}")];
+
+                foreach ($probe as $j => $p) {
+                    $h = $huruf(3 + $j);
+                    $kol[] = $kolom($p, $p, 'desimal_opsional', '°C', "{$SK}!{$h}{$b0}:{$h}{$b1}");
+                }
+
+                $daftar[] = $lembar("{$alat}_{$bagian}", "{$n} — {$lb} sensor standar", "{$alat}/{$bagian}", 'daftar', 'titik', $kol);
+            }
+
+            foreach (['constant' => 'Y', 'yokogawa' => 'AA'] as $merk => $kv) {
+                $daftar[] = $lembar("{$alat}_drift_kalibrator_{$merk}", "{$n} — drift kalibrator {$merk}", "{$alat}/drift_kalibrator/{$merk}", 'objek', null, [
+                    $kolom('RTD', 'PRT PT100', 'desimal', '°C', "{$SK}!{$kv}6"),
+                    $kolom('Type N', 'Thermocouple Type N', 'desimal', '°C', "{$SK}!{$kv}7"),
+                    $kolom('Type K', 'Thermocouple Type K', 'desimal', '°C', "{$SK}!{$kv}8"),
+                ]);
+            }
+
+            $daftar[] = $lembar("{$alat}_drift_sensor", "{$n} — drift sensor standar", "{$alat}/drift_sensor", 'objek', null, [
+                $kolom('RTD', 'PRT PT100', 'desimal', '°C', "{$SK}!Y12"),
+                $kolom('Type N', 'Thermocouple Type N', 'desimal', '°C', "{$SK}!Y13"),
+                $kolom('Type K', 'Thermocouple Type K', 'desimal', '°C', "{$SK}!Y14"),
+            ]);
+
+            // Nomor termokopel -> probe: turunan rumus PERHITUNGAN FC!R23, bukan tabel sel.
+            foreach (['Type K' => 'type_k', 'Type N' => 'type_n', 'RTD' => 'rtd'] as $t => $kt) {
+                $daftar[] = $lembar("{$alat}_probe_{$kt}", "{$n} — probe {$t} per nomor", "{$alat}/probe_per_tipe/{$t}", 'baris', 'nomor', [
+                    $kolom('nomor', 'No. termokopel', 'teks', null, null),
+                    $kolom('probe', 'Probe', 'teks', null, null),
+                ]);
+            }
+        }
+
+        foreach (['A', 'B'] as $b) {
+            $daftar[] = $lembar('thermocouple_dryblock_'.strtolower($b), "Thermocouple — dryblock {$b}", "thermocouple/dryblock/{$b}", 'objek', null, [
+                $kolom('axial_u', 'Ketidakpastian axial', 'desimal', '°C', "Variasi axial Dryblok {$b}!G28"),
+                $kolom('radial_max', 'Variasi antar lubang (maks)', 'desimal', '°C', "Variasi axial Dryblok {$b}!B39"),
+            ]);
+        }
+
+        $daftar[] = $lembar('thermocouple_cmc', 'Thermocouple — CMC master', 'thermocouple/cmc', 'daftar', 'rentang', [
+            $kolom('rentang', 'Rentang', 'teks', '°C', 'DATABASE!R5:R7'),
+            $kolom('u', 'CMC', 'desimal', '°C', 'DATABASE!S5:S7'),
+        ]);
+
+        foreach (['satu' => ['C', 'D'], 'dua' => ['M', 'N']] as $ob => [$kv, $ks]) {
+            $daftar[] = $lembar("thermometer_glass_oilbath_{$ob}", "Thermometer Glass — oilbath {$ob}", "thermometer_glass/oilbath/{$ob}", 'objek', null, [
+                $kolom('variasi_spasial', 'Variasi spasial (maks)', 'desimal', '°C', "Variasi Spasial & stab Oilbath!{$kv}12"),
+                $kolom('stabilitas', 'Stabilitas (maks)', 'desimal', '°C', "Variasi Spasial & stab Oilbath!{$ks}12"),
+            ]);
+        }
+
+        $daftar[] = $lembar('thermometer_glass_tipe', 'Thermometer Glass — tipe pencelupan', 'thermometer_glass/tipe_thermometer', 'daftar', 'label', [
+            $kolom('nilai', 'Nilai', 'desimal', null, 'DATABASE!Q32:Q34'),
+            $kolom('label', 'Tipe', 'teks', null, 'DATABASE!R32:R34'),
+        ]);
+        $daftar[] = $lembar('thermometer_glass_cmc', 'Thermometer Glass — CMC master', 'thermometer_glass/cmc', 'daftar', 'rentang', [
+            $kolom('rentang', 'Rentang', 'teks', '°C', 'DATABASE!R5:R6'),
+            $kolom('u', 'CMC', 'desimal', '°C', 'DATABASE!S5:S6'),
+        ]);
+
+        $ST = 'STANDAR_KALIBRATOR';
+        $CH = 'stabilitas dan homogenitas Cham';
+        $daftar[] = $lembar('thermohygro_umum', 'Thermohygro — catatan', 'thermohygro', 'objek', null, [
+            $kolom('_sumber', 'Catatan sumber', 'teks', null, null),
+        ]);
+        $daftar[] = $lembar('thermohygro_koreksi_suhu', 'Thermohygro — koreksi standar suhu', 'thermohygro/koreksi_suhu', 'daftar', 'titik', [
+            $kolom('titik', 'Titik', 'desimal', '°C', "{$ST}!D20:D26"),
+            $kolom('koreksi', 'Koreksi', 'desimal', '°C', "{$ST}!E20:E26"),
+        ]);
+        $daftar[] = $lembar('thermohygro_koreksi_rh', 'Thermohygro — koreksi standar kelembapan', 'thermohygro/koreksi_rh', 'daftar', 'titik', [
+            $kolom('titik', 'Titik', 'desimal', '%RH', "{$ST}!D6:D14"),
+            $kolom('koreksi', 'Koreksi', 'desimal', '%RH', "{$ST}!E6:E14"),
+        ]);
+        $daftar[] = $lembar('thermohygro_u95', 'Thermohygro — U95 kalibrator', 'thermohygro/u95_kalibrator', 'objek', null, [
+            $kolom('suhu', 'Suhu', 'desimal', '°C', "{$ST}!E27"),
+            $kolom('rh', 'Kelembapan', 'desimal', '%RH', "{$ST}!E15"),
+        ]);
+        $daftar[] = $lembar('thermohygro_drift', 'Thermohygro — drift kalibrator', 'thermohygro/drift_kalibrator', 'objek', null, [
+            $kolom('suhu', 'Suhu', 'desimal', '°C', "{$ST}!G4"),
+            $kolom('rh', 'Kelembapan', 'desimal', '%RH', "{$ST}!I4"),
+        ]);
+
+        foreach ([
+            'biobase_suhu' => ['Biobase suhu', 'B14', 'C14', '°C'],
+            'biobase_rh' => ['Biobase kelembapan', 'F13', 'G13', '%RH'],
+            'gea_rh' => ['Gea kelembapan', 'F30', 'G30', '%RH'],
+        ] as $ch => [$label, $sh, $ss, $sat]) {
+            $daftar[] = $lembar("thermohygro_chamber_{$ch}", "Thermohygro — chamber {$label}", "thermohygro/chamber/{$ch}", 'objek', null, [
+                $kolom('homogenitas', 'Homogenitas (maks)', 'desimal', $sat, "{$CH}!{$sh}"),
+                $kolom('stabilitas', 'Stabilitas (maks)', 'desimal', $sat, "{$CH}!{$ss}"),
+            ]);
+        }
+
+        $daftar[] = $lembar('thermohygro_cmc', 'Thermohygro — CMC master', 'thermohygro/cmc', 'daftar', 'parameter', [
+            $kolom('parameter', 'Parameter', 'teks', null, 'DATABASE!R5:R6'),
+            $kolom('u', 'CMC', 'desimal', null, 'DATABASE!S5:S6'),
+        ]);
+
+        return ['skema_versi' => 1, 'sumber_json' => 'tabel-master-suhu-3alat.json', 'lembar' => $daftar];
     }
 }

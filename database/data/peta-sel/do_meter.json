@@ -1,0 +1,41 @@
+{
+ "format": 1,
+ "kode_profil": "do_meter",
+ "sumber_json": "tabel-standar-do-meter.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-pengenceran.py (do_meter); dulu konstanta kode profil (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/instrument-analiitk/Master_Olah_Data_DO_Meter sebaris dengan .xlsm di sel ini; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "V17 = 0,89 µL dibagi 1000 DI DALAM rumus (PERHITUNGAN U95%!Q16 = V17/2/1000) — disimpan apa adanya."
+ ],
+ "lembar_wajib": [
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!R17",
+   "teks": "Micropippete"
+  },
+  {
+   "sel": "DATABASE!R18",
+   "teks": "Labu Ukur"
+  },
+  {
+   "sel": "DATABASE!V12",
+   "teks": "U95% (%O2)"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "pengenceran.u95_micropipette_ul",
+   "tipe": "angka",
+   "sel": "DATABASE!V17"
+  },
+  {
+   "jalur": "pengenceran.u95_labu_ukur_ml",
+   "tipe": "angka",
+   "sel": "DATABASE!V18"
+  }
+ ],
+ "tidak_dipetakan": [
+  "_sumber — dokumentasi."
+ ]
+}

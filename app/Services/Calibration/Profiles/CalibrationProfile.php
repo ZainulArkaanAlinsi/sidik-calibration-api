@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
@@ -1894,6 +1895,8 @@ abstract class CalibrationProfile
      *               `kunci` null.
      *  - `baris`  — objek peta `kunci baris => nilai`; `kunci` menamai kolom
      *               yang memegang kunci objek, kolom lain memegang nilainya.
+     *               Boleh juga list nilai (kunci = POSISI, kolom kuncinya
+     *               bertipe `bulat`) — `SelAcuan` membacanya sama.
      *  - `daftar` — list objek; tiap kolom = satu kunci objek baris. `kunci`
      *               menamai kolom pengenal baris, atau null kalau barisnya
      *               dikenali dari POSISI (urutan list itu data).
@@ -1903,11 +1906,36 @@ abstract class CalibrationProfile
      * `perlu_konfirmasi` (satuan atau maknanya belum bisa dipastikan dari kode
      * dan wajib dikonfirmasi Lab sebelum disunting lewat Studio).
      *
+     * `tipe`: `teks`, `teks_kosong` (teks atau null), `tanggal`, `desimal`,
+     * `desimal_kosong` (float atau null — sel yang memang tidak ada di master,
+     * bukan nol), `desimal_opsional` (float, atau KUNCI TIDAK ADA di baris itu —
+     * bukan null; tabel jarang suhu 3 alat), `bulat` (int), `boolean`, `daftar_angka`, `daftar_teks` (list teks, mis. titik indeks Enclosure), `angka_atau_teks` (float atau teks penanda seperti `-`/`all` Tabel_MPE Sieve).
+     *
      * @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>}|null
      */
     public function skemaAcuan(): ?array
     {
         return null;
+    }
+
+    /**
+     * Kode PAKET data acuan profil ini — kunci `paket_acuan.kode_profil`,
+     * lingkup `SumberAcuan`, nama berkas peta sel. Bawaan = [kode]. Profil
+     * yang berbagi satu kelas `Tabel*` (satu berkas JSON, satu workbook
+     * master) memulangkan kode paket yang SAMA, supaya satu tabel punya satu
+     * riwayat versi — bukan salinan per profil yang bisa saling menyimpang.
+     * Profil sepaket wajib memulangkan `skemaAcuan()` yang identik
+     * (dijaga `SkemaAcuanProfilTest`).
+     */
+    public function kodePaketAcuan(): string
+    {
+        return $this->kode();
+    }
+
+    /** Nama paket data acuan untuk tampilan. Bawaan = [namaAlatKemampuan]. */
+    public function namaPaketAcuan(): string
+    {
+        return $this->namaAlatKemampuan();
     }
 
     /**
@@ -2338,6 +2366,21 @@ abstract class CalibrationProfile
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
         return [];
+    }
+
+    /**
+     * Format sel lembar SERTIFIKAT master (K-50-15, sertifikat = lembar
+     * SERTIFIKAT master persis) untuk varian master `$varian` di titik ini:
+     * `kolom => kode format`. Sumbernya [FormatSertifikatAcuan] (versi data
+     * acuan dalam lingkup, cadangan `format_sertifikat` peta sel paket ini).
+     * Tanpa entri = `[]` (aturan lama). Yang dibekukan ke snapshot sertifikat
+     * adalah JAWABAN ini waktu terbit — sertifikat terbit tidak berubah.
+     *
+     * @return array<string, string>
+     */
+    protected function formatSertifikatMaster(?string $varian, float $titikUkur): array
+    {
+        return FormatSertifikatAcuan::untuk($this->kodePaketAcuan(), $varian, $titikUkur);
     }
 
     /**

@@ -24,11 +24,12 @@ use DateTimeInterface;
  * pernah dicari dua kali dan tidak bisa menunjuk versi lain dari yang
  * menghitung angkanya.
  *
- * Lingkup cuma dibuka untuk sesi yang profilnya punya `skemaAcuan()` (hari ini
- * Micrometer). Dial Indicator memakai balok ukur Micrometer
- * (`TabelStandarDialIndicator`), tapi sesinya tidak pernah membuka lingkup
- * `micrometer`: dia tetap membaca JSON dan stempelnya null. Tanpa ini, versi 2
- * Micrometer diam-diam menggeser angka Dial Indicator tanpa satu pun stempel.
+ * Lingkup cuma dibuka untuk sesi yang profilnya punya `skemaAcuan()`, dan
+ * hanya untuk kode profil SESI itu. Dial Indicator memakai balok ukur
+ * Micrometer (`TabelStandarDialIndicator`): sesinya membuka lingkup
+ * `dial_indicator` (pita CMC & identitas standar), TIDAK PERNAH `micrometer`,
+ * jadi balok ukurnya tetap dari JSON. Tanpa ini, versi 2 Micrometer diam-diam
+ * menggeser angka Dial Indicator tanpa satu pun stempel.
  *
  * Bila `config('acuan.sumber') !== 'db'` tidak ada lingkup dan stempelnya null
  * — bukan "stempel tetap ditulis": stempel yang menunjuk versi yang tidak
@@ -76,7 +77,7 @@ class PenentuVersiAcuan
 
         return $this->untukProfil(
             (int) $sesi->organization_id,
-            $profil->kode(),
+            $profil->kodePaketAcuan(),
             $sesi->tanggal_kalibrasi ?? now(),
         );
     }
@@ -170,7 +171,7 @@ class PenentuVersiAcuan
         if ($stempel !== null) {
             $milikSesi = (int) $stempel->organization_id === (int) $sesi->organization_id
                 && $stempel->jenis === PaketAcuanVersi::JENIS_DATA
-                && $stempel->paketAcuan?->kode_profil === $profil->kode();
+                && $stempel->paketAcuan?->kode_profil === $profil->kodePaketAcuan();
 
             if ($milikSesi && in_array($stempel->status, self::STATUS_BERLAKU, true)) {
                 return [

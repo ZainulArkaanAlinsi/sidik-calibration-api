@@ -1,0 +1,1777 @@
+{
+ "format": 1,
+ "kode_profil": "suhu_3alat",
+ "sumber_json": "tabel-master-suhu-3alat.json",
+ "bukti": [
+  "Tidak ada generator untuk tabel-master-suhu-3alat.json; aturan DITURUNKAN & dibuktikan 22 Okt 2026 terhadap ketiga master .xlsm asli dan ekspor CSV repo (Project-PT-Sidik/alat-alat-Pt-Sidik/suhu_&_kelembapan/Master_Olah_Data_Suhu_{Thermocouple,Thermometer_Glass,__Kelembapan}): tabel STANDAR KALIBRATOR thermocouple/glass dibulatkan 9 desimal (round(x, 9) membuang derau float Excel: 0.10000000000000142 -> 0.1, 0.003969164084907106 -> 0.003969164; satu aturan berlaku untuk SEMUA sel tabel itu), sel kosong & galat #REF! = kunci TIDAK ditulis (boleh_hilang), header PT100/PRT PT100 = 'RTD'. Thermohygro tanpa pembulatan.",
+  "Kolom tabel sensor dinamai menurut header koreksi STANDAR KALIBRATOR!C61:AC62 (RTD, TCK-01..16, TCN3..12) untuk koreksi DAN U95 - header U95 master Thermometer Glass (D83:F83 'KJ25-0x') berbeda; nilainya per posisi kolom, sama dengan JSON.",
+  "Thermocouple: Koreksi_Yokogawa & U95_Yokogawa = nama rentang ke '[4]STANDAR KALIBRATOR'!M10:U49 (Master Olda Enclosure - Yokogawa.xlsm, TAUTAN LUAR). Cache tautan luar di .xlsm thermocouple (externalLink4) SAMA dengan JSON (43 + 43 sel, round 9), tetapi sel lembar M10:U49 lokal berisi tabel LAIN ('[6]STANDAR-YOKOGAWA'); jadi tidak dipetakan, dibawa dari versi dasar.",
+  "Drift Yokogawa = 'STANDAR KALIBRATOR'!Z6:AA8 lokal: rumus PERHITUNGAN U95%!N23 memakai Tabel_Drift_Victor (= Z6:AA8), bukan Tabel_Drift_Yokogawa (tautan luar)."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  {
+   "nama": "STANDAR KALIBRATOR",
+   "varian": [
+    "thermocouple",
+    "thermometer_glass"
+   ]
+  },
+  {
+   "nama": "PERHITUNGAN U95%",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "nama": "Variasi axial Dryblok A",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "nama": "Variasi axial Dryblok B",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "nama": "Variasi Spasial & stab Oilbath",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "nama": "STANDAR_KALIBRATOR",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "nama": "stabilitas dan homogenitas Cham",
+   "varian": [
+    "thermohygro"
+   ]
+  }
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!Q3",
+   "teks": "No"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B8",
+   "teks": "Titik Kalibrasi (oC)",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C9",
+   "teks": "PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J9",
+   "teks": "Type J",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N9",
+   "teks": "PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U9",
+   "teks": "Type J",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C31",
+   "teks": "PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N31",
+   "teks": "PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A59",
+   "teks": "TABEL KOREKSI SENSOR",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C61",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D62",
+   "teks": "TCK-01",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S62",
+   "teks": "TCK-16",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T62",
+   "teks": "TCN3",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC62",
+   "teks": "TCN12",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A80",
+   "teks": "TABEL U95% SENSOR",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C82",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X6",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z6",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X12",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X13",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X14",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B8",
+   "teks": "Titik Kalibrasi (oC)",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C9",
+   "teks": "PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!J9",
+   "teks": "Type J",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N9",
+   "teks": "PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!U9",
+   "teks": "Type J",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C31",
+   "teks": "PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!N31",
+   "teks": "PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!B29",
+   "teks": "TABEL U95% TEMPERATURE KALIBRATOR",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A59",
+   "teks": "TABEL KOREKSI SENSOR",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C61",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D62",
+   "teks": "TCK-01",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S62",
+   "teks": "TCK-16",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T62",
+   "teks": "TCN3",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!AC62",
+   "teks": "TCN12",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!A80",
+   "teks": "TABEL U95% SENSOR",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!C82",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X6",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z6",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z7",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Z8",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X12",
+   "teks": "PRT PT100",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X13",
+   "teks": "Thermocouple Type N",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!X14",
+   "teks": "Thermocouple Type K",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "Variasi axial Dryblok A!F28",
+   "teks": "u",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "Variasi axial Dryblok A!A39",
+   "teks": "Max Radial",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "Variasi axial Dryblok B!F28",
+   "teks": "u",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "Variasi axial Dryblok B!A39",
+   "teks": "Max Radial",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN U95%!B22",
+   "teks": "Stabilitas Cold Junction",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "PERHITUNGAN U95%!B25",
+   "teks": "AC Pick-up",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "sel": "Variasi Spasial & stab Oilbath!C9",
+   "teks": "Keseragaman",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "Variasi Spasial & stab Oilbath!D9",
+   "teks": "Kestabilan",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "DATABASE!R30",
+   "teks": "Jenis Thermometer",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!D4",
+   "teks": "Titik Kalibrasi (%RH)",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!D15",
+   "teks": "U95%",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!D18",
+   "teks": "Titik Kalibrasi (oC)",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!D27",
+   "teks": "U95%",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!G1",
+   "teks": "Drift Kalibrator",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!G3",
+   "teks": "0C",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "STANDAR_KALIBRATOR!I3",
+   "teks": "%RH",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "stabilitas dan homogenitas Cham!B2",
+   "teks": "Biobase",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "stabilitas dan homogenitas Cham!B19",
+   "teks": "Gea",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "stabilitas dan homogenitas Cham!A14",
+   "teks": "max",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "stabilitas dan homogenitas Cham!E13",
+   "teks": "max",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "stabilitas dan homogenitas Cham!E30",
+   "teks": "max",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "sel": "DATABASE!R3",
+   "teks": "Jenis Sensor",
+   "varian": [
+    "thermohygro"
+   ]
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "thermocouple": "(^| )thermocouple( |$)",
+   "thermometer_glass": "(^| )thermometer glass( |$)",
+   "thermohygro": "(^| )suhu kelembapan( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "thermocouple.index_kalibrator",
+   "tipe": "daftar_angka",
+   "rentang": "STANDAR KALIBRATOR!B10:B27",
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermocouple.koreksi_kalibrator.constant",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C10:C27",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!D10:D27",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!E10:E27",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!F10:F27",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!G10:G27",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!H10:H27",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!I10:I27",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!J10:J27",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermocouple.u95_kalibrator.constant",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B32:B49",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C32:C49",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!D32:D49",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!E32:E49",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!F32:F49",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!G32:G49",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!H32:H49",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!I32:I49",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!J32:J49",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermocouple.koreksi_sensor",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B64:B78",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C64:C78",
+     "boleh_hilang": true
+    },
+    "TCK-01": {
+     "rentang": "STANDAR KALIBRATOR!D64:D78",
+     "boleh_hilang": true
+    },
+    "TCK-02": {
+     "rentang": "STANDAR KALIBRATOR!E64:E78",
+     "boleh_hilang": true
+    },
+    "TCK-03": {
+     "rentang": "STANDAR KALIBRATOR!F64:F78",
+     "boleh_hilang": true
+    },
+    "TCK-04": {
+     "rentang": "STANDAR KALIBRATOR!G64:G78",
+     "boleh_hilang": true
+    },
+    "TCK-05": {
+     "rentang": "STANDAR KALIBRATOR!H64:H78",
+     "boleh_hilang": true
+    },
+    "TCK-06": {
+     "rentang": "STANDAR KALIBRATOR!I64:I78",
+     "boleh_hilang": true
+    },
+    "TCK-07": {
+     "rentang": "STANDAR KALIBRATOR!J64:J78",
+     "boleh_hilang": true
+    },
+    "TCK-08": {
+     "rentang": "STANDAR KALIBRATOR!K64:K78",
+     "boleh_hilang": true
+    },
+    "TCK-09": {
+     "rentang": "STANDAR KALIBRATOR!L64:L78",
+     "boleh_hilang": true
+    },
+    "TCK-10": {
+     "rentang": "STANDAR KALIBRATOR!M64:M78",
+     "boleh_hilang": true
+    },
+    "TCK-11": {
+     "rentang": "STANDAR KALIBRATOR!N64:N78",
+     "boleh_hilang": true
+    },
+    "TCK-12": {
+     "rentang": "STANDAR KALIBRATOR!O64:O78",
+     "boleh_hilang": true
+    },
+    "TCK-13": {
+     "rentang": "STANDAR KALIBRATOR!P64:P78",
+     "boleh_hilang": true
+    },
+    "TCK-14": {
+     "rentang": "STANDAR KALIBRATOR!Q64:Q78",
+     "boleh_hilang": true
+    },
+    "TCK-15": {
+     "rentang": "STANDAR KALIBRATOR!R64:R78",
+     "boleh_hilang": true
+    },
+    "TCK-16": {
+     "rentang": "STANDAR KALIBRATOR!S64:S78",
+     "boleh_hilang": true
+    },
+    "TCN3": {
+     "rentang": "STANDAR KALIBRATOR!T64:T78",
+     "boleh_hilang": true
+    },
+    "TCN4": {
+     "rentang": "STANDAR KALIBRATOR!U64:U78",
+     "boleh_hilang": true
+    },
+    "TCN5": {
+     "rentang": "STANDAR KALIBRATOR!V64:V78",
+     "boleh_hilang": true
+    },
+    "TCN6": {
+     "rentang": "STANDAR KALIBRATOR!W64:W78",
+     "boleh_hilang": true
+    },
+    "TCN7": {
+     "rentang": "STANDAR KALIBRATOR!X64:X78",
+     "boleh_hilang": true
+    },
+    "TCN8": {
+     "rentang": "STANDAR KALIBRATOR!Y64:Y78",
+     "boleh_hilang": true
+    },
+    "TCN9": {
+     "rentang": "STANDAR KALIBRATOR!Z64:Z78",
+     "boleh_hilang": true
+    },
+    "TCN10": {
+     "rentang": "STANDAR KALIBRATOR!AA64:AA78",
+     "boleh_hilang": true
+    },
+    "TCN11": {
+     "rentang": "STANDAR KALIBRATOR!AB64:AB78",
+     "boleh_hilang": true
+    },
+    "TCN12": {
+     "rentang": "STANDAR KALIBRATOR!AC64:AC78",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 15,
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermocouple.u95_sensor",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B85:B99",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C85:C99",
+     "boleh_hilang": true
+    },
+    "TCK-01": {
+     "rentang": "STANDAR KALIBRATOR!D85:D99",
+     "boleh_hilang": true
+    },
+    "TCK-02": {
+     "rentang": "STANDAR KALIBRATOR!E85:E99",
+     "boleh_hilang": true
+    },
+    "TCK-03": {
+     "rentang": "STANDAR KALIBRATOR!F85:F99",
+     "boleh_hilang": true
+    },
+    "TCK-04": {
+     "rentang": "STANDAR KALIBRATOR!G85:G99",
+     "boleh_hilang": true
+    },
+    "TCK-05": {
+     "rentang": "STANDAR KALIBRATOR!H85:H99",
+     "boleh_hilang": true
+    },
+    "TCK-06": {
+     "rentang": "STANDAR KALIBRATOR!I85:I99",
+     "boleh_hilang": true
+    },
+    "TCK-07": {
+     "rentang": "STANDAR KALIBRATOR!J85:J99",
+     "boleh_hilang": true
+    },
+    "TCK-08": {
+     "rentang": "STANDAR KALIBRATOR!K85:K99",
+     "boleh_hilang": true
+    },
+    "TCK-09": {
+     "rentang": "STANDAR KALIBRATOR!L85:L99",
+     "boleh_hilang": true
+    },
+    "TCK-10": {
+     "rentang": "STANDAR KALIBRATOR!M85:M99",
+     "boleh_hilang": true
+    },
+    "TCK-11": {
+     "rentang": "STANDAR KALIBRATOR!N85:N99",
+     "boleh_hilang": true
+    },
+    "TCK-12": {
+     "rentang": "STANDAR KALIBRATOR!O85:O99",
+     "boleh_hilang": true
+    },
+    "TCK-13": {
+     "rentang": "STANDAR KALIBRATOR!P85:P99",
+     "boleh_hilang": true
+    },
+    "TCK-14": {
+     "rentang": "STANDAR KALIBRATOR!Q85:Q99",
+     "boleh_hilang": true
+    },
+    "TCK-15": {
+     "rentang": "STANDAR KALIBRATOR!R85:R99",
+     "boleh_hilang": true
+    },
+    "TCK-16": {
+     "rentang": "STANDAR KALIBRATOR!S85:S99",
+     "boleh_hilang": true
+    },
+    "TCN3": {
+     "rentang": "STANDAR KALIBRATOR!T85:T99",
+     "boleh_hilang": true
+    },
+    "TCN4": {
+     "rentang": "STANDAR KALIBRATOR!U85:U99",
+     "boleh_hilang": true
+    },
+    "TCN5": {
+     "rentang": "STANDAR KALIBRATOR!V85:V99",
+     "boleh_hilang": true
+    },
+    "TCN6": {
+     "rentang": "STANDAR KALIBRATOR!W85:W99",
+     "boleh_hilang": true
+    },
+    "TCN7": {
+     "rentang": "STANDAR KALIBRATOR!X85:X99",
+     "boleh_hilang": true
+    },
+    "TCN8": {
+     "rentang": "STANDAR KALIBRATOR!Y85:Y99",
+     "boleh_hilang": true
+    },
+    "TCN9": {
+     "rentang": "STANDAR KALIBRATOR!Z85:Z99",
+     "boleh_hilang": true
+    },
+    "TCN10": {
+     "rentang": "STANDAR KALIBRATOR!AA85:AA99",
+     "boleh_hilang": true
+    },
+    "TCN11": {
+     "rentang": "STANDAR KALIBRATOR!AB85:AB99",
+     "boleh_hilang": true
+    },
+    "TCN12": {
+     "rentang": "STANDAR KALIBRATOR!AC85:AC99",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 15,
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.constant.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y6",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.constant.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y7",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.constant.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y8",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.yokogawa.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA6",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.yokogawa.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA7",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_kalibrator.yokogawa.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA8",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_sensor.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y12",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_sensor.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y13",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.drift_sensor.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y14",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.index_kalibrator",
+   "tipe": "daftar_angka",
+   "rentang": "STANDAR KALIBRATOR!B10:B27",
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.koreksi_kalibrator.constant",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C10:C27",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!D10:D27",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!E10:E27",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!F10:F27",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!G10:G27",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!H10:H27",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!I10:I27",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!J10:J27",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.u95_kalibrator.constant",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B32:B49",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C32:C49",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!D32:D49",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!E32:E49",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!F32:F49",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!G32:G49",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!H32:H49",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!I32:I49",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!J32:J49",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.koreksi_kalibrator.yokogawa",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B10:B27",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!N10:N27",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!O10:O27",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!P10:P27",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!Q10:Q27",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!R10:R27",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!S10:S27",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!T10:T27",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!U10:U27",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.u95_kalibrator.yokogawa",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B32:B49",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!N32:N49",
+     "boleh_hilang": true
+    },
+    "Type K": {
+     "rentang": "STANDAR KALIBRATOR!O32:O49",
+     "boleh_hilang": true
+    },
+    "Type N": {
+     "rentang": "STANDAR KALIBRATOR!P32:P49",
+     "boleh_hilang": true
+    },
+    "Type B": {
+     "rentang": "STANDAR KALIBRATOR!Q32:Q49",
+     "boleh_hilang": true
+    },
+    "Type T": {
+     "rentang": "STANDAR KALIBRATOR!R32:R49",
+     "boleh_hilang": true
+    },
+    "Type R": {
+     "rentang": "STANDAR KALIBRATOR!S32:S49",
+     "boleh_hilang": true
+    },
+    "Type S": {
+     "rentang": "STANDAR KALIBRATOR!T32:T49",
+     "boleh_hilang": true
+    },
+    "Type J": {
+     "rentang": "STANDAR KALIBRATOR!U32:U49",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 18,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.koreksi_sensor",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B64:B78",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C64:C78",
+     "boleh_hilang": true
+    },
+    "TCK-01": {
+     "rentang": "STANDAR KALIBRATOR!D64:D78",
+     "boleh_hilang": true
+    },
+    "TCK-02": {
+     "rentang": "STANDAR KALIBRATOR!E64:E78",
+     "boleh_hilang": true
+    },
+    "TCK-03": {
+     "rentang": "STANDAR KALIBRATOR!F64:F78",
+     "boleh_hilang": true
+    },
+    "TCK-04": {
+     "rentang": "STANDAR KALIBRATOR!G64:G78",
+     "boleh_hilang": true
+    },
+    "TCK-05": {
+     "rentang": "STANDAR KALIBRATOR!H64:H78",
+     "boleh_hilang": true
+    },
+    "TCK-06": {
+     "rentang": "STANDAR KALIBRATOR!I64:I78",
+     "boleh_hilang": true
+    },
+    "TCK-07": {
+     "rentang": "STANDAR KALIBRATOR!J64:J78",
+     "boleh_hilang": true
+    },
+    "TCK-08": {
+     "rentang": "STANDAR KALIBRATOR!K64:K78",
+     "boleh_hilang": true
+    },
+    "TCK-09": {
+     "rentang": "STANDAR KALIBRATOR!L64:L78",
+     "boleh_hilang": true
+    },
+    "TCK-10": {
+     "rentang": "STANDAR KALIBRATOR!M64:M78",
+     "boleh_hilang": true
+    },
+    "TCK-11": {
+     "rentang": "STANDAR KALIBRATOR!N64:N78",
+     "boleh_hilang": true
+    },
+    "TCK-12": {
+     "rentang": "STANDAR KALIBRATOR!O64:O78",
+     "boleh_hilang": true
+    },
+    "TCK-13": {
+     "rentang": "STANDAR KALIBRATOR!P64:P78",
+     "boleh_hilang": true
+    },
+    "TCK-14": {
+     "rentang": "STANDAR KALIBRATOR!Q64:Q78",
+     "boleh_hilang": true
+    },
+    "TCK-15": {
+     "rentang": "STANDAR KALIBRATOR!R64:R78",
+     "boleh_hilang": true
+    },
+    "TCK-16": {
+     "rentang": "STANDAR KALIBRATOR!S64:S78",
+     "boleh_hilang": true
+    },
+    "TCN3": {
+     "rentang": "STANDAR KALIBRATOR!T64:T78",
+     "boleh_hilang": true
+    },
+    "TCN4": {
+     "rentang": "STANDAR KALIBRATOR!U64:U78",
+     "boleh_hilang": true
+    },
+    "TCN5": {
+     "rentang": "STANDAR KALIBRATOR!V64:V78",
+     "boleh_hilang": true
+    },
+    "TCN6": {
+     "rentang": "STANDAR KALIBRATOR!W64:W78",
+     "boleh_hilang": true
+    },
+    "TCN7": {
+     "rentang": "STANDAR KALIBRATOR!X64:X78",
+     "boleh_hilang": true
+    },
+    "TCN8": {
+     "rentang": "STANDAR KALIBRATOR!Y64:Y78",
+     "boleh_hilang": true
+    },
+    "TCN9": {
+     "rentang": "STANDAR KALIBRATOR!Z64:Z78",
+     "boleh_hilang": true
+    },
+    "TCN10": {
+     "rentang": "STANDAR KALIBRATOR!AA64:AA78",
+     "boleh_hilang": true
+    },
+    "TCN11": {
+     "rentang": "STANDAR KALIBRATOR!AB64:AB78",
+     "boleh_hilang": true
+    },
+    "TCN12": {
+     "rentang": "STANDAR KALIBRATOR!AC64:AC78",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 15,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.u95_sensor",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR KALIBRATOR!B85:B99",
+    "RTD": {
+     "rentang": "STANDAR KALIBRATOR!C85:C99",
+     "boleh_hilang": true
+    },
+    "TCK-01": {
+     "rentang": "STANDAR KALIBRATOR!D85:D99",
+     "boleh_hilang": true
+    },
+    "TCK-02": {
+     "rentang": "STANDAR KALIBRATOR!E85:E99",
+     "boleh_hilang": true
+    },
+    "TCK-03": {
+     "rentang": "STANDAR KALIBRATOR!F85:F99",
+     "boleh_hilang": true
+    },
+    "TCK-04": {
+     "rentang": "STANDAR KALIBRATOR!G85:G99",
+     "boleh_hilang": true
+    },
+    "TCK-05": {
+     "rentang": "STANDAR KALIBRATOR!H85:H99",
+     "boleh_hilang": true
+    },
+    "TCK-06": {
+     "rentang": "STANDAR KALIBRATOR!I85:I99",
+     "boleh_hilang": true
+    },
+    "TCK-07": {
+     "rentang": "STANDAR KALIBRATOR!J85:J99",
+     "boleh_hilang": true
+    },
+    "TCK-08": {
+     "rentang": "STANDAR KALIBRATOR!K85:K99",
+     "boleh_hilang": true
+    },
+    "TCK-09": {
+     "rentang": "STANDAR KALIBRATOR!L85:L99",
+     "boleh_hilang": true
+    },
+    "TCK-10": {
+     "rentang": "STANDAR KALIBRATOR!M85:M99",
+     "boleh_hilang": true
+    },
+    "TCK-11": {
+     "rentang": "STANDAR KALIBRATOR!N85:N99",
+     "boleh_hilang": true
+    },
+    "TCK-12": {
+     "rentang": "STANDAR KALIBRATOR!O85:O99",
+     "boleh_hilang": true
+    },
+    "TCK-13": {
+     "rentang": "STANDAR KALIBRATOR!P85:P99",
+     "boleh_hilang": true
+    },
+    "TCK-14": {
+     "rentang": "STANDAR KALIBRATOR!Q85:Q99",
+     "boleh_hilang": true
+    },
+    "TCK-15": {
+     "rentang": "STANDAR KALIBRATOR!R85:R99",
+     "boleh_hilang": true
+    },
+    "TCK-16": {
+     "rentang": "STANDAR KALIBRATOR!S85:S99",
+     "boleh_hilang": true
+    },
+    "TCN3": {
+     "rentang": "STANDAR KALIBRATOR!T85:T99",
+     "boleh_hilang": true
+    },
+    "TCN4": {
+     "rentang": "STANDAR KALIBRATOR!U85:U99",
+     "boleh_hilang": true
+    },
+    "TCN5": {
+     "rentang": "STANDAR KALIBRATOR!V85:V99",
+     "boleh_hilang": true
+    },
+    "TCN6": {
+     "rentang": "STANDAR KALIBRATOR!W85:W99",
+     "boleh_hilang": true
+    },
+    "TCN7": {
+     "rentang": "STANDAR KALIBRATOR!X85:X99",
+     "boleh_hilang": true
+    },
+    "TCN8": {
+     "rentang": "STANDAR KALIBRATOR!Y85:Y99",
+     "boleh_hilang": true
+    },
+    "TCN9": {
+     "rentang": "STANDAR KALIBRATOR!Z85:Z99",
+     "boleh_hilang": true
+    },
+    "TCN10": {
+     "rentang": "STANDAR KALIBRATOR!AA85:AA99",
+     "boleh_hilang": true
+    },
+    "TCN11": {
+     "rentang": "STANDAR KALIBRATOR!AB85:AB99",
+     "boleh_hilang": true
+    },
+    "TCN12": {
+     "rentang": "STANDAR KALIBRATOR!AC85:AC99",
+     "boleh_hilang": true
+    }
+   },
+   "bulat": 9,
+   "min_baris": 15,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.constant.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y6",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.constant.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y7",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.constant.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y8",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.yokogawa.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA6",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.yokogawa.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA7",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_kalibrator.yokogawa.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!AA8",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_sensor.RTD",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y12",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_sensor.Type N",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y13",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.drift_sensor.Type K",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!Y14",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.dryblock.A.axial_u",
+   "tipe": "angka",
+   "sel": "Variasi axial Dryblok A!G28",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.dryblock.A.radial_max",
+   "tipe": "angka",
+   "sel": "Variasi axial Dryblok A!B39",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.dryblock.B.axial_u",
+   "tipe": "angka",
+   "sel": "Variasi axial Dryblok B!G28",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.dryblock.B.radial_max",
+   "tipe": "angka",
+   "sel": "Variasi axial Dryblok B!B39",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.stabilitas_cold_junction",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN U95%!N22",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.ac_pick_up",
+   "tipe": "angka",
+   "sel": "PERHITUNGAN U95%!N25",
+   "varian": [
+    "thermocouple"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermocouple.cmc",
+   "tipe": "daftar_objek",
+   "kunci": "rentang",
+   "kolom": {
+    "rentang": {
+     "rentang": "DATABASE!R5:R7",
+     "tipe": "teks"
+    },
+    "u": "DATABASE!S5:S7"
+   },
+   "min_baris": 3,
+   "varian": [
+    "thermocouple"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.oilbath.satu.variasi_spasial",
+   "tipe": "angka",
+   "sel": "Variasi Spasial & stab Oilbath!C12",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.oilbath.satu.stabilitas",
+   "tipe": "angka",
+   "sel": "Variasi Spasial & stab Oilbath!D12",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.oilbath.dua.variasi_spasial",
+   "tipe": "angka",
+   "sel": "Variasi Spasial & stab Oilbath!M12",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.oilbath.dua.stabilitas",
+   "tipe": "angka",
+   "sel": "Variasi Spasial & stab Oilbath!N12",
+   "varian": [
+    "thermometer_glass"
+   ],
+   "bulat": 9
+  },
+  {
+   "jalur": "thermometer_glass.tipe_thermometer",
+   "tipe": "daftar_objek",
+   "kunci": "label",
+   "kolom": {
+    "nilai": "DATABASE!Q32:Q35",
+    "label": {
+     "rentang": "DATABASE!R32:R35",
+     "tipe": "teks"
+    }
+   },
+   "min_baris": 3,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermometer_glass.cmc",
+   "tipe": "daftar_objek",
+   "kunci": "rentang",
+   "kolom": {
+    "rentang": {
+     "rentang": "DATABASE!R5:R6",
+     "tipe": "teks"
+    },
+    "u": "DATABASE!S5:S6"
+   },
+   "min_baris": 2,
+   "varian": [
+    "thermometer_glass"
+   ]
+  },
+  {
+   "jalur": "thermohygro.koreksi_suhu",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR_KALIBRATOR!D20:D26",
+    "koreksi": "STANDAR_KALIBRATOR!E20:E26"
+   },
+   "min_baris": 7,
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.koreksi_rh",
+   "tipe": "daftar_objek",
+   "kunci": "titik",
+   "kolom": {
+    "titik": "STANDAR_KALIBRATOR!D6:D14",
+    "koreksi": "STANDAR_KALIBRATOR!E6:E14"
+   },
+   "min_baris": 9,
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.u95_kalibrator.suhu",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!E27",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.u95_kalibrator.rh",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!E15",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.drift_kalibrator.suhu",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!G4",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.drift_kalibrator.rh",
+   "tipe": "angka",
+   "sel": "STANDAR_KALIBRATOR!I4",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.biobase_suhu.homogenitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!B14",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.biobase_suhu.stabilitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!C14",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.biobase_rh.homogenitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!F13",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.biobase_rh.stabilitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!G13",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.gea_rh.homogenitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!F30",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.chamber.gea_rh.stabilitas",
+   "tipe": "angka",
+   "sel": "stabilitas dan homogenitas Cham!G30",
+   "varian": [
+    "thermohygro"
+   ]
+  },
+  {
+   "jalur": "thermohygro.cmc",
+   "tipe": "daftar_objek",
+   "kunci": "parameter",
+   "kolom": {
+    "parameter": {
+     "rentang": "DATABASE!R5:R6",
+     "tipe": "teks"
+    },
+    "u": "DATABASE!S5:S6"
+   },
+   "min_baris": 2,
+   "varian": [
+    "thermohygro"
+   ]
+  }
+ ],
+ "tidak_dipetakan": [
+  "thermocouple.koreksi_kalibrator.yokogawa & thermocouple.u95_kalibrator.yokogawa - nilai master dari TAUTAN LUAR [4] (bukan sel lembar workbook ini); cache tautan sama dengan JSON 22 Okt 2026; dibawa dari dasar.",
+  "*.probe_per_tipe - turunan rumus PERHITUNGAN FC!R23 (nomor termokopel -> probe), bukan tabel sel.",
+  "_sumber/_yokogawa_dari_tautan_luar - dokumentasi."
+ ],
+ "perlu_berkas_asli": [
+  "Format SERTIFIKAT ketiga alat belum dicatat di format_sertifikat."
+ ]
+}

@@ -374,6 +374,46 @@ class CalibrationProfileRegistry
     }
 
     /**
+     * Satu profil WAKIL per paket data acuan (`kodePaketAcuan()`), hanya profil
+     * yang punya `skemaAcuan()`, urut registry: yang pertama di registry
+     * mewakili paketnya. Beberapa profil bisa berbagi satu paket karena
+     * berbagi satu kelas `Tabel*` (Volumetric, Tekanan, ...).
+     *
+     * @return array<string, CalibrationProfile> kode paket => wakil
+     */
+    public function paketAcuan(): array
+    {
+        $hasil = [];
+
+        foreach ($this->profil as $p) {
+            if ($p->skemaAcuan() !== null) {
+                $hasil[$p->kodePaketAcuan()] ??= $p;
+            }
+        }
+
+        return $hasil;
+    }
+
+    /** Wakil paket data acuan `$kodePaket` (lihat [paketAcuan]), atau null. */
+    public function untukPaketAcuan(string $kodePaket): ?CalibrationProfile
+    {
+        return $this->paketAcuan()[$kodePaket] ?? null;
+    }
+
+    /**
+     * Semua profil ber-skema yang memakai paket `$kodePaket`, urut registry.
+     *
+     * @return list<CalibrationProfile>
+     */
+    public function profilPaketAcuan(string $kodePaket): array
+    {
+        return array_values(array_filter(
+            $this->profil,
+            static fn (CalibrationProfile $p): bool => $p->skemaAcuan() !== null && $p->kodePaketAcuan() === $kodePaket,
+        ));
+    }
+
+    /**
      * Kode profil lembar kerja dari sebuah nama alat, atau **null** kalau nggak
      * ada yang cocok. Ini yang dikirim `GET /api/categories/{kode}` ke HP lewat
      * field `profil`.

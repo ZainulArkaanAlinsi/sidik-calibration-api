@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -67,9 +68,6 @@ class TabelStandarAnakTimbangan
      * (`anak_timbangan_densitas_m3_asumsi`).
      */
     public const DENSITAS_M3_ASUMSI = 7100.0;
-
-    /** @var array<string, mixed>|null */
-    private static ?array $cache = null;
 
     /**
      * Keping standar untuk sebuah nominal (gram), atau `null` kalau tidak ada.
@@ -393,28 +391,26 @@ class TabelStandarAnakTimbangan
     /** @return array<string, mixed> */
     private static function data(): array
     {
-        if (self::$cache !== null) {
-            return self::$cache;
-        }
-
         $berkas = database_path('data/tabel-standar-anak-timbangan.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar Anak Timbangan nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `anak_timbangan`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini.
+        $isi = app(SumberAcuan::class)->isi('anak_timbangan', $berkas);
 
-        if (! is_array($isi) || ! isset($isi['standar_at'], $isi['timbangan'], $isi['densitas'], $isi['mpe'])) {
+        if (! isset($isi['standar_at'], $isi['timbangan'], $isi['densitas'], $isi['mpe'])) {
             throw new RuntimeException("Tabel standar Anak Timbangan rusak: {$berkas}");
         }
 
-        return self::$cache = $isi;
+        return $isi;
     }
 
     /** Buat test yang menukar isi berkas. */
     public static function lupakanCache(): void
     {
-        self::$cache = null;
+        SumberAcuan::lupakanCache();
     }
 }
