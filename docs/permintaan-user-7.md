@@ -5369,6 +5369,24 @@ berantai MySQL tidak menyalakan trigger, jadi menghapus ORGANISASI tetap ikut me
 simulasinya. Bila MySQL produksi menolak `CREATE TRIGGER` (binlog tanpa SUPER / tanpa hak TRIGGER),
 migrasi tidak gagal tetapi menulis galat ke log & stderr — periksa log deploy.
 
+**Catatan operasional lapis DB (22 Okt 2026).** Gate MySQL lokal membuktikan keadaan ini nyata:
+MySQL 8 dengan binary log menolak `CREATE TRIGGER` dari pengguna tanpa SUPER (galat 1419), jadi
+keempat trigger TIDAK terpasang dan hanya penjaga model yang menahan. Aiven MySQL produksi hampir
+pasti sama. Keadaannya sekarang terlihat dari luar: `GET /api/health` → `append_only_db`
+(`true` hanya bila keempat trigger `pal_tolak_ubah/hapus`, `sa_tolak_ubah/hapus` ada; dicache
+5 menit; `App\Support\TriggerAppendOnlyAcuan`). Untuk menyalakan lapis DB di produksi:
+
+1. Aiven console → service MySQL → *Advanced configuration* → `log_bin_trust_function_creators = true`
+   (tulis ke infrastruktur aktif — butuh izin pemilik).
+2. Redeploy, atau jalankan `php artisan acuan:pasang-trigger` (idempoten: yang sudah ada tidak
+   disentuh; pulang FAILURE bila belum lengkap). `docker/entrypoint.sh` memanggilnya tiap boot
+   sesudah `migrate` dengan `|| true`, jadi redeploy biasa sudah cukup.
+3. Periksa `/api/health` → `append_only_db: true` (tunggu ≤ 5 menit cache, atau sesudah boot baru).
+
+Dijaga `PasangTriggerAcuanTest` dan `AlurVersiAcuanTest::test_log_dan_simulasi_tidak_bisa_diubah_atau_dihapus_massal`
+(SQLite: aksi massal wajib ditolak; MySQL tanpa trigger: wajib terbukti binlog tanpa trust DAN health
+melapor `false`).
+
 Semua transisi mengunci baris `paket_acuan` dulu, baru versinya, supaya dua pengaktifan dalam satu
 paket tidak bisa sama-sama `aktif` (BR-03).
 

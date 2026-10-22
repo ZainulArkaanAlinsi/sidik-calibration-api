@@ -14,6 +14,7 @@ use App\Services\Acuan\SimulasiVersiAcuan;
 use App\Services\Acuan\SumberAcuan;
 use App\Services\Studio\Workbook\ImporWorkbook;
 use App\Support\JsonKanonik;
+use App\Support\TriggerAppendOnlyAcuan;
 use Illuminate\Database\QueryException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use LogicException;
 use RuntimeException;
+use Tests\Concerns\PetaJsonTanpaUrutan;
 use Tests\Concerns\SesiDataAcuan;
 use Tests\TestCase;
 
@@ -35,6 +37,7 @@ use Tests\TestCase;
  */
 class AlurVersiAcuanTest extends TestCase
 {
+    use PetaJsonTanpaUrutan;
     use RefreshDatabase;
     use SesiDataAcuan;
 
@@ -251,7 +254,8 @@ class AlurVersiAcuanTest extends TestCase
             $this->assertSame($masterB->sha256, $l->sumber['workbook_sha256']);
         }
         $sah = $log->last();
-        $this->assertSame([$this->sa1->id, $pengakuan], [$sah->user_id, $sah->rincian['pengakuan']]);
+        // `rincian` kolom JSON: MySQL mengurutkan ulang kunci peta, daftar tetap berurutan.
+        $this->assertSamaPetaJson([$this->sa1->id, $pengakuan], [$sah->user_id, $sah->rincian['pengakuan']]);
         $this->assertSame([$this->v1->id], $sah->rincian['versi_dipensiunkan']);
         $this->assertSame('pensiun', PaketAcuanLog::query()->where('paket_acuan_versi_id', $this->v1->id)->sole()->aksi);
 
@@ -415,12 +419,55 @@ class AlurVersiAcuanTest extends TestCase
         $this->assertSame(['pensiun', 'pensiun'], [$this->v1->fresh()->status, $v2->status]);
     }
 
+    /**
+     * Append-only dua lapis (§54). Lapis DATABASE (trigger) bergantung pada
+     * izin server: MySQL ber-binary-log menolak `CREATE TRIGGER` (1419) kecuali
+     * `log_bin_trust_function_creators=1` atau pengguna punya SUPER, dan
+     * migrasinya sengaja tidak gagal karenanya. Jadi:
+     *
+     * - SQLite (trigger selalu terpasang; migrasi melempar bila gagal): update
+     *   & delete massal WAJIB ditolak.
+     * - MySQL dengan trigger terpasang: sama, wajib ditolak.
+     * - MySQL tanpa trigger: celahnya wajib TERLIHAT — penyebabnya memang
+     *   jalur peringatan migrasi (binlog nyala, trust mati) dan `/api/health`
+     *   melaporkan `append_only_db=false`. DDL tidak dicoba ulang di sini:
+     *   MySQL melakukan commit implisit sebelum `CREATE TRIGGER`, yang
+     *   merusak transaksi `RefreshDatabase`.
+     *
+     * Penjaga model (`updating`/`deleting` melempar) berlaku di semua cabang.
+     */
     public function test_log_dan_simulasi_tidak_bisa_diubah_atau_dihapus_massal(): void
     {
         $v2 = $this->drafV2();
         $this->simulasi($this->admin, $v2)->assertCreated();
         $this->assertGreaterThan(0, PaketAcuanLog::query()->count());
         $this->assertGreaterThan(0, SimulasiAcuan::query()->count());
+
+        $log = PaketAcuanLog::query()->firstOrFail();
+        foreach ([fn () => $log->update(['alasan' => 'diubah']), fn () => $log->delete()] as $i => $aksi) {
+            try {
+                $aksi();
+                $this->fail("penjaga model #{$i} lolos");
+            } catch (LogicException) {
+                // ditahan model
+            }
+        }
+
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver !== 'sqlite' && ! TriggerAppendOnlyAcuan::terpasang()) {
+            $server = DB::selectOne('SELECT @@GLOBAL.log_bin AS log_bin, @@GLOBAL.log_bin_trust_function_creators AS percaya');
+            $this->assertSame(
+                [1, 0],
+                [(int) $server->log_bin, (int) $server->percaya],
+                'trigger tidak terpasang tetapi bukan karena binlog tanpa log_bin_trust_function_creators — periksa hak TRIGGER',
+            );
+            $this->getJson('/api/health')->assertOk()->assertJsonPath('append_only_db', false);
+
+            return;
+        }
+
+        $this->assertTrue(TriggerAppendOnlyAcuan::terpasang());
 
         foreach ([
             fn () => PaketAcuanLog::query()->update(['alasan' => 'diubah']),
@@ -438,6 +485,7 @@ class AlurVersiAcuanTest extends TestCase
         }
 
         $this->assertSame(['dibuat', 'simulasi'], PaketAcuanLog::query()->where('paket_acuan_versi_id', $v2->id)->orderBy('id')->pluck('aksi')->all());
+        $this->getJson('/api/health')->assertOk()->assertJsonPath('append_only_db', true);
     }
 
     public function test_simulasi_tidak_menulis_sesi_hasil_maupun_sertifikat(): void

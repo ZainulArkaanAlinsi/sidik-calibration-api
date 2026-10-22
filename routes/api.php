@@ -47,6 +47,7 @@ use App\Services\Direktori\DirektoriLokalDb;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\PilihanDriver;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use App\Support\TriggerAppendOnlyAcuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -268,6 +269,14 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
             'paket_terpasang' => class_exists(ReverbServiceProvider::class),
         ];
     })(),
+
+    // Lapis DATABASE append-only `paket_acuan_log` & `simulasi_acuan` (§54):
+    // true hanya bila keempat trigger ada. MySQL ber-binlog tanpa SUPER /
+    // `log_bin_trust_function_creators=1` menolak `CREATE TRIGGER` (1419) dan
+    // migrasinya sengaja tidak gagal — tanpa ini celahnya senyap. Penjaga
+    // model tetap jalan apa pun nilainya. Satu query, dicache 5 menit; galat
+    // baca dijawab false. Pemasang ulang: `php artisan acuan:pasang-trigger`.
+    'append_only_db' => TriggerAppendOnlyAcuan::terpasangTercache(),
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.

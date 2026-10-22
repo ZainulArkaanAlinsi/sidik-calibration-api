@@ -159,6 +159,13 @@ done
 tahap "migrasi database"
 php artisan migrate --force
 
+# Trigger append-only data acuan (§54). Migrasinya tidak gagal kalau MySQL
+# menolak CREATE TRIGGER (1419: binlog tanpa SUPER); perintah ini mencoba lagi
+# tiap boot — idempoten, yang sudah ada tidak disentuh. Gagal = peringatan di
+# log deploy + /api/health append_only_db=false, bukan boot mati: penjaga
+# model tetap jalan. Nyalakan di Aiven: log_bin_trust_function_creators=1.
+php artisan acuan:pasang-trigger || true
+
 # Sengaja pakai saklar, bukan otomatis: seeder di project ini idempotent
 # (firstOrCreate/updateOrCreate), tapi DemoDataSeeder nulis ulang sesi demo —
 # kalau jalan tiap container bangun, data yang lagi diuji teknisi bisa
