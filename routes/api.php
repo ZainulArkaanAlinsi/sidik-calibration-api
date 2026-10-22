@@ -361,7 +361,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal,studio', 'role:admin,tekni
         Route::get('/paket/{kode}/versi', [DataAcuanController::class, 'garisWaktu']);
         Route::get('/versi/{versi}', [DataAcuanController::class, 'versi']);
         Route::get('/versi/{versi}/banding/{pembanding}', [DataAcuanController::class, 'banding']);
-        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel']);
+        // Kunci baris boleh bergaris miring (satuan Flowmeter 'm3/h', konversi Tekanan 'kg/cm2',
+        // pembagi '1/2'); klien mengirimnya ter-encode (%2F) dan path didekode sebelum dicocokkan.
+        Route::get('/versi/{versi}/sel/{lembar}/{kunci}/{kolom}/riwayat', [DataAcuanController::class, 'riwayatSel'])
+            ->where('kunci', '.+');
         // Alur versi (T2.2/T2.3) — baca. Teknisi → 404 di controller.
         Route::get('/paket/{kode}/alur', [DataAcuanAlurController::class, 'daftar']);
         Route::get('/versi/{versi}/simulasi', [DataAcuanAlurController::class, 'simulasi']);
