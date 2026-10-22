@@ -1,5 +1,5 @@
 {
-    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
+    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. Tabel_MPE disalin apa adanya; kolom yang janggal tidak dibetulkan; tandanya DITURUNKAN kode (TabelStandarSieve::tanda), bukan data.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-sieve.py",
     "standar": {
         "caliper": {
@@ -264,8 +264,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 8.0,
             "kawat_max_mm": 9.2,
-            "kawat_min_mm": 6.8,
-            "tanda": []
+            "kawat_min_mm": 6.8
         },
         {
             "ukuran_mm": 106.0,
@@ -282,8 +281,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 6.3,
             "kawat_max_mm": 7.2,
-            "kawat_min_mm": 5.4,
-            "tanda": []
+            "kawat_min_mm": 5.4
         },
         {
             "ukuran_mm": 100.0,
@@ -300,8 +298,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 6.3,
             "kawat_max_mm": 7.2,
-            "kawat_min_mm": 5.4,
-            "tanda": []
+            "kawat_min_mm": 5.4
         },
         {
             "ukuran_mm": 90.0,
@@ -318,8 +315,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 6.3,
             "kawat_max_mm": 7.2,
-            "kawat_min_mm": 5.4,
-            "tanda": []
+            "kawat_min_mm": 5.4
         },
         {
             "ukuran_mm": 75.0,
@@ -336,8 +332,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 6.3,
             "kawat_max_mm": 7.2,
-            "kawat_min_mm": 5.4,
-            "tanda": []
+            "kawat_min_mm": 5.4
         },
         {
             "ukuran_mm": 63.0,
@@ -354,8 +349,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 5.6,
             "kawat_max_mm": 6.4,
-            "kawat_min_mm": 4.8,
-            "tanda": []
+            "kawat_min_mm": 4.8
         },
         {
             "ukuran_mm": 56.0,
@@ -372,8 +366,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 5.0,
             "kawat_max_mm": 5.8,
-            "kawat_min_mm": 4.3,
-            "tanda": []
+            "kawat_min_mm": 4.3
         },
         {
             "ukuran_mm": 53.0,
@@ -390,8 +383,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 5.0,
             "kawat_max_mm": 5.8,
-            "kawat_min_mm": 4.3,
-            "tanda": []
+            "kawat_min_mm": 4.3
         },
         {
             "ukuran_mm": 50.0,
@@ -408,8 +400,7 @@
             "max_stdev_mm": "-",
             "kawat_preferred_mm": 5.0,
             "kawat_max_mm": 5.8,
-            "kawat_min_mm": 4.3,
-            "tanda": []
+            "kawat_min_mm": 4.3
         },
         {
             "ukuran_mm": 45.0,
@@ -426,8 +417,7 @@
             "max_stdev_mm": 1.0,
             "kawat_preferred_mm": 4.5,
             "kawat_max_mm": 5.2,
-            "kawat_min_mm": 3.8,
-            "tanda": []
+            "kawat_min_mm": 3.8
         },
         {
             "ukuran_mm": 40.0,
@@ -444,8 +434,7 @@
             "max_stdev_mm": 1.0,
             "kawat_preferred_mm": 4.5,
             "kawat_max_mm": 5.2,
-            "kawat_min_mm": 3.8,
-            "tanda": []
+            "kawat_min_mm": 3.8
         },
         {
             "ukuran_mm": 37.5,
@@ -462,8 +451,7 @@
             "max_stdev_mm": 1.0,
             "kawat_preferred_mm": 4.5,
             "kawat_max_mm": 5.2,
-            "kawat_min_mm": 3.8,
-            "tanda": []
+            "kawat_min_mm": 3.8
         },
         {
             "ukuran_mm": 35.5,
@@ -480,8 +468,7 @@
             "max_stdev_mm": 1.0,
             "kawat_preferred_mm": 4.0,
             "kawat_max_mm": 4.6,
-            "kawat_min_mm": 3.4,
-            "tanda": []
+            "kawat_min_mm": 3.4
         },
         {
             "ukuran_mm": 31.5,
@@ -498,8 +485,7 @@
             "max_stdev_mm": 0.907,
             "kawat_preferred_mm": 4.0,
             "kawat_max_mm": 4.6,
-            "kawat_min_mm": 3.4,
-            "tanda": []
+            "kawat_min_mm": 3.4
         },
         {
             "ukuran_mm": 28.0,
@@ -516,8 +502,7 @@
             "max_stdev_mm": 0.801,
             "kawat_preferred_mm": 3.55,
             "kawat_max_mm": 4.1,
-            "kawat_min_mm": 3.0,
-            "tanda": []
+            "kawat_min_mm": 3.0
         },
         {
             "ukuran_mm": 26.5,
@@ -534,8 +519,7 @@
             "max_stdev_mm": 0.757,
             "kawat_preferred_mm": 3.55,
             "kawat_max_mm": 4.1,
-            "kawat_min_mm": 3.0,
-            "tanda": []
+            "kawat_min_mm": 3.0
         },
         {
             "ukuran_mm": 25.0,
@@ -552,8 +536,7 @@
             "max_stdev_mm": 0.714,
             "kawat_preferred_mm": 3.55,
             "kawat_max_mm": 4.1,
-            "kawat_min_mm": 3.0,
-            "tanda": []
+            "kawat_min_mm": 3.0
         },
         {
             "ukuran_mm": 22.4,
@@ -570,8 +553,7 @@
             "max_stdev_mm": 0.641,
             "kawat_preferred_mm": 3.55,
             "kawat_max_mm": 4.1,
-            "kawat_min_mm": 3.0,
-            "tanda": []
+            "kawat_min_mm": 3.0
         },
         {
             "ukuran_mm": 20.0,
@@ -588,8 +570,7 @@
             "max_stdev_mm": 0.575,
             "kawat_preferred_mm": 3.15,
             "kawat_max_mm": 3.6,
-            "kawat_min_mm": 2.7,
-            "tanda": []
+            "kawat_min_mm": 2.7
         },
         {
             "ukuran_mm": 19.0,
@@ -606,8 +587,7 @@
             "max_stdev_mm": 0.547,
             "kawat_preferred_mm": 3.15,
             "kawat_max_mm": 3.6,
-            "kawat_min_mm": 2.7,
-            "tanda": []
+            "kawat_min_mm": 2.7
         },
         {
             "ukuran_mm": 18.0,
@@ -624,8 +604,7 @@
             "max_stdev_mm": 0.52,
             "kawat_preferred_mm": 3.15,
             "kawat_max_mm": 3.6,
-            "kawat_min_mm": 2.7,
-            "tanda": []
+            "kawat_min_mm": 2.7
         },
         {
             "ukuran_mm": 16.0,
@@ -642,8 +621,7 @@
             "max_stdev_mm": 0.441,
             "kawat_preferred_mm": 3.15,
             "kawat_max_mm": 3.6,
-            "kawat_min_mm": 2.7,
-            "tanda": []
+            "kawat_min_mm": 2.7
         },
         {
             "ukuran_mm": 14.0,
@@ -660,8 +638,7 @@
             "max_stdev_mm": 0.387,
             "kawat_preferred_mm": 2.8,
             "kawat_max_mm": 3.2,
-            "kawat_min_mm": 2.4,
-            "tanda": []
+            "kawat_min_mm": 2.4
         },
         {
             "ukuran_mm": 13.2,
@@ -678,8 +655,7 @@
             "max_stdev_mm": 0.392,
             "kawat_preferred_mm": 2.8,
             "kawat_max_mm": 3.2,
-            "kawat_min_mm": 2.4,
-            "tanda": []
+            "kawat_min_mm": 2.4
         },
         {
             "ukuran_mm": 12.5,
@@ -696,8 +672,7 @@
             "max_stdev_mm": 0.374,
             "kawat_preferred_mm": 2.5,
             "kawat_max_mm": 2.9,
-            "kawat_min_mm": 2.1,
-            "tanda": []
+            "kawat_min_mm": 2.1
         },
         {
             "ukuran_mm": 11.2,
@@ -714,8 +689,7 @@
             "max_stdev_mm": 0.339,
             "kawat_preferred_mm": 2.5,
             "kawat_max_mm": 2.9,
-            "kawat_min_mm": 2.1,
-            "tanda": []
+            "kawat_min_mm": 2.1
         },
         {
             "ukuran_mm": 10.0,
@@ -732,10 +706,7 @@
             "max_stdev_mm": 0.307,
             "kawat_preferred_mm": 2.5,
             "kawat_max_mm": 2.9,
-            "kawat_min_mm": 2.1,
-            "tanda": [
-                "ukuran_inch"
-            ]
+            "kawat_min_mm": 2.1
         },
         {
             "ukuran_mm": 9.5,
@@ -752,8 +723,7 @@
             "max_stdev_mm": 0.294,
             "kawat_preferred_mm": 2.24,
             "kawat_max_mm": 2.6,
-            "kawat_min_mm": 1.9,
-            "tanda": []
+            "kawat_min_mm": 1.9
         },
         {
             "ukuran_mm": 9.0,
@@ -770,8 +740,7 @@
             "max_stdev_mm": 0.281,
             "kawat_preferred_mm": 2.24,
             "kawat_max_mm": 2.6,
-            "kawat_min_mm": 1.9,
-            "tanda": []
+            "kawat_min_mm": 1.9
         },
         {
             "ukuran_mm": 8.0,
@@ -788,8 +757,7 @@
             "max_stdev_mm": 0.254,
             "kawat_preferred_mm": 2.0,
             "kawat_max_mm": 2.3,
-            "kawat_min_mm": 1.7,
-            "tanda": []
+            "kawat_min_mm": 1.7
         },
         {
             "ukuran_mm": 7.1,
@@ -806,8 +774,7 @@
             "max_stdev_mm": 0.229,
             "kawat_preferred_mm": 1.8,
             "kawat_max_mm": 2.1,
-            "kawat_min_mm": 1.5,
-            "tanda": []
+            "kawat_min_mm": 1.5
         },
         {
             "ukuran_mm": 6.7,
@@ -824,8 +791,7 @@
             "max_stdev_mm": 0.218,
             "kawat_preferred_mm": 1.8,
             "kawat_max_mm": 2.1,
-            "kawat_min_mm": 1.5,
-            "tanda": []
+            "kawat_min_mm": 1.5
         },
         {
             "ukuran_mm": 6.3,
@@ -842,8 +808,7 @@
             "max_stdev_mm": 0.207,
             "kawat_preferred_mm": 1.8,
             "kawat_max_mm": 2.1,
-            "kawat_min_mm": 1.5,
-            "tanda": []
+            "kawat_min_mm": 1.5
         },
         {
             "ukuran_mm": 5.6,
@@ -860,8 +825,7 @@
             "max_stdev_mm": 0.188,
             "kawat_preferred_mm": 1.6,
             "kawat_max_mm": 1.9,
-            "kawat_min_mm": 1.3,
-            "tanda": []
+            "kawat_min_mm": 1.3
         },
         {
             "ukuran_mm": 5.0,
@@ -878,8 +842,7 @@
             "max_stdev_mm": 0.171,
             "kawat_preferred_mm": 1.6,
             "kawat_max_mm": 1.9,
-            "kawat_min_mm": 1.3,
-            "tanda": []
+            "kawat_min_mm": 1.3
         },
         {
             "ukuran_mm": 4.75,
@@ -896,8 +859,7 @@
             "max_stdev_mm": 0.164,
             "kawat_preferred_mm": 1.6,
             "kawat_max_mm": 1.9,
-            "kawat_min_mm": 1.3,
-            "tanda": []
+            "kawat_min_mm": 1.3
         },
         {
             "ukuran_mm": 4.5,
@@ -914,8 +876,7 @@
             "max_stdev_mm": 0.157,
             "kawat_preferred_mm": 1.4,
             "kawat_max_mm": 1.7,
-            "kawat_min_mm": 1.2,
-            "tanda": []
+            "kawat_min_mm": 1.2
         },
         {
             "ukuran_mm": 4.0,
@@ -932,8 +893,7 @@
             "max_stdev_mm": 0.143,
             "kawat_preferred_mm": 1.4,
             "kawat_max_mm": 1.7,
-            "kawat_min_mm": 1.2,
-            "tanda": []
+            "kawat_min_mm": 1.2
         },
         {
             "ukuran_mm": 3.55,
@@ -950,8 +910,7 @@
             "max_stdev_mm": 0.13,
             "kawat_preferred_mm": 1.25,
             "kawat_max_mm": 1.5,
-            "kawat_min_mm": 1.06,
-            "tanda": []
+            "kawat_min_mm": 1.06
         },
         {
             "ukuran_mm": 3.35,
@@ -968,8 +927,7 @@
             "max_stdev_mm": 0.124,
             "kawat_preferred_mm": 1.25,
             "kawat_max_mm": 1.5,
-            "kawat_min_mm": 1.06,
-            "tanda": []
+            "kawat_min_mm": 1.06
         },
         {
             "ukuran_mm": 3.15,
@@ -986,8 +944,7 @@
             "max_stdev_mm": 0.118,
             "kawat_preferred_mm": 1.25,
             "kawat_max_mm": 1.5,
-            "kawat_min_mm": 1.06,
-            "tanda": []
+            "kawat_min_mm": 1.06
         },
         {
             "ukuran_mm": 2.8,
@@ -1004,8 +961,7 @@
             "max_stdev_mm": 0.108,
             "kawat_preferred_mm": 1.12,
             "kawat_max_mm": 1.3,
-            "kawat_min_mm": 0.95,
-            "tanda": []
+            "kawat_min_mm": 0.95
         },
         {
             "ukuran_mm": 2.5,
@@ -1022,8 +978,7 @@
             "max_stdev_mm": 0.098,
             "kawat_preferred_mm": 1.0,
             "kawat_max_mm": 1.15,
-            "kawat_min_mm": 0.85,
-            "tanda": []
+            "kawat_min_mm": 0.85
         },
         {
             "ukuran_mm": 2.36,
@@ -1040,8 +995,7 @@
             "max_stdev_mm": 0.094,
             "kawat_preferred_mm": 1.0,
             "kawat_max_mm": 1.15,
-            "kawat_min_mm": 0.85,
-            "tanda": []
+            "kawat_min_mm": 0.85
         },
         {
             "ukuran_mm": 2.24,
@@ -1058,8 +1012,7 @@
             "max_stdev_mm": 0.09,
             "kawat_preferred_mm": 0.9,
             "kawat_max_mm": 1.04,
-            "kawat_min_mm": 0.77,
-            "tanda": []
+            "kawat_min_mm": 0.77
         },
         {
             "ukuran_mm": 2.0,
@@ -1076,8 +1029,7 @@
             "max_stdev_mm": 0.083,
             "kawat_preferred_mm": 0.9,
             "kawat_max_mm": 1.04,
-            "kawat_min_mm": 0.77,
-            "tanda": []
+            "kawat_min_mm": 0.77
         },
         {
             "ukuran_mm": 1.8,
@@ -1094,8 +1046,7 @@
             "max_stdev_mm": 0.076,
             "kawat_preferred_mm": 0.8,
             "kawat_max_mm": 0.92,
-            "kawat_min_mm": 0.68,
-            "tanda": []
+            "kawat_min_mm": 0.68
         },
         {
             "ukuran_mm": 1.7,
@@ -1112,8 +1063,7 @@
             "max_stdev_mm": 0.073,
             "kawat_preferred_mm": 0.8,
             "kawat_max_mm": 0.92,
-            "kawat_min_mm": 0.68,
-            "tanda": []
+            "kawat_min_mm": 0.68
         },
         {
             "ukuran_mm": 1.6,
@@ -1130,8 +1080,7 @@
             "max_stdev_mm": 0.07,
             "kawat_preferred_mm": 0.8,
             "kawat_max_mm": 0.92,
-            "kawat_min_mm": 0.68,
-            "tanda": []
+            "kawat_min_mm": 0.68
         },
         {
             "ukuran_mm": 1.4,
@@ -1148,8 +1097,7 @@
             "max_stdev_mm": 0.063,
             "kawat_preferred_mm": 0.71,
             "kawat_max_mm": 0.82,
-            "kawat_min_mm": 0.6,
-            "tanda": []
+            "kawat_min_mm": 0.6
         },
         {
             "ukuran_mm": 1.25,
@@ -1166,8 +1114,7 @@
             "max_stdev_mm": 0.058,
             "kawat_preferred_mm": 0.63,
             "kawat_max_mm": 0.72,
-            "kawat_min_mm": 0.54,
-            "tanda": []
+            "kawat_min_mm": 0.54
         },
         {
             "ukuran_mm": 1.18,
@@ -1184,8 +1131,7 @@
             "max_stdev_mm": 0.056,
             "kawat_preferred_mm": 0.63,
             "kawat_max_mm": 0.72,
-            "kawat_min_mm": 0.54,
-            "tanda": []
+            "kawat_min_mm": 0.54
         },
         {
             "ukuran_mm": 1.12,
@@ -1202,8 +1148,7 @@
             "max_stdev_mm": 0.053,
             "kawat_preferred_mm": 0.56,
             "kawat_max_mm": 0.64,
-            "kawat_min_mm": 0.48,
-            "tanda": []
+            "kawat_min_mm": 0.48
         },
         {
             "ukuran_mm": 1.0,
@@ -1220,10 +1165,7 @@
             "max_stdev_mm": 0.049,
             "kawat_preferred_mm": 0.56,
             "kawat_max_mm": 0.64,
-            "kawat_min_mm": 0.48,
-            "tanda": [
-                "ukuran_um"
-            ]
+            "kawat_min_mm": 0.48
         },
         {
             "ukuran_mm": 0.9,
@@ -1240,8 +1182,7 @@
             "max_stdev_mm": 0.0455,
             "kawat_preferred_mm": 0.5,
             "kawat_max_mm": 0.58,
-            "kawat_min_mm": 0.43,
-            "tanda": []
+            "kawat_min_mm": 0.43
         },
         {
             "ukuran_mm": 0.85,
@@ -1258,8 +1199,7 @@
             "max_stdev_mm": 0.0436,
             "kawat_preferred_mm": 0.5,
             "kawat_max_mm": 0.58,
-            "kawat_min_mm": 0.43,
-            "tanda": []
+            "kawat_min_mm": 0.43
         },
         {
             "ukuran_mm": 0.8,
@@ -1276,8 +1216,7 @@
             "max_stdev_mm": 0.0418,
             "kawat_preferred_mm": 0.45,
             "kawat_max_mm": 0.52,
-            "kawat_min_mm": 0.38,
-            "tanda": []
+            "kawat_min_mm": 0.38
         },
         {
             "ukuran_mm": 0.71,
@@ -1294,8 +1233,7 @@
             "max_stdev_mm": 0.0384,
             "kawat_preferred_mm": 0.45,
             "kawat_max_mm": 0.52,
-            "kawat_min_mm": 0.38,
-            "tanda": []
+            "kawat_min_mm": 0.38
         },
         {
             "ukuran_mm": 0.63,
@@ -1312,8 +1250,7 @@
             "max_stdev_mm": 0.0352,
             "kawat_preferred_mm": 0.4,
             "kawat_max_mm": 0.46,
-            "kawat_min_mm": 0.34,
-            "tanda": []
+            "kawat_min_mm": 0.34
         },
         {
             "ukuran_mm": 0.6,
@@ -1330,8 +1267,7 @@
             "max_stdev_mm": 0.034,
             "kawat_preferred_mm": 0.4,
             "kawat_max_mm": 0.46,
-            "kawat_min_mm": 0.34,
-            "tanda": []
+            "kawat_min_mm": 0.34
         },
         {
             "ukuran_mm": 0.56,
@@ -1348,8 +1284,7 @@
             "max_stdev_mm": 0.0324,
             "kawat_preferred_mm": 0.355,
             "kawat_max_mm": 0.41,
-            "kawat_min_mm": 0.3,
-            "tanda": []
+            "kawat_min_mm": 0.3
         },
         {
             "ukuran_mm": 0.5,
@@ -1366,8 +1301,7 @@
             "max_stdev_mm": 0.03,
             "kawat_preferred_mm": 0.315,
             "kawat_max_mm": 0.36,
-            "kawat_min_mm": 0.27,
-            "tanda": []
+            "kawat_min_mm": 0.27
         },
         {
             "ukuran_mm": 0.45,
@@ -1384,8 +1318,7 @@
             "max_stdev_mm": 0.027899999999999998,
             "kawat_preferred_mm": 0.28,
             "kawat_max_mm": 0.32,
-            "kawat_min_mm": 0.24,
-            "tanda": []
+            "kawat_min_mm": 0.24
         },
         {
             "ukuran_mm": 0.425,
@@ -1402,8 +1335,7 @@
             "max_stdev_mm": 0.0268,
             "kawat_preferred_mm": 0.28,
             "kawat_max_mm": 0.32,
-            "kawat_min_mm": 0.24,
-            "tanda": []
+            "kawat_min_mm": 0.24
         },
         {
             "ukuran_mm": 0.4,
@@ -1420,8 +1352,7 @@
             "max_stdev_mm": 0.0257,
             "kawat_preferred_mm": 0.25,
             "kawat_max_mm": 0.29,
-            "kawat_min_mm": 0.21,
-            "tanda": []
+            "kawat_min_mm": 0.21
         },
         {
             "ukuran_mm": 0.355,
@@ -1438,8 +1369,7 @@
             "max_stdev_mm": 0.0237,
             "kawat_preferred_mm": 0.224,
             "kawat_max_mm": 0.26,
-            "kawat_min_mm": 0.19,
-            "tanda": []
+            "kawat_min_mm": 0.19
         },
         {
             "ukuran_mm": 0.315,
@@ -1456,8 +1386,7 @@
             "max_stdev_mm": 0.0219,
             "kawat_preferred_mm": 0.2,
             "kawat_max_mm": 0.23,
-            "kawat_min_mm": 0.17,
-            "tanda": []
+            "kawat_min_mm": 0.17
         },
         {
             "ukuran_mm": 0.3,
@@ -1474,8 +1403,7 @@
             "max_stdev_mm": 0.0212,
             "kawat_preferred_mm": 0.2,
             "kawat_max_mm": 0.23,
-            "kawat_min_mm": 0.17,
-            "tanda": []
+            "kawat_min_mm": 0.17
         },
         {
             "ukuran_mm": 0.28,
@@ -1492,8 +1420,7 @@
             "max_stdev_mm": 0.020300000000000002,
             "kawat_preferred_mm": 0.18,
             "kawat_max_mm": 0.21,
-            "kawat_min_mm": 0.15,
-            "tanda": []
+            "kawat_min_mm": 0.15
         },
         {
             "ukuran_mm": 0.25,
@@ -1510,8 +1437,7 @@
             "max_stdev_mm": 0.0188,
             "kawat_preferred_mm": 0.16,
             "kawat_max_mm": 0.19,
-            "kawat_min_mm": 0.13,
-            "tanda": []
+            "kawat_min_mm": 0.13
         },
         {
             "ukuran_mm": 0.224,
@@ -1528,8 +1454,7 @@
             "max_stdev_mm": 0.0175,
             "kawat_preferred_mm": 0.16,
             "kawat_max_mm": 0.19,
-            "kawat_min_mm": 0.13,
-            "tanda": []
+            "kawat_min_mm": 0.13
         },
         {
             "ukuran_mm": 0.212,
@@ -1546,8 +1471,7 @@
             "max_stdev_mm": 0.0169,
             "kawat_preferred_mm": 0.14,
             "kawat_max_mm": 0.17,
-            "kawat_min_mm": 0.12,
-            "tanda": []
+            "kawat_min_mm": 0.12
         },
         {
             "ukuran_mm": 0.2,
@@ -1564,8 +1488,7 @@
             "max_stdev_mm": 0.016300000000000002,
             "kawat_preferred_mm": 0.14,
             "kawat_max_mm": 0.17,
-            "kawat_min_mm": 0.12,
-            "tanda": []
+            "kawat_min_mm": 0.12
         },
         {
             "ukuran_mm": 0.18,
@@ -1582,8 +1505,7 @@
             "max_stdev_mm": 0.015300000000000001,
             "kawat_preferred_mm": 0.125,
             "kawat_max_mm": 0.15,
-            "kawat_min_mm": 0.106,
-            "tanda": []
+            "kawat_min_mm": 0.106
         },
         {
             "ukuran_mm": 0.16,
@@ -1600,8 +1522,7 @@
             "max_stdev_mm": 0.014199999999999999,
             "kawat_preferred_mm": 0.112,
             "kawat_max_mm": 0.13,
-            "kawat_min_mm": 0.095,
-            "tanda": []
+            "kawat_min_mm": 0.095
         },
         {
             "ukuran_mm": 0.15,
@@ -1618,8 +1539,7 @@
             "max_stdev_mm": 0.013699999999999999,
             "kawat_preferred_mm": 0.1,
             "kawat_max_mm": 0.115,
-            "kawat_min_mm": 0.085,
-            "tanda": []
+            "kawat_min_mm": 0.085
         },
         {
             "ukuran_mm": 0.14,
@@ -1636,8 +1556,7 @@
             "max_stdev_mm": 0.013099999999999999,
             "kawat_preferred_mm": 0.1,
             "kawat_max_mm": 0.115,
-            "kawat_min_mm": 0.085,
-            "tanda": []
+            "kawat_min_mm": 0.085
         },
         {
             "ukuran_mm": 0.125,
@@ -1654,8 +1573,7 @@
             "max_stdev_mm": 0.012199999999999999,
             "kawat_preferred_mm": 0.09,
             "kawat_max_mm": 0.104,
-            "kawat_min_mm": 0.077,
-            "tanda": []
+            "kawat_min_mm": 0.077
         },
         {
             "ukuran_mm": 0.112,
@@ -1672,8 +1590,7 @@
             "max_stdev_mm": 0.0115,
             "kawat_preferred_mm": 0.08,
             "kawat_max_mm": 0.092,
-            "kawat_min_mm": 0.068,
-            "tanda": []
+            "kawat_min_mm": 0.068
         },
         {
             "ukuran_mm": 0.106,
@@ -1690,8 +1607,7 @@
             "max_stdev_mm": 0.0111,
             "kawat_preferred_mm": 0.071,
             "kawat_max_mm": 0.082,
-            "kawat_min_mm": 0.06,
-            "tanda": []
+            "kawat_min_mm": 0.06
         },
         {
             "ukuran_mm": 0.1,
@@ -1708,8 +1624,7 @@
             "max_stdev_mm": 0.0108,
             "kawat_preferred_mm": 0.071,
             "kawat_max_mm": 0.082,
-            "kawat_min_mm": 0.06,
-            "tanda": []
+            "kawat_min_mm": 0.06
         },
         {
             "ukuran_mm": 0.09,
@@ -1726,8 +1641,7 @@
             "max_stdev_mm": 0.0101,
             "kawat_preferred_mm": 0.063,
             "kawat_max_mm": 0.072,
-            "kawat_min_mm": 0.054,
-            "tanda": []
+            "kawat_min_mm": 0.054
         },
         {
             "ukuran_mm": 0.08,
@@ -1744,10 +1658,7 @@
             "max_stdev_mm": 0.0095,
             "kawat_preferred_mm": 0.56,
             "kawat_max_mm": 0.064,
-            "kawat_min_mm": 0.048,
-            "tanda": [
-                "kawat_preferred_mm"
-            ]
+            "kawat_min_mm": 0.048
         },
         {
             "ukuran_mm": 0.075,
@@ -1764,8 +1675,7 @@
             "max_stdev_mm": 0.0091,
             "kawat_preferred_mm": 0.05,
             "kawat_max_mm": 0.058,
-            "kawat_min_mm": 0.043,
-            "tanda": []
+            "kawat_min_mm": 0.043
         },
         {
             "ukuran_mm": 0.07100000000000001,
@@ -1782,8 +1692,7 @@
             "max_stdev_mm": 0.0089,
             "kawat_preferred_mm": 0.05,
             "kawat_max_mm": 0.058,
-            "kawat_min_mm": 0.043,
-            "tanda": []
+            "kawat_min_mm": 0.043
         },
         {
             "ukuran_mm": 0.063,
@@ -1800,8 +1709,7 @@
             "max_stdev_mm": 0.0083,
             "kawat_preferred_mm": 0.045,
             "kawat_max_mm": 0.052,
-            "kawat_min_mm": 0.038,
-            "tanda": []
+            "kawat_min_mm": 0.038
         },
         {
             "ukuran_mm": 0.056,
@@ -1818,8 +1726,7 @@
             "max_stdev_mm": 0.0078,
             "kawat_preferred_mm": 0.04,
             "kawat_max_mm": 0.046,
-            "kawat_min_mm": 0.034,
-            "tanda": []
+            "kawat_min_mm": 0.034
         },
         {
             "ukuran_mm": 0.053,
@@ -1836,8 +1743,7 @@
             "max_stdev_mm": 0.0076,
             "kawat_preferred_mm": 0.036,
             "kawat_max_mm": 0.041,
-            "kawat_min_mm": 0.031,
-            "tanda": []
+            "kawat_min_mm": 0.031
         },
         {
             "ukuran_mm": 0.05,
@@ -1854,8 +1760,7 @@
             "max_stdev_mm": 0.0073,
             "kawat_preferred_mm": 0.036,
             "kawat_max_mm": 0.041,
-            "kawat_min_mm": 0.031,
-            "tanda": []
+            "kawat_min_mm": 0.031
         },
         {
             "ukuran_mm": 0.045,
@@ -1872,8 +1777,7 @@
             "max_stdev_mm": 0.006900000000000001,
             "kawat_preferred_mm": 0.032,
             "kawat_max_mm": 0.037,
-            "kawat_min_mm": 0.027,
-            "tanda": []
+            "kawat_min_mm": 0.027
         },
         {
             "ukuran_mm": 0.04,
@@ -1890,8 +1794,7 @@
             "max_stdev_mm": 0.0065,
             "kawat_preferred_mm": 0.032,
             "kawat_max_mm": 0.037,
-            "kawat_min_mm": 0.027,
-            "tanda": []
+            "kawat_min_mm": 0.027
         },
         {
             "ukuran_mm": 0.038,
@@ -1908,8 +1811,7 @@
             "max_stdev_mm": 0.0064,
             "kawat_preferred_mm": 0.03,
             "kawat_max_mm": 0.035,
-            "kawat_min_mm": 0.024,
-            "tanda": []
+            "kawat_min_mm": 0.024
         },
         {
             "ukuran_mm": 0.036000000000000004,
@@ -1926,8 +1828,7 @@
             "max_stdev_mm": 0.0062,
             "kawat_preferred_mm": 0.03,
             "kawat_max_mm": 0.035,
-            "kawat_min_mm": 0.024,
-            "tanda": []
+            "kawat_min_mm": 0.024
         },
         {
             "ukuran_mm": 0.032,
@@ -1944,8 +1845,7 @@
             "max_stdev_mm": 0.005900000000000001,
             "kawat_preferred_mm": 0.028,
             "kawat_max_mm": 0.033,
-            "kawat_min_mm": 0.023,
-            "tanda": []
+            "kawat_min_mm": 0.023
         },
         {
             "ukuran_mm": 0.025,
@@ -1962,8 +1862,7 @@
             "max_stdev_mm": 0.0052,
             "kawat_preferred_mm": 0.025,
             "kawat_max_mm": 0.029,
-            "kawat_min_mm": 0.021,
-            "tanda": []
+            "kawat_min_mm": 0.021
         },
         {
             "ukuran_mm": 0.02,
@@ -1980,8 +1879,7 @@
             "max_stdev_mm": 0.0047,
             "kawat_preferred_mm": 0.02,
             "kawat_max_mm": 0.023,
-            "kawat_min_mm": 0.017,
-            "tanda": []
+            "kawat_min_mm": 0.017
         }
     ]
 }

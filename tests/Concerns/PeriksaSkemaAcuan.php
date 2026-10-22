@@ -25,6 +25,7 @@ trait PeriksaSkemaAcuan
                 is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_float') === $nilai,
                 "{$jalur} bukan list float",
             ),
+            'angka_atau_teks' => $this->assertTrue(is_float($nilai) || is_string($nilai), "{$jalur} bukan float/teks"),
             'daftar_teks' => $this->assertTrue(
                 is_array($nilai) && array_is_list($nilai) && array_filter($nilai, 'is_string') === $nilai,
                 "{$jalur} bukan list teks",
@@ -113,6 +114,11 @@ trait PeriksaSkemaAcuan
             }
 
             return $hasil;
+        }
+
+        // Indeks list (`cmc_master/0`) — SelAcuan membacanya lewat array_key_exists.
+        if (is_array($nilai) && array_is_list($nilai) && ctype_digit((string) $kepala) && array_key_exists((int) $kepala, $nilai)) {
+            return self::simpul($nilai[(int) $kepala], $segmen, "{$awalan}{$kepala}");
         }
 
         if (! $nilai instanceof stdClass || ! property_exists($nilai, $kepala)) {

@@ -306,6 +306,7 @@ final class PemeriksaMaster
             case 'angka':
             case 'bilangan_bulat':
             case 'tanggal':
+            case 'angka_atau_teks':
                 $a = Alamat::urai((string) $e['sel']);
                 $alamat = Alamat::sel($a['lembar'], $a['k1'], $a['b1'] + $geser);
                 $sel = $this->sel($indeks, $a['lembar'], $a['k1'], $a['b1'] + $geser);
@@ -315,6 +316,9 @@ final class PemeriksaMaster
                     'angka' => self::transformasi($this->angkaWajib($sel, $alamat, $bulat, $masalah, $bagi), $e),
                     'bilangan_bulat' => $this->bilanganBulat($sel, $alamat, $masalah),
                     'tanggal' => $this->tanggal($sel, $alamat, $masalah),
+                    'angka_atau_teks' => is_int($sel['n'] ?? null) || is_float($sel['n'] ?? null)
+                        ? (float) $sel['n']
+                        : $this->teks($sel, $alamat, $masalah),
                 };
 
             case 'daftar_angka':

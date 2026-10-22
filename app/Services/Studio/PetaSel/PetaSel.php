@@ -59,6 +59,8 @@ use JsonException;
  * penting (`float(f"{x:.10g}")`). `peta_angka` boleh `kunci_teks: true`
  * (kunci `25`, `-100` — bukan `25.0`) dan `lewati_galat: true` (sel bernilai
  * teks seperti `#REF!` dilewati seperti sel kosong, bukan galat).
+ * `angka_atau_teks` (satu sel): angka -> float, selain itu teks apa adanya
+ * (`'-'`, `'all'` Tabel_MPE Sieve = makna, bukan nol; `angka_atau_teks()` generator).
  * `daftar_kunci` menulis list kunci teks unik (urutan kemunculan) dari
  * beberapa rentang satu kolom: `{"tipe": "daftar_kunci", "rentang": [..]}`.
  *
@@ -71,7 +73,7 @@ final class PetaSel
 {
     public const FORMAT = 1;
 
-    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek', 'daftar_kunci'];
+    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek', 'daftar_kunci', 'angka_atau_teks'];
 
     /** @param  array<string, mixed>  $isi */
     private function __construct(
@@ -334,6 +336,7 @@ final class PetaSel
                 case 'angka':
                 case 'bilangan_bulat':
                 case 'tanggal':
+                case 'angka_atau_teks':
                     if (($x = $selSah($e['sel'] ?? null)) !== null) {
                         $m[] = "{$label}: {$x}";
                     }

@@ -19,6 +19,7 @@ use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarPistonVolume;
 use App\Services\Calibration\TabelStandarPutaran;
+use App\Services\Calibration\TabelStandarSieve;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TabelStandarTids;
 use App\Services\Calibration\TabelStandarVolumetric;
@@ -490,6 +491,44 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
             return $h;
         });
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Sieve: `tanda` kini diturunkan kode — hasilnya wajib sama dengan yang dulu disimpan generator. */
+    public function test_sieve_v1_setara_json_dan_tanda_diturunkan(): void
+    {
+        $v1 = $this->v1('sieve');
+
+        [$a, $b] = $this->duaJalur('sieve', $v1, function (): array {
+            $t = new TabelStandarSieve;
+            $h = ['mpe' => $t->semuaMpe(), 'konstanta' => $t->konstanta(), 'standar' => [$t->standar('caliper'), $t->standar('mikroskop')]];
+
+            foreach ([[19.0, 'mm'], [80.0, 'µm'], [1.0, 'mm'], [0.394, 'inch'], [0.279, 'inch'], [7.0, 'mm']] as [$n, $s]) {
+                $baris = $t->barisMpe($n, $s);
+                $h['baris'][] = [$baris, $baris === null ? null : $t->kolomJanggalTerpakai($baris, $s)];
+            }
+
+            foreach ([0.05, 1.0, 2.0, 3.0, 50.0, 120.0] as $mm) {
+                $h['lantai'][] = [$t->lantaiCmc($mm, 'mikroskop'), $t->lantaiCmc($mm, 'caliper')];
+            }
+
+            foreach ([['caliper', 'warp'], ['mikroskop', 'warp'], ['mikroskop', 'weft'], ['mikroskop', 'kawat']] as [$std, $par]) {
+                $h['koreksi'][] = [$t->titikKoreksi($std, $par, 0.5), $t->titikKoreksi($std, $par, 5.0), $t->u95Sertifikat($std, $par)];
+            }
+
+            return $h;
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+
+        // Tanda turunan = tanda yang dulu disimpan generator (sebelum 22 Okt 2026).
+        $tanda = [];
+
+        foreach ($a['mpe'] as $baris) {
+            if ($baris['tanda'] !== []) {
+                $tanda[(string) $baris['ukuran_mm']] = $baris['tanda'];
+            }
+        }
+
+        $this->assertSame(['10' => ['ukuran_inch'], '1' => ['ukuran_um'], '0.08' => ['kawat_preferred_mm']], $tanda);
     }
 
     /** Urutkan kunci objek rekursif; urutan list dipertahankan. */

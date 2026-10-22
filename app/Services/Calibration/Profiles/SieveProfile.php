@@ -51,6 +51,126 @@ class SieveProfile extends CalibrationProfile
 {
     use SertifikatDimensi;
 
+    /**
+     * Skema `tabel-standar-sieve.json` untuk Studio Data Acuan. Alamat dari
+     * `docs/skrip/gen-tabel-standar-sieve.py` (peta sel
+     * `database/data/peta-sel/sieve.json`, diverifikasi pada CSV dan .xlsm
+     * asli). `tanda` Tabel_MPE bukan data — diturunkan `TabelStandarSieve::tanda()`.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+        $K = 'STANDAR_KALIBRATOR';
+        $standar = static fn (string $kode, string $label, int $b, string $res): array => $lembar("standar_{$kode}", $label, "standar/{$kode}", 'objek', null, [
+            $kolom('nama', 'Nama', 'teks', null, "DATABASE!S{$b}"),
+            $kolom('merk_tipe', 'Merek/tipe', 'teks', null, "DATABASE!T{$b}"),
+            $kolom('seri', 'Nomor seri', 'teks', null, "DATABASE!U{$b}"),
+            $kolom('traceability', 'Ketertelusuran', 'teks', null, "DATABASE!V{$b}"),
+            $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, "DATABASE!W{$b}"),
+            $kolom('interval_tahun', 'Interval', 'bulat', 'tahun', "DATABASE!X{$b}"),
+            $kolom('berlaku_sampai', 'Berlaku sampai', 'tanggal', null, "DATABASE!Y{$b}"),
+            $kolom('resolusi_mm', 'Resolusi', 'desimal', 'mm', "{$K}!{$res}"),
+        ]);
+        $koreksi = static fn (string $kode, string $label, string $kn, string $kt, string $kk, int $b0, int $b1): array => $lembar("koreksi_{$kode}", $label, "koreksi/{$kode}", 'daftar', 'nilai_standar_mm', [
+            $kolom('nilai_standar_mm', 'Nilai standar', 'desimal', 'mm', "{$K}!{$kn}{$b0}:{$kn}{$b1}"),
+            $kolom('penunjukan_mm', 'Rata-rata penunjukan', 'desimal', 'mm', "{$K}!{$kt}{$b0}:{$kt}{$b1}"),
+            $kolom('koreksi_mm', 'Koreksi', 'desimal', 'mm', "{$K}!{$kk}{$b0}:{$kk}{$b1}"),
+        ]);
+        $mpe = static fn (string $kode, string $label, string $k, string $tipe = 'angka_atau_teks', ?string $satuan = 'mm'): array => $kolom($kode, $label, $tipe, $satuan, "{$K}!{$k}41:{$k}136");
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-sieve.json',
+            'lembar' => [
+                $standar('caliper', 'Digital Caliper', 13, 'K7'),
+                $standar('mikroskop', 'Digital Microscope', 14, 'C7'),
+                $koreksi('caliper', 'Koreksi caliper', 'K', 'L', 'N', 12, 21),
+                $koreksi('mikroskop_x', 'Koreksi mikroskop sumbu X', 'C', 'D', 'F', 12, 22),
+                $koreksi('mikroskop_y', 'Koreksi mikroskop sumbu Y', 'C', 'D', 'F', 26, 36),
+                $lembar('u95_sertifikat', 'U95 sertifikat standar', 'u95_sertifikat_mm', 'objek', null, [
+                    $kolom('caliper', 'Caliper', 'desimal', 'mm', "{$K}!O12"),
+                    $kolom('mikroskop_x', 'Mikroskop X', 'desimal', 'mm', "{$K}!G12"),
+                    $kolom('mikroskop_y', 'Mikroskop Y', 'desimal', 'mm', "{$K}!G26"),
+                ]),
+                $lembar('cmc_master_mikroskop', 'CMC master — mikroskop', 'cmc_master/0', 'objek', null, [
+                    $kolom('label', 'Label', 'teks', null, 'DATABASE!S5'),
+                    $kolom('standar', 'Standar', 'teks', null, null),
+                    $kolom('ukuran_min_mm', 'Ukuran min', 'desimal', 'mm', null),
+                    $kolom('ukuran_maks_mm', 'Ukuran maks', 'desimal', 'mm', null),
+                    $kolom('u95_mm', 'CMC', 'desimal', 'mm', 'DATABASE!T5'),
+                ]),
+                $lembar('cmc_master_caliper', 'CMC master — caliper', 'cmc_master/1', 'objek', null, [
+                    $kolom('label', 'Label', 'teks', null, 'DATABASE!S6'),
+                    $kolom('standar', 'Standar', 'teks', null, null),
+                    $kolom('ukuran_min_mm_eksklusif', 'Ukuran min (eksklusif)', 'desimal', 'mm', null),
+                    $kolom('ukuran_maks_mm', 'Ukuran maks', 'desimal_kosong', 'mm', null),
+                    $kolom('u95_mm', 'CMC', 'desimal', 'mm', 'DATABASE!T6'),
+                ]),
+                $lembar('cmc_lampiran', 'CMC lampiran LK-285-IDN', 'cmc_lampiran', 'daftar', null, [
+                    $kolom('label', 'Label', 'teks', null, null),
+                    $kolom('ukuran_min_mm', 'Ukuran min', 'desimal', 'mm', null),
+                    $kolom('ukuran_maks_mm', 'Ukuran maks', 'desimal', 'mm', null),
+                    $kolom('u95_mm', 'CMC', 'desimal', 'mm', null),
+                ]),
+                $lembar('konstanta', 'Konstanta metode', 'konstanta', 'objek', null, [
+                    $kolom('suhu_acuan_c', 'Suhu acuan', 'desimal', '°C', null),
+                    $kolom('delta_alpha_per_c', 'Δα', 'desimal', '/°C', null),
+                    $kolom('vi_sertifikat', 'vi sertifikat', 'bulat', null, null),
+                    $kolom('daya_baca_pengali', 'Pengali daya baca', 'desimal', null, null),
+                    $kolom('vi_daya_baca', 'vi daya baca', 'bulat', null, null),
+                    $kolom('geometri_mm', 'Geometri', 'desimal', 'mm', null),
+                    $kolom('vi_geometri', 'vi geometri', 'bulat', null, null),
+                    $kolom('vi_suhu', 'vi suhu', 'bulat', null, null),
+                    $kolom('pembagi_pengulangan', 'Pembagi pengulangan', 'bulat', null, null),
+                    $kolom('vi_pengulangan', 'vi pengulangan', 'bulat', null, null),
+                    $kolom('jumlah_opening_pengulangan', 'Jumlah opening', 'bulat', null, null),
+                    $kolom('k', 'k', 'desimal', null, null),
+                ]),
+                $lembar('konstanta_u_alpha', 'Pengali u(α)', 'konstanta/u_alpha_pengali', 'objek', null, [
+                    $kolom('mikroskop', 'Mikroskop', 'desimal', null, null),
+                    $kolom('caliper', 'Caliper', 'desimal', null, null),
+                ]),
+                $lembar('konstanta_pembagi_sertifikat', 'Pembagi sertifikat', 'konstanta/pembagi_sertifikat', 'objek', null, [
+                    $kolom('mikroskop', 'Mikroskop', 'desimal', null, null),
+                    $kolom('caliper', 'Caliper', 'desimal', null, null),
+                ]),
+                $lembar('mpe', 'Tabel_MPE (ASTM E11 / ISO 3310-1)', 'mpe', 'daftar', 'ukuran_mm', [
+                    $mpe('ukuran_mm', 'Ukuran', 'B', 'desimal'),
+                    $mpe('sieve_no', 'Sieve No.', 'C', 'teks', null),
+                    $mpe('ukuran_um', 'Ukuran', 'D', satuan: 'µm'),
+                    $mpe('ukuran_inch', 'Ukuran', 'E', satuan: 'inch'),
+                    $mpe('x_mm', '+X', 'I'),
+                    $mpe('y_mm', '±Y', 'J'),
+                    $mpe('max_stdev_mm', 'Maks. stdev', 'K'),
+                    $mpe('kawat_preferred_mm', 'Ø kawat preferred', 'L'),
+                    $mpe('kawat_max_mm', 'Ø kawat maks', 'M'),
+                    $mpe('kawat_min_mm', 'Ø kawat min', 'N'),
+                ]),
+                $lembar('mpe_min_opening', 'Tabel_MPE — Σ sample opening', 'mpe/*/min_opening', 'objek', null, [
+                    $mpe('compliance', 'Compliance sieve', 'F', satuan: null),
+                    $mpe('inspection', 'Inspection sieve', 'G', satuan: null),
+                    $mpe('calibration', 'Calibration sieve', 'H', satuan: null),
+                ]),
+            ],
+        ];
+    }
+
     public const SATUAN = 'mm';
 
     /** Baris opening yang tercetak di kertas: dua blok × 15. */

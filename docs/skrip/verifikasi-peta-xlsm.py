@@ -193,7 +193,7 @@ def gabungan(wb, spec, tambah, asal):
 
 def ekstrak_satu(wb, e, geser, masalah):
     t, bl = e['tipe'], e.get('bulat')
-    if t in ('teks', 'angka', 'bilangan_bulat', 'tanggal'):
+    if t in ('teks', 'angka', 'bilangan_bulat', 'tanggal', 'angka_atau_teks'):
         lb, k, b, _, _ = urai(e['sel'])
         v = nilai(wb, lb, k, b + geser)
         alamat = f"{lb}!{e['sel'].split('!')[-1]}+{geser}"
@@ -203,6 +203,12 @@ def ekstrak_satu(wb, e, geser, masalah):
             return teks(v)
         if t == 'tanggal':
             return tanggal(v)
+        if t == 'angka_atau_teks':
+            if angka(v) is not None:
+                return angka(v)
+            if kosong(v) or (isinstance(v, str) and v.startswith('#')):
+                masalah.append(f"{alamat} kosong/galat: {v!r}")
+            return teks(v)
         x = angka(v)
         if x is None:
             masalah.append(f"{alamat} bukan angka: {v!r}")

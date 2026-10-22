@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\Calibration\TabelStandarSieve;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 /**
  * Tiga sel Tabel_MPE master menyimpang dari ASTM E11, dan dibetulkan saat

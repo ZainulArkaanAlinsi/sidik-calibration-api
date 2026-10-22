@@ -211,6 +211,13 @@
    "sha256": "db5209443c4c14b634f3d6dad0910a708588e8c6b5c75c1edbe203300d42bd5e",
    "ukuran_byte": 471552,
    "terverifikasi": true
+  },
+  {
+   "paket": "sieve",
+   "berkas": "Master Olah Data_Sieve Mesh.xlsm",
+   "sha256": "d8e43c46af57b7ac06d93671aba1a32b26008370ddf56e674ba755190f7e5688",
+   "ukuran_byte": 293888,
+   "terverifikasi": true
   }
  ]
 }

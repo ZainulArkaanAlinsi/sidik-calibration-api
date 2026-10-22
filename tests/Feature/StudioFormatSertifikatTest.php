@@ -96,6 +96,7 @@ class StudioFormatSertifikatTest extends TestCase
             'piston_volume' => ['piston_volume', [['fixed', 'piston_pipette', 1.0, $piston('fixed')], ['fixed', 'dispensett', 10.0, $piston('fixed')], ['graduated', 'buret_digital', 10.0, $piston('graduated')]]],
             'kalibrator_suhu' => ['kalibrator_suhu', [['measure', 'tits', 100.0, []], ['source', 'tits', 100.0, []]]],
             'tids' => ['tids', [['yokogawa', 'tids', 100.0, []], ['recorder', 'tids', 100.0, []]]],
+            'sieve' => ['sieve', [[null, 'sieve', 19.0, []]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, []], ['druck13g', 'pressure_gauge', 100.0, []], ['spmk', 'pressure_gauge', 5.0, []], ['differential', 'differential_pressure', 2.0, []]]],
         ];
     }

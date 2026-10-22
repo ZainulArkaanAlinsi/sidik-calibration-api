@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use DateTimeInterface;
 use RuntimeException;
 
@@ -37,9 +38,6 @@ use RuntimeException;
  */
 class TabelStandarSieve
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /** Kolom tampilan yang dipakai pencocokan per satuan; kolom kawat selalu dipakai. */
     private const KOLOM_TERPAKAI = [
         'mm' => ['kawat_preferred_mm', 'kawat_min_max'],
@@ -236,20 +234,60 @@ class TabelStandarSieve
         ['ukuran_mm' => 10.0, 'kolom' => 'ukuran_inch', 'master' => 0.279, 'astm' => 0.394],
     ];
 
+    /**
+     * Kolom Tabel_MPE yang janggal di satu baris — DITURUNKAN dari angkanya,
+     * bukan dibaca dari data (data acuan Studio hanya berisi sel master;
+     * turunan yang disimpan bisa basi saat master diimpor ulang). Aturan sama
+     * dengan `docs/skrip/gen-tabel-standar-sieve.py`:
+     *
+     *  - `ukuran_um`   : |µm − mm×1000| > 1 %
+     *  - `ukuran_inch` : |inch − mm/25,4| > 10 %
+     *  - `kawat_min_max` : min > max; selain itu `kawat_preferred_mm` bila
+     *    preferred di luar [min, max]
+     *
+     * @param  array<string, mixed>  $baris
+     * @return list<string>
+     */
+    public static function tanda(array $baris): array
+    {
+        $tanda = [];
+        $mm = (float) $baris['ukuran_mm'];
+        $um = $baris['ukuran_um'] ?? null;
+        $inch = $baris['ukuran_inch'] ?? null;
+
+        if (is_float($um) && abs($um - $mm * 1000) > 0.01 * $mm * 1000) {
+            $tanda[] = 'ukuran_um';
+        }
+
+        if (is_float($inch) && abs($inch - $mm / 25.4) > 0.10 * ($mm / 25.4)) {
+            $tanda[] = 'ukuran_inch';
+        }
+
+        [$pref, $maks, $min] = [$baris['kawat_preferred_mm'] ?? null, $baris['kawat_max_mm'] ?? null, $baris['kawat_min_mm'] ?? null];
+
+        if (is_float($pref) && is_float($maks) && is_float($min)) {
+            if ($min > $maks) {
+                $tanda[] = 'kawat_min_max';
+            } elseif (! ($min <= $pref && $pref <= $maks)) {
+                $tanda[] = 'kawat_preferred_mm';
+            }
+        }
+
+        return $tanda;
+    }
+
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-sieve.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar sieve nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `sieve`: cache di SumberAcuan, dikunci (versi, sha256) —
+        // bukan statis di kelas ini.
+        $isi = app(SumberAcuan::class)->isi('sieve', $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['mpe'], $isi['koreksi'], $isi['konstanta'], $isi['cmc_lampiran'], $isi['cmc_master'])
@@ -258,6 +296,10 @@ class TabelStandarSieve
         }
 
         $isi['mpe'] = array_map(static function (array $baris): array {
+            // Ditandai dari angka MASTER, sebelum koreksi ASTM di bawah — sama
+            // dengan yang dulu disimpan generator di JSON.
+            $baris['tanda'] = self::tanda($baris);
+
             foreach (self::KOREKSI_ASTM as $k) {
                 $cocok = abs((float) $baris['ukuran_mm'] - $k['ukuran_mm']) < 1e-9
                     && is_numeric($baris[$k['kolom']] ?? null)
@@ -274,6 +316,12 @@ class TabelStandarSieve
             return $baris;
         }, $isi['mpe']);
 
-        return self::$data = $isi;
+        return $isi;
+    }
+
+    /** Dipakai test yang menukar berkas tabelnya. */
+    public static function lupakan(): void
+    {
+        SumberAcuan::lupakanCache();
     }
 }
