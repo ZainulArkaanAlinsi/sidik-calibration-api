@@ -7,7 +7,9 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarViscometer;
 use App\Support\Angka;
+use RuntimeException;
 
 /**
  * Profil Viscometer rotasi Brookfield (alat ke-7). Formulir
@@ -305,101 +307,105 @@ class ViscometerProfile extends CalibrationProfile
     public const TITIK_TANPA_CMC = ['3000', '100000'];
 
     /**
-     * Tabel D-2 Brookfield (`MPE Visco.csv`) — model alat → TK (Torque
-     * Constant). Dua kolom modelnya dua-duanya tercetak di kertas: yang di
-     * BADAN alat dan yang di LAYAR. Teknisi milih satu baris; dua-duanya
-     * ditampilkan biar dia bisa cocokin dari mana pun yang kebaca.
+     * Tabel D-2 Brookfield (`MPE Visco.csv`) — LABEL model alat, urut baris
+     * master `B6:C17`. Dua kolom modelnya dua-duanya tercetak di kertas: yang
+     * di BADAN alat dan yang di LAYAR. Teknisi milih satu baris; dua-duanya
+     * ditampilkan biar dia bisa cocokin dari mana pun yang kebaca. Angka TK
+     * (`D6:D17`) = data acuan lapis 1 [TabelStandarViscometer::tk], dipasang
+     * per posisi oleh [tabelTk].
      *
-     * @var list<array{badan: string, layar: string, tk: float}>
+     * @var list<array{badan: string, layar: string}>
      */
     public const TABEL_TK = [
-        ['badan' => 'DV2TLV', 'layar' => 'LV', 'tk' => 0.09373],
-        ['badan' => '2.5DV2TLV', 'layar' => 'L3', 'tk' => 0.2343],
-        ['badan' => '5DV2TLV', 'layar' => 'L5', 'tk' => 0.4686],
-        ['badan' => '1/4DV2TRV', 'layar' => 'RQ', 'tk' => 0.25],
-        ['badan' => '1/2DV2TRV', 'layar' => 'RH', 'tk' => 0.5],
-        ['badan' => 'DV2TRV', 'layar' => 'RV', 'tk' => 1.0],
-        ['badan' => 'DV2THA', 'layar' => 'HA', 'tk' => 2.0],
-        ['badan' => '2DV2THA', 'layar' => 'A2', 'tk' => 4.0],
-        ['badan' => '2.5DV2THA', 'layar' => 'A3', 'tk' => 5.0],
-        ['badan' => 'DV2THB', 'layar' => 'HB', 'tk' => 8.0],
-        ['badan' => '2DV2THB', 'layar' => 'B3', 'tk' => 16.0],
-        ['badan' => '2.5DV2THB', 'layar' => 'B5', 'tk' => 20.0],
+        ['badan' => 'DV2TLV', 'layar' => 'LV'],
+        ['badan' => '2.5DV2TLV', 'layar' => 'L3'],
+        ['badan' => '5DV2TLV', 'layar' => 'L5'],
+        ['badan' => '1/4DV2TRV', 'layar' => 'RQ'],
+        ['badan' => '1/2DV2TRV', 'layar' => 'RH'],
+        ['badan' => 'DV2TRV', 'layar' => 'RV'],
+        ['badan' => 'DV2THA', 'layar' => 'HA'],
+        ['badan' => '2DV2THA', 'layar' => 'A2'],
+        ['badan' => '2.5DV2THA', 'layar' => 'A3'],
+        ['badan' => 'DV2THB', 'layar' => 'HB'],
+        ['badan' => '2DV2THB', 'layar' => 'B3'],
+        ['badan' => '2.5DV2THB', 'layar' => 'B5'],
     ];
 
     /**
-     * Tabel D-1 Brookfield (`MPE Visco.csv`) — spindle → SMC (Spindle
-     * Multiplier Constant), dikelompokkan seperti di kertas.
+     * Tabel D-1 Brookfield (`MPE Visco.csv`) — LABEL spindle (urut baris
+     * master `C22:C84`), dikelompokkan seperti di kertas. Angka SMC
+     * (`D22:D84`) = data acuan lapis 1 [TabelStandarViscometer::smc], dipasang
+     * per posisi oleh [tabelSmc].
      *
      * Ditulis lengkap 63 baris, bukan cuma tiga yang kepakai sesi contoh:
      * daftarnya yang tercetak di lembar kerja, dan teknisi milih dari situ.
      *
-     * @var list<array{spindle: string, smc: float, grup: string}>
+     * @var list<array{spindle: string, grup: string}>
      */
     public const TABEL_SMC = [
-        ['spindle' => 'RV1', 'smc' => 1.0, 'grup' => 'RV'],
-        ['spindle' => 'RV2', 'smc' => 4.0, 'grup' => 'RV'],
-        ['spindle' => 'RV3', 'smc' => 10.0, 'grup' => 'RV'],
-        ['spindle' => 'RV4', 'smc' => 20.0, 'grup' => 'RV'],
-        ['spindle' => 'RV5', 'smc' => 40.0, 'grup' => 'RV'],
-        ['spindle' => 'RV6', 'smc' => 100.0, 'grup' => 'RV'],
-        ['spindle' => 'RV7', 'smc' => 400.0, 'grup' => 'RV'],
-        ['spindle' => 'HA1', 'smc' => 1.0, 'grup' => 'HA'],
-        ['spindle' => 'HA2', 'smc' => 4.0, 'grup' => 'HA'],
-        ['spindle' => 'HA3', 'smc' => 10.0, 'grup' => 'HA'],
-        ['spindle' => 'HA4', 'smc' => 20.0, 'grup' => 'HA'],
-        ['spindle' => 'HA5', 'smc' => 40.0, 'grup' => 'HA'],
-        ['spindle' => 'HA6', 'smc' => 100.0, 'grup' => 'HA'],
-        ['spindle' => 'HA7', 'smc' => 400.0, 'grup' => 'HA'],
-        ['spindle' => 'HB1', 'smc' => 1.0, 'grup' => 'HB'],
-        ['spindle' => 'HB2', 'smc' => 4.0, 'grup' => 'HB'],
-        ['spindle' => 'HB3', 'smc' => 10.0, 'grup' => 'HB'],
-        ['spindle' => 'HB4', 'smc' => 20.0, 'grup' => 'HB'],
-        ['spindle' => 'HB5', 'smc' => 40.0, 'grup' => 'HB'],
-        ['spindle' => 'HB6', 'smc' => 100.0, 'grup' => 'HB'],
-        ['spindle' => 'HB7', 'smc' => 400.0, 'grup' => 'HB'],
-        ['spindle' => 'LV1', 'smc' => 6.4, 'grup' => 'LV'],
-        ['spindle' => 'LV2', 'smc' => 32.0, 'grup' => 'LV'],
-        ['spindle' => 'LV3', 'smc' => 128.0, 'grup' => 'LV'],
-        ['spindle' => 'LV4 or 4B2', 'smc' => 640.0, 'grup' => 'LV'],
-        ['spindle' => 'LV5', 'smc' => 1280.0, 'grup' => 'LV'],
-        ['spindle' => 'LV-2C', 'smc' => 32.0, 'grup' => 'LV'],
-        ['spindle' => 'LV-3C', 'smc' => 128.0, 'grup' => 'LV'],
-        ['spindle' => 'SPIRAL', 'smc' => 105.0, 'grup' => 'SPIRAL'],
-        ['spindle' => 'T-A', 'smc' => 20.0, 'grup' => 'T'],
-        ['spindle' => 'T-B', 'smc' => 40.0, 'grup' => 'T'],
-        ['spindle' => 'T-C', 'smc' => 100.0, 'grup' => 'T'],
-        ['spindle' => 'T-D', 'smc' => 200.0, 'grup' => 'T'],
-        ['spindle' => 'T-E', 'smc' => 500.0, 'grup' => 'T'],
-        ['spindle' => 'T-F', 'smc' => 1000.0, 'grup' => 'T'],
-        ['spindle' => 'ULA', 'smc' => 0.64, 'grup' => 'ULA'],
-        ['spindle' => 'DIN-81', 'smc' => 3.7, 'grup' => 'DIN'],
-        ['spindle' => 'DIN-82', 'smc' => 3.75, 'grup' => 'DIN'],
-        ['spindle' => 'DIN-83', 'smc' => 12.09, 'grup' => 'DIN'],
-        ['spindle' => 'DIN-85', 'smc' => 1.22, 'grup' => 'DIN'],
-        ['spindle' => 'DIN-86', 'smc' => 3.65, 'grup' => 'DIN'],
-        ['spindle' => 'DIN-87', 'smc' => 12.13, 'grup' => 'DIN'],
-        ['spindle' => 'SC4-14', 'smc' => 125.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-15', 'smc' => 50.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-16', 'smc' => 128.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-18', 'smc' => 3.2, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-21', 'smc' => 5.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-25', 'smc' => 512.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-27', 'smc' => 25.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-28', 'smc' => 50.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-29', 'smc' => 100.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-31', 'smc' => 32.0, 'grup' => 'SC4'],
-        ['spindle' => 'SC4-34', 'smc' => 64.0, 'grup' => 'SC4'],
-        ['spindle' => 'CPE-40 or CPA-40Z', 'smc' => 0.327, 'grup' => 'CPE/CPA'],
-        ['spindle' => 'CPE-41 or CPA-41Z', 'smc' => 1.228, 'grup' => 'CPE/CPA'],
-        ['spindle' => 'CPE-42 or CPA-42Z', 'smc' => 0.64, 'grup' => 'CPE/CPA'],
-        ['spindle' => 'CPE-51 or CPA-51Z', 'smc' => 5.178, 'grup' => 'CPE/CPA'],
-        ['spindle' => 'CPE-52 or CPA-52Z', 'smc' => 9.922, 'grup' => 'CPE/CPA'],
-        ['spindle' => 'V-71', 'smc' => 2.62, 'grup' => 'V'],
-        ['spindle' => 'V-72', 'smc' => 11.1, 'grup' => 'V'],
-        ['spindle' => 'V-73', 'smc' => 53.5, 'grup' => 'V'],
-        ['spindle' => 'V-74', 'smc' => 543.0, 'grup' => 'V'],
-        ['spindle' => 'V-75', 'smc' => 213.0, 'grup' => 'V'],
+        ['spindle' => 'RV1', 'grup' => 'RV'],
+        ['spindle' => 'RV2', 'grup' => 'RV'],
+        ['spindle' => 'RV3', 'grup' => 'RV'],
+        ['spindle' => 'RV4', 'grup' => 'RV'],
+        ['spindle' => 'RV5', 'grup' => 'RV'],
+        ['spindle' => 'RV6', 'grup' => 'RV'],
+        ['spindle' => 'RV7', 'grup' => 'RV'],
+        ['spindle' => 'HA1', 'grup' => 'HA'],
+        ['spindle' => 'HA2', 'grup' => 'HA'],
+        ['spindle' => 'HA3', 'grup' => 'HA'],
+        ['spindle' => 'HA4', 'grup' => 'HA'],
+        ['spindle' => 'HA5', 'grup' => 'HA'],
+        ['spindle' => 'HA6', 'grup' => 'HA'],
+        ['spindle' => 'HA7', 'grup' => 'HA'],
+        ['spindle' => 'HB1', 'grup' => 'HB'],
+        ['spindle' => 'HB2', 'grup' => 'HB'],
+        ['spindle' => 'HB3', 'grup' => 'HB'],
+        ['spindle' => 'HB4', 'grup' => 'HB'],
+        ['spindle' => 'HB5', 'grup' => 'HB'],
+        ['spindle' => 'HB6', 'grup' => 'HB'],
+        ['spindle' => 'HB7', 'grup' => 'HB'],
+        ['spindle' => 'LV1', 'grup' => 'LV'],
+        ['spindle' => 'LV2', 'grup' => 'LV'],
+        ['spindle' => 'LV3', 'grup' => 'LV'],
+        ['spindle' => 'LV4 or 4B2', 'grup' => 'LV'],
+        ['spindle' => 'LV5', 'grup' => 'LV'],
+        ['spindle' => 'LV-2C', 'grup' => 'LV'],
+        ['spindle' => 'LV-3C', 'grup' => 'LV'],
+        ['spindle' => 'SPIRAL', 'grup' => 'SPIRAL'],
+        ['spindle' => 'T-A', 'grup' => 'T'],
+        ['spindle' => 'T-B', 'grup' => 'T'],
+        ['spindle' => 'T-C', 'grup' => 'T'],
+        ['spindle' => 'T-D', 'grup' => 'T'],
+        ['spindle' => 'T-E', 'grup' => 'T'],
+        ['spindle' => 'T-F', 'grup' => 'T'],
+        ['spindle' => 'ULA', 'grup' => 'ULA'],
+        ['spindle' => 'DIN-81', 'grup' => 'DIN'],
+        ['spindle' => 'DIN-82', 'grup' => 'DIN'],
+        ['spindle' => 'DIN-83', 'grup' => 'DIN'],
+        ['spindle' => 'DIN-85', 'grup' => 'DIN'],
+        ['spindle' => 'DIN-86', 'grup' => 'DIN'],
+        ['spindle' => 'DIN-87', 'grup' => 'DIN'],
+        ['spindle' => 'SC4-14', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-15', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-16', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-18', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-21', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-25', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-27', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-28', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-29', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-31', 'grup' => 'SC4'],
+        ['spindle' => 'SC4-34', 'grup' => 'SC4'],
+        ['spindle' => 'CPE-40 or CPA-40Z', 'grup' => 'CPE/CPA'],
+        ['spindle' => 'CPE-41 or CPA-41Z', 'grup' => 'CPE/CPA'],
+        ['spindle' => 'CPE-42 or CPA-42Z', 'grup' => 'CPE/CPA'],
+        ['spindle' => 'CPE-51 or CPA-51Z', 'grup' => 'CPE/CPA'],
+        ['spindle' => 'CPE-52 or CPA-52Z', 'grup' => 'CPE/CPA'],
+        ['spindle' => 'V-71', 'grup' => 'V'],
+        ['spindle' => 'V-72', 'grup' => 'V'],
+        ['spindle' => 'V-73', 'grup' => 'V'],
+        ['spindle' => 'V-74', 'grup' => 'V'],
+        ['spindle' => 'V-75', 'grup' => 'V'],
     ];
 
     /**
@@ -444,6 +450,12 @@ class ViscometerProfile extends CalibrationProfile
     public function kode(): string
     {
         return 'viscometer';
+    }
+
+    /** Lapis 1: angka TK & SMC Brookfield (`tabel-standar-viscometer.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarViscometer::skemaAcuan();
     }
 
     public function namaAlatKemampuan(): string
@@ -905,7 +917,7 @@ class ViscometerProfile extends CalibrationProfile
     {
         $cari = mb_strtolower(trim($model));
 
-        foreach (self::TABEL_TK as $baris) {
+        foreach (self::tabelTk() as $baris) {
             if (mb_strtolower($baris['badan']) === $cari || mb_strtolower($baris['layar']) === $cari) {
                 return $baris['tk'];
             }
@@ -914,12 +926,61 @@ class ViscometerProfile extends CalibrationProfile
         return null;
     }
 
+    /**
+     * Tabel D-2 lengkap: label kode ([TABEL_TK]) + angka TK data acuan
+     * ([TabelStandarViscometer::tk]) dipasang per posisi baris master.
+     *
+     * @return list<array{badan: string, layar: string, tk: float}>
+     */
+    public static function tabelTk(): array
+    {
+        return self::pasangkan(self::TABEL_TK, TabelStandarViscometer::tk(), 'tk');
+    }
+
+    /**
+     * Tabel D-1 lengkap: label spindle & grup ([TABEL_SMC]) + angka SMC data
+     * acuan ([TabelStandarViscometer::smc]), per posisi baris master.
+     *
+     * @return list<array{spindle: string, smc: float, grup: string}>
+     */
+    public static function tabelSmc(): array
+    {
+        $hasil = [];
+
+        foreach (self::pasangkan(self::TABEL_SMC, TabelStandarViscometer::smc(), 'smc') as $b) {
+            $hasil[] = ['spindle' => $b['spindle'], 'smc' => $b['smc'], 'grup' => $b['grup']];
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Pasang angka acuan ke label kode per posisi. Jumlah beda = data acuan
+     * tidak lagi sebaris dengan label lembar kerja — gagal keras, jangan
+     * memasang SMC spindle lain diam-diam.
+     *
+     * @param  list<array<string, string>>  $label
+     * @param  list<float>  $angka
+     * @return list<array<string, string|float>>
+     */
+    private static function pasangkan(array $label, array $angka, string $kunci): array
+    {
+        if (count($label) !== count($angka)) {
+            throw new RuntimeException(sprintf(
+                'Data acuan viscometer brookfield.%s berisi %d angka, label lembar kerja %d baris.',
+                $kunci, count($angka), count($label),
+            ));
+        }
+
+        return array_map(static fn (array $l, float $x): array => $l + [$kunci => $x], $label, $angka);
+    }
+
     /** SMC dari kode spindle. */
     public function smcSpindle(string $spindle): ?float
     {
         $cari = mb_strtolower(trim($spindle));
 
-        foreach (self::TABEL_SMC as $baris) {
+        foreach (self::tabelSmc() as $baris) {
             if (mb_strtolower($baris['spindle']) === $cari) {
                 return $baris['smc'];
             }
@@ -1298,7 +1359,7 @@ class ViscometerProfile extends CalibrationProfile
                                     'nilai' => $m['badan'],
                                     'label' => sprintf('%s / %s (TK %s)', $m['badan'], $m['layar'], $m['tk']),
                                 ],
-                                self::TABEL_TK,
+                                self::tabelTk(),
                             ),
                         ),
                     ],
@@ -1471,7 +1532,7 @@ class ViscometerProfile extends CalibrationProfile
                 'label' => sprintf('%s (SMC %s)', $s['spindle'], $s['smc']),
                 'grup' => $s['grup'],
             ],
-            self::TABEL_SMC,
+            self::tabelSmc(),
         );
 
         $field = [];

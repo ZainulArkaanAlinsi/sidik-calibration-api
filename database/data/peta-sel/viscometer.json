@@ -1,0 +1,65 @@
+{
+ "format": 1,
+ "kode_profil": "viscometer",
+ "sumber_json": "tabel-standar-viscometer.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-analitik.py (viscometer); dulu angka tk/smc ViscometerProfile::TABEL_TK/TABEL_SMC (22 Okt 2026). Lembar 'MPE Visco' identik di kedua master (5. Viscometer 86068360 terbaru .xlsm & Master Olah Data_Viscometer.xlsm); ekspor CSV kedua master di repo sebaris dengan .xlsm; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "Hanya ANGKA (D6:D17 TK, D22:D84 SMC) sebagai daftar urut baris; label model/spindle & grup tetap kode (lapis 3) dan dipasangkan per posisi — kode menulis 'SC4-18'/'CPE/CPA', master 'sc4-18'/'CPE or CPA'. Generator mengadu label master ke label kode dan menolak urutan yang bergeser; jangkar menjaga baris pertama/terakhir kedua tabel; ViscometerProfile menolak jumlah angka yang beda dari jumlah label."
+ ],
+ "lembar_wajib": [
+  "MPE Visco"
+ ],
+ "jangkar": [
+  {
+   "sel": "MPE Visco!A3",
+   "teks": "Table D-2 for finding the TK (Torque Constant) value"
+  },
+  {
+   "sel": "MPE Visco!D5",
+   "teks": "TK"
+  },
+  {
+   "sel": "MPE Visco!B6",
+   "teks": "DV2TLV"
+  },
+  {
+   "sel": "MPE Visco!B17",
+   "teks": "2.5DV2THB"
+  },
+  {
+   "sel": "MPE Visco!A19",
+   "teks": "Table D-1 for finding the SMC (Spindle Multiplier Constant) value"
+  },
+  {
+   "sel": "MPE Visco!D21",
+   "teks": "SMC"
+  },
+  {
+   "sel": "MPE Visco!C22",
+   "teks": "RV1"
+  },
+  {
+   "sel": "MPE Visco!C84",
+   "teks": "V-75"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "brookfield.tk",
+   "tipe": "daftar_angka",
+   "rentang": "MPE Visco!D6:D17"
+  },
+  {
+   "jalur": "brookfield.smc",
+   "tipe": "daftar_angka",
+   "rentang": "MPE Visco!D22:D84"
+  }
+ ],
+ "tidak_dipetakan": [
+  "Label model (badan/layar) & spindle + grup (TABEL_TK/TABEL_SMC) — pilihan lembar kerja, lapis 3.",
+  "Nilai larutan @25 °C & u_persen (TITIK) — DITAHAN: master terbaru menulis 0,13 % untuk 100 cP, kode 0,17 % (sertifikat terbit hanya terreproduksi dengan 0,17; docs/pertanyaan-lab-viscometer.md butir 10). Memetakannya dari master mengubah angka.",
+  "JANGKAUAN_LARUTAN & KELONGGARAN_PITA — pita pindai OCR, bukan jalur hitung (lapis 3).",
+  "PERSEN_MPE 1 %, PEMBAGI_CI_SUHU 400, VI_TEMPERATURE 50, VI_KALIBRATOR 200, SUHU_ACUAN 25 — literal rumus/struktur budget, lapis 2.",
+  "_sumber — dokumentasi."
+ ]
+}

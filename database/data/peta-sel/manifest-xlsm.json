@@ -319,6 +319,21 @@
    "ukuran_byte": 167424,
    "terverifikasi": true,
    "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "viscometer",
+   "berkas": "5. Viscometer 86068360 terbaru .xlsm",
+   "sha256": "4042b4910097a336276579a34da6d7d281be7c01207310d437f74c7d925d9787",
+   "ukuran_byte": 361984,
+   "terverifikasi": true
+  },
+  {
+   "paket": "viscometer",
+   "berkas": "Master Olah Data_Viscometer.xlsm",
+   "sha256": "48d379e150a16f7827049fd45a1dd13896648c6468c71f9368e6f169c11d430f",
+   "ukuran_byte": 349184,
+   "terverifikasi": true,
+   "catatan": "Lembar MPE Visco identik dengan master terbaru."
   }
  ]
 }

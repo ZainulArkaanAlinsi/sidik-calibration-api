@@ -14,6 +14,7 @@ use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
+use App\Services\Calibration\Profiles\ViscometerProfile;
 use App\Services\Calibration\SpectrophotometerCalculator;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
@@ -630,6 +631,28 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
 
         $this->assertSame($harap, $hitung());
         [$a, $b] = $this->duaJalur('spectrophotometer', $this->v1('spectrophotometer'), $hitung);
+        $this->assertSame($harap, $b);
+        $this->assertSame($a, $b);
+    }
+
+    /**
+     * Viscometer: angka TK & SMC Brookfield (`MPE Visco!D6:D17`, `D22:D84`)
+     * pindah dari `TABEL_TK`/`TABEL_SMC` ke data acuan; label tetap kode.
+     * Tabel terpasang (label + angka) lewat berkas == lewat DB v1 == konstanta
+     * lama, termasuk pencarian TK model & SMC spindle.
+     */
+    public function test_viscometer_v1_setara_json_dan_konstanta_lama(): void
+    {
+        $tkLama = [['badan' => 'DV2TLV', 'layar' => 'LV', 'tk' => 0.09373], ['badan' => '2.5DV2TLV', 'layar' => 'L3', 'tk' => 0.2343], ['badan' => '5DV2TLV', 'layar' => 'L5', 'tk' => 0.4686], ['badan' => '1/4DV2TRV', 'layar' => 'RQ', 'tk' => 0.25], ['badan' => '1/2DV2TRV', 'layar' => 'RH', 'tk' => 0.5], ['badan' => 'DV2TRV', 'layar' => 'RV', 'tk' => 1.0], ['badan' => 'DV2THA', 'layar' => 'HA', 'tk' => 2.0], ['badan' => '2DV2THA', 'layar' => 'A2', 'tk' => 4.0], ['badan' => '2.5DV2THA', 'layar' => 'A3', 'tk' => 5.0], ['badan' => 'DV2THB', 'layar' => 'HB', 'tk' => 8.0], ['badan' => '2DV2THB', 'layar' => 'B3', 'tk' => 16.0], ['badan' => '2.5DV2THB', 'layar' => 'B5', 'tk' => 20.0]];
+        $smcLama = [['spindle' => 'RV1', 'smc' => 1.0, 'grup' => 'RV'], ['spindle' => 'RV2', 'smc' => 4.0, 'grup' => 'RV'], ['spindle' => 'RV3', 'smc' => 10.0, 'grup' => 'RV'], ['spindle' => 'RV4', 'smc' => 20.0, 'grup' => 'RV'], ['spindle' => 'RV5', 'smc' => 40.0, 'grup' => 'RV'], ['spindle' => 'RV6', 'smc' => 100.0, 'grup' => 'RV'], ['spindle' => 'RV7', 'smc' => 400.0, 'grup' => 'RV'], ['spindle' => 'HA1', 'smc' => 1.0, 'grup' => 'HA'], ['spindle' => 'HA2', 'smc' => 4.0, 'grup' => 'HA'], ['spindle' => 'HA3', 'smc' => 10.0, 'grup' => 'HA'], ['spindle' => 'HA4', 'smc' => 20.0, 'grup' => 'HA'], ['spindle' => 'HA5', 'smc' => 40.0, 'grup' => 'HA'], ['spindle' => 'HA6', 'smc' => 100.0, 'grup' => 'HA'], ['spindle' => 'HA7', 'smc' => 400.0, 'grup' => 'HA'], ['spindle' => 'HB1', 'smc' => 1.0, 'grup' => 'HB'], ['spindle' => 'HB2', 'smc' => 4.0, 'grup' => 'HB'], ['spindle' => 'HB3', 'smc' => 10.0, 'grup' => 'HB'], ['spindle' => 'HB4', 'smc' => 20.0, 'grup' => 'HB'], ['spindle' => 'HB5', 'smc' => 40.0, 'grup' => 'HB'], ['spindle' => 'HB6', 'smc' => 100.0, 'grup' => 'HB'], ['spindle' => 'HB7', 'smc' => 400.0, 'grup' => 'HB'], ['spindle' => 'LV1', 'smc' => 6.4, 'grup' => 'LV'], ['spindle' => 'LV2', 'smc' => 32.0, 'grup' => 'LV'], ['spindle' => 'LV3', 'smc' => 128.0, 'grup' => 'LV'], ['spindle' => 'LV4 or 4B2', 'smc' => 640.0, 'grup' => 'LV'], ['spindle' => 'LV5', 'smc' => 1280.0, 'grup' => 'LV'], ['spindle' => 'LV-2C', 'smc' => 32.0, 'grup' => 'LV'], ['spindle' => 'LV-3C', 'smc' => 128.0, 'grup' => 'LV'], ['spindle' => 'SPIRAL', 'smc' => 105.0, 'grup' => 'SPIRAL'], ['spindle' => 'T-A', 'smc' => 20.0, 'grup' => 'T'], ['spindle' => 'T-B', 'smc' => 40.0, 'grup' => 'T'], ['spindle' => 'T-C', 'smc' => 100.0, 'grup' => 'T'], ['spindle' => 'T-D', 'smc' => 200.0, 'grup' => 'T'], ['spindle' => 'T-E', 'smc' => 500.0, 'grup' => 'T'], ['spindle' => 'T-F', 'smc' => 1000.0, 'grup' => 'T'], ['spindle' => 'ULA', 'smc' => 0.64, 'grup' => 'ULA'], ['spindle' => 'DIN-81', 'smc' => 3.7, 'grup' => 'DIN'], ['spindle' => 'DIN-82', 'smc' => 3.75, 'grup' => 'DIN'], ['spindle' => 'DIN-83', 'smc' => 12.09, 'grup' => 'DIN'], ['spindle' => 'DIN-85', 'smc' => 1.22, 'grup' => 'DIN'], ['spindle' => 'DIN-86', 'smc' => 3.65, 'grup' => 'DIN'], ['spindle' => 'DIN-87', 'smc' => 12.13, 'grup' => 'DIN'], ['spindle' => 'SC4-14', 'smc' => 125.0, 'grup' => 'SC4'], ['spindle' => 'SC4-15', 'smc' => 50.0, 'grup' => 'SC4'], ['spindle' => 'SC4-16', 'smc' => 128.0, 'grup' => 'SC4'], ['spindle' => 'SC4-18', 'smc' => 3.2, 'grup' => 'SC4'], ['spindle' => 'SC4-21', 'smc' => 5.0, 'grup' => 'SC4'], ['spindle' => 'SC4-25', 'smc' => 512.0, 'grup' => 'SC4'], ['spindle' => 'SC4-27', 'smc' => 25.0, 'grup' => 'SC4'], ['spindle' => 'SC4-28', 'smc' => 50.0, 'grup' => 'SC4'], ['spindle' => 'SC4-29', 'smc' => 100.0, 'grup' => 'SC4'], ['spindle' => 'SC4-31', 'smc' => 32.0, 'grup' => 'SC4'], ['spindle' => 'SC4-34', 'smc' => 64.0, 'grup' => 'SC4'], ['spindle' => 'CPE-40 or CPA-40Z', 'smc' => 0.327, 'grup' => 'CPE/CPA'], ['spindle' => 'CPE-41 or CPA-41Z', 'smc' => 1.228, 'grup' => 'CPE/CPA'], ['spindle' => 'CPE-42 or CPA-42Z', 'smc' => 0.64, 'grup' => 'CPE/CPA'], ['spindle' => 'CPE-51 or CPA-51Z', 'smc' => 5.178, 'grup' => 'CPE/CPA'], ['spindle' => 'CPE-52 or CPA-52Z', 'smc' => 9.922, 'grup' => 'CPE/CPA'], ['spindle' => 'V-71', 'smc' => 2.62, 'grup' => 'V'], ['spindle' => 'V-72', 'smc' => 11.1, 'grup' => 'V'], ['spindle' => 'V-73', 'smc' => 53.5, 'grup' => 'V'], ['spindle' => 'V-74', 'smc' => 543.0, 'grup' => 'V'], ['spindle' => 'V-75', 'smc' => 213.0, 'grup' => 'V']];
+        $harap = [$tkLama, $smcLama, 0.2343, 640.0, 0.327];
+        $hitung = fn (): array => [
+            ViscometerProfile::tabelTk(), ViscometerProfile::tabelSmc(),
+            (new ViscometerProfile)->tkModel('L3'), (new ViscometerProfile)->smcSpindle('lv4 or 4b2'), (new ViscometerProfile)->smcSpindle('CPE-40 or CPA-40Z'),
+        ];
+
+        $this->assertSame($harap, $hitung());
+        [$a, $b] = $this->duaJalur('viscometer', $this->v1('viscometer'), $hitung);
         $this->assertSame($harap, $b);
         $this->assertSame($a, $b);
     }
