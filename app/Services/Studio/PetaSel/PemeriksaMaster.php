@@ -307,9 +307,25 @@ final class PemeriksaMaster
             case 'bilangan_bulat':
             case 'tanggal':
             case 'angka_atau_teks':
+            case 'bendera_akhiran':
                 $a = Alamat::urai((string) $e['sel']);
                 $alamat = Alamat::sel($a['lembar'], $a['k1'], $a['b1'] + $geser);
                 $sel = $this->sel($indeks, $a['lembar'], $a['k1'], $a['b1'] + $geser);
+
+                // Nominal ber-bintang (`0.002*`, keping kedua Anak Timbangan):
+                // `buang_akhiran` membaca angkanya, `bendera_akhiran` benderanya.
+                if ($e['tipe'] === 'bendera_akhiran') {
+                    return ! is_int($sel['n'] ?? null) && ! is_float($sel['n'] ?? null)
+                        && str_ends_with(trim((string) ($sel['s'] ?? '')), (string) $e['akhiran']);
+                }
+
+                if (isset($e['buang_akhiran']) && ! is_int($sel['n'] ?? null) && ! is_float($sel['n'] ?? null)) {
+                    $s = trim((string) ($sel['s'] ?? ''));
+
+                    if (str_ends_with($s, (string) $e['buang_akhiran']) && is_numeric($x = trim(substr($s, 0, -strlen((string) $e['buang_akhiran']))))) {
+                        $sel = ['n' => (float) $x, 's' => $x];
+                    }
+                }
 
                 return match ($e['tipe']) {
                     'teks' => $this->teks($sel, $alamat, $masalah),

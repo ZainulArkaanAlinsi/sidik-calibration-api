@@ -78,7 +78,7 @@ final class PetaSel
 {
     public const FORMAT = 1;
 
-    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek', 'daftar_kunci', 'angka_atau_teks'];
+    public const TIPE_EKSTRAK = ['teks', 'angka', 'bilangan_bulat', 'tanggal', 'peta_angka', 'daftar_angka', 'daftar_objek', 'daftar_kunci', 'angka_atau_teks', 'bendera_akhiran'];
 
     /** @param  array<string, mixed>  $isi */
     private function __construct(
@@ -342,8 +342,17 @@ final class PetaSel
                 case 'bilangan_bulat':
                 case 'tanggal':
                 case 'angka_atau_teks':
+                case 'bendera_akhiran':
                     if (($x = $selSah($e['sel'] ?? null)) !== null) {
                         $m[] = "{$label}: {$x}";
+                    }
+
+                    if ($e['tipe'] === 'bendera_akhiran' && (! is_string($e['akhiran'] ?? null) || $e['akhiran'] === '')) {
+                        $m[] = "{$label}: bendera_akhiran butuh akhiran (teks)";
+                    }
+
+                    if (isset($e['buang_akhiran']) && ($e['tipe'] !== 'angka' || ! is_string($e['buang_akhiran']) || $e['buang_akhiran'] === '')) {
+                        $m[] = "{$label}: buang_akhiran hanya untuk tipe angka, teks tidak kosong";
                     }
 
                     break;

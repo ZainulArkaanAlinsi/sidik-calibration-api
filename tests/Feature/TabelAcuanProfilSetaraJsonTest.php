@@ -13,6 +13,7 @@ use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
+use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
@@ -31,9 +32,11 @@ use App\Services\Calibration\ThermocoupleCalculator;
 use App\Services\Calibration\ThermohygroCalculator;
 use App\Services\Calibration\ThermometerGlassCalculator;
 use App\Services\Calibration\TimbanganCalculator;
+use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use ReflectionClass;
 use Tests\TestCase;
+use Tests\Unit\AnakTimbanganMasterTest;
 use Tests\Unit\DialIndicatorMasterTest;
 use Tests\Unit\HeightGaugeMasterTest;
 use Tests\Unit\JangkaSorongMasterTest;
@@ -537,6 +540,45 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         }
 
         $this->assertSame(['10' => ['ukuran_inch'], '1' => ['ukuran_um'], '0.08' => ['kawat_preferred_mm']], $tanda);
+    }
+
+    /** Anak Timbangan (workbook F2 IMTE-LQ-197): tabel + hitung sesi master (fixture AnakTimbanganMasterTest). */
+    public function test_anak_timbangan_v1_setara_json(): void
+    {
+        $v1 = $this->v1('anak_timbangan');
+        $t = new AnakTimbanganMasterTest('hitung');
+        Closure::bind(static function (): void {
+            self::$fixture ??= json_decode((string) file_get_contents(base_path('tests/Fixtures/anak-timbangan-master.json')), true);
+        }, null, AnakTimbanganMasterTest::class)();
+
+        [$a, $b] = $this->duaJalur('anak_timbangan', $v1, function () use ($t): array {
+            $h = [
+                'keping' => TabelStandarAnakTimbangan::semuaKeping(), 'kembar' => TabelStandarAnakTimbangan::kepingKembar(),
+                'set' => TabelStandarAnakTimbangan::setStandar(), 'neraca' => TabelStandarAnakTimbangan::semuaTimbangan(),
+                'konstanta' => TabelStandarAnakTimbangan::konstanta(), 'sengketa' => TabelStandarAnakTimbangan::densitasDisengketakan(),
+                'meter' => TabelStandarAnakTimbangan::meterLingkungan('Thermobarometer'),
+            ];
+
+            foreach ([0.001, 0.002, 0.1, 0.5, 2.0, 100.0, 500.0, 1000.0, 10000.0, 20000.0] as $n) {
+                $h['cari'][] = TabelStandarAnakTimbangan::cariKeping($n);
+
+                foreach (['E2', 'F1', 'F2', 'M1', 'M2', 'M3'] as $kelas) {
+                    $h['dm'][] = [TabelStandarAnakTimbangan::densitas($n, $kelas), TabelStandarAnakTimbangan::mpe($n, $kelas)];
+                }
+
+                $h['neraca_terbaik'][] = TabelStandarAnakTimbangan::timbanganTerbaikUntuk($n);
+            }
+
+            foreach ([['suhu', 22.4], ['kelembaban', 61.0], ['tekanan', 955.0]] as [$besaran, $nilai]) {
+                $h['indeks'][] = TabelStandarAnakTimbangan::titikIndeks('Thermobarometer', $besaran, $nilai);
+            }
+
+            $h['hitung'] = (fn (): array => $this->hitung())->call($t);
+
+            return $h;
+        });
+        $this->assertNotEmpty($a['hitung']['titik']);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 
     /** Suhu 3 alat (Thermocouple, Thermometer Glass, Thermohygro): tabel + sesi master ketiganya. */

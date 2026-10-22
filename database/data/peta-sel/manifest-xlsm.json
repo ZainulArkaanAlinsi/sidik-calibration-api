@@ -264,6 +264,30 @@
    "sha256": "86951e44726504a4cdbd4c5976a6ca69d6c164a286424549705a1afcfb438b7f",
    "ukuran_byte": 188928,
    "terverifikasi": true
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 1.xlsx",
+   "sha256": "9e7a71fa344a804c5da57a99dc532dd834e29719c86355d8a672a2a5b9c9b93c",
+   "ukuran_byte": 792735,
+   "terverifikasi": true,
+   "catatan": "Sumber generator gen-tabel-standar-anak-timbangan.py (xlsx, tidak terenkripsi)."
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 2.xlsx",
+   "sha256": "ac11c88ad9d73e5360eaa479e805788a032011198cd0bcb97a7a6545e0394cac",
+   "ukuran_byte": 791898,
+   "terverifikasi": true,
+   "catatan": "Sel yang dipetakan identik dengan hal 1."
+  },
+  {
+   "paket": "anak_timbangan",
+   "berkas": "Anak timbangan F2_IMTE-LQ-197 hal 3.xlsx",
+   "sha256": "a36655d6b8e134986aae36b1e9c39826b465f666b7f167aab28f9e8c3fedf866",
+   "ukuran_byte": 791724,
+   "terverifikasi": true,
+   "catatan": "Sel yang dipetakan identik dengan hal 1."
   }
  ]
 }
