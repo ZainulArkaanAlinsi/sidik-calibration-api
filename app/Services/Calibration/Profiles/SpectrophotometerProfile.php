@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\SpectrophotometerCalculator;
+use App\Services\Calibration\TabelStandarSpectrophotometer;
 use App\Support\Regresi;
 use Illuminate\Support\Carbon;
 
@@ -313,6 +314,12 @@ class SpectrophotometerProfile extends CalibrationProfile
         return 'spectrophotometer';
     }
 
+    /** Lapis 1: tabel celah Spectral Bandwidth (`tabel-standar-spectrophotometer.json`). */
+    public function skemaAcuan(): ?array
+    {
+        return TabelStandarSpectrophotometer::skemaAcuan();
+    }
+
     public function namaAlatKemampuan(): string
     {
         return 'Spectrophotometer';
@@ -596,6 +603,20 @@ class SpectrophotometerProfile extends CalibrationProfile
     public function nolBelakangStandarDibuang(): bool
     {
         return false;
+    }
+
+    /**
+     * Format sel lembar SERTIFIKAT master (K-50-15) dari `format_sertifikat`
+     * peta sel: Standard/UUT/Correction `0.0` di ketiga blok (`C19:O52`),
+     * U95 `0.00` (`M29`/`M43`/`M53`), k `0` (`Q30`/`Q44`/`Q54`) — sama dengan
+     * [desimalSertifikat], [desimalU95], [desimalFaktorCakupan] dan
+     * [nolBelakangStandarDibuang] di atas. Hanya cetak.
+     *
+     * @return array<string, string>
+     */
+    public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
+    {
+        return $this->formatSertifikatMaster(null, $titikUkur);
     }
 
     /**

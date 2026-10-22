@@ -14,6 +14,7 @@ use App\Services\Calibration\PistonVolumeCalculator;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
+use App\Services\Calibration\SpectrophotometerCalculator;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
@@ -26,6 +27,7 @@ use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarPistonVolume;
 use App\Services\Calibration\TabelStandarPutaran;
 use App\Services\Calibration\TabelStandarSieve;
+use App\Services\Calibration\TabelStandarSpectrophotometer;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TabelStandarTids;
 use App\Services\Calibration\TabelStandarTimbangan;
@@ -607,6 +609,28 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         $this->assertSame($lama, $hitung());
         [$a, $b] = $this->duaJalur('refractometer', $this->v1('refractometer'), $hitung);
         $this->assertSame($lama, $b);
+        $this->assertSame($a, $b);
+    }
+
+    /**
+     * Spectrophotometer: tabel celah Spectral Bandwidth (`PERHITUNGAN U95%!N10:O27`)
+     * pindah dari konstanta `GAP_SPECTRAL_BANDWIDTH` ke data acuan. Pasangan &
+     * rata-rata celah (sel Q30) lewat berkas == lewat DB v1 == konstanta lama.
+     */
+    public function test_spectrophotometer_v1_setara_json_dan_konstanta_lama(): void
+    {
+        $lama = [
+            [241.12, 241.12], [249.89, 250.03], [260.18, 260.19], [278.13, 278.10], [287.22, 287.52], [293.38, 293.43],
+            [333.48, 333.47], [345.38, 345.42], [361.25, 361.12], [385.61, 385.80], [416.25, 416.57], [451.45, 451.32],
+            [467.82, 467.90], [473.54, 473.47], [485.23, 485.25], [536.56, 536.86], [640.50, 640.79], [652.67, 652.66],
+        ];
+        $celah = array_map(static fn (array $b): float => $b[0] - $b[1], $lama);
+        $harap = [$lama, abs(array_sum($celah) / count($celah))];
+        $hitung = fn (): array => [TabelStandarSpectrophotometer::celahSpectralBandwidth(), (new SpectrophotometerCalculator)->celahSpectralBandwidth()];
+
+        $this->assertSame($harap, $hitung());
+        [$a, $b] = $this->duaJalur('spectrophotometer', $this->v1('spectrophotometer'), $hitung);
+        $this->assertSame($harap, $b);
         $this->assertSame($a, $b);
     }
 

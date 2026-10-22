@@ -82,6 +82,7 @@ class StudioFormatSertifikatTest extends TestCase
             'tids' => ['tids', [['yokogawa', 'tids', 100.0, $tids('yokogawa')], ['yokogawa', 'tids', 100.0, $tids('constant')], ['recorder', 'tids', 100.0, $tids('recorder')]]],
             'sieve' => ['sieve', [[null, 'sieve', 19.0, $kosong]]],
             'refractometer' => ['refractometer', [[null, 'refractometer', 1.33659, $kosong], [null, 'refractometer', 1.39986, $kosong]]],
+            'spectrophotometer' => ['spectrophotometer', [[null, 'spectrophotometer', 279.6, $kosong], [null, 'spectrophotometer', 475.2, $kosong], [null, 'spectrophotometer', 9.9, $kosong]]],
             'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, $tekanan('druck07g')], ['druck13g', 'pressure_gauge', 100.0, $tekanan('druck13g')], ['spmk', 'pressure_gauge', 5.0, $tekanan('spmk')], ['differential', 'differential_pressure', 2.0, $tekanan('differential')]]],
         ];
     }

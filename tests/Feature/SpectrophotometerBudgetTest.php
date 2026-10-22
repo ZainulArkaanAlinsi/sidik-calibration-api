@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\SpectrophotometerCalculator;
+use App\Services\Calibration\TabelStandarSpectrophotometer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -274,8 +275,8 @@ class SpectrophotometerBudgetTest extends TestCase
     }
 
     /**
-     * Celah spectral bandwidth dihitung dari tabel `N10:O27` yang ditanam di
-     * kelas kalkulator, bukan ditulis sebagai konstanta hasil. Jadi kalau satu
+     * Celah spectral bandwidth dihitung dari tabel `N10:O27` (data acuan
+     * `TabelStandarSpectrophotometer`), bukan ditulis sebagai konstanta hasil. Jadi kalau satu
      * baris tabelnya salah salin, angka ini yang berubah.
      */
     public function test_celah_spectral_bandwidth_cocok_sel_q30(): void
@@ -286,7 +287,7 @@ class SpectrophotometerBudgetTest extends TestCase
             self::TOLERANSI,
         );
 
-        $this->assertCount(18, SpectrophotometerCalculator::GAP_SPECTRAL_BANDWIDTH);
+        $this->assertCount(18, TabelStandarSpectrophotometer::celahSpectralBandwidth());
     }
 
     public function test_uc_veff_k_dan_u95_cocok_master(): void

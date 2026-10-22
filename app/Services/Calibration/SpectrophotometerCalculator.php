@@ -67,39 +67,10 @@ class SpectrophotometerCalculator
 
     public const GRUP_TRANSMITAN = 'akurasi_transmitan';
 
-    /**
-     * Tabel celah spectral bandwidth, sel `N10:O27` di sheet `PERHITUNGAN U95%`.
-     * Pasangan `[nilai acuan, nilai terbaca]` dalam nm; sumbernya tercetak di
-     * sel N31: **SNSU PK.F-01:2020 Panduan Kalibrasi Spektrofotometer UV-Vis**.
-     *
-     * Datanya HARDCODE di dalam sheet-nya sendiri (bukan external reference
-     * yang putus), jadi aman disalin. Disalin sebagai PASANGAN, bukan sebagai
-     * hasil rata-ratanya (0,0755…), supaya angka yang masuk budget tetap bisa
-     * ditelusuri balik ke barisnya — dan supaya nambah/ngurangin baris waktu
-     * panduannya direvisi nggak perlu ngitung tangan.
-     *
-     * @var list<array{0: float, 1: float}>
-     */
-    public const GAP_SPECTRAL_BANDWIDTH = [
-        [241.12, 241.12],
-        [249.89, 250.03],
-        [260.18, 260.19],
-        [278.13, 278.10],
-        [287.22, 287.52],
-        [293.38, 293.43],
-        [333.48, 333.47],
-        [345.38, 345.42],
-        [361.25, 361.12],
-        [385.61, 385.80],
-        [416.25, 416.57],
-        [451.45, 451.32],
-        [467.82, 467.90],
-        [473.54, 473.47],
-        [485.23, 485.25],
-        [536.56, 536.86],
-        [640.50, 640.79],
-        [652.67, 652.66],
-    ];
+    // Tabel celah spectral bandwidth (`PERHITUNGAN U95%!N10:O27`, SNSU
+    // PK.F-01:2020) — dulu konstanta `GAP_SPECTRAL_BANDWIDTH` — kini data
+    // acuan lapis 1: [TabelStandarSpectrophotometer] (paket
+    // `spectrophotometer`, generator `gen-tabel-standar-analitik.py`).
 
     /**
      * Pembagi ci Spectral Bandwidth di blok %T: `I50 = (E50/1100)*100`.
@@ -139,7 +110,7 @@ class SpectrophotometerCalculator
     {
         $celah = array_map(
             static fn (array $baris): float => $baris[0] - $baris[1],
-            self::GAP_SPECTRAL_BANDWIDTH,
+            TabelStandarSpectrophotometer::celahSpectralBandwidth(),
         );
 
         return abs(array_sum($celah) / count($celah));
@@ -352,7 +323,7 @@ class SpectrophotometerCalculator
                 'sumber' => 'spectral_bandwidth',
                 'keterangan' => sprintf(
                     'Rata-rata celah %s nm dari %d pasang data SNSU PK.F-01:2020 (÷√3)',
-                    $this->angka($celah), count(self::GAP_SPECTRAL_BANDWIDTH),
+                    $this->angka($celah), count(TabelStandarSpectrophotometer::celahSpectralBandwidth()),
                 ),
                 'distribusi' => 'persegi',
                 'u' => $celah / $sqrt3,
@@ -434,7 +405,7 @@ class SpectrophotometerCalculator
                 'keterangan' => sprintf(
                     'Rata-rata celah %s nm dari %d pasang data SNSU PK.F-01:2020 (÷√3), '
                     .'ci = (celah / %s nm) × 100 buat nerjemahin nm ke %%T',
-                    $this->angka($celah), count(self::GAP_SPECTRAL_BANDWIDTH), $this->angka(self::RENTANG_SPEKTRAL_NM),
+                    $this->angka($celah), count(TabelStandarSpectrophotometer::celahSpectralBandwidth()), $this->angka(self::RENTANG_SPEKTRAL_NM),
                 ),
                 'distribusi' => 'persegi',
                 'u' => $celah / $sqrt3,

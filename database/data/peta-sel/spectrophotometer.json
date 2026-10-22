@@ -1,0 +1,95 @@
+{
+ "format": 1,
+ "kode_profil": "spectrophotometer",
+ "sumber_json": "tabel-standar-spectrophotometer.json",
+ "bukti": [
+  "Alamat = docs/skrip/gen-tabel-standar-analitik.py (spectrophotometer); dulu konstanta kode SpectrophotometerCalculator::GAP_SPECTRAL_BANDWIDTH (22 Okt 2026). Ekspor CSV repo Project-PT-Sidik/alat-alat-Pt-Sidik/instrument-analiitk/Master_Olah_Data_Spectrofotometer sebaris dengan .xlsm di sel ini; ekstraksi CSV = JSON (StudioPetaSelProfilTest), .xlsm asli diverifikasi docs/skrip/verifikasi-peta-xlsm.py (manifest-xlsm.json).",
+  "PERHITUNGAN U95%!N10:O27 = 18 pasangan [nilai acuan, nilai terbaca] nm, sumber tercetak N31 (SNSU PK.F-01:2020). Q30 = ABS(AVERAGE(P10:P27)), P = N - O: rata-rata tetap dihitung kode (lapis 2); master merata-ratakan TEPAT 18 baris, jadi min_baris 18."
+ ],
+ "lembar_wajib": [
+  "PERHITUNGAN U95%"
+ ],
+ "jangkar": [
+  {
+   "sel": "PERHITUNGAN U95%!N8",
+   "teks": "Spectral Bandwidth"
+  },
+  {
+   "sel": "PERHITUNGAN U95%!P8",
+   "teks": "Gap (nm)"
+  },
+  {
+   "sel": "PERHITUNGAN U95%!N30",
+   "teks": "Average (nm)"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "celah_spectral_bandwidth",
+   "tipe": "daftar_objek",
+   "kunci": "acuan_nm",
+   "kolom": {
+    "acuan_nm": "PERHITUNGAN U95%!N10:N27",
+    "terbaca_nm": "PERHITUNGAN U95%!O10:O27"
+   },
+   "min_baris": 18
+  }
+ ],
+ "tidak_dipetakan": [
+  "Drift standar 10 % U95 (E13 = E11*0.1), pembagi 1100 nm ci %T (I50 = (E50/1100)*100), vi per komponen — literal di rumus budget, lapis 2.",
+  "Nilai filter Holmium/Didynium/%T (SpectrophotometerProfile::TITIK[*]['nilai']) — titik pra-cetak lembar kerja (lapis 3); isinya = nilai sertifikat filter STANDAR_KALIBRATOR!J5:J.. (rekalibrasi 15 Apr 2025). Kandidat lapis 1 berikutnya: kini bentuk lembar kerja, belum jalur hitung.",
+  "U95 sertifikat filter (STANDAR_KALIBRATOR!M5 dst.) & CMC — tabel standards / calibration_capabilities (DB).",
+  "_sumber — dokumentasi."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026; per sel dibekukan di tests/Fixtures/peta-sel-xlsm/format-sertifikat.json. Sama dengan render sebelumnya (desimalSertifikat 1, desimalU95 2, desimalFaktorCakupan 0, nol belakang Standard dipertahankan). Blok 4 baris 57 (sisa tautan luar [3], #REF!) tidak dicetak.",
+  "entri": [
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!C19:C28",
+     "SERTIFIKAT!C34:C42",
+     "SERTIFIKAT!C48:C52"
+    ],
+    "format": "0.0",
+    "catatan": "Standard (nm / %T), tiga blok"
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!J19:J28",
+     "SERTIFIKAT!J34:J42",
+     "SERTIFIKAT!J48:J52"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!O19:O28",
+     "SERTIFIKAT!O34:O42",
+     "SERTIFIKAT!O48:O52"
+    ],
+    "format": "0.0"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!M29",
+     "SERTIFIKAT!M43",
+     "SERTIFIKAT!M53"
+    ],
+    "format": "0.00"
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!Q30",
+     "SERTIFIKAT!Q44",
+     "SERTIFIKAT!Q54"
+    ],
+    "format": "0"
+   }
+  ]
+ }
+}

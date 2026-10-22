@@ -20,6 +20,11 @@ Paket:
     kode tidak bisa mewakilinya dengan satu koefisien. Batas tabel = `B4` dan
     `B116` (round 10: kolom T menumpuk derau `30.2000000000002`).
 
+  spectrophotometer — `Master Olah Data_Spectrofotometer.xlsm`, lembar
+    `PERHITUNGAN U95%` N10:O27: 18 pasangan [nilai acuan, nilai terbaca] (nm)
+    tabel celah Spectral Bandwidth (sumber tercetak N31: SNSU PK.F-01:2020).
+    Dulu `SpectrophotometerCalculator::GAP_SPECTRAL_BANDWIDTH`. Rata-rata
+    `Q30 = ABS(AVERAGE(P10:P27))` tetap dihitung kode (lapis 2).
 """
 import io
 import json
@@ -102,6 +107,22 @@ def refractometer():
     })
 
 
+def spectrophotometer():
+    t = "PERHITUNGAN U95%"
+    for a, h in [("N8", "Spectral Bandwidth"), ("P8", "Gap (nm)"), ("N29", "Average (%)"), ("N30", "Average (nm)")]:
+        label(t, a, h)
+    if not str(sel(t, "N31") or "").startswith("Sumber : SNSU PK.F-01:2020"):
+        sys.exit(f"MENOLAK: {t}!N31 = {sel(t, 'N31')!r}, sumber tabel berubah")
+    baris = [{"acuan_nm": angka(t, f"N{b}"), "terbaca_nm": angka(t, f"O{b}")} for b in range(10, 28)]
+    if sel(t, "N28") is not None:
+        sys.exit(f"MENOLAK: {t}!N28 terisi — tabel lebih dari 18 baris, AVERAGE(P10:P27) master tidak mencakupnya")
+    tulis("tabel-standar-spectrophotometer.json", {
+        "_sumber": "Master Olah Data_Spectrofotometer.xlsm 'PERHITUNGAN U95%'!N10:O27 (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+        "celah_spectral_bandwidth": baris,
+    })
+
+
 {
     "refractometer": refractometer,
+    "spectrophotometer": spectrophotometer,
 }.get(PAKET, lambda: sys.exit(f"paket tak dikenal: {PAKET}"))()

@@ -311,6 +311,14 @@
    "ukuran_byte": 183296,
    "terverifikasi": true,
    "catatan": "Salinan '.xlsm1' dan '.xlsm2' di folder yang sama ber-sha256 identik."
+  },
+  {
+   "paket": "spectrophotometer",
+   "berkas": "Master Olah Data_Spectrofotometer.xlsm",
+   "sha256": "c03984f831cd7e91dbdb7fce328eeb48ff5079dca2d716bcd7084c90e0d2ff31",
+   "ukuran_byte": 167424,
+   "terverifikasi": true,
+   "catatan": "Salinan '.xlsm1' di folder yang sama ber-sha256 identik."
   }
  ]
 }

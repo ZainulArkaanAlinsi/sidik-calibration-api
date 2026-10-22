@@ -96,6 +96,8 @@ class StudioPetaSelProfilTest extends TestCase
             'do_meter' => ['do_meter', [['instrument-analiitk/Master_Olah_Data_DO_Meter', null, 2]]],
             // Refractometer: 2 koefisien + 2 batas Tab Konversi Temperatur.
             'refractometer' => ['refractometer', [['instrument-analiitk/Master_Olah_Data_Refractometer', null, 4]]],
+            // Spectrophotometer: tabel celah Spectral Bandwidth (satu daftar 18 baris).
+            'spectrophotometer' => ['spectrophotometer', [['instrument-analiitk/Master_Olah_Data_Spectrofotometer', null, 1]]],
             // Suhu 3 alat: Thermocouple 5 tabel + 9 drift + 4 dryblock + 2 konstanta + CMC;
             // Glass 7 tabel + 9 drift + 4 oilbath + tipe + CMC (22); Thermohygro 2 tabel + 10 angka + CMC.
             'suhu_3alat' => ['suhu_3alat', [

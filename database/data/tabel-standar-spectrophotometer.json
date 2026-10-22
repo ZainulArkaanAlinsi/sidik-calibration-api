@@ -1,0 +1,77 @@
+{
+ "_sumber": "Master Olah Data_Spectrofotometer.xlsm 'PERHITUNGAN U95%'!N10:O27 (docs/skrip/gen-tabel-standar-analitik.py). JANGAN diedit tangan.",
+ "celah_spectral_bandwidth": [
+  {
+   "acuan_nm": 241.12,
+   "terbaca_nm": 241.12
+  },
+  {
+   "acuan_nm": 249.89,
+   "terbaca_nm": 250.03
+  },
+  {
+   "acuan_nm": 260.18,
+   "terbaca_nm": 260.19
+  },
+  {
+   "acuan_nm": 278.13,
+   "terbaca_nm": 278.1
+  },
+  {
+   "acuan_nm": 287.22,
+   "terbaca_nm": 287.52
+  },
+  {
+   "acuan_nm": 293.38,
+   "terbaca_nm": 293.43
+  },
+  {
+   "acuan_nm": 333.48,
+   "terbaca_nm": 333.47
+  },
+  {
+   "acuan_nm": 345.38,
+   "terbaca_nm": 345.42
+  },
+  {
+   "acuan_nm": 361.25,
+   "terbaca_nm": 361.12
+  },
+  {
+   "acuan_nm": 385.61,
+   "terbaca_nm": 385.8
+  },
+  {
+   "acuan_nm": 416.25,
+   "terbaca_nm": 416.57
+  },
+  {
+   "acuan_nm": 451.45,
+   "terbaca_nm": 451.32
+  },
+  {
+   "acuan_nm": 467.82,
+   "terbaca_nm": 467.9
+  },
+  {
+   "acuan_nm": 473.54,
+   "terbaca_nm": 473.47
+  },
+  {
+   "acuan_nm": 485.23,
+   "terbaca_nm": 485.25
+  },
+  {
+   "acuan_nm": 536.56,
+   "terbaca_nm": 536.86
+  },
+  {
+   "acuan_nm": 640.5,
+   "terbaca_nm": 640.79
+  },
+  {
+   "acuan_nm": 652.67,
+   "terbaca_nm": 652.66
+  }
+ ]
+}
