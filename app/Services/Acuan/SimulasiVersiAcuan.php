@@ -136,7 +136,8 @@ final class SimulasiVersiAcuan
         return Equipment::query()
             ->where('organization_id', $organisasiId)
             ->get()
-            ->filter(fn (Equipment $e): bool => $this->registry->untukAlat($e)->kode() === $kode)
+            // Semua profil SEPAKET ikut disimulasikan: satu tabel acuan, satu dampak.
+            ->filter(fn (Equipment $e): bool => $this->registry->untukAlat($e)->kodePaketAcuan() === $kode)
             ->pluck('id')
             ->map(static fn ($id): int => (int) $id)
             ->values()

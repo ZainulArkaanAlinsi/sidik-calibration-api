@@ -77,7 +77,7 @@ class PenentuVersiAcuan
 
         return $this->untukProfil(
             (int) $sesi->organization_id,
-            $profil->kode(),
+            $profil->kodePaketAcuan(),
             $sesi->tanggal_kalibrasi ?? now(),
         );
     }
@@ -171,7 +171,7 @@ class PenentuVersiAcuan
         if ($stempel !== null) {
             $milikSesi = (int) $stempel->organization_id === (int) $sesi->organization_id
                 && $stempel->jenis === PaketAcuanVersi::JENIS_DATA
-                && $stempel->paketAcuan?->kode_profil === $profil->kode();
+                && $stempel->paketAcuan?->kode_profil === $profil->kodePaketAcuan();
 
             if ($milikSesi && in_array($stempel->status, self::STATUS_BERLAKU, true)) {
                 return [

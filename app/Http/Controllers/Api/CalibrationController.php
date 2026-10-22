@@ -373,7 +373,7 @@ class CalibrationController extends Controller
         // `null` untuk profil yang data acuannya belum berversi — kuncinya
         // tetap ada supaya bentuk respons seragam di semua lembar.
         $bentuk['versi_acuan'] = $profil->skemaAcuan() === null ? null : [
-            'paket' => $profil->kode(),
+            'paket' => $profil->kodePaketAcuan(),
             'data' => $versiAcuan === null ? null : [
                 'nomor' => (int) $versiAcuan->nomor_versi,
                 'sha256' => PenentuVersiAcuan::sha256($versiAcuan),
@@ -398,7 +398,7 @@ class CalibrationController extends Controller
 
         return app(PenentuVersiAcuan::class)->untukProfil(
             (int) $request->user()->organization_id,
-            $profil->kode(),
+            $profil->kodePaketAcuan(),
             now(),
         );
     }

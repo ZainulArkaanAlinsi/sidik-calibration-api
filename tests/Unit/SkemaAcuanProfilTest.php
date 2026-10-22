@@ -33,10 +33,32 @@ class SkemaAcuanProfilTest extends TestCase
     /** @return array{skema_versi: int, sumber_json: string, lembar: list<array<string, mixed>>} */
     private function skema(string $kode): array
     {
-        $skema = app(CalibrationProfileRegistry::class)->untukKode($kode)?->skemaAcuan();
+        $skema = app(CalibrationProfileRegistry::class)->untukPaketAcuan($kode)?->skemaAcuan();
         $this->assertNotNull($skema, $kode);
 
         return $skema;
+    }
+
+    /** Daftar dipatok = paket yang benar-benar ber-skema di registry. */
+    public function test_daftar_paket_dipatok(): void
+    {
+        $this->assertSame(self::BERSKEMA, array_keys(app(CalibrationProfileRegistry::class)->paketAcuan()));
+    }
+
+    /**
+     * Profil sepaket membaca SATU tabel: skemanya wajib identik, kalau tidak
+     * Studio menampilkan/menyunting struktur yang beda tergantung profil
+     * mana yang kebetulan jadi wakil.
+     */
+    public function test_profil_sepaket_skemanya_identik(): void
+    {
+        $registry = app(CalibrationProfileRegistry::class);
+
+        foreach ($registry->paketAcuan() as $kodePaket => $wakil) {
+            foreach ($registry->profilPaketAcuan($kodePaket) as $profil) {
+                $this->assertSame($wakil->skemaAcuan(), $profil->skemaAcuan(), "{$profil->kode()} vs wakil paket {$kodePaket}");
+            }
+        }
     }
 
     #[DataProvider('profil')]

@@ -136,7 +136,7 @@ final class PetaSel
             $m[] = "kode_profil harus '{$kodeProfil}' (sama dengan nama berkas)";
         }
 
-        $profil = app(CalibrationProfileRegistry::class)->untukKode($kodeProfil);
+        $profil = app(CalibrationProfileRegistry::class)->untukPaketAcuan($kodeProfil);
         $skema = $profil?->skemaAcuan();
 
         if ($skema === null) {

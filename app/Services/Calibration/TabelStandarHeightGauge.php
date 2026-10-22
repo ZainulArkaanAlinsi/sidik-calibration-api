@@ -153,7 +153,7 @@ class TabelStandarHeightGauge
             throw new RuntimeException("Tabel standar height gauge nggak ketemu: {$berkas}");
         }
 
-        $isi = app(SumberAcuan::class)->isi((new HeightGaugeProfile)->kode(), $berkas);
+        $isi = app(SumberAcuan::class)->isi((new HeightGaugeProfile)->kodePaketAcuan(), $berkas);
 
         // `standar.tanggal_kalibrasi` ikut diperiksa: dia titik nol umur drift,
         // dan tanpa penjagaan ini berkas yang kehilangan blok itu meledak jauh

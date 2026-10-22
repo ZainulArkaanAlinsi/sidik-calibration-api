@@ -193,7 +193,7 @@ class TabelStandarJangkaSorong
             throw new RuntimeException("Tabel standar jangka sorong nggak ketemu: {$berkas}");
         }
 
-        $isi = app(SumberAcuan::class)->isi((new JangkaSorongProfile)->kode(), $berkas);
+        $isi = app(SumberAcuan::class)->isi((new JangkaSorongProfile)->kodePaketAcuan(), $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['cmc'], $isi['konstanta'], $isi['tumpukan_depth_mm'], $isi['balok_ukur']['keping'])) {

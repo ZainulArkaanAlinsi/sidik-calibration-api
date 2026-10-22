@@ -119,7 +119,7 @@ class TabelStandarDialIndicator
             throw new RuntimeException("Tabel standar dial indicator nggak ketemu: {$berkas}");
         }
 
-        $isi = app(SumberAcuan::class)->isi((new DialIndicatorProfile)->kode(), $berkas);
+        $isi = app(SumberAcuan::class)->isi((new DialIndicatorProfile)->kodePaketAcuan(), $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['cmc'], $isi['konstanta'])

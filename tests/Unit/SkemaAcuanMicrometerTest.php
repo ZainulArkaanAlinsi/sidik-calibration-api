@@ -207,13 +207,13 @@ class SkemaAcuanMicrometerTest extends TestCase
 
         foreach (app(CalibrationProfileRegistry::class)->semua() as $profil) {
             if ($profil->skemaAcuan() !== null) {
-                $denganSkema[] = $profil->kode();
+                $denganSkema[$profil->kodePaketAcuan()] = true;
             }
         }
 
         // Daftar profil yang sudah dipindah ke Studio dipatok satu tempat.
-        $this->assertSame(SkemaAcuanProfilTest::BERSKEMA, $denganSkema);
-        $this->assertContains((new MicrometerProfile)->kode(), $denganSkema);
+        $this->assertSame(SkemaAcuanProfilTest::BERSKEMA, array_keys($denganSkema));
+        $this->assertArrayHasKey((new MicrometerProfile)->kodePaketAcuan(), $denganSkema);
         $this->assertNull((new ProfilGenerik)->skemaAcuan());
     }
 }

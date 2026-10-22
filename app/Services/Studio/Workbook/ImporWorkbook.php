@@ -5,6 +5,7 @@ namespace App\Services\Studio\Workbook;
 use App\Models\Organization;
 use App\Models\WorkbookMaster;
 use App\Models\WorkbookMasterLembar;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Studio\Hitung\ModelHitung;
 use App\Services\Studio\Hitung\SumberModelHitung;
 use App\Services\Studio\PetaSel\DrafAcuanMaster;
@@ -236,7 +237,9 @@ final class ImporWorkbook
         $lama = $ganti ? $this->barisEkstrakUlang($organisasi, $meta, $ada) : null;
 
         // Peta sel: struktur diperiksa sebelum apa pun ditulis (melempar bila berubah).
-        $peta = PetaSel::untuk($meta['kode_profil']);
+        // Peta per PAKET data acuan: workbook keluarga (Volumetric Fixed/Graduated,
+        // DRUCK, ...) memetakan ke paket profil-profil yang berbagi satu tabel.
+        $peta = PetaSel::untuk(PetaProfilWorkbook::kodePaket($meta, app(CalibrationProfileRegistry::class)));
         $dasar = $peta !== null ? $this->draf->dasar((int) $organisasi->id, $peta) : null;
         $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi']) : null;
         $statusPeta = $peta !== null ? 'tervalidasi' : 'belum_terpetakan';

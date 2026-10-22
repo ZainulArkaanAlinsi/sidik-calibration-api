@@ -89,11 +89,11 @@ class ImporAwalAcuan extends Command
             $berkas = database_path('data/'.$skema['sumber_json']);
 
             $this->line('');
-            $this->line("kode_profil    : {$profil->kode()}");
+            $this->line("kode_profil    : {$profil->kodePaketAcuan()}");
             $this->line("berkas         : {$relatif}");
 
             if (! is_file($berkas)) {
-                $this->error("Berkas {$relatif} tidak ada. Profil {$profil->kode()} dilewati.");
+                $this->error("Berkas {$relatif} tidak ada. Profil {$profil->kodePaketAcuan()} dilewati.");
                 $gagal = true;
 
                 continue;
@@ -102,7 +102,7 @@ class ImporAwalAcuan extends Command
             try {
                 $kanonik = JsonKanonik::dariTeks((string) file_get_contents($berkas));
             } catch (JsonException $e) {
-                $this->error("Berkas {$relatif} bukan JSON sah ({$e->getMessage()}). Profil {$profil->kode()} dilewati.");
+                $this->error("Berkas {$relatif} bukan JSON sah ({$e->getMessage()}). Profil {$profil->kodePaketAcuan()} dilewati.");
                 $gagal = true;
 
                 continue;
@@ -134,12 +134,12 @@ class ImporAwalAcuan extends Command
         string $kanonik,
         string $sha,
     ): bool {
-        $label = "[{$profil->kode()}] organisasi #{$organisasi->id} {$organisasi->nama}";
+        $label = "[{$profil->kodePaketAcuan()}] organisasi #{$organisasi->id} {$organisasi->nama}";
 
         return DB::transaction(function () use ($registry, $profil, $skema, $organisasi, $relatif, $kanonik, $sha, $label): bool {
             $paket = PaketAcuan::withTrashed()
                 ->where('organization_id', $organisasi->id)
-                ->where('kode_profil', $profil->kode())
+                ->where('kode_profil', $profil->kodePaketAcuan())
                 ->lockForUpdate()
                 ->first();
 
@@ -158,8 +158,8 @@ class ImporAwalAcuan extends Command
 
             $paket ??= PaketAcuan::create([
                 'organization_id' => $organisasi->id,
-                'kode_profil' => $profil->kode(),
-                'nama' => $profil->namaAlatKemampuan(),
+                'kode_profil' => $profil->kodePaketAcuan(),
+                'nama' => $profil->namaPaketAcuan(),
                 'skema_versi' => $skema['skema_versi'],
             ]);
 
@@ -250,7 +250,7 @@ class ImporAwalAcuan extends Command
                     ->select('equipment_id'),
             )
             ->get()
-            ->filter(fn (Equipment $alat): bool => $registry->untukAlat($alat)->kode() === $profil->kode())
+            ->filter(fn (Equipment $alat): bool => $registry->untukAlat($alat)->kodePaketAcuan() === $profil->kodePaketAcuan())
             ->modelKeys();
 
         if ($alatId === []) {
@@ -279,13 +279,12 @@ class ImporAwalAcuan extends Command
         $kode = $this->argument('profil');
 
         if ($kode === null || $kode === '') {
-            return array_values(array_filter(
-                $registry->semua(),
-                static fn (CalibrationProfile $p): bool => $p->skemaAcuan() !== null,
-            ));
+            // Satu wakil per paket: profil sepaket berbagi satu tabel acuan.
+            return array_values($registry->paketAcuan());
         }
 
-        $profil = $registry->untukKode((string) $kode);
+        // Kode profil ATAU kode paket.
+        $profil = $registry->untukKode((string) $kode) ?? $registry->untukPaketAcuan((string) $kode);
 
         if ($profil === null) {
             $this->error("Profil '{$kode}' tidak dikenal.");

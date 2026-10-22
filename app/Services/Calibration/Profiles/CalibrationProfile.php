@@ -1720,6 +1720,26 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Kode PAKET data acuan profil ini — kunci `paket_acuan.kode_profil`,
+     * lingkup `SumberAcuan`, nama berkas peta sel. Bawaan = [kode]. Profil
+     * yang berbagi satu kelas `Tabel*` (satu berkas JSON, satu workbook
+     * master) memulangkan kode paket yang SAMA, supaya satu tabel punya satu
+     * riwayat versi — bukan salinan per profil yang bisa saling menyimpang.
+     * Profil sepaket wajib memulangkan `skemaAcuan()` yang identik
+     * (dijaga `SkemaAcuanProfilTest`).
+     */
+    public function kodePaketAcuan(): string
+    {
+        return $this->kode();
+    }
+
+    /** Nama paket data acuan untuk tampilan. Bawaan = [namaAlatKemampuan]. */
+    public function namaPaketAcuan(): string
+    {
+        return $this->namaAlatKemampuan();
+    }
+
+    /**
      * Berapa desimal yang dipakai NYETAK angka hasil di sertifikat, kalau alat
      * ini emang beda dari aturan umum. `null` = ikut aturan umum
      * (`Organization::desimalSertifikat`, yaitu diturunkan dari resolusi alat).

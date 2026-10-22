@@ -71,17 +71,18 @@ class DataAcuanController extends Controller
             ->pluck('kode_profil')
             ->all();
 
-        foreach ($this->registry->semua() as $profil) {
+        // Satu baris per PAKET (profil sepaket berbagi satu tabel acuan).
+        foreach ($this->registry->paketAcuan() as $kodePaket => $profil) {
             $skema = $profil->skemaAcuan();
 
-            if ($skema === null || in_array($profil->kode(), $pernahAda, true)) {
+            if (in_array($kodePaket, $pernahAda, true)) {
                 continue;
             }
 
             $data[] = new PaketAcuanResource(
                 new PaketAcuan([
-                    'kode_profil' => $profil->kode(),
-                    'nama' => $profil->namaAlatKemampuan(),
+                    'kode_profil' => $kodePaket,
+                    'nama' => $profil->namaPaketAcuan(),
                     'skema_versi' => $skema['skema_versi'],
                 ]),
                 $this->bolehLihatSemua($request)
@@ -99,7 +100,7 @@ class DataAcuanController extends Controller
         $paket = $this->cariPaket($request, $kode);
 
         $ringkasan = $this->ringkasan($request, $paket, detail: true);
-        $ringkasan['skema'] = $this->registry->untukKode($paket->kode_profil)?->skemaAcuan();
+        $ringkasan['skema'] = $this->registry->untukPaketAcuan($paket->kode_profil)?->skemaAcuan();
 
         return $this->json(['data' => new PaketAcuanResource($paket, $ringkasan)]);
     }
@@ -201,7 +202,7 @@ class DataAcuanController extends Controller
 
         $paket = $this->muatPaket($versi);
         $pembanding->setRelation('paketAcuan', $paket);
-        $skema = $this->registry->untukKode((string) $paket?->kode_profil)?->skemaAcuan();
+        $skema = $this->registry->untukPaketAcuan((string) $paket?->kode_profil)?->skemaAcuan();
 
         if ($skema === null) {
             return $this->tolak('skema_tidak_ada', 'Profil paket ini tidak punya skema data acuan di kode.');
@@ -233,7 +234,7 @@ class DataAcuanController extends Controller
         abort_unless($versi->jenis === PaketAcuanVersi::JENIS_DATA, 404);
 
         $paket = $this->muatPaket($versi);
-        $skema = $this->registry->untukKode((string) $paket?->kode_profil)?->skemaAcuan();
+        $skema = $this->registry->untukPaketAcuan((string) $paket?->kode_profil)?->skemaAcuan();
 
         // Dicocokkan STRICT: `firstWhere` membanding longgar (`==`).
         $defLembar = collect($skema['lembar'] ?? [])->first(fn (array $l): bool => ($l['kode'] ?? null) === $lembar);
