@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -35,9 +36,6 @@ class TabelStandarTekanan
     public const DIFFERENTIAL = 'differential';
 
     public const VARIAN = [self::DRUCK07G, self::DRUCK13G, self::SPMK, self::DIFFERENTIAL];
-
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
 
     /** @return array<string, mixed>|null */
     public static function varian(string $kode): ?array
@@ -253,17 +251,15 @@ class TabelStandarTekanan
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-tekanan.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar tekanan nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `tekanan` (kodePaketAcuan Pressure/Vacuum/Differential). Tidak
+        // di-cache di kelas ini — cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('tekanan', $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['varian'], $isi['pembagi_resolusi'], $isi['beda_level'], $isi['gravitasi_lokal'])
@@ -271,12 +267,12 @@ class TabelStandarTekanan
             throw new RuntimeException("Tabel standar tekanan rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 
     /** Dipakai test yang menukar berkas tabelnya. */
     public static function lupakan(): void
     {
-        self::$data = null;
+        SumberAcuan::lupakanCache();
     }
 }

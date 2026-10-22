@@ -125,6 +125,38 @@
    "sha256": "a17dc15ad711f0e5d455e58cb0070555a092370811a52d1624e07c45d1b3a895",
    "ukuran_byte": 179712,
    "terverifikasi": true
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm",
+   "sha256": "a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3ce1669fa939301fb88",
+   "ukuran_byte": 556544,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure DRUCK13G 0~20bar.xlsm",
+   "sha256": "5ccb64f527c7547fd61a8b3b0291451a16e79edce93f576df31c02e534452dd3",
+   "ukuran_byte": 553472,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure SPMK.xlsm",
+   "sha256": "27cce61b06fb4dec1ab714d5494433b954c9e14a02771a600745d3d21b30bbaf",
+   "ukuran_byte": 1169920,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
+  },
+  {
+   "paket": "tekanan",
+   "berkas": "Master Olda Pressure Differential.xlsm",
+   "sha256": "91564b56c246e643cacb9c0a32f5eaa6613e499b4db9e99cd71dbfe5ac424596",
+   "ukuran_byte": 1175552,
+   "terverifikasi": true,
+   "sama_dengan": "manifest-workbook-tekanan-piston.json"
   }
  ]
 }

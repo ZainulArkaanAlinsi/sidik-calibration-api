@@ -1,0 +1,1181 @@
+{
+ "format": 1,
+ "kode_profil": "tekanan",
+ "sumber_json": "tabel-standar-tekanan.json",
+ "bukti": [
+  "Alamat = aturan docs/skrip/gen-tabel-standar-tekanan.py (PETA per varian: sheet_standar/baris_standar/kolom_standar, resolusi_standar, drift.sel; DATABASE R13:X13 identitas, Q19:S21 media, R29:S40 konversi, R5:S6 CMC). Tidak ada ekspor CSV di repo: alamat peta = alamat .xlsm asli (tanpa bagian `xlsm`).",
+  "Diverifikasi terhadap keempat .xlsm asli (sha256 = manifest-workbook-tekanan-piston.json) dengan docs/skrip/verifikasi-peta-xlsm.py 22 Okt 2026: lembar wajib, jangkar, seluruh ekstrak (= JSON repo, sha256 kanonik) lolos; sel yang dirujuk peta dibekukan di tests/Fixtures/peta-sel-xlsm/ untuk paritas PHP.",
+  "U95 DRUCK07G G10:G17 adalah sel gabungan (merge): kolom u95 memakai `gabungan: true` seperti generator. Kunci asal `u95_dari_sel_gabungan` dibuang dari JSON (tidak dipakai kode; gabungan tercatat di tata letak master)."
+ ],
+ "lembar_wajib": [
+  "DATABASE",
+  {
+   "nama": "STANDAR_DRUCK",
+   "varian": [
+    "druck07g",
+    "druck13g"
+   ]
+  },
+  {
+   "nama": "STANDAR_SPMK",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "nama": "STANDAR_ADDITEL",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "nama": "Druck (kPa) vacum",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "nama": "Druck (psi)",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "nama": "Drift SPMK (bar)",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "nama": "Record Drift Additel",
+   "varian": [
+    "differential"
+   ]
+  }
+ ],
+ "jangkar": [
+  {
+   "sel": "DATABASE!R3",
+   "teks": "Pengukuran"
+  },
+  {
+   "sel": "DATABASE!S3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!R12",
+   "teks": "Temperature Calibrator"
+  },
+  {
+   "sel": "DATABASE!S12",
+   "teks": "Merk/Type"
+  },
+  {
+   "sel": "DATABASE!T12",
+   "teks": "S/N"
+  },
+  {
+   "sel": "DATABASE!U12",
+   "teks": "Traceability"
+  },
+  {
+   "sel": "DATABASE!V12",
+   "teks": "Calibration Date"
+  },
+  {
+   "sel": "DATABASE!W12",
+   "teks": "Interval (tahun)"
+  },
+  {
+   "sel": "DATABASE!X12",
+   "teks": "Due Date"
+  },
+  {
+   "sel": "DATABASE!R18",
+   "teks": "Media"
+  },
+  {
+   "sel": "DATABASE!S18",
+   "teks": "Massa Jenis (kg/m3)"
+  },
+  {
+   "sel": "DATABASE!R28",
+   "teks": "Satuan"
+  },
+  {
+   "sel": "DATABASE!S28",
+   "teks": "Conversion to kPa",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "Vacum",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "Non Vacum",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!D7",
+   "teks": "Set Point (kPa)",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!E9",
+   "teks": "UP",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!F9",
+   "teks": "DOWN",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!G7",
+   "teks": "U95% (kPa)",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!H5",
+   "teks": "Resolusi",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "Druck (kPa) vacum!H3",
+   "teks": "drift sementara",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "sel": "DATABASE!S28",
+   "teks": "Conversion to Psi",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "Vacum",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "Non Vacum",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!D6",
+   "teks": "UUT (psi)",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!E6",
+   "teks": "UP",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!F6",
+   "teks": "DOWN",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!G6",
+   "teks": "U95% (psi)",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "STANDAR_DRUCK!H4",
+   "teks": "Resolusi",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "Druck (psi)!H3",
+   "teks": "drift sementara",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "sel": "DATABASE!S28",
+   "teks": "Conversion to Bar",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "Pressure",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "STANDAR_SPMK!D6",
+   "teks": "Set Point (bar)",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "STANDAR_SPMK!E7",
+   "teks": "UP",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "STANDAR_SPMK!F7",
+   "teks": "DOWN",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "STANDAR_SPMK!G6",
+   "teks": "U95% (bar)",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "STANDAR_SPMK!H5",
+   "teks": "Resolusi",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "Drift SPMK (bar)!O26",
+   "teks": "Max. U drift",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "sel": "DATABASE!S28",
+   "teks": "Conversion to mbar",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "-10 mbar ~ 10 mbar",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "STANDAR_ADDITEL!D7",
+   "teks": "Pembacaan Alat (mbar)",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "STANDAR_ADDITEL!E7",
+   "teks": "Correction (mbar)",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "STANDAR_ADDITEL!F7",
+   "teks": "U95% (mbar)",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "STANDAR_ADDITEL!G5",
+   "teks": "Resolusi",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "sel": "Record Drift Additel!L39",
+   "teks": "U drift",
+   "varian": [
+    "differential"
+   ]
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "druck07g": "(^| )druck ?07g( |$)",
+   "druck13g": "(^| )druck ?13g( |$)",
+   "spmk": "(^| )spmk( |$)",
+   "differential": "(^| )differential( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "varian.druck07g.konversi",
+   "tipe": "daftar_objek",
+   "kunci": "satuan",
+   "varian": [
+    "druck07g"
+   ],
+   "kolom": {
+    "satuan": {
+     "rentang": "DATABASE!R29:R40",
+     "tipe": "teks"
+    },
+    "faktor": "DATABASE!S29:S40"
+   },
+   "lewati_kolom": [
+    "faktor"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.druck07g.titik_standar",
+   "tipe": "daftar_objek",
+   "kunci": "set_point",
+   "varian": [
+    "druck07g"
+   ],
+   "kolom": {
+    "set_point": "STANDAR_DRUCK!D10:D28",
+    "koreksi_up": "STANDAR_DRUCK!E10:E28",
+    "koreksi_down": "STANDAR_DRUCK!F10:F28",
+    "u95": {
+     "rentang": "STANDAR_DRUCK!G10:G28",
+     "gabungan": true
+    }
+   },
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.druck07g.standar.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!R13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!S13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.nomor_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!V13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!W13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!X13",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.standar.resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR_DRUCK!K5",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.media",
+   "tipe": "daftar_objek",
+   "kunci": "nomor",
+   "varian": [
+    "druck07g"
+   ],
+   "kolom": {
+    "nomor": {
+     "rentang": "DATABASE!Q19:Q21",
+     "tipe": "bilangan_bulat"
+    },
+    "media": {
+     "rentang": "DATABASE!R19:R21",
+     "tipe": "teks"
+    },
+    "massa_jenis": "DATABASE!S19:S21"
+   },
+   "min_baris": 3
+  },
+  {
+   "jalur": "varian.druck07g.drift.nilai",
+   "tipe": "angka",
+   "sel": "Druck (kPa) vacum!H4",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.cmc_master.Vacum.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S5",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck07g.cmc_master.Non Vacum.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S6",
+   "varian": [
+    "druck07g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.konversi",
+   "tipe": "daftar_objek",
+   "kunci": "satuan",
+   "varian": [
+    "druck13g"
+   ],
+   "kolom": {
+    "satuan": {
+     "rentang": "DATABASE!R29:R40",
+     "tipe": "teks"
+    },
+    "faktor": "DATABASE!S29:S40"
+   },
+   "lewati_kolom": [
+    "faktor"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.druck13g.titik_standar",
+   "tipe": "daftar_objek",
+   "kunci": "set_point",
+   "varian": [
+    "druck13g"
+   ],
+   "kolom": {
+    "set_point": "STANDAR_DRUCK!D8:D18",
+    "koreksi_up": "STANDAR_DRUCK!E8:E18",
+    "koreksi_down": "STANDAR_DRUCK!F8:F18",
+    "u95": "STANDAR_DRUCK!G8:G18"
+   },
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.druck13g.standar.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!R13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!S13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.nomor_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!V13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!W13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!X13",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.standar.resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR_DRUCK!K4",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.media",
+   "tipe": "daftar_objek",
+   "kunci": "nomor",
+   "varian": [
+    "druck13g"
+   ],
+   "kolom": {
+    "nomor": {
+     "rentang": "DATABASE!Q19:Q21",
+     "tipe": "bilangan_bulat"
+    },
+    "media": {
+     "rentang": "DATABASE!R19:R21",
+     "tipe": "teks"
+    },
+    "massa_jenis": "DATABASE!S19:S21"
+   },
+   "min_baris": 3
+  },
+  {
+   "jalur": "varian.druck13g.drift.nilai",
+   "tipe": "angka",
+   "sel": "Druck (psi)!H5",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.cmc_master.Vacum.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S5",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.druck13g.cmc_master.Non Vacum.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S6",
+   "varian": [
+    "druck13g"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.konversi",
+   "tipe": "daftar_objek",
+   "kunci": "satuan",
+   "varian": [
+    "spmk"
+   ],
+   "kolom": {
+    "satuan": {
+     "rentang": "DATABASE!R29:R40",
+     "tipe": "teks"
+    },
+    "faktor": "DATABASE!S29:S40"
+   },
+   "lewati_kolom": [
+    "faktor"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.spmk.titik_standar",
+   "tipe": "daftar_objek",
+   "kunci": "set_point",
+   "varian": [
+    "spmk"
+   ],
+   "kolom": {
+    "set_point": "STANDAR_SPMK!D8:D20",
+    "koreksi_up": "STANDAR_SPMK!E8:E20",
+    "koreksi_down": "STANDAR_SPMK!F8:F20",
+    "u95": "STANDAR_SPMK!G8:G20"
+   },
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.spmk.standar.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!R13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!S13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.nomor_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!V13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!W13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!X13",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.standar.resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR_SPMK!K5",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.media",
+   "tipe": "daftar_objek",
+   "kunci": "nomor",
+   "varian": [
+    "spmk"
+   ],
+   "kolom": {
+    "nomor": {
+     "rentang": "DATABASE!Q19:Q21",
+     "tipe": "bilangan_bulat"
+    },
+    "media": {
+     "rentang": "DATABASE!R19:R21",
+     "tipe": "teks"
+    },
+    "massa_jenis": "DATABASE!S19:S21"
+   },
+   "min_baris": 3
+  },
+  {
+   "jalur": "varian.spmk.drift.nilai",
+   "tipe": "angka",
+   "sel": "Drift SPMK (bar)!P26",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.spmk.cmc_master.Pressure.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S5",
+   "varian": [
+    "spmk"
+   ]
+  },
+  {
+   "jalur": "varian.differential.konversi",
+   "tipe": "daftar_objek",
+   "kunci": "satuan",
+   "varian": [
+    "differential"
+   ],
+   "kolom": {
+    "satuan": {
+     "rentang": "DATABASE!R29:R40",
+     "tipe": "teks"
+    },
+    "faktor": "DATABASE!S29:S40"
+   },
+   "lewati_kolom": [
+    "faktor"
+   ],
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.differential.titik_standar",
+   "tipe": "daftar_objek",
+   "kunci": "set_point",
+   "varian": [
+    "differential"
+   ],
+   "kolom": {
+    "set_point": "STANDAR_ADDITEL!D8:D29",
+    "koreksi_up": "STANDAR_ADDITEL!E8:E29",
+    "koreksi_down": "STANDAR_ADDITEL!E8:E29",
+    "u95": "STANDAR_ADDITEL!F8:F29"
+   },
+   "lewati_jika": "bukan_angka",
+   "min_baris": 1
+  },
+  {
+   "jalur": "varian.differential.standar.nama",
+   "tipe": "teks",
+   "sel": "DATABASE!R13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.merk_tipe",
+   "tipe": "teks",
+   "sel": "DATABASE!S13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.nomor_seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "DATABASE!V13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.interval_tahun",
+   "tipe": "bilangan_bulat",
+   "sel": "DATABASE!W13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.jatuh_tempo",
+   "tipe": "tanggal",
+   "sel": "DATABASE!X13",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.standar.resolusi",
+   "tipe": "angka",
+   "sel": "STANDAR_ADDITEL!J6",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.media",
+   "tipe": "daftar_objek",
+   "kunci": "nomor",
+   "varian": [
+    "differential"
+   ],
+   "kolom": {
+    "nomor": {
+     "rentang": "DATABASE!Q19:Q21",
+     "tipe": "bilangan_bulat"
+    },
+    "media": {
+     "rentang": "DATABASE!R19:R21",
+     "tipe": "teks"
+    },
+    "massa_jenis": "DATABASE!S19:S21"
+   },
+   "min_baris": 3
+  },
+  {
+   "jalur": "varian.differential.drift.nilai",
+   "tipe": "angka",
+   "sel": "Record Drift Additel!M39",
+   "varian": [
+    "differential"
+   ]
+  },
+  {
+   "jalur": "varian.differential.cmc_master.-10 mbar ~ 10 mbar.nilai",
+   "tipe": "angka",
+   "sel": "DATABASE!S5",
+   "varian": [
+    "differential"
+   ]
+  }
+ ],
+ "tidak_dipetakan": [
+  "gravitasi_lokal, gravitasi_standar, beda_level, pembagi_resolusi — literal generator (beda_level dari 'PERHITUNGAN U95%'!N13 SPMK, angka tetap), bukan sel acuan.",
+  "satuan_kerja per varian — literal generator (PETA[...].satuan_kerja), dijaga jangkar 'Conversion to <satuan>'.",
+  "drift.sel_master/rumus_master/metode/catatan dan cmc_master.*.rumus_master — dokumentasi (teks rumus), bukan angka; dibawa dari versi dasar."
+ ],
+ "format_sertifikat": {
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. BELUM dipakai render — TekananProfile tidak memberi formatKolomSertifikat() (desimal lama); paritas diadu StudioFormatSertifikatTest.",
+  "entri": [
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!E22:E34"
+    ],
+    "format": "0",
+    "varian": [
+     "druck07g"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!I22:I34",
+     "SERTIFIKAT!L22:L34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck07g"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!N22:N34",
+     "SERTIFIKAT!P22:P34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck07g"
+    ]
+   },
+   {
+    "kolom": "sebaran",
+    "sel": [
+     "SERTIFIKAT!R22:R34",
+     "SERTIFIKAT!T22:T34",
+     "SERTIFIKAT!V22:V34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck07g"
+    ],
+    "catatan": "Hysterisis 1-3"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!P35"
+    ],
+    "format": "0.000",
+    "varian": [
+     "druck07g"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U36"
+    ],
+    "format": "General",
+    "varian": [
+     "druck07g"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!E22:E34"
+    ],
+    "format": "0",
+    "varian": [
+     "druck13g"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!I22:I34",
+     "SERTIFIKAT!L22:L34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck13g"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!N22:N34",
+     "SERTIFIKAT!P22:P34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck13g"
+    ]
+   },
+   {
+    "kolom": "sebaran",
+    "sel": [
+     "SERTIFIKAT!R22:R34",
+     "SERTIFIKAT!T22:T34",
+     "SERTIFIKAT!V22:V34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck13g"
+    ],
+    "catatan": "Hysterisis 1-3"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!P35"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck13g"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U36"
+    ],
+    "format": "General",
+    "varian": [
+     "druck13g"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!E22:E34"
+    ],
+    "format": "0.000",
+    "varian": [
+     "spmk"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!I22:I34",
+     "SERTIFIKAT!L22:L34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "spmk"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!N22:N34",
+     "SERTIFIKAT!P22:P34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "spmk"
+    ]
+   },
+   {
+    "kolom": "sebaran",
+    "sel": [
+     "SERTIFIKAT!R22:R34",
+     "SERTIFIKAT!T22:T34",
+     "SERTIFIKAT!V22:V34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "spmk"
+    ],
+    "catatan": "Hysterisis 1-3"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!P35"
+    ],
+    "format": "0.00",
+    "varian": [
+     "spmk"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U36"
+    ],
+    "format": "General",
+    "varian": [
+     "spmk"
+    ]
+   },
+   {
+    "kolom": "uut",
+    "sel": [
+     "SERTIFIKAT!E22:E34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "differential"
+    ]
+   },
+   {
+    "kolom": "standar",
+    "sel": [
+     "SERTIFIKAT!I22:I34",
+     "SERTIFIKAT!L22:L34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "differential"
+    ]
+   },
+   {
+    "kolom": "koreksi",
+    "sel": [
+     "SERTIFIKAT!N22:N34",
+     "SERTIFIKAT!P22:P34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "differential"
+    ]
+   },
+   {
+    "kolom": "sebaran",
+    "sel": [
+     "SERTIFIKAT!R22:R34",
+     "SERTIFIKAT!T22:T34",
+     "SERTIFIKAT!V22:V34"
+    ],
+    "format": "0.0",
+    "varian": [
+     "differential"
+    ],
+    "catatan": "Hysterisis 1-3"
+   },
+   {
+    "kolom": "u95",
+    "sel": [
+     "SERTIFIKAT!P35"
+    ],
+    "format": "0.00",
+    "varian": [
+     "differential"
+    ]
+   },
+   {
+    "kolom": "k",
+    "sel": [
+     "SERTIFIKAT!U36"
+    ],
+    "format": "0",
+    "varian": [
+     "differential"
+    ]
+   }
+  ]
+ }
+}

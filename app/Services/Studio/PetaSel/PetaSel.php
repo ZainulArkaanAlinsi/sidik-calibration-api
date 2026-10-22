@@ -46,7 +46,10 @@ use JsonException;
  * `bulat` — meniru generator yang menyimpan `float(sel) / 1000` (µm → mm).
  * `bilangan_bulat` memulangkan int (JSON `3`, bukan `3.0`); sel pecahan ditolak.
  * `daftar_objek` menulis list objek dari baris rentang yang sel `kunci`-nya
- * berisi (baris ber-kunci kosong dilewati, seperti generator):
+ * berisi (baris ber-kunci kosong dilewati, seperti generator). Kolom boleh
+ * berbentuk `{"rentang", "tipe": angka|teks|bilangan_bulat, "boleh_kosong",
+ * "gabungan"}` — `gabungan: true` membaca sel kosong di dalam rentang merge
+ * dari sel kiri-atasnya (xlsm; CSV tidak membawa merge):
  * `{"jalur": "balok_ukur.keping", "tipe": "daftar_objek", "kunci": "nominal_mm",
  *   "kolom": {"nominal_mm": "S!Q10:Q132", "u95_mm": "S!S10:S132"}, "min_baris": 1}`.
  *
@@ -376,12 +379,14 @@ final class PetaSel
 
                         $rentang = is_array($spek) ? ($spek['rentang'] ?? null) : $spek;
 
-                        if (is_array($spek) && ! in_array($spek['tipe'] ?? 'angka', ['angka', 'teks'], true)) {
-                            $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks";
+                        if (is_array($spek) && ! in_array($spek['tipe'] ?? 'angka', ['angka', 'teks', 'bilangan_bulat'], true)) {
+                            $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks/bilangan_bulat";
                         }
 
-                        if (is_array($spek) && isset($spek['boleh_kosong']) && ! is_bool($spek['boleh_kosong'])) {
-                            $m[] = "{$label}.{$nama}: boleh_kosong harus boolean";
+                        foreach (['boleh_kosong', 'gabungan'] as $bendera) {
+                            if (is_array($spek) && isset($spek[$bendera]) && ! is_bool($spek[$bendera])) {
+                                $m[] = "{$label}.{$nama}: {$bendera} harus boolean";
+                            }
                         }
 
                         if (($x = $selSah($rentang, true)) !== null) {

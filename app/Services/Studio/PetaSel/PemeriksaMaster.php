@@ -38,6 +38,14 @@ final class PemeriksaMaster
      */
     private array $alih = ['lembar' => [], 'geser' => []];
 
+    /**
+     * Rentang sel gabungan (merge) per lembar PETA, alamat lembar asli:
+     * `[k1, b1, k2, b2]`. Dari `tata_letak.merge` pembaca (CSV: kosong).
+     *
+     * @var array<string, list<array{0: int, 1: int, 2: int, 3: int}>>
+     */
+    private array $gabung = [];
+
     /** Geser baris untuk sel baris `$baris` (alamat peta) di lembar peta `$lembar`. */
     private function geserBaris(string $lembar, int $baris): int
     {
@@ -214,6 +222,15 @@ final class PemeriksaMaster
             }
 
             $indeks[$nama] = [];
+            $this->gabung[$nama] = [];
+
+            foreach ((array) ($per[$asli]['tata_letak']['merge'] ?? []) as $m) {
+                $r = Alamat::urai('x!'.$m);
+
+                if ($r !== null) {
+                    $this->gabung[$nama][] = [$r['k1'], $r['b1'], $r['k2'], $r['b2']];
+                }
+            }
 
             foreach ((array) $sel as $s) {
                 $indeks[$nama][(string) $s['a']] = $s;
@@ -388,6 +405,9 @@ final class PemeriksaMaster
                 // Sel kosong = null (mis. U95 sertifikat standar yang cuma
                 // tercetak di sebagian titik), bukan galat.
                 'boleh_kosong' => is_array($spek) && ($spek['boleh_kosong'] ?? false),
+                // Sel kosong di dalam rentang gabungan (merge) = nilai sel
+                // kiri-atasnya, seperti generator (U95 DRUCK07G G10:G17).
+                'gabungan' => is_array($spek) && ($spek['gabungan'] ?? false),
             ];
         }
 
@@ -426,15 +446,21 @@ final class PemeriksaMaster
                 $c = $this->sel($indeks, $lb, $kk, $bb);
                 $alamat = Alamat::sel($lb, $kk, $bb);
 
+                if ($k['gabungan'] && self::kosong($c)) {
+                    $c = $this->selGabungan($indeks, $lb, $kk, $bb) ?? $c;
+                }
+
                 if ($k['boleh_kosong'] && ($c === null || (! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null) && trim((string) ($c['s'] ?? '')) === ''))) {
                     $baris[$nama] = null;
 
                     continue;
                 }
 
-                $baris[$nama] = $k['tipe'] === 'teks'
-                    ? $this->teks($c, $alamat, $masalah)
-                    : $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah);
+                $baris[$nama] = match ($k['tipe']) {
+                    'teks' => $this->teks($c, $alamat, $masalah),
+                    'bilangan_bulat' => $this->bilanganBulat($c, $alamat, $masalah),
+                    default => $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah),
+                };
             }
 
             $daftar[] = $baris;
@@ -492,6 +518,35 @@ final class PemeriksaMaster
         if (abs($x - (float) $banding) > (float) $c['toleransi']) {
             $masalah[] = "{$alamat} = {$x} menyimpang dari {$jalur} = {$banding} (toleransi {$c['toleransi']})";
         }
+    }
+
+    /** @param  array<string, mixed>|null  $c */
+    private static function kosong(?array $c): bool
+    {
+        return $c === null || (! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null) && trim((string) ($c['s'] ?? '')) === '');
+    }
+
+    /**
+     * Sel kiri-atas rentang gabungan yang memuat sel peta ini (alamat peta,
+     * geser `xlsm` diterapkan), atau null bila sel itu tidak di dalam
+     * gabungan / sudah sel kiri-atasnya.
+     *
+     * @param  array<string, array<string, array<string, mixed>>>  $indeks
+     * @return array<string, mixed>|null
+     */
+    private function selGabungan(array $indeks, string $lembar, int $kolom, int $baris): ?array
+    {
+        $baris += $this->geserBaris($lembar, $baris);
+
+        foreach ($this->gabung[$lembar] ?? [] as [$k1, $b1, $k2, $b2]) {
+            if ($kolom >= $k1 && $kolom <= $k2 && $baris >= $b1 && $baris <= $b2 && ($kolom !== $k1 || $baris !== $b1)) {
+                $alamat = substr(Alamat::sel($lembar, $k1, $b1), strlen($lembar) + 1);
+
+                return $indeks[$lembar][$alamat] ?? null;
+            }
+        }
+
+        return null;
     }
 
     /** @param  array<string, string>  $pola */

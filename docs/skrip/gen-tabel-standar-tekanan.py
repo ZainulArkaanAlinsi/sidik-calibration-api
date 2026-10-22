@@ -190,11 +190,10 @@ def baca_varian(nama, path):
 
         ku, _ = sel(ks["koreksi_up"])
         kd, _ = sel(ks["koreksi_down"])
-        u95, asal_u95 = sel(ks["u95"])
-        baris = {"set_point": float(sp), "koreksi_up": ku, "koreksi_down": kd, "u95": u95}
-        if asal_u95:
-            baris["u95_dari_sel_gabungan"] = asal_u95
-        titik.append(baris)
+        u95, _ = sel(ks["u95"])
+        # U95 dari sel gabungan (DRUCK07G G10:G17) diisi nilai sel kiri-atas; asal
+        # gabungannya tidak ditulis ke JSON (22 Okt 2026, peta-sel/tekanan.json).
+        titik.append({"set_point": float(sp), "koreksi_up": ku, "koreksi_down": kd, "u95": u95})
 
     std = {
         "nama": db["R13"].value, "merk_tipe": db["S13"].value, "nomor_seri": str(db["T13"].value),

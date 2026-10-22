@@ -53,6 +53,129 @@ use InvalidArgumentException;
 abstract class TekananProfile extends CalibrationProfile
 {
     /**
+     * Pressure Gauge, Vacuum Gauge, dan Differential membaca SATU tabel
+     * (`tabel-standar-tekanan.json`, empat master) — satu paket data acuan.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'tekanan';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Tekanan (DRUCK07G, DRUCK13G, SPMK, Differential)';
+    }
+
+    /**
+     * Skema `tabel-standar-tekanan.json` untuk Studio Data Acuan — sama untuk
+     * ketiga profil. Alamat dari `PETA` di `docs/skrip/gen-tabel-standar-tekanan.py`
+     * (peta sel `database/data/peta-sel/tekanan.json`, diverifikasi pada
+     * keempat .xlsm asli). Sel drift ada di lembar bernama ber-kurung yang
+     * tidak bisa ditulis di `asal` — alamatnya ada di peta sel.
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+        $lembar = static fn (string $kode, string $label, string $jalur, string $jenis, ?string $kunci, array $kol): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $jalur,
+            'jenis' => $jenis,
+            'kunci' => $kunci,
+            'kolom' => $kol,
+            'boleh_tambah_baris' => false,
+        ];
+
+        // varian => [nama, satuan kerja, lembar standar, [baris awal, akhir],
+        // kolom [set point, up, down, U95], sel resolusi, label CMC => [baris, tipe rumus_master]]
+        $varian = [
+            Tabel::DRUCK07G => ['DRUCK07G', 'kPa', 'STANDAR_DRUCK', [10, 28], ['D', 'E', 'F', 'G'], 'K5', ['Vacum' => [5, 'teks'], 'Non Vacum' => [6, 'teks']]],
+            Tabel::DRUCK13G => ['DRUCK13G', 'Psi', 'STANDAR_DRUCK', [8, 18], ['D', 'E', 'F', 'G'], 'K4', ['Vacum' => [5, 'teks'], 'Non Vacum' => [6, 'teks']]],
+            Tabel::SPMK => ['SPMK', 'Bar', 'STANDAR_SPMK', [8, 20], ['D', 'E', 'F', 'G'], 'K5', ['Pressure' => [5, 'desimal']]],
+            Tabel::DIFFERENTIAL => ['Differential', 'mBar', 'STANDAR_ADDITEL', [8, 29], ['D', 'E', 'E', 'F'], 'J6', ['-10 mbar ~ 10 mbar' => [5, 'desimal']]],
+        ];
+
+        $daftar = [
+            $lembar('umum', 'Tetapan umum', '', 'objek', null, [
+                $kolom('gravitasi_lokal', 'Gravitasi lokal', 'desimal', 'm/s²', null),
+                $kolom('gravitasi_standar', 'Gravitasi standar', 'desimal', 'm/s²', null),
+            ]),
+            $lembar('beda_level', 'Beda level (SPMK)', 'beda_level', 'objek', null, [
+                $kolom('u', 'u', 'desimal', null, null),
+                $kolom('pembagi', 'Pembagi', 'desimal', null, null),
+                $kolom('vi', 'Derajat kebebasan', 'bulat', null, null),
+                $kolom('sumber', 'Sumber', 'teks', null, null),
+            ]),
+            $lembar('pembagi_resolusi', 'Pembagi resolusi UUT (Tabel_resolusi)', 'pembagi_resolusi', 'baris', 'tampilan', [
+                $kolom('tampilan', 'Rasio jarum / digital', 'teks', null, null),
+                $kolom('pembagi', 'Pembagi', 'desimal', null, null),
+            ]),
+        ];
+
+        foreach ($varian as $v => [$nama, $satuan, $L, [$b0, $b1], [$kSp, $kUp, $kDn, $kU], $res, $cmc]) {
+            $j = "varian/{$v}";
+            $daftar[] = $lembar("{$v}_umum", "{$nama} — satuan kerja", $j, 'objek', null, [
+                $kolom('satuan_kerja', 'Satuan kerja', 'teks', null, null),
+            ]);
+            $daftar[] = $lembar("{$v}_konversi", "{$nama} — konversi satuan ke {$satuan}", "{$j}/konversi", 'daftar', 'satuan', [
+                $kolom('satuan', 'Satuan', 'teks', null, 'DATABASE!R29:R40'),
+                $kolom('faktor', 'Faktor', 'desimal', $satuan, 'DATABASE!S29:S40'),
+            ]);
+            $daftar[] = $lembar("{$v}_titik_standar", "{$nama} — koreksi & U95 standar", "{$j}/titik_standar", 'daftar', 'set_point', [
+                $kolom('set_point', 'Set point', 'desimal', $satuan, "{$L}!{$kSp}{$b0}:{$kSp}{$b1}"),
+                $kolom('koreksi_up', 'Koreksi naik', 'desimal', $satuan, "{$L}!{$kUp}{$b0}:{$kUp}{$b1}"),
+                $kolom('koreksi_down', 'Koreksi turun', 'desimal', $satuan, "{$L}!{$kDn}{$b0}:{$kDn}{$b1}"),
+                $kolom('u95', 'U95', 'desimal', $satuan, "{$L}!{$kU}{$b0}:{$kU}{$b1}"),
+            ]);
+            $daftar[] = $lembar("{$v}_standar", "{$nama} — identitas standar", "{$j}/standar", 'objek', null, [
+                $kolom('nama', 'Nama', 'teks', null, 'DATABASE!R13'),
+                $kolom('merk_tipe', 'Merek/tipe', 'teks', null, 'DATABASE!S13'),
+                $kolom('nomor_seri', 'Nomor seri', 'teks', null, 'DATABASE!T13'),
+                $kolom('tertelusur', 'Ketertelusuran', 'teks', null, 'DATABASE!U13'),
+                $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, 'DATABASE!V13'),
+                $kolom('interval_tahun', 'Interval', 'bulat', 'tahun', 'DATABASE!W13'),
+                $kolom('jatuh_tempo', 'Jatuh tempo', 'tanggal', null, 'DATABASE!X13'),
+                $kolom('resolusi', 'Resolusi', 'desimal', $satuan, "{$L}!{$res}"),
+            ]);
+            $daftar[] = $lembar("{$v}_media", "{$nama} — media kalibrasi", "{$j}/media", 'daftar', 'nomor', [
+                $kolom('nomor', 'Nomor', 'bulat', null, 'DATABASE!Q19:Q21'),
+                $kolom('media', 'Media', 'teks', null, 'DATABASE!R19:R21'),
+                $kolom('massa_jenis', 'Massa jenis', 'desimal', 'kg/m³', 'DATABASE!S19:S21'),
+            ]);
+            $daftar[] = $lembar("{$v}_drift", "{$nama} — drift standar", "{$j}/drift", 'objek', null, [
+                $kolom('nilai', 'Drift', 'desimal', $satuan, null),
+                $kolom('sel_master', 'Sel master', 'teks', null, null),
+                $kolom('rumus_master', 'Rumus master', 'teks', null, null),
+                $kolom('metode', 'Metode', 'teks', null, null),
+                $kolom('catatan', 'Catatan', 'teks', null, null),
+            ]);
+
+            $n = 0;
+
+            foreach ($cmc as $label => [$b, $tipeRumus]) {
+                $daftar[] = $lembar("{$v}_cmc_".(++$n), "{$nama} — CMC master {$label}", "{$j}/cmc_master/{$label}", 'objek', null, [
+                    $kolom('nilai', 'CMC', 'desimal', $satuan, "DATABASE!S{$b}"),
+                    // Rumus sel (teks) atau angka tetap bila sel tanpa rumus — dokumentasi, tidak dihitung.
+                    $kolom('rumus_master', 'Rumus master', $tipeRumus, null, null),
+                ]);
+            }
+        }
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-tekanan.json',
+            'lembar' => $daftar,
+        ];
+    }
+
+    /**
      * Blok STANDARD kertas FM-0507 Rev.5, disesuaikan ke kalibrator yang punya
      * master olah data.
      *

@@ -30,6 +30,32 @@ class StudioFormatSertifikatTest extends TestCase
         // (FlowmeterProfile::FORMAT_SERTIFIKAT [.., null]) -> jatuh ke desimal lama.
         'flowmeter/totalizer/u95' => ['0.0', null],
         'flowmeter/flowrate/u95' => ['0.0', null],
+        // Tekanan: TekananProfile tidak memberi formatKolomSertifikat() sama sekali (desimal lama);
+        // master mencetak format per varian (contoh sesi di lembar SERTIFIKAT).
+        'tekanan/druck07g/k' => ['General', null],
+        'tekanan/druck07g/koreksi' => ['0.0', null],
+        'tekanan/druck07g/sebaran' => ['0.0', null],
+        'tekanan/druck07g/standar' => ['0.0', null],
+        'tekanan/druck07g/u95' => ['0.000', null],
+        'tekanan/druck07g/uut' => ['0', null],
+        'tekanan/druck13g/k' => ['General', null],
+        'tekanan/druck13g/koreksi' => ['0.0', null],
+        'tekanan/druck13g/sebaran' => ['0.0', null],
+        'tekanan/druck13g/standar' => ['0.0', null],
+        'tekanan/druck13g/u95' => ['0.0', null],
+        'tekanan/druck13g/uut' => ['0', null],
+        'tekanan/spmk/k' => ['General', null],
+        'tekanan/spmk/koreksi' => ['0.00', null],
+        'tekanan/spmk/sebaran' => ['0.00', null],
+        'tekanan/spmk/standar' => ['0.00', null],
+        'tekanan/spmk/u95' => ['0.00', null],
+        'tekanan/spmk/uut' => ['0.000', null],
+        'tekanan/differential/k' => ['0', null],
+        'tekanan/differential/koreksi' => ['0.0', null],
+        'tekanan/differential/sebaran' => ['0.0', null],
+        'tekanan/differential/standar' => ['0.0', null],
+        'tekanan/differential/u95' => ['0.00', null],
+        'tekanan/differential/uut' => ['0.0', null],
     ];
 
     /**
@@ -51,6 +77,7 @@ class StudioFormatSertifikatTest extends TestCase
             'gaya' => ['gaya', [['utm', 'utm', 10.0, []], ['load_cell', 'load_cell', 10.0, []], ['proving_ring', 'proving_ring', 10.0, []]]],
             'putaran' => ['putaran', [['tachometer', 'tachometer', 500.0, []], ['tachometer', 'tachometer', 20000.0, []], ['centrifuge', 'centrifuge', 500.0, []]]],
             'timer_stopwatch' => ['timer_stopwatch', [[null, 'timer_stopwatch', 60.0, []]]],
+            'tekanan' => ['tekanan', [['druck07g', 'pressure_gauge', 100.0, []], ['druck13g', 'pressure_gauge', 100.0, []], ['spmk', 'pressure_gauge', 5.0, []], ['differential', 'differential_pressure', 2.0, []]]],
         ];
     }
 

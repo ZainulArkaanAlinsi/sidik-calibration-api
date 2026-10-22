@@ -15,8 +15,10 @@ use App\Services\Calibration\TabelStandarGaya;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarPutaran;
+use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TabelStandarVolumetric;
 use App\Services\Calibration\TabelStandarWaktu;
+use App\Services\Calibration\TekananCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Unit\DialIndicatorMasterTest;
@@ -288,6 +290,49 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
 
             return $h;
         });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Tekanan: satu paket untuk Pressure Gauge, Vacuum Gauge, Differential (empat master). */
+    public function test_tekanan_v1_setara_json(): void
+    {
+        $v1 = $this->v1('tekanan');
+
+        [$a, $b] = $this->duaJalur('tekanan', $v1, function (): array {
+            $h = [
+                'beda_level' => TabelStandarTekanan::bedaLevel(),
+                'g' => TabelStandarTekanan::gravitasiLokal(),
+                'resolusi' => [TabelStandarTekanan::pembagiResolusi('digital', null), TabelStandarTekanan::pembagiResolusi('analog', '1/5'), TabelStandarTekanan::pembagiResolusi('analog', null)],
+            ];
+
+            foreach (TabelStandarTekanan::VARIAN as $v) {
+                $h[$v] = [
+                    'satuan_kerja' => TabelStandarTekanan::satuanKerja($v),
+                    'satuan' => TabelStandarTekanan::satuanTersedia($v),
+                    'faktor' => array_map(static fn (string $s): ?float => TabelStandarTekanan::faktor($v, $s), [...TabelStandarTekanan::satuanTersedia($v), 'mpa', 'tidak_ada']),
+                    'standar' => TabelStandarTekanan::standar($v),
+                    'drift' => TabelStandarTekanan::drift($v),
+                    'media' => TabelStandarTekanan::daftarMedia($v),
+                    'rho' => [TabelStandarTekanan::massaJenisMedia($v, 1), TabelStandarTekanan::massaJenisMedia($v, 3)],
+                    'cmc' => [TabelStandarTekanan::cmcMaster($v, TabelStandarTekanan::kunciCmcMaster($v, true)), TabelStandarTekanan::cmcMaster($v, TabelStandarTekanan::kunciCmcMaster($v, false))],
+                    'varian' => TabelStandarTekanan::varian($v),
+                ];
+
+                // Sesi master (masukan `TekananMasterTest`), kedua mode.
+                $sesi = json_decode((string) file_get_contents(database_path('data/sesi-master-tekanan.json')), true)['sesi'][$v]['masukan'];
+
+                foreach ([TekananCalculator::MODE_MASTER, TekananCalculator::MODE_BENAR] as $mode) {
+                    $h[$v]['hitung'][$mode] = (new TekananCalculator)->hitungSesi($v, $sesi, $mode);
+                }
+            }
+
+            return $h;
+        });
+        // Daftar satuan (urutan dropdown) identik apa adanya; isi lain tanpa memandang urutan kunci objek.
+        foreach (TabelStandarTekanan::VARIAN as $v) {
+            $this->assertSame($a[$v]['satuan'], $b[$v]['satuan'], $v);
+        }
+
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 

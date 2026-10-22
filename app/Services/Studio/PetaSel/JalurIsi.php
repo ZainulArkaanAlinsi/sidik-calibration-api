@@ -22,8 +22,9 @@ final class JalurIsi
         $segmen = [];
 
         foreach (explode('.', $jalur) as $s) {
-            // Kunci objek boleh berspasi & huruf besar (`cmc.Labu Ukur`); titik tetap pemisah.
-            if (preg_match('/^([A-Za-z0-9_](?:[A-Za-z0-9_ ]*[A-Za-z0-9_])?)(?:\[(?:kode=([A-Za-z0-9_\-]+)|(\d+))\])?$/', $s, $m) !== 1) {
+            // Kunci objek boleh berspasi & huruf besar (`cmc.Labu Ukur`), juga label
+            // master seperti `-10 mbar ~ 10 mbar` (CMC Differential); titik tetap pemisah.
+            if (preg_match('/^([A-Za-z0-9_\-](?:[A-Za-z0-9_ \-~\/%()+]*[A-Za-z0-9_)])?)(?:\[(?:kode=([A-Za-z0-9_\-]+)|(\d+))\])?$/', $s, $m) !== 1) {
                 return null;
             }
 

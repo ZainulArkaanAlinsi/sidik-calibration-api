@@ -6,7 +6,7 @@
 Butuh `msoffcrypto-tool` + `openpyxl`. Master dibaca DI TEMPAT dan didekripsi ke
 MEMORI saja (BytesIO); tidak ada salinan, terdekripsi atau tidak, yang ditulis
 ke disk. Sandi dibaca dari variabel lingkungan USER Windows `SIDIK_MASTER_SANDI`
-(HKCU\Environment) — tidak pernah dicetak, dicatat, atau ditulis. Berkas master
+(HKCU Environment) — tidak pernah dicetak, dicatat, atau ditulis. Berkas master
 TIDAK boleh disalin ke repo (data pelanggan).
 
 Untuk tiap berkas: varian dari nama, lembar wajib (nama asli lewat bagian `xlsm`
@@ -165,6 +165,19 @@ def untuk_varian(butir, var):
     return [b for b in butir if 'varian' not in b or (var is not None and var in b['varian'])]
 
 
+def gabungan(wb, spec, tambah, asal):
+    """Sel kosong di dalam rentang merge -> nilai sel kiri-atasnya (seperti generator tekanan)."""
+    lb, k, b0, _, _ = spec
+    b = b0 + tambah
+    for dari, gs in ALIH['geser'].get(lb, []):
+        if b0 + tambah >= dari:
+            b = b0 + tambah + gs
+    for r in wb[asli(lb)].merged_cells.ranges:
+        if r.min_col <= k <= r.max_col and r.min_row <= b <= r.max_row and (k, b) != (r.min_col, r.min_row):
+            return wb[asli(lb)].cell(row=r.min_row, column=r.min_col).value
+    return asal
+
+
 def ekstrak_satu(wb, e, geser, masalah):
     t, bl = e['tipe'], e.get('bulat')
     if t in ('teks', 'angka', 'bilangan_bulat', 'tanggal'):
@@ -214,7 +227,8 @@ def ekstrak_satu(wb, e, geser, masalah):
                 kolom[nama] = ('tetap', sp['nilai_tetap'])
                 continue
             r = sp['rentang'] if isinstance(sp, dict) else sp
-            kolom[nama] = ('sel', urai(r), (sp.get('tipe', 'angka') if isinstance(sp, dict) else 'angka'), isinstance(sp, dict) and sp.get('boleh_kosong', False))
+            kolom[nama] = ('sel', urai(r), (sp.get('tipe', 'angka') if isinstance(sp, dict) else 'angka'), isinstance(sp, dict) and sp.get('boleh_kosong', False),
+                           isinstance(sp, dict) and sp.get('gabungan', False))
         kunci = kolom[e['kunci']][1]
         n = kunci[4] - kunci[2]
         lewati = e.get('lewati_kolom', [e['kunci']])
@@ -237,10 +251,17 @@ def ekstrak_satu(wb, e, geser, masalah):
                     baris[nama] = spec[1]
                     continue
                 v = v_of(spec)
+                if spec[4] and kosong(v):
+                    v = gabungan(wb, spec[1], geser + i, v)
                 if spec[3] and kosong(v):
                     baris[nama] = None
                 elif spec[2] == 'teks':
                     baris[nama] = teks(v)
+                elif spec[2] == 'bilangan_bulat':
+                    x = angka(v)
+                    if x is None or not x.is_integer():
+                        masalah.append(f"{e['jalur']} baris {i}: {v!r} bukan bilangan bulat")
+                    baris[nama] = None if x is None else int(x)
                 else:
                     x = angka(v)
                     if x is None:
