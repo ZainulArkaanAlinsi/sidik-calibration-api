@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -24,9 +25,6 @@ use RuntimeException;
  */
 class TabelStandarWaktu
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /**
      * Koreksi standar (ms) di satu nominal sertifikat (detik), atau `null`
      * kalau nominal itu tidak ada — meniru `VLOOKUP(...; 0)` master.
@@ -197,22 +195,20 @@ class TabelStandarWaktu
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-waktu.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar waktu nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `timer_stopwatch` (kodePaketAcuan). Tidak di-cache di kelas ini —
+        // cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('timer_stopwatch', $berkas);
 
         if (! is_array($isi) || ! isset($isi['sertifikat'], $isi['drift'], $isi['human_reaction'])) {
             throw new RuntimeException("Tabel standar waktu rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 }

@@ -380,6 +380,10 @@ final class PetaSel
                             $m[] = "{$label}.{$nama}: tipe kolom harus angka/teks";
                         }
 
+                        if (is_array($spek) && isset($spek['boleh_kosong']) && ! is_bool($spek['boleh_kosong'])) {
+                            $m[] = "{$label}.{$nama}: boleh_kosong harus boolean";
+                        }
+
                         if (($x = $selSah($rentang, true)) !== null) {
                             $m[] = "{$label}.{$nama}: {$x}";
 

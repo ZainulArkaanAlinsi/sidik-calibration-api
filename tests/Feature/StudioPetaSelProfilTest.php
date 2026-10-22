@@ -69,6 +69,12 @@ class StudioPetaSelProfilTest extends TestCase
                 ['Alat_Gaya/Gaya_Load_Cell', 'load_cell', 44],
                 ['Alat_Gaya/Gaya_Proving_Ring', 'proving_ring', 41],
             ]],
+            // Identitas standar + tabel sertifikat; drift dijaga cek, tidak diekstrak.
+            'putaran' => ['putaran', [
+                ['Waktu_/Master_Olda_Tachometer', 'tachometer', 6],
+                ['Waktu_/Master_Olda_Centrifuge', 'centrifuge', 5],
+            ]],
+            'timer_stopwatch' => ['timer_stopwatch', [['Waktu_/Master_Olda_Timer_dan_Stopwatch', null, 6]]],
             'volumetric' => ['volumetric', [
                 ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
                 ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],
@@ -133,6 +139,36 @@ class StudioPetaSelProfilTest extends TestCase
 
             try {
                 app(PemeriksaMaster::class)->periksa($peta, basename($asal), app(PembacaCsvWorkbook::class)->baca($this->temp)['lembar'], $json);
+                $this->fail("{$harap} seharusnya ditolak");
+            } catch (GagalBacaWorkbook $e) {
+                $this->assertStringContainsString($harap, $e->getMessage());
+            } finally {
+                (new Filesystem)->deleteDirectory($this->temp);
+            }
+        }
+    }
+
+    /**
+     * Drift Putaran & Waktu tidak diekstrak (rentang/maks = turunan generator)
+     * tapi dijaga: master dengan koreksi drift lain DITOLAK, tidak diam-diam
+     * menyisakan rentang lama.
+     */
+    public function test_drift_putaran_dan_waktu_berubah_ditolak(): void
+    {
+        foreach ([
+            ['putaran', 'Waktu_/Master_Olda_Tachometer', 'Drift Std Kalibrator.csv', ',,30000,0,1.4,1.5,-2,-3,0,-2,', ',,30000,0,1.4,1.5,-2,-3,0,-2.5,', 'Drift Std Kalibrator!J32 = -2.5'],
+            ['timer_stopwatch', 'Waktu_/Master_Olda_Timer_dan_Stopwatch', 'Drift Stopwatch.csv', ',0,40,0,0,278,245,-10,-20,', ',0,40,0,0,278,245,-10,-25,', 'Drift Stopwatch!I23 = -25'],
+        ] as [$kode, $folder, $csv, $cari, $ganti, $harap]) {
+            $peta = PetaSel::untuk($kode) ?? $this->fail("peta {$kode}");
+            $json = json_decode((string) file_get_contents(database_path('data/'.$peta->isi['sumber_json'])), true);
+            $this->temp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'sidik-petasel-'.bin2hex(random_bytes(5));
+            (new Filesystem)->copyDirectory(base_path(self::AKAR.$folder), $this->temp);
+            $isi = (string) file_get_contents($this->temp.'/'.$csv);
+            $this->assertSame(1, substr_count($isi, $cari), "prasyarat {$kode}");
+            file_put_contents($this->temp.'/'.$csv, str_replace($cari, $ganti, $isi));
+
+            try {
+                app(PemeriksaMaster::class)->periksa($peta, basename($folder), app(PembacaCsvWorkbook::class)->baca($this->temp)['lembar'], $json);
                 $this->fail("{$harap} seharusnya ditolak");
             } catch (GagalBacaWorkbook $e) {
                 $this->assertStringContainsString($harap, $e->getMessage());

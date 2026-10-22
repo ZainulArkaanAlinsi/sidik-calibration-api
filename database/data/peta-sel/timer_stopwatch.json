@@ -1,0 +1,611 @@
+{
+ "format": 1,
+ "kode_profil": "timer_stopwatch",
+ "sumber_json": "tabel-standar-waktu.json",
+ "bukti": [
+  "Alamat = gen-tabel-standar-waktu-frekuensi.py bagian WAKTU (SERTIFIKAT KALIBRATOR!C1:C5 & C9:F21, Drift Stopwatch!B12:J25, F8:J9, L7, Human Reaction) atas ekspor CSV Project-PT-Sidik/alat-alat-Pt-Sidik/Waktu_/Master_Olda_Timer_dan_Stopwatch (22 Okt 2026); ekstraksi = tabel-standar-waktu.json (StudioPetaSelProfilTest).",
+  "Drift & Human Reaction TIDAK diekstrak (rentang, rata-rata, stdev, maks = turunan generator); koreksi drift baris 12,13,14,15,16,17,18,19,20,21,22,23,25 dan hari_master L7 dijaga cek, sel J/M/s nominal drift dipatok jangkar — master dengan data drift lain DITOLAK."
+ ],
+ "lembar_wajib": [
+  "SERTIFIKAT KALIBRATOR",
+  "Drift Stopwatch",
+  "Human Reaction"
+ ],
+ "jangkar": [
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A1",
+   "teks": "Name"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A2",
+   "teks": "Manufacturer"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A3",
+   "teks": "Accuration"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A4",
+   "teks": "Serial Number"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!A5",
+   "teks": "Calibration Date"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!C8",
+   "teks": "Nominal STD (s)"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!E8",
+   "teks": "Koreksi (ms)"
+  },
+  {
+   "sel": "SERTIFIKAT KALIBRATOR!F8",
+   "teks": "Uncertainty (s)"
+  },
+  {
+   "sel": "Drift Stopwatch!B11",
+   "teks": "J"
+  },
+  {
+   "sel": "Drift Stopwatch!C11",
+   "teks": "M"
+  },
+  {
+   "sel": "Drift Stopwatch!D11",
+   "teks": "s"
+  },
+  {
+   "sel": "Drift Stopwatch!K7",
+   "teks": "Jumlah hari"
+  },
+  {
+   "sel": "Drift Stopwatch!B9",
+   "teks": "Tanggal Kalibrasi"
+  },
+  {
+   "sel": "Drift Stopwatch!F9",
+   "teks": "2022-12-22T00:00:00"
+  },
+  {
+   "sel": "Drift Stopwatch!G9",
+   "teks": "2023-12-22T00:00:00"
+  },
+  {
+   "sel": "Drift Stopwatch!H9",
+   "teks": "2024-12-20T00:00:00"
+  },
+  {
+   "sel": "Drift Stopwatch!I9",
+   "teks": "2025-12-15T00:00:00"
+  },
+  {
+   "sel": "Drift Stopwatch!B12",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C12",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!D12",
+   "teks": "5"
+  },
+  {
+   "sel": "Drift Stopwatch!B13",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C13",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!D13",
+   "teks": "10"
+  },
+  {
+   "sel": "Drift Stopwatch!B14",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C14",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!D14",
+   "teks": "30"
+  },
+  {
+   "sel": "Drift Stopwatch!B15",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C15",
+   "teks": "1"
+  },
+  {
+   "sel": "Drift Stopwatch!D15",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B16",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C16",
+   "teks": "2"
+  },
+  {
+   "sel": "Drift Stopwatch!D16",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B17",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C17",
+   "teks": "3"
+  },
+  {
+   "sel": "Drift Stopwatch!D17",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B18",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C18",
+   "teks": "4"
+  },
+  {
+   "sel": "Drift Stopwatch!D18",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B19",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C19",
+   "teks": "5"
+  },
+  {
+   "sel": "Drift Stopwatch!D19",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B20",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C20",
+   "teks": "10"
+  },
+  {
+   "sel": "Drift Stopwatch!D20",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B21",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C21",
+   "teks": "20"
+  },
+  {
+   "sel": "Drift Stopwatch!D21",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B22",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C22",
+   "teks": "30"
+  },
+  {
+   "sel": "Drift Stopwatch!D22",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B23",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!C23",
+   "teks": "40"
+  },
+  {
+   "sel": "Drift Stopwatch!D23",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!B25",
+   "teks": "1"
+  },
+  {
+   "sel": "Drift Stopwatch!C25",
+   "teks": "0"
+  },
+  {
+   "sel": "Drift Stopwatch!D25",
+   "teks": "0"
+  }
+ ],
+ "ekstrak": [
+  {
+   "jalur": "standar.nama",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C1"
+  },
+  {
+   "jalur": "standar.merk",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C2"
+  },
+  {
+   "jalur": "standar.resolusi",
+   "tipe": "angka",
+   "sel": "SERTIFIKAT KALIBRATOR!C3"
+  },
+  {
+   "jalur": "standar.seri",
+   "tipe": "teks",
+   "sel": "SERTIFIKAT KALIBRATOR!C4"
+  },
+  {
+   "jalur": "standar.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "SERTIFIKAT KALIBRATOR!C5"
+  },
+  {
+   "jalur": "sertifikat",
+   "tipe": "daftar_objek",
+   "kunci": "nominal_detik",
+   "bulat": 10,
+   "kolom": {
+    "nominal_detik": "SERTIFIKAT KALIBRATOR!C9:C21",
+    "koreksi_ms": "SERTIFIKAT KALIBRATOR!E9:E21",
+    "u95_detik": {
+     "rentang": "SERTIFIKAT KALIBRATOR!F9:F21",
+     "boleh_kosong": true
+    }
+   },
+   "min_baris": 1
+  }
+ ],
+ "cek": [
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F12",
+   "banding": "drift.titik[0].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G12",
+   "banding": "drift.titik[0].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H12",
+   "banding": "drift.titik[0].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I12",
+   "banding": "drift.titik[0].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F13",
+   "banding": "drift.titik[1].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G13",
+   "banding": "drift.titik[1].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H13",
+   "banding": "drift.titik[1].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I13",
+   "banding": "drift.titik[1].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F14",
+   "banding": "drift.titik[2].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G14",
+   "banding": "drift.titik[2].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H14",
+   "banding": "drift.titik[2].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I14",
+   "banding": "drift.titik[2].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F15",
+   "banding": "drift.titik[3].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G15",
+   "banding": "drift.titik[3].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H15",
+   "banding": "drift.titik[3].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I15",
+   "banding": "drift.titik[3].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F16",
+   "banding": "drift.titik[4].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G16",
+   "banding": "drift.titik[4].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H16",
+   "banding": "drift.titik[4].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I16",
+   "banding": "drift.titik[4].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F17",
+   "banding": "drift.titik[5].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G17",
+   "banding": "drift.titik[5].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H17",
+   "banding": "drift.titik[5].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I17",
+   "banding": "drift.titik[5].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F18",
+   "banding": "drift.titik[6].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G18",
+   "banding": "drift.titik[6].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H18",
+   "banding": "drift.titik[6].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I18",
+   "banding": "drift.titik[6].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F19",
+   "banding": "drift.titik[7].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G19",
+   "banding": "drift.titik[7].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H19",
+   "banding": "drift.titik[7].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I19",
+   "banding": "drift.titik[7].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F20",
+   "banding": "drift.titik[8].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G20",
+   "banding": "drift.titik[8].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H20",
+   "banding": "drift.titik[8].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I20",
+   "banding": "drift.titik[8].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F21",
+   "banding": "drift.titik[9].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G21",
+   "banding": "drift.titik[9].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H21",
+   "banding": "drift.titik[9].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I21",
+   "banding": "drift.titik[9].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F22",
+   "banding": "drift.titik[10].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G22",
+   "banding": "drift.titik[10].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H22",
+   "banding": "drift.titik[10].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I22",
+   "banding": "drift.titik[10].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F23",
+   "banding": "drift.titik[11].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G23",
+   "banding": "drift.titik[11].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H23",
+   "banding": "drift.titik[11].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I23",
+   "banding": "drift.titik[11].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!F25",
+   "banding": "drift.titik[12].koreksi_ms.F",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!G25",
+   "banding": "drift.titik[12].koreksi_ms.G",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!H25",
+   "banding": "drift.titik[12].koreksi_ms.H",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!I25",
+   "banding": "drift.titik[12].koreksi_ms.I",
+   "toleransi": 1e-09
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "Drift Stopwatch!L7",
+   "banding": "drift.hari_master",
+   "toleransi": 1e-09
+  }
+ ],
+ "tidak_dipetakan": [
+  "human_reaction.* — beda/rata-rata/stdev/maks diturunkan generator dari pasangan sel Human Reaction (D..M baris 8-15) dan inisial C19:C22; TIDAK diekstrak dan TIDAK dijaga sel per sel (beda = selisih dua sel). Master dengan Human Reaction baru tidak menggeser acuan — perubahan wajib lewat generator/PR",
+  "drift.snapshot[*].lab — nama lab Drift Stopwatch!F8:I8 DIREDAKSI di CSV repo; tanggal F9:I9 dipatok jangkar",
+  "drift.titik[*].rentang_ms, drift.rentang_maks_*, dihitung_master, nominal_detik — TURUNAN generator, dijaga lewat cek/jangkar sel sumber"
+ ],
+ "perlu_berkas_asli": [
+  "Konfirmasi alamat di .xlsm (terenkripsi; SIDIK_MASTER_SANDI belum disetel).",
+  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
+ ]
+}

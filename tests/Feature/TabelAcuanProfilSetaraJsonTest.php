@@ -14,7 +14,9 @@ use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
+use App\Services\Calibration\TabelStandarPutaran;
 use App\Services\Calibration\TabelStandarVolumetric;
+use App\Services\Calibration\TabelStandarWaktu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Unit\DialIndicatorMasterTest;
@@ -252,6 +254,40 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
         });
         // Daftar (urutan tampil) identik apa adanya; isi lain tanpa memandang urutan kunci objek.
         $this->assertSame([$a['satuan'], $a['standar']], [$b['satuan'], $b['standar']]);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Putaran (Centrifuge & Tachometer) dan Timer/Stopwatch. */
+    public function test_putaran_dan_waktu_v1_setara_json(): void
+    {
+        $vP = $this->v1('putaran');
+        [$a, $b] = $this->duaJalur('putaran', $vP, function (): array {
+            $t = new TabelStandarPutaran;
+            $h = ['standar' => $t->standar(), 'sertifikat' => $t->sertifikat(), 'n' => $t->jumlahSnapshotDrift(), 'drift' => [$t->driftSetengahLebar(true), $t->driftSetengahLebar(false)]];
+
+            foreach ([10.0, 60.0, 150.0, 2500.0, 30000.0, 90000.0] as $n) {
+                $h['titik'][] = [$t->koreksi($n), $t->u95Sertifikat($n), $t->nominalTerdekat($n)];
+            }
+
+            return $h;
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+
+        $vW = $this->v1('timer_stopwatch');
+        [$a, $b] = $this->duaJalur('timer_stopwatch', $vW, function (): array {
+            $t = new TabelStandarWaktu;
+            $h = [
+                'standar' => $t->standar(), 'sertifikat' => $t->sertifikat(), 'n' => $t->jumlahSnapshotDrift(),
+                'drift' => [$t->driftMs(true), $t->driftMs(false)],
+                'hr' => [$t->uHumanReactionRata(true), $t->uHumanReactionRata(false), $t->uHumanReactionStdev()],
+            ];
+
+            foreach ([3.0, 5.0, 61.0, 600.0, 3600.0, 7200.0] as $n) {
+                $h['titik'][] = [$t->koreksiMs($n), $t->u95Sertifikat($n), $t->nominalTerdekat($n)];
+            }
+
+            return $h;
+        });
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 

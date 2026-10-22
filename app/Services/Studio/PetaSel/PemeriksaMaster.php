@@ -351,6 +351,9 @@ final class PemeriksaMaster
                 'tetap' => false,
                 'r' => Alamat::urai((string) (is_array($spek) ? $spek['rentang'] : $spek)),
                 'tipe' => is_array($spek) ? ($spek['tipe'] ?? 'angka') : 'angka',
+                // Sel kosong = null (mis. U95 sertifikat standar yang cuma
+                // tercetak di sebagian titik), bukan galat.
+                'boleh_kosong' => is_array($spek) && ($spek['boleh_kosong'] ?? false),
             ];
         }
 
@@ -388,6 +391,13 @@ final class PemeriksaMaster
                 [$lb, $kk, $bb] = $sel($k);
                 $c = $this->sel($indeks, $lb, $kk, $bb);
                 $alamat = Alamat::sel($lb, $kk, $bb);
+
+                if ($k['boleh_kosong'] && ($c === null || (! is_int($c['n'] ?? null) && ! is_float($c['n'] ?? null) && trim((string) ($c['s'] ?? '')) === ''))) {
+                    $baris[$nama] = null;
+
+                    continue;
+                }
+
                 $baris[$nama] = $k['tipe'] === 'teks'
                     ? $this->teks($c, $alamat, $masalah)
                     : $this->angkaWajib($c, $alamat, isset($e['bulat']) ? (int) $e['bulat'] : null, $masalah);
