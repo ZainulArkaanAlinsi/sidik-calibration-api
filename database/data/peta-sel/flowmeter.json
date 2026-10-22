@@ -1,0 +1,373 @@
+{
+ "format": 1,
+ "kode_profil": "flowmeter",
+ "sumber_json": "tabel-standar-flowmeter.json",
+ "bukti": [
+  "Alamat = alamat docs/skrip/gen-tabel-standar-flowmeter.py: STANDAR KALIBRATOR!D10:H21 (std_totalizer) & Q10:U18 (std_flowrate), baris standard kosong dibuang; DATABASE!R5:S6 pita CMC; DATABASE!T14:U17 + V15:V16 (Totalizer), STANDAR KALIBRATOR!E43/R43/Q39 (Totalizer), DATABASE!T19 (Flowrate), cek E32/R32 Flowrate = Totalizer.",
+  "Jalur generator memakai Aliran_CSV/; ekspor yang sama ada di Project-PT-Sidik/alat-alat-Pt-Sidik/Aliran_2/ (1_3_..._Ultrasonic_Totalizer..., Master_olda_Ultrasonic_Flowrate...). Ekstraksi dari keduanya = tabel-standar-flowmeter.json (StudioPetaSelProfilTest).",
+  "Paket flowmeter = tabel Ultrasonic, dipakai profil flowmeter_totalizer & flowmeter_flowrate. Master Gravimetri (1_2 Totalizer dini, 2_1 Flowrate 100-980) masuk profil yang sama tapi tabelnya lain: varian.lainnya = lewati -> belum terpetakan, tidak ditolak.",
+  "Data bersama antar varian otomatis: std_totalizer & std_flowrate (generator menuntut kedua master identik)."
+ ],
+ "lembar_wajib": [
+  "STANDAR KALIBRATOR",
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR KALIBRATOR!D8",
+   "teks": "Standard"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!E8",
+   "teks": "Unit Under Test"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!F8",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G8",
+   "teks": "Ketidakpastian"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q8",
+   "teks": "Standard"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!R8",
+   "teks": "Unit Under Test"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!S8",
+   "teks": "Koreksi"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T8",
+   "teks": "Ketidakpastian"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!G9",
+   "teks": "% of Reading"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!T9",
+   "teks": "% of Reading"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D30",
+   "teks": "U95 % (°C)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!Q30",
+   "teks": "U95 % (°C)"
+  },
+  {
+   "sel": "STANDAR KALIBRATOR!D41",
+   "teks": "U95 % (mm)"
+  },
+  {
+   "sel": "DATABASE!R3",
+   "teks": "Range"
+  },
+  {
+   "sel": "DATABASE!S3",
+   "teks": "CMC"
+  },
+  {
+   "sel": "DATABASE!S4",
+   "teks": "% of reading"
+  },
+  {
+   "sel": "DATABASE!S13",
+   "teks": "Merk/Type"
+  },
+  {
+   "sel": "DATABASE!T13",
+   "teks": "S/N"
+  },
+  {
+   "sel": "DATABASE!U13",
+   "teks": "Traceability"
+  },
+  {
+   "sel": "DATABASE!V13",
+   "teks": "U95%"
+  },
+  {
+   "sel": "DATABASE!R14",
+   "teks": "Ultrasonic Flowmeter"
+  },
+  {
+   "sel": "DATABASE!R15",
+   "teks": "Temperature Calibrator"
+  },
+  {
+   "sel": "DATABASE!R16",
+   "teks": "Thermocouple"
+  },
+  {
+   "sel": "DATABASE!R17",
+   "teks": "Digital Caliper"
+  },
+  {
+   "sel": "DATABASE!R18",
+   "teks": "Ultrasonic Thickness Gauge"
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "10 - 78 L",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "78 - 1991 L",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "sel": "DATABASE!R5",
+   "teks": "75 - 191 Lpm",
+   "varian": [
+    "flowrate"
+   ]
+  },
+  {
+   "sel": "DATABASE!R6",
+   "teks": "190.6 - 519.4 Lpm",
+   "varian": [
+    "flowrate"
+   ]
+  },
+  {
+   "sel": "DATABASE!R19",
+   "teks": "Stopwatch",
+   "varian": [
+    "flowrate"
+   ]
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "totalizer": "(^| )ultrasonic totalizer( |$)",
+   "flowrate": "(^| )ultrasonic flowrate( |$)"
+  },
+  "lainnya": "lewati"
+ },
+ "ekstrak": [
+  {
+   "jalur": "std_totalizer",
+   "tipe": "daftar_objek",
+   "kunci": "standard",
+   "kolom": {
+    "standard": "STANDAR KALIBRATOR!D10:D21",
+    "uut": "STANDAR KALIBRATOR!E10:E21",
+    "koreksi": "STANDAR KALIBRATOR!F10:F21",
+    "persen_of_reading": "STANDAR KALIBRATOR!G10:G21",
+    "u": "STANDAR KALIBRATOR!H10:H21"
+   },
+   "min_baris": 1
+  },
+  {
+   "jalur": "std_flowrate",
+   "tipe": "daftar_objek",
+   "kunci": "standard",
+   "kolom": {
+    "standard": "STANDAR KALIBRATOR!Q10:Q18",
+    "uut": "STANDAR KALIBRATOR!R10:R18",
+    "koreksi": "STANDAR KALIBRATOR!S10:S18",
+    "persen_of_reading": "STANDAR KALIBRATOR!T10:T18",
+    "u": "STANDAR KALIBRATOR!U10:U18"
+   },
+   "min_baris": 1
+  },
+  {
+   "jalur": "cmc.{varian}[0].cmc_persen_of_reading",
+   "tipe": "angka",
+   "sel": "DATABASE!S5"
+  },
+  {
+   "jalur": "cmc.{varian}[1].cmc_persen_of_reading",
+   "tipe": "angka",
+   "sel": "DATABASE!S6"
+  },
+  {
+   "jalur": "standar.ufm.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T14",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.ufm.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U14",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.yokogawa.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T15",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.yokogawa.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U15",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.thermocouple.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T16",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.thermocouple.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U16",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.caliper.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T17",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.caliper.tertelusur",
+   "tipe": "teks",
+   "sel": "DATABASE!U17",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.yokogawa.u95_c",
+   "tipe": "angka",
+   "sel": "DATABASE!V15",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "konstanta.u95_yokogawa_c",
+   "tipe": "angka",
+   "sel": "DATABASE!V15",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.thermocouple.u95_c",
+   "tipe": "angka",
+   "sel": "DATABASE!V16",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "konstanta.u95_thermocouple_c",
+   "tipe": "angka",
+   "sel": "DATABASE!V16",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.caliper.u95_mm",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!E43",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "konstanta.u95_caliper_mm",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!E43",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.thickness_gauge.seri",
+   "tipe": "teks",
+   "sel": "STANDAR KALIBRATOR!Q39",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.thickness_gauge.u95_mm",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!R43",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "konstanta.u95_thickness_gauge_mm",
+   "tipe": "angka",
+   "sel": "STANDAR KALIBRATOR!R43",
+   "varian": [
+    "totalizer"
+   ]
+  },
+  {
+   "jalur": "standar.timer.seri",
+   "tipe": "teks",
+   "sel": "DATABASE!T19",
+   "varian": [
+    "flowrate"
+   ]
+  }
+ ],
+ "cek": [
+  {
+   "tipe": "selisih_maks",
+   "sel": "STANDAR KALIBRATOR!E32",
+   "banding": "standar.yokogawa.u95_c",
+   "toleransi": 1e-12,
+   "varian": [
+    "flowrate"
+   ]
+  },
+  {
+   "tipe": "selisih_maks",
+   "sel": "STANDAR KALIBRATOR!R32",
+   "banding": "standar.thermocouple.u95_c",
+   "toleransi": 1e-12,
+   "varian": [
+    "flowrate"
+   ]
+  }
+ ],
+ "tidak_dipetakan": [
+  "cmc.*[*].label/min/maks/satuan — batas pita diurai generator dari TEKS label; label dipatok jangkar (R5/R6 per varian), jadi master dengan pita lain ditolak, bukan diurai diam-diam",
+  "standar.*.nama/merk/tipe/tanggal_kalibrasi/tanggal_jatuh_tempo/resolusi/hanya_flowrate, standar.timer.tertelusur, standar.thickness_gauge.tertelusur (null) — ditulis LITERAL di generator, bukan dibaca sel",
+  "konstanta.* selain u95_* — angka telanjang/rumus master (pi 3.14, pembagi 1.73, vi, densitas Tanaka); tetap kode/JSON sampai fase 5",
+  "satuan.* — faktor konversi literal generator (massa = null karena master rusak), bukan sel",
+  "tabel-standar-flowmeter-gravimetri.json — tabel lain (TabelStandarFlowmeterGravimetri), dibaca profil yang sama; belum dipindah: satu profil membaca dua paket, lingkup sesi baru membuka satu paket (perlu desain)"
+ ],
+ "perlu_berkas_asli": [
+  "Konfirmasi alamat di .xlsm asli (terenkripsi; SIDIK_MASTER_SANDI belum disetel).",
+  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
+ ]
+}

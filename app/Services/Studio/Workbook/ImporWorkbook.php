@@ -241,6 +241,10 @@ final class ImporWorkbook
         // Peta per PAKET data acuan: workbook keluarga (Volumetric Fixed/Graduated,
         // DRUCK, ...) memetakan ke paket profil-profil yang berbagi satu tabel.
         $peta = PetaSel::untuk(PetaProfilWorkbook::kodePaket($meta, app(CalibrationProfileRegistry::class)));
+        // Peta ber-`varian.lainnya = lewati` tidak berlaku untuk master di luar
+        // variannya (mis. Flowmeter Gravimetri vs peta Ultrasonic): belum terpetakan, bukan ditolak.
+        $petaDilewati = $peta !== null && $peta->tidakBerlakuUntuk((string) $meta['nama']) ? $peta->kodeProfil : null;
+        $peta = $petaDilewati !== null ? null : $peta;
         $dasar = $peta !== null ? $this->draf->dasar((int) $organisasi->id, $peta) : null;
         $hasilPeta = $peta !== null ? $this->pemeriksa->periksa($peta, (string) $meta['nama'], $lembar, $dasar['isi']) : null;
         $statusPeta = $peta !== null ? 'tervalidasi' : 'belum_terpetakan';
@@ -249,7 +253,7 @@ final class ImporWorkbook
         $bedaPaket = $peta !== null ? app(DataBersamaPaket::class)->periksa($peta, $lembar, (int) $organisasi->id) : [];
         $meta['catatan'] = trim($meta['catatan'].($peta !== null
             ? ' Peta sel '.$peta->kodeProfil.': struktur tervalidasi'.($hasilPeta['varian'] !== null ? ' (varian '.$hasilPeta['varian'].')' : '').'.'
-            : ' Peta sel: belum terpetakan — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.')
+            : ' Peta sel: belum terpetakan'.($petaDilewati !== null ? " (bukan varian peta {$petaDilewati})" : '').' — struktur master ini belum divalidasi dan isinya TIDAK dipakai jalur hitung/sertifikat/CMC.')
             .($bedaPaket === [] ? '' : ' PERINGATAN bersama_antar_paket: '.count($bedaPaket).' daun data paket lain ('
                 .implode(', ', array_unique(array_column($bedaPaket, 'paket'))).') di master ini beda dari versi berlakunya.'));
 

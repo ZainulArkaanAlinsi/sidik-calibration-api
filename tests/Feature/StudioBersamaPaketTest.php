@@ -90,6 +90,24 @@ class StudioBersamaPaketTest extends TestCase
         $this->assertSame([], $this->beda('jangka_sorong', base_path(self::AKAR.self::CALIPER), $org->id));
     }
 
+    /**
+     * `varian.lainnya = lewati`: master Gravimetri masuk profil Flowmeter yang
+     * sama tapi bukan varian peta Ultrasonic — belum terpetakan, TIDAK ditolak.
+     * Master Ultrasonic tetap divalidasi peta.
+     */
+    public function test_peta_flowmeter_melewati_master_gravimetri(): void
+    {
+        $org = Organization::factory()->create();
+        $impor = app(ImporWorkbook::class);
+        $akar = 'Project-PT-Sidik/alat-alat-Pt-Sidik/Aliran_2/';
+
+        $grav = $impor->imporCsv(base_path($akar.'1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_'), '1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_', 'uji', $org, null, true);
+        $this->assertSame(['kering', 'belum_terpetakan'], [$grav['status'], $grav['peta_sel']]);
+
+        $ufm = $impor->imporCsv(base_path($akar.'Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026'), 'Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026', 'uji', $org, null, true);
+        $this->assertSame(['kering', 'tervalidasi'], [$ufm['status'], $ufm['peta_sel']]);
+    }
+
     public function test_beda_ditandai_per_daun(): void
     {
         $org = Organization::factory()->create();

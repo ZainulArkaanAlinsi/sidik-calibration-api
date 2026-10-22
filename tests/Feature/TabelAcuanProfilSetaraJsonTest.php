@@ -10,6 +10,7 @@ use App\Services\Calibration\DialIndicatorCalculator;
 use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\TabelStandarDialIndicator;
+use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarVolumetric;
@@ -182,6 +183,40 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
             return $hasil;
         });
         $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+    }
+
+    /** Flowmeter Ultrasonic: satu paket untuk Totalizer & Flowrate. */
+    public function test_flowmeter_v1_setara_json(): void
+    {
+        $v1 = $this->v1('flowmeter');
+
+        [$a, $b] = $this->duaJalur('flowmeter', $v1, function (): array {
+            $t = new TabelStandarFlowmeter;
+            $hasil = ['konstanta' => $t->konstanta(), 'standar' => $t->standar()];
+
+            foreach ([TabelStandarFlowmeter::MODE_TOTALIZER, TabelStandarFlowmeter::MODE_FLOWRATE] as $m) {
+                $hasil[$m]['baris'] = $t->baris($m);
+                $hasil[$m]['pita'] = $t->semuaPitaCmc($m);
+                $hasil[$m]['standar'] = $t->standarUntuk($m);
+
+                foreach ($t->satuanDikenal($m) as $s) {
+                    $hasil[$m]['satuan'][$s] = [$t->faktorSatuan($m, $s), $t->satuanBerbasisMassa($m, $s)];
+                }
+
+                foreach ([5.0, 50.0, 100.0, 120.0, 236.0, 500.0, 1000.0, 1900.0, 2500.0] as $n) {
+                    $hasil[$m]['titik'][] = [$t->cocokTerdekat($m, $n), $t->jarakRelatif($m, $n), $t->dalamJangkauan($m, $n), $t->pitaCmc($m, $n)];
+                }
+            }
+
+            return $hasil;
+        });
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
+
+        // Urutan satuan (pilihan lembar kerja) tidak bergantung sumber isi.
+        foreach ([TabelStandarFlowmeter::MODE_TOTALIZER, TabelStandarFlowmeter::MODE_FLOWRATE] as $m) {
+            [$x, $y] = $this->duaJalur('flowmeter', $v1, fn (): array => (new TabelStandarFlowmeter)->satuanDikenal($m));
+            $this->assertSame($x, $y, $m);
+        }
     }
 
     /** Urutkan kunci objek rekursif; urutan list dipertahankan. */

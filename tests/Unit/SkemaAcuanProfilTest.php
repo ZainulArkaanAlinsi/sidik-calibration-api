@@ -18,11 +18,11 @@ class SkemaAcuanProfilTest extends TestCase
     use PeriksaSkemaAcuan;
 
     /** Profil yang sudah dipindah ke Studio, urut registry (bukan urut migrasi). Menambah = keputusan yang terlihat di diff. */
-    public const BERSKEMA = ['micrometer', 'height_gauge', 'dial_indicator', 'jangka_sorong', 'volumetric'];
+    public const BERSKEMA = ['micrometer', 'height_gauge', 'flowmeter', 'dial_indicator', 'jangka_sorong', 'volumetric'];
 
     private const JENIS = ['objek', 'baris', 'daftar'];
 
-    private const TIPE = ['teks', 'tanggal', 'desimal', 'desimal_kosong', 'bulat', 'daftar_angka'];
+    private const TIPE = ['teks', 'teks_kosong', 'tanggal', 'desimal', 'desimal_kosong', 'bulat', 'boolean', 'daftar_angka'];
 
     /** @return array<string, array{string}> */
     public static function profil(): array

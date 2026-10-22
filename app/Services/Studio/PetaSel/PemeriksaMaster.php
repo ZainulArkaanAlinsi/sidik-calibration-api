@@ -3,7 +3,6 @@
 namespace App\Services\Studio\PetaSel;
 
 use App\Services\Studio\Workbook\GagalBacaWorkbook;
-use App\Services\Studio\Workbook\PetaProfilWorkbook;
 use JsonException;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use RuntimeException;
@@ -454,17 +453,7 @@ final class PemeriksaMaster
     /** @param  array<string, string>  $pola */
     private function varian(array $pola, string $nama): ?string
     {
-        $normal = PetaProfilWorkbook::normalkan($nama);
-        $cocok = [];
-
-        foreach ($pola as $kode => $regex) {
-            if (preg_match('/'.$regex.'/u', $normal) === 1) {
-                $cocok[] = (string) $kode;
-            }
-        }
-
-        // Dua pola cocok = nama ambigu; tidak ditebak.
-        return count($cocok) === 1 ? $cocok[0] : null;
+        return PetaSel::varianDariPola($pola, $nama);
     }
 
     /**

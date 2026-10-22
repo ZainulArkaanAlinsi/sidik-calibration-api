@@ -3,6 +3,7 @@
 namespace App\Services\Studio\PetaSel;
 
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Studio\Workbook\PetaProfilWorkbook;
 use App\Support\JsonKanonik;
 use JsonException;
 
@@ -225,8 +226,9 @@ final class PetaSel
             $v = $p['varian'];
             $pola = is_array($v) ? ($v['pola'] ?? null) : null;
 
-            if (! is_array($v) || ($v['sumber'] ?? null) !== 'nama' || ! is_array($pola) || $pola === []) {
-                $m[] = "varian harus {sumber: 'nama', pola: {kode: regex}}";
+            if (! is_array($v) || ($v['sumber'] ?? null) !== 'nama' || ! is_array($pola) || $pola === []
+                || ! in_array($v['lainnya'] ?? 'tolak', ['tolak', 'lewati'], true)) {
+                $m[] = "varian harus {sumber: 'nama', pola: {kode: regex}, lainnya?: tolak|lewati}";
             } else {
                 foreach ($pola as $kode => $regex) {
                     if (! is_string($regex) || @preg_match('/'.$regex.'/u', '') === false) {
@@ -453,6 +455,41 @@ final class PetaSel
     /**
      * Ganti `{varian}`/`{i}` di jalur.
      */
+    /**
+     * Kode varian dari nama workbook (pola `varian.pola`), atau null bila
+     * tidak ada / lebih dari satu pola cocok (nama ambigu tidak ditebak).
+     *
+     * @param  array<string, string>  $pola
+     */
+    public static function varianDariPola(array $pola, string $nama): ?string
+    {
+        $normal = PetaProfilWorkbook::normalkan($nama);
+        $cocok = [];
+
+        foreach ($pola as $kode => $regex) {
+            if (preg_match('/'.$regex.'/u', $normal) === 1) {
+                $cocok[] = (string) $kode;
+            }
+        }
+
+        return count($cocok) === 1 ? $cocok[0] : null;
+    }
+
+    /**
+     * Peta ini TIDAK berlaku untuk master bernama `$nama`: petanya ber-varian
+     * dengan `varian.lainnya = lewati` dan nama itu tidak cocok varian mana
+     * pun. Dipakai untuk profil yang menerima master dari dua keluarga —
+     * mis. Flowmeter: master Ultrasonic dipetakan, master Gravimetri (profil
+     * sama, tabel lain) belum, dan tidak boleh ditolak gara-gara peta
+     * Ultrasonic.
+     */
+    public function tidakBerlakuUntuk(string $nama): bool
+    {
+        return isset($this->isi['varian'])
+            && ($this->isi['varian']['lainnya'] ?? 'tolak') === 'lewati'
+            && self::varianDariPola($this->isi['varian']['pola'], $nama) === null;
+    }
+
     /**
      * Butir (jangkar/ekstrak/cek) yang berlaku untuk `$varian`: butir tanpa
      * kunci `varian` berlaku untuk semua; butir ber-`varian` hanya untuk kode

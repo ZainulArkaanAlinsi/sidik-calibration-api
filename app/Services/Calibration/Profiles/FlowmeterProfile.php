@@ -68,6 +68,160 @@ use Carbon\Carbon;
 abstract class FlowmeterProfile extends CalibrationProfile
 {
     /**
+     * Flowmeter Totalizer & Flowrate membaca SATU tabel Ultrasonic
+     * (`tabel-standar-flowmeter.json`, dua master) — satu paket data acuan.
+     * Tabel Gravimetri (`TabelStandarFlowmeterGravimetri`) belum dipindah:
+     * satu sesi baru membuka lingkup satu paket, jadi tabel itu tetap JSON.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'flowmeter';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Flowmeter Ultrasonic (Totalizer & Flowrate)';
+    }
+
+    /**
+     * Skema `tabel-standar-flowmeter.json` untuk Studio Data Acuan — sama
+     * untuk kedua profil. Alamat dari `docs/skrip/gen-tabel-standar-flowmeter.py`
+     * (peta sel `database/data/peta-sel/flowmeter.json`). Kolom berasal
+     * literal generator memegang `asal` null. `perlu_konfirmasi` = pertanyaan
+     * lab terbuka (`docs/pertanyaan-lab-flowmeter.md` §6-§10).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+
+        $std = static fn (string $kode, string $label, string $k, int $b0, int $b1, string $sat): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'jalur' => $kode,
+            'jenis' => 'daftar',
+            'kunci' => 'standard',
+            'kolom' => [
+                $kolom('standard', 'Standard', 'desimal', $sat, "STANDAR KALIBRATOR!{$k[0]}{$b0}:{$k[0]}{$b1}"),
+                $kolom('uut', 'Unit under test', 'desimal', $sat, "STANDAR KALIBRATOR!{$k[1]}{$b0}:{$k[1]}{$b1}"),
+                $kolom('koreksi', 'Koreksi', 'desimal', $sat, "STANDAR KALIBRATOR!{$k[2]}{$b0}:{$k[2]}{$b1}"),
+                $kolom('persen_of_reading', 'Ketidakpastian', 'desimal', '% of reading', "STANDAR KALIBRATOR!{$k[3]}{$b0}:{$k[3]}{$b1}"),
+                $kolom('u', 'Ketidakpastian', 'desimal', $sat, "STANDAR KALIBRATOR!{$k[4]}{$b0}:{$k[4]}{$b1}"),
+            ],
+            'boleh_tambah_baris' => true,
+        ];
+
+        $cmc = static fn (string $mode): array => [
+            'kode' => 'cmc_'.$mode,
+            'label' => 'Pita CMC '.ucfirst($mode),
+            'jalur' => "cmc/{$mode}",
+            'jenis' => 'daftar',
+            'kunci' => 'label',
+            'kolom' => [
+                // Batas pita diurai dari teks label (generator); label dipatok jangkar peta.
+                $kolom('label', 'Label pita', 'teks', null, 'DATABASE!R5:R6'),
+                $kolom('min', 'Batas bawah', 'desimal', null, null),
+                $kolom('maks', 'Batas atas', 'desimal', null, null),
+                $kolom('satuan', 'Satuan', 'teks', null, null),
+                $kolom('cmc_persen_of_reading', 'CMC', 'desimal', '% of reading', 'DATABASE!S5:S6'),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        $standar = static fn (string $kode, string $label, array $tambahan, ?string $asalSeri, ?string $asalTertelusur, string $tipeTertelusur = 'teks'): array => [
+            'kode' => 'standar_'.$kode,
+            'label' => $label,
+            'jalur' => "standar/{$kode}",
+            'jenis' => 'objek',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('nama', 'Nama', 'teks', null, null),
+                $kolom('merk', 'Merk', 'teks', null, null),
+                $kolom('tipe', 'Tipe', 'teks', null, null),
+                $kolom('seri', 'Nomor seri', 'teks', null, $asalSeri),
+                $kolom('tertelusur', 'Ketertelusuran', $tipeTertelusur, null, $asalTertelusur),
+                $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, null),
+                $kolom('tanggal_jatuh_tempo', 'Jatuh tempo', 'tanggal', null, null),
+                ...$tambahan,
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        $satuan = static fn (string $mode): array => [
+            'kode' => 'satuan_'.$mode,
+            'label' => 'Faktor satuan '.ucfirst($mode),
+            'jalur' => "satuan/{$mode}",
+            'jenis' => 'baris',
+            'kunci' => 'satuan',
+            'kolom' => [
+                $kolom('satuan', 'Satuan', 'teks', null, null),
+                // Satuan massa = null: master tidak punya faktor yang sah (generator).
+                $kolom('faktor', 'Faktor ke satuan budget', 'desimal_kosong', null, null),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        $k = static fn (string $kode, string $label, ?string $sat, ?string $asal = null, bool $perlu = false): array => $kolom($kode, $label, 'desimal', $sat, $asal, $perlu);
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-flowmeter.json',
+            'lembar' => [
+                $std('std_totalizer', 'Tabel standar UFM — Totalizer', 'DEFGH', 10, 21, 'L'),
+                $std('std_flowrate', 'Tabel standar UFM — Flowrate', 'QRSTU', 10, 18, 'Lpm'),
+                $cmc('totalizer'),
+                $cmc('flowrate'),
+                $standar('ufm', 'Ultrasonic Flowmeter (standar)', [$k('resolusi', 'Resolusi', null)], 'DATABASE!T14', 'DATABASE!U14'),
+                $standar('yokogawa', 'Temperature Calibrator', [$k('u95_c', 'U95', '°C', 'DATABASE!V15')], 'DATABASE!T15', 'DATABASE!U15'),
+                $standar('thermocouple', 'Thermocouple Type K', [$k('u95_c', 'U95', '°C', 'DATABASE!V16')], 'DATABASE!T16', 'DATABASE!U16'),
+                $standar('caliper', 'Digital Caliper', [$k('u95_mm', 'U95', 'mm', 'STANDAR KALIBRATOR!E43')], 'DATABASE!T17', 'DATABASE!U17'),
+                $standar('thickness_gauge', 'Ultrasonic Thickness Gauge', [$k('u95_mm', 'U95', 'mm', 'STANDAR KALIBRATOR!R43')], 'STANDAR KALIBRATOR!Q39', null, 'teks_kosong'),
+                $standar('timer', 'Timer Software Flowmeter', [$kolom('hanya_flowrate', 'Hanya varian Flowrate', 'boolean', null, null)], 'DATABASE!T19', null),
+                [
+                    'kode' => 'konstanta',
+                    'label' => 'Konstanta metode',
+                    'jalur' => 'konstanta',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $k('pi', 'π', null, null, true),
+                        $k('pembagi_rect', 'Pembagi rectangular', null, null, true),
+                        $k('pembagi_normal', 'Pembagi normal', null),
+                        $k('vi_type_b', 'Derajat kebebasan Type B', null),
+                        $k('vi_standar_ufm', 'Derajat kebebasan standar UFM', null),
+                        $k('vi_suhu_totalizer', 'vi suhu — Totalizer', null, null, true),
+                        $k('vi_suhu_flowrate', 'vi suhu — Flowrate', null, null, true),
+                        $k('pembagi_cross_section_totalizer', 'Pembagi cross-section — Totalizer', null, null, true),
+                        $k('pembagi_cross_section_flowrate', 'Pembagi cross-section — Flowrate', null, null, true),
+                        $k('velocity_profile_persen', 'Velocity profile', '%', null, true),
+                        $k('geometry_factor_persen', 'Geometry factor', '%', null, true),
+                        $k('drift_ufm_persen', 'Drift UFM', '%'),
+                        $k('koefisien_muai_air_per_c', 'Koefisien muai air', '/°C', null, true),
+                        $k('densitas_a0', 'Densitas air a0', null),
+                        $k('densitas_a1', 'Densitas air a1', null),
+                        $k('densitas_a2', 'Densitas air a2', null),
+                        $k('densitas_a3', 'Densitas air a3', null),
+                        $k('densitas_a4', 'Densitas air a4', null),
+                        $k('u95_caliper_mm', 'U95 caliper', 'mm', 'STANDAR KALIBRATOR!E43'),
+                        $k('u95_thickness_gauge_mm', 'U95 thickness gauge', 'mm', 'STANDAR KALIBRATOR!R43'),
+                        $k('u95_yokogawa_c', 'U95 Yokogawa', '°C', 'DATABASE!V15'),
+                        $k('u95_thermocouple_c', 'U95 thermocouple', '°C', 'DATABASE!V16'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                $satuan('totalizer'),
+                $satuan('flowrate'),
+            ],
+        ];
+    }
+
+    /**
      * Nomor Instruksi Kerja, sama untuk kedua alat — lampiran akreditasi no. 30
      * & 31 menulis nomor yang identik.
      */

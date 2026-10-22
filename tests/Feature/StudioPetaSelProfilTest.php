@@ -58,6 +58,11 @@ class StudioPetaSelProfilTest extends TestCase
             'jangka_sorong' => ['jangka_sorong', [['Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_', null, 10]]],
             // Satu paket, dua master. Fixed: 6 CMC + 2 U95 suhu + neraca + diameter + kalibrator + PRT;
             // Graduated: 6 CMC + 2 U95 suhu + neraca + koefisien muai.
+            // Totalizer: 2 tabel std + 2 CMC + identitas/U95 standar pendukung (17); Flowrate: 2 + 2 + timer.
+            'flowmeter' => ['flowmeter', [
+                ['Aliran_2/1_3_Master_Olah_Data_Flowmeter_Ultrasonic_Totalizer__1000-1900L__2026', 'totalizer', 21],
+                ['Aliran_2/Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026', 'flowrate', 5],
+            ]],
             'volumetric' => ['volumetric', [
                 ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
                 ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],

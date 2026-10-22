@@ -15,6 +15,8 @@ trait PeriksaSkemaAcuan
     {
         match ($tipe) {
             'teks' => $this->assertIsString($nilai, $jalur),
+            'teks_kosong' => $this->assertTrue($nilai === null || is_string($nilai), "{$jalur} bukan teks/null"),
+            'boolean' => $this->assertIsBool($nilai, $jalur),
             'tanggal' => $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $nilai, $jalur),
             'desimal' => $this->assertIsFloat($nilai, $jalur),
             'desimal_kosong' => $this->assertTrue($nilai === null || is_float($nilai), "{$jalur} bukan float/null"),
