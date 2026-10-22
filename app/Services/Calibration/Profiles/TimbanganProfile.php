@@ -1331,6 +1331,93 @@ class TimbanganProfile extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
+    /**
+     * Titik sesi blok ACCURACY: nominal SARAN (tangga 10–100 % rentang,
+     * [tangga]), paling banyak sebanyak baris tangga yang digambar lembar.
+     * Nominal titik = JUMLAH nominal keping baris itu (`titik_ukur` yang
+     * disusun `susunBlokTimbangan`), jadi keping yang dikirim wajib berjumlah
+     * nominal titiknya.
+     *
+     * Pengulangan `null`: empat bacaan z, m, m', z' satu titik itu urutan
+     * pembebanan, bukan ulangan yang bisa ditambah.
+     *
+     * Varian SUBSTITUSI tidak boleh menonaktifkan titik: koreksinya KUMULATIF
+     * (`Cn = C(n−1) + ΔI`, `TimbanganCalculator::titikAkurasi`), jadi titik
+     * yang dikeluarkan dari tengah rangkaian mengubah koreksi seluruh titik
+     * sesudahnya — bukan lagi "dihitung seolah baris itu kosong".
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        $satuan = (string) ($spesifikasi['satuan'] ?? $equipment?->satuan ?? 'kg');
+        $kapasitas = (float) ($spesifikasi['kapasitas'] ?? $equipment?->range_max ?? 0.0);
+        $varian = (string) ($spesifikasi['varian_master'] ?? VarianMasterTimbangan::bawaanUntuk(
+            strtolower(trim($satuan)) === 'g' ? $kapasitas / 1000.0 : $kapasitas,
+            $satuan,
+        )->kode);
+        $substitusi = $varian === VarianMasterTimbangan::SUBSTITUSI;
+
+        $tangga = array_values(array_filter(
+            array_map(static fn (array $b): float => (float) $b['titik_ukur'], $this->tangga($equipment, $satuan)),
+            static fn (float $n): bool => $n > 0.0,
+        ));
+
+        return [
+            'didukung' => true,
+            'alasan' => null,
+            'tabel' => [[
+                'kode' => 'akurasi',
+                'judul' => 'Accuracy — pembebanan bertingkat',
+                'min' => 1,
+                'maks' => max(count($this->tangga($equipment, $satuan)), 1),
+                'boleh_tambah' => true,
+                'boleh_nonaktif' => ! $substitusi,
+                'alasan_nonaktif' => $substitusi
+                    ? 'Varian beban substitusi menghitung koreksi KUMULATIF; titik di tengah rangkaian tidak bisa dikeluarkan.'
+                    : null,
+                'nominal' => 'saran',
+                'bawaan' => $tangga,
+                'fase' => ['sesudah'],
+                'satuan' => $satuan,
+                'pengulangan' => null,
+            ]],
+        ];
+    }
+
+    /**
+     * Cakupan CMC Timbangan = gabungan pita `TabelStandarTimbangan` (0 s/d
+     * pita terakhir, kg — lampiran LK-285-IDN baris 12), dalam satuan titik.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<array{min: float, maks: float}>|null
+     */
+    public function cakupanCmcTitik(Equipment $equipment, array $spesifikasi = [], ?string $satuan = null): ?array
+    {
+        $pita = TabelStandarTimbangan::semuaPitaCmc();
+
+        if ($pita === []) {
+            return null;
+        }
+
+        $satuan = strtolower(trim((string) ($satuan ?? $spesifikasi['satuan'] ?? $equipment->satuan ?? 'kg')));
+        $faktor = match ($satuan) {
+            'kg' => 1.0,
+            'g' => 1000.0,
+            'mg' => 1_000_000.0,
+            default => null,
+        };
+
+        if ($faktor === null) {
+            return null;
+        }
+
+        $maksKg = max(array_map(static fn (array $p): float => (float) $p['maks_kg'], $pita));
+
+        return [['min' => 0.0, 'maks' => $maksKg * $faktor]];
+    }
+
     private function bagianAkurasi(?Equipment $equipment = null): array
     {
         $satuan = (string) ($equipment?->satuan ?? 'kg');

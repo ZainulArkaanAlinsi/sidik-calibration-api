@@ -754,6 +754,74 @@ class MicrometerProfile extends CalibrationProfile
      *
      * @return array<string, mixed>|null
      */
+    /**
+     * Titik sesi Micrometer: sebelas nominal DIPATOK kertas varian (sama
+     * dengan yang dipakai `susunBlokMicrometer`). Teknisi boleh
+     * MENONAKTIFKAN titik; menambah TIDAK — titik di luar kertas butuh
+     * tumpukan balok ukur, dan tumpukan itu ditetapkan Instruksi Kerja, bukan
+     * dipilih di lapangan (`MicrometerSesiTest`: tumpukan tidak pernah datang
+     * dari luar). Pertanyaan lab terbuka: §55 `docs/permintaan-user-7.md`.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        $blok = (array) ($spesifikasi[MicrometerMentah::KUNCI_SESI] ?? []);
+        $kapasitas = (float) ($blok['kapasitas_mm'] ?? $equipment?->range_max ?? 0.0);
+        $varian = $kapasitas > 0.0 ? (new TabelStandarMicrometer)->pitaCmc($kapasitas) : null;
+
+        if ($varian === null) {
+            return self::batasTidakDidukung('kapasitas alat belum diisi atau di luar empat varian kertas — '
+                .'nominal titiknya belum bisa ditentukan.');
+        }
+
+        return [
+            'didukung' => true,
+            'alasan' => null,
+            'tabel' => [[
+                'kode' => 'utama',
+                'judul' => 'Data Kalibrasi',
+                'min' => 1,
+                'maks' => self::BARIS_KERTAS,
+                'boleh_tambah' => false,
+                'alasan_tambah' => 'Titik di luar sebelas nominal kertas butuh tumpukan balok ukur dari Instruksi '
+                    .'Kerja; belum ditetapkan lab.',
+                'boleh_nonaktif' => true,
+                'nominal' => 'dipatok',
+                'bawaan' => array_map(static fn (array $t): float => (float) $t['nominal_cetak_mm'], $varian['titik']),
+                'fase' => ['sesudah'],
+                'satuan' => self::SATUAN,
+                'pengulangan' => [
+                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'maks' => self::MAKS_KOLOM_PENGULANGAN,
+                    'bawaan' => self::PENGULANGAN,
+                ],
+            ]],
+        ];
+    }
+
+    /**
+     * Cakupan CMC Micrometer = gabungan pita kapasitas lampiran LK-285-IDN
+     * baris 34 (0–100 mm), dari `TabelStandarMicrometer::semuaPitaCmc()`.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<array{min: float, maks: float}>|null
+     */
+    public function cakupanCmcTitik(Equipment $equipment, array $spesifikasi = [], ?string $satuan = null): ?array
+    {
+        $pita = (new TabelStandarMicrometer)->semuaPitaCmc();
+
+        if ($pita === [] || strtolower(trim((string) ($satuan ?? self::SATUAN))) !== self::SATUAN) {
+            return null;
+        }
+
+        return [[
+            'min' => min(array_map(static fn (array $p): float => (float) $p['kapasitas_min_mm'], $pita)),
+            'maks' => max(array_map(static fn (array $p): float => (float) $p['kapasitas_maks_mm'], $pita)),
+        ]];
+    }
+
     private function varian(?Equipment $equipment): ?array
     {
         $kapasitas = (float) ($equipment?->range_max ?? 0.0);

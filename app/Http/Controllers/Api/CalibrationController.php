@@ -35,6 +35,7 @@ use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarHydrometer;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\Calibration\TabelStandarSieve;
+use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
@@ -125,6 +126,18 @@ class CalibrationController extends Controller
      * @var list<array{titik_ke: int, alasan: string}>
      */
     private array $belumDihitungTerakhir = [];
+
+    /**
+     * Set titik ukur sesi yang BERLAKU untuk request ini (`TitikUkurSesi`):
+     * kiriman yang sudah lolos validasi, atau yang tersimpan kalau tidak
+     * dikirim. `null` = sesi tanpa set — perilaku lama, tidak ada saringan.
+     *
+     * @var array<string, mixed>|null
+     */
+    private ?array $titikSesiEfektif = null;
+
+    /** @var array{berubah: bool, ringkasan: list<string>, lama: ?array<string, mixed>} */
+    private array $titikSesiPerubahan = ['berubah' => false, 'ringkasan' => [], 'lama' => null];
 
     /**
      * Relasi yang selalu dibutuhin CalibrationResource.
@@ -362,6 +375,13 @@ class CalibrationController extends Controller
             // mana yang kertasnya beda, dan nggak ada daftar kedua yang bisa basi.
             $bentuk['pindai_foto'] = $profil->bentukPindaiFoto();
 
+            // Titik ukur sesi (§55): batas yang ditegakkan server + set bawaan
+            // yang dipakai HP untuk membangun set pertama sebuah sesi.
+            // `$konteksAlat`, bukan `$alat`: tanpa alat, bentuk lembar disusun
+            // dengan organisasi pemanggil (lihat penjelasan di atas).
+            $bentuk['batas_titik'] = $profil->batasTitik($konteksAlat, []);
+            $bentuk['titik_sesi_bawaan'] = $profil->titikSesiBawaan($konteksAlat, []);
+
             return $bentuk;
         });
 
@@ -467,6 +487,8 @@ class CalibrationController extends Controller
             return $replay;
         }
 
+        $this->siapkanTitikSesi($request, null, periksaRevisi: false);
+
         try {
             $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
                 // Duluan sebelum pengukurannya disusun: `isiUlangPengukuran` muter
@@ -475,7 +497,7 @@ class CalibrationController extends Controller
                 $this->simpanSatuanAlat($request);
 
                 $sesi = CalibrationSession::create([
-                    ...$this->atributDariRequest($request),
+                    ...$this->atributDenganTitikSesi($request, null),
                     'organization_id' => $request->user()->organization_id,
                     'teknisi_id' => $request->user()->id,
                     'client_request_id' => $clientRequestId,
@@ -500,11 +522,16 @@ class CalibrationController extends Controller
             throw $e;
         }
 
+        $this->catatPerubahanTitikSesi($sesi);
         $this->siarkan($sesi, 'dibuat');
 
         return response()->json([
             'data' => new CalibrationResource($sesi),
-            'meta' => ['belum_dihitung' => $this->belumDihitungTerakhir],
+            'meta' => [
+                'belum_dihitung' => $this->belumDihitungTerakhir,
+                // Revisi titik sesi terbaru — HP butuh untuk kiriman berikutnya.
+                'titik_sesi' => $this->titikSesiEfektif === null ? null : $this->kontrakTitikSesi($sesi),
+            ],
         ], 201);
     }
 
@@ -892,6 +919,10 @@ class CalibrationController extends Controller
         // Dibuat SEBELUM pengukurannya disusun: versi data acuan yang jadi
         // lingkup hitungan dicari dari alat & tanggal sesi ini, persis seperti
         // sesi yang nanti disimpan `store()` — lihat [susunDiLingkupAcuan].
+        // Set titik kiriman ikut menyaring hitungan preview — fungsi yang SAMA
+        // dengan simpan. Tanpa revisi: preview tidak menulis apa pun.
+        $this->siapkanTitikSesi($request, null, periksaRevisi: false);
+
         $sesi = new CalibrationSession([
             ...$this->atributDariRequest($request),
             'organization_id' => $request->user()->organization_id,
@@ -967,8 +998,14 @@ class CalibrationController extends Controller
 
         // rawMeasurements cuma dimuat di detail (bukan list) — buat nampilin
         // status verifikasi tiap pembacaan. Lihat CalibrationResource.
+        $calibration->load([...self::RELASI, 'rawMeasurements']);
+
         return response()->json([
-            'data' => new CalibrationResource($calibration->load([...self::RELASI, 'rawMeasurements'])),
+            'data' => new CalibrationResource($calibration),
+            // Kontrak titik ukur sesi (§55): batas lembar + set tersimpan +
+            // titik aktif yang di luar cakupan CMC. Di `meta`, bukan di
+            // Resource, karena butuh bentuk lembar — terlalu mahal untuk daftar.
+            'meta' => ['titik_sesi' => $this->kontrakTitikSesi($calibration)],
         ]);
     }
 
@@ -1060,6 +1097,12 @@ class CalibrationController extends Controller
         // sama tidak sedang mengoreksi pengukuran siapa pun — memintainya
         // alasan cuma melatih orang mengetik "ok" supaya lolos, dan jejak yang
         // isinya "ok" lebih buruk daripada jejak yang kosong.
+        // Titik ukur sesi DULUAN: penyaringnya ikut menentukan hasil susunan
+        // yang dipakai mendeteksi koreksi di bawah. 409 kalau revisinya basi.
+        // Ini pemeriksaan awal; yang mengikat diulang di dalam transaksi atas
+        // baris yang DIKUNCI (lihat di bawah).
+        $this->siapkanTitikSesi($request, $calibration, periksaRevisi: true);
+
         $pembacaanLama = $this->potretPembacaan($calibration);
 
         // `$pembacaanLama !== []` bagian dari syaratnya, bukan penjagaan
@@ -1111,6 +1154,13 @@ class CalibrationController extends Controller
         }
 
         $sesi = DB::transaction(function () use ($request, $calibration): CalibrationSession {
+            // Revisi titik sesi diperiksa ATOMIK: baris sesi dikunci, set
+            // tersimpan dibaca dari baris terkunci itu, baru diterapkan. Dua
+            // perangkat yang menyimpan berbarengan tidak bisa sama-sama lolos
+            // dengan revisi yang sama — yang kedua menunggu kunci lalu 409.
+            $terkunci = CalibrationSession::whereKey($calibration->getKey())->lockForUpdate()->firstOrFail();
+            $this->siapkanTitikSesi($request, $terkunci, periksaRevisi: true);
+
             // Sama kayak `store`: sebelum pengukurannya disusun ulang. Teknisi
             // yang sadar salah pilih satuan lalu ngerevisi sesinya mesti bikin
             // hitungannya ikut berubah, bukan cuma labelnya.
@@ -1121,18 +1171,23 @@ class CalibrationController extends Controller
             // Dulu dibuang di tiap simpan, termasuk Simpan Draf atas lembar
             // `perlu_revisi`, jadi teguran admin hilang sebelum teknisi selesai
             // membetulkannya (keputusan pemilik proyek 15 Okt 2026).
-            $calibration->update($this->atributDariRequest($request));
+            $calibration->update($this->atributDenganTitikSesi($request, $terkunci));
 
             return $this->isiUlangPengukuran($calibration, $request);
         });
 
         $this->catatKoreksiPembacaan($sesi, $pembacaanLama, $catatanJejak);
+        $this->catatPerubahanTitikSesi($sesi);
 
         $this->siarkan($sesi, 'diubah');
 
         return response()->json([
             'data' => new CalibrationResource($sesi),
-            'meta' => ['belum_dihitung' => $this->belumDihitungTerakhir],
+            'meta' => [
+                'belum_dihitung' => $this->belumDihitungTerakhir,
+                // Revisi titik sesi terbaru — HP butuh untuk kiriman berikutnya.
+                'titik_sesi' => $this->titikSesiEfektif === null ? null : $this->kontrakTitikSesi($sesi),
+            ],
         ]);
     }
 
@@ -1887,6 +1942,17 @@ class CalibrationController extends Controller
             ]);
         }
 
+        // Titik ukur sesi: tiap baris jatuh ke titik terdaftar, dan pembacaan
+        // titik nonaktif tidak berubah/hilang. Dicek SEBELUM baris lama
+        // dihapus — penolakan di sini tidak menyentuh apa pun.
+        TitikUkurSesi::periksaSusunan(
+            $this->titikSesiEfektif,
+            $susunan['mentah'],
+            $sesi->rawMeasurements()->get(),
+            bekukanNonaktif: ! $sesi->wasRecentlyCreated,
+            batas: $this->batasTitikSesi($request, $sesi),
+        );
+
         // Isian ASLI teknisi dibekukan SEBELUM dihapus-tulis-ulang (K-50-01).
         // Sesi yang sudah pernah dikirim (admin mengoreksi, atau sesi lama
         // `perlu_revisi`) tidak boleh kehilangan keadaan kirim pertamanya.
@@ -2451,6 +2517,11 @@ class CalibrationController extends Controller
         // Profil yang nggak butuh itu balikin null dari `hitungPerGrup()` dan
         // jatuh ke jalur per-titik di bawah — perilakunya persis kayak sebelum
         // hook ini ada.
+        // Titik sesi nonaktif keluar SEBELUM dihitung — pembacaannya tetap
+        // tersimpan di `$mentah`, cuma tidak ikut rumus (TitikUkurSesi).
+        [$siapHitung, $nonaktif] = $this->saringTitikAktif($siapHitung);
+        $belumDihitung = [...$belumDihitung, ...$nonaktif];
+
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
 
         if ($perGrup !== null) {
@@ -2888,7 +2959,10 @@ class CalibrationController extends Controller
             ];
         }
 
+        // Titik sesi nonaktif keluar SEBELUM dihitung (TitikUkurSesi).
+        [$siapHitung, $nonaktif] = $this->saringTitikAktif($siapHitung);
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+        $perGrup['belum_dihitung'] = [...($perGrup['belum_dihitung'] ?? []), ...$nonaktif];
 
         return [
             'mentah' => $mentah,
@@ -3028,7 +3102,10 @@ class CalibrationController extends Controller
             ];
         }
 
+        // Titik sesi nonaktif keluar SEBELUM dihitung (TitikUkurSesi).
+        [$siapHitung, $nonaktif] = $this->saringTitikAktif($siapHitung);
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+        $perGrup['belum_dihitung'] = [...($perGrup['belum_dihitung'] ?? []), ...$nonaktif];
 
         return [
             'mentah' => $mentah,
@@ -3243,7 +3320,10 @@ class CalibrationController extends Controller
             ];
         }
 
+        // Titik sesi nonaktif keluar SEBELUM dihitung (TitikUkurSesi).
+        [$siapHitung, $nonaktif] = $this->saringTitikAktif($siapHitung);
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+        $perGrup['belum_dihitung'] = [...($perGrup['belum_dihitung'] ?? []), ...$nonaktif];
 
         return [
             'mentah' => $mentah,
@@ -3579,7 +3659,10 @@ class CalibrationController extends Controller
             ];
         }
 
+        // Titik sesi nonaktif keluar SEBELUM dihitung (TitikUkurSesi).
+        [$siapHitung, $nonaktif] = $this->saringTitikAktif($siapHitung);
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+        $perGrup['belum_dihitung'] = [...($perGrup['belum_dihitung'] ?? []), ...$nonaktif];
 
         return [
             'mentah' => $mentah,
@@ -5638,6 +5721,162 @@ class CalibrationController extends Controller
         }
 
         return $atribut;
+    }
+
+    /**
+     * Tetapkan [titikSesiEfektif] untuk request ini (`TitikUkurSesi::terapkan`).
+     *
+     * @throws ValidationException
+     * @throws HttpResponseException 409
+     */
+    private function siapkanTitikSesi(CalibrationRequest $request, ?CalibrationSession $sesi, bool $periksaRevisi): void
+    {
+        $tersimpan = TitikUkurSesi::dariSesi($sesi);
+        $kiriman = $request->has(TitikUkurSesi::KUNCI) ? $request->input(TitikUkurSesi::KUNCI) : null;
+
+        if ($kiriman === null) {
+            $this->titikSesiEfektif = $tersimpan;
+            $this->titikSesiPerubahan = ['berubah' => false, 'ringkasan' => [], 'lama' => $tersimpan];
+
+            return;
+        }
+
+        $alat = $this->alatTitikSesi($request, $sesi);
+        $spesifikasi = $request->has('spesifikasi_alat')
+            ? (array) $request->input('spesifikasi_alat', [])
+            : (array) ($sesi?->spesifikasi_alat ?? []);
+        $mentahLama = $sesi?->rawMeasurements()->get();
+
+        $hasil = TitikUkurSesi::terapkan(
+            (array) $kiriman,
+            $tersimpan,
+            $this->profil->untukAlat($alat),
+            $alat,
+            $spesifikasi,
+            $request->user(),
+            $periksaRevisi,
+            $mentahLama,
+        );
+
+        // Perubahan set wajib bersama tabel pembacaannya: tanpa itu hasil hitung
+        // tersimpan masih memuat titik yang baru dinonaktifkan.
+        if ($hasil['berubah'] && ! $request->has('measurements') && ($mentahLama?->isNotEmpty() ?? false)) {
+            throw ValidationException::withMessages(['measurements' => 'Perubahan titik ukur sesi wajib dikirim '
+                .'bersama tabel pembacaannya (`measurements`), supaya hasil hitung ikut disusun ulang dari titik aktif.']);
+        }
+
+        $this->titikSesiEfektif = $hasil['set'];
+        $this->titikSesiPerubahan = ['berubah' => $hasil['berubah'], 'ringkasan' => $hasil['ringkasan'], 'lama' => $tersimpan];
+    }
+
+    /**
+     * Alat untuk titik sesi: `equipment_id` kiriman, atau alat sesi kalau tidak
+     * dikirim — sama dengan `CalibrationRequest::alatRequest()`.
+     */
+    private function alatTitikSesi(CalibrationRequest $request, ?CalibrationSession $sesi): Equipment
+    {
+        $alat = $request->filled('equipment_id')
+            ? Equipment::find($request->integer('equipment_id'))
+            : $sesi?->equipment;
+
+        if (! $alat instanceof Equipment) {
+            throw ValidationException::withMessages(['equipment_id' => 'Alat sesi tidak ditemukan.']);
+        }
+
+        return $alat;
+    }
+
+    /**
+     * `batasTitik()` profil untuk set yang berlaku — dipakai aturan titik
+     * pertama di `TitikUkurSesi::periksaSusunan()`. `null` kalau tanpa set.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function batasTitikSesi(CalibrationRequest $request, CalibrationSession $sesi): ?array
+    {
+        if ($this->titikSesiEfektif === null) {
+            return null;
+        }
+
+        $alat = $this->alatTitikSesi($request, $sesi);
+
+        return $this->profil->untukAlat($alat)->batasTitik($alat, (array) $request->input('spesifikasi_alat', $sesi->spesifikasi_alat ?? []));
+    }
+
+    /**
+     * [atributDariRequest] + set titik efektif di `spesifikasi_alat`. Kalau
+     * request tidak membawa `spesifikasi_alat`, isi tersimpan dipakai sebagai
+     * dasar — supaya menulis set titik tidak menghapus blok sesi lain.
+     *
+     * @return array<string, mixed>
+     */
+    private function atributDenganTitikSesi(Request $request, ?CalibrationSession $sesi): array
+    {
+        $atribut = $this->atributDariRequest($request);
+
+        if ($this->titikSesiEfektif === null) {
+            return $atribut;
+        }
+
+        $spek = array_key_exists('spesifikasi_alat', $atribut)
+            ? (array) ($atribut['spesifikasi_alat'] ?? [])
+            : (array) ($sesi?->spesifikasi_alat ?? []);
+        $spek[TitikUkurSesi::KUNCI] = $this->titikSesiEfektif;
+        $atribut['spesifikasi_alat'] = $spek;
+
+        return $atribut;
+    }
+
+    /**
+     * Jejak perubahan titik: lama → baru + alasan per titik, satu baris
+     * `audit_logs` (AGENTS.md §Peran butir 5). `Diaudit` sesi sudah mencatat
+     * `spesifikasi_alat` mentah; baris ini yang terbaca manusia.
+     */
+    private function catatPerubahanTitikSesi(CalibrationSession $sesi): void
+    {
+        if (! $this->titikSesiPerubahan['berubah']) {
+            return;
+        }
+
+        $sesi->catatAudit(
+            AuditLog::ACTION_DIUBAH,
+            [TitikUkurSesi::KUNCI => $this->titikSesiPerubahan['lama']],
+            [TitikUkurSesi::KUNCI => $this->titikSesiEfektif],
+            TitikUkurSesi::CATATAN_AUDIT.implode('; ', $this->titikSesiPerubahan['ringkasan']),
+        );
+    }
+
+    /**
+     * Keluarkan titik nonaktif dari masukan hitung — lihat
+     * `TitikUkurSesi::saringSiapHitung()`.
+     *
+     * @param  list<array<string, mixed>>  $siapHitung
+     * @return array{0: list<array<string, mixed>>, 1: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function saringTitikAktif(array $siapHitung): array
+    {
+        return TitikUkurSesi::saringSiapHitung($siapHitung, $this->titikSesiEfektif);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function kontrakTitikSesi(CalibrationSession $sesi): ?array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null || $sesi->adalahAutoclave()) {
+            return null;
+        }
+
+        $profil = $this->profil->untukAlat($alat);
+        $spek = (array) ($sesi->spesifikasi_alat ?? []);
+        $set = TitikUkurSesi::dariSpesifikasi($spek);
+
+        return [
+            'batas' => $profil->batasTitik($alat, $spek),
+            'set' => $set,
+            'bawaan' => $set === null ? $profil->titikSesiBawaan($alat, $spek) : null,
+            'di_luar_cmc' => array_column(TitikUkurSesi::diLuarCmc($set, $profil, $alat, $spek), 'id'),
+        ];
     }
 
     /**

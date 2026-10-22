@@ -51,6 +51,20 @@ use Illuminate\Support\Collection;
  */
 abstract class ProfilPutaran extends CalibrationProfile
 {
+    /**
+     * Titik ukur sesi BELUM dibuka untuk Centrifuge & Tachometer (review §55,
+     * 22 Okt 2026): 18 baris lembar dibaca per blok rentang, dan penghubung
+     * titik ↔ pembacaan lewat nominal belum diuji per profil.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     * @return array<string, mixed>
+     */
+    public function batasTitik(?Equipment $equipment = null, array $spesifikasi = []): array
+    {
+        return self::batasTidakDidukung($this->namaAlatKemampuan().' belum diverifikasi untuk titik ukur sesi '
+            .'(baris lembar dibaca per blok rentang).');
+    }
+
     public const KODE_METODE = 'SIDIK-IK-CAL-0511_Rev.6';
 
     public const SATUAN = 'rpm';

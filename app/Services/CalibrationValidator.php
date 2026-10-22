@@ -12,6 +12,7 @@ use App\Models\UncertaintyCalculation;
 use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
+use App\Services\Calibration\TitikUkurSesi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
 use App\Support\DialIndicatorMentah;
@@ -266,7 +267,15 @@ class CalibrationValidator
             $sebab[] = 'toleransi alat kosong';
         }
 
-        foreach ($titikMentah->diff($titikTerhitung)->sort() as $ke) {
+        // Titik yang SENGAJA dinonaktifkan (titik sesi) memang tidak dihitung —
+        // itu keputusan tercatat, bukan data kurang.
+        $setTitik = TitikUkurSesi::dariSesi($sesi);
+        $titikNonaktif = $sesi->rawMeasurements
+            ->filter(fn ($m): bool => TitikUkurSesi::nonaktif($setTitik, $m->titik_ukur))
+            ->pluck('titik_ke')
+            ->unique();
+
+        foreach ($titikMentah->diff($titikTerhitung)->diff($titikNonaktif)->sort() as $ke) {
             $temuan[] = $this->temuan(
                 self::PERINGATAN,
                 'titik_tidak_terhitung',
@@ -399,11 +408,15 @@ class CalibrationValidator
             $penghuni[$kunci] = ($penghuni[$kunci] ?? 0) + 1;
         }
 
+        $setTitik = TitikUkurSesi::dariSesi($sesi);
+
         foreach ($sesi->rawMeasurements->sortBy(['titik_ke', 'pembacaan_ke']) as $m) {
             /** @var RawMeasurement $m */
             $nilai = $m->pembacaan === null ? null : (float) $m->pembacaan;
 
-            if ($nilai === null) {
+            // Titik nonaktif tidak dihitung dan tidak dicetak; pembacaannya
+            // tinggal arsip — sering justru dinonaktifkan KARENA aneh.
+            if ($nilai === null || TitikUkurSesi::nonaktif($setTitik, $m->titik_ukur)) {
                 continue;
             }
 
@@ -931,6 +944,16 @@ class CalibrationValidator
     }
 
     private function diLuarRentang(float $nilai, Equipment $alat): bool
+    {
+        return self::diLuarRentangAlat($nilai, $alat);
+    }
+
+    /**
+     * Aturan rentang yang SAMA untuk pemeriksa pembacaan dan untuk nominal
+     * titik sesi (`TitikUkurSesi`) — satu definisi, supaya titik yang diterima
+     * waktu disimpan tidak berubah jadi "di luar rentang" waktu disetujui.
+     */
+    public static function diLuarRentangAlat(float $nilai, Equipment $alat): bool
     {
         if ($alat->range_min === null || $alat->range_max === null) {
             return false;
@@ -2101,9 +2124,61 @@ class CalibrationValidator
             ...$this->periksaPeringatanProfil($sesi),
             ...$this->periksaVersiRumus($sesi),
             ...$this->periksaPenahanProfil($sesi),
+            ...$this->periksaTitikSesiDiLuarCmc($sesi),
         ])['hasil'];
 
         return [...$temuan, ...$this->periksaVersiAcuan($sesi, $pilihan)];
+    }
+
+    /**
+     * Titik sesi (`TitikUkurSesi`) yang AKTIF tapi nominalnya di luar cakupan
+     * CMC lampiran akreditasi LK-285-IDN untuk alat ini.
+     *
+     * - tanpa `justifikasi_cmc` → ERROR: sertifikat tidak terbit sampai titiknya
+     *   dinonaktifkan atau dijustifikasi;
+     * - dengan justifikasi → PERINGATAN: admin melanjutkan secara sadar
+     *   (`abaikan_peringatan`), dan alasannya terbaca di jejak titik.
+     *
+     * Hanya sesi yang punya set titik. Sesi lama tanpa set tidak berubah
+     * perilakunya.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaTitikSesiDiLuarCmc(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+        $set = TitikUkurSesi::dariSesi($sesi);
+
+        if ($alat === null || $set === null) {
+            return [];
+        }
+
+        $profil = $this->profil->untukAlat($alat);
+        $temuan = [];
+
+        foreach (TitikUkurSesi::diLuarCmc($set, $profil, $alat, (array) ($sesi->spesifikasi_alat ?? [])) as $t) {
+            $cakupan = collect($t['cakupan'])
+                ->map(fn (array $r): string => TitikUkurSesi::angka($r['min']).'–'.TitikUkurSesi::angka($r['maks']))
+                ->implode(', ');
+            $justifikasi = $t['justifikasi_cmc'] ?? null;
+
+            $temuan[] = $this->temuan(
+                $justifikasi === null ? self::ERROR : self::PERINGATAN,
+                'titik_di_luar_cmc',
+                sprintf(
+                    'Titik %s di luar cakupan CMC lampiran akreditasi (%s %s). %s',
+                    TitikUkurSesi::label($t),
+                    $cakupan,
+                    $t['satuan'] ?? '',
+                    $justifikasi === null
+                        ? 'Nonaktifkan titiknya atau isi justifikasinya sebelum sertifikat bisa terbit.'
+                        : 'Justifikasi: '.$justifikasi,
+                ),
+                ['titik_id' => $t['id'], 'nominal' => $t['nominal'], 'cakupan' => $t['cakupan']],
+            );
+        }
+
+        return $temuan;
     }
 
     /**

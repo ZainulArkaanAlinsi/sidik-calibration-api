@@ -16,6 +16,7 @@ use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
+use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
@@ -67,6 +68,7 @@ class CalibrationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $this->bakukanTitikSesi();
         $this->bakukanKomaDesimal();
         $this->bakukanKeterulanganTimbangan();
         $this->bakukanPraEvaluasiMicrometer();
@@ -85,6 +87,38 @@ class CalibrationRequest extends FormRequest
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /**
+     * Titik ukur sesi milik SERVER (`TitikUkurSesi`).
+     *
+     * Salinan `spesifikasi_alat.titik_sesi` yang ikut terkirim klien DIBUANG:
+     * `spesifikasi_alat` disimpan utuh-timpa, jadi tanpa ini perangkat yang
+     * membawa salinan basi diam-diam menimpa set yang baru diubah perangkat
+     * lain — melewati penjaga revisi. Perubahan hanya lewat kunci
+     * `titik_sesi` di badan. Nominal berkoma (`0,5`) dibakukan seperti
+     * pembacaan.
+     */
+    private function bakukanTitikSesi(): void
+    {
+        $spek = $this->input('spesifikasi_alat');
+
+        if (is_array($spek) && array_key_exists(TitikUkurSesi::KUNCI, $spek)) {
+            unset($spek[TitikUkurSesi::KUNCI]);
+            $this->merge(['spesifikasi_alat' => $spek]);
+        }
+
+        $set = $this->input(TitikUkurSesi::KUNCI);
+
+        if (is_array($set) && is_array($set['titik'] ?? null)) {
+            foreach ($set['titik'] as $i => $t) {
+                if (is_array($t) && array_key_exists('nominal', $t)) {
+                    $set['titik'][$i]['nominal'] = AngkaDesimal::bakukan($t['nominal']);
+                }
+            }
+
+            $this->merge([TitikUkurSesi::KUNCI => $set]);
+        }
     }
 
     /**
@@ -1715,6 +1749,15 @@ class CalibrationRequest extends FormRequest
             // yang bikin ini kerasa: tiap titiknya grid (sensor × pengulangan),
             // jadi jumlah barisnya perkalian TIGA sisi, bukan dua. Produksi
             // jalan di satu proses 512 MB yang dipakai semua organisasi.
+            // Titik ukur sesi (§55). Bentuknya saja di sini; batas per lembar,
+            // rentang alat, revisi, dan larangan menghapus ditegakkan
+            // `TitikUkurSesi::terapkan()` karena butuh profil & set tersimpan.
+            'titik_sesi' => ['sometimes', 'nullable', 'array'],
+            'titik_sesi.revisi' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'titik_sesi.titik' => ['required_with:titik_sesi', 'array', 'max:'.TitikUkurSesi::MAKS_TOTAL],
+            'titik_sesi.titik.*' => ['array'],
+            'titik_sesi.titik.*.nominal' => ['required', 'numeric'],
+            'titik_sesi.pengulangan' => ['sometimes', 'nullable', 'array'],
             'measurements' => ['sometimes', 'array', 'max:60'],
             'measurements.*.titik_ukur' => ['required', 'numeric'],
             'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],

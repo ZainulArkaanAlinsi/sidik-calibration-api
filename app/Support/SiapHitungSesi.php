@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
+use App\Services\Calibration\TitikUkurSesi;
 
 /**
  * Pembacaan mentah satu sesi -> masukan `hitungPerGrup()` profil, persis bentuk
@@ -485,6 +486,8 @@ final class SiapHitungSesi
             ];
         }
 
-        return $siapHitung;
+        // Titik sesi nonaktif keluar dari masukan hitung — fungsi yang SAMA
+        // dengan jalur simpan (`CalibrationController::saringTitikAktif`).
+        return TitikUkurSesi::saringSiapHitung($siapHitung, TitikUkurSesi::dariSesi($sesi))[0];
     }
 }

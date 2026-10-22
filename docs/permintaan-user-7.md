@@ -5399,6 +5399,85 @@ isolasi organisasi), `IzinDataAcuanTest`, `MeIzinTest`, `BatasAntarLabTest`, `Pe
 belum dijalankan. Belum: Filament baca, `terjadwal`/scheduler, `kembalikan`/`tarik`, siaran
 `data_acuan`, simulasi sebagai job, nama izin di mobile.
 
+## §55 — Titik ukur sesi: tambah / ubah / nonaktifkan, sinkron lintas perangkat — 22 Okt 2026
+
+**Permintaan pemilik (22 Okt 2026):** teknisi bisa menyesuaikan titik ukur khusus sesi dengan
+cepat — menambah titik, mengubah nominal, menonaktifkan titik, memilih sebelum/sesudah adjustment,
+jumlah pengulangan — dan hasilnya sama di HP, tablet, dan desktop; titik permintaan pelanggan
+didukung.
+
+**Keadaan sebelumnya:** titik tiap lembar dipatok profil (Micrometer 11 nominal, Tekanan maks 14,
+dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup di draf lokal HP
+(`_titikKustom`), tidak tersinkron dan tidak dipulihkan `muatDariSesi`. Rencana ADR-06
+`batasBentuk()` belum ada.
+
+### Yang dibangun (sisi API, branch `feat/titik-ukur-sesi`)
+
+- **Lapis 3 AGENTS.md §Olah data**, rumus tidak disentuh. Titik nonaktif dikeluarkan dari masukan
+  hitung SEBELUM `hitungPerGrup()` — artinya sama dengan baris master yang tidak diisi.
+- `CalibrationProfile::batasTitik()` / `titikSesiBawaan()` / `cakupanCmcTitik()`. Bawaan
+  diturunkan dari bentuk lembar untuk lembar **jalur datar** saja; lembar berblok `didukung:
+  false` sampai profilnya menimpa sendiri. Pilot menimpa: Timer (saran, maks 10), Timbangan
+  (saran, blok Accuracy, substitusi tidak boleh nonaktif — koreksi kumulatif), Micrometer
+  (dipatok 11, tambah ditolak), Tekanan (bebas, maks 14, pengulangan dipatok 3).
+- **Penyimpanan:** `calibration_sessions.spesifikasi_alat.titik_sesi` — nol kolom & nol tabel
+  baru. Riwayat = `audit_logs` (satu baris per perubahan, lama → baru + ringkasan beralasan,
+  awalan `TitikUkurSesi::CATATAN_AUDIT`), ditambah `Diaudit` sesi. Tabel riwayat sendiri tidak
+  perlu: audit log sudah append-only dan terbaca di jejak sesi.
+- **Penjaga** (`App\Services\Calibration\TitikUkurSesi`): titik tidak bisa dihapus (hanya
+  nonaktif + alasan); pembacaan titik nonaktif wajib dikirim balik apa adanya (diubah/hilang =
+  422, AGENTS.md §Peran butir 5); tiap baris mentah wajib jatuh ke titik terdaftar; nominal unik;
+  jumlah aktif di `[min, maks]`; nominal dalam rentang alat (`CalibrationValidator::
+  diLuarRentangAlat`, satu definisi dengan pemeriksa pembacaan); pengulangan tidak boleh membuang
+  pembacaan tersimpan; revisi basi = **409** `titik_sesi_konflik`.
+- **Jalur hitung:** simpan, preview (`saringTitikAktif`), hitung ulang (`SiapHitungSesi`), dan
+  validator (titik nonaktif bukan `titik_tidak_terhitung`, tidak diperiksa "pembacaan mustahil")
+  memakai penyaring yang sama.
+- **CMC:** temuan baru `titik_di_luar_cmc` — ERROR (menahan terbit) tanpa `justifikasi_cmc`,
+  PERINGATAN dengan justifikasi. Hanya sesi yang punya set; cakupan dari profil (Timbangan &
+  Micrometer: tabel pita; Tekanan: baris lampiran + faktor kalibrator; lainnya: baris
+  `calibration_capabilities` sesatuan). Cakupan tak diketahui = diam, bukan menebak.
+- **Sertifikat:** titik `asal: pelanggan` aktif → catatan kaki "Titik atas permintaan pelanggan:
+  …" di bawah tabel hasil (semua tata letak; kolom Remarks tidak disentuh).
+- Kontrak HP: `docs/perintah-frontend-titik-ukur-sesi.md`. Realtime memakai siaran
+  `PerubahanDataOrganisasi` yang sudah ada.
+- Hasil sapuan registry (22 Okt 2026) — `didukung: true`: Timer, Timbangan, Micrometer, Pressure /
+  Vacuum / Differential (pilot) + turunan generik jalur datar: pH, Turbidimeter, Chlorine,
+  Refractometer, Conductivity, Viscometer, DO Meter, Gas Detector. TITS, Centrifuge, dan
+  Tachometer sengaja `didukung: false` sampai diverifikasi per profil (review 22 Okt 2026).
+  `didukung: false` (alasan terbaca di `batas.alasan`): Spectrophotometer (tiga blok titik
+  bernominal beda), Autoklaf (nominal kembar), dan semua lembar berblok — TIDS, kelima Enclosure,
+  Thermocouple, Termometer Gelas, Thermohygro, Height Gauge, Flowmeter ×2, Anak Timbangan, Dial
+  Indicator, Jangka Sorong, Sieve, Hydrometer, enam Volumetric, UTM, Load Cell, Proving Ring,
+  Piston Pipette, Dispensett, Buret Digital. Untuk lembar berblok `titik_ukur` mentahnya tidak
+  selalu = nominal titik (mis. Anak Timbangan per keping, Sieve per opening, Gaya/Piston per
+  setelan berderet), jadi penghubung lewat nominal perlu dibuktikan per profil dulu.
+- Turunan generik baru diuji di pH (`test_jalur_datar_ph_nonaktif_dan_fase_sebelum`); tujuh
+  profil datar lain didukung lewat aturan yang sama tanpa test khusus.
+- Perbaikan review (22 Okt 2026): revisi diperiksa ATOMIK di dalam transaksi atas baris sesi
+  yang dikunci (`lockForUpdate`); nominal titik yang sudah punya pembacaan tidak bisa diganti
+  (nonaktifkan + tambah titik baru); titik pertama Tekanan dikunci aktif dan wajib baris
+  pertama (zero error master `Q39` dibaca dari titik pertama — menggesernya belum diverifikasi
+  penjaga angka); alat titik sesi jatuh ke alat sesi bila `equipment_id` tidak dikirim.
+- Dijaga `TitikUkurSesiTest` (12 test, 330 asersi).
+
+### Pertanyaan terbuka
+
+1. **Micrometer titik tambahan.** Keputusan orkestrator mengizinkan titik tambahan, tapi titik di
+   luar 11 nominal kertas butuh tumpukan balok ukur, dan tumpukan itu ditetapkan IK — server
+   sengaja tidak menerima tumpukan dari HP (`MicrometerSesiTest`). Sertifikat master juga 11
+   baris. Perlu: daftar tumpukan untuk nominal tambahan + bentuk baris sertifikat ke-12 dst.
+   Sampai dijawab, Micrometer `boleh_tambah: false`. Height Gauge (lembar berblok) belum
+   didukung dengan alasan yang sama.
+2. **Timbangan maks titik**: lembar menggambar 10 baris tangga, master gram/kg punya 11 slot
+   (`INPUT DATA` C55:C65). Dipakai 10 sampai lab memastikan.
+3. **Cakupan CMC Timbangan**: tabel pita lab sampai 2000 kg, rekap lampiran sampai 1200 kg. Dipakai
+   tabel (yang dipakai hitungan) — mohon dikonfirmasi.
+4. **Pengulangan Timer/Micrometer 2–10**: mengikuti batas `?pengulangan=` lembar yang sudah ada.
+   IK menyebut 3 (Timer) / 5 (Micrometer); apakah teknisi boleh di bawah itu?
+5. **Sesi tanpa set** tidak diperiksa `titik_di_luar_cmc` (supaya sesi lama tidak berubah
+   perilakunya) — nominal Tekanan yang diketik tanpa set tetap lolos seperti sebelumnya.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
@@ -5742,6 +5821,7 @@ berkas profil.
 | G16 | **Data pelanggan disapu + riwayat git ditulis ulang** — §27 & K27 | **BERES** (10 Sep 2026) — dua pekerjaan yang saling mengunci. **(1) Sanitasi:** 81 berkas, commit `c0645f6`, empat gelombang — dan tiap gelombang menemukan yang tidak terlihat dari sebelumnya, termasuk **enam nama pelanggan yang tidak ada di daftar `.gitignore`** (jadi daftar itu sendiri tidak lengkap) dan `Puskesad` yang dieja panjang. Celah yang bisa membatalkan semuanya dalam sekali jalan ikut ditutup: dua generator menyalin sel identitas pelanggan langsung ke `database/data/*.json` yang ter-commit. **(2) Rewrite:** 686 commit, 91 branch. Jejaknya empat bentuk, bukan satu — 440 trailer `Co-Authored-By`, 164 `Claude-Session`, **143 commit ber-AUTHOR Claude** (ini yang menentukan daftar Contributors, dan `--message-callback` tidak menyentuhnya), 137 deskripsi PR (tidak ada di git sama sekali), dan 37 branch `claude/*` (yang paling kelihatan). Gerbang sebelum push: tree `main` sebelum/sesudah diadu dan **identik byte-per-byte** — nol byte kode berubah. Branch **diganti nama, bukan dihapus**, karena 32 dari 37 bukan leluhur `main`. Tag ikut dipindah — tanpa itu seluruh riwayat lama tetap terjangkau lewat tag. Hasil: Contributors tinggal dua orang. **Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri:** `~/.claude/settings.json` menyimpan Personal Access Token GitHub polos — dilaporkan, dicabut, dihapus |
 | G17 | Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** untuk alat ke-27 & ke-28 — §27 | **BERES di server** (10 Sep 2026) — bukan alat ke-29: dua workbook master baru mengukur alat, besaran, dan pita CMC yang SAMA dengan varian UFM, dengan metode yang sama sekali lain. Yang dibangun sumbu `varian_metode` di dua profil yang sudah ada, presedennya TimbanganProfile / TITS / TIDS. Rumusnya dibuktikan di Python SEBELUM PHP: **107 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶ — termasuk tabel densitas yang ternyata BUKAN rumus melainkan piknometer 50,3139 ml di empat suhu plus interpolasi linier. Delapan penyimpangan master dibetulkan dengan arah yang ditegakkan test, sepuluh ditiru + diangkat jadi 23 pertanyaan lab. Yang paling menentukan: koreksi timer yang dihitung lalu dibuang **membalik TANDA** deviasi Flowrate titik 2 (+0,0299 → −0,0012 Lpm), dan lantai CMC yang tidak pernah dipasang membuat keempat titik terbit di bawah pita — titik 3 mengklaim ketidakpastian sebelas kali lebih baik dari yang diakui KAN. **Nol kolom baru** di `raw_measurements`. Satu bug LAMA ikut ketemu: `peringatanSesi()` memulangkan deret string sementara `CalibrationValidator` menuntut `['kode','pesan']`, jadi endpoint `/validasi` pulang **500** untuk sesi UFM mana pun yang geometri pipanya kosong — hidup diam-diam sejak 8 Sep karena kedua sesi contoh selalu punya geometri pipa. **Sisi mobile BELUM** — `docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: sapuan mock registry dulu, baru cabang varian |
 | G18 | **Alur verifikasi lembar kerja & peran Super Admin** — §35 | **PRD DITULIS** (17 Sep 2026), nol baris kode. Yang menentukan ukurannya: sebagian besar kerangkanya SUDAH ADA — alur `draft`→`menunggu_approval`→`disetujui`/`perlu_revisi`, aksi tolak berikut `catatan_revisi`, jalur teknisi mengerjakan ulang, tujuh kelas `Notification`, dan pengirim push FCM. Yang benar-benar baru cuma enam: penandaan per titik (tabel `tanda_revisi`, isi lembar TIDAK dihapus), suntingan pemeriksa berikut jejaknya, peran `super_admin` dihidupkan, pencatatan akses lintas-organisasi, revisi sertifikat bernomor, dan notifikasi sertifikat diunduh. Dua keputusan diambil pemilik proyek SESUDAH risikonya disebutkan dan itu tertulis di §35: super admin menembus `organization_id` (ISO/IEC 17025 §4.2 — karena itu tiap akses lintas-lab wajib tercatat), dan edit sesudah sertifikat terbit menembus kebekuan `uncertainty_calculations` (karena itu tiap edit melahirkan revisi bernomor, bukan menimpa). Prasyarat di luar urutan sudah **SELESAI 23 Sep 2026**: `super_admin` kini bisa login, buka panel, dan membaca seluruh rute `GET` — menulis masih ditahan sampai K4 turun, dan lintas organisasi belum dibuka. Delapan pertanyaan terbuka di `docs/pertanyaan-lab-alur-verifikasi.md` |
+| G19 | **Titik ukur sesi** — tambah/ubah/nonaktifkan titik, sinkron lintas perangkat — §55 | **Sisi API selesai di branch `feat/titik-ukur-sesi`** (22 Okt 2026, belum push): pilot Timer/Timbangan/Micrometer/Tekanan + 8 lembar jalur datar, `TitikUkurSesiTest` 12 test. **Gate MySQL belum. Sisi HP BELUM** — kontrak `docs/perintah-frontend-titik-ukur-sesi.md`. Lima pertanyaan terbuka di §55 |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
