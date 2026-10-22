@@ -8,6 +8,7 @@ use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\TabelStandarTids;
+use App\Services\Studio\PetaSel\Alamat;
 use App\Services\Studio\PetaSel\PetaSel;
 use App\Support\FlowmeterMentah;
 use App\Support\PistonVolumeMentah;
@@ -25,9 +26,13 @@ use Tests\TestCase;
  * Sampai 22 Okt 2026 test ini mematok beda yang "diketahui" (Tekanan tanpa
  * format, TITS Source, TIDS, Micrometer 0-25, Flowmeter UFM). Keputusan
  * pemilik K-50-15 menjadikannya bug: profil-profil itu kini membaca
- * `format_sertifikat` peta (lewat `CalibrationProfile::formatSertifikatMaster()`),
- * dan tidak ada lagi beda yang dipatok. Sertifikat yang SUDAH terbit tidak
- * berubah — formatnya beku di snapshot.
+ * `format_sertifikat` peta (lewat `CalibrationProfile::formatSertifikatMaster()`).
+ * Sertifikat yang SUDAH terbit tidak berubah — formatnya beku di snapshot.
+ *
+ * Peta = render tidak membuktikan peta = master per sel (temuan F-3, 22 Okt
+ * 2026): `test_entri_peta_sama_dengan_format_tiap_sel_master` mengadu tiap sel
+ * ke number_format master yang dibekukan. Satu-satunya beda master vs render
+ * yang tersisa dipatok di [BEDA_DIKETAHUI] (Tekanan baris 7-13, menunggu lab).
  */
 class StudioFormatSertifikatTest extends TestCase
 {
@@ -85,7 +90,8 @@ class StudioFormatSertifikatTest extends TestCase
      * `EnclosureProfileBase::FORMAT_CETAK` per varian, plus format `Suhu
      * Setting` per baris (`FORMAT_SETTING_PER_BARIS`, CY `C46:C47` General).
      * Peta mencatat varian Constant_Yokogawa (Recorder belum dipetakan) —
-     * wajib sama persis.
+     * wajib sama persis. `Pembacaan Indikator` set point 5/6 (`B33`/`B35`
+     * `0.00`) = `FORMAT_INDIKATOR_PER_BARIS` (temuan F-1, 22 Okt 2026).
      */
     public function test_format_master_enclosure_lawan_format_cetak(): void
     {
@@ -102,6 +108,10 @@ class StudioFormatSertifikatTest extends TestCase
 
         foreach (EnclosureProfileBase::FORMAT_SETTING_PER_BARIS['constant_yokogawa'] as $i => $d) {
             $harap['setting_baris_'.($i + 1)] = $format($d);
+        }
+
+        foreach (EnclosureProfileBase::FORMAT_INDIKATOR_PER_BARIS['constant_yokogawa'] as $i => $d) {
+            $harap['indikator_baris_'.($i + 1)] = $format($d);
         }
 
         ksort($master);
@@ -130,14 +140,131 @@ class StudioFormatSertifikatTest extends TestCase
 
                 $diadu++;
                 $kunci = $paket.'/'.($varian ?? '-').'/'.$f['kolom'];
+                // Entri per baris (`koreksi_baris_7`) diadu ke format kolom
+                // induknya yang dipakai render untuk SEMUA baris.
+                $kolomRender = (string) preg_replace('/_baris_[0-9_]+$/', '', $f['kolom']);
 
-                if (($kode[$f['kolom']] ?? null) !== $f['format']) {
-                    $beda[$kunci] = [$f['format'], $kode[$f['kolom']] ?? null];
+                if (($kode[$kolomRender] ?? null) !== $f['format']) {
+                    $beda[$kunci] = [$f['format'], $kode[$kolomRender] ?? null];
                 }
             }
         }
 
         $this->assertGreaterThan(0, $diadu);
-        $this->assertSame([], $beda, "{$paket}: format render beda dari lembar SERTIFIKAT master (K-50-15)");
+        $diketahui = array_filter(self::BEDA_DIKETAHUI, static fn (string $k): bool => str_starts_with($k, $paket.'/'), ARRAY_FILTER_USE_KEY);
+        ksort($beda);
+        ksort($diketahui);
+        $this->assertSame($diketahui, $beda, "{$paket}: format render beda dari lembar SERTIFIKAT master (K-50-15)");
+    }
+
+    /**
+     * Beda master vs render yang SENGAJA dipatok (kunci => [format master,
+     * format render]) — bukan diterima diam-diam. Temuan F-2 paritas format
+     * (22 Okt 2026): master DRUCK07G/DRUCK13G/Differential memformat UUT dan
+     * Correction baris ke-7..13 (`E28:E34`, `N28:P34`) lain dari baris 1-6
+     * (N28 `0.000`, N29:N34 `0.00`, E28 `0.0`, E29:E34 `0.000`). Kode lama
+     * menilainya salin-tempel; render TIDAK diubah sampai lab menjawab
+     * `docs/pertanyaan-lab-format-sertifikat.md` #5. Hanya berdampak pada sesi
+     * tekanan 7 titik atau lebih.
+     *
+     * @var array<string, array{string, string}>
+     */
+    private const BEDA_DIKETAHUI = [
+        'tekanan/druck07g/uut_baris_7' => ['0.0', '0'],
+        'tekanan/druck07g/uut_baris_8_13' => ['0.000', '0'],
+        'tekanan/druck07g/koreksi_baris_7' => ['0.000', '0.0'],
+        'tekanan/druck07g/koreksi_baris_8_13' => ['0.00', '0.0'],
+        'tekanan/druck13g/uut_baris_7' => ['0.0', '0'],
+        'tekanan/druck13g/uut_baris_8_13' => ['0.000', '0'],
+        'tekanan/druck13g/koreksi_baris_7' => ['0.000', '0.0'],
+        'tekanan/druck13g/koreksi_baris_8_13' => ['0.00', '0.0'],
+        'tekanan/differential/uut_baris_8_13' => ['0.000', '0.0'],
+        'tekanan/differential/koreksi_baris_7' => ['0.000', '0.0'],
+        'tekanan/differential/koreksi_baris_8_13' => ['0.00', '0.0'],
+    ];
+
+    /** Satu berkas, bukan subdirektori: `StudioPetaSelXlsmTest` membaca `peta-sel-xlsm/<paket>/*.json`. */
+    private const FIXTURE_FORMAT = 'tests/Fixtures/peta-sel-xlsm/format-sertifikat.json';
+
+    /**
+     * Temuan F-3 (22 Okt 2026): test render di atas hanya membuktikan peta =
+     * render, bukan peta = master PER SEL — rentang `B25:B35` bisa menyimpan
+     * `0.0` sementara `B33` master `0.00`. Test ini mengadu tiap sel tiap
+     * rentang entri `format_sertifikat` ke number_format sel master yang
+     * DIBEKUKAN (`docs/skrip/bekukan-format-sertifikat-xlsm.py`, hanya alamat +
+     * kode format, tanpa nilai). `null` = sel bagian merge, tidak tercetak.
+     * Rentang yang digabung tidak bisa lagi menyembunyikan baris yang beda:
+     * peta harus dipecah per baris (`indikator_baris_5`, `koreksi_baris_7`).
+     */
+    public function test_entri_peta_sama_dengan_format_tiap_sel_master(): void
+    {
+        $paketPeta = [];
+
+        foreach (glob(PetaSel::direktori().'/*.json') ?: [] as $berkas) {
+            $paket = basename($berkas, '.json');
+            $peta = PetaSel::untuk($paket);
+
+            if ($peta !== null && isset($peta->isi['format_sertifikat'])) {
+                $paketPeta[] = $paket;
+            }
+        }
+
+        $semua = json_decode((string) file_get_contents(base_path(self::FIXTURE_FORMAT)), true, flags: JSON_THROW_ON_ERROR)['paket'];
+        $paketFixture = array_keys($semua);
+        sort($paketPeta);
+        sort($paketFixture);
+        $this->assertNotSame([], $paketPeta);
+        $this->assertSame($paketPeta, $paketFixture, 'Tiap peta ber-format_sertifikat wajib punya fixture format sel master (jalankan docs/skrip/bekukan-format-sertifikat-xlsm.py).');
+
+        $beda = [];
+
+        foreach ($paketPeta as $paket) {
+            $entri = PetaSel::untuk($paket)->isi['format_sertifikat']['entri'];
+            $fixture = $semua[$paket];
+            $this->assertNotEmpty($fixture['varian'] ?? [], $paket);
+
+            foreach ($entri as $f) {
+                foreach ($f['varian'] ?? [] as $v) {
+                    $this->assertArrayHasKey($v, $fixture['varian'], "{$paket}: varian {$v} tanpa fixture master");
+                }
+            }
+
+            foreach ($fixture['varian'] as $varian => $isi) {
+                $sel = $isi['sel'];
+                $tercakup = [];
+
+                foreach (PetaSel::untukVarian($entri, $varian === '-' ? null : $varian) as $f) {
+                    $dicetak = 0;
+
+                    foreach ($f['sel'] as $rentang) {
+                        $a = Alamat::urai($rentang) ?? $this->fail("{$paket}: alamat {$rentang}");
+
+                        for ($b = $a['b1']; $b <= $a['b2']; $b++) {
+                            for ($k = $a['k1']; $k <= $a['k2']; $k++) {
+                                $alamat = Alamat::sel($a['lembar'], $k, $b);
+                                $this->assertArrayHasKey($alamat, $sel, "{$paket}/{$varian}: {$alamat} tidak ada di fixture — bekukan ulang");
+                                $tercakup[$alamat] = true;
+
+                                if ($sel[$alamat] === null) {
+                                    continue;
+                                }
+
+                                $dicetak++;
+
+                                if ($sel[$alamat] !== $f['format']) {
+                                    $beda["{$paket}/{$varian}/{$f['kolom']}/{$alamat}"] = [$f['format'], $sel[$alamat]];
+                                }
+                            }
+                        }
+                    }
+
+                    $this->assertGreaterThan(0, $dicetak, "{$paket}/{$varian}/{$f['kolom']}: tidak ada sel tercetak di rentangnya");
+                }
+
+                $this->assertSame([], array_keys(array_diff_key(array_filter($sel, static fn ($x): bool => $x !== null), $tercakup)), "{$paket}/{$varian}: sel fixture tak tercakup entri peta");
+            }
+        }
+
+        $this->assertSame([], $beda, 'Entri format_sertifikat peta beda dari number_format sel master: [peta, master]');
     }
 }

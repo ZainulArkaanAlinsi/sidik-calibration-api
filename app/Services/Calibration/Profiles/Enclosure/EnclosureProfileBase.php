@@ -391,7 +391,21 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         'constant_yokogawa' => [4 => null, 5 => null],
     ];
 
-    /** @return array{varian: string, desimal: array<string, int|null>, desimal_setting_baris: array<int, int|null>} */
+    /**
+     * Format kolom `Pembacaan Indikator Enklosur` tabel Sebaran Suhu per BARIS
+     * set point yang beda dari [FORMAT_CETAK] (indeks 0-basis => desimal).
+     * Master Constant/Yokogawa memformat `SERTIFIKAT!B25:B31` `0.0` tetapi
+     * `B33`/`B35` (set point ke-5 & ke-6) `0.00` — dibaca dari .xlsm asli
+     * 22 Okt 2026 (temuan F-1 paritas format). K-50-15: dicetak persis master;
+     * pertanyaan lab `docs/pertanyaan-lab-format-sertifikat.md` #2.
+     *
+     * @var array<string, array<int, int|null>>
+     */
+    public const FORMAT_INDIKATOR_PER_BARIS = [
+        'constant_yokogawa' => [4 => 2, 5 => 2],
+    ];
+
+    /** @return array{varian: string, desimal: array<string, int|null>, desimal_setting_baris: array<int, int|null>, desimal_indikator_baris: array<int, int|null>} */
     public function formatCetakSertifikat(?string $merkKalibrator): array
     {
         $varian = $merkKalibrator === TabelKalibratorEnclosure::MERK_BERKANAL ? 'recorder' : 'constant_yokogawa';
@@ -400,6 +414,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             'varian' => $varian,
             'desimal' => self::FORMAT_CETAK[$varian],
             'desimal_setting_baris' => self::FORMAT_SETTING_PER_BARIS[$varian] ?? [],
+            'desimal_indikator_baris' => self::FORMAT_INDIKATOR_PER_BARIS[$varian] ?? [],
         ];
     }
 

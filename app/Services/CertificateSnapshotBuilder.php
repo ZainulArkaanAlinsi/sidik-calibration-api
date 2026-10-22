@@ -824,6 +824,14 @@ class CertificateSnapshotBuilder
             }
         }
 
+        // Sama untuk `Pembacaan Indikator Enklosur` (CY `SERTIFIKAT!B33`/`B35`
+        // `0.00`, baris lain `0.0`).
+        foreach ($format['desimal_indikator_baris'] ?? [] as $i => $d) {
+            if (isset($setPoint[$i])) {
+                $setPoint[$i]['desimal_indikator'] = $d;
+            }
+        }
+
         return [
             'satuan' => EnclosureProfileBase::SATUAN,
             // Ikut DIBEKUKAN, sama alasannya seperti `desimal` di tabel hasil.

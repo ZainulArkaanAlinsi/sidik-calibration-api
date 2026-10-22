@@ -914,17 +914,39 @@
   "drift.sel_master/rumus_master/metode/catatan dan cmc_master.*.rumus_master — dokumentasi (teks rumus), bukan angka; dibawa dari versi dasar."
  ],
  "format_sertifikat": {
-  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; sama dengan master, diadu StudioFormatSertifikatTest.",
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-workbook-tekanan-piston.json), dibaca 22 Okt 2026. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan. Tiap sel diadu ke format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json). DRUCK07G/DRUCK13G/Differential: kolom UUT dan Correction baris 7-13 (E28:E34, N28:P34) berformat lain di master; dipetakan sebagai *_baris_7 / *_baris_8_13 tetapi BELUM dicetak (semua baris memakai format baris 1-6) — beda yang dipatok, pertanyaan lab format sertifikat #5.",
   "entri": [
    {
     "kolom": "uut",
     "sel": [
-     "SERTIFIKAT!E22:E34"
+     "SERTIFIKAT!E22:E27"
     ],
     "format": "0",
     "varian": [
      "druck07g"
     ]
+   },
+   {
+    "kolom": "uut_baris_7",
+    "sel": [
+     "SERTIFIKAT!E28"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck07g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
+   },
+   {
+    "kolom": "uut_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!E29:E34"
+    ],
+    "format": "0.000",
+    "varian": [
+     "druck07g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "standar",
@@ -940,13 +962,37 @@
    {
     "kolom": "koreksi",
     "sel": [
-     "SERTIFIKAT!N22:N34",
-     "SERTIFIKAT!P22:P34"
+     "SERTIFIKAT!N22:N27",
+     "SERTIFIKAT!P22:P27"
     ],
     "format": "0.0",
     "varian": [
      "druck07g"
     ]
+   },
+   {
+    "kolom": "koreksi_baris_7",
+    "sel": [
+     "SERTIFIKAT!N28",
+     "SERTIFIKAT!P28"
+    ],
+    "format": "0.000",
+    "varian": [
+     "druck07g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
+   },
+   {
+    "kolom": "koreksi_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!N29:N34",
+     "SERTIFIKAT!P29:P34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "druck07g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "sebaran",
@@ -984,12 +1030,34 @@
    {
     "kolom": "uut",
     "sel": [
-     "SERTIFIKAT!E22:E34"
+     "SERTIFIKAT!E22:E27"
     ],
     "format": "0",
     "varian": [
      "druck13g"
     ]
+   },
+   {
+    "kolom": "uut_baris_7",
+    "sel": [
+     "SERTIFIKAT!E28"
+    ],
+    "format": "0.0",
+    "varian": [
+     "druck13g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
+   },
+   {
+    "kolom": "uut_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!E29:E34"
+    ],
+    "format": "0.000",
+    "varian": [
+     "druck13g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "standar",
@@ -1005,13 +1073,37 @@
    {
     "kolom": "koreksi",
     "sel": [
-     "SERTIFIKAT!N22:N34",
-     "SERTIFIKAT!P22:P34"
+     "SERTIFIKAT!N22:N27",
+     "SERTIFIKAT!P22:P27"
     ],
     "format": "0.0",
     "varian": [
      "druck13g"
     ]
+   },
+   {
+    "kolom": "koreksi_baris_7",
+    "sel": [
+     "SERTIFIKAT!N28",
+     "SERTIFIKAT!P28"
+    ],
+    "format": "0.000",
+    "varian": [
+     "druck13g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
+   },
+   {
+    "kolom": "koreksi_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!N29:N34",
+     "SERTIFIKAT!P29:P34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "druck13g"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "sebaran",
@@ -1114,12 +1206,23 @@
    {
     "kolom": "uut",
     "sel": [
-     "SERTIFIKAT!E22:E34"
+     "SERTIFIKAT!E22:E28"
     ],
     "format": "0.0",
     "varian": [
      "differential"
     ]
+   },
+   {
+    "kolom": "uut_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!E29:E34"
+    ],
+    "format": "0.000",
+    "varian": [
+     "differential"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "standar",
@@ -1135,13 +1238,37 @@
    {
     "kolom": "koreksi",
     "sel": [
-     "SERTIFIKAT!N22:N34",
-     "SERTIFIKAT!P22:P34"
+     "SERTIFIKAT!N22:N27",
+     "SERTIFIKAT!P22:P27"
     ],
     "format": "0.0",
     "varian": [
      "differential"
     ]
+   },
+   {
+    "kolom": "koreksi_baris_7",
+    "sel": [
+     "SERTIFIKAT!N28",
+     "SERTIFIKAT!P28"
+    ],
+    "format": "0.000",
+    "varian": [
+     "differential"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
+   },
+   {
+    "kolom": "koreksi_baris_8_13",
+    "sel": [
+     "SERTIFIKAT!N29:N34",
+     "SERTIFIKAT!P29:P34"
+    ],
+    "format": "0.00",
+    "varian": [
+     "differential"
+    ],
+    "catatan": "Baris ke-7..13 master berformat lain dari baris 1-6 (salin-tempel?). TIDAK dipakai render: kolom ini di luar TataLetakSertifikat::KOLOM_FORMAT, semua baris dicetak dengan format baris 1-6. Menunggu docs/pertanyaan-lab-format-sertifikat.md #5; dipatok StudioFormatSertifikatTest::BEDA_DIKETAHUI."
    },
    {
     "kolom": "sebaran",

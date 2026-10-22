@@ -617,7 +617,7 @@
   "Identitas kalibrator (nama, merek, S/N, tanggal) — tidak disimpan di JSON ini (dipakai dari tabel standar/DB)."
  ],
  "format_sertifikat": {
-  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Tata letak SERTIFIKAT Measure & Source beda baris. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; sama dengan master, diadu StudioFormatSertifikatTest.",
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Tata letak SERTIFIKAT Measure & Source beda baris. Dipakai render (K-50-15, 22 Okt 2026) lewat CalibrationProfile::formatSertifikatMaster() / FormatSertifikatAcuan; tiap sel sama dengan format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json); render diadu StudioFormatSertifikatTest.",
   "entri": [
    {
     "kolom": "standar",

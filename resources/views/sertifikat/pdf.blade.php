@@ -1478,7 +1478,7 @@
             <tbody>
                 @foreach ($spE as $sp)
                     <tr>
-                        <td rowspan="2">{{ $nE($sp['indikator'] ?? null, 'indikator') }}</td>
+                        <td rowspan="2">{{ array_key_exists('desimal_indikator', $sp) ? (($sp['indikator'] ?? null) === null ? '—' : \App\Support\TataLetakSertifikat::angka(($sp['desimal_indikator'] === null ? \App\Support\Angka::nilaiStandar((float) $sp['indikator'], 10) : \App\Support\Angka::hasil((float) $sp['indikator'], (int) $sp['desimal_indikator'], tandaNol: $nolE)), $tataLetak)) : $nE($sp['indikator'] ?? null, 'indikator') }}</td>
                         <td>Terukur (°C)</td>
                         @forelse ($blokPosisi as $idx => $pos)
                             <td>{{ $nE($sp['sensor'][$idx]['terukur'] ?? null, 'terukur') }}</td>

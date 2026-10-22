@@ -1302,14 +1302,30 @@
   "SELURUH master Recorder (meter.recorder, sensor.recorder, index_temps.recorder) — DITAHAN: JSON repo tidak memuat titik -20 °C di meter.recorder.u95 (20 kanal × Type N/K) dan sensor.recorder.koreksi/u95 Type N (10 kanal), sedangkan CSV repo (generator dijalankan ulang 22 Okt 2026) dan .xlsm asli memuatnya. Master Recorder dilewati peta (`lainnya: lewati`) sampai pemilik/lab memutuskan JSON mana yang benar."
  ],
  "format_sertifikat": {
-  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli Enclosure Constant_Yokogawa (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Enclosure tidak memakai formatKolomSertifikat(): kolom di sini = kunci EnclosureProfileBase::FORMAT_CETAK['constant_yokogawa'] (desimal), diadu StudioFormatSertifikatTest. Recorder belum dipetakan; .xlsm Recorder memformat baris Koreksi F26:S30 `0.00` = asumsi FORMAT_CETAK (pertanyaan lab #14 terjawab oleh master).",
+  "bukti": "number_format sel lembar SERTIFIKAT .xlsm asli Enclosure Constant_Yokogawa (sha256 di manifest-xlsm.json), dibaca 22 Okt 2026. Rentang dipecah per baris di mana format master beda (indikator B33/B35, setting C46/C47); tiap sel diadu ke format sel master yang dibekukan (StudioFormatSertifikatTest::test_entri_peta_sama_dengan_format_tiap_sel_master, fixture tests/Fixtures/peta-sel-xlsm/format-sertifikat.json; sel bagian merge dilewati). Enclosure tidak memakai formatKolomSertifikat(): kolom di sini = kunci EnclosureProfileBase::FORMAT_CETAK['constant_yokogawa'] + FORMAT_SETTING_PER_BARIS + FORMAT_INDIKATOR_PER_BARIS (desimal), diadu StudioFormatSertifikatTest::test_format_master_enclosure_lawan_format_cetak. Recorder belum dipetakan; .xlsm Recorder memformat baris Koreksi F26:S30 `0.00` = asumsi FORMAT_CETAK (pertanyaan lab #14 terjawab oleh master).",
   "entri": [
    {
     "kolom": "indikator",
     "sel": [
-     "SERTIFIKAT!B25:B35"
+     "SERTIFIKAT!B25:B31"
     ],
     "format": "0.0"
+   },
+   {
+    "kolom": "indikator_baris_5",
+    "sel": [
+     "SERTIFIKAT!B33"
+    ],
+    "format": "0.00",
+    "catatan": "Pembacaan Indikator set point ke-5 berformat 0.00 di master (B25:B31 0.0) — K-50-15: dicetak 0.00 (EnclosureProfileBase::FORMAT_INDIKATOR_PER_BARIS, 22 Okt 2026); pertanyaan lab format sertifikat #2"
+   },
+   {
+    "kolom": "indikator_baris_6",
+    "sel": [
+     "SERTIFIKAT!B35"
+    ],
+    "format": "0.00",
+    "catatan": "Set point ke-6, sama dengan set point ke-5"
    },
    {
     "kolom": "terukur",
