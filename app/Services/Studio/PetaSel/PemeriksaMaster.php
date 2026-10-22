@@ -483,6 +483,14 @@ final class PemeriksaMaster
 
         $s = (string) ($sel['s'] ?? '');
 
+        // Galat Excel (`#REF!`, `#N/A`) bukan teks data — identitas standar
+        // Proving Ring yang rusak tidak boleh masuk acuan sebagai '#REF!'.
+        if (($sel['t'] ?? null) === 'e') {
+            $masalah[] = "{$alamat} berisi galat '{$s}', padahal wajib berisi teks";
+
+            return null;
+        }
+
         if (trim($s) === '') {
             $masalah[] = "{$alamat} kosong, padahal wajib berisi teks";
 

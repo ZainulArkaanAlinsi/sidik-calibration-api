@@ -63,6 +63,12 @@ class StudioPetaSelProfilTest extends TestCase
                 ['Aliran_2/1_3_Master_Olah_Data_Flowmeter_Ultrasonic_Totalizer__1000-1900L__2026', 'totalizer', 21],
                 ['Aliran_2/Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026', 'flowrate', 5],
             ]],
+            // Tiga master: 44 butir ekstrak dikurangi 3 identitas 5 kN di Proving Ring (#REF!).
+            'gaya' => ['gaya', [
+                ['Alat_Gaya/Gaya_UTM', 'utm', 44],
+                ['Alat_Gaya/Gaya_Load_Cell', 'load_cell', 44],
+                ['Alat_Gaya/Gaya_Proving_Ring', 'proving_ring', 41],
+            ]],
             'volumetric' => ['volumetric', [
                 ['Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026', 'fixed', 12],
                 ['Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026', 'graduated', 10],

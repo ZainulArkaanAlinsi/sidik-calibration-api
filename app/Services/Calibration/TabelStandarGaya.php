@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\SumberAcuan;
 use RuntimeException;
 
 /**
@@ -34,9 +35,6 @@ use RuntimeException;
  */
 class TabelStandarGaya
 {
-    /** @var array<string, mixed>|null */
-    private static ?array $data = null;
-
     /** Arah beban seperti yang dipakai master: Tekan / Tarik. */
     public const ARAH_PUSH = 'Push';
 
@@ -53,7 +51,7 @@ class TabelStandarGaya
     /** @return array<int, string> */
     public static function satuanYangDikenal(): array
     {
-        return array_keys(self::muat()['faktor_satuan'] ?? []);
+        return self::urut(array_keys(self::muat()['faktor_satuan'] ?? []), ['kN', 'N', 'lbf', 'kgf', 'tnf']);
     }
 
     /** Koefisien suhu load cell, 0,00027 per °C. */
@@ -71,7 +69,7 @@ class TabelStandarGaya
     /** @return array<int, string> */
     public static function daftarStandar(): array
     {
-        return array_keys(self::muat()['standar'] ?? []);
+        return self::urut(array_keys(self::muat()['standar'] ?? []), ['100kN', '3000kN', '5kN']);
     }
 
     /**
@@ -153,20 +151,34 @@ class TabelStandarGaya
         return self::muat()['drift'][$kunciStandar][$arah] ?? [];
     }
 
+    /**
+     * Kunci dalam urutan generator (master), sisanya di belakang: isi versi DB
+     * kanonik mengurutkan ulang kunci objek, dan urutan yang tampil (pesan
+     * satuan, daftar standar) tidak boleh bergantung sumber isi.
+     *
+     * @param  list<int|string>  $ada
+     * @param  list<string>  $urutan
+     * @return list<string>
+     */
+    private static function urut(array $ada, array $urutan): array
+    {
+        $ada = array_map('strval', $ada);
+
+        return [...array_values(array_intersect($urutan, $ada)), ...array_values(array_diff($ada, $urutan))];
+    }
+
     /** @return array<string, mixed> */
     private static function muat(): array
     {
-        if (self::$data !== null) {
-            return self::$data;
-        }
-
         $berkas = database_path('data/tabel-standar-gaya.json');
 
         if (! is_file($berkas)) {
             throw new RuntimeException("Tabel standar gaya nggak ketemu: {$berkas}");
         }
 
-        $isi = json_decode((string) file_get_contents($berkas), true);
+        // Paket `gaya` (kodePaketAcuan UTM/Load Cell/Proving Ring). Tidak di-cache
+        // di kelas ini — cache-nya di SumberAcuan, dikunci (versi, sha256).
+        $isi = app(SumberAcuan::class)->isi('gaya', $berkas);
 
         if (! is_array($isi)
             || ! isset($isi['faktor_satuan'], $isi['standar'], $isi['drift'])
@@ -174,12 +186,12 @@ class TabelStandarGaya
             throw new RuntimeException("Tabel standar gaya rusak: {$berkas}");
         }
 
-        return self::$data = $isi;
+        return $isi;
     }
 
     /** Dipakai test yang menukar berkas tabelnya. */
     public static function lupakan(): void
     {
-        self::$data = null;
+        SumberAcuan::lupakanCache();
     }
 }

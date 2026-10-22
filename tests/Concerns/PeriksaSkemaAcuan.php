@@ -46,7 +46,7 @@ trait PeriksaSkemaAcuan
                     $this->assertInstanceOf(stdClass::class, $simpul, "{$jalur} bukan objek");
 
                     foreach ($lembar['kolom'] as $kolom) {
-                        $hasil[] = "{$jalur}/{$kolom['kode']}";
+                        $hasil[] = ($jalur === '' ? '' : "{$jalur}/").$kolom['kode'];
                     }
 
                     break;
@@ -89,7 +89,8 @@ trait PeriksaSkemaAcuan
      */
     private static function simpul(mixed $nilai, array $segmen, string $jalur): array
     {
-        if ($segmen === []) {
+        // Jalur kosong = akar isi (lembar objek untuk daun tingkat atas).
+        if ($segmen === [] || $segmen === ['']) {
             return [[$jalur, $nilai]];
         }
 

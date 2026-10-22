@@ -50,6 +50,144 @@ abstract class GayaProfile extends CalibrationProfile
     private ?GumCalculator $gum = null;
 
     /**
+     * UTM, Load Cell, dan Proving Ring membaca SATU tabel
+     * (`tabel-standar-gaya.json`, tiga master) — satu paket data acuan.
+     */
+    public function kodePaketAcuan(): string
+    {
+        return 'gaya';
+    }
+
+    public function namaPaketAcuan(): string
+    {
+        return 'Gaya (UTM, Load Cell, Proving Ring)';
+    }
+
+    /**
+     * Skema `tabel-standar-gaya.json` untuk Studio Data Acuan — sama untuk
+     * ketiga profil. Alamat dari aturan `docs/skrip/gen-tabel-standar-gaya.py`
+     * atas ekspor CSV ketiga master (peta sel `database/data/peta-sel/gaya.json`).
+     * `perlu_konfirmasi`: drift per workbook yang tidak sepakat
+     * (`docs/pertanyaan-lab-gaya.md` G2).
+     */
+    public function skemaAcuan(): ?array
+    {
+        $kolom = static fn (string $kode, string $label, string $tipe, ?string $satuan, ?string $asal, bool $perlu = false): array => [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'satuan' => $satuan,
+            'asal' => $asal,
+            'perlu_konfirmasi' => $perlu,
+        ];
+
+        $L = 'STANDAR_LOADCELL';
+
+        $identitas = static fn (string $k, string $label, int $b, int $bSuhu, string $kU95, int $bU95) => [
+            'kode' => 'standar_'.$k,
+            'label' => $label,
+            'jalur' => "standar/{$k}",
+            'jenis' => 'objek',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('nama', 'Nama', 'teks', null, "{$L}!D{$b}"),
+                $kolom('merek', 'Merek', 'teks_kosong', null, "{$L}!D".($b + 1)),
+                $kolom('tipe', 'Tipe', 'teks_kosong', null, "{$L}!D".($b + 2)),
+                $kolom('serial', 'Nomor seri', 'teks_kosong', null, "{$L}!D".($b + 3)),
+                $kolom('tertelusur', 'Ketertelusuran', 'teks_kosong', null, "{$L}!L".($b + 2)),
+                $kolom('tanggal_kalibrasi', 'Tanggal kalibrasi', 'tanggal', null, "{$L}!L{$b}"),
+                $kolom('berlaku_sampai', 'Berlaku sampai', 'tanggal', null, "{$L}!L".($b + 1)),
+                $kolom('suhu_sertifikat', 'Suhu sertifikat', 'desimal', '°C', "{$L}!L{$bSuhu}"),
+                $kolom('u95_persen', 'U95', 'desimal', '% reading', "{$L}!{$kU95}{$bU95}"),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        $tabel = static fn (string $k, string $arah, int $b0, int $b1, bool $kg): array => [
+            'kode' => 'tabel_'.$k.'_'.strtolower($arah),
+            'label' => "Koreksi {$k} — ".($arah === 'Push' ? 'Tekan' : 'Tarik'),
+            'jalur' => "standar/{$k}/tabel/{$arah}",
+            'jenis' => 'daftar',
+            'kunci' => 'set_point_kn',
+            'kolom' => $kg
+                ? [
+                    $kolom('set_point_kn', 'Set point', 'desimal', 'kN', "{$L}!E{$b0}:E{$b1}"),
+                    $kolom('koreksi_kn', 'Koreksi', 'desimal', 'kN', "{$L}!G{$b0}:G{$b1}"),
+                    $kolom('set_point_kg', 'Set point', 'desimal', 'kg', "{$L}!D{$b0}:D{$b1}"),
+                    $kolom('koreksi_kg', 'Koreksi', 'desimal', 'kg', "{$L}!F{$b0}:F{$b1}"),
+                ]
+                : [
+                    $kolom('set_point_kn', 'Set point', 'desimal', 'kN', "{$L}!D{$b0}:D{$b1}"),
+                    $kolom('koreksi_kn', 'Koreksi', 'desimal', 'kN', "{$L}!F{$b0}:F{$b1}"),
+                ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        $drift = static fn (string $k, string $arah, string $kolomSel, int $b): array => [
+            'kode' => 'drift_'.$k.'_'.strtolower($arah),
+            'label' => "Drift {$k} — ".($arah === 'Push' ? 'Tekan' : 'Tarik').' (per workbook)',
+            'jalur' => "drift/{$k}/{$arah}",
+            'jenis' => 'objek',
+            'kunci' => null,
+            'kolom' => [
+                $kolom('utm', 'Workbook UTM', 'desimal_kosong', '% f.s', "{$L}!{$kolomSel}{$b}", true),
+                $kolom('load_cell', 'Workbook Load Cell', 'desimal_kosong', '% f.s', "{$L}!{$kolomSel}{$b}", true),
+                $kolom('proving_ring', 'Workbook Proving Ring', 'desimal_kosong', '% f.s', "{$L}!{$kolomSel}{$b}", true),
+            ],
+            'boleh_tambah_baris' => false,
+        ];
+
+        return [
+            'skema_versi' => 1,
+            'sumber_json' => 'tabel-standar-gaya.json',
+            'lembar' => [
+                [
+                    'kode' => 'umum',
+                    'label' => 'Tetapan umum',
+                    'jalur' => '',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        // Sel E18 ("kg -> kN"); generator menulisnya literal 0,00980665.
+                        $kolom('faktor_set_point_kg_ke_kn', 'Faktor set point kg → kN', 'desimal', 'kN/kg', "{$L}!E18"),
+                        $kolom('koefisien_suhu_per_c', 'Koefisien suhu', 'desimal', '/°C', null),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                [
+                    'kode' => 'faktor_satuan',
+                    'label' => 'Faktor satuan ke kN (Tabel_Satuan)',
+                    'jalur' => 'faktor_satuan',
+                    'jenis' => 'objek',
+                    'kunci' => null,
+                    'kolom' => [
+                        $kolom('kN', 'kN', 'desimal', null, 'DATABASE!S19'),
+                        $kolom('N', 'N', 'desimal', null, 'DATABASE!S20'),
+                        $kolom('lbf', 'lbf', 'desimal', null, 'DATABASE!S21'),
+                        $kolom('kgf', 'kgf', 'desimal', null, 'DATABASE!S22'),
+                        $kolom('tnf', 'tnf', 'desimal', null, 'DATABASE!S23'),
+                    ],
+                    'boleh_tambah_baris' => false,
+                ],
+                $identitas('100kN', 'Load Cell 100 kN', 2, 10, 'H', 9),
+                $tabel('100kN', 'Push', 9, 17, true),
+                $tabel('100kN', 'Pull', 21, 29, true),
+                $identitas('3000kN', 'Load Cell 3000 kN', 30, 37, 'G', 36),
+                $tabel('3000kN', 'Push', 36, 46, false),
+                $identitas('5kN', 'Load Cell 5 kN', 47, 54, 'H', 53),
+                $tabel('5kN', 'Push', 53, 61, true),
+                $tabel('5kN', 'Pull', 64, 72, true),
+                $drift('5kN', 'Push', 'R', 5),
+                $drift('5kN', 'Pull', 'S', 5),
+                $drift('100kN', 'Push', 'R', 6),
+                $drift('100kN', 'Pull', 'S', 6),
+                $drift('3000kN', 'Push', 'R', 7),
+                $drift('3000kN', 'Pull', 'S', 7),
+            ],
+        ];
+    }
+
+    /**
      * Nomor Instruksi Kerja, DARI kertas lembar kerjanya sendiri.
      *
      * Bukan slug karangan: nomor ini ikut tercetak di sertifikat sebagai metode

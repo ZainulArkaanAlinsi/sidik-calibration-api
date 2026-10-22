@@ -11,6 +11,7 @@ use App\Services\Calibration\HeightGaugeCalculator;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\TabelStandarDialIndicator;
 use App\Services\Calibration\TabelStandarFlowmeter;
+use App\Services\Calibration\TabelStandarGaya;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarJangkaSorong;
 use App\Services\Calibration\TabelStandarVolumetric;
@@ -217,6 +218,41 @@ class TabelAcuanProfilSetaraJsonTest extends TestCase
             [$x, $y] = $this->duaJalur('flowmeter', $v1, fn (): array => (new TabelStandarFlowmeter)->satuanDikenal($m));
             $this->assertSame($x, $y, $m);
         }
+    }
+
+    /** Gaya: satu paket untuk UTM, Load Cell, Proving Ring. */
+    public function test_gaya_v1_setara_json(): void
+    {
+        $v1 = $this->v1('gaya');
+
+        [$a, $b] = $this->duaJalur('gaya', $v1, function (): array {
+            $hasil = [
+                'satuan' => TabelStandarGaya::satuanYangDikenal(),
+                'standar' => TabelStandarGaya::daftarStandar(),
+                'k' => TabelStandarGaya::koefisienSuhu(),
+            ];
+
+            foreach (TabelStandarGaya::satuanYangDikenal() as $s) {
+                $hasil['faktor'][$s] = TabelStandarGaya::faktorSatuan($s);
+            }
+
+            foreach (TabelStandarGaya::daftarStandar() as $k) {
+                $hasil['isi'][$k] = TabelStandarGaya::standar($k);
+
+                foreach (['Push', 'Pull'] as $arah) {
+                    $hasil['drift'][$k][$arah] = TabelStandarGaya::driftSemuaSumber($k, $arah);
+
+                    foreach ([0.0, 0.3, 4.0, 9.0, 50.0, 88.0, 1500.0, 3100.0] as $kn) {
+                        $hasil['koreksi'][$k][$arah][] = TabelStandarGaya::koreksi($kn, $k, $arah);
+                    }
+                }
+            }
+
+            return $hasil;
+        });
+        // Daftar (urutan tampil) identik apa adanya; isi lain tanpa memandang urutan kunci objek.
+        $this->assertSame([$a['satuan'], $a['standar']], [$b['satuan'], $b['standar']]);
+        $this->assertSame(self::urutKunci($a), self::urutKunci($b));
     }
 
     /** Urutkan kunci objek rekursif; urutan list dipertahankan. */

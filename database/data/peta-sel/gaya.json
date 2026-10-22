@@ -1,0 +1,586 @@
+{
+ "format": 1,
+ "kode_profil": "gaya",
+ "sumber_json": "tabel-standar-gaya.json",
+ "bukti": [
+  "Alamat = hasil aturan docs/skrip/gen-tabel-standar-gaya.py (blok 'Nama Alat'/Merek/Type/S/N kolom D, tanggal & tertelusur kolom L, 'Temp cal. Certificate' L, penanda arah '(Tekan)'/'(Tarik)' kolom C, judul tabel baris 'No.', baris data bernomor, tabel drift Q:S, Tabel_Satuan DATABASE!R:S) diterapkan ke ekspor CSV ketiga master (Project-PT-Sidik/alat-alat-Pt-Sidik/Alat_Gaya/Gaya_{UTM,Load_Cell,Proving_Ring}) 22 Okt 2026 — tata letak STANDAR_LOADCELL identik di ketiganya.",
+  "Ekstraksi dari ketiga CSV = tabel-standar-gaya.json (StudioPetaSelProfilTest). Satu paket 'gaya' untuk utm, load_cell, proving_ring.",
+  "Data bersama antar varian otomatis: seluruh standar.* & faktor_satuan.* (generator: blok standar identik antar workbook). drift.*.*.{varian} per workbook, seperti generator (ketiganya tidak sepakat untuk 5 kN Tarik)."
+ ],
+ "lembar_wajib": [
+  "STANDAR_LOADCELL",
+  "DATABASE"
+ ],
+ "jangkar": [
+  {
+   "sel": "STANDAR_LOADCELL!P1",
+   "teks": "LATEST RECORD DRIFT"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!R4",
+   "teks": "Tekan"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!S4",
+   "teks": "Tarik"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!Q5",
+   "teks": "Load Cell 5 kN"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!Q6",
+   "teks": "Load Cell 100 kN"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!Q7",
+   "teks": "Load Cell 3000 kN"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D18",
+   "teks": "kg -> kN"
+  },
+  {
+   "sel": "DATABASE!R17",
+   "teks": "Satuan"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B2",
+   "teks": "Nama Alat"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B3",
+   "teks": "Merek"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B4",
+   "teks": "Type"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B5",
+   "teks": "S/N"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I2",
+   "teks": "Tanggal Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I3",
+   "teks": "Due Date Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I4",
+   "teks": "Tertelusur"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B30",
+   "teks": "Nama Alat"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B31",
+   "teks": "Merek"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B32",
+   "teks": "Type"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B33",
+   "teks": "S/N"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I30",
+   "teks": "Tanggal Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I31",
+   "teks": "Due Date Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I32",
+   "teks": "Tertelusur"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B47",
+   "teks": "Nama Alat"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B48",
+   "teks": "Merek"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B49",
+   "teks": "Type"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!B50",
+   "teks": "S/N"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I47",
+   "teks": "Tanggal Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I48",
+   "teks": "Due Date Kalibrasi"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!I49",
+   "teks": "Tertelusur"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!J10",
+   "teks": "Temp cal. Certificate"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!J37",
+   "teks": "Temp cal. Certificate"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!J54",
+   "teks": "Temp cal. Certificate"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D8",
+   "teks": "Set Point (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!E8",
+   "teks": "Set Point (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!F8",
+   "teks": "Correction (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!G8",
+   "teks": "Correction (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!H8",
+   "teks": "U95% (% reading)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D20",
+   "teks": "Set Point (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!E20",
+   "teks": "Set Point (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!F20",
+   "teks": "Correction (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!G20",
+   "teks": "Correction (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!H20",
+   "teks": "U95% (% reading)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D52",
+   "teks": "Set Point (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!E52",
+   "teks": "Set Point (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!F52",
+   "teks": "Correction (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!G52",
+   "teks": "Correction (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!H52",
+   "teks": "U95% (% reading)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D63",
+   "teks": "Set Point (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!E63",
+   "teks": "Set Point (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!F63",
+   "teks": "Correction (kg)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!G63",
+   "teks": "Correction (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!H63",
+   "teks": "U95% (% reading)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!D35",
+   "teks": "Set Point (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!F35",
+   "teks": "Correction (kN)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!G35",
+   "teks": "U95% (% reading)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!C7",
+   "teks": "Load Cell Uscell & Indicator SONIC AIX2 (Tekan)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!C19",
+   "teks": "Load Cell Uscell & Indicator SONIC AIX2 (Tarik)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!C34",
+   "teks": "Load Cell Matest & Indicator SONIC AIX1 (Tekan)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!C51",
+   "teks": "Load Cell N & Indicator SONIC N (Tekan)"
+  },
+  {
+   "sel": "STANDAR_LOADCELL!C62",
+   "teks": "Load Cell N & Indicator SONIC N (Tarik)"
+  },
+  {
+   "sel": "DATABASE!R19",
+   "teks": "kN"
+  },
+  {
+   "sel": "DATABASE!R20",
+   "teks": "N"
+  },
+  {
+   "sel": "DATABASE!R21",
+   "teks": "lbf"
+  },
+  {
+   "sel": "DATABASE!R22",
+   "teks": "kgf"
+  },
+  {
+   "sel": "DATABASE!R23",
+   "teks": "tnf"
+  }
+ ],
+ "varian": {
+  "sumber": "nama",
+  "pola": {
+   "utm": "(^| )utm( |$)",
+   "load_cell": "(^| )load cell( |$)",
+   "proving_ring": "(^| )pro[fv]ing ring( |$)"
+  }
+ },
+ "ekstrak": [
+  {
+   "jalur": "standar.100kN.nama",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D2"
+  },
+  {
+   "jalur": "standar.100kN.tertelusur",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!L4"
+  },
+  {
+   "jalur": "standar.100kN.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L2"
+  },
+  {
+   "jalur": "standar.100kN.berlaku_sampai",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L3"
+  },
+  {
+   "jalur": "standar.100kN.merek",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D3"
+  },
+  {
+   "jalur": "standar.100kN.tipe",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D4"
+  },
+  {
+   "jalur": "standar.100kN.serial",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D5"
+  },
+  {
+   "jalur": "standar.100kN.suhu_sertifikat",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!L10"
+  },
+  {
+   "jalur": "standar.100kN.u95_persen",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!H9"
+  },
+  {
+   "jalur": "standar.100kN.tabel.Push",
+   "tipe": "daftar_objek",
+   "kunci": "set_point_kn",
+   "kolom": {
+    "set_point_kn": "STANDAR_LOADCELL!E9:E17",
+    "koreksi_kn": "STANDAR_LOADCELL!G9:G17",
+    "set_point_kg": "STANDAR_LOADCELL!D9:D17",
+    "koreksi_kg": "STANDAR_LOADCELL!F9:F17"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "set_point_kn",
+    "koreksi_kn"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "standar.100kN.tabel.Pull",
+   "tipe": "daftar_objek",
+   "kunci": "set_point_kn",
+   "kolom": {
+    "set_point_kn": "STANDAR_LOADCELL!E21:E29",
+    "koreksi_kn": "STANDAR_LOADCELL!G21:G29",
+    "set_point_kg": "STANDAR_LOADCELL!D21:D29",
+    "koreksi_kg": "STANDAR_LOADCELL!F21:F29"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "set_point_kn",
+    "koreksi_kn"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "standar.3000kN.nama",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D30"
+  },
+  {
+   "jalur": "standar.3000kN.tertelusur",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!L32"
+  },
+  {
+   "jalur": "standar.3000kN.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L30"
+  },
+  {
+   "jalur": "standar.3000kN.berlaku_sampai",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L31"
+  },
+  {
+   "jalur": "standar.3000kN.merek",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D31"
+  },
+  {
+   "jalur": "standar.3000kN.tipe",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D32"
+  },
+  {
+   "jalur": "standar.3000kN.serial",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D33"
+  },
+  {
+   "jalur": "standar.3000kN.suhu_sertifikat",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!L37"
+  },
+  {
+   "jalur": "standar.3000kN.u95_persen",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!G36"
+  },
+  {
+   "jalur": "standar.3000kN.tabel.Push",
+   "tipe": "daftar_objek",
+   "kunci": "set_point_kn",
+   "kolom": {
+    "set_point_kn": "STANDAR_LOADCELL!D36:D46",
+    "koreksi_kn": "STANDAR_LOADCELL!F36:F46"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "set_point_kn",
+    "koreksi_kn"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "standar.5kN.nama",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D47"
+  },
+  {
+   "jalur": "standar.5kN.tertelusur",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!L49"
+  },
+  {
+   "jalur": "standar.5kN.tanggal_kalibrasi",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L47"
+  },
+  {
+   "jalur": "standar.5kN.berlaku_sampai",
+   "tipe": "tanggal",
+   "sel": "STANDAR_LOADCELL!L48"
+  },
+  {
+   "jalur": "standar.5kN.merek",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D48",
+   "varian": [
+    "utm",
+    "load_cell"
+   ]
+  },
+  {
+   "jalur": "standar.5kN.tipe",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D49",
+   "varian": [
+    "utm",
+    "load_cell"
+   ]
+  },
+  {
+   "jalur": "standar.5kN.serial",
+   "tipe": "teks",
+   "sel": "STANDAR_LOADCELL!D50",
+   "varian": [
+    "utm",
+    "load_cell"
+   ]
+  },
+  {
+   "jalur": "standar.5kN.suhu_sertifikat",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!L54"
+  },
+  {
+   "jalur": "standar.5kN.u95_persen",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!H53"
+  },
+  {
+   "jalur": "standar.5kN.tabel.Push",
+   "tipe": "daftar_objek",
+   "kunci": "set_point_kn",
+   "kolom": {
+    "set_point_kn": "STANDAR_LOADCELL!E53:E61",
+    "koreksi_kn": "STANDAR_LOADCELL!G53:G61",
+    "set_point_kg": "STANDAR_LOADCELL!D53:D61",
+    "koreksi_kg": "STANDAR_LOADCELL!F53:F61"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "set_point_kn",
+    "koreksi_kn"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "standar.5kN.tabel.Pull",
+   "tipe": "daftar_objek",
+   "kunci": "set_point_kn",
+   "kolom": {
+    "set_point_kn": "STANDAR_LOADCELL!E64:E72",
+    "koreksi_kn": "STANDAR_LOADCELL!G64:G72",
+    "set_point_kg": "STANDAR_LOADCELL!D64:D72",
+    "koreksi_kg": "STANDAR_LOADCELL!F64:F72"
+   },
+   "lewati_jika": "bukan_angka",
+   "lewati_kolom": [
+    "set_point_kn",
+    "koreksi_kn"
+   ],
+   "min_baris": 1
+  },
+  {
+   "jalur": "drift.5kN.Push.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!R5"
+  },
+  {
+   "jalur": "drift.5kN.Pull.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!S5"
+  },
+  {
+   "jalur": "drift.100kN.Push.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!R6"
+  },
+  {
+   "jalur": "drift.100kN.Pull.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!S6"
+  },
+  {
+   "jalur": "drift.3000kN.Push.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!R7"
+  },
+  {
+   "jalur": "drift.3000kN.Pull.{varian}",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!S7"
+  },
+  {
+   "jalur": "faktor_satuan.kN",
+   "tipe": "angka",
+   "sel": "DATABASE!S19"
+  },
+  {
+   "jalur": "faktor_satuan.N",
+   "tipe": "angka",
+   "sel": "DATABASE!S20"
+  },
+  {
+   "jalur": "faktor_satuan.lbf",
+   "tipe": "angka",
+   "sel": "DATABASE!S21"
+  },
+  {
+   "jalur": "faktor_satuan.kgf",
+   "tipe": "angka",
+   "sel": "DATABASE!S22"
+  },
+  {
+   "jalur": "faktor_satuan.tnf",
+   "tipe": "angka",
+   "sel": "DATABASE!S23"
+  },
+  {
+   "jalur": "faktor_set_point_kg_ke_kn",
+   "tipe": "angka",
+   "sel": "STANDAR_LOADCELL!E18"
+  }
+ ],
+ "tidak_dipetakan": [
+  "koefisien_suhu_per_c (0,00027) — literal generator, bukan sel",
+  "standar.5kN.merek/tipe/serial dari master Proving Ring — sel berisi #REF! (generator: null lalu diisi workbook lain); peta mengekstraknya hanya dari UTM & Load Cell",
+  "CMC — sengaja tidak di tabel ini; sumbernya kemampuan-kalibrasi.json (lampiran LK-285-IDN)"
+ ],
+ "perlu_berkas_asli": [
+  "faktor_set_point_kg_ke_kn ditulis literal 0.00980665 oleh generator; peta membacanya dari STANDAR_LOADCELL!E18 (label D18 'kg -> kN') — nilai sel sama, konfirmasi di .xlsm.",
+  "Konfirmasi alamat di .xlsm asli (terenkripsi; SIDIK_MASTER_SANDI belum disetel). Nama lembar CSV 'STANDAR_LOADCELL' mungkin 'STANDAR LOADCELL' di .xlsm.",
+  "Format angka (numFmt) lembar SERTIFIKAT untuk fase 3."
+ ]
+}
