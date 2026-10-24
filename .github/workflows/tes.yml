@@ -73,16 +73,82 @@ jobs:
 
       - run: composer install --prefer-dist --no-interaction --no-progress
 
-      # Test-nya jalan di SQLite in-memory (lihat phpunit.xml), jadi nggak perlu
-      # nyalain MySQL di CI. Tapi .env harus tetap ada — `key:generate` nulisnya
+      # Job ini memakai SQLite in-memory (lihat phpunit.xml); MySQL diuji pada
+      # job terpisah di bawah. .env tetap ada — `key:generate` nulisnya
       # ke situ, dan tanpa APP_KEY semua test yang nyentuh enkripsi/sesi jatuh.
       - run: cp .env.example .env
       - run: php artisan key:generate
 
       - run: php artisan test
 
+  mysql:
+    name: PHPUnit MySQL 8.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3307'
+      DB_DATABASE: asmo_db_test
+      DB_USERNAME: sidik_test
+      # Kredensial sintetis khusus service CI sementara, bukan secret lab.
+      DB_PASSWORD: ci-sidik-test-password
+      DB_URL: ''
+      DB_SOCKET: ''
+      MYSQL_ATTR_SSL_CA: ''
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-sidik-root-password
+          MYSQL_DATABASE: asmo_db_test
+          MYSQL_USER: sidik_test
+          MYSQL_PASSWORD: ci-sidik-test-password
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, pdo_sqlite, gd, intl, bcmath, zip, exif
+          coverage: none
+
+      - name: Cache dependency Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --prefer-dist --no-interaction --no-progress
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+
+      # Hanya server service CI ini yang diubah. User test tetap mendapat hak
+      # asmo_db_test.* dari entrypoint image, tanpa SUPER/global privileges.
+      - name: Izinkan pembuatan trigger pada service MySQL CI
+        env:
+          MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+          MYSQL_PWD: ci-sidik-root-password
+        run: >-
+          docker exec -e MYSQL_PWD="$MYSQL_PWD" "$MYSQL_CONTAINER"
+          mysql --user=root --execute="SET GLOBAL log_bin_trust_function_creators = 1;"
+
+      - name: Suite penuh MySQL
+        run: php artisan test -c phpunit.mysql.xml
+
   deploy:
-    needs: phpunit
+    needs: [phpunit, mysql]
     runs-on: ubuntu-latest
     name: deploy ke Render
 
