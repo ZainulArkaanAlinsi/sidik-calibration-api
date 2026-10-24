@@ -270,6 +270,12 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         ];
     })(),
 
+    // Status sumber acuan dari config yang sudah dimuat (termasuk config:cache).
+    // Hanya nama sumber; tidak membocorkan isi paket atau mengubah rollout.
+    'data_acuan' => [
+        'sumber' => (string) config('acuan.sumber'),
+    ],
+
     // Lapis DATABASE append-only `paket_acuan_log` & `simulasi_acuan` (§54):
     // true hanya bila keempat trigger ada. MySQL ber-binlog tanpa SUPER /
     // `log_bin_trust_function_creators=1` menolak `CREATE TRIGGER` (1419) dan
