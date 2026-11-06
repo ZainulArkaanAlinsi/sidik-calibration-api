@@ -314,6 +314,21 @@ PS;
         self::require($host === '127.0.0.1:'.$port, 'wrong_host');
     }
 
+    public static function allowedRequest(string $method, string $path): bool
+    {
+        return ($method === 'GET' && (in_array($path, ['/__sidik_e2e', '/api/data-acuan/paket'], true)
+                || (bool) preg_match('~^/api/(?:health|studio/me|studio/workbook(?:/\d+(?:/lembar/\d+)?)?)$~D', $path)))
+            || ($method === 'POST' && in_array($path, ['/api/login', '/api/studio/logout'], true));
+    }
+
+    /** Request metadata only: do not accept body, headers, or credentials. */
+    public static function accessEntry(string $method, string $uri, int $status): array
+    {
+        $path = parse_url($uri, PHP_URL_PATH);
+
+        return ['method' => $method, 'path' => is_string($path) ? $path : '<invalid>', 'status' => $status];
+    }
+
     public static function snapshot(): array
     {
         $counts = [];

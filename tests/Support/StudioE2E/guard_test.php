@@ -56,6 +56,20 @@ try {
     $reject('legacy port', fn () => Harness::port(8000));
     Harness::assertHost('127.0.0.1:48123', 48123);
     $passed[] = 'loopback Host accepted';
+    foreach ([
+        ['GET', '/api/data-acuan/paket', true],
+        ['POST', '/api/data-acuan/paket', false],
+        ['GET', '/api/data-acuan/paket/extra', false],
+        ['GET', '/api/data-acuan/paketx', false],
+        ['GET', '/api/data-acuan/paket/', false],
+        ['POST', '/api/data-acuan/versi/1/aktifkan', false],
+    ] as [$method, $path, $allowed]) {
+        Harness::require(Harness::allowedRequest($method, $path) === $allowed, 'request_scope_regression');
+        $passed[] = ($allowed ? 'allow ' : 'deny ').$method.' '.$path;
+    }
+    Harness::require(Harness::accessEntry('GET', '/api/data-acuan/paket?token=SYNTHETIC_TEST_ONLY', 404)
+        === ['method' => 'GET', 'path' => '/api/data-acuan/paket', 'status' => 404], 'access_log_query_leak');
+    $passed[] = 'early rejection log strips query';
     $reject('write outside run parent', fn () => Harness::writeNew('C:/Users/USER/not-synthetic.txt', ''));
     $reject('write outside run root', fn () => Harness::writeNew(Harness::RUN_PARENT.'/not-a-run-file.txt', ''));
     Harness::assertFresh($root);
