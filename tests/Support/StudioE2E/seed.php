@@ -116,6 +116,14 @@ try {
     unset($password, $settings, $environment);
     Harness::output(['status' => 'seeded', 'run_id' => $runId, 'manifest_path' => $root.'/manifest.json']);
 } catch (Throwable $error) {
+    if (isset($root) && is_string($root) && is_dir($root)) {
+        // Private, argument-free diagnostics: never serialize exception bindings/config.
+        @file_put_contents($root.'/seed-diagnostic.json', json_encode([
+            'exception' => $error::class, 'file' => $error->getFile(), 'line' => $error->getLine(),
+            'trace' => array_map(static fn (array $frame): array => array_intersect_key($frame,
+                array_flip(['file', 'line', 'class', 'function'])), $error->getTrace()),
+        ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+    }
     Harness::failure($error);
     exit(1);
 }

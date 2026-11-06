@@ -242,13 +242,7 @@ PS;
         $app->useEnvironmentPath($root);
         $app->useStoragePath($root.'/storage');
         self::require(self::samePath($app->basePath(), $base) && self::samePath($app->storagePath(), $root.'/storage'), 'wrong_application_path');
-        foreach (['Config', 'Services', 'Packages', 'Routes', 'Events'] as $type) {
-            $method = 'getCached'.$type.'Path';
-            self::require(self::samePath($app->$method(), $settings['APP_'.strtoupper($type).'_CACHE']), 'wrong_cache_path');
-        }
-        foreach (['APP_CONFIG_CACHE', 'APP_ROUTES_CACHE', 'APP_EVENTS_CACHE'] as $key) {
-            self::require(! file_exists($settings[$key]), 'unexpected_executable_cache');
-        }
+        self::isolateCachePaths($app, $root, $settings);
         // Validate resolved config before any service provider can open a connection.
         $app->afterBootstrapping(LoadConfiguration::class,
             static fn (Application $application) => self::resolvedSettings($application, $root, $settings));
@@ -256,6 +250,20 @@ PS;
         self::resolvedSettings($app, $root, $settings);
 
         return $app;
+    }
+
+    public static function isolateCachePaths(Application $app, string $root, array $settings): void
+    {
+        // Laravel only recognizes slash-prefixed absolute paths by default.
+        // Register this owned Windows root before resolving any cached path.
+        $app->addAbsoluteCachePathPrefix($root.'/');
+        foreach (['Config', 'Services', 'Packages', 'Routes', 'Events'] as $type) {
+            $method = 'getCached'.$type.'Path';
+            self::require(self::samePath($app->$method(), $settings['APP_'.strtoupper($type).'_CACHE']), 'wrong_cache_path');
+        }
+        foreach (['APP_CONFIG_CACHE', 'APP_ROUTES_CACHE', 'APP_EVENTS_CACHE'] as $key) {
+            self::require(! file_exists($settings[$key]), 'unexpected_executable_cache');
+        }
     }
 
     public static function resolvedSettings(Application $app, string $root, array $settings): void

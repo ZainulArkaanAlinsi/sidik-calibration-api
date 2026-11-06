@@ -6,7 +6,7 @@ use Tests\Support\StudioE2E\Harness;
 
 require __DIR__.'/bootstrap.php';
 
-// Standalone, opt-in guard checks: no Laravel bootstrap, SQL, server, or migration.
+// Standalone, opt-in guard checks: no Laravel kernel bootstrap, SQL, server, or migration.
 try {
     Harness::require(PHP_SAPI === 'cli', 'cli_required');
     $runId = 'guard-'.bin2hex(random_bytes(8));
@@ -78,6 +78,22 @@ try {
         putenv('SIDIK_E2E_JUNCTION_TARGET');
     }
     $reject('junction ancestor', fn () => Harness::noReparse([$junction.'/not-created.sqlite']));
+
+    // Real Laravel path metadata, without bootstrapping the console/HTTP kernel.
+    // This guards the Windows drive-letter normalization that prevented seed boot.
+    foreach ($settings as $key => $value) {
+        putenv($key.'='.$value);
+        $_ENV[$key] = $_SERVER[$key] = $value;
+    }
+    $base = Harness::basePath();
+    require_once $base.'/vendor/autoload.php';
+    $application = require $base.'/bootstrap/app.php';
+    Harness::isolateCachePaths($application, $root, $settings);
+    foreach (['Config', 'Services', 'Packages', 'Routes', 'Events'] as $type) {
+        $method = 'getCached'.$type.'Path';
+        Harness::require(Harness::samePath($application->$method(), $root.'/cache/'.strtolower($type).'.php'), 'absolute_cache_regression');
+    }
+    $passed[] = 'Windows absolute cache metadata';
     Harness::output([
         'status' => 'guard_tests_passed', 'count' => count($passed), 'checks' => $passed,
         'artifacts_path' => $root, 'database_connections' => 0,
