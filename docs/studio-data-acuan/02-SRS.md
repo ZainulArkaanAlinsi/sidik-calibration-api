@@ -1,5 +1,23 @@
 # 02 — SRS Studio Data Acuan
 
+## Addendum A0 — Kontrak penerimaan lokal
+
+Kebutuhan berikut belum diimplementasikan. Acuan: addendum A0 [PRD](01-PRD.md).
+
+| ID | Kebutuhan dan bukti penerimaan |
+|---|---|
+| FR-ST-DRAF-01 | Simpan menghasilkan ID/hash draf server; GET baru atau tutup/buka memulihkan nilai tersimpan. Simulasi memiliki status tersendiri. |
+| FR-ST-DRAF-02 | Workbook, paket dan versi satu organisasi/profil. Server menentukan alamat, tipe dan jalur dari peta tervalidasi; sel, rumus, transformasi atau penambahan yang belum didukung ditolak jelas. |
+| FR-ST-DRAF-03 | Angka masuk sebagai teks desimal dan dikanonikkan sesuai aturan data acuan. Kosong mengikuti skema; tidak diganti nol atau dibulatkan tambahan. |
+| FR-ST-DRAF-04 | Periksa hash workbook/peta/dasar. Update memakai hash draf terakhir dibaca; konflik 409 menjaga edit klien dan membatalkan seluruh tulisan/audit. |
+| FR-ST-DRAF-05 | Akun tunggal/token Studio tetap diperiksa. Gate tulis mengikuti hak sunting draf lab yang disahkan. Aktivasi tetap di lab oleh SA orang kedua; izin produksi diputuskan terpisah. |
+| FR-ST-DRAF-06 | Audit memuat aktor, nilai lama/baru, alasan dan sumber sebenarnya. Draf diajukan/aktif beku. Simpan draf tidak mengubah master, versi aktif, sesi lama atau sertifikat. |
+| FR-ST-DRAF-07 | Respons simpan terlambat sesudah edit baru/logout tidak menghapus edit terbaru atau menampilkan akun lama. Jaringan gagal tidak memberi sukses palsu; retry tidak menggandakan draf. |
+| FR-ST-DRAF-08 | Pilot numerik membuktikan versi sesuai organisasi/tanggal; delta nilai antara/komponen atau hasil terhadap baseline sesuai oracle dan konsisten pada preview/simpan/reload. U95 akhir boleh sama saat lantai CMC berlaku. Perubahan versi saat draf lapangan belum terkirim ditangani eksplisit dengan raw input utuh. |
+
+Gate lokal: data sintetis, SQLite/MySQL terisolasi, tanpa emulator. Gate pilot nyata mencakup
+workbook kanonik/nilai antara, pengesah kedua, perangkat fisik dan deployment terverifikasi.
+
 Istilah: **paket** = seluruh data acuan satu profil alat (mis. `micrometer`). **Versi** = satu
 isi paket yang tidak bisa diubah sesudah diajukan. **Lembar acuan** = satu tab di Studio, setara
 satu sheet acuan di workbook. **Sel** = satu nilai di lembar acuan.
