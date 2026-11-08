@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 /**
  * @mixin IdeHelperRawMeasurement
@@ -16,6 +17,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class RawMeasurement extends Model
 {
+    public function setPembacaanAttribute(mixed $value): void
+    {
+        $this->attributes['pembacaan'] = $this->decimalStorageValue($value);
+    }
+
+    public function setTitikUkurAttribute(mixed $value): void
+    {
+        $this->attributes['titik_ukur'] = $this->decimalStorageValue($value);
+    }
+
+    /** Keep PDO's float-to-string conversion from applying PHP's shorter precision. */
+    private function decimalStorageValue(mixed $value): mixed
+    {
+        if (! is_float($value)) {
+            return $value;
+        }
+
+        if (ini_get('serialize_precision') !== '-1') {
+            throw new LogicException('Raw measurement float writes require serialize_precision=-1.');
+        }
+
+        // Encode before assigning so either exception leaves the old attribute intact.
+        return json_encode($value, JSON_THROW_ON_ERROR);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

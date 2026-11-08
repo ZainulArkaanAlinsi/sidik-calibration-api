@@ -287,6 +287,10 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // Versi PHP yang benar-benar jalan — supaya status tambalan keamanan PHP
     // (mis. CVE-2026-109618/109619, butuh >= 8.4.27) bisa dicek tanpa Shell.
     'php_versi' => PHP_VERSION,
+
+    // Status worker yang menjawab: serializer raw memerlukan JSON shortest.
+    // Tidak mengubah INI atau menjamin konfigurasi seluruh worker pool.
+    'json_float_shortest' => ini_get('serialize_precision') === '-1',
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.

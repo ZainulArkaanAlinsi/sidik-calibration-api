@@ -114,4 +114,47 @@ class RawMeasurementMysqlPrecisionTest extends TestCase
             );
         }
     }
+
+    public function test_model_update_and_relation_create_many_preserve_both_raw_columns(): void
+    {
+        $session = CalibrationSession::factory()->create([
+            'status' => CalibrationSession::STATUS_DRAFT,
+            'keputusan' => null,
+            'nomor_order' => null,
+        ]);
+        $attributes = [
+            'titik_ke' => 1,
+            'pembacaan_ke' => 1,
+            'titik_ukur' => 0,
+            'pembacaan' => 0,
+            'satuan' => 'unit',
+            'input_source' => 'manual',
+            'is_verified' => true,
+        ];
+
+        $raw = $session->rawMeasurements()->create($attributes);
+        $raw->update([
+            'pembacaan' => 123456789.12345678,
+            'titik_ukur' => 123456789.12345678,
+        ]);
+        $this->assertExactStoredColumns($raw, '123456789.12345678');
+
+        $batch = $session->rawMeasurements()->createMany([
+            array_replace($attributes, ['titik_ke' => 2, 'pembacaan' => 123456789.12345678, 'titik_ukur' => 123456789.12345678]),
+            array_replace($attributes, ['titik_ke' => 3, 'pembacaan' => 100000000000.125, 'titik_ukur' => 100000000000.125]),
+        ]);
+        $this->assertCount(2, $batch);
+        $this->assertExactStoredColumns($batch[0], '123456789.12345678');
+        $this->assertExactStoredColumns($batch[1], '100000000000.12500000');
+    }
+
+    private function assertExactStoredColumns(RawMeasurement $raw, string $expected): void
+    {
+        foreach (self::COLUMNS as $column) {
+            $stored = DB::table('raw_measurements')->where('id', $raw->id)
+                ->selectRaw('CAST('.$column.' AS CHAR) AS exact_value')->first();
+            $this->assertNotNull($stored);
+            $this->assertSame($expected, $stored->exact_value, $column.' must survive its ORM write path unchanged.');
+        }
+    }
 }
