@@ -804,7 +804,18 @@
          boleh). Bawaannya grid lama 8 × 2 (`TataLetakSertifikat::BAWAAN`).
          Sel ber-`\n` (Capacity/Graduation bertingkat, Env. Condition
          bertumpuk) dicetak `pre-line`. --}}
-    <table class="info{{ $tataLetak['kepala'] !== \App\Support\TataLetakSertifikat::BAWAAN['kepala'] ? ' kepala-master' : '' }}">
+{{-- Kolom titik dua kepala (G0-a R3): aturannya cuma ikut terbit bila snapshot
+     menyatakan `kepala_titik_dua`, supaya cetak ulang snapshot lama IDENTIK
+     byte demi byte (komentar Blade meninggalkan newline-nya, jadi `@if`
+     menempel di ujung komentar). Selektor `.titik-dua` lebih lemah dari aturan
+     `body.longgar-*`, jadi pelebaran label tingkat longgar tetap menang. --}}@if ($tataLetak['kepala_titik_dua'])
+<style>
+table.info.titik-dua td.lbl { width: 17%; }
+table.info.titik-dua td.val { width: 31.5%; }
+table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text-align: center; }
+</style>
+@endif
+    <table class="info{{ $tataLetak['kepala'] !== \App\Support\TataLetakSertifikat::BAWAAN['kepala'] ? ' kepala-master' : '' }}{{ $tataLetak['kepala_titik_dua'] ? ' titik-dua' : '' }}">
         @php($rentangKepala = \App\Support\TataLetakSertifikat::rentangKepala($tataLetak['kepala']))
         @foreach ($tataLetak['kepala'] as $iKepala => $barisKepala)
             <tr>
@@ -813,11 +824,11 @@
                     @php($atrRs = $rsKepala > 1 ? ' rowspan="'.$rsKepala.'"' : '')
                     @if ($rsKepala === 0)
                     @elseif ($selKepala === null)
-                        <td class="lbl"></td><td class="val"></td>
+                        <td class="lbl"></td>{!! $tataLetak['kepala_titik_dua'] ? '<td class="sep"></td>' : '' !!}<td class="val"></td>
                     @else
                         @php($kunciKepala = $selKepala['kunci'])
                         @php($teksKepala = in_array($kunciKepala, \App\Support\TataLetakSertifikat::KUNCI_TANGGAL, true) ? $tgl($nilaiKepala[$kunciKepala] ?? null) : $isi($nilaiKepala[$kunciKepala] ?? null))
-                        <td class="lbl"{!! $atrRs !!}>{{ $selKepala['label'] }}</td><td class="val{{ $kunciKepala === 'equipment_name' ? ' alat' : '' }}{{ $kunciKepala === 'capacity_graduation' || str_contains($teksKepala, "\n") ? ' tumpuk' : '' }}"{!! $atrRs !!}>{{ $teksKepala }}</td>
+                        <td class="lbl"{!! $atrRs !!}>{{ $selKepala['label'] }}</td>{!! $tataLetak['kepala_titik_dua'] ? '<td class="sep"'.$atrRs.'>:</td>' : '' !!}<td class="val{{ $kunciKepala === 'equipment_name' ? ' alat' : '' }}{{ $kunciKepala === 'capacity_graduation' || str_contains($teksKepala, "\n") ? ' tumpuk' : '' }}"{!! $atrRs !!}>{{ $teksKepala }}</td>
                     @endif
                 @endforeach
             </tr>
@@ -1571,7 +1582,7 @@
              `judul_sebaran`) — sertifikat lama jatuh ke judul lamanya. --}}
         @php($kolomHasil = \App\Support\TataLetakSertifikat::kolomHasil($snapshot, $tataLetak, $r2 !== null))
         @php($susunanLama = $tataLetak['kolom_hasil'] === null)
-        @php($u95Kolom = collect($kolomHasil)->contains(fn ($k) => $k['kolom'] === 'u95'))
+        @php($u95Kolom = collect($kolomHasil)->contains(fn ($k) => $k['kolom'] === 'u95' || ($tataLetak['u95_relatif_menggantikan_baris'] && $k['kolom'] === 'u95_relatif')))
         @php($barisSatuan = (bool) $tataLetak['satuan_baris_sendiri'])
         {{-- Judul kolom U95 bawaan nyebut `k` cuma kalau alat ini emang
              MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis kayak masternya
@@ -1909,6 +1920,21 @@
     @if (filled($tataLetak['akhir_sertifikat']))
         <div class="akhir-sertifikat">{{ $tataLetak['akhir_sertifikat'] }}</div>
     @endif
+{{-- "End of Certificate" berbentuk GRUP garis-teks-garis (G0-a R1; 51 lembar
+     master: `grpSp` "Group 10" di dalam print area, `<lembar>.objek.json`).
+     Garis hitam 0,75 pt kiri & kanan ±21 % lebar grup, teks di tengah ±58 %,
+     rata tengah halaman. Gaya & lebar dibekukan di `tata_letak.
+     akhir_sertifikat_garis` (`AkhirSertifikatMaster`); `null` = tidak dicetak
+     (snapshot lama). Gaya inline & direktif di kolom 0 sengaja: cetak ulang
+     snapshot lama harus keluar IDENTIK byte demi byte (komentar Blade
+     meninggalkan newline-nya, jadi `@if` menempel di ujung komentar). --}}@if (filled($tataLetak['akhir_sertifikat_garis']))
+@php($ag = $tataLetak['akhir_sertifikat_garis'])
+<table style="width: {{ round($ag['lebar'] * 100, 1) }}%; margin: 2px auto 0 auto; border-collapse: collapse;"><tr>
+<td style="width: 21%; padding: 0; vertical-align: middle;"><div style="border-top: 0.75pt solid #000; height: 0; font-size: 1px; line-height: 1px;"></div></td>
+<td style="width: 58%; padding: 0 4px; text-align: center; white-space: nowrap; line-height: 1.1; font-size: {{ $ag['ukuran'] }}px; font-weight: {{ $ag['tebal'] ? 'bold' : 'normal' }}; font-style: {{ $ag['miring'] ? 'italic' : 'normal' }};">{{ $ag['teks'] }}</td>
+<td style="width: 21%; padding: 0; vertical-align: middle;"><div style="border-top: 0.75pt solid #000; height: 0; font-size: 1px; line-height: 1px;"></div></td>
+</tr></table>
+@endif
 
     <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
     @if ($longgar !== 0)

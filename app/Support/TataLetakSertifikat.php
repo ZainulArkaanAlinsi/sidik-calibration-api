@@ -124,6 +124,19 @@ final class TataLetakSertifikat
         // (master: `Issuance Date :`, `Issuance Date:`).
         'label_tanggal_terbit' => 'Issuance Date:',
         'akhir_sertifikat' => null,
+        // "End of Certificate" berbentuk GRUP garis-teks-garis (51 lembar
+        // master: objek `grpSp` di dalam print area, bukan sel teks). `null` =
+        // tidak dicetak (bentuk lama). Bentuk dari profil lewat
+        // [AkhirSertifikatMaster]: `['teks', 'tebal', 'miring', 'ukuran', 'lebar']`.
+        'akhir_sertifikat_garis' => null,
+        // Titik dua `:` sebagai sel tersendiri antara label dan nilai kepala
+        // (72 dari 72 lembar master). Bentuk lama: tanpa titik dua.
+        'kepala_titik_dua' => false,
+        // Kolom `u95_relatif` (U95 `%OR` per baris, Flowmeter UFM) menggantikan
+        // baris ringkas `Uncertainty U95% = ±` seperti kolom `u95`. Bentuk lama
+        // `false`: hanya kolom `u95` yang menggantikannya, sehingga snapshot UFM
+        // yang sudah terbit tetap mencetak baris itu.
+        'u95_relatif_menggantikan_baris' => false,
         // Kelompok tabel hasil ikut SATUAN baris juga, bukan cuma `remark`.
         // Bentuk lama `false`: snapshot terbit tanpa `tata_letak` dikelompokkan
         // seperti waktu terbit (satu tabel Conductivity µS/cm + mS/cm).
@@ -178,8 +191,13 @@ final class TataLetakSertifikat
      * ketik di dokumen terakreditasi tidak dipertahankan. `kalimat_k` tetap
      * `null` (kalimat lama ber-"Confidence").
      *
-     * Yang TIDAK di sini karena bukan mayoritas: `akhir_sertifikat` (G6) hanya
-     * 13 profil — anak timbangan (`139!G68`), labu ukur/pipet volume/picnometer
+     * G0-a (R1, R3): `kepala_titik_dua` di sini (`:` tersendiri di 72/72 lembar).
+     * "End of Certificate" berbentuk GRUP garis-teks-garis (51 lembar) TIDAK di
+     * sini: bentuknya per profil di [AkhirSertifikatMaster]
+     * (`tata_letak.akhir_sertifikat_garis`).
+     *
+     * Yang TIDAK di sini karena bukan mayoritas: `akhir_sertifikat` (G6, sel
+     * teks) hanya 13 profil — anak timbangan (`139!G68`), labu ukur/pipet volume/picnometer
      * (`143!G45`), buret/gelas ukur/pipet ukur (`144!G49`), timbangan
      * (`145!L76`), autoclave (`155!E66`), piston pipette/dispensett
      * (`160!G45`), buret digital (`164!G47`), TITS (`173!F53`, `174!F47`) —
@@ -212,6 +230,9 @@ final class TataLetakSertifikat
             ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through :'],
         ],
         'label_tanggal_terbit' => 'Issuance Date :',
+        // G0-a (R3): sel `:` tersendiri di tiap baris kepala master (55 lembar,
+        // mis. micrometer `E5:E15`, anak timbangan, timbangan, tits).
+        'kepala_titik_dua' => true,
         // Keputusan pemilik 20 Okt 2026 ("ikut master semua"):
         // - P1 (kop & judul besar) SENGAJA tidak ditimpa: kop memuat nomor
         //   akreditasi KAN, dan klaim itu tidak boleh hilang tanpa konfirmasi
@@ -275,7 +296,8 @@ final class TataLetakSertifikat
 
         foreach ($timpaan as $kunci => $nilai) {
             $hasil[$kunci] = match ($kunci) {
-                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan' => self::bool($kunci, $nilai),
+                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan', 'kepala_titik_dua', 'u95_relatif_menggantikan_baris' => self::bool($kunci, $nilai),
+                'akhir_sertifikat_garis' => $nilai === null ? null : self::garisAkhir($nilai),
                 'format_k' => $nilai === null ? null : self::normalisasiFormat(['k' => $nilai])['k'],
                 'k_tunggal' => $nilai === null || in_array($nilai, self::K_TUNGGAL, true)
                     ? $nilai
@@ -946,6 +968,35 @@ final class TataLetakSertifikat
         }
 
         return $nilai;
+    }
+
+    /**
+     * Bentuk grup "End of Certificate" garis-teks-garis: `teks`, `tebal`,
+     * `miring`, `ukuran` (pt, gaya run master), `lebar` (pecahan lebar isi
+     * halaman, 0,1-1).
+     *
+     * @return array{teks: string, tebal: bool, miring: bool, ukuran: int|float, lebar: float}
+     */
+    private static function garisAkhir(mixed $nilai): array
+    {
+        if (! is_array($nilai) || array_diff(array_keys($nilai), ['teks', 'tebal', 'miring', 'ukuran', 'lebar']) !== []
+            || array_diff(['teks', 'tebal', 'miring', 'ukuran', 'lebar'], array_keys($nilai)) !== []) {
+            throw new InvalidArgumentException('Tata letak sertifikat `akhir_sertifikat_garis` harus `[teks, tebal, miring, ukuran, lebar]`.');
+        }
+
+        if (! is_string($nilai['teks']) || trim($nilai['teks']) === '' || ! is_bool($nilai['tebal']) || ! is_bool($nilai['miring'])
+            || ! is_numeric($nilai['ukuran']) || $nilai['ukuran'] < 5 || $nilai['ukuran'] > 14
+            || ! is_numeric($nilai['lebar']) || $nilai['lebar'] < 0.1 || $nilai['lebar'] > 1) {
+            throw new InvalidArgumentException('Tata letak sertifikat `akhir_sertifikat_garis`: teks wajib, tebal/miring boolean, ukuran 5-14 pt, lebar 0,1-1.');
+        }
+
+        return [
+            'teks' => $nilai['teks'],
+            'tebal' => $nilai['tebal'],
+            'miring' => $nilai['miring'],
+            'ukuran' => $nilai['ukuran'] + 0,
+            'lebar' => (float) $nilai['lebar'],
+        ];
     }
 
     private static function teksAtauNull(string $kunci, mixed $nilai): ?string
