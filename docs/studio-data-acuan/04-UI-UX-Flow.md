@@ -1,5 +1,23 @@
 # 04 — UI/UX Flow Studio Data Acuan
 
+## Addendum A0 — Simpan dan buka kembali draf
+
+Rancangan lokal untuk FR-ST-DRAF-01..08; UI berikut belum tersedia.
+
+1. Muat workbook, izin dan identitas dasar/peta dari server. Fitur tulis tersembunyi saat gate mati.
+2. Edit sel yang didukung; tampilkan dirty dan pisahkan hasil simulasi dari status tersimpan.
+3. Simpan dengan alasan wajib dan snapshot edit/hash. Selama kirim, cegah pengiriman ganda.
+4. Sesudah berhasil, GET draf tersimpan dan tampilkan ID/hash/status draf. Edit yang dibuat
+   setelah snapshot kirim tetap dirty; respons lama sesudah logout tidak memasuki sesi baru.
+5. Konflik 409 mempertahankan edit dan meminta tindakan muat ulang/perbandingan; tidak overwrite
+   atau retry otomatis. Validasi 422 menunjuk sel; jaringan gagal menyediakan retry eksplisit.
+6. Tutup saat dirty menawarkan simpan, buang atau tetap di layar. Buka kembali memuat versi server.
+7. Pengajuan dan pengesahan dilanjutkan lewat lab yang berizin. Status aktif ditampilkan setelah
+   dibuktikan server; pilot numerik berakhir pada sesi Mobile baru dengan hash/hasil yang sesuai.
+
+Uji UI mencakup gagal simpan, respons bertukar urutan, ganti akun, konflik dan reopen.
+Uji perangkat/rantai perhitungan memiliki gate terpisah dari uji persistensi draf.
+
 Mockup visual: artefak desain "Studio Data Acuan — Panel Desktop" (dikirim terpisah). Dokumen
 ini adalah acuan perilakunya. Gaya mengikuti keputusan 26 Sep: tidak ada gradasi warna campur,
 mode terang/gelap tetap; "meja kerja lab" yang tenang. Angka memakai font tabular (lebar sama)

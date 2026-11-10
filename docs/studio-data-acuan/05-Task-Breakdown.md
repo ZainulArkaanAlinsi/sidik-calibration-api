@@ -1,5 +1,22 @@
 # 05 — Task Breakdown Studio Data Acuan
 
+## Addendum A0 — Rencana lokal disetujui 8 November 2026
+
+Status pekerjaan baru: A0 sedang direview; implementasi lain belum dimulai. Estimasi usaha
+awal berikut bukan tanggal janji; waktu tunggu Lab, perangkat, kuota dan CI dicatat tersendiri.
+
+| ID | Tugas | DoD | Estimasi | Dependency | Owner | Referensi |
+|---|---|---|---|---|---|---|
+| ST-DRAF-A0 | Tetapkan kontrak, policy, alamat/tipe yang didukung dan bukti status aktual | PRD/SRS/SDD/Flow konsisten dan review independen; numeric pilot dibedakan dari fondasi persistensi | 0,5–1 hari | Persetujuan lokal; riset API/UI | Orkestrator + peninjau | Addendum A0; FR-ST-DRAF-01..08 |
+| ST-DRAF-A1 | API create/update/reload draf, hash dan audit | OFF/auth/org/schema/conflict/atomic/idempotent tests; SQLite + MySQL hijau; master/aktif tidak berubah | 2–4 hari | A0; policy dan extractor/proyeksi terverifikasi | BE + peninjau | SDD A0; FR-ST-DRAF-01..06 |
+| ST-DRAF-A2 | State/service/editor simpan draf di Studio | Save/reload/dirty/409/logout/late-response tests; kontrak API tepat; tanpa dependency baru | 2–4 hari | A1 kontrak server beku | FE + peninjau | Flow A0; FR-ST-DRAF-07 |
+| ST-DRAF-A3 | Sambungan native lokal sintetis | Edit → HTTP save → tutup/buka → identitas/nilai sama; cross-account ditolak; token uji bersih | 1–2 hari | A1+A2 | QA + BE/FE | FR-ST-DRAF-01..07 |
+| ST-DRAF-A4 | Pilot parameter numerik sampai Mobile | Paritas workbook/nilai antara; orang kedua mengesahkan; sesi baru berhash baru dan delta numerik terhadap baseline sesuai oracle FR-ST-DRAF-08; preview/simpan/reload sama; histori tetap | 2–4 hari + tunggu Lab/perangkat | A3; workbook/profil/org kanonik; kontrak expected-version | BE/FE + penjaga angka + Lab | FR-ST-DRAF-08 |
+| ST-DRAF-A5 | Rollout | Sensus dampak sumber global, backup/rollback, izin konkret, rilis/perangkat dan SHA live terverifikasi | Setelah cakupan dampak diketahui | A4; persetujuan produksi | Pemilik + tim + Lab | PRD A0; gate rollout existing |
+
+Editor rumus dan bentuk lembar mengikuti S4/S5 pada dokumen Studio; statusnya tetap terbuka
+sesudah A1–A3. Seluruh alat mengikuti gate paritas masing-masing sebelum dinyatakan selesai.
+
 Owner: **Z** = Zainul (pemilik/BE), **M** = rekan full-stack mobile/desktop, **CC** = Claude Code
 di bawah arahan Z, **Lab** = Technical Manager / Master Data, **SA** = pemegang akun super admin.
 Estimasi dalam hari kerja orang. Semua tugas backend: DoD umum = test SQLite **dan** MySQL hijau,

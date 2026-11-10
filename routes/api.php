@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
+use App\Http\Controllers\Api\Studio\DrafAcuanController;
 use App\Http\Controllers\Api\Studio\HitungWorkbookController;
 use App\Http\Controllers\Api\Studio\ImporWorkbookController;
 use App\Http\Controllers\Api\Studio\StudioSesiController;
@@ -358,6 +359,21 @@ Route::middleware(['auth:sanctum', 'studio'])->prefix('studio')->group(function 
     // Tahap C: hitung ulang "bagaimana jika" (stateless; tidak menulis data lab).
     Route::post('/workbook/{workbook}/hitung', HitungWorkbookController::class)
         ->middleware('throttle:studio-hitung');
+
+    // Simpan/muat ulang DRAF data acuan (rencana A1, flag default MATI).
+    // Dideklarasikan: gerbang `studio` (grup) -> sakelar `fitur.studio-draf`
+    // (503 `belum_tersedia`) -> `throttle:studio-draf`. Urutan JALAN ditentukan
+    // prioritas middleware Laravel: `throttle` dan `SubstituteBindings` lebih awal
+    // dari `studio` (sama seperti rute Studio lain); yang dijamin hanya `studio`
+    // sebelum sakelar, jadi non-Studio tidak pernah melihat 503. Jumlah segmen
+    // berbeda dari `/workbook/impor` dan `/workbook/{workbook}`, jadi "impor"
+    // tidak terbaca sebagai id di sini; tetap didaftarkan sesudahnya.
+    Route::middleware(['fitur.studio-draf', 'throttle:studio-draf'])->group(function () {
+        Route::get('/workbook/{workbook}/draf-dasar', [DrafAcuanController::class, 'dasar']);
+        Route::post('/workbook/{workbook}/draf', [DrafAcuanController::class, 'simpan']);
+        Route::get('/workbook/{workbook}/draf/{versi}', [DrafAcuanController::class, 'tampil']);
+        Route::put('/workbook/{workbook}/draf/{versi}', [DrafAcuanController::class, 'perbarui']);
+    });
 });
 
 /*

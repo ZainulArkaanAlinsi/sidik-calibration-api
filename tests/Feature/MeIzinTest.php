@@ -148,6 +148,69 @@ class MeIzinTest extends TestCase
     }
 
     /**
+     * Izin Studio (`PETA_STUDIO`) juga nunjuk ke rute yang beneran terdaftar,
+     * dan tiap rutenya ber-gerbang `studio` -- `untukStudio()` cuma menyebut
+     * izin yang lolos dua syarat itu, jadi izin yang rutenya hilang/salah gerbang
+     * hilang diam-diam dari `/studio/me`. Izin simpan draf (A1) dikunci di sini.
+     */
+    public function test_peta_studio_nunjuk_rute_studio_yang_ada_dan_memuat_izin_draf(): void
+    {
+        // Flag dinyalakan HANYA supaya cek rute menjangkau semua izin berflag;
+        // yang dikunci di sini kesesuaian izin<->rute, bukan sakelarnya.
+        config(['studio.draf_acuan_aktif' => true]);
+
+        $boleh = $this->matriks->untukStudio()['boleh'];
+
+        foreach (array_keys(MatriksIzin::PETA_STUDIO) as $izin) {
+            $this->assertContains($izin, $boleh, "Izin Studio `{$izin}` tidak terbaca: rutenya hilang atau tidak ber-gerbang `studio`.");
+        }
+
+        $this->assertContains('workbook.draf.sunting', $boleh);
+        $this->assertSame(
+            ['POST', 'api/studio/workbook/{workbook}/draf'],
+            MatriksIzin::PETA_STUDIO['workbook.draf.sunting'],
+        );
+
+        // Izin Studio sengaja bukan bagian peta lab (`/me/permissions`).
+        $this->assertArrayNotHasKey('workbook.draf.sunting', MatriksIzin::PETA);
+    }
+
+    /**
+     * `/studio/me` jujur: izin yang rutenya masih 503 (flag mati) tidak disebut,
+     * dan sisanya persis daftar lama. Flag hidup -> izinnya muncul. Pembacaan
+     * flag strict `=== true`, sama dengan `FiturStudioDraf`.
+     */
+    public function test_izin_studio_berflag_disembunyikan_selama_flag_bukan_true(): void
+    {
+        $lama = ['workbook.lihat', 'workbook.hitung', 'workbook.impor', 'workbook.sel-terkunci.sunting', 'data-acuan.lihat'];
+
+        $this->assertFalse(config('studio.draf_acuan_aktif'));
+        $this->assertSame($lama, $this->matriks->untukStudio()['boleh']);
+
+        // Nilai truthy yang BUKAN `true` tetap dianggap mati (sama dengan gerbang 503).
+        foreach ([1, '1', 'true', null, false] as $bukanTrue) {
+            config(['studio.draf_acuan_aktif' => $bukanTrue]);
+            $this->assertNotContains('workbook.draf.sunting', $this->matriks->untukStudio()['boleh'], var_export($bukanTrue, true));
+        }
+
+        config(['studio.draf_acuan_aktif' => true]);
+        $boleh = $this->matriks->untukStudio()['boleh'];
+        $this->assertContains('workbook.draf.sunting', $boleh);
+        $this->assertEqualsCanonicalizing([...$lama, 'workbook.draf.sunting'], $boleh);
+    }
+
+    /** Izin Studio berflag tidak pernah bocor ke peta lab, flag hidup sekalipun. */
+    public function test_izin_studio_berflag_tidak_ada_di_peta_lab_walau_flag_hidup(): void
+    {
+        config(['studio.draf_acuan_aktif' => true]);
+
+        foreach (['admin', 'teknisi', 'viewer', 'super_admin'] as $role) {
+            $this->assertNotContains('workbook.draf.sunting', $this->matriks->bolehUntuk($role), $role);
+        }
+        $this->assertArrayNotHasKey('workbook.draf.sunting', MatriksIzin::PETA);
+    }
+
+    /**
      * Nama izin yang BENERAN ditanyakan aplikasi mobile ada semua di peta.
      *
      * ## Kenapa arah ini perlu dites terpisah

@@ -400,6 +400,14 @@ services:
       - key: STUDIO_AKUN
         sync: false
 
+      # Simpan/muat ulang DRAF data acuan dari Studio (rencana A1). WAJIB "false"
+      # sampai gerbang verifikasi A1 (SQLite + MySQL + tinjauan) lengkap: mati =
+      # `/api/studio/workbook/{workbook}/draf*` dijawab 503 `belum_tersedia`.
+      # Bernilai di blueprint, jadi menyalakannya = mengubah baris ini lalu
+      # deploy (nilai di dashboard akan ditimpa balik; pola FITUR_PELANGGAN).
+      - key: STUDIO_DRAF_ACUAN_AKTIF
+        value: "false"
+
       # Maintenance khusus modul pelanggan — TIDAK menyentuh app internal.
       # Dipisah dari `php artisan down` justru karena itu: teknisi di lapangan
       # nggak boleh ikut berhenti waktu sisi pelanggan sedang diperbaiki.

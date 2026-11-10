@@ -1,5 +1,24 @@
 # 01 — PRD Studio Data Acuan
 
+## Addendum A0 — Studio ke Mobile, 8 November 2026
+
+Status: pengembangan lokal sintetis disetujui pemilik; kemampuan berikut belum diimplementasikan.
+Target produk mencakup perubahan dan penambahan data, rumus, serta bentuk lembar di Studio
+yang dipakai Mobile setelah versi disahkan. Tahap data acuan dilanjutkan mesin/editor rumus
+dan bentuk pada [PRD Studio](../sidik-studio/01-PRD.md).
+
+DoD pilot: satu perubahan **parameter numerik** yang sah tersimpan, pulih sesudah tutup/buka,
+disimulasikan dan diaktifkan orang kedua; sesi Mobile baru memakai versi serta delta numerik
+pada nilai antara, komponen atau hasil sesuai oracle terhadap baseline. U95 akhir boleh tetap
+sama ketika lantai CMC berlaku. Simpan teks metadata berstatus fondasi persistensi. Penambahan data mengikuti
+skema/peta alat dan memiliki kasus uji tersendiri. Sesi lama dan sertifikat terbit mempertahankan
+versi serta snapshot semula.
+
+Kondisi A0: edit workbook dan `/hitung` masih simulasi; impor master dapat membentuk draf;
+token Studio belum mempunyai rute tulis draf. Produksi tetap JSON. Akun tunggal Studio
+K-50-12 berlaku. Tahap lokal tidak mengaktifkan sumber DB atau mengubah master/izin produksi.
+Kontrak baru diturunkan berurutan ke addendum A0 SRS, SDD, Flow dan Task Breakdown.
+
 ## 1. Masalah
 
 1. **Data acuan berubah lebih sering daripada kode.** Standar direkalibrasi tiap tahun, CMC

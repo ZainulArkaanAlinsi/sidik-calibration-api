@@ -158,12 +158,33 @@ class MatriksIzin
         'workbook.lihat' => ['GET', 'api/studio/workbook'],
         'workbook.hitung' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
         'workbook.impor' => ['POST', 'api/studio/workbook/impor'],
+        // Simpan/muat ulang draf data acuan (rencana A1). Rutenya ada di grup
+        // `studio` tapi hidup hanya bila `studio.draf_acuan_aktif` menyala;
+        // izin ini tetap di peta (kesesuaian izin<->rute dikunci `MeIzinTest`),
+        // tapi `untukStudio()` hanya menyebutnya selama flag itu menyala --
+        // lihat `IZIN_STUDIO_BERFLAG`.
+        'workbook.draf.sunting' => ['POST', 'api/studio/workbook/{workbook}/draf'],
         // Bukan rute: aturan di server (`ProteksiLembar::bolehMelewati`) — sel
         // terkunci di lembar terproteksi boleh disunting di simulasi /hitung.
         'workbook.sel-terkunci.sunting' => ['POST', 'api/studio/workbook/{workbook}/hitung'],
         // Layar Data Acuan di Studio: rute BACA lab yang membuka diri untuk token
         // `studio` lewat `aplikasi:internal,studio`.
         'data-acuan.lihat' => ['GET', 'api/data-acuan/paket'],
+    ];
+
+    /**
+     * Izin Studio yang rutenya dijaga sakelar fitur (`config`): izin → kunci config.
+     *
+     * Selama sakelarnya bukan `true`, semua rute izin ini menjawab 503
+     * `belum_tersedia`. `/studio/me` tidak boleh menyebutnya, supaya klien tidak
+     * menawarkan tombol Simpan yang pasti 503 ("/me jujur"). Pembacaannya
+     * strict `=== true`, sama dengan `FiturStudioDraf` -- jangan dilonggarkan
+     * sepihak, nanti `/me` bilang boleh sementara rutenya menolak.
+     *
+     * @var array<string, string>
+     */
+    private const IZIN_STUDIO_BERFLAG = [
+        'workbook.draf.sunting' => 'studio.draf_acuan_aktif',
     ];
 
     /**
@@ -204,6 +225,11 @@ class MatriksIzin
         $boleh = [];
 
         foreach (self::PETA_STUDIO as $izin => [$method, $uri]) {
+            // Fitur belum dinyalakan: rutenya 503, jadi izinnya tidak disebut.
+            if (isset(self::IZIN_STUDIO_BERFLAG[$izin]) && config(self::IZIN_STUDIO_BERFLAG[$izin]) !== true) {
+                continue;
+            }
+
             $rute = $this->cariRute($method, $uri);
 
             $mw = $rute?->gatherMiddleware() ?? [];

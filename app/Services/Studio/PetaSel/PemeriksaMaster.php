@@ -30,6 +30,22 @@ final class PemeriksaMaster
 
     public const FORMAT_XLSM = 'xlsm';
 
+    /** Forward the existing scalar extraction rule; this does not validate an edit batch. */
+    public function normalizeScalarNumber(float $candidate, string $address, int $decimals): float
+    {
+        if (! is_finite($candidate)) {
+            throw new RuntimeException('Scalar number normalization requires a finite candidate.');
+        }
+        $problems = [];
+        $value = $this->angkaWajib(['n' => $candidate], $address, $decimals, $problems);
+
+        if ($value === null || $problems !== [] || ! is_finite($value)) {
+            throw new RuntimeException('Scalar number normalization failed: '.implode('; ', $problems));
+        }
+
+        return $value;
+    }
+
     /**
      * Terjemahan alamat CSV peta -> master yang sedang diperiksa
      * ([PetaSel::alihXlsm]); kosong = CSV apa adanya.

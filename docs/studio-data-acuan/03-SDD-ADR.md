@@ -1,5 +1,34 @@
 # 03 — SDD & ADR Studio Data Acuan
 
+## Addendum A0 — Rancangan draf workbook tersimpan
+
+Status 10 Nov 2026: **API A1 (B1–B4) diimplementasikan di balik flag mati** (SQLite terbukti; MySQL belum; UI/Mobile belum). Ringkasan desain (tanpa migrasi; draf = `paket_acuan_versi` status draf, riwayat = `paket_acuan_suntingan` + `paket_acuan_log` aksi `sunting`; hash CAS = sha256 teks isi kanonik; kunci paket lalu versi) ada di bagian atas kontrak klien: [`docs/perintah-frontend-studio-draf.md`](../perintah-frontend-studio-draf.md). Acuan FR-ST-DRAF-01..08.
+`WorkbookMaster` tetap master impor; suntingan menghasilkan versi `PaketAcuanVersi`.
+
+| Operasi calon | Kontrak |
+|---|---|
+| `POST /api/studio/workbook/{workbook}/draf` | Buat draf dengan hash dasar masih cocok. |
+| `GET /api/studio/workbook/{workbook}/draf/{versi}` | Baca identitas/hash dan proyeksi sel dari versi tersimpan. |
+| `PUT /api/studio/workbook/{workbook}/draf/{versi}` | Ubah hanya draf dengan compare-and-swap hash kanonik. |
+| `GET /api/studio/workbook/{workbook}/draf-dasar` | (A1, ditambahkan) Hash workbook/peta/dasar, nilai dasar, dan daftar draf (maks 20 terbaru) sebelum draf pertama ada. Tidak menulis. |
+
+Payload: `workbook_sha256`, `peta_sel_sha256`, `alasan`, `suntingan:[{sel,nilai}]`;
+`nilai` string (A1: `null` ditolak 422), tipe ditentukan server. POST menambah `base_isi_sha256` untuk dasar;
+PUT memakai `expected_isi_sha256` untuk isi draf terakhir dibaca. Respons memuat workbook/versi,
+status draf, hash dasar/workbook/peta/isi (`hash.isi`; kolom `isi_sha256` sengaja tetap NULL pada draf) dan proyeksi sel (`suntingan:[{sel,jalur,nilai}]`, `nilai` string; A1). Hash draf dihitung dari
+isi kanonik memakai helper versi existing; kolom hash terkunci saat diajukan mengikuti lifecycle.
+
+Flag baru yang direncanakan `studio.draf_acuan_aktif` default false. Penjagaan akun/token
+Studio serta hak tulis diperiksa sebelum lookup. Lintas organisasi ditolak 404. Create mengunci
+baris paket sebelum penomoran; update mengunci draf dan memeriksa hash dalam transaksi.
+Konflik 409/status beku/validasi 422 membatalkan tulisan dan audit (A1: satu transaksi; pembacaan pertama di dalam transaksi adalah kunci baris paket — MySQL REPEATABLE READ — lalu workbook dibaca ulang, baru dasar/versi). Retry mempertahankan ID,
+sumber serta aktor sebenarnya; identitas versi aktif tidak boleh dikemas sebagai draf baru.
+
+Peta range/transformasi memerlukan ekstraksi dan proyeksi balik teruji; jangan menebak invers
+atau menimpa perubahan dasar lain. Alur ajukan/simulasi/aktifkan existing tetap terpisah.
+Kontrak expected-version Mobile, refresh/cache dan idempotensi sesi harus selesai sebelum
+FR-ST-DRAF-08 lulus. Tidak ada migrasi/source-flag produksi yang diotorisasi oleh tahap lokal.
+
 ## 1. Gambaran arsitektur
 
 ```

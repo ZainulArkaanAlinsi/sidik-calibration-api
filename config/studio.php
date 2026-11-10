@@ -32,6 +32,18 @@ return [
     'akun' => strtolower(trim((string) env('STUDIO_AKUN', ''))),
 
     /*
+     * Sakelar simpan/muat ulang DRAF data acuan dari Studio (rencana A1,
+     * `POST|GET|PUT /api/studio/workbook/{workbook}/draf[/{versi}]`).
+     *
+     * Bawaan `false`: mati -> rute-rutenya dijawab 503 `belum_tersedia`
+     * (`FiturStudioDraf`). Lewat config, bukan `env()` langsung di middleware,
+     * karena `config:cache` di produksi membuat `env()` mengembalikan null
+     * (alasan lengkap di config/pelanggan.php). Dinyalakan hanya sesudah gerbang
+     * verifikasi A1 lengkap; tidak mengubah `DATA_ACUAN_SUMBER`.
+     */
+    'draf_acuan_aktif' => (bool) env('STUDIO_DRAF_ACUAN_AKTIF', false),
+
+    /*
      * Disk penyimpanan berkas asli workbook (+ gambar lembarnya). `arsip` =
      * disk awet yang sama dengan PDF sertifikat: R2 (`ARSIP_DRIVER=s3`) di
      * produksi. Disk container Render terhapus tiap deploy, dan tanpa berkas

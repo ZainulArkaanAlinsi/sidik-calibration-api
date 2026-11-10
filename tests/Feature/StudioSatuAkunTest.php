@@ -250,9 +250,19 @@ class StudioSatuAkunTest extends TestCase
 
         $me = $this->withToken($token)->getJson('/api/studio/me')->assertOk();
         $me->assertJsonPath('data.user.email', 'pemilik@sidik.test')->assertJsonPath('data.izin.role', 'studio');
+        // Flag draf MATI (bawaan): izin simpan draf tidak disebut (rutenya 503).
         $this->assertEqualsCanonicalizing(
             ['workbook.lihat', 'workbook.hitung', 'workbook.impor', 'workbook.sel-terkunci.sunting', 'data-acuan.lihat'],
             $me->json('data.izin.boleh'),
+        );
+
+        // Flag draf HIDUP: izinnya muncul, sisanya sama.
+        config(['studio.draf_acuan_aktif' => true]);
+        $this->app['auth']->forgetGuards();
+        $meHidup = $this->withToken($token)->getJson('/api/studio/me')->assertOk();
+        $this->assertEqualsCanonicalizing(
+            ['workbook.lihat', 'workbook.hitung', 'workbook.impor', 'workbook.draf.sunting', 'workbook.sel-terkunci.sunting', 'data-acuan.lihat'],
+            $meHidup->json('data.izin.boleh'),
         );
 
         $this->app['auth']->forgetGuards();
