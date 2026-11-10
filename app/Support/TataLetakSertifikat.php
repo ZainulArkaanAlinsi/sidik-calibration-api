@@ -150,6 +150,11 @@ final class TataLetakSertifikat
         // satu sel `k`, mis. `183!V29`). `null` = perilaku lama: `k` baris
         // pertama, `≈` bila angka cetaknya berbeda.
         'k_tunggal' => null,
+        // Gambar khas alat di dalam print area master (G2, R4): diagram posisi
+        // termokopel autoclave/enclosure. `null` = tidak dicetak (bentuk lama,
+        // semua snapshot terbit sebelum G2). Entri dari profil lewat
+        // [GambarKhasSertifikat].
+        'gambar_khas' => null,
     ];
 
     /**
@@ -298,6 +303,7 @@ final class TataLetakSertifikat
             $hasil[$kunci] = match ($kunci) {
                 'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan', 'kepala_titik_dua', 'u95_relatif_menggantikan_baris' => self::bool($kunci, $nilai),
                 'akhir_sertifikat_garis' => $nilai === null ? null : self::garisAkhir($nilai),
+                'gambar_khas' => $nilai === null ? null : GambarKhasSertifikat::normalisasi($nilai),
                 'format_k' => $nilai === null ? null : self::normalisasiFormat(['k' => $nilai])['k'],
                 'k_tunggal' => $nilai === null || in_array($nilai, self::K_TUNGGAL, true)
                     ? $nilai
