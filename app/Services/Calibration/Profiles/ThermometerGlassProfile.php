@@ -180,7 +180,9 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
      * Bentuk lembar SERTIFIKAT master `176` (K-50-15): judul `Standard Reading
      * (oC)` tanpa baris satuan (`E20:L20`), label `Uncertainty  95%  ±`
      * (`E35`), Standard used tanpa titik dua (`B41:Q41`), `Issuance Date`
-     * tanpa titik dua (`B48`). Tidak ada `End of Certificate`.
+     * tanpa titik dua (`B48`). `End of Certificate` ADA: grup garis-teks-garis `H58:N60` di
+     * dalam print area (`176` objek.json "Group 10"; bukan sel teks) — dicetak lewat
+     * `AkhirSertifikatMaster` (G0-a). Docblock lama "tidak ada" salah (PDF master memuatnya).
      *
      * @return array<string, mixed>
      */

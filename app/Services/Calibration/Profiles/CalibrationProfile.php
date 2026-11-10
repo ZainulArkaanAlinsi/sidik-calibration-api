@@ -8,6 +8,9 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
+use App\Support\AkhirSertifikatMaster;
+use App\Support\FormatMasterSertifikat;
+use App\Support\StandarCetakMaster;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 
@@ -297,9 +300,16 @@ abstract class CalibrationProfile
      * Bukan aturan metrologi, melainkan format sel di master masing-masing
      * alat, dan masternya emang beda satu sama lain:
      *
-     *  - Turbidimeter `0189-CAL-624` nyetak `-0,00` (koreksi -0,004) dan `-0,0`
-     *    (koreksi -0,02) — diadu ke kertasnya langsung 10 Agt 2026. pH &
-     *    Chlorine ikut pola yang sama.
+     *  - Kertas Turbidimeter `0189-CAL-624` nyetak `-0,00` (koreksi -0,004) dan
+     *    `-0,0` (koreksi -0,02) — diadu ke kertasnya langsung 10 Agt 2026. pH &
+     *    Chlorine ikut pola yang sama. TAPI PDF master workbook turbidimeter
+     *    (`master-olah-data-turbidimeter`) nyetak `0.00` / `0.0` tanpa minus; dua
+     *    bukti itu bertentangan, jadi turbidimeter DITAHAN di `true` (perilaku
+     *    lama) menunggu konfirmasi pemilik (koordinator, 10 Nov 2026).
+     *  - PDF master Centrifuge, Dial Indicator, TITS, Micrometer, dan Tachometer
+     *    nyetak `0.0`/`0.00` tanpa minus (G0-b P4) — override `false` di profilnya.
+     *    Load Cell, Pressure, dan Timbangan belum terbukti dari PDF, jadi tidak
+     *    diubah.
      *  - Master Conductivity nyimpen angka yang SAMA PERSIS kayak kita
      *    (`SERTIFIKAT STYLE 1` baris 35: `25` · `25.04` · `-0.03999999999999915`)
      *    tapi nyetaknya `0,0`, tanpa minus. Master Spectrophotometer sama:
@@ -2297,7 +2307,40 @@ abstract class CalibrationProfile
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return TataLetakSertifikat::MAYORITAS_MASTER;
+        // "End of Certificate" berbentuk grup garis-teks-garis (G0-a, R1): satu
+        // tabel data (`AkhirSertifikatMaster`) per kode profil, bukan `if` di tiap
+        // profil. Profil yang masternya sel teks menimpa `akhir_sertifikat`
+        // sendiri dan tidak ada di tabel itu.
+        $garis = AkhirSertifikatMaster::untukProfil($this->kode());
+        // G0-b (P1/P2): kertas berkop pracetak + tanggal seperti format sel
+        // master, per kode profil (`FormatMasterSertifikat`). Profil tanpa master
+        // di folder ekstraksi tidak menyatakan apa pun (bentuk lama).
+        // Kop pracetak hanya bila sakelar `sertifikat.kop_pracetak` menyala
+        // (bawaan MATI: kop/judul/kode dokumen tetap tercetak).
+        $pracetak = config('sertifikat.kop_pracetak') === true
+            ? FormatMasterSertifikat::ruangPracetakCm($this->kode())
+            : null;
+        $tanggal = FormatMasterSertifikat::tanggalUntukProfil($this->kode());
+
+        return [
+            ...TataLetakSertifikat::MAYORITAS_MASTER,
+            ...($garis === null ? [] : ['akhir_sertifikat_garis' => $garis]),
+            ...($pracetak === null ? [] : ['kop_pracetak' => $pracetak]),
+            ...($tanggal === null ? [] : ['tanggal_master' => $tanggal]),
+        ];
+    }
+
+    /**
+     * Kapasitas yang dicetak sel Capacity/Graduation master (G0-b P3), dipakai
+     * hanya bila `tata_letak.kapasitas_master` dinyatakan. `null` = `-` bila
+     * profil tidak punya sumber kapasitas ketikan; bawaannya rentang atas alat
+     * (`equipments.range_max`).
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $maks = $sesi->equipment?->range_max;
+
+        return $maks === null ? null : (float) $maks;
     }
 
     /**
@@ -2703,6 +2746,48 @@ abstract class CalibrationProfile
     public function standarTambahanSesi(CalibrationSession $sesi): array
     {
         return [];
+    }
+
+    /**
+     * Standar yang master SELALU cetak di tabel Standard Used walau tidak
+     * dicentang teknisi (baris "Termometer & Sensor Std."; G1/R2). Datanya
+     * tabel per kode profil `App\Support\StandarCetakMaster`, jadi tidak ada
+     * `if` per profil di sini — profil tanpa baris di tabel itu mengembalikan
+     * kosong dan sertifikatnya tidak berubah.
+     *
+     * Hanya CETAK: masa berlaku standar ini TIDAK ikut diperiksa
+     * `CalibrationValidator` (itu perilaku `standarTambahanSesi`, dan
+     * melebarkannya mengubah gerbang terbit alat-alat ini — bukan lingkup
+     * perubahan bentuk cetak). Baris yang tidak ketemu di master standar lab
+     * dilewati.
+     *
+     * @return list<Standard>
+     */
+    public function standarSelaluTercetakSesi(CalibrationSession $sesi): array
+    {
+        $daftar = StandarCetakMaster::untukProfil($this->kode());
+
+        if ($daftar === [] || $sesi->organization_id === null) {
+            return [];
+        }
+
+        $master = Standard::query()
+            ->whereNull('parameter_kondisi')
+            ->where('organization_id', $sesi->organization_id)
+            ->orderBy('id')
+            ->get();
+
+        $hasil = [];
+
+        foreach ($daftar as $kunci) {
+            $standar = $this->cocokkanStandar($master, $kunci);
+
+            if ($standar !== null) {
+                $hasil[] = $standar;
+            }
+        }
+
+        return $hasil;
     }
 
     /**

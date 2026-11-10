@@ -1,0 +1,277 @@
+{
+    "versi": 1,
+    "desimal": 0,
+    "judul_uut": "Unit Under Test",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": true,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": "Correction factor from % to %LEL — Methane (CH4) = 2.5 % = 50 %LEL",
+    "satuan": "ppm",
+    "satuan_cetak": "ppm",
+    "header": {
+        "certificate_number": "UJI/00015",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 11",
+        "order_number": "2602.03.A.NK",
+        "address": "Alamat Sintetis 11, Jl. Contoh No. 11, Kota Contoh",
+        "received_date": "2026-02-02",
+        "equipment_name": "Multi Gas Detector",
+        "manufacturer": "Honeywell",
+        "calibration_location": "Laboratorium",
+        "model_type": "Microclip XL",
+        "calibration_date": "2026-02-02",
+        "serial_number": "KA419-1086675",
+        "calibration_method": "SIDIK-IK-CAL-0536_Rev.0",
+        "capacity_graduation": "0–1999 ppm / 1 ppm",
+        "env_condition": "T 23.9 °C ± 1.2 °C\n%RH 53 % ± 4.2 %",
+        "technician_id": "DR"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": 101,
+            "remark": "Carbon Monoxide (CO)",
+            "unit_under_test": 100.33333333333,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.66666666666667,
+            "u95": 5.0540177345833,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9715466694442,
+            "desimal_k": null,
+            "desimal": 0,
+            "satuan": "ppm",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 2,
+            "standard_value": 25,
+            "remark": "Hydrogen Sulfide (H₂S)",
+            "unit_under_test": 23.666666666667,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 1.3333333333333,
+            "u95": 1.5380401173151,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 2.0106347576239,
+            "desimal_k": null,
+            "desimal": 0,
+            "satuan": "ppm",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 3,
+            "standard_value": 50,
+            "remark": "Methane (CH4)",
+            "unit_under_test": 49.666666666667,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.33333333333334,
+            "u95": 2.6172538663617,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9743577636569,
+            "desimal_k": null,
+            "desimal": 0,
+            "satuan": "%LEL",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 4,
+            "standard_value": 17.9,
+            "remark": "Oxygen (O2)",
+            "unit_under_test": 16.733333333333,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 1.1666666666667,
+            "u95": 0.88671070105162,
+            "desimal_u95": 2,
+            "faktor_cakupan_k": 1.9717188484625,
+            "desimal_k": null,
+            "desimal": 1,
+            "satuan": "%",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": true,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type :"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number :"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through :"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date :",
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": "."
+    },
+    "standar_digunakan": [
+        {
+            "name": "Standar Gas Mixture (CO)",
+            "merk_type": "Rigas/Carbon Monoxide (CO) 101 Ppm",
+            "serial_number": "WO0125576",
+            "traceable_to": "Rigas"
+        },
+        {
+            "name": "Standar Gas Mixture (H₂S)",
+            "merk_type": "Rigas/Hydrogen Sulfide (H₂S) 25 Ppm",
+            "serial_number": "WO0125576",
+            "traceable_to": "Rigas"
+        },
+        {
+            "name": "Standar Gas Mixture (CH4)",
+            "merk_type": "Rigas/Methane (CH4) 2.5%(50%LEL)",
+            "serial_number": "WO0125576",
+            "traceable_to": "Rigas"
+        },
+        {
+            "name": "Standar Gas Mixture (O2)",
+            "merk_type": "Rigas/Oxygen (O2) 17.9%",
+            "serial_number": "WO0125576",
+            "traceable_to": "Rigas"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-09",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "uwane0iim9",
+        "qr_payload": "http://localhost/verify/uwane0iim9",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": null,
+            "standar_akreditasi": null,
+            "dalam_lingkup_akreditasi": false
+        }
+    }
+}

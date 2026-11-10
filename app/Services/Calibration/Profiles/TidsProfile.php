@@ -577,8 +577,11 @@ class TidsProfile extends CalibrationProfile
      * Bentuk lembar SERTIFIKAT master (K-50-15), sama di kedua workbook
      * (`193`, `194`): judul `Standard Reading (oC)` tanpa baris satuan
      * (`E19:L19`), label `Uncertainty  95%  ±` (`E34`), Standard used tanpa
-     * titik dua (`B40:Q40`), `Issuance Date` tanpa titik dua (`B47`). Tidak
-     * ada `End of Certificate`. Desimal tetap ikut resolusi alat (docblock
+     * titik dua (`B40:Q40`), `Issuance Date` tanpa titik dua (`B47`).
+     * `End of Certificate` ADA: grup garis-teks-garis di dalam print area (Recorder
+     * Graptech `H58:N60`, Yokogawa K N `H57:N59`; `objek.json` "Group 10", Arial 8
+     * tebal-miring) — dicetak lewat `AkhirSertifikatMaster` (G0-a); docblock lama
+     * "tidak ada" salah. Desimal tetap ikut resolusi alat (docblock
      * [desimalSertifikat]) — format sel kedua varian memang mengikutinya.
      *
      * @return array<string, mixed>

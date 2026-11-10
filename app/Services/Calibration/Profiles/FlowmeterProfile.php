@@ -1309,6 +1309,9 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through'],
             ],
             'label_tanggal_terbit' => 'Issuance Date',
+            // R11: kolom `u95_relatif` UFM sudah U95 per baris; master (`149!O20:O22`,
+            // `185!N24:N26`) tidak punya baris `Uncertainty U95% = ±` di bawah tabel.
+            ...($ufm ? ['u95_relatif_menggantikan_baris' => true] : []),
         ];
     }
 

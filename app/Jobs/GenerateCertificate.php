@@ -13,6 +13,7 @@ use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
+use App\Services\Pelanggan\KabarSertifikatTerbit;
 use App\Services\PenerimaNotifikasi;
 use App\Services\SertifikatSatuHalaman;
 use App\Services\SinkronJadwalAlat;
@@ -355,6 +356,23 @@ class GenerateCertificate implements ShouldQueue
             Log::warning('Sertifikat terbit, tapi penautan folder/notifikasi gagal.', [
                 'certificate_id' => $sertifikat->id,
                 'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Anggota perusahaan pemilik alat. Langkah TERPISAH dari blok di atas:
+        // penautan folder atau kabar ke teknisi yang meledak tidak boleh ikut
+        // menahan kabar ke pelanggan. `kabari()` menelan galatnya sendiri;
+        // `try` di sini menutup sisanya (mis. container gagal membuatnya),
+        // karena galat apa pun yang lolos dari sini me-retry job dan mencetak
+        // nomor baru. Job yang diulang untuk sertifikat yang sudah terbit
+        // berhenti di `sudahTerbit()` jauh di atas, dan `kabari()` masih
+        // punya penjaga ganda per sertifikat.
+        try {
+            app(KabarSertifikatTerbit::class)->kabari($sertifikat);
+        } catch (\Throwable $e) {
+            Log::warning('Sertifikat terbit, tapi mengabari pelanggan gagal.', [
+                'certificate_id' => $sertifikat->id,
+                'galat' => $e::class,
             ]);
         }
     }

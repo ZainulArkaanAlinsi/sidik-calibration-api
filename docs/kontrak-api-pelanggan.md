@@ -559,6 +559,46 @@ telanjur berisi tetap harus bisa diputus.
 | DELETE | `/api/customers/{id}/undangan/{undanganId}` | Membatalkan, bukan menghapus |
 | PATCH | `/api/customers/{id}/pic-admin` | `{user_id}` (boleh `null`) |
 
+#### `POST /api/customers/{id}/undangan` — kode ikut dibalas (Fase 1a, 10 Nov 2026)
+
+Pemanggil: `admin` dan `super_admin` (K-49-14) di organisasinya sendiri.
+`teknisi`/`viewer` `403`, akun pelanggan `403`/`404`, admin lab lain `404`.
+Throttle `pelanggan-undang` (20/menit per admin).
+
+```json
+// 201
+{
+  "message": "Undangan dibuat untuk budi@contoh.test. Kirim kodenya langsung bila email tidak sampai.",
+  "data": {
+    "id": 12,
+    "email": "budi@contoh.test",
+    "peran": "staf",
+    "kedaluwarsa_pada": "2026-11-17T09:00:00+07:00",
+    "berlaku_sampai": "2026-11-17T09:00:00+07:00",
+    "kode": "K7M2QX9P",
+    "email_terkirim": false
+  }
+}
+```
+
+- **`data.kode` hanya muncul SEKALI, di balasan pembuatan ini.** Server cuma
+  menyimpan hash-nya; tidak ada endpoint yang bisa membacanya lagi. Aplikasi lab
+  yang ingin menampilkannya harus menampilkannya sekarang (dan jangan menyimpannya
+  di log, analytics, atau penyimpanan lokal). Lupa/hilang = buat undangan baru
+  (yang lama otomatis batal).
+- Kode ini persis yang dikirim di email dan yang ditampilkan panel Filament:
+  8 karakter `A-Z2-9` tanpa `0 O 1 I L`, ditukar di `POST /pelanggan/v1/auth/terima-undangan`.
+- **`data.email_terkirim`**: `true` hanya bila email diserahkan ke mailer sungguhan
+  tanpa galat. `false` bila terjadi galat kirim (yang ditelan server) ATAU server
+  masih memakai mailer `log`/`array`. Ini BUKAN bukti email sampai ke kotak masuk
+  penerima — kalau orangnya bilang belum menerima, bacakan `kode`-nya langsung.
+  `false` bukan kegagalan: undangannya sah dan kodenya bisa dipakai.
+- `berlaku_sampai` bernilai sama dengan `kedaluwarsa_pada` (nama lama tetap ada).
+- Pada `422` (anggota aktif sudah ada, batas anggota) dan semua penolakan lain
+  tidak ada `kode` di balasan.
+- `POST /api/pelanggan/v1/anggota/undangan` (PIC utama) **tidak** berubah: kodenya
+  hanya lewat email.
+
 ```json
 {
   "data": [
@@ -664,3 +704,60 @@ adanya — tidak ada yang dihapus atau diganti nama.
 K-50-09. Aplikasi pelanggan (`StatusKalibrasi.dariApi`) sudah membaca keenam kode dan jatuh ke
 `status_kalibrasi` kalau `status_alat` tidak ada, jadi APK lama maupun baru aman.
 Ringkasan beranda (`ringkasan.*`) tidak berubah. Penjaga: `StatusAlatPelangganTest`.
+
+## 8. Notifikasi `sertifikat terbit` ke anggota perusahaan (additive, 10 Nov 2026)
+
+Sebelumnya `GenerateCertificate::kabarin()` hanya mengabari teknisi & admin penerbit; pelanggan
+baru tahu bila admin mengirim email manual atau membuka aplikasi. Sekarang, begitu sertifikat
+berstatus `terbit`, server mengirim notifikasi ke **anggota aktif perusahaan pemilik alat**
+(`equipment.customer` dari sesi sertifikat; akun `aktif` DAN `customer_members.status = aktif`).
+Tidak ada rute baru, tidak ada migrasi, tidak ada field respons baru: notifikasinya muncul lewat
+`GET /notifikasi` yang sudah ada dan lewat push FCM (`NotifikasiSistem::toPush`).
+
+| Kejadian | `kategori` | `tautan` | Saklar |
+|---|---|---|---|
+| Sertifikat pertama terbit | `pelanggan.sertifikat_terbit` | `{tipe: "pelanggan_sertifikat", id: <id sertifikat>}` | `status_permintaan` (bawaan menyala) |
+| Revisi `<nomor>-R<n>` terbit (hasil tarik → setujui ulang) | `pelanggan.sertifikat_direvisi` | `{tipe: "pelanggan_sertifikat", id: <id revisi>}` | **tidak ada** — selalu dikirim (ISO/IEC 17025 §7.8.8) |
+
+Isi `sertifikat_terbit` (netral; tampil di layar kunci lewat push):
+`judul` "Sertifikat kalibrasi Anda sudah terbit", `isi` "Sertifikat {nomor} untuk {nama alat}
+(terbit dd-mm-yyyy) sudah bisa dibuka di aplikasi." Tidak memuat nomor seri, nama perusahaan,
+hasil/PASS-FAIL, nama teknisi atau penerbit, maupun catatan internal. Notifikasi revisi memakai
+`SertifikatBerubah` yang sudah ada (hanya `catatan_pelanggan`).
+
+Aturan pengiriman:
+
+- Hanya sertifikat berstatus `terbit` (bukan `gagal`, `menunggu_generate`, `ditarik`, `dibatalkan`);
+  status dibaca ulang dari database saat mengirim.
+- Hanya perusahaan pemilik alat; perusahaan yang `organization_id`-nya tidak sama dengan sertifikat
+  dilewati. Anggota/akun nonaktif tidak dikabari.
+- Sekali per sertifikat per akun: `tanda_tangan` di payload (`pelanggan.sertifikat_terbit:<id>`)
+  diperiksa sebelum mengirim; job yang diulang untuk sertifikat terbit juga berhenti lebih awal.
+  Retry sertifikat `gagal` mengabari sekali, saat akhirnya terbit.
+- Kegagalan notifikasi tidak pernah menggagalkan penerbitan atau me-retry job; log hanya memuat
+  `certificate_id` dan kelas galat (tanpa pesan galat, email, atau nama).
+
+Penjaga: `NotifikasiSertifikatTerbitPelangganTest` (14 kasus).
+
+### Catatan serah terima untuk aplikasi pelanggan (`sidik-pelanggan-mobile`, diperiksa pada `origin/main` 5d4d4a5)
+
+**Tidak ada yang wajib diubah agar notifikasi ini tampil dan bisa dibuka.**
+
+- `lib/screens/tautan.dart` sudah memetakan `pelanggan_sertifikat` + id → `SertifikatDetailScreen`,
+  dipakai bersama oleh ketukan baris kotak masuk dan ketukan push. `lib/screens/notifikasi/notifikasi_screen.dart`
+  hanya membaca `judul`/`isi`/`tautan`; `kategori` hanya dibedakan untuk `pelanggan_alat_jatuh_tempo`.
+  Jadi `pelanggan.sertifikat_terbit` dan `pelanggan.sertifikat_direvisi` tampil dengan judul/isi dari
+  server dan membuka detail sertifikat. `test/model_test.dart` sudah menguji bentuk tautan ini.
+- Teks kosong-state kotak masuk dan teks izin push ("Kami kabari saat sertifikat terbit …") sudah
+  menjanjikan kabar ini; sekarang janjinya benar.
+
+Yang bisa dipertimbangkan (tidak memblokir, belum dikerjakan di repo aplikasi):
+
+1. **Tidak ada layar `preferensi-notifikasi` di aplikasi** (tidak ada rujukan ke endpoint itu di `lib/`).
+   Saklar `status_permintaan` karenanya tidak bisa dimatikan pengguna dari aplikasi; bawaannya menyala.
+   Bila layar itu dibuat, labelnya jangan "status permintaan" saja — permintaan kalibrasi dicabut
+   (K-50-09) dan saklar itu sekarang juga memegang kabar sertifikat terbit.
+2. Id kanal Android push `sidik_kerja` / `sidik_pengingat` tidak ditemukan di kode Android aplikasi
+   pelanggan (`lib/`, `android/`). Pengingat jatuh tempo sudah memakai pola yang sama; perilaku
+   kanal bawaan FCM di HP nyata **belum diverifikasi**.
+3. `kategori` baru tidak punya ikon khusus; kotak masuk memakai tampilan yang sama untuk semua baris.

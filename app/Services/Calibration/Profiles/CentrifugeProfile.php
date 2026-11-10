@@ -62,4 +62,15 @@ class CentrifugeProfile extends ProfilPutaran
     {
         return [self::BATAS_AKREDITASI_RPM, 38];
     }
+
+    /**
+     * Master mencetak koreksi yang membulat ke nol sebagai `0.0` — bukan `-0.0`
+     * (PDF master master-olda-centrifuge `SERTIFIKAT`; G0-b P4, keputusan pemilik 10 Nov 2026 "persis master").
+     * Hanya cetak: `tanda_nol` dibekukan per baris snapshot, nilai antara dan
+     * pembulatan tidak berubah.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
 }

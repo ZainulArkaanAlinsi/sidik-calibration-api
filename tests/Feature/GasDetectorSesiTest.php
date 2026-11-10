@@ -276,6 +276,12 @@ class GasDetectorSesiTest extends TestCase
 
             $angka = fn (string $t): bool => preg_match('/^-?\d+(\.\d+)?$/', $t) === 1;
 
+            // G3/R12: tabel persis master `Reference Gas | Unit | Standard | UUT |
+            // Correction | U95` -> enam sel, empat angka terakhir yang dibandingkan.
+            if (count($teks) === 6 && ! $angka($teks[0]) && ! $angka($teks[1]) && count(array_filter(array_slice($teks, 2), $angka)) === 4) {
+                $teks = array_slice($teks, 2);
+            }
+
             if (count($teks) === 4 && count(array_filter($teks, $angka)) === 4) {
                 $tabel[] = $teks;
             }

@@ -1,0 +1,240 @@
+{
+    "versi": 1,
+    "desimal": 4,
+    "judul_uut": "Actual Volume",
+    "judul_standar": "Nominal Value",
+    "u95_per_titik": false,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": null,
+    "satuan": "g",
+    "satuan_cetak": "ml",
+    "header": {
+        "certificate_number": "UJI/00021",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 29",
+        "order_number": "ORD/UJI/39",
+        "address": "Alamat Sintetis 29, Jl. Contoh No. 29, Kota Contoh",
+        "received_date": "2026-09-21",
+        "equipment_name": "Labu Ukur",
+        "manufacturer": "Pyrex",
+        "calibration_location": "Laboratorium",
+        "model_type": null,
+        "calibration_date": "2026-09-22",
+        "serial_number": "DEMO-VOL-002",
+        "calibration_method": "SIDIK-IK-CAL-0510_Rev.7",
+        "capacity_graduation": "0–1 ml",
+        "env_condition": "T 20.3 °C ± 1.8 °C\n%RH 45 % ± 4.9 %\nTekanan Udara 933 hPa",
+        "technician_id": "RK"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": 1,
+            "remark": null,
+            "unit_under_test": 1.0039273322428,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.0039273322428386,
+            "u95": 0.0067,
+            "desimal_u95": 4,
+            "faktor_cakupan_k": 2.0075837703154,
+            "desimal_k": 0,
+            "desimal": 4,
+            "satuan": "ml",
+            "tanda_nol": true,
+            "standar_ringkas": false,
+            "format": {
+                "standar": "0.0",
+                "uut": "0.0000",
+                "koreksi": "0.0000",
+                "u95": "0.0000",
+                "k": "0"
+            },
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Environmental Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                {
+                    "kunci": "kelas_toleransi",
+                    "label": "Class/Permitted Error"
+                }
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": true,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type :"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number :"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through :"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date :",
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "kalimat_k": "The uncertainty is taken at a confidence level 95 % and coverage factor (k)",
+        "akhir_sertifikat": "------------------ End of Certificate ------------------"
+    },
+    "catatan_blok": [
+        {
+            "posisi": "atas_hasil",
+            "judul": null,
+            "baris": [],
+            "tabel": [
+                [
+                    "Suhu Dasar Volume",
+                    ":",
+                    "20 °C"
+                ]
+            ]
+        }
+    ],
+    "header_tambahan": {
+        "kelas_toleransi": "B/±0.008 ml"
+    },
+    "standar_digunakan": [
+        {
+            "name": "Analytical Balance",
+            "merk_type": "Mettler Toledo/XS204",
+            "serial_number": "1129063525",
+            "traceable_to": "LK-305-IDN"
+        },
+        {
+            "name": "Termometer & Sensor Std.",
+            "merk_type": "Yokogawa/CA 150 Handy Cal",
+            "serial_number": "23P1005",
+            "traceable_to": "LK-285-IDN"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-09",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "qocunjxsci",
+        "qr_payload": "http://localhost/verify/qocunjxsci",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}

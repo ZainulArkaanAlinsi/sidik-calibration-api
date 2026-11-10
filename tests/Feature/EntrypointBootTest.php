@@ -62,7 +62,7 @@ class EntrypointBootTest extends TestCase
         $envExample = (string) file_get_contents(base_path('.env.example'));
         $blueprint = (string) file_get_contents(base_path('render.yaml'));
 
-        foreach (['SEED_ON_BOOT', 'BANGUN_ULANG_ON_BOOT'] as $key) {
+        foreach (['SEED_ON_BOOT', 'BANGUN_ULANG_ON_BOOT', 'ACUAN_IMPOR_AWAL_ON_BOOT'] as $key) {
             // Diadu ke BARIS PENUGASANNYA, bukan ke kemunculan namanya.
             //
             // Temuan review: versi pertama memakai `assertStringContainsString`,
@@ -137,6 +137,58 @@ class EntrypointBootTest extends TestCase
             substr($isi, $posisiGerbang, $posisiTutup - $posisiGerbang),
             'Bangun ulang jalan DI LUAR gerbangnya — tiap boot, termasuk tiap Render '
             .'membangunkan service yang ketiduran, bakal nulis ulang semua PDF.',
+        );
+    }
+
+    /**
+     * Impor awal data acuan: digerbangi saklar, tidak menjatuhkan boot, dan
+     * bawaannya MATI di `.env.example` maupun blueprint.
+     *
+     * Perintahnya menulis ke database produksi (baris paket + versi 1) dan
+     * tidak punya jalur lain di paket gratis Render, jadi tiga hal ini yang
+     * dijaga: tidak jalan tiap boot, galatnya tidak mematikan SELURUH server
+     * (`set -e` di kepala berkas), dan tidak ada yang mengirimkannya sudah
+     * menyala.
+     */
+    public function test_impor_awal_acuan_digerbangi_tidak_menjatuhkan_boot_dan_bawaannya_mati(): void
+    {
+        $isi = (string) file_get_contents(base_path(self::ENTRYPOINT));
+
+        $posisiGerbang = strpos($isi, 'if [ "${ACUAN_IMPOR_AWAL_ON_BOOT}" = "true" ]');
+        $this->assertNotFalse($posisiGerbang, 'Gerbang ACUAN_IMPOR_AWAL_ON_BOOT hilang dari entrypoint.');
+
+        // Isi blok `if … fi` terluar (tutupnya di kolom 0; `fi` bersarang
+        // diindentasi), bukan "apa pun sesudah gerbang".
+        $posisiTutup = strpos($isi, "\nfi\n", $posisiGerbang);
+        $this->assertNotFalse($posisiTutup, 'Blok gerbang impor awal acuan nggak pernah ditutup `fi`.');
+
+        $blok = substr($isi, $posisiGerbang, $posisiTutup - $posisiGerbang);
+
+        $this->assertMatchesRegularExpression(
+            '/^[ \t]*php artisan acuan:impor-awal\s*\|\|\s*STATUS_IMPOR_ACUAN=\$\?\s*$/m',
+            $blok,
+            'acuan:impor-awal harus DI DALAM gerbangnya dan ditangkap `|| STATUS=$?` — tanpa itu '
+            .'galat impor mematikan boot lewat `set -e`, atau perintahnya jalan tiap boot.',
+        );
+
+        $this->assertStringContainsString(
+            'dikembalikan ke false',
+            $blok,
+            'Peringatan keras "kembalikan saklar ke false" hilang dari blok impor awal acuan.',
+        );
+
+        // Bawaan MATI di kedua tempat. Nilai `true` yang terkirim berarti
+        // tulis ke produksi di deploy berikutnya tanpa ada yang menyalakannya.
+        $this->assertMatchesRegularExpression(
+            '/^ACUAN_IMPOR_AWAL_ON_BOOT=false\s*$/m',
+            (string) file_get_contents(base_path('.env.example')),
+            '.env.example harus mematok ACUAN_IMPOR_AWAL_ON_BOOT=false.',
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/-\s*key:\s*ACUAN_IMPOR_AWAL_ON_BOOT\s*\n\s*value:\s*"false"/',
+            (string) file_get_contents(base_path('render.yaml')),
+            'render.yaml harus mematok ACUAN_IMPOR_AWAL_ON_BOOT `value: "false"` (bukan sync: false, bukan true).',
         );
     }
 
