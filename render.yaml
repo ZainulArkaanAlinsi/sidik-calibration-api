@@ -280,6 +280,17 @@ services:
       - key: DATA_ACUAN_SUMBER
         value: json
 
+      # Kertas berkop PRACETAK (G0-b P1, config/sertifikat.php): "false" = kop /
+      # logo KAN, judul, dan kode dokumen tetap tercetak di PDF sertifikat
+      # baru. "true" = diganti ruang kosong setinggi margin atas master. Mati
+      # dulu: PDF yang sampai ke pelanggan lewat app/QR kehilangan identitas
+      # lab tanpa kop, dan ruang kosong yang dipotong bisa menimpa kop kertas
+      # fisik bila lebih tinggi — jenis kertasnya belum dipastikan pemilik.
+      # Dipatok `value` (keputusan lewat commit yang ditinjau, pola
+      # DATA_ACUAN_SUMBER): ubah ke "true" SESUDAH pemilik memastikan kertas.
+      - key: SERTIFIKAT_KOP_PRACETAK
+        value: "false"
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.

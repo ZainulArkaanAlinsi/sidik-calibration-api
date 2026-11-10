@@ -78,6 +78,8 @@ class SertifikatTemplatMasterG0bTest extends TestCase
 
     public function test_tabel_master_memuat_margin_dan_tanggal_per_profil_dan_tanpa_master_tidak_menebak(): void
     {
+        config(['sertifikat.kop_pracetak' => true]);
+
         foreach ($this->semuaProfil() as $kode => $profil) {
             $tl = $this->tataLetak($kode);
 
@@ -99,6 +101,8 @@ class SertifikatTemplatMasterG0bTest extends TestCase
 
     public function test_ruang_pracetak_setinggi_margin_atas_master_dikurangi_margin_halaman(): void
     {
+        config(['sertifikat.kop_pracetak' => true]);
+
         // labu ukur: margin atas 2,10 inci (`sertifikat.json` halaman.margin.atas = 2.0991…).
         $this->assertEqualsWithDelta(2.1 * 2.54 - 0.85, $this->tataLetak('labu_ukur')['kop_pracetak'], 0.01);
         // chlorine: 0,94 inci -> ruangnya jauh lebih kecil, jangan negatif.
@@ -112,6 +116,9 @@ class SertifikatTemplatMasterG0bTest extends TestCase
 
     public function test_cetak_baru_tanpa_kop_judul_kode_dokumen_tapi_dengan_ruang_kosong_qr_dan_ttd_tetap(): void
     {
+        // Sakelar `SERTIFIKAT_KOP_PRACETAK` menyala (bawaannya MATI, lihat tes bawah).
+        config(['sertifikat.kop_pracetak' => true]);
+
         foreach (['labu_ukur', 'micrometer', 'timbangan', 'thermocouple'] as $kode) {
             $baru = $this->render($this->snapshotBaru($kode), 'en', 'data:image/png;base64,AAAA');
 
@@ -123,6 +130,34 @@ class SertifikatTemplatMasterG0bTest extends TestCase
             // QR/verifikasi TIDAK dihapus (master tanpa QR, tapi QR default dipasang sistem).
             $this->assertStringContainsString('class="qr"', $baru, "{$kode}: QR verifikasi tetap.");
         }
+    }
+
+    /**
+     * Sakelar `sertifikat.kop_pracetak` MATI (bawaan produksi): snapshot BARU
+     * tidak membekukan `kop_pracetak`, jadi kop, judul, dan kode dokumen tetap
+     * tercetak persis seperti sebelum G0-b P1. Bagian G0-b lain (tanggal per
+     * lembar, Capacity/Graduation) tetap aktif tanpa sakelar.
+     */
+    public function test_sakelar_kop_pracetak_mati_membekukan_snapshot_dengan_kop_dan_bagian_lain_tetap_aktif(): void
+    {
+        config(['sertifikat.kop_pracetak' => false]);
+
+        foreach ($this->semuaProfil() as $kode => $profil) {
+            $this->assertNull($this->tataLetak($kode)['kop_pracetak'] ?? null, "{$kode}: sakelar mati, kunci kop_pracetak harus null.");
+        }
+
+        foreach (['labu_ukur', 'micrometer', 'timbangan', 'thermocouple'] as $kode) {
+            $baru = $this->render($this->snapshotBaru($kode), 'en');
+
+            $this->assertStringContainsString('class="kop"', $baru, $kode);
+            $this->assertStringContainsString('CALIBRATION CERTIFICATE', $baru, $kode);
+            $this->assertStringContainsString('<div class="kode-dokumen">', $baru, $kode);
+            $this->assertStringNotContainsString('font-size: 0; line-height: 0;', $baru, $kode);
+        }
+
+        // Tanggal per lembar dan Capacity/Graduation TIDAK ikut sakelar.
+        $this->assertNotNull($this->tataLetak('labu_ukur')['tanggal_master']);
+        $this->assertSame(['graduasi' => 'strip'], $this->tataLetak('labu_ukur')['kapasitas_master']);
     }
 
     public function test_snapshot_lama_tanpa_kunci_baru_masih_mencetak_kop_judul_dan_kode_dokumen(): void

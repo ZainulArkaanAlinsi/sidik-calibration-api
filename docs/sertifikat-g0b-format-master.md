@@ -11,6 +11,34 @@ beku (dijaga `SertifikatBekuTidakBerubahTest`). Data: `app/Support/FormatMasterS
 | `kapasitas_master` | Capacity/Graduation = satu angka kapasitas diketik + graduasi (`250 ml / - ml`) | P3 |
 | `tanda_nol` (per baris, sudah ada) | profil `tandaNolDicetak()=false` mencetak `0.0` | P4 |
 
+## Sakelar kop pracetak (P1) — bawaan MATI
+
+`config('sertifikat.kop_pracetak')` (`config/sertifikat.php`, env `SERTIFIKAT_KOP_PRACETAK`) menentukan
+apakah snapshot BARU membekukan `tata_letak.kop_pracetak` (`CalibrationProfile::tataLetakSertifikat`).
+
+- **`false` (bawaan; `.env.example` dan `render.yaml` memakai `"false"` eksplisit):** kop/logo KAN, judul
+  "CALIBRATION CERTIFICATE", dan kode dokumen kaki tercetak persis seperti sebelum G0-b. Kunci
+  `kop_pracetak` tidak dibekukan (bernilai `null`).
+- **`true`:** perilaku G0-b penuh — kop, judul, dan kode dokumen diganti ruang kosong setinggi margin atas
+  master, dibatasi `RUANG_PRACETAK_MAKS_CM` (4,5 cm).
+- **Bagian G0-b lain tidak punya sakelar** dan tetap aktif: tanggal per lembar (P2), Capacity/Graduation
+  diketik (P3), minus nol (P4).
+- Hanya sertifikat yang terbit SESUDAH nilainya berubah yang terpengaruh; snapshot lama beku.
+
+**Kenapa mati dulu (keputusan koordinator atas delegasi pemilik, 10 Nov 2026):** sertifikat digital sampai ke
+pelanggan lewat aplikasi/QR sebagai PDF; tanpa kop/logo KAN/judul PDF-nya kehilangan identitas lab. Ruang
+kosong yang dipotong ke 4,5 cm juga bisa menimpa kop kertas pracetak FISIK bila kop itu lebih tinggi, dan
+jenis kertas fisiknya belum diketahui. Diukur 10 Nov 2026: dengan sakelar mati `BUTUH_PADAT` sama dengan
+sebelum G0-b (ditambah Viscometer dari G1/G3) dan `SertifikatPunyaMarginTest` hijau; dengan sakelar menyala
+Viscometer muat di mode normal hanya dengan sisa 6 px (lebih mepet dari juara 8 px) sehingga tes margin merah.
+
+**Cara menyalakan:** setelah pemilik memastikan jenis kertas (berkop pracetak, tinggi kop <= ruang yang
+dikosongkan), ubah `SERTIFIKAT_KOP_PRACETAK` di `render.yaml` menjadi `"true"` lewat commit yang ditinjau
+(blueprint menimpa setelan dashboard tiap deploy), lalu ukur ulang `BUTUH_PADAT` di
+`SertifikatSemuaAlatSatuHalamanTest` dan `SertifikatPunyaMarginTest` — dengan kop pracetak daftar itu
+memendek dan Viscometer sisanya hanya 6 px (diukur 10 Nov 2026). Tes G0-b yang menguji kop pracetak
+menyetel sakelar `true` sendiri; tes `test_sakelar_kop_pracetak_mati_...` menjaga bawaan `false`.
+
 Batas ruang pracetak 4,5 cm (`RUANG_PRACETAK_MAKS_CM`): margin master yang lebih lebar dipotong, karena sertifikat yang tumbuh lebih tinggi dari sebelum G0-b memaksa huruf mengecil lewat aturan satu halaman (Viscometer 5,9 cm masuk `BUTUH_PADAT` pada percobaan pertama). Profil terpotong: lihat laporan G0-b (viscometer, centrifuge, thermohygro, load cell, anak timbangan, tachometer, dst.).
 
 ## P6 — workbook baku bila >1 (alasan)

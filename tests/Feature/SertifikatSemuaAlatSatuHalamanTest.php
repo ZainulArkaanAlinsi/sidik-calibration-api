@@ -249,13 +249,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // punya budget, U95, dan `k` masing-masing, jadi sertifikatnya mencetak
         // tiga judul + tiga kalimat `Uncertainty U95% = ±`. Master pun
         // melaporkan U95 per parameter.
-        //
-        // KELUAR dari daftar ini 10 Nov 2026 (G0-b, kertas berkop pracetak): kop,
-        // judul, dan kode dokumen kaki tidak dicetak (diganti ruang kosong
-        // <= 4,5 cm, `FormatMasterSertifikat`), jadi lembarnya muat di mode
-        // normal. Daftar MEMENDEK = hurufnya membesar; tidak ada nama yang masuk
-        // (Viscometer sempat masuk waktu ruang pracetak belum dibatasi, lalu
-        // dibatasi 4,5 cm).
+        '0736-CAL-526 (Sieve Mesh)',
         '22506.01.A (Temperature Calibrator)',
         // Kedua Enclosure masuk sini 15 Okt 2026, dan sebabnya isi, bukan tata
         // letak yang menyusut: sertifikatnya dulu SALAH mencetak satu baris
@@ -279,18 +273,20 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // `k`, bukan dua tabel per remark dengan judul & baris U95 masing-
         // masing. Lembarnya memendek, jadi muat di mode normal.
         '2406.51.S (Autoclave)',
-        // Multi Gas Detector KELUAR dari daftar ini 10 Nov 2026 (integrasi G0-b +
-        // G1/G3): tabel hasil kini SATU tabel empat baris gas (bukan empat tabel
-        // berjudul) dan kop/judul/kode dokumen diganti ruang pracetak, jadi
-        // lembarnya muat di mode normal (sisa 47 px, diukur). Daftar MEMENDEK =
-        // hurufnya membesar.
+        '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',
-        // Viscometer SEMPAT masuk daftar ini di cabang G1/R2 (baris `Termometer &
-        // Sensor Std.` `SERTIFIKAT!B35` kini selalu tercetak, jadi Standard Used
-        // bertambah satu baris), lalu KELUAR lagi di integrasi G0-b + G1/G3 10 Nov
-        // 2026: ruang pracetak G0-b (4,5 cm, pengganti kop+judul) memberi ruang
-        // yang cukup untuk baris itu di mode normal. Sisanya SANGAT tipis (6 px,
-        // diukur) — lihat `SertifikatPunyaMarginTest`.
+        // Viscometer masuk daftar ini 10 Nov 2026 (G1/R2, K-50-15): baris
+        // `Termometer & Sensor Std.` (`SERTIFIKAT!B35`) kini SELALU tercetak
+        // seperti master, jadi Standard Used bertambah satu baris dan sesi
+        // contoh lima baris standar tidak lagi muat di mode normal. Tetap SATU
+        // halaman di mode padat.
+        //
+        // Daftar ini diukur dengan sakelar `sertifikat.kop_pracetak` MATI (bawaan,
+        // kop/judul/kode dokumen tetap tercetak). Dengan sakelar menyala (G0-b P1)
+        // Sieve Mesh, UTM, Gas Detector, dan Viscometer muat di mode normal
+        // (Viscometer hanya sisa 6 px, mepet `SertifikatPunyaMarginTest`) — ukur
+        // ulang daftar ini dan tes margin SEBELUM menyalakannya.
+        '2607.59.W (Viscometer)',
         // Load Cell (alat ke-41, 24 Sep 2026) — sebab yang sama dengan Height
         // Gauge & Micrometer: jumlah baris. Sertifikat masternya mencetak
         // SEPULUH titik, dan tiap angkanya dua desimal (resolusi 0,01 kN),
@@ -317,10 +313,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // (`E37`) dan `Units Used: kgf : Kilogram-force` (`E39:I40`). Isinya
         // bertambah, bukan tata letak yang menyusut; titik nol (`E21`,
         // disembunyikan master) malah keluar dari tabel. Tetap satu halaman.
-        //
-        // KELUAR dari daftar ini 10 Nov 2026 (G0-b): margin atas master UTM cuma
-        // 0,63 inci, jadi ruang pracetaknya jauh lebih rendah dari kop+judul
-        // lama dan lembarnya muat di mode normal.
+        'DEMO-UTM-001 (Universal Testing Machine)',
     ];
 
     /**

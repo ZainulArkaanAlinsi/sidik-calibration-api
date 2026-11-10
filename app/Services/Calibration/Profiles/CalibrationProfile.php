@@ -2308,7 +2308,11 @@ abstract class CalibrationProfile
         // G0-b (P1/P2): kertas berkop pracetak + tanggal seperti format sel
         // master, per kode profil (`FormatMasterSertifikat`). Profil tanpa master
         // di folder ekstraksi tidak menyatakan apa pun (bentuk lama).
-        $pracetak = FormatMasterSertifikat::ruangPracetakCm($this->kode());
+        // Kop pracetak hanya bila sakelar `sertifikat.kop_pracetak` menyala
+        // (bawaan MATI: kop/judul/kode dokumen tetap tercetak).
+        $pracetak = config('sertifikat.kop_pracetak') === true
+            ? FormatMasterSertifikat::ruangPracetakCm($this->kode())
+            : null;
         $tanggal = FormatMasterSertifikat::tanggalUntukProfil($this->kode());
 
         return [
