@@ -58,9 +58,12 @@ class Angka
      *    ngebuang tandanya: `number_format(-0.004, 2)` balik `0,00`.
      *
      * Poin 2 pernah dipatok terbalik di tes ("yang kecetak `0`, BUKAN `-0`") —
-     * ditulis dari nalar, bukan dari kertasnya. Waktu master Turbidimeter
+     * ditulis dari nalar, bukan dari kertasnya. Waktu KERTAS Turbidimeter
      * `0189-CAL-624` diadu langsung 10 Agt 2026, yang kecetak `-0,00` / `-0,0`.
      * Tandanya bukan hiasan: dia yang bilang alatnya baca DI ATAS standar.
+     * (PDF master workbook turbidimeter mencetak `0.00` tanpa minus — bukti yang
+     * bertentangan, jadi turbidimeter masih ditahan dengan tanda minus menunggu
+     * konfirmasi pemilik; lihat `CalibrationProfile::tandaNolDicetak()`.)
      *
      * Tapi poin 2 juga NGGAK berlaku di semua alat, dan itu ketahuan waktu
      * master Conductivity dibuka: selnya nyimpen `-0.03999999999999915` — sama
