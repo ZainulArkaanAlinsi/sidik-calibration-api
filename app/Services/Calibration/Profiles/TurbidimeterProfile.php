@@ -670,4 +670,19 @@ class TurbidimeterProfile extends CalibrationProfile
 
         return ['standar' => '0', 'uut' => $kode, 'koreksi' => $kode, 'u95' => $kode, 'k' => '0.0'];
     }
+
+    /**
+     * `true` = tanda minus dipertahankan (perilaku lama; BUKAN `-0.00` dibuang).
+     * DITAHAN dari perubahan G0-b P4 (keputusan koordinator 10 Nov 2026): kertas
+     * lama `0189-CAL-624` mencetak `-0,00` / `-0,0`, sedangkan PDF master
+     * `master-olah-data-turbidimeter` mencetak `0.00` / `0.0` — bukti bertentangan
+     * dan masternya lama (`+1` hari) tak sejalan dengan job Jun 2026 (`+4`).
+     * Menunggu konfirmasi pemilik; `FormatMasterSertifikat` juga menahan
+     * `tambah_hari` turbidimeter (`null`). Hanya cetak: nilai antara dan pembulatan
+     * tidak berubah.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return true;
+    }
 }
