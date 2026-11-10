@@ -123,6 +123,15 @@ class BatasAntarLabTest extends TestCase
         // `StudioGambarWorkbookTest::test_izin_gambar_sama_dengan_baca_workbook`.
         'api/studio/workbook/{workbook}/gambar/{gambar}' => 'butuh gambar nyata (id sha256); isolasi diuji StudioGambarWorkbookTest',
 
+        // Draf data acuan (A1, sakelar `studio.draf_acuan_aktif`, bawaan MATI):
+        // sapuan menembus 503 `belum_tersedia` sebelum organisasi ditanya, dan
+        // butuh paket + versi + workbook nyata. Lab lain → 404 identik dengan
+        // "tidak ada" diuji dengan data nyata di
+        // `StudioDrafAcuanDasarTest::test_workbook_lab_lain_dan_tak_ada_404_identik_dan_data_lab_lain_tidak_bocor`
+        // dan `StudioDrafAcuanMuatTest::test_versi_lab_lain_paket_lain_jenis_bentuk_dan_id_aneh_semua_404_identik`.
+        'api/studio/workbook/{workbook}/draf-dasar' => 'butuh paket+workbook nyata; sakelar draf mati menjawab 503; isolasi diuji StudioDrafAcuanDasarTest',
+        'api/studio/workbook/{workbook}/draf/{versi}' => 'butuh paket+versi draf nyata; sakelar draf mati menjawab 503; isolasi diuji StudioDrafAcuanMuatTest',
+
         // Rute APLIKASI PELANGGAN (slice F). Batasnya PERUSAHAAN, bukan lab:
         // token internal (admin lab mana pun) sudah ditolak `aplikasi:pelanggan`
         // sebelum organisasi sempat ditanya, jadi sapuan di sini hijau karena

@@ -40,6 +40,9 @@ class PaketAcuanLog extends Model
 
     public const AKSI_BUANG = 'buang';
 
+    /** Suntingan angka ke draf yang sama lewat Studio (PUT draf, A1 B4); status tetap draf. */
+    public const AKSI_SUNTING = 'sunting';
+
     /** @return array<string, string> */
     protected function casts(): array
     {

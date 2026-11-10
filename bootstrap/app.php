@@ -3,6 +3,7 @@
 use App\Http\Middleware\CatatAksesLintasOrganisasi;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
+use App\Http\Middleware\FiturStudioDraf;
 use App\Http\Middleware\IdentitasKlien;
 use App\Http\Middleware\KonteksPerusahaan;
 use App\Http\Middleware\PastikanAkunStudio;
@@ -57,6 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'fitur.pelanggan' => FiturPelanggan::class,
             'aplikasi' => PastikanAplikasi::class,
             'studio' => PastikanAkunStudio::class,
+            'fitur.studio-draf' => FiturStudioDraf::class,
             'pelanggan.aktif' => PelangganAktif::class,
             'perusahaan' => KonteksPerusahaan::class,
             'peran' => PeranAnggota::class,

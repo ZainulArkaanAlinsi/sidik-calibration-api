@@ -449,6 +449,18 @@ class AppServiceProvider extends ServiceProvider
             ->response(fn (Request $request, array $header) => response()->json([
                 'message' => 'Kebanyakan unggahan. Tunggu sebentar, terus coba lagi.',
             ], 429, $header)));
+        // Studio — simpan/muat ulang draf data acuan (rencana A1). Satu pemakai
+        // (akun Studio tunggal) menyimpan per klik "Simpan", bukan per ketukan,
+        // dan tiap simpan menulis versi + baris suntingan + log dalam satu
+        // transaksi berkunci: 30/menit per pengguna cukup lega untuk kerja
+        // manual dan tetap menahan skrip yang lepas. GET muat-ulang ikut ember
+        // yang sama (jarang, setelah simpan/konflik). 429 membawa header
+        // throttle supaya klien tahu kapan boleh mencoba lagi (pola studio-hitung).
+        RateLimiter::for('studio-draf', fn (Request $request) => Limit::perMinute(30)
+            ->by('studio-draf|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn (Request $request, array $header) => response()->json([
+                'message' => 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.',
+            ], 429, $header)));
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
         // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia
