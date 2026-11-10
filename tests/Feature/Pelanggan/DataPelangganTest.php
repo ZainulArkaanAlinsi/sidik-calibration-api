@@ -170,6 +170,62 @@ class DataPelangganTest extends TestCase
             ->assertJsonMissingPath('data.snapshot');
     }
 
+    /** "Yang berlaku sekarang" di app = revisi yang TERBIT. */
+    public function test_digantikan_oleh_terisi_bila_revisinya_terbit(): void
+    {
+        $alat = $this->alat($this->milikSaya);
+        $lama = $this->sertifikat($alat);
+        $baru = $this->sertifikat($alat, ['revision_of' => $lama->id]);
+
+        $lamaJson = $this->ambil("/sertifikat/{$lama->id}")->assertOk()
+            ->assertJsonPath('data.status', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh.id', $baru->id)
+            ->assertJsonPath('data.digantikan_oleh.nomor', $baru->nomor)
+            ->json('data');
+        $this->assertSame($baru->diterbitkan_pada?->toDateString(), $lamaJson['digantikan_oleh']['diterbitkan_pada']);
+
+        $this->ambil("/sertifikat/{$baru->id}")->assertOk()
+            ->assertJsonPath('data.status', 'berlaku')
+            ->assertJsonPath('data.digantikan_oleh', null);
+    }
+
+    /**
+     * Revisi yang DIBATALKAN bukan dokumen yang berlaku, jadi tidak boleh
+     * dipajang sebagai "Yang berlaku sekarang" (`digantikan_oleh` = null). Tapi
+     * pendahulunya TETAP `digantikan` (K38-2: pembatalan revisi tidak
+     * menghidupkan pendahulunya) — dan itu cocok dengan daftar bawaan yang
+     * menyembunyikannya. Jadi tidak pernah ada dua sertifikat `berlaku`, dan
+     * tidak ada satu pun yang `berlaku` dari rantai ini.
+     */
+    public function test_revisi_dibatalkan_bukan_pengganti_dan_tidak_menghidupkan_pendahulu(): void
+    {
+        $alat = $this->alat($this->milikSaya);
+        $lama = $this->sertifikat($alat);
+        $batal = $this->sertifikat($alat, [
+            'revision_of' => $lama->id,
+            'status' => Certificate::STATUS_DIBATALKAN,
+            'dibatalkan_pada' => now(),
+        ]);
+
+        $this->ambil("/sertifikat/{$lama->id}")->assertOk()
+            ->assertJsonPath('data.status', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh', null);
+
+        $this->ambil("/sertifikat/{$batal->id}")->assertOk()
+            ->assertJsonPath('data.status', 'dibatalkan')
+            ->assertJsonPath('data.revisi_dari.id', $lama->id)
+            ->assertJsonPath('data.digantikan_oleh', null);
+
+        // Daftar bawaan: pendahulu disembunyikan, yang batal tetap tampil dengan statusnya.
+        $bawaan = $this->ambil('/sertifikat')->assertOk()->json('data');
+        $this->assertSame([$batal->id], array_column($bawaan, 'id'));
+        $this->assertSame(['dibatalkan'], array_column($bawaan, 'status'));
+
+        // Daftar penuh: tidak ada yang `berlaku`, jadi tidak ada dua yang "berlaku".
+        $semua = collect($this->ambil('/sertifikat?termasuk_digantikan=1')->json('data'))->pluck('status', 'id');
+        $this->assertSame([$lama->id => 'digantikan', $batal->id => 'dibatalkan'], $semua->sortKeys()->all());
+    }
+
     public function test_sertifikat_yang_belum_terbit_dijawab_404(): void
     {
         $belum = $this->sertifikat($this->alat($this->milikSaya), [

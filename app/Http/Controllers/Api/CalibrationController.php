@@ -1377,18 +1377,18 @@ class CalibrationController extends Controller
         }
 
         // Pemisahan wewenang (temuan B01, keputusan K-30-03 1 Okt 2026: blokir,
-        // tanpa pengecualian, semua peran). Yang ikut mengisi data sesi ini —
-        // pengisi lembar, admin yang mengoreksi pembacaannya, atau yang
-        // mengonfirmasi hasil pindai — tidak boleh juga menyetujuinya. Tanpa
-        // ini satu admin bisa mengisi lalu menerbitkan sertifikat berlogo
-        // akreditasi sendirian. Diperiksa sebelum validasi supaya pesannya
-        // menunjuk ke tindakan yang benar: minta orang lain.
+        // tanpa pengecualian, semua peran; dipersempit K-50-02). Pengisi lembar
+        // atau yang mengonfirmasi hasil pindai tidak boleh juga menyetujuinya
+        // (mengoreksi pembacaan TIDAK lagi memblokir). Tanpa ini satu admin
+        // bisa mengisi lalu menerbitkan sertifikat berlogo akreditasi
+        // sendirian. Diperiksa sebelum validasi supaya pesannya menunjuk ke
+        // tindakan yang benar: minta orang lain. Teks `message` spesifik per
+        // penyebab (`PemisahanWewenang::pesanPersetujuan()`); `kode` & 422 tetap.
         $wewenang = $this->pemisahan->periksaPersetujuan($calibration, $request->user());
 
         if (! $wewenang['bersih']) {
             return response()->json([
-                'message' => 'Kamu ikut mengisi atau mengoreksi data sesi ini, jadi tidak bisa '
-                    .'menyetujuinya sendiri. Minta Master Data lain.',
+                'message' => PemisahanWewenang::pesanPersetujuan($wewenang),
                 'kode' => 'pemisahan_wewenang',
                 'wewenang' => $wewenang,
             ], 422);

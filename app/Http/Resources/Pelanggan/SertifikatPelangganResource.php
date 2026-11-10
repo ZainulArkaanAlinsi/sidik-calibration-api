@@ -26,6 +26,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * - `berlaku`    — sah dan belum digantikan.
  * - `digantikan` — ada revisi yang terbit (atau terbit lalu dibatalkan; K38-2:
  *                  pembatalan revisi tidak menghidupkan pendahulunya).
+ *                  `digantikan_oleh` terisi hanya bila revisinya TERBIT; kalau
+ *                  revisinya dibatalkan, ia `null` (tidak ada yang berlaku).
  * - `dibatalkan` — final; unduhnya ditolak 410.
  *
  * @property Certificate $resource
@@ -44,9 +46,19 @@ class SertifikatPelangganResource extends JsonResource
         $header = (array) ($c->snapshot['header'] ?? []);
 
         $revisi = $c->relationLoaded('revisiTerakhir') ? $c->revisiTerakhir : $this->pengganti;
-        $pengganti = $revisi !== null && in_array($revisi->status, Certificate::STATUS_PENGGANTI, true) ? $revisi : null;
 
-        $status = match (Certificate::labelDokumen((string) $c->status, $pengganti?->status)) {
+        // DUA pertanyaan berbeda, jangan disatukan:
+        // - STATUS dokumen ini: revisi terbit ATAU dibatalkan sama-sama
+        //   membuatnya `digantikan` (K38-2 — pembatalan revisi tidak
+        //   menghidupkan pendahulunya; konsisten dengan `belumDigantikan()`
+        //   yang menyaring daftar bawaan).
+        // - `digantikan_oleh` ("Yang berlaku sekarang" di app): hanya revisi
+        //   yang TERBIT. Revisi yang dibatalkan bukan dokumen yang berlaku, jadi
+        //   tidak boleh dipajang sebagai penggantinya.
+        $revisiSah = $revisi !== null && in_array($revisi->status, Certificate::STATUS_PENGGANTI, true) ? $revisi : null;
+        $pengganti = $revisiSah?->status === Certificate::STATUS_TERBIT ? $revisiSah : null;
+
+        $status = match (Certificate::labelDokumen((string) $c->status, $revisiSah?->status)) {
             Certificate::DOKUMEN_DIBATALKAN => Certificate::DOKUMEN_DIBATALKAN,
             Certificate::DOKUMEN_DIGANTIKAN => Certificate::DOKUMEN_DIGANTIKAN,
             default => Certificate::DOKUMEN_BERLAKU,

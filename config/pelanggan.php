@@ -51,6 +51,33 @@ return [
     ),
 
     /*
+     * Isi `GET /app/info` — kontak lab, dokumen hukum, alamat, petunjuk
+     * pengemasan (layar Bantuan aplikasi pelanggan).
+     *
+     * SEMUA default `null`, dan itu disengaja: nilai yang belum diisi dijawab
+     * `null` lalu aplikasi MENYEMBUNYIKAN tombolnya. Server tidak pernah
+     * mengarang nomor WhatsApp atau tautan — nomor palsu di layar Bantuan lebih
+     * buruk daripada tombol yang tidak ada. String kosong/spasi di env dibaca
+     * `null` juga (lihat InfoAplikasiController).
+     *
+     * `versi` kebijakan privasi & syarat TIDAK di sini: ikut `versi_dokumen`
+     * di bawah, supaya satu sumber (angka yang dicatat di persetujuan_dokumen).
+     */
+    'info' => [
+        'nama_organisasi' => env('PELANGGAN_INFO_NAMA_ORGANISASI'),
+        'alamat_organisasi' => env('PELANGGAN_INFO_ALAMAT_ORGANISASI'),
+        'telepon_organisasi' => env('PELANGGAN_INFO_TELEPON_ORGANISASI'),
+        'whatsapp' => env('PELANGGAN_INFO_WHATSAPP'),
+        'whatsapp_url' => env('PELANGGAN_INFO_WHATSAPP_URL'),
+        'email' => env('PELANGGAN_INFO_EMAIL'),
+        'jam_layanan' => env('PELANGGAN_INFO_JAM_LAYANAN'),
+        'kebijakan_privasi_url' => env('PELANGGAN_INFO_KEBIJAKAN_PRIVASI_URL'),
+        'syarat_url' => env('PELANGGAN_INFO_SYARAT_URL'),
+        'hapus_akun_url' => env('PELANGGAN_INFO_HAPUS_AKUN_URL'),
+        'petunjuk_pengemasan' => env('PELANGGAN_INFO_PETUNJUK_PENGEMASAN'),
+    ],
+
+    /*
      * Batas akhir masa transisi token internal tanpa ability (03-SDD §3.1).
      *
      * Token internal yang sudah beredar di HP teknisi dibuat sebelum ability

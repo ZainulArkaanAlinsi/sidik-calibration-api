@@ -14,6 +14,7 @@ use App\Models\RawMeasurement;
 use App\Models\User;
 use App\Services\PemisahanWewenang;
 use Filament\Actions\Testing\TestAction;
+use Filament\Notifications\Notification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -25,8 +26,9 @@ use Tests\TestCase;
  *
  * Temuan B01 & B02 (paket 30 Sep). Keputusan K-30-03 (1 Okt 2026): **blokir,
  * tanpa pengecualian, untuk semua peran.** Orang yang ikut mengisi data sesi —
- * pengisi lembar (`teknisi_id`), admin yang mengoreksi pembacaannya, atau yang
- * mengonfirmasi hasil pindai OCR — tidak boleh juga menyetujuinya. Dulu
+ * pengisi lembar (`teknisi_id`) atau yang mengonfirmasi hasil pindai OCR
+ * (mengoreksi pembacaan tidak lagi memblokir, K-50-02) — tidak boleh juga
+ * menyetujuinya. Dulu
  * `approve()` dan tombol Setujui panel tidak memeriksa satu pun, jadi satu admin
  * bisa mengisi lalu menerbitkan sertifikat berlogo akreditasi sendirian.
  *
@@ -71,10 +73,83 @@ class PemisahanWewenangPersetujuanTest extends TestCase
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
             ->assertStatus(422)
             ->assertJsonPath('kode', 'pemisahan_wewenang')
-            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI);
+            ->assertJsonPath('wewenang.temuan.0.kode', PemisahanWewenang::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI)
+            ->assertJsonPath('message', 'Kamu yang mengisi lembar kerja ini, jadi tidak bisa menyetujuinya sendiri. '
+                .'Minta Master Data atau super admin lain yang menyetujuinya.');
 
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
         $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
+    }
+
+    /**
+     * Pesan tingkat atas spesifik per penyebab dan memuat tindakannya — bukan
+     * lagi kalimat generik "ikut mengisi atau mengoreksi" (kasus mengoreksi
+     * sudah dicabut K-50-02, jadi menyebutnya menyesatkan pelatih). `kode` dan
+     * status 422 tidak berubah.
+     */
+    public function test_pesan_pemisahan_wewenang_spesifik_per_penyebab_dan_tanpa_kata_mengoreksi(): void
+    {
+        Queue::fake();
+
+        // Penyebab 1: pengisi lembar.
+        $sesiIsi = $this->bikinSesi($this->adminA);
+        $pesanIsi = $this->actingAs($this->adminA, 'sanctum')
+            ->postJson("/api/calibrations/{$sesiIsi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'pemisahan_wewenang')
+            ->json('message');
+
+        // Penyebab 2: pengonfirmasi hasil pindai (lembar diisi teknisi).
+        $sesiPindai = $this->bikinSesi($this->teknisi);
+        $this->tanamPembacaanPindai($sesiPindai);
+        $this->actingAs($this->adminA, 'sanctum')
+            ->postJson("/api/calibrations/{$sesiPindai->id}/measurements/verify")
+            ->assertOk();
+        $pesanPindai = $this->actingAs($this->adminA, 'sanctum')
+            ->postJson("/api/calibrations/{$sesiPindai->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'pemisahan_wewenang')
+            ->json('message');
+
+        $this->assertStringContainsString('mengisi lembar kerja', $pesanIsi);
+        $this->assertStringNotContainsString('mengonfirmasi', $pesanIsi);
+        $this->assertStringContainsString('mengonfirmasi hasil pindai', $pesanPindai);
+        $this->assertStringNotContainsString('mengisi lembar kerja', $pesanPindai);
+        $this->assertNotSame($pesanIsi, $pesanPindai);
+
+        foreach ([$pesanIsi, $pesanPindai] as $pesan) {
+            $this->assertStringContainsString('Minta Master Data atau super admin lain yang menyetujuinya.', $pesan);
+            $this->assertStringNotContainsString('mengoreksi', $pesan);
+        }
+    }
+
+    /** Dua penyebab sekaligus → satu kalimat gabungan, anjuran tidak tercetak dua kali. */
+    public function test_pesan_dua_penyebab_sekaligus_digabung_satu_kalimat(): void
+    {
+        $dua = [
+            'temuan' => [
+                ['kode' => PemisahanWewenang::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI, 'pesan' => 'a'],
+                ['kode' => PemisahanWewenang::KODE_PENYETUJU_MEMVERIFIKASI_OCR, 'pesan' => 'b'],
+            ],
+        ];
+
+        $pesan = PemisahanWewenang::pesanPersetujuan($dua);
+
+        $this->assertStringContainsString('mengisi lembar kerja ini dan mengonfirmasi hasil pindainya', $pesan);
+        $this->assertSame(1, substr_count($pesan, 'Minta Master Data atau super admin lain'));
+
+        // Jalur nyata: pengisi yang juga mengonfirmasi pindainya sendiri.
+        Queue::fake();
+        $sesi = $this->bikinSesi($this->adminA);
+        $this->tanamPembacaanPindai($sesi);
+        $this->actingAs($this->adminA, 'sanctum')->postJson("/api/calibrations/{$sesi->id}/measurements/verify")->assertOk();
+
+        $this->actingAs($this->adminA, 'sanctum')
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'pemisahan_wewenang')
+            ->assertJsonCount(2, 'wewenang.temuan')
+            ->assertJsonPath('message', $pesan);
     }
 
     /**
@@ -132,7 +207,18 @@ class PemisahanWewenangPersetujuanTest extends TestCase
 
         Livewire::actingAs($this->adminA)
             ->test(ListCalibrationSessions::class)
-            ->callAction(TestAction::make('approve')->table($sesi), ['abaikan_peringatan' => true]);
+            // Form Setujui mewajibkan No. Sertifikat; tanpa itu aksi berhenti di
+            // validasi form dan tidak pernah sampai ke penjaga wewenang.
+            ->callAction(TestAction::make('approve')->table($sesi), ['nomor_sertifikat' => $this->nomorUji(), 'abaikan_peringatan' => true])
+            // Teks yang sama dengan `message` API (satu sumber: pesanPersetujuan).
+            ->assertNotified(
+                Notification::make()
+                    ->title('Kamu tidak bisa menyetujui sesi ini.')
+                    ->body('Kamu yang mengisi lembar kerja ini, jadi tidak bisa menyetujuinya sendiri. '
+                        .'Minta Master Data atau super admin lain yang menyetujuinya.')
+                    ->danger()
+                    ->persistent(),
+            );
 
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
         $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
