@@ -1791,6 +1791,7 @@ Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat laya
   > walau belum ada logonya.
 - **`GET /api/customers?search=&page=`** · **`POST`** · **`GET/PUT/DELETE /api/customers/{id}`** — CRUD pelanggan. Field: `nama`, `alamat`, `contact_person`, `telepon`, `email` (+ `jumlah_alat` di response).
 - **Pelanggan yang masih punya alat nggak bisa dihapus** → `422`. Kalau dipaksa, alat & riwayat kalibrasinya jadi yatim. Mobile: tampilin pesannya apa adanya.
+- **`POST /api/customers/{id}/undangan`** `{email, peran}` — undang anggota pelanggan (admin + super_admin; teknisi/viewer `403`, lab lain `404`). Balasan `201` memuat **`data.kode`** (8 karakter, kode polos yang sama dengan di email), `data.berlaku_sampai`, dan `data.email_terkirim` (bool). ⚠️ **`kode` hanya muncul SEKALI, di balasan ini** — server cuma menyimpan hash-nya; tampilkan sekarang, jangan di-log. `email_terkirim: false` = galat kirim atau mailer server belum sungguhan (`log`) → bacakan kodenya langsung. Rincian: `kontrak-api-pelanggan.md` §4.
 
 Teknisi & viewer yang nembak endpoint ini dapat `403`.
 

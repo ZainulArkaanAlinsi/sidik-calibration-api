@@ -521,6 +521,46 @@ telanjur berisi tetap harus bisa diputus.
 | DELETE | `/api/customers/{id}/undangan/{undanganId}` | Membatalkan, bukan menghapus |
 | PATCH | `/api/customers/{id}/pic-admin` | `{user_id}` (boleh `null`) |
 
+#### `POST /api/customers/{id}/undangan` — kode ikut dibalas (Fase 1a, 10 Nov 2026)
+
+Pemanggil: `admin` dan `super_admin` (K-49-14) di organisasinya sendiri.
+`teknisi`/`viewer` `403`, akun pelanggan `403`/`404`, admin lab lain `404`.
+Throttle `pelanggan-undang` (20/menit per admin).
+
+```json
+// 201
+{
+  "message": "Undangan dibuat untuk budi@contoh.test. Kirim kodenya langsung bila email tidak sampai.",
+  "data": {
+    "id": 12,
+    "email": "budi@contoh.test",
+    "peran": "staf",
+    "kedaluwarsa_pada": "2026-11-17T09:00:00+07:00",
+    "berlaku_sampai": "2026-11-17T09:00:00+07:00",
+    "kode": "K7M2QX9P",
+    "email_terkirim": false
+  }
+}
+```
+
+- **`data.kode` hanya muncul SEKALI, di balasan pembuatan ini.** Server cuma
+  menyimpan hash-nya; tidak ada endpoint yang bisa membacanya lagi. Aplikasi lab
+  yang ingin menampilkannya harus menampilkannya sekarang (dan jangan menyimpannya
+  di log, analytics, atau penyimpanan lokal). Lupa/hilang = buat undangan baru
+  (yang lama otomatis batal).
+- Kode ini persis yang dikirim di email dan yang ditampilkan panel Filament:
+  8 karakter `A-Z2-9` tanpa `0 O 1 I L`, ditukar di `POST /pelanggan/v1/auth/terima-undangan`.
+- **`data.email_terkirim`**: `true` hanya bila email diserahkan ke mailer sungguhan
+  tanpa galat. `false` bila terjadi galat kirim (yang ditelan server) ATAU server
+  masih memakai mailer `log`/`array`. Ini BUKAN bukti email sampai ke kotak masuk
+  penerima — kalau orangnya bilang belum menerima, bacakan `kode`-nya langsung.
+  `false` bukan kegagalan: undangannya sah dan kodenya bisa dipakai.
+- `berlaku_sampai` bernilai sama dengan `kedaluwarsa_pada` (nama lama tetap ada).
+- Pada `422` (anggota aktif sudah ada, batas anggota) dan semua penolakan lain
+  tidak ada `kode` di balasan.
+- `POST /api/pelanggan/v1/anggota/undangan` (PIC utama) **tidak** berubah: kodenya
+  hanya lewat email.
+
 ```json
 {
   "data": [
