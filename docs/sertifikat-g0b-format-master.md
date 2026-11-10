@@ -9,7 +9,7 @@ beku (dijaga `SertifikatBekuTidakBerubahTest`). Data: `app/Support/FormatMasterS
 | `kop_pracetak` (cm) | kop gambar/teks, judul "CALIBRATION CERTIFICATE", kode dokumen kaki tidak dicetak; diganti ruang kosong = margin atas master (inci x 2,54) - 0,85 cm. QR & tanda tangan tidak tersentuh | P1 |
 | `tanggal_master` | bahasa bulan kepala & Issuance Date per lembar (`[$-421]` id `dd mmmm yyyy`, `[$-809]` en `d mmmm yyyy`); `tambah_hari` = rumus `=<tgl kalibrasi>+N` | P2 |
 | `kapasitas_master` | Capacity/Graduation = satu angka kapasitas diketik + graduasi (`250 ml / - ml`) | P3 |
-| `tanda_nol` (per baris, sudah ada) | profil `tandaNolDicetak()=false` mencetak `0.0` | P4 |
+| `tanda_nol` (per baris, sudah ada) | profil `tandaNolDicetak()=false` mencetak `0.0` — centrifuge, dial indicator, TITS, micrometer, tachometer (PDF master terbukti tanpa minus). Load cell, pressure, timbangan: belum terbukti dari PDF, tidak diubah. **Turbidimeter DITAHAN (tetap `true`, lihat bawah)** | P4 |
 
 ## Sakelar kop pracetak (P1) — bawaan MATI
 
@@ -43,10 +43,27 @@ Batas ruang pracetak 4,5 cm (`RUANG_PRACETAK_MAKS_CM`): margin master yang lebih
 
 ## P6 — workbook baku bila >1 (alasan)
 - conductivity: dua lembar (STYLE 1 `+4`, STYLE 2 `+2`), belum ada pemilih -> margin STYLE 1, tanggal terbit TIDAK ditebak (`tambah_hari` null).
-- jangka_sorong: `SERTIFIKAT` (bukan `SERTIFIKAT (2)`/Depth) -> margin 1,97; tanggal tanpa rumus +N.
-- turbidimeter: `master-olah-data-turbidimeter` (+1), yang diikuti app (bandingkan T45-5); `turbidimeter-22120d000010` (+4) tidak dipakai.
-- flowmeter_flowrate (`2-1` +4 vs UFM tanpa +N), flowmeter_totalizer (+3 vs tanpa), ph_meter (trial +4 vs IMTE +3), piston/dispensett (fixed tanpa +N vs graduated +4), timbangan (gram/kg +4 vs substitusi +1): workbook berbeda untuk satu kode profil, nilai bentrok -> `tambah_hari` null (tanggal terbit sistem) sampai pemilik memilih.
+- jangka_sorong: `SERTIFIKAT` (bukan `SERTIFIKAT (2)`/Depth) -> margin 1,97; Issuance Date = tanggal kalibrasi +0 (terbukti penjaga-angka).
+- turbidimeter: DITAHAN dari G0-b (keputusan koordinator 10 Nov 2026) — `tambah_hari` null (tanggal terbit sistem) dan `tandaNolDicetak()` tetap `true` (tanda minus dipertahankan, perilaku lama). Alasan: master lama `+1` berlawanan dengan job Jun 2026 `+4`, dan bukti kertas lama (`0189-CAL-624` mencetak `-0,00`) bertentangan dengan PDF master (`0.00`). Menunggu konfirmasi pemilik.
+- flowmeter_flowrate (`2-1` +4 vs UFM tanpa +N), flowmeter_totalizer (+4 vs +1; koreksi dari catatan awal "+3"), ph_meter (trial +4 vs IMTE +3), timbangan (gram/kg +4 vs substitusi +1): workbook berbeda untuk satu kode profil, nilai bentrok -> `tambah_hari` null (tanggal terbit sistem) sampai pemilik memilih. Conductivity, tids, enclosure (inkubator/oven/furnace/refrigerator), vacuum_gauge: tak terbukti -> null.
+- piston_pipette dan dispensett: **+4** (Fixed Piston `D62` = `Q16+4`; koreksi dari catatan awal "fixed tanpa +N"). thermocouple dan thermometer_glass: **+1** (`INPUT DATA!E68`/`E67` = `P16+1`). gas_detector, jangka_sorong, height_gauge: **+0**.
 - margin atas: dari workbook pertama yang tercantum di tabel (anak timbangan F2, 3 micrometer sama, enclosure Recorder untuk oven/furnace/refrigerator).
 
 ## P7 — master tidak ada (tidak ditebak)
 bath, buret, buret_digital, picnometer: tanpa baris di `FormatMasterSertifikat` -> bentuk lama (kop tetap). Master 13G/SPMK/Differential ada di folder ekstraksi tetapi profilnya "ditahan"; margin dipakai dari Druck 13G/Differential. TIDS memakai master Recorder Graptech (Yokogawa K N sama +N-nya kosong).
+
+## Issuance Date dibatasi hari penerbitan
+
+Issuance Date yang dibekukan = `min(tanggal kalibrasi + N, hari penerbitan)`
+(`CertificateSnapshotBuilder::tanggalTerbitMaster`). Hari penerbitan = `certificates.diterbitkan_pada`
+(sumber yang sama dengan footer lama; bila belum ada, hari ini). Alasan: sertifikat tidak boleh mengaku
+terbit SESUDAH hari ia benar-benar diterbitkan — kalibrasi tanggal 1 yang diterbitkan tanggal 1 dengan
+N=4 tercetak tanggal 1 (bukan 5), sementara layar pelanggan menampilkan tanggal terbit asli. Terbit
+lambat: tanggal kalibrasi + N. Dijaga `test_tanggal_terbit_dibatasi_hari_penerbitan_sebenarnya`.
+
+## Capacity/Graduation — pipet ukur dan kapasitas non-bulat
+
+`pipet_ukur` ikut `kapasitas_master` dengan bentuk `N ml / - ml` (master `pipet-ukur-pv-*` memakai
+Fixed: graduasi `-`). **Penyimpangan sengaja dari master (`SERTIFIKAT!F11`)**: sel itu berformat `0`
+sehingga kapasitas 0,5 ml tercetak `1`; sertifikat mencetak nilai SEBENARNYA (`0,5 ml / - ml`) karena
+nilai yang tercetak tidak boleh menyalahi alatnya. Berlaku untuk semua alat `kapasitas_master`.

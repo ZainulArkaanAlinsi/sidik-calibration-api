@@ -1142,4 +1142,15 @@ class MicrometerProfile extends CalibrationProfile
             ],
         ];
     }
+
+    /**
+     * Master mencetak koreksi yang membulat ke nol sebagai `0.0` / `0.00` — bukan `-0.0`
+     * (PDF master micrometer `SERTIFIKAT`, terbukti tanpa minus; G0-b P4, keputusan
+     * koordinator 10 Nov 2026). Hanya cetak: `tanda_nol` dibekukan per baris snapshot,
+     * nilai antara dan pembulatan tidak berubah.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
 }

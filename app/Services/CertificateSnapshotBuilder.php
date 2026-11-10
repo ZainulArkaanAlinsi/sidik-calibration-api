@@ -18,6 +18,7 @@ use App\Services\Calibration\Profiles\TekananProfile;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -1169,8 +1170,12 @@ class CertificateSnapshotBuilder
             // G0-b (P2): master mencetak Issuance Date = tanggal kalibrasi + N
             // (`=T9+4`). `tambahHari` hanya terisi bila tata letak baru
             // menyatakannya; tanpa tanggal kalibrasi tetap tanggal terbit sistem.
+            // DIBATASI hari penerbitan sebenarnya (sumber yang sama dengan footer
+            // lama, `diterbitkan_pada`; bila belum ada, hari ini): sertifikat tidak
+            // boleh mengaku terbit SESUDAH hari ia diterbitkan (kalibrasi tanggal 1
+            // diterbitkan tanggal 1 dengan N=4 tercetak tanggal 1, bukan 5).
             'issuance_date' => $tambahHari !== null && $sesi->tanggal_kalibrasi !== null
-                ? $sesi->tanggal_kalibrasi->copy()->addDays($tambahHari)->toDateString()
+                ? $this->tanggalTerbitMaster($sesi->tanggal_kalibrasi, $tambahHari, $sertifikat->diterbitkan_pada ?? now())
                 : $sertifikat->diterbitkan_pada?->toDateString(),
             'penandatangan' => $dipilih?->name
                 ?? $pengaturan[Organization::KEY_PENANDATANGAN_NAMA]
@@ -1182,6 +1187,17 @@ class CertificateSnapshotBuilder
                 ?? 'Technical Manager',
             'kode_dokumen' => $pengaturan['kode_dokumen_form'] ?? self::KODE_DOKUMEN_DEFAULT,
         ];
+    }
+
+    /**
+     * `min(tanggal kalibrasi + N, hari penerbitan)` sebagai `Y-m-d` (G0-b P2).
+     */
+    private function tanggalTerbitMaster(CarbonInterface $kalibrasi, int $tambahHari, CarbonInterface $terbit): string
+    {
+        $hitung = $kalibrasi->copy()->startOfDay()->addDays($tambahHari);
+        $batas = $terbit->copy()->startOfDay();
+
+        return ($hitung->greaterThan($batas) ? $batas : $hitung)->toDateString();
     }
 
     /**

@@ -29,6 +29,19 @@ namespace App\Support;
  *   workbook profil itu >1 dan nilainya berbeda: tanggal terbit tetap tanggal
  *   terbit sistem (bentuk lama). Jangan ditebak — lihat laporan G0-b.
  *
+ * Terbukti master (penjaga-angka, 10 Nov 2026): thermocouple +1 dan thermometer_glass +1
+ * (`INPUT DATA!E68`/`E67` = `P16+1`), gas_detector/jangka_sorong/height_gauge +0, piston_pipette
+ * dan dispensett +4 (Fixed Piston `D62` = `Q16+4`). Tetap `null` (nilai bentrok antar workbook atau
+ * tak terbukti): flowmeter_totalizer/flowrate, ph_meter, timbangan, conductivity, tids, enclosure
+ * (inkubator/oven/furnace/refrigerator), vacuum_gauge — dan TURBIDIMETER, yang DITAHAN
+ * (keputusan koordinator): master lama `+1` berlawanan dengan job Jun 2026 `+4` dan bukti kertas
+ * lama bertentangan dengan PDF master, jadi tanggal terbit tetap tanggal terbit sistem sampai
+ * pemilik memastikan.
+ *
+ * Issuance Date yang dibekukan = `min(tanggal kalibrasi + N, hari penerbitan)`
+ * (`CertificateSnapshotBuilder::tanggalTerbitMaster`): sertifikat tidak pernah mengaku terbit
+ * SESUDAH hari ia benar-benar diterbitkan.
+ *
  * Profil TANPA baris di sini (bath, buret, buret_digital, picnometer): tidak
  * ada master di folder ekstraksi (P7) — tidak menyatakan apa pun.
  *
@@ -62,10 +75,10 @@ final class FormatMasterSertifikat
         'do_meter' => [0.96, 'id', 'id', 1],
         'flowmeter_flowrate' => [1.53, 'en', 'en', null],
         'flowmeter_totalizer' => [1.53, 'en', 'en', null],
-        'gas_detector' => [1.65, 'id', 'id', null],
-        'height_gauge' => [2.19, 'id', 'id', null],
+        'gas_detector' => [1.65, 'id', 'id', 0],
+        'height_gauge' => [2.19, 'id', 'id', 0],
         'hydrometer' => [2.3, 'id', 'id', 0],
-        'jangka_sorong' => [1.97, 'id', 'id', null],
+        'jangka_sorong' => [1.97, 'id', 'id', 0],
         'load_cell' => [2.75, 'en', 'id', 4],
         'proving_ring' => [1.92, 'en', 'id', 4],
         'utm' => [0.63, 'en', 'id', 4],
@@ -76,10 +89,11 @@ final class FormatMasterSertifikat
         'spectrophotometer' => [2.39, 'id', 'id', 1],
         'tachometer' => [2.61, 'en', 'en', 1],
         'timer_stopwatch' => [1.1, 'id', 'id', 1],
-        'thermocouple' => [1.53, 'en', 'en', null],
+        'thermocouple' => [1.53, 'en', 'en', 1],
         'thermohygro' => [2.88, 'id', 'id', 2],
-        'thermometer_glass' => [1.53, 'en', 'en', null],
-        'turbidimeter' => [1.65, 'id', 'id', 1],
+        'thermometer_glass' => [1.53, 'en', 'en', 1],
+        // DITAHAN: tambah_hari null (tanggal terbit sistem) — lihat docblock kelas.
+        'turbidimeter' => [1.65, 'id', 'id', null],
         'viscometer' => [2.66, 'id', 'id', 4],
         'inkubator' => [2.34, 'en', 'en', null],
         'oven' => [2.34, 'en', 'en', null],
@@ -94,8 +108,8 @@ final class FormatMasterSertifikat
         'pipet_volume' => [2.1, 'id', 'id', 4],
         'gelas_ukur' => [2.1, 'id', 'id', 4],
         'pipet_ukur' => [2.1, 'id', 'id', 4],
-        'piston_pipette' => [2.1, 'id', 'id', null],
-        'dispensett' => [2.1, 'id', 'id', null],
+        'piston_pipette' => [2.1, 'id', 'id', 4],
+        'dispensett' => [2.1, 'id', 'id', 4],
         'timbangan' => [2.2, 'id', 'id', null],
     ];
 

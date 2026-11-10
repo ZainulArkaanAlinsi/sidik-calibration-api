@@ -300,9 +300,16 @@ abstract class CalibrationProfile
      * Bukan aturan metrologi, melainkan format sel di master masing-masing
      * alat, dan masternya emang beda satu sama lain:
      *
-     *  - Turbidimeter `0189-CAL-624` nyetak `-0,00` (koreksi -0,004) dan `-0,0`
-     *    (koreksi -0,02) — diadu ke kertasnya langsung 10 Agt 2026. pH &
-     *    Chlorine ikut pola yang sama.
+     *  - Kertas Turbidimeter `0189-CAL-624` nyetak `-0,00` (koreksi -0,004) dan
+     *    `-0,0` (koreksi -0,02) — diadu ke kertasnya langsung 10 Agt 2026. pH &
+     *    Chlorine ikut pola yang sama. TAPI PDF master workbook turbidimeter
+     *    (`master-olah-data-turbidimeter`) nyetak `0.00` / `0.0` tanpa minus; dua
+     *    bukti itu bertentangan, jadi turbidimeter DITAHAN di `true` (perilaku
+     *    lama) menunggu konfirmasi pemilik (koordinator, 10 Nov 2026).
+     *  - PDF master Centrifuge, Dial Indicator, TITS, Micrometer, dan Tachometer
+     *    nyetak `0.0`/`0.00` tanpa minus (G0-b P4) — override `false` di profilnya.
+     *    Load Cell, Pressure, dan Timbangan belum terbukti dari PDF, jadi tidak
+     *    diubah.
      *  - Master Conductivity nyimpen angka yang SAMA PERSIS kayak kita
      *    (`SERTIFIKAT STYLE 1` baris 35: `25` · `25.04` · `-0.03999999999999915`)
      *    tapi nyetaknya `0,0`, tanpa minus. Master Spectrophotometer sama:

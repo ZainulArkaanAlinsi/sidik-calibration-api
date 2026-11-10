@@ -672,13 +672,17 @@ class TurbidimeterProfile extends CalibrationProfile
     }
 
     /**
-     * Master mencetak koreksi yang membulat ke nol sebagai `0.00 / 0.0` — bukan `-0.00 / 0.0`
-     * (PDF master master-olah-data-turbidimeter `SERTIFIKAT` (bandingkan T45-4); G0-b P4, keputusan pemilik 10 Nov 2026 "persis master").
-     * Hanya cetak: `tanda_nol` dibekukan per baris snapshot, nilai antara dan
-     * pembulatan tidak berubah.
+     * `true` = tanda minus dipertahankan (perilaku lama; BUKAN `-0.00` dibuang).
+     * DITAHAN dari perubahan G0-b P4 (keputusan koordinator 10 Nov 2026): kertas
+     * lama `0189-CAL-624` mencetak `-0,00` / `-0,0`, sedangkan PDF master
+     * `master-olah-data-turbidimeter` mencetak `0.00` / `0.0` — bukti bertentangan
+     * dan masternya lama (`+1` hari) tak sejalan dengan job Jun 2026 (`+4`).
+     * Menunggu konfirmasi pemilik; `FormatMasterSertifikat` juga menahan
+     * `tambah_hari` turbidimeter (`null`). Hanya cetak: nilai antara dan pembulatan
+     * tidak berubah.
      */
     public function tandaNolDicetak(): bool
     {
-        return false;
+        return true;
     }
 }

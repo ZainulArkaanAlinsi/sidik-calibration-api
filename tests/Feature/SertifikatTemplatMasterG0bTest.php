@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\CertificateSnapshotBuilder;
+use App\Support\Angka;
 use App\Support\FormatMasterSertifikat;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
@@ -200,9 +201,21 @@ class SertifikatTemplatMasterG0bTest extends TestCase
         $this->assertSame(['kepala' => 'en', 'terbit' => 'id', 'tambah_hari' => 4], $this->tataLetak('load_cell')['tanggal_master']);
         $this->assertSame(['kepala' => 'en', 'terbit' => 'en', 'tambah_hari' => 4], $this->tataLetak('tits')['tanggal_master']);
         $this->assertSame(['kepala' => 'id', 'terbit' => 'id', 'tambah_hari' => 4], $this->tataLetak('gelas_ukur')['tanggal_master']);
-        // `Issuance Date` yang tidak berumus +N di master (diketik / workbook >1 beda): tanggal terbit sistem.
-        $this->assertNull($this->tataLetak('gas_detector')['tanggal_master']['tambah_hari']);
-        $this->assertNull($this->tataLetak('thermocouple')['tanggal_master']['tambah_hari']);
+        // Terbukti master (penjaga-angka 10 Nov 2026).
+        foreach (['thermocouple' => 1, 'thermometer_glass' => 1, 'gas_detector' => 0, 'jangka_sorong' => 0, 'height_gauge' => 0, 'piston_pipette' => 4, 'dispensett' => 4] as $kode => $n) {
+            $this->assertSame($n, $this->tataLetak($kode)['tanggal_master']['tambah_hari'], $kode);
+        }
+        // `Issuance Date` yang bentrok antar workbook / tak terbukti: tanggal terbit sistem.
+        foreach (['flowmeter_totalizer', 'flowmeter_flowrate', 'ph_meter', 'timbangan', 'conductivity_meter', 'tids', 'inkubator', 'oven', 'furnace', 'refrigerator'] as $kode) {
+            $this->assertNull($this->tataLetak($kode)['tanggal_master']['tambah_hari'], $kode);
+        }
+    }
+
+    public function test_turbidimeter_ditahan_dari_tanggal_dan_minus_nol_g0b(): void
+    {
+        $this->assertNull($this->tataLetak('turbidimeter')['tanggal_master']['tambah_hari']);
+        $this->assertTrue($this->semuaProfil()['turbidimeter']->tandaNolDicetak());
+        $this->assertStringStartsWith('-0', Angka::hasil(-0.004, 2, tandaNol: $this->semuaProfil()['turbidimeter']->tandaNolDicetak()));
     }
 
     public function test_tanggal_terbit_dibekukan_tanggal_kalibrasi_plus_n_hanya_bila_dinyatakan(): void
@@ -218,6 +231,28 @@ class SertifikatTemplatMasterG0bTest extends TestCase
         $this->assertSame('2026-09-22', $footer->invoke($builder, $sesi, $sertifikat, [], 0)['issuance_date']);
         // Tanpa N (bentuk lama / master tak berumus): tanggal terbit sistem.
         $this->assertSame('2026-11-10', $footer->invoke($builder, $sesi, $sertifikat, [])['issuance_date']);
+    }
+
+    /**
+     * Issuance Date tidak pernah jatuh SESUDAH hari penerbitan sebenarnya:
+     * `min(tanggal kalibrasi + N, tanggal terbit)`.
+     */
+    public function test_tanggal_terbit_dibatasi_hari_penerbitan_sebenarnya(): void
+    {
+        $footer = new ReflectionMethod(CertificateSnapshotBuilder::class, 'footer');
+        $builder = app(CertificateSnapshotBuilder::class);
+        $sesi = new CalibrationSession;
+        $sesi->tanggal_kalibrasi = Carbon::parse('2026-09-01');
+        $terbit = fn (string $tgl): Certificate => (new Certificate)->forceFill(['diterbitkan_pada' => Carbon::parse($tgl.' 15:30:00')]);
+
+        // Terbit cepat (kalibrasi tanggal 1, diterbitkan tanggal 1) dengan N=4: tanggal 1, bukan 5.
+        $this->assertSame('2026-09-01', $footer->invoke($builder, $sesi, $terbit('2026-09-01'), [], 4)['issuance_date']);
+        $this->assertSame('2026-09-03', $footer->invoke($builder, $sesi, $terbit('2026-09-03'), [], 4)['issuance_date']);
+        // Tepat pada hari kalibrasi + N, dan terbit lambat: tanggal kalibrasi + N.
+        $this->assertSame('2026-09-05', $footer->invoke($builder, $sesi, $terbit('2026-09-05'), [], 4)['issuance_date']);
+        $this->assertSame('2026-09-05', $footer->invoke($builder, $sesi, $terbit('2026-10-20'), [], 4)['issuance_date']);
+        // N=0 tidak pernah melampaui terbit.
+        $this->assertSame('2026-09-01', $footer->invoke($builder, $sesi, $terbit('2026-09-01'), [], 0)['issuance_date']);
     }
 
     // ---- P3: Capacity/Graduation -------------------------------------------
@@ -241,6 +276,10 @@ class SertifikatTemplatMasterG0bTest extends TestCase
         // Labu ukur / pipet volume: `F11` kapasitas diketik, `I11` = `-`.
         $this->assertSame('250 ml / - ml', $this->kapasitas('labu_ukur', ['satuan' => 'ml', 'range_min' => 0, 'range_max' => 250, 'resolusi' => null]));
         $this->assertSame('1 ml / - ml', $this->kapasitas('pipet_volume', ['satuan' => 'ml', 'range_min' => 0, 'range_max' => 1, 'resolusi' => 0.01]));
+        // Pipet ukur memakai master Fixed: `N ml / - ml`. Kapasitas non-bulat dicetak
+        // SEBENARNYA (`0,5`), bukan dibulatkan `1` seperti format sel `0` master `F11`.
+        $this->assertSame('10 ml / - ml', $this->kapasitas('pipet_ukur', ['satuan' => 'ml', 'range_min' => 0, 'range_max' => 10, 'resolusi' => 0.1]));
+        $this->assertSame('0,5 ml / - ml', $this->kapasitas('pipet_ukur', ['satuan' => 'ml', 'range_min' => 0, 'range_max' => 0.5, 'resolusi' => 0.01]));
         // Blok sesi `kapasitas_ml` (yang diketik) menang atas rentang alat.
         $this->assertSame('500 ml / - ml', $this->kapasitas('labu_ukur', ['satuan' => 'ml', 'range_max' => 250], ['volumetric' => ['kapasitas_ml' => 500]]));
         // Gelas ukur: kapasitas / resolusi.
@@ -252,7 +291,7 @@ class SertifikatTemplatMasterG0bTest extends TestCase
 
     public function test_profil_lain_belum_menyatakan_kapasitas_master(): void
     {
-        foreach (['buret', 'pipet_ukur', 'micrometer', 'timbangan'] as $kode) {
+        foreach (['buret', 'micrometer', 'timbangan'] as $kode) {
             $this->assertArrayNotHasKey('kapasitas_master', $this->tataLetak($kode), $kode);
         }
     }
@@ -261,11 +300,12 @@ class SertifikatTemplatMasterG0bTest extends TestCase
 
     public function test_minus_nol_dicetak_nol_seperti_pdf_master(): void
     {
-        foreach (['centrifuge', 'dial_indicator', 'tits', 'turbidimeter', 'conductivity_meter', 'spectrophotometer'] as $kode) {
+        foreach (['centrifuge', 'dial_indicator', 'tits', 'micrometer', 'tachometer', 'conductivity_meter', 'spectrophotometer'] as $kode) {
             $this->assertFalse($this->semuaProfil()[$kode]->tandaNolDicetak(), $kode);
         }
-        // Yang masternya mencetak minus tidak ikut berubah.
-        foreach (['micrometer', 'ph_meter', 'timbangan'] as $kode) {
+        // Yang masternya mencetak minus / belum terbukti dari PDF tidak ikut berubah
+        // (turbidimeter ditahan: lihat `test_turbidimeter_ditahan_...`).
+        foreach (['turbidimeter', 'ph_meter', 'timbangan', 'load_cell', 'pressure_gauge'] as $kode) {
             $this->assertTrue($this->semuaProfil()[$kode]->tandaNolDicetak(), $kode);
         }
     }

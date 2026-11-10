@@ -26,6 +26,13 @@ return [
     | lama beku dan tidak ikut berubah. Bagian G0-b lain (tanggal per lembar,
     | Capacity/Graduation, tanda minus nol) tidak punya sakelar.
     |
+    | Bagian G0-b lain yang tidak punya sakelar: Issuance Date seperti rumus master
+    | (`tanggal kalibrasi + N`) selalu DIBATASI hari penerbitan sebenarnya —
+    | sertifikat tidak pernah mengaku terbit sesudah hari ia diterbitkan
+    | (`CertificateSnapshotBuilder::tanggalTerbitMaster`). Turbidimeter ditahan
+    | dari G0-b (tanggal terbit sistem, tanda minus nol tetap) sampai pemilik
+    | memastikan.
+    |
     | Nilai yang bukan boolean diperlakukan `false` (`filter_var`), supaya salah
     | ketik di `.env` tidak diam-diam menghapus kop dari sertifikat terakreditasi.
     |
