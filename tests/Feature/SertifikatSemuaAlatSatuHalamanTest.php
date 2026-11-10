@@ -279,14 +279,18 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // `k`, bukan dua tabel per remark dengan judul & baris U95 masing-
         // masing. Lembarnya memendek, jadi muat di mode normal.
         '2406.51.S (Autoclave)',
-        '2602.03.A (Multi Gas Detector)',
+        // Multi Gas Detector KELUAR dari daftar ini 10 Nov 2026 (integrasi G0-b +
+        // G1/G3): tabel hasil kini SATU tabel empat baris gas (bukan empat tabel
+        // berjudul) dan kop/judul/kode dokumen diganti ruang pracetak, jadi
+        // lembarnya muat di mode normal (sisa 47 px, diukur). Daftar MEMENDEK =
+        // hurufnya membesar.
         '2606.08.C (Temperature Recorder Controller)',
-        // Viscometer masuk daftar ini 10 Nov 2026 (G1/R2, K-50-15): baris
-        // `Termometer & Sensor Std.` (`SERTIFIKAT!B35`) kini SELALU tercetak
-        // seperti master, jadi Standard Used bertambah satu baris dan sesi
-        // contoh lima baris standar tidak lagi muat di mode normal. Tetap SATU
-        // halaman di mode padat.
-        '2607.59.W (Viscometer)',
+        // Viscometer SEMPAT masuk daftar ini di cabang G1/R2 (baris `Termometer &
+        // Sensor Std.` `SERTIFIKAT!B35` kini selalu tercetak, jadi Standard Used
+        // bertambah satu baris), lalu KELUAR lagi di integrasi G0-b + G1/G3 10 Nov
+        // 2026: ruang pracetak G0-b (4,5 cm, pengganti kop+judul) memberi ruang
+        // yang cukup untuk baris itu di mode normal. Sisanya SANGAT tipis (6 px,
+        // diukur) — lihat `SertifikatPunyaMarginTest`.
         // Load Cell (alat ke-41, 24 Sep 2026) — sebab yang sama dengan Height
         // Gauge & Micrometer: jumlah baris. Sertifikat masternya mencetak
         // SEPULUH titik, dan tiap angkanya dua desimal (resolusi 0,01 kN),
