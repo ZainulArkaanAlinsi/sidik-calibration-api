@@ -66,12 +66,11 @@ class VerificationTest extends TestCase
             ->assertSee('CAL/2026/07/0001')
             ->assertSee('Jangka Sorong Mitutoyo')
             ->assertSee('MT-500-196-30')
-            // Disamarkan sebagian sejak 1 Okt 2026 (artboard Web_Verifikasi,
-            // App\Support\SamarkanNama) — kartu lama tidak punya lembar
-            // lengkap, jadi nama utuh tidak muncul sama sekali di sini.
-            ->assertSee('PT Ma•• Jaya')
-            ->assertSee('Disamarkan sebagian')
+            // Nama pelanggan tidak tampil sama sekali, utuh maupun disamarkan
+            // (ISO/IEC 17025 klausul 4.2); lihat VerifikasiPublikMinimalTest.
             ->assertDontSee('PT Maju Jaya')
+            ->assertDontSee('PT Ma••')
+            ->assertDontSee('Pemilik alat')
             ->assertSee('PASS')
             ->assertSee('LK-285-IDN');
     }
@@ -144,7 +143,7 @@ class VerificationTest extends TestCase
             ->assertSee('Kadaluarsa');
     }
 
-    /** Yang tampil TETAP delapan hal yang tampil sebelum restyle — tidak lebih. */
+    /** Yang tampil: nomor, alat, nomor seri, hasil, tanggal, penerbit — tanpa nama pelanggan. */
     public function test_kartu_tetap_memuat_data_yang_sama_dan_tidak_menambah(): void
     {
         $sertifikat = $this->sertifikat();
@@ -154,7 +153,8 @@ class VerificationTest extends TestCase
             ->assertSee('CAL/2026/07/0001')
             ->assertSee('Jangka Sorong Mitutoyo')
             ->assertSee('MT-500-196-30')
-            ->assertSee('PT Ma•• Jaya')
+            ->assertDontSee('PT Maju Jaya')
+            ->assertDontSee('PT Ma••')
             ->assertSee('PASS')
             ->assertDontSee($sertifikat->session->teknisi->name)
             ->assertDontSee($sertifikat->session->teknisi->email)
@@ -171,6 +171,7 @@ class VerificationTest extends TestCase
             ->assertJsonPath('data.nomor', 'CAL/2026/07/0001')
             ->assertJsonPath('data.keputusan', 'PASS')
             ->assertJsonPath('data.alat.serial_number', 'MT-500-196-30')
+            ->assertJsonMissingPath('data.alat.pemilik')
             ->assertJsonPath('data.diterbitkan_oleh.no_akreditasi', 'LK-285-IDN');
 
         $this->getJson('/api/verify/QR-KARANGAN')->assertNotFound();

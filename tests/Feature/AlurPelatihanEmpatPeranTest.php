@@ -752,17 +752,24 @@ class AlurPelatihanEmpatPeranTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['data' => [
                 'nomor', 'status', 'status_dokumen', 'digantikan_oleh', 'keputusan', 'diterbitkan_pada',
-                'berlaku_sampai', 'kadaluarsa', 'alat' => ['nama_alat', 'serial_number', 'pemilik'],
+                'berlaku_sampai', 'kadaluarsa', 'alat' => ['nama_alat', 'serial_number'],
                 'tanggal_kalibrasi', 'diterbitkan_oleh' => ['nama', 'no_akreditasi'],
             ]])
             ->assertJsonPath('data.nomor', 'DEMO-0001')
             ->assertJsonPath('data.status', Certificate::STATUS_TERBIT)
             ->assertJsonPath('data.status_dokumen', 'berlaku')
-            ->assertJsonPath('data.alat.pemilik', 'PT CONTOH VOLUMETRIK');
+            // Nama pelanggan = data rahasia klien (ISO/IEC 17025 klausul 4.2):
+            // tidak boleh ada di respons publik, di mana pun.
+            ->assertJsonMissingPath('data.alat.pemilik');
 
         // Halaman web hasil scan QR.
         $this->app['auth']->forgetGuards();
-        $this->flushHeaders()->get("/verify/{$sertifikat->qr_token}")->assertOk()->assertSee('DEMO-0001');
+        $halaman = $this->flushHeaders()->get("/verify/{$sertifikat->qr_token}")->assertOk()->assertSee('DEMO-0001');
+        $html = $halaman->getContent();
+        $ringkas = substr($html, 0, (int) strpos($html, 'class="lembar-lengkap"'));
+        $this->assertNotSame('', $ringkas, 'Blok lembar lengkap tidak ditemukan.');
+        $this->assertStringNotContainsString('PT CONTOH VOLUMETRIK', $ringkas, 'Kartu ringkas verifikasi publik memuat nama pelanggan.');
+        $this->assertStringNotContainsString('Pemilik alat', $ringkas);
 
         $this->tamu('GET', '/api/verify/tokentakadayangsah')->assertNotFound()->assertJsonStructure(['message']);
     }

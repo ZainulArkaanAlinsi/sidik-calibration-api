@@ -420,14 +420,24 @@ class RevisiSertifikatTest extends TestCase
             ->assertJsonMissingPath('data.alasan_pembatalan');
     }
 
-    public function test_kartu_ringkas_menyamarkan_nama_pemilik(): void
+    /**
+     * Kartu ringkas TIDAK menampilkan nama pelanggan sama sekali (ISO/IEC
+     * 17025 klausul 4.2); lembar lengkap tetap ada di balik tombolnya.
+     * Rincian di `VerifikasiPublikMinimalTest`.
+     */
+    public function test_kartu_ringkas_tidak_menampilkan_nama_pemilik(): void
     {
         $asal = $this->sertifikatTerbit();
 
-        $this->get("/verify/{$asal->qr_token}")
+        $html = $this->get("/verify/{$asal->qr_token}")
             ->assertOk()
-            ->assertSee('PT Con•• Jaya')
-            ->assertSee('Disamarkan sebagian')
-            ->assertSee('Tampilkan lembar lengkap');
+            ->assertSee('Tampilkan lembar lengkap')
+            ->getContent();
+
+        $ringkas = substr($html, 0, (int) strpos($html, 'class="lembar-lengkap"'));
+        $this->assertNotSame('', $ringkas);
+        $this->assertStringNotContainsString('PT Contoh Jaya', $ringkas);
+        $this->assertStringNotContainsString('PT Con••', $ringkas);
+        $this->assertStringNotContainsString('Disamarkan sebagian', $ringkas);
     }
 }
