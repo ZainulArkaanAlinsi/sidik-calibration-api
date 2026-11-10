@@ -281,6 +281,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2406.51.S (Autoclave)',
         '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',
+        // Viscometer masuk daftar ini 10 Nov 2026 (G1/R2, K-50-15): baris
+        // `Termometer & Sensor Std.` (`SERTIFIKAT!B35`) kini SELALU tercetak
+        // seperti master, jadi Standard Used bertambah satu baris dan sesi
+        // contoh lima baris standar tidak lagi muat di mode normal. Tetap SATU
+        // halaman di mode padat.
+        '2607.59.W (Viscometer)',
         // Load Cell (alat ke-41, 24 Sep 2026) — sebab yang sama dengan Height
         // Gauge & Micrometer: jumlah baris. Sertifikat masternya mencetak
         // SEPULUH titik, dan tiap angkanya dua desimal (resolusi 0,01 kN),

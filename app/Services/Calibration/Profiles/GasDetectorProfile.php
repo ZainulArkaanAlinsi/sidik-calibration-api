@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Support\TataLetakSertifikat;
 
 /**
  * Profil Multi Gas Detector (alat ke-10). Metode `SIDIK-IK-CAL-0536_Rev.0`
@@ -492,7 +493,92 @@ class GasDetectorProfile extends CalibrationProfile
      */
     public function catatanAtasTabelHasil(CalibrationSession $sesi): ?string
     {
-        return 'Correction factor from % to %LEL — Methane (CH4) = 2,5 % = 50 %LEL';
+        // G3/R12: sejak sertifikat persis master catatan ini dicetak DI BAWAH
+        // tabel sebagai blok (`catatanSertifikat`), bukan satu baris di atas.
+        // Snapshot yang sudah terbit tetap membawa kalimat lamanya.
+        return null;
+    }
+
+    /**
+     * Tabel hasil Gas Detector persis `SERTIFIKAT!C22:U27`: SATU tabel, empat
+     * gas sebagai baris (`Reference Gas | Unit | Standard | Unit Under Test |
+     * Correction | U95% (±)`), bukan empat tabel berjudul per gas. Satuan ada
+     * di kolom `Unit` (`H24:H27` = `L14:L17`), bukan baris di bawah judul
+     * kolom. Kalimat `k` SATU kali (`C28`/`U28` = `'PERHITUNGAN U95%'!AB71`,
+     * blok O2) — keempat `k` dibulatkan ke `2` oleh format sel `0`, jadi
+     * barisnya sama dengan yang tiap gas bawa sendiri; U95 tiap gas tidak
+     * tersentuh. Kolom `Standard used` berlabel `Gas Composition` (`I36`),
+     * isinya komposisi botol tanpa merk (`I37:I40` = `DATABASE!S13:S16`).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $kolom = static fn (string $kolom, string $judul): array => ['kolom' => $kolom, 'judul' => $judul, 'satuan' => ''];
+
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'pisah_per_remark' => false,
+            'pisah_per_satuan' => false,
+            'satuan_baris_sendiri' => false,
+            'k_tunggal' => 'baris_pertama',
+            'kolom_hasil' => [
+                $kolom('tambahan:gas', 'Reference Gas'),
+                $kolom('tambahan:satuan_gas', 'Unit'),
+                $kolom('standar', 'Standard'),
+                $kolom('uut', 'Unit Under Test'),
+                $kolom('koreksi', 'Correction'),
+                $kolom('u95', 'U95% (±)'),
+            ],
+            'kolom_standar_digunakan' => [
+                ['kunci' => 'name', 'label' => 'Name'],
+                ['kunci' => 'komposisi_gas', 'label' => 'Gas Composition'],
+                ['kunci' => 'serial_number', 'label' => 'Serial Number :'],
+                ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through :'],
+            ],
+        ];
+    }
+
+    /**
+     * Kolom `Reference Gas` (`C24:C27` `CO`/`H2S`/`CH4`/`O2`) dan `Unit`
+     * (`H24:H27`). Dibaca dari tabel gas profil ini — bukan dari data sesi
+     * yang bisa kosong.
+     *
+     * @return array<string, string>
+     */
+    public function kolomTambahanTitik(CalibrationSession $sesi, float $titikUkur, int $titikKe): array
+    {
+        $gas = $this->gasUntukTitik($titikUkur);
+
+        if ($gas === null) {
+            return [];
+        }
+
+        return [
+            'gas' => strtr($gas['kode'], ['H2S' => 'H₂S', 'CH4' => 'CH₄', 'O2' => 'O₂']),
+            'satuan_gas' => $gas['satuan'],
+        ];
+    }
+
+    /** Komposisi botol saja (`DATABASE!S13:S16`), tanpa awalan merk. */
+    public function isiTambahanStandarDigunakan(CalibrationSession $sesi, Standard $standar): array
+    {
+        return ['komposisi_gas' => filled($standar->model) ? (string) $standar->model : $standar->merk];
+    }
+
+    /**
+     * Catatan konversi `SERTIFIKAT!C29:J30` DI BAWAH tabel, sesudah kalimat `k`.
+     * "Convidence" master tidak ditiru; teks selebihnya persis sel.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        return [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'baris' => ['Correction factor from % to %LEL'],
+            'tabel' => [['Methane (CH4)', '=', '2.5% = 50%LEL']],
+        ]];
     }
 
     /**

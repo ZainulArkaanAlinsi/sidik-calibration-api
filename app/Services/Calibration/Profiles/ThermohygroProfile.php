@@ -9,7 +9,9 @@ use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\TabelKalibratorSuhu3Alat;
 use App\Services\Calibration\ThermohygroCalculator;
+use App\Support\Angka;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -273,6 +275,41 @@ class ThermohygroProfile extends ProfilSuhuPasangan
         return $this->parameterTitik($sesi, $titikKe) === ThermohygroCalculator::PARAMETER_KELEMBABAN
             ? self::SATUAN_RH
             : self::SATUAN_SUHU;
+    }
+
+    /**
+     * Baris `Uncertainty 95% ± <U95> %RH` di bawah tabel Humidity
+     * (`SERTIFIKAT!E63`/`M63`/`N63`). Di master selnya RUSAK: `M63 = #REF!`
+     * (kerusakan salin-tempel; padanan baris suhu `M29` =
+     * `'PERHITUNGAN U95%'!AC32`, kelembapan `U35` = `'PERHITUNGAN U95%'!AC72`).
+     * `#REF!` TIDAK dicetak; yang dicetak U95 kelembapan yang benar — angka
+     * yang sama dengan kolom U95 tabel Humidity (`U35`), format `0.0` — dan
+     * penyimpangannya tertulis di jejak sesi (`thermohygro_u95_rh_ref_rusak`,
+     * [jejakAudit]). Perhitungan tidak disentuh.
+     *
+     * Dicetak sesudah SEMUA tabel (blok `bawah_hasil`), bukan di antara tabel
+     * Humidity dan kalimat `k` seperti master.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $u95 = [];
+
+        foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
+            if ($titik->ketidakpastian_diperluas === null
+                || $this->parameterTitik($sesi, (int) $titik->titik_ke) !== ThermohygroCalculator::PARAMETER_KELEMBABAN) {
+                continue;
+            }
+
+            $teks = Angka::keTitik(TataLetakSertifikat::formatAngka((float) $titik->ketidakpastian_diperluas, '0.0'));
+            $u95[$teks] = ['Uncertainty 95% ±', $teks, self::SATUAN_RH];
+        }
+
+        return $u95 === [] ? [] : [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'tabel' => array_values($u95),
+        ]];
     }
 
     /** Judul seksi master: `1. Temperature` (`154!E19`), `2. Humidity` (`E32`). */
@@ -689,6 +726,22 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                 'keterangan' => $catatan['pesan'],
                 'distribusi' => '-',
                 'nilai' => $grup['ketidakpastian_diperluas'],
+            ];
+        }
+
+        // Penyimpangan master (AGENTS.md "Olah data" butir 4): sel rusak
+        // `SERTIFIKAT!M63 = #REF!` tidak ditiru; U95 kelembapan dicetak benar.
+        if ($grup['parameter'] === ThermohygroCalculator::PARAMETER_KELEMBABAN) {
+            $audit[] = [
+                'sumber' => 'thermohygro_u95_rh_ref_rusak',
+                'keterangan' => sprintf(
+                    'Master `SERTIFIKAT!M63` ("Uncertainty 95%% ± #REF! %%RH") berisi `=#REF!` — sel rusak salin-tempel. '
+                    .'Sertifikat mencetak U95 kelembapan %s %%RH (sama dengan kolom U95 tabel Humidity, '
+                    .'`SERTIFIKAT!U35` = `PERHITUNGAN U95%%!AC72`), bukan #REF!. Perhitungan tidak diubah.',
+                    rtrim(rtrim(number_format($grup['u95_sertifikat'], 8, '.', ''), '0'), '.'),
+                ),
+                'distribusi' => '-',
+                'nilai' => $grup['u95_sertifikat'],
             ];
         }
 

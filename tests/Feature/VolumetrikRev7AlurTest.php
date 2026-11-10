@@ -655,7 +655,10 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertSamaPetaJson(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
         $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
         $this->assertStringNotContainsString('hPa', (string) $snapshot['header']['env_condition']);
-        $this->assertSame(['Analytical Balance'], array_column($snapshot['standar_digunakan'], 'name'));
+        // G1/R2 (K-50-15): master Fixed mencetak baris termometer SELALU
+        // (`DATABASE!V22`), picnometer ikut lewat `StandarCetakMaster`. Aturan
+        // Rev.7 lain (tekanan, `standarTambahanSesi`, validator) tidak berlaku.
+        $this->assertSame(['Analytical Balance', 'Termometer & Sensor Std.'], array_column($snapshot['standar_digunakan'], 'name'));
         $this->assertTrue($snapshot['hasil'][0]['standar_ringkas']);
     }
 }

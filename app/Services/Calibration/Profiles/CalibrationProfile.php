@@ -10,6 +10,7 @@ use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
 use App\Support\AkhirSertifikatMaster;
 use App\Support\FormatMasterSertifikat;
+use App\Support\StandarCetakMaster;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 
@@ -2734,6 +2735,48 @@ abstract class CalibrationProfile
     public function standarTambahanSesi(CalibrationSession $sesi): array
     {
         return [];
+    }
+
+    /**
+     * Standar yang master SELALU cetak di tabel Standard Used walau tidak
+     * dicentang teknisi (baris "Termometer & Sensor Std."; G1/R2). Datanya
+     * tabel per kode profil `App\Support\StandarCetakMaster`, jadi tidak ada
+     * `if` per profil di sini — profil tanpa baris di tabel itu mengembalikan
+     * kosong dan sertifikatnya tidak berubah.
+     *
+     * Hanya CETAK: masa berlaku standar ini TIDAK ikut diperiksa
+     * `CalibrationValidator` (itu perilaku `standarTambahanSesi`, dan
+     * melebarkannya mengubah gerbang terbit alat-alat ini — bukan lingkup
+     * perubahan bentuk cetak). Baris yang tidak ketemu di master standar lab
+     * dilewati.
+     *
+     * @return list<Standard>
+     */
+    public function standarSelaluTercetakSesi(CalibrationSession $sesi): array
+    {
+        $daftar = StandarCetakMaster::untukProfil($this->kode());
+
+        if ($daftar === [] || $sesi->organization_id === null) {
+            return [];
+        }
+
+        $master = Standard::query()
+            ->whereNull('parameter_kondisi')
+            ->where('organization_id', $sesi->organization_id)
+            ->orderBy('id')
+            ->get();
+
+        $hasil = [];
+
+        foreach ($daftar as $kunci) {
+            $standar = $this->cocokkanStandar($master, $kunci);
+
+            if ($standar !== null) {
+                $hasil[] = $standar;
+            }
+        }
+
+        return $hasil;
     }
 
     /**
