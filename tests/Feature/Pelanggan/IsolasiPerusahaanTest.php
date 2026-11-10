@@ -305,4 +305,40 @@ class IsolasiPerusahaanTest extends TestCase
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.nomor', 'ISO/A/0001');
     }
+
+    /**
+     * Pencarian dari NOMOR ORDER (`GET /sertifikat?q=` dan `GET /paket?q=`)
+     * hanya melihat PT sendiri -- nomor order PT lain dijawab daftar kosong.
+     * Rincian di `CariDariNomorOrderTest`.
+     */
+    public function test_cari_nomor_order_tidak_menembus_perusahaan_lain(): void
+    {
+        $alatB = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        Certificate::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'nomor' => 'ISO/B/0009',
+            'status' => Certificate::STATUS_TERBIT,
+            'calibration_session_id' => CalibrationSession::factory()->create([
+                'organization_id' => $this->perusahaanB->organization_id,
+                'equipment_id' => $alatB->getKey(),
+                'nomor_order' => 'PO-MILIK-B-4711',
+            ])->getKey(),
+        ]);
+        Order::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'nomor' => 'ORD/B/4712',
+        ]);
+
+        foreach (['/sertifikat?q=PO-MILIK-B-4711', '/paket?q=ORD/B/4712'] as $uri) {
+            $this->permintaanBaru();
+            $this->withHeaders($this->bearer($this->picA))
+                ->getJson('/api/pelanggan/v1'.$uri)
+                ->assertOk()
+                ->assertJsonPath('meta.total', 0);
+        }
+    }
 }

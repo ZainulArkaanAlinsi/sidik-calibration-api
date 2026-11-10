@@ -24,6 +24,7 @@ class PaketController extends Controller
     {
         $data = $request->validate([
             'selesai' => ['sometimes', 'boolean'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ]);
 
@@ -35,6 +36,9 @@ class PaketController extends Controller
                 fn ($q) => $q->where('status', Order::STATUS_SELESAI),
                 fn ($q) => $q->where('status', '!=', Order::STATUS_SELESAI),
             )
+            // `?q=` mencari NOMOR order. Di atas himpunan `LingkupData::paket()`
+            // (sudah dikunci ke perusahaan pemanggil), bukan menggantikannya.
+            ->when(filled($data['q'] ?? null), fn ($q) => $q->where('nomor', 'like', '%'.$data['q'].'%'))
             ->with($this->relasi())
             ->orderByDesc('tanggal_masuk')
             ->orderByDesc('id')
