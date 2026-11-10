@@ -28,6 +28,41 @@ yang cocok) — AGENTS.md §Git Workflow. Tulis ke produksi lewat urutan
 | 6 | Alat berikutnya, satu per deploy (T3.7) | per alat | per alat, sakelar per profil |
 | 7 | Sesudah 2 bulan stabil: `database/data/tabel-*.json` dijadikan fixture test saja (dipindah ke `tests/fixtures/acuan/`) | nol | — |
 
+### 2a. Menjalankan tahap 2 di produksi tanpa shell
+
+Paket gratis Render tidak punya shell ("Shell is not supported for free compute plans"), jadi
+`acuan:impor-awal` dijalankan lewat boot, dengan sakelar `ACUAN_IMPOR_AWAL_ON_BOOT`
+(`docker/entrypoint.sh`; bawaan `false` = tidak melakukan apa pun).
+
+**Syarat — semuanya sebelum sakelar disentuh:**
+
+1. §1 selesai: cadangan produksi terverifikasi + sensus baca-saja. Boot tidak bisa memeriksanya;
+   yang menyalakan yang bertanggung jawab. Tahap 2 menulis ke produksi (tabel `paket_acuan` dan
+   `paket_acuan_versi`), jadi urutannya mengikuti `docs/aturan-akses-database.md`.
+2. Tahap 1 (migrasi) sudah live dan `/api/health` memulangkan `deploy.versi` yang cocok.
+3. `DATA_ACUAN_SUMBER` masih `json` — tahap 2 tidak mengubah angka siapa pun.
+
+**Langkah:**
+
+1. Satu commit: `render.yaml` → `ACUAN_IMPOR_AWAL_ON_BOOT` `value: "true"` (nilainya dipatok
+   blueprint, bukan dashboard — menyalakannya lewat commit yang ditinjau). Satu push, satu
+   deploy (AGENTS.md §Git Workflow).
+2. Buka deploy log, cari tahap `impor awal data acuan`. Per paket per organisasi tercetak
+   `versi 1 dibuat (aktif, berlaku_mulai …), sha256 …` atau `versi 1 sudah ada, sama`. Cocokkan
+   `sha256 kanonik` tiap `kode_profil` dengan JSON di repo (`JsonKanonik`).
+3. Boot tetap lanjut walau impor gagal (`|| true`, kode keluarnya dicetak). Galat per paket
+   (berkas hilang, paket soft delete, versi 1 lama **BEDA** dari berkas) tidak menimpa apa pun
+   dan harus diputuskan manusia sebelum tahap 3.
+4. **Commit berikutnya mengembalikan nilainya ke `"false"`.** Perintahnya aman diulang, tapi tiap
+   boot yang masih `true` cuma memakan jendela health check Render yang 15 menit tanpa memberi
+   apa-apa; entrypoint mencetak peringatan keras di tiap boot selama masih `true`.
+5. Jalankan sekali lagi hanya bila perlu bukti idempotensi: semua baris harus `sudah ada, sama`.
+
+**Rollback tahap 2** = hapus baris paket yang baru dibuat. Aman hanya selama belum ada hasil
+hitung yang distempel `paket_acuan_versi_id` (tahap 3 belum jalan). Itu tulis ke produksi, jadi
+lewat urutan `docs/aturan-akses-database.md` butir 4 (rencana tertulis → cadangan → dry-run →
+eksekusi atas instruksi terpisah); mengembalikan sakelar ke `false` saja TIDAK menghapus apa pun.
+
 Sakelar `DATA_ACUAN_SUMBER` wajib masuk `.env.example` **dan** `render.yaml` (AGENTS.md §Alur
 Kerja 9). Nilainya di `render.yaml` ditulis `value:` eksplisit dengan komentar, supaya tidak
 ketimpa diam-diam seperti kejadian `ARSIP_DRIVER` 1 Sep.

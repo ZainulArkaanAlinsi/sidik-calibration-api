@@ -311,6 +311,25 @@ services:
       - key: BANGUN_ULANG_ON_BOOT
         sync: false
 
+      # Impor awal data acuan (`acuan:impor-awal`): versi 1 `aktif` tiap paket
+      # dari database/data/*.json, semua profil, semua organisasi — rollout
+      # Studio Data Acuan tahap 2 (docs/studio-data-acuan/07-Migrasi-Rollout.md).
+      # Satu-satunya jalan di produksi: paket gratis Render nggak punya shell.
+      #
+      # Dipatok `value: "false"`, BUKAN `sync: false` — sama pola SEED_ON_BOOT
+      # dan DATA_ACUAN_SUMBER. Ini tulis ke database produksi, jadi
+      # menyalakannya harus lewat commit yang ditinjau (ganti ke "true" di
+      # sini, setelah cadangan + sensus 07 §1), dan commit berikutnya
+      # mengembalikannya ke "false". Arah timpa blueprint di sini aman: lupa
+      # dimatikan di dashboard cuma berarti saklarnya mati lagi di deploy
+      # berikutnya, bukan impor yang jalan tiap boot.
+      #
+      # Perintahnya idempoten dan nggak pernah menimpa; gagalnya nggak
+      # menjatuhkan boot. Nyalain SATU deploy, baca deploy log, balikin ke
+      # "false". Rollback = hapus baris paket yang baru dibuat (07 §2 tahap 2).
+      - key: ACUAN_IMPOR_AWAL_ON_BOOT
+        value: "false"
+
       # Satu akun admin yang dibikin sendiri waktu boot, kalau emailnya belum
       # kedaftar. Kosongin kalau nggak dipakai — perintahnya diam total.
       #
