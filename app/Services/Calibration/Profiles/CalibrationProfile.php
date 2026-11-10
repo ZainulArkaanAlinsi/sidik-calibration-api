@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
+use App\Support\AkhirSertifikatMaster;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 
@@ -2297,7 +2298,16 @@ abstract class CalibrationProfile
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return TataLetakSertifikat::MAYORITAS_MASTER;
+        // "End of Certificate" berbentuk grup garis-teks-garis (G0-a, R1): satu
+        // tabel data (`AkhirSertifikatMaster`) per kode profil, bukan `if` di tiap
+        // profil. Profil yang masternya sel teks menimpa `akhir_sertifikat`
+        // sendiri dan tidak ada di tabel itu.
+        $garis = AkhirSertifikatMaster::untukProfil($this->kode());
+
+        return [
+            ...TataLetakSertifikat::MAYORITAS_MASTER,
+            ...($garis === null ? [] : ['akhir_sertifikat_garis' => $garis]),
+        ];
     }
 
     /**

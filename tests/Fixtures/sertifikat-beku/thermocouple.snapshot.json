@@ -1,0 +1,262 @@
+{
+    "versi": 1,
+    "desimal": 1,
+    "judul_uut": "Unit Under Test",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": false,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": null,
+    "satuan": "°C",
+    "satuan_cetak": "°C",
+    "header": {
+        "certificate_number": "UJI/00037",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 17",
+        "order_number": "2411.50.I",
+        "address": "Alamat Sintetis 17, Jl. Contoh No. 17, Kota Contoh",
+        "received_date": "2024-12-03",
+        "equipment_name": "Thermocouple Thermometer",
+        "manufacturer": "Hanna Instrument",
+        "calibration_location": "Laboratorium",
+        "model_type": "HI93530",
+        "calibration_date": "2024-12-03",
+        "serial_number": "J0037794",
+        "calibration_method": "SIDIK-IK-CAL-0529_Rev.2",
+        "capacity_graduation": "50–150 °C / 0.1 °C",
+        "env_condition": "T 24.0 °C ± 1.7 °C\n%RH 60 % ± 4.9 %",
+        "technician_id": "RK"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": 49.275,
+            "remark": null,
+            "unit_under_test": 49.755,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.48,
+            "u95": 0.84,
+            "desimal_u95": 2,
+            "faktor_cakupan_k": 1.9720858012419,
+            "desimal_k": 0,
+            "desimal": 1,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 2,
+            "standard_value": 99.105,
+            "remark": null,
+            "unit_under_test": 99.73,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.625,
+            "u95": 0.84,
+            "desimal_u95": 2,
+            "faktor_cakupan_k": 1.9720858012419,
+            "desimal_k": 0,
+            "desimal": 1,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 3,
+            "standard_value": 148.705,
+            "remark": null,
+            "unit_under_test": 149.96,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -1.255,
+            "u95": 0.84,
+            "desimal_u95": 2,
+            "faktor_cakupan_k": 1.9720858012419,
+            "desimal_k": 0,
+            "desimal": 1,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": false,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date",
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "kolom_hasil": [
+            {
+                "kolom": "standar",
+                "judul": "Standard Reading (oC)",
+                "satuan": "",
+                "gabung": false
+            },
+            {
+                "kolom": "uut",
+                "judul": "Unit Under Test (oC)",
+                "satuan": "",
+                "gabung": false
+            },
+            {
+                "kolom": "koreksi",
+                "judul": "Correction (oC)",
+                "satuan": "",
+                "gabung": false
+            }
+        ],
+        "label_u95": "Uncertainty  95%  ±"
+    },
+    "standar_digunakan": [
+        {
+            "name": "Termometer & Sensor Std.",
+            "merk_type": "Yokogawa/CA 150 Handy Cal",
+            "serial_number": "23P1005",
+            "traceable_to": "LK-285-IDN"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-09",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "8jqj9ko2kn",
+        "qr_payload": "http://localhost/verify/8jqj9ko2kn",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}

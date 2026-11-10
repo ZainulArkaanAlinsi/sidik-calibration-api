@@ -293,7 +293,9 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
      * Bentuk lembar SERTIFIKAT master `175` (K-50-15): judul `Standard Reading
      * (oC)` tanpa baris satuan (`E19:L19`), label `Uncertainty  95%  ±`
      * (`E34`), Standard used tanpa titik dua (`B40:Q40`), `Issuance Date`
-     * tanpa titik dua (`B47`). Tidak ada `End of Certificate`.
+     * tanpa titik dua (`B47`). `End of Certificate` ADA: grup garis-teks-garis `H57:N59` di
+     * dalam print area (`175` objek.json "Group 10"; bukan sel teks) — dicetak lewat
+     * `AkhirSertifikatMaster` (G0-a). Docblock lama "tidak ada" salah (PDF master memuatnya).
      *
      * @return array<string, mixed>
      */

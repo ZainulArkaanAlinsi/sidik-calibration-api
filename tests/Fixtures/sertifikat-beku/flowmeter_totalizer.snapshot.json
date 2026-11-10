@@ -1,0 +1,325 @@
+{
+    "versi": 1,
+    "desimal": 3,
+    "judul_uut": "Unit Under Test",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": true,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": null,
+    "satuan": "L",
+    "satuan_cetak": "L",
+    "header": {
+        "certificate_number": "UJI/00013",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 16",
+        "order_number": "DEMO-ORD-FM-GRAV-01",
+        "address": "Alamat Sintetis 37, Jl. Contoh No. 37, Kota Contoh",
+        "received_date": "2026-01-05",
+        "equipment_name": "Flow Meter Cairan (Totalizer)",
+        "manufacturer": "Contoh",
+        "calibration_location": "Laboratorium",
+        "model_type": "GRAV-DEMO",
+        "calibration_date": "2026-01-05",
+        "serial_number": "FM-GRAV-TOT-DEMO-01",
+        "calibration_method": "SIDIK-IK-CAL-0528_Rev.4",
+        "capacity_graduation": "0–9999 L / 0.01 L",
+        "env_condition": "T 24.9 °C ± 1.7 °C\n%RH 38 % ± 4.9 %",
+        "technician_id": "RK"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": 140.5294412942693,
+            "remark": null,
+            "unit_under_test": 140.10666666667,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.4227746275993,
+            "u95": 1.68128,
+            "desimal_u95": 3,
+            "faktor_cakupan_k": 1.9893185571357,
+            "desimal_k": null,
+            "desimal": 3,
+            "satuan": "L",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "tambahan": {
+                "suhu_fluida": 25.449999999999996,
+                "jenis_fluida": "Air"
+            },
+            "r2": null
+        },
+        {
+            "titik_ke": 2,
+            "standard_value": 501.7242276961946,
+            "remark": null,
+            "unit_under_test": 500.69666666667,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 1.0275610295246,
+            "u95": 6.00836,
+            "desimal_u95": 3,
+            "faktor_cakupan_k": 1.9893185571357,
+            "desimal_k": null,
+            "desimal": 3,
+            "satuan": "L",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "tambahan": {
+                "suhu_fluida": 25.399999999999995,
+                "jenis_fluida": "Air"
+            },
+            "r2": null
+        },
+        {
+            "titik_ke": 3,
+            "standard_value": 1003.3639826190513,
+            "remark": null,
+            "unit_under_test": 1001.2633333333,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 2.1006492857513,
+            "u95": 12.01516,
+            "desimal_u95": 3,
+            "faktor_cakupan_k": 1.9893185571357,
+            "desimal_k": null,
+            "desimal": 3,
+            "satuan": "L",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "tambahan": {
+                "suhu_fluida": 25.349999999999998,
+                "jenis_fluida": "Air"
+            },
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": {
+        "mode": "totalizer",
+        "satuan": "L",
+        "material_pipa": "Carbon Steel",
+        "jenis_fluida": "Air",
+        "path_configuration": null,
+        "liner_material": null,
+        "liner_ketebalan_mm": null,
+        "diameter_luar_mm": null,
+        "ketebalan_mm": null,
+        "diameter_dalam_mm": null,
+        "luas_penampang_mm2": null
+    },
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": true,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date",
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "kolom_hasil": [
+            {
+                "kolom": "uut",
+                "judul": "Unit Under Test",
+                "satuan": null,
+                "gabung": false
+            },
+            {
+                "kolom": "standar",
+                "judul": "Standard Indication",
+                "satuan": null,
+                "gabung": false
+            },
+            {
+                "kolom": "koreksi",
+                "judul": "Correction",
+                "satuan": null,
+                "gabung": false
+            },
+            {
+                "kolom": "u95",
+                "judul": "U95% ±",
+                "satuan": null,
+                "gabung": false
+            },
+            {
+                "kolom": "tambahan:suhu_fluida",
+                "judul": "Fluids Condition Temperature",
+                "satuan": "⁰C",
+                "gabung": false,
+                "format": "0.0"
+            },
+            {
+                "kolom": "tambahan:jenis_fluida",
+                "judul": "Type of Fluids",
+                "satuan": null,
+                "gabung": false
+            }
+        ]
+    },
+    "standar_digunakan": [
+        {
+            "name": "Timbangan Elektronik Dini Argeo",
+            "merk_type": "Dini Argeo/DFWLB-3",
+            "serial_number": "0792531584",
+            "traceable_to": "LK-285-IDN"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-09",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "g5hu2rnu9c",
+        "qr_payload": "http://localhost/verify/g5hu2rnu9c",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}
