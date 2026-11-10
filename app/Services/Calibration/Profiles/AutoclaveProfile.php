@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\TabelStandarAutoclave;
+use App\Support\GambarKhasSertifikat;
 
 /**
  * Profil Autoklaf (alat ke-8). Metode `SIDIK-IK-CAL-0531_Rev.4`, form
@@ -213,10 +214,12 @@ class AutoclaveProfile extends CalibrationProfile
      * dua (`G46:Q46`), `Issuance Date:` (`B54`), dan `End of Certificate`
      * sesudah tanda tangan (`E66`, spasi tepi master dibuang).
      *
+     * `Thermocouple Position : (For Temperature)` (`F19:F20`) + gambar posisi
+     * termokopel (`J19`, silinder 1-2-3) dicetak lewat `gambar_khas` (G2,
+     * `GambarKhasSertifikat`).
+     *
      * BELUM (bagian tabel autoklaf digambar `pdf.blade.php`, lapisan T):
-     * `Thermocouple Position : (For Temperature)` + gambar posisi (`F19`,
-     * gambar di `J19`), kepala `Sensor No. (oC)` bernomor (`F23:P24`), judul
-     * `C) Tekanan` (`B35`).
+     * kepala `Sensor No. (oC)` bernomor (`F23:P24`), judul `C) Tekanan` (`B35`).
      *
      * @return array<string, mixed>
      */
@@ -228,6 +231,7 @@ class AutoclaveProfile extends CalibrationProfile
             'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
             'label_tanggal_terbit' => 'Issuance Date:',
             'akhir_sertifikat' => '-------------- End of Certificate  --------------',
+            'gambar_khas' => GambarKhasSertifikat::untuk('autoclave'),
         ];
     }
 

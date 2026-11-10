@@ -849,6 +849,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
         <div class="catatan-atas-hasil">{{ $snapshot['catatan_atas_hasil'] }}</div>
     @endif
     @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_ATAS_HASIL, [])])
+@include('sertifikat._gambar-khas', ['gambar' => $tataLetak['gambar_khas']])
     {{-- Kolom "Remark" cuma dicetak kalau alatnya emang punya keterangan
          parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
          alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
