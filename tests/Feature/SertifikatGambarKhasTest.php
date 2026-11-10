@@ -140,6 +140,49 @@ class SertifikatGambarKhasTest extends TestCase
         $this->assertSame(array_keys(self::BERGAMBAR), $dicetak);
     }
 
+    /**
+     * Dua master enclosure merentangkan gambar dengan geometri BEDA (`171` Constant/
+     * Yokogawa `J17` vs `172` Recorder `I17`), dipilih dari merk kalibrator sesi.
+     * Tanpa tes ini, membalik pilihan varian di `EnclosureProfileBase::tataLetakSertifikat`
+     * tetap hijau karena keduanya memakai berkas PNG yang sama.
+     */
+    public function test_enclosure_memilih_geometri_gambar_menurut_merk_kalibrator(): void
+    {
+        $this->freezeTime();
+        $this->seed(DatabaseSeeder::class);
+        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
+
+        $recorder = GambarKhasSertifikat::PER_VARIAN['enclosure_recorder'][0];
+        $yokogawa = GambarKhasSertifikat::PER_VARIAN['enclosure_constant_yokogawa'][0];
+
+        foreach (['kiri', 'lebar', 'tinggi', 'kiri_teks'] as $k) {
+            $this->assertNotSame($recorder[$k], $yokogawa[$k], "{$k}: dua varian harus dibedakan tes ini");
+        }
+
+        // nomor sesi seeder -> (merk kalibrator, entri yang wajib beku di snapshot)
+        foreach (['2406.25.AI' => ['graphtech', $recorder], '2405.03.AV' => ['yokogawa', $yokogawa]] as $nomor => [$merk, $diharapkan]) {
+            $sesi = CalibrationSession::query()->where('nomor_sesi', 'like', $nomor.'%')->firstOrFail();
+            $standar = $sesi->rawMeasurements->first()?->standard ?? $sesi->standard;
+            $this->assertStringContainsString($merk, strtolower((string) $standar?->merk), "{$nomor}: standar sesi bukan {$merk}");
+
+            $entri = $this->terbitkan($sesi)->snapshot['tata_letak']['gambar_khas'][0];
+
+            foreach (['berkas', 'kiri', 'lebar', 'tinggi', 'kiri_teks', 'turun_teks_pt', 'turun_gambar_pt', 'teks'] as $k) {
+                $this->assertEquals($diharapkan[$k], $entri[$k], "{$nomor}: {$k}");
+            }
+        }
+    }
+
+    public function test_normalisasi_mengubah_ofset_teks_numerik_menjadi_angka(): void
+    {
+        $e = [...GambarKhasSertifikat::PER_VARIAN['autoclave'][0], 'turun_teks_pt' => '3', 'turun_gambar_pt' => '9.5', 'kiri' => '0.3935'];
+        $hasil = GambarKhasSertifikat::normalisasi([$e])[0];
+
+        $this->assertSame(3, $hasil['turun_teks_pt']);
+        $this->assertSame(9.5, $hasil['turun_gambar_pt']);
+        $this->assertSame(0.3935, $hasil['kiri']);
+    }
+
     /** @param array<string, mixed> $bahan */
     private function halamanPdf(array $bahan): int
     {
