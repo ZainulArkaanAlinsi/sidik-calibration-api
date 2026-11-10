@@ -166,7 +166,7 @@ class CertificateSnapshotBuilder
             // Digital menimbang dalam `g` tapi masternya mencetak `ml`
             // (`164!E20:S20`). `satuan` di atas dibiarkan — HP membacanya.
             ...($tataLetak === [] ? [] : ['satuan_cetak' => $this->satuanCetak($sesi, $profil)]),
-            'header' => $this->header($sesi, $sertifikat, (bool) ($tataLetak['env_bertumpuk'] ?? false), $teksAngka),
+            'header' => $this->header($sesi, $sertifikat, (bool) ($tataLetak['env_bertumpuk'] ?? false), $teksAngka, $tataLetak['kapasitas_master'] ?? null, $profil),
             // Enclosure TIDAK punya tabel `Standard | UUT | Correction`. Baris
             // `uncertainty_calculations`-nya memang menyimpan Keseragaman di
             // kolom `koreksi` (wakil "koreksi terbesar", lihat
@@ -256,7 +256,7 @@ class CertificateSnapshotBuilder
             // belas — dijaga `CertificateSnapshotTest`).
             ...($kepalaTambahan === [] ? [] : ['header_tambahan' => $kepalaTambahan]),
             'standar_digunakan' => $this->standarDigunakan($sesi, $profil),
-            'footer' => $this->footer($sesi, $sertifikat, $pengaturan),
+            'footer' => $this->footer($sesi, $sertifikat, $pengaturan, $tataLetak['tanggal_master']['tambah_hari'] ?? null),
             // Bukan bagian dari dokumen cetak — dipakai halaman verifikasi &
             // API buat nampilin status alat. Ditaruh di luar empat bagian baku
             // supaya jelas ini metadata, bukan field sertifikat.
@@ -340,9 +340,16 @@ class CertificateSnapshotBuilder
      */
     /**
      * @param  (callable(?string): ?string)|null  $teksAngka  pemisah desimal tata letak (lihat [bangun])
+     * @param  array{graduasi: string}|null  $kapasitasMaster  `tata_letak.kapasitas_master` (G0-b P3)
      */
-    private function header(CalibrationSession $sesi, Certificate $sertifikat, bool $envBertumpuk = false, ?callable $teksAngka = null): array
+    private function header(CalibrationSession $sesi, Certificate $sertifikat, bool $envBertumpuk = false, ?callable $teksAngka = null, ?array $kapasitasMaster = null, ?CalibrationProfile $profil = null): array
     {
+        // G0-b (P3): Capacity/Graduation seperti sel master (satu angka kapasitas
+        // diketik, bukan "0–X"). Hanya bila tata letak baru menyatakannya.
+        $kapasitasGraduasi = $kapasitasMaster !== null
+            ? $this->kapasitasGraduasiMaster($sesi, $profil, $kapasitasMaster['graduasi'])
+            : $this->kapasitasGraduasi($sesi);
+
         $alat = $sesi->equipment;
         $pelanggan = $alat?->customer;
 
@@ -371,7 +378,7 @@ class CertificateSnapshotBuilder
             'calibration_date' => $sesi->tanggal_kalibrasi?->toDateString(),
             'serial_number' => $sesi->alat_serial_number ?: $alat?->serial_number,
             'calibration_method' => $this->metodeKalibrasi($sesi),
-            'capacity_graduation' => $teksAngka ? $teksAngka($this->kapasitasGraduasi($sesi)) : $this->kapasitasGraduasi($sesi),
+            'capacity_graduation' => $teksAngka ? $teksAngka($kapasitasGraduasi) : $kapasitasGraduasi,
             'env_condition' => $teksAngka ? $teksAngka($this->kondisiLingkungan($sesi, $envBertumpuk)) : $this->kondisiLingkungan($sesi, $envBertumpuk),
             'technician_id' => $sesi->teknisi?->kodeTeknisi(),
         ];
@@ -1148,12 +1155,17 @@ class CertificateSnapshotBuilder
      * @param  array<string, mixed>  $pengaturan
      * @return array<string, string|null>
      */
-    private function footer(CalibrationSession $sesi, Certificate $sertifikat, array $pengaturan): array
+    private function footer(CalibrationSession $sesi, Certificate $sertifikat, array $pengaturan, ?int $tambahHari = null): array
     {
         $dipilih = $sesi->penandatangan;
 
         return [
-            'issuance_date' => $sertifikat->diterbitkan_pada?->toDateString(),
+            // G0-b (P2): master mencetak Issuance Date = tanggal kalibrasi + N
+            // (`=T9+4`). `tambahHari` hanya terisi bila tata letak baru
+            // menyatakannya; tanpa tanggal kalibrasi tetap tanggal terbit sistem.
+            'issuance_date' => $tambahHari !== null && $sesi->tanggal_kalibrasi !== null
+                ? $sesi->tanggal_kalibrasi->copy()->addDays($tambahHari)->toDateString()
+                : $sertifikat->diterbitkan_pada?->toDateString(),
             'penandatangan' => $dipilih?->name
                 ?? $pengaturan[Organization::KEY_PENANDATANGAN_NAMA]
                 ?? $sesi->pengesah?->name
@@ -1315,6 +1327,33 @@ class CertificateSnapshotBuilder
             ?? ($organisasi
                 ? $organisasi->desimalSertifikat($resolusi)
                 : Angka::desimalDariResolusi($resolusi));
+    }
+
+    /**
+     * `250 ml / - ml` (labu ukur, pipet volume), `100 ml / 1 ml` (gelas ukur),
+     * `2000 °C / 0.1 °C` (TITS) — satu angka kapasitas dan graduasi seperti sel
+     * master (G0-b P3). Kapasitas dari `CalibrationProfile::kapasitasCetakMaster`
+     * lalu rentang atas alat; tanpa keduanya `-` (master source TITS `- °C`).
+     */
+    private function kapasitasGraduasiMaster(CalibrationSession $sesi, ?CalibrationProfile $profil, string $graduasi): ?string
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return null;
+        }
+
+        $satuan = $alat->satuan ? ' '.$alat->satuan : '';
+        $kapasitas = $profil?->kapasitasCetakMaster($sesi);
+        $teks = static fn (float|int|string|null $n): string => $n === null || $n === ''
+            ? '-'
+            // Tanpa pemisah ribuan, sama dengan rentang di [kapasitasGraduasi] (`2000 °C`, bukan `2.000`).
+            : rtrim(rtrim(number_format((float) $n, 6, ',', ''), '0'), ',');
+
+        $kapasitasTeks = $teks($kapasitas);
+        $graduasiTeks = $graduasi === 'strip' || $alat->resolusi === null ? '-' : $teks((float) $alat->resolusi);
+
+        return $kapasitasTeks.$satuan.' / '.$graduasiTeks.$satuan;
     }
 
     /** `0–14 pH / 0,01 pH` — rentang alat / resolusinya. */

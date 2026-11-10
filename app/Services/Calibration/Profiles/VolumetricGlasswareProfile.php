@@ -356,7 +356,27 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             'kepala' => $kepala,
             'kalimat_k' => 'The uncertainty is taken at a confidence level 95 % and coverage factor (k)',
             'akhir_sertifikat' => '------------------ End of Certificate ------------------',
+            // G0-b (P3): Capacity/Graduation seperti sel master `F11`/`I11`
+            // (`250 ml / - ml` labu ukur & pipet volume, `100 ml / 1 ml` gelas
+            // ukur) — hanya tiga alat yang masternya sudah dibaca selnya.
+            ...(in_array($this->kode(), self::KAPASITAS_MASTER_KODE, true)
+                ? ['kapasitas_master' => ['graduasi' => $this instanceof FixedVolumetricGlasswareProfile ? 'strip' : 'resolusi']]
+                : []),
         ];
+    }
+
+    /** Alat yang Capacity/Graduation-nya sudah dibuktikan dari sel master (G0-b P3). */
+    private const KAPASITAS_MASTER_KODE = ['labu_ukur', 'pipet_volume', 'gelas_ukur'];
+
+    /**
+     * Master `F11` = `INPUT DATA!E15` (kapasitas yang DIKETIK), bukan rentang
+     * `0–X`: blok sesi `kapasitas_ml`, cadangan rentang atas alat.
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $blok = M::blokSesi($sesi->spesifikasi_alat);
+
+        return $blok['kapasitas_ml'] ?? parent::kapasitasCetakMaster($sesi);
     }
 
     /**

@@ -569,7 +569,31 @@ class TitsProfile extends CalibrationProfile
         return [
             ...self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi)),
             'akhir_sertifikat' => '--------- End of Certificate  ---------',
+            // G0-b (P3): `173!F14` = `INPUT DATA!E15` (kapasitas diketik, mis.
+            // `2000 °C / 0.1 °C`), Source `174!F10` = `-`.
+            'kapasitas_master' => ['graduasi' => 'resolusi'],
         ];
+    }
+
+    /**
+     * Kapasitas yang dicetak master (`spesifikasi_alat.kapasitas`, diketik) —
+     * BUKAN rentang ukur alat. Tidak diisi = `-` (master Source).
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $kapasitas = $sesi->spesifikasi_alat['kapasitas'] ?? null;
+
+        return is_numeric($kapasitas) ? (float) $kapasitas : null;
+    }
+
+    /**
+     * Master TITS mencetak selisih yang membulat ke nol sebagai `0.0`, bukan
+     * `-0.0` (PDF master `173!L20:L28`; G0-b P4, keputusan pemilik 10 Nov 2026).
+     * Hanya cetak: `tanda_nol` dibekukan per baris snapshot, nilai tidak berubah.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
     }
 
     /**
