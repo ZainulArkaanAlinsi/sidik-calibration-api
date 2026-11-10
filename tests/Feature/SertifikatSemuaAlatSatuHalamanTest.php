@@ -249,7 +249,13 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // punya budget, U95, dan `k` masing-masing, jadi sertifikatnya mencetak
         // tiga judul + tiga kalimat `Uncertainty U95% = ±`. Master pun
         // melaporkan U95 per parameter.
-        '0736-CAL-526 (Sieve Mesh)',
+        //
+        // KELUAR dari daftar ini 10 Nov 2026 (G0-b, kertas berkop pracetak): kop,
+        // judul, dan kode dokumen kaki tidak dicetak (diganti ruang kosong
+        // <= 4,5 cm, `FormatMasterSertifikat`), jadi lembarnya muat di mode
+        // normal. Daftar MEMENDEK = hurufnya membesar; tidak ada nama yang masuk
+        // (Viscometer sempat masuk waktu ruang pracetak belum dibatasi, lalu
+        // dibatasi 4,5 cm).
         '22506.01.A (Temperature Calibrator)',
         // Kedua Enclosure masuk sini 15 Okt 2026, dan sebabnya isi, bukan tata
         // letak yang menyusut: sertifikatnya dulu SALAH mencetak satu baris
@@ -301,7 +307,10 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // (`E37`) dan `Units Used: kgf : Kilogram-force` (`E39:I40`). Isinya
         // bertambah, bukan tata letak yang menyusut; titik nol (`E21`,
         // disembunyikan master) malah keluar dari tabel. Tetap satu halaman.
-        'DEMO-UTM-001 (Universal Testing Machine)',
+        //
+        // KELUAR dari daftar ini 10 Nov 2026 (G0-b): margin atas master UTM cuma
+        // 0,63 inci, jadi ruang pracetaknya jauh lebih rendah dari kop+judul
+        // lama dan lembarnya muat di mode normal.
     ];
 
     /**

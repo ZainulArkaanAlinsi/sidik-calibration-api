@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\GumCalculator;
 use App\Support\AkhirSertifikatMaster;
+use App\Support\FormatMasterSertifikat;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Collection;
 
@@ -2303,11 +2304,31 @@ abstract class CalibrationProfile
         // profil. Profil yang masternya sel teks menimpa `akhir_sertifikat`
         // sendiri dan tidak ada di tabel itu.
         $garis = AkhirSertifikatMaster::untukProfil($this->kode());
+        // G0-b (P1/P2): kertas berkop pracetak + tanggal seperti format sel
+        // master, per kode profil (`FormatMasterSertifikat`). Profil tanpa master
+        // di folder ekstraksi tidak menyatakan apa pun (bentuk lama).
+        $pracetak = FormatMasterSertifikat::ruangPracetakCm($this->kode());
+        $tanggal = FormatMasterSertifikat::tanggalUntukProfil($this->kode());
 
         return [
             ...TataLetakSertifikat::MAYORITAS_MASTER,
             ...($garis === null ? [] : ['akhir_sertifikat_garis' => $garis]),
+            ...($pracetak === null ? [] : ['kop_pracetak' => $pracetak]),
+            ...($tanggal === null ? [] : ['tanggal_master' => $tanggal]),
         ];
+    }
+
+    /**
+     * Kapasitas yang dicetak sel Capacity/Graduation master (G0-b P3), dipakai
+     * hanya bila `tata_letak.kapasitas_master` dinyatakan. `null` = `-` bila
+     * profil tidak punya sumber kapasitas ketikan; bawaannya rentang atas alat
+     * (`equipments.range_max`).
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $maks = $sesi->equipment?->range_max;
+
+        return $maks === null ? null : (float) $maks;
     }
 
     /**
