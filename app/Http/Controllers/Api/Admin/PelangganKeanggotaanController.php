@@ -52,11 +52,23 @@ class PelangganKeanggotaanController extends Controller
             $request->user(),
         );
 
-        UndanganEmail::kirim($hasil['undangan'], $hasil['kode'], $customer);
+        $emailTerkirim = UndanganEmail::kirim($hasil['undangan'], $hasil['kode'], $customer);
 
+        // Kode polos ikut DIBALAS, sekali ini saja (aplikasi lab tidak punya
+        // layar notifikasi seperti panel, dan `kirim()` menelan galat email).
+        // Dia tidak disimpan di mana pun selain email: DB menyimpan hash, dan
+        // `ringkas()` yang dipakai tempat lain sengaja tidak memuatnya.
         return response()->json([
-            'message' => 'Undangan dikirim ke '.$hasil['undangan']->email.'.',
-            'data' => $this->ringkas($hasil['undangan']),
+            'message' => 'Undangan dibuat untuk '.$hasil['undangan']->email
+                .'. Kirim kodenya langsung bila email tidak sampai.',
+            'data' => [
+                ...$this->ringkas($hasil['undangan']),
+                'kode' => $hasil['kode'],
+                // Nilai yang sama dengan `kedaluwarsa_pada` (nama itu tetap, klien lama
+                // membacanya); ini nama yang dipakai layar "berlaku sampai".
+                'berlaku_sampai' => $hasil['undangan']->kedaluwarsa_pada?->toIso8601String(),
+                'email_terkirim' => $emailTerkirim,
+            ],
         ], 201);
     }
 

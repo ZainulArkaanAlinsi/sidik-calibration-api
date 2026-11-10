@@ -39,8 +39,15 @@ class UndanganEmail extends Mailable
      * admin menekan "undang" lagi — dan undangan kedua membatalkan yang pertama
      * (lihat `KodeUndangan::terbitkan`), jadi kode yang mungkin sudah sampai ke
      * orangnya justru mati. Lebih baik satu email gagal dan bisa dikirim ulang.
+     *
+     * Pulangannya cuma kabar buat yang mau memberi tahu admin, bukan pengubah
+     * perilaku: `true` = diserahkan ke mailer sungguhan tanpa galat; `false` =
+     * galat, ATAU mailernya `log`/`array` (email cuma ditulis ke berkas log /
+     * memori, tidak keluar ke mana pun — keadaan server yang SMTP-nya belum
+     * disetel, persis yang bikin kodenya perlu ikut dibalas ke admin).
+     * Ini bukan bukti email sampai ke kotak masuk penerima.
      */
-    public static function kirim(UndanganPelanggan $undangan, string $kode, Customer $perusahaan): void
+    public static function kirim(UndanganPelanggan $undangan, string $kode, Customer $perusahaan): bool
     {
         try {
             Mail::to((string) $undangan->email)->send(new self(
@@ -53,7 +60,11 @@ class UndanganEmail extends Mailable
                 'undangan_id' => $undangan->getKey(),
                 'error' => $e->getMessage(),
             ]);
+
+            return false;
         }
+
+        return ! in_array(config('mail.default'), ['log', 'array'], true);
     }
 
     public function envelope(): Envelope

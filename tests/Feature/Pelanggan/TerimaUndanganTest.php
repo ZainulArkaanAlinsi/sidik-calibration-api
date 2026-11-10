@@ -10,7 +10,10 @@ use App\Models\UndanganPelanggan;
 use App\Models\User;
 use App\Services\Pelanggan\TokenPelanggan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\JalurPelanggan;
 use Tests\TestCase;
 
@@ -53,13 +56,17 @@ class TerimaUndanganTest extends TestCase
         // UNIQUE(organization_id, nama).
         $perusahaan ??= $this->perusahaan();
 
-        $this->withHeaders($this->bearerInternal($this->adminLab()))
+        $respons = $this->withHeaders($this->bearerInternal($this->adminLab()))
             ->postJson("/api/customers/{$perusahaan->id}/undangan", ['email' => $email, 'peran' => $peran])
             ->assertCreated()
             ->assertJsonPath('data.email', $email)
-            ->assertJsonStructure(['data' => ['id', 'email', 'peran', 'kedaluwarsa_pada']]);
+            ->assertJsonStructure(['data' => ['id', 'email', 'peran', 'kedaluwarsa_pada', 'berlaku_sampai', 'kode', 'email_terkirim']]);
 
         $kode = $this->kodeDariEmail($email);
+
+        // Kode di balasan HARUS kode yang sama dengan yang masuk email — bukan
+        // sekadar "8 karakter apa saja".
+        $this->assertSame($kode, $respons->json('data.kode'));
         $this->lupakanSesiGuard();
 
         return ['customer' => $perusahaan, 'kode' => $kode];
@@ -173,6 +180,236 @@ class TerimaUndanganTest extends TestCase
                 'peran' => CustomerMember::PERAN_STAF,
             ])
             ->assertNotFound();
+    }
+
+    // ------------------------------------------------------------ kode di balasan (Fase 1a)
+
+    /**
+     * Kode di balasan `POST /customers/{c}/undangan` adalah kode yang SUNGGUHAN
+     * bisa ditukar — diuji ujung ke ujung, tanpa menengok email sama sekali.
+     * (Tes ini sengaja tidak memakai helper `undang()`.)
+     */
+    public function test_kode_di_balasan_bisa_ditukar_ujung_ke_ujung(): void
+    {
+        $perusahaan = $this->perusahaan();
+
+        $respons = $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Undangan dibuat untuk budi@contoh.test. Kirim kodenya langsung bila email tidak sampai.');
+
+        $kode = $respons->json('data.kode');
+        $this->assertIsString($kode);
+        $this->assertMatchesRegularExpression('/^[A-Z2-9]{8}$/', $kode);
+        $this->assertSame($respons->json('data.kedaluwarsa_pada'), $respons->json('data.berlaku_sampai'));
+        $this->assertTrue(
+            now()->addDays(UndanganPelanggan::BERLAKU_HARI)->diffInSeconds($respons->json('data.berlaku_sampai'), true) < 60,
+        );
+        $this->lupakanSesiGuard();
+
+        $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir('budi@contoh.test', $kode))
+            ->assertCreated()
+            ->assertJsonPath('data.user.status', User::STATUS_AKTIF);
+
+        $this->assertDatabaseHas('customer_members', [
+            'customer_id' => $perusahaan->id,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+    }
+
+    /** Undangan kedua: kode di balasan pertama mati, kode di balasan kedua hidup. */
+    public function test_kode_dari_balasan_lama_mati_setelah_undangan_baru(): void
+    {
+        $perusahaan = $this->perusahaan();
+        $kodeDari = function () use ($perusahaan): string {
+            $kode = $this->withHeaders($this->bearerInternal($this->adminLab()))
+                ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                    'email' => 'budi@contoh.test',
+                    'peran' => CustomerMember::PERAN_STAF,
+                ])
+                ->assertCreated()
+                ->json('data.kode');
+            $this->lupakanSesiGuard();
+
+            return $kode;
+        };
+
+        $lama = $kodeDari();
+        $baru = $kodeDari();
+
+        $this->assertNotSame($lama, $baru);
+
+        $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir('budi@contoh.test', $lama))
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'undangan_tidak_berlaku');
+
+        $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir('budi@contoh.test', $baru))
+            ->assertCreated();
+    }
+
+    /** Anggota aktif: 422 dan TIDAK ada kode, undangan, maupun email. */
+    public function test_anggota_aktif_422_tanpa_kode_di_balasan(): void
+    {
+        $anggota = $this->anggota();
+        $perusahaan = $anggota->keanggotaan()->first()->customer;
+
+        $respons = $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => $anggota->email,
+                'peran' => CustomerMember::PERAN_STAF,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
+
+        $this->assertNull($respons->json('data.kode'));
+        $this->assertArrayNotHasKey('data', $respons->json() ?? [], 'Penolakan tidak boleh membawa data.kode.');
+        $this->assertDatabaseCount('undangan_pelanggan', 0);
+        Mail::assertNothingSent();
+    }
+
+    /** Kode polos tidak boleh nongol di DB (hash saja), audit_logs, maupun log. */
+    public function test_kode_polos_tidak_tersimpan_di_db_audit_atau_log(): void
+    {
+        $dicatat = [];
+        Log::listen(function ($pesan) use (&$dicatat) {
+            $dicatat[] = $pesan->message.json_encode($pesan->context);
+        });
+
+        ['kode' => $kode] = $this->undang('budi@contoh.test');
+
+        foreach (DB::table('undangan_pelanggan')->get() as $baris) {
+            $this->assertStringNotContainsString($kode, json_encode($baris));
+        }
+        foreach (DB::table('audit_logs')->get() as $baris) {
+            $this->assertStringNotContainsString($kode, json_encode($baris), 'Kode polos bocor ke audit_logs.');
+        }
+        $this->assertStringNotContainsString($kode, implode("\n", $dicatat), 'Kode polos bocor ke log.');
+    }
+
+    /** Galat kirim email tidak menggagalkan undangan, dan balasan jujur: email_terkirim=false. */
+    public function test_email_terkirim_false_bila_mailer_gagal_tapi_kode_tetap_dibalas(): void
+    {
+        Mail::shouldReceive('to')->once()->andThrow(new \RuntimeException('SMTP mati'));
+        $perusahaan = $this->perusahaan();
+
+        $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.email_terkirim', false)
+            ->assertJsonPath('data.kode', fn ($kode) => is_string($kode) && strlen($kode) === 8);
+    }
+
+    /** Mailer `log`/`array` tidak mengirim ke mana pun, jadi tidak boleh mengaku terkirim. */
+    public function test_email_terkirim_hanya_true_untuk_mailer_sungguhan(): void
+    {
+        $perusahaan = $this->perusahaan();
+        $panggil = fn (string $email) => $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", ['email' => $email, 'peran' => CustomerMember::PERAN_STAF])
+            ->assertCreated();
+
+        config(['mail.default' => 'log']);
+        $panggil('a@contoh.test')->assertJsonPath('data.email_terkirim', false);
+        $this->lupakanSesiGuard();
+
+        config(['mail.default' => 'smtp']);
+        $panggil('b@contoh.test')->assertJsonPath('data.email_terkirim', true);
+    }
+
+    /** @return array<string, array{0: string, 1: int}> */
+    public static function peranPemanggil(): array
+    {
+        return [
+            'admin' => [User::ROLE_ADMIN, 201],
+            'super_admin' => [User::ROLE_SUPER_ADMIN, 201],
+            'teknisi' => [User::ROLE_TEKNISI, 403],
+            'viewer' => [User::ROLE_VIEWER, 403],
+        ];
+    }
+
+    #[DataProvider('peranPemanggil')]
+    public function test_siapa_boleh_mengundang(string $role, int $diharapkan): void
+    {
+        $perusahaan = $this->perusahaan();
+
+        $respons = $this->withHeaders($this->bearerInternal($this->adminLab($role)))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ])
+            ->assertStatus($diharapkan);
+
+        if ($diharapkan === 201) {
+            $this->assertSame(8, strlen($respons->json('data.kode')));
+        } else {
+            // Ditolak: tidak ada kode di balasan, undangan, ataupun email.
+            $this->assertArrayNotHasKey('data', $respons->json() ?? [], 'Penolakan tidak boleh membawa data.kode.');
+            $this->assertDatabaseCount('undangan_pelanggan', 0);
+            Mail::assertNothingSent();
+        }
+    }
+
+    public function test_pelanggan_tidak_bisa_memakai_pintu_undangan_lab(): void
+    {
+        $anggota = $this->anggota();
+        $perusahaan = $anggota->keanggotaan()->first()->customer;
+
+        $respons = $this->withHeaders($this->bearer($anggota))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ]);
+
+        $this->assertContains($respons->getStatusCode(), [403, 404]);
+        $this->assertArrayNotHasKey('data', $respons->json() ?? [], 'Penolakan tidak boleh membawa data.kode.');
+        $this->assertDatabaseCount('undangan_pelanggan', 0);
+    }
+
+    public function test_admin_organisasi_lain_dijawab_404_tanpa_kode(): void
+    {
+        $perusahaan = $this->perusahaan();
+        $adminLain = User::factory()->create([
+            'organization_id' => Organization::factory()->create()->id,
+            'role' => User::ROLE_ADMIN,
+            'status' => User::STATUS_AKTIF,
+        ]);
+
+        $respons = $this->withHeaders($this->bearerInternal($adminLain))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ])
+            ->assertNotFound();
+
+        $this->assertArrayNotHasKey('data', $respons->json() ?? [], 'Penolakan tidak boleh membawa data.kode.');
+        $this->assertDatabaseCount('undangan_pelanggan', 0);
+    }
+
+    public function test_rute_undangan_lab_punya_throttle_dan_menahan_banjir(): void
+    {
+        $rute = collect(app('router')->getRoutes()->getRoutes())
+            ->first(fn ($r) => $r->uri() === 'api/customers/{customer}/undangan' && in_array('POST', $r->methods(), true));
+
+        $this->assertNotNull($rute);
+        $this->assertContains('throttle:pelanggan-undang', $rute->gatherMiddleware());
+
+        // Perilakunya, bukan cuma daftarnya: jatah 20/menit per admin.
+        $perusahaan = $this->perusahaan();
+        $header = $this->bearerInternal($this->adminLab());
+        for ($i = 1; $i <= 20; $i++) {
+            $this->withHeaders($header)
+                ->postJson("/api/customers/{$perusahaan->id}/undangan", ['email' => "u{$i}@contoh.test", 'peran' => CustomerMember::PERAN_STAF])
+                ->assertCreated();
+        }
+
+        $this->withHeaders($header)
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", ['email' => 'u21@contoh.test', 'peran' => CustomerMember::PERAN_STAF])
+            ->assertStatus(429);
     }
 
     // ------------------------------------------------------------ menukar
