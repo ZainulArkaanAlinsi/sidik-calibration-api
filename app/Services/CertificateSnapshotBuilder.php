@@ -1122,12 +1122,18 @@ class CertificateSnapshotBuilder
             return [];
         }
 
-        $tambahan = app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment)->standarTambahanSesi($sesi);
+        $profil = app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment);
+        $tambahan = $profil->standarTambahanSesi($sesi);
 
-        return array_values(array_map(
-            static fn (array $t): Standard => $t['standar'],
-            array_filter($tambahan, static fn (array $t): bool => $t['dicetak']),
-        ));
+        return [
+            ...array_values(array_map(
+                static fn (array $t): Standard => $t['standar'],
+                array_filter($tambahan, static fn (array $t): bool => $t['dicetak']),
+            )),
+            // Baris yang master SELALU cetak (G1/R2) — sesudah standar tertaut,
+            // seperti urutan lembar master (termometer di baris terakhir).
+            ...$profil->standarSelaluTercetakSesi($sesi),
+        ];
     }
 
     /**

@@ -1415,7 +1415,41 @@ class ConductivityProfile extends CalibrationProfile
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return [...parent::tataLetakSertifikat($sesi), 'judul_standar_digunakan' => 'Standard Used :'];
+        $induk = parent::tataLetakSertifikat($sesi);
+
+        return [
+            ...$induk,
+            'judul_standar_digunakan' => 'Standard Used :',
+            'kepala' => self::technicianIdKanan($induk['kepala']),
+        ];
+    }
+
+    /**
+     * G3/R13: Technician ID master ada di KOLOM KANAN, tepat di bawah
+     * `Env. Condition` (`O16`:`S16`, kedua style), bukan di kolom kiri di bawah
+     * Capacity/Graduation seperti mayoritas lembar master.
+     *
+     * @param  list<list<array{kunci: string, label: string}|null>>  $kepala
+     * @return list<list<array{kunci: string, label: string}|null>>
+     */
+    private static function technicianIdKanan(array $kepala): array
+    {
+        $teknisi = null;
+
+        foreach ($kepala as $b => $baris) {
+            if (($baris[0]['kunci'] ?? null) === 'technician_id') {
+                $teknisi = $baris[0];
+                $kepala[$b][0] = null;
+            }
+        }
+
+        foreach ($kepala as $b => $baris) {
+            if (($baris[1]['kunci'] ?? null) === 'env_condition' && $teknisi !== null && array_key_exists(1, $kepala[$b + 1] ?? []) && $kepala[$b + 1][1] === null) {
+                $kepala[$b + 1][1] = $teknisi;
+            }
+        }
+
+        return $kepala;
     }
 
     /**
