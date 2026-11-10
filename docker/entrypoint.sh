@@ -249,6 +249,63 @@ if [ "${BANGUN_ULANG_ON_BOOT}" = "true" ]; then
     php artisan sertifikat:bangun-ulang --render-ulang-pdf || true
 fi
 
+# Impor awal data acuan (Studio Data Acuan, rollout tahap 2).
+#
+# Melahirkan versi 1 `aktif` tiap paket acuan dari berkas `database/data/*.json`
+# yang dipakai hari ini — semua profil yang punya skemaAcuan(), semua
+# organisasi. Rancangannya di docs/studio-data-acuan/07-Migrasi-Rollout.md §2–3.
+#
+# ## Kenapa lewat boot, bukan dijalankan sekali lewat shell
+#
+# Alasannya sama persis dengan bangun ulang sertifikat di atas: paket gratis
+# Render TIDAK menyediakan shell ("Shell is not supported for free compute
+# plans"). Tanpa jalur ini `acuan:impor-awal` tidak punya tempat buat jalan di
+# produksi, dan rollout tahap 3 (stempel versi di hasil hitung) tidak bisa
+# dimulai karena belum ada versi di database untuk dibaca.
+#
+# ## Kenapa aman diulang, dan kenapa tetap harus dimatikan lagi
+#
+# Perintahnya idempoten dan TIDAK PERNAH menimpa: paket yang sudah punya versi
+# data cuma diadu sha256-nya ("sudah ada, sama" / "BEDA — tidak ditimpa"), dan
+# isi yang beda dilaporkan sebagai galat, bukan dibereskan. Jadi dibiarkan
+# `true` tidak merusak apa pun. Tapi dia menulis ke produksi SEKALI (baris paket
+# + versi 1), dan setelah itu tiap boot cuma membayar menit yang diambil dari
+# jendela health check Render yang 15 menit — tanpa memberi apa-apa. Nyalakan
+# SATU deploy, baca log-nya, lalu kembalikan ke `false`.
+#
+# Syarat sebelum menyalakan (07-Migrasi-Rollout.md §1): cadangan produksi yang
+# sudah diverifikasi + sensus baca-saja. Boot tidak bisa memeriksa itu, jadi
+# yang menyalakan yang bertanggung jawab. Rollback = hapus baris paket yang
+# baru dibuat (belum ada hasil hitung yang distempel), lihat 07 §2 tahap 2.
+#
+# ## `|| true` di sini BUKAN kelalaian
+#
+# Sama alasannya dengan impor direktori di bawah: paket yang gagal diimpor
+# (berkas JSON hilang, versi 1 lama beda dari berkas) cuma membuat tahap 3
+# belum bisa jalan — sesi tetap dihitung dari berkas JSON seperti hari ini
+# (`DATA_ACUAN_SUMBER=json`). Menjatuhkan boot karena itu menukar satu paket
+# yang belum terimpor dengan SELURUH server yang dipakai teknisi di lokasi.
+# Gagalnya tetap kelihatan: kode keluarnya dicetak, dan perintahnya sendiri
+# menulis alasan per paket.
+if [ "${ACUAN_IMPOR_AWAL_ON_BOOT}" = "true" ]; then
+    tahap "impor awal data acuan (semua profil ber-skemaAcuan, semua organisasi)"
+    echo "!! ACUAN_IMPOR_AWAL_ON_BOOT=true — MENULIS baris paket + versi 1 acuan ke database." >&2
+    echo "   Pastikan cadangan produksi & sensus (07-Migrasi-Rollout.md §1) sudah beres." >&2
+    echo "   Perintahnya idempoten dan tidak pernah menimpa, tapi saklar ini HARUS" >&2
+    echo "   dikembalikan ke false sesudah SATU deploy: tiap boot berikutnya cuma" >&2
+    echo "   memakan jendela health check Render tanpa memberi apa-apa." >&2
+    STATUS_IMPOR_ACUAN=0
+    php artisan acuan:impor-awal || STATUS_IMPOR_ACUAN=$?
+    if [ "${STATUS_IMPOR_ACUAN}" -ne 0 ]; then
+        echo "!! acuan:impor-awal berhenti dengan kode ${STATUS_IMPOR_ACUAN} — boot TETAP lanjut." >&2
+        echo "   Baca baris galat per paket di atas (berkas hilang / versi 1 beda / paket" >&2
+        echo "   soft delete). Tidak ada yang ditimpa; tahap 3 rollout belum boleh jalan" >&2
+        echo "   sebelum semua paket ber-versi 1." >&2
+    else
+        echo "   acuan:impor-awal selesai tanpa galat. Kembalikan ACUAN_IMPOR_AWAL_ON_BOOT ke false." >&2
+    fi
+fi
+
 # Direktori perusahaan rujukan (10.320 PT) dimuat di sini, bukan lewat shell.
 #
 # ## Kenapa di boot, bukan sekali manual
