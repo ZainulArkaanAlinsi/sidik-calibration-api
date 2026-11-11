@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Models\Certificate;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
@@ -201,7 +202,30 @@ class BerkasPdfSertifikat
     /** Render dari snapshot beku, lalu pastikan yang mendarat memang utuh. */
     private function tulisUlang(Certificate $sertifikat, string $path, bool $paksa = false): ?string
     {
-        $isi = $this->satuHalaman->isi($sertifikat);
+        try {
+            $isi = $this->satuHalaman->isi($sertifikat);
+        } catch (SertifikatLebihSatuHalamanException $e) {
+            Log::error('Render ulang PDF sertifikat meluap >1 halaman.', [
+                'certificate_id' => $sertifikat->getKey(),
+                'nomor' => $sertifikat->nomor,
+                'halaman_padat' => $e->halamanPadat,
+                'paksa' => $paksa,
+            ]);
+
+            // Cetak ulang PAKSA (admin sengaja mengganti berkas): tidak pernah
+            // menimpa arsip dengan PDF yang headernya bilang "1 of 1" padahal 2
+            // halaman. Berkas lama dibiarkan; pemanggil menjawab ditolak.
+            //
+            // `pastikanAda` (berkas sertifikat TERBIT/DIBATALKAN raib, mis. disk
+            // arsip sementara hilang tiap deploy): pemegangnya tidak boleh
+            // mendadak 404. Perilaku lama dipertahankan — versi terpadat
+            // dilayani — dan sebabnya tetap tercatat di log di atas.
+            if ($paksa || $e->isiPadat === null) {
+                return null;
+            }
+
+            $isi = $e->isiPadat;
+        }
 
         // Diperiksa SEBELUM ditulis: menulis keluaran yang cacat berarti
         // menyimpan kerusakan itu secara permanen, karena panggilan berikutnya

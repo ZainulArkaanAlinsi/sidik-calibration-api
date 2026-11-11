@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\PerubahanDataOrganisasi;
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
@@ -337,6 +338,15 @@ class GenerateCertificate implements ShouldQueue
             // kebetulan buka layar sertifikatnya — sementara pelanggan nungguin
             // dokumen yang dari sisi lab kelihatan udah selesai.
             $this->kabarinKegagalan($sertifikat, $e);
+
+            // Sertifikat yang tak muat satu halaman itu kegagalan DETERMINISTIK:
+            // mengulang job sama saja merender lembar yang sama tiga kali (dan
+            // mengabari admin tiga kali). Ditandai gagal-final supaya antrean
+            // tidak mengulang; nomor, snapshot, dan sesi `disetujui` tetap, dan
+            // admin menerbitkan ulang lewat tombol retry setelah isinya diperbaiki.
+            if ($e instanceof SertifikatLebihSatuHalamanException) {
+                $this->fail($e);
+            }
 
             throw $e;
         }

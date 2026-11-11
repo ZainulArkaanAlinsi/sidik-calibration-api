@@ -145,6 +145,11 @@ final class TataLetakSertifikat
         // (`FormatMasterSertifikat::ruangPracetakCm`). QR & tanda tangan tidak
         // tersentuh.
         'kop_pracetak' => null,
+        // A3: ukuran huruf MEDIAN lembar master (pt, diskala ke A4) yang diikuti
+        // `SertifikatSatuHalaman`/`SkalaUkuranSertifikat` — huruf dicetak
+        // 0,95-1,00 x ini selama tetap satu halaman dengan ruang sisa. `null` =
+        // tangga kerapatan lama (snapshot terbit sebelum A3 tidak berubah satu byte).
+        'font_master_pt' => null,
         // G0-b (P2): tanggal seperti format sel master. `null` = bentuk lama
         // (bahasa mengikuti locale aplikasi, `d F Y`). Bentuk:
         // `['kepala' => 'id'|'en', 'terbit' => 'id'|'en']` — bahasa bulan per
@@ -324,6 +329,7 @@ final class TataLetakSertifikat
                 'akhir_sertifikat_garis' => $nilai === null ? null : self::garisAkhir($nilai),
                 'gambar_khas' => $nilai === null ? null : GambarKhasSertifikat::normalisasi($nilai),
                 'kop_pracetak' => $nilai === null ? null : self::tinggiPracetak($nilai),
+                'font_master_pt' => $nilai === null ? null : self::fontMaster($nilai),
                 'tanggal_master' => $nilai === null ? null : self::tanggalMaster($nilai),
                 'kapasitas_master' => $nilai === null ? null : self::kapasitasMaster($nilai),
                 'format_k' => $nilai === null ? null : self::normalisasiFormat(['k' => $nilai])['k'],
@@ -1025,6 +1031,16 @@ final class TataLetakSertifikat
             'ukuran' => $nilai['ukuran'] + 0,
             'lebar' => (float) $nilai['lebar'],
         ];
+    }
+
+    /** Ukuran huruf median master (pt), 6-12: di bawah 6 pt tak terbaca di kertas. */
+    private static function fontMaster(mixed $nilai): float
+    {
+        if (! is_numeric($nilai) || $nilai < 6 || $nilai > 12) {
+            throw new InvalidArgumentException('Tata letak sertifikat `font_master_pt` harus null atau ukuran 6-12 pt.');
+        }
+
+        return (float) $nilai;
     }
 
     /** Tinggi ruang kosong pengganti kop (cm), 0-12. */

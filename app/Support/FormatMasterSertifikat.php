@@ -114,6 +114,44 @@ final class FormatMasterSertifikat
     ];
 
     /**
+     * Ukuran huruf MEDIAN lembar `SERTIFIKAT` master setelah diskala ke A4 (pt),
+     * per kode profil — dasar `tata_letak.font_master_pt` (A3, audit 11 Nov 2026).
+     *
+     * Cara ukur (sama dengan audit): median ukuran huruf semua karakter bukan-spasi
+     * di `<workbook>/sertifikat*.terang.pdf` x (595,3 / lebar halaman PDF master).
+     * Hanya profil yang di audit 11 Nov menyimpang dari 0,95-1,05 x master DAN yang
+     * ukurannya bisa dicapai tanpa membuat huruf < 6 pt (`SkalaUkuranSertifikat`):
+     *
+     *     oven               7,44  (enclosure-recorder)
+     *     timbangan          6,84  (timbangan-kg; gram 6,72, substitusi 6,96)
+     *     tits               8,04  (fungsi-measure; fungsi-source 8,28)
+     *     conductivity_meter 7,92  (style 1 = style 2)
+     *     pressure_gauge     7,32  (Druck 07G; 13G 7,20)
+     *     vacuum_gauge       7,32  (tak ada master vakum sendiri: pembanding terdekat 07G)
+     *     timer_stopwatch    7,20
+     *
+     * Thermohygro SENGAJA tidak ada: lembar master dicetak skala 50 % (4,8 pt),
+     * menyamakannya berarti huruf < 5 pt yang tak terbaca.
+     *
+     * @var array<string, float>
+     */
+    public const FONT_MEDIAN_PT = [
+        'oven' => 7.44,
+        'timbangan' => 6.84,
+        'tits' => 8.04,
+        'conductivity_meter' => 7.92,
+        'pressure_gauge' => 7.32,
+        'vacuum_gauge' => 7.32,
+        'timer_stopwatch' => 7.2,
+    ];
+
+    /** Ukuran huruf median master (pt) untuk profil ini, atau `null` bila tak dinyatakan. */
+    public static function fontMasterPt(string $kode): ?float
+    {
+        return self::FONT_MEDIAN_PT[$kode] ?? null;
+    }
+
+    /**
      * Tinggi ruang kosong pengganti kop (cm), atau `null` bila profil tak ada
      * di tabel.
      */

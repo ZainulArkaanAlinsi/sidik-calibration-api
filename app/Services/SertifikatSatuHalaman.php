@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Models\Certificate;
+use App\Support\SkalaUkuranSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 
@@ -34,10 +36,12 @@ use Illuminate\Support\Facades\Log;
  *
  *   1. Render apa adanya. Muat satu halaman → selesai, tidak ada ongkos tambahan.
  *   2. Belum muat → render ulang dengan mode padat DIPAKSA.
- *   3. Masih belum muat → yang paling ringkas yang dipakai, dan kegagalannya
- *      DICATAT sebagai error. Tidak ada yang dipalsukan: kalau lembarnya memang
+ *   3. Masih belum muat → DITOLAK: `SertifikatLebihSatuHalamanException`
+ *      (plus `Log::error`). Dulu versi terpadat tetap dikembalikan dan terbit
+ *      sebagai PDF dua halaman bertulis "Page : 1 of 1". Kalau lembarnya memang
  *      tidak bisa dipadatkan lagi, yang salah datanya atau gambarnya, dan itu
- *      harus kelihatan — bukan ditelan diam-diam seperti sebelumnya.
+ *      harus kelihatan — pemanggil penerbit menandai sertifikat `gagal` supaya
+ *      admin bisa menerbitkan ulang setelah diperbaiki.
  *
  * Render kedua cuma jalan buat sertifikat yang memang bermasalah. Yang sudah
  * muat — mayoritasnya — tetap satu kali render.
@@ -46,7 +50,11 @@ class SertifikatSatuHalaman
 {
     public function __construct(private DataTampilanSertifikat $tampilan) {}
 
-    /** Isi PDF sertifikat, sepadat yang diperlukan supaya muat satu halaman. */
+    /**
+     * Isi PDF sertifikat, sepadat yang diperlukan supaya muat satu halaman.
+     *
+     * @throws SertifikatLebihSatuHalamanException bila mode terpadat pun >1 halaman
+     */
     public function isi(Certificate $sertifikat): string
     {
         $bahan = $this->tampilan->untuk($sertifikat);
@@ -68,6 +76,20 @@ class SertifikatSatuHalaman
         // lima kali di server 0,1 CPU. Sertifikat berbaris banyak TETAP dicoba:
         // tebakan `> 12 baris = padat` di blade dimatikan begitu tingkat dikirim.
         $snapshot = $bahan['snapshot'] ?? [];
+
+        // A3: profil yang ukuran masternya dinyatakan di snapshot (BARU saja)
+        // mengikuti ukuran itu, bukan tangga kasar di bawah. Tidak ada yang muat
+        // -> jatuh ke tangga lama apa adanya.
+        $fontMaster = $snapshot['tata_letak']['font_master_pt'] ?? null;
+
+        if (is_numeric($fontMaster)) {
+            $isi = $this->isiMengikutiMaster($bahan, (float) $fontMaster);
+
+            if ($isi !== null) {
+                return $isi;
+            }
+        }
+
         $tingkat = ($snapshot['timbangan'] ?? null) !== null || ($snapshot['autoclave'] ?? null) !== null
             ? []
             : [2, 1, 0, -1, -2];
@@ -103,6 +125,41 @@ class SertifikatSatuHalaman
     }
 
     /**
+     * Ukuran tabel 1,00 -> 0,95 x ukuran median master (`SkalaUkuranSertifikat`),
+     * per keluarga jarak (`rapat` dulu, lalu `padat`). Gerbangnya sama dengan
+     * tangga lama: harus satu halaman DAN tetap satu halaman dengan kotak uji 6 px.
+     *
+     * @param  array<string, mixed>  $bahan
+     */
+    private function isiMengikutiMaster(array $bahan, float $fontMasterPt): ?string
+    {
+        $snapshot = $bahan['snapshot'] ?? [];
+        // Timbangan & Autoklaf punya pemadatan sendiri; blade memaksa `padat`.
+        $keluarga = ($snapshot['timbangan'] ?? null) !== null || ($snapshot['autoclave'] ?? null) !== null
+            ? ['padat']
+            : ['rapat', 'padat'];
+
+        foreach (SkalaUkuranSertifikat::kandidat($fontMasterPt) as $ukuran) {
+            foreach ($keluarga as $jarak) {
+                $padat = $jarak === 'padat';
+                $longgar = $padat ? 0 : -2;
+
+                if ($this->cetak($bahan, $padat, $longgar, ujiCadangan: true, ukuranTabel: $ukuran, keluargaUkuran: $jarak)['halaman'] > 1) {
+                    continue;
+                }
+
+                $hasil = $this->cetak($bahan, $padat, $longgar, ukuranTabel: $ukuran, keluargaUkuran: $jarak);
+
+                if ($hasil['halaman'] <= 1) {
+                    return $hasil['isi'];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Aturan pemilihannya, dipisah dari dompdf supaya bisa diuji sendirian.
      *
      * @param  callable(bool): array{isi: string, halaman: int}  $cetak
@@ -124,11 +181,14 @@ class SertifikatSatuHalaman
             return $padat['isi'];
         }
 
-        // Sudah sepadat yang bisa, masih meluap. Yang dikembalikan tetap versi
-        // terpadatnya — dua halaman yang terbaca lebih berguna daripada tidak
-        // ada PDF sama sekali — tapi kegagalannya TIDAK ditelan: headernya
-        // terlanjur mencetak "1 of 1", jadi selisih itu harus ada jejaknya.
-        Log::error('Sertifikat nggak muat satu halaman walau mode padat dipaksa.', [
+        // Sudah sepadat yang bisa, masih meluap. TIDAK dikembalikan: headernya
+        // terlanjur mencetak "1 of 1", jadi PDF dua halaman ini dokumen
+        // terkendali yang menyatakan hal tidak benar tentang dirinya sendiri.
+        // Dulu versi terpadatnya tetap terbit dengan satu baris log; sekarang
+        // pemanggil menerima pengecualian dan menandai sertifikatnya `gagal`
+        // (nomor & snapshot tetap, bisa diterbitkan ulang setelah diperbaiki).
+        // Gerbang yang menentukan "muat" tidak dilonggarkan sama sekali.
+        Log::error('Sertifikat nggak muat satu halaman walau mode padat dipaksa; TIDAK diterbitkan.', [
             'certificate_id' => $id,
             'halaman_normal' => $hasil['halaman'],
             'halaman_padat' => $padat['halaman'],
@@ -137,14 +197,23 @@ class SertifikatSatuHalaman
                 .'di resources/views/sertifikat/pdf.blade.php — dua-duanya `height: auto`.',
         ]);
 
-        return $padat['isi'];
+        throw new SertifikatLebihSatuHalamanException($id, (int) $hasil['halaman'], (int) $padat['halaman'], $padat['isi']);
     }
 
     /** @return array{isi: string, halaman: int} */
-    private function cetak(array $bahan, bool $paksaPadat, int $longgar = 0, bool $ujiCadangan = false): array
-    {
+    protected function cetak(
+        array $bahan,
+        bool $paksaPadat,
+        int $longgar = 0,
+        bool $ujiCadangan = false,
+        ?float $ukuranTabel = null,
+        string $keluargaUkuran = 'rapat',
+    ): array {
         $pdf = Pdf::loadView('sertifikat.pdf', [
             ...$bahan,
+            // A3: hanya terisi di jalur `isiMengikutiMaster`; selain itu blade
+            // tidak menambah apa pun (keluaran lama tidak berubah).
+            ...($ukuranTabel === null ? [] : ['ukuranTabel' => $ukuranTabel, 'keluargaUkuran' => $keluargaUkuran]),
             'paksaPadat' => $paksaPadat,
             'longgar' => $longgar,
             // Kotak uji ruang sisa — cuma dipasang waktu tingkat kerapatan

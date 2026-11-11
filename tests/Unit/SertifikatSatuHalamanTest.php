@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Services\SertifikatSatuHalaman;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
@@ -66,22 +67,32 @@ class SertifikatSatuHalamanTest extends TestCase
     }
 
     /**
-     * Masih meluap walau sudah dipaksa padat.
+     * Masih meluap walau sudah dipaksa padat → DITOLAK, bukan diterbitkan.
      *
-     * Yang dikembalikan tetap versi terpadatnya — dua halaman yang terbaca lebih
-     * berguna daripada tidak ada PDF sama sekali — TAPI kegagalannya tidak boleh
-     * ditelan. Headernya terlanjur mencetak "1 of 1"; kalau selisih itu tidak
-     * meninggalkan jejak, tidak ada yang akan tahu.
+     * Dulu versi terpadatnya tetap dikembalikan dengan satu baris log, dan PDF
+     * dua halaman itu terbit bertulis "Page : 1 of 1". Sekarang pengecualian
+     * dilempar (pemanggil penerbit menandai sertifikat `gagal`), dan kegagalannya
+     * tetap meninggalkan log error.
      */
-    public function test_yang_tetap_meluap_dicatat_sebagai_error(): void
+    public function test_yang_tetap_meluap_ditolak_dan_dicatat_sebagai_error(): void
     {
         Log::spy();
 
         $jejak = [];
-        $isi = $this->layanan()->paling($this->cetakPalsu([3, 2], $jejak), 42);
 
-        $this->assertSame('PDF-PADAT', $isi);
-        $this->assertSame([false, true], $jejak);
+        try {
+            $this->layanan()->paling($this->cetakPalsu([3, 2], $jejak), 42);
+            $this->fail('Sertifikat >1 halaman seharusnya ditolak, bukan dikembalikan.');
+        } catch (SertifikatLebihSatuHalamanException $e) {
+            $this->assertSame(42, $e->sertifikatId);
+            $this->assertSame(3, $e->halamanNormal);
+            $this->assertSame(2, $e->halamanPadat);
+            $this->assertStringContainsString('TIDAK diterbitkan', $e->getMessage());
+            // Notifikasi admin memotong pesan di 160 karakter: alasan harus muat.
+            $this->assertLessThanOrEqual(160, mb_strlen($e->getMessage()));
+        }
+
+        $this->assertSame([false, true], $jejak, 'Mode padat tetap WAJIB dicoba sebelum menolak.');
 
         Log::shouldHaveReceived('error')
             ->once()
@@ -91,6 +102,17 @@ class SertifikatSatuHalamanTest extends TestCase
                     && $konteks['halaman_normal'] === 3
                     && $konteks['halaman_padat'] === 2;
             });
+    }
+
+    /** Gerbang TIDAK dilonggarkan: dua halaman di mode padat ditolak, satu halaman di mode padat tetap lolos. */
+    public function test_ambang_satu_halaman_tidak_berubah(): void
+    {
+        $jejak = [];
+        $this->assertSame('PDF-PADAT', $this->layanan()->paling($this->cetakPalsu([2, 1], $jejak), 7));
+
+        $this->expectException(SertifikatLebihSatuHalamanException::class);
+        $jejak = [];
+        $this->layanan()->paling($this->cetakPalsu([2, 2], $jejak), 7);
     }
 
     /** Yang berhasil TIDAK boleh mencatat error — log palsu melatih orang mengabaikannya. */
