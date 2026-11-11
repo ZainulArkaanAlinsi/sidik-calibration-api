@@ -863,6 +863,16 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
     }
 
     /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B42` = `INPUT DATA!X13`,
+     * `VLOOKUP … Standar_Sensor`): sensor yang dipilih sesi (`tipe_sensor`
+     * RTD / Type K / Type N), B1 / R2.
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return $this->normalkanTipeSensor($this->atributSesi($sesi, 'tipe_sensor'));
+    }
+
+    /**
      * Terima ejaan master (`PRT PT100`, `Thermocouple Type K`) maupun ejaan repo
      * (`RTD`, `Type K`) — dua-duanya beredar di kertas lab yang sama.
      */

@@ -2222,6 +2222,16 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B42` = `INPUT DATA!X13`:
+     * `Thermocouple Type K`/`N` atau `PRT PT100`): sensor acuan yang dipilih
+     * sesi (B1 / R2).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return $this->tipeSensorSesi($sesi);
+    }
+
+    /**
      * Tipe sensor standar yang tercatat di sesi — kolom `tipe_sensor` dengan
      * cadangan `spesifikasi_alat.sensor_standar` (ejaan kertas, dari APK lama).
      */

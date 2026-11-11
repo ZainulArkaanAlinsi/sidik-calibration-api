@@ -129,6 +129,10 @@ final class FormatMasterSertifikat
      *     pressure_gauge     7,32  (Druck 07G; 13G 7,20)
      *     vacuum_gauge       7,32  (tak ada master vakum sendiri: pembanding terdekat 07G)
      *     timer_stopwatch    7,20
+     *     gas_detector       7,9   (B1: Capacity 4 baris mendorong tangga lama ke
+     *                              0,90 x; audit 06 `gas-detector-uli-skin-std-rigaz`)
+     *     viscometer         8,8   (B1: Capacity + Graduation 2 baris; audit 06
+     *                              `5-viscometer-86068360-terbaru`)
      *
      * Thermohygro SENGAJA tidak ada: lembar master dicetak skala 50 % (4,8 pt),
      * menyamakannya berarti huruf < 5 pt yang tak terbaca.
@@ -143,6 +147,8 @@ final class FormatMasterSertifikat
         'pressure_gauge' => 7.32,
         'vacuum_gauge' => 7.32,
         'timer_stopwatch' => 7.2,
+        'gas_detector' => 7.9,
+        'viscometer' => 8.8,
     ];
 
     /** Ukuran huruf median master (pt) untuk profil ini, atau `null` bila tak dinyatakan. */

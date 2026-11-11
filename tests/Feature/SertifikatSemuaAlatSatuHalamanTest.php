@@ -238,6 +238,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '002-UB.P-11-20 (Outside Micrometer)',
         '003-UB.P-11-20 (Digital Outside Micrometer)',
         '0106-CAL-1023 (Micrometer Digital)',
+        // Thermometer Glass masuk daftar ini 12 Nov 2026 (B1/R2, K-50-15): baris sensor
+        // acuan `PRT PT100` (`SERTIFIKAT!B43`) kini SELALU tercetak seperti master, jadi
+        // Standard Used bertambah satu baris dan sesi contoh lima titik tidak lagi muat di
+        // mode normal (sebab yang sama dengan Viscometer di bawah). Tetap SATU halaman,
+        // huruf 7,9 pt = 1,00 x master (rapat-1).
+        '0135-CAL-125 (Thermometer Glass)',
         '0312-CAL-624 (Thermohygrometer)',
         // Dial Indicator (alat ke-30, 15 Sep 2026) — sebab yang sama dengan
         // Height Gauge & Micrometer di atas: sesi contoh masternya SEPULUH titik

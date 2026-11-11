@@ -593,7 +593,43 @@ class SpectrophotometerProfile extends CalibrationProfile
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return [...parent::tataLetakSertifikat($sesi), 'satuan_baris_sendiri' => false];
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'satuan_baris_sendiri' => false,
+            // B1 / R7: dua baris Capacity/Graduation (nm, %T).
+            'kapasitas_master' => ['graduasi' => 'baris'],
+        ];
+    }
+
+    /**
+     * Capacity/Graduation master `SERTIFIKAT!F12:K13` (dua baris):
+     * `200-700 nm / 0.01 nm` (`INPUT DATA!G14`/`G16`) dan `0-100 %T / 0.001 %T`
+     * (`E14`/`E16`). Dibaca dari isian teknisi di blok `spesifikasi_alat`
+     * (`rentang_ukur_panjang_gelombang`, `resolusi_panjang_gelombang`,
+     * `rentang_ukur_transmitan`, `resolusi_transmitan`) — tepat sel yang sama
+     * di master. Salah satu dari keempatnya kosong = bentuk lama
+     * (`CertificateSnapshotBuilder::kapasitasGraduasi`), tidak ditebak.
+     *
+     * @return list<string>|null
+     */
+    public function kapasitasBarisMaster(CalibrationSession $sesi): ?array
+    {
+        $spek = is_array($sesi->spesifikasi_alat) ? $sesi->spesifikasi_alat : [];
+        $kunci = [
+            'rentang_ukur_panjang_gelombang', 'resolusi_panjang_gelombang',
+            'rentang_ukur_transmitan', 'resolusi_transmitan',
+        ];
+
+        foreach ($kunci as $k) {
+            if (! is_scalar($spek[$k] ?? null) || trim((string) $spek[$k]) === '') {
+                return null;
+            }
+        }
+
+        return [
+            $this->barisKapasitas((string) $spek['rentang_ukur_panjang_gelombang'], self::SATUAN_PANJANG_GELOMBANG, (string) $spek['resolusi_panjang_gelombang']),
+            $this->barisKapasitas((string) $spek['rentang_ukur_transmitan'], self::SATUAN_TRANSMITAN, (string) $spek['resolusi_transmitan']),
+        ];
     }
 
     /**

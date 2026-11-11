@@ -540,6 +540,21 @@ class JangkaSorongProfile extends CalibrationProfile
     }
 
     /**
+     * Koreksi yang membulat ke nol dicetak `0.00` — bukan `-0.00` (B1 / R8,
+     * keputusan pemilik 10 Nov 2026 "persis master", pola yang sama dengan
+     * Dial Indicator, Micrometer, Centrifuge, Tachometer, TITS). Tabel
+     * Outside/Inside/Depth master (`153!L25:L34`, `L41:L50`, `L57:L61`)
+     * berformat `0.00`; tanda minus pada Depth ("-0.00") tidak punya padanan
+     * di cetakan master. Hanya cetak: `tanda_nol` dibekukan per baris
+     * snapshot BARU, nilai antara dan pembulatan tidak berubah, dan
+     * sertifikat yang sudah terbit tetap seperti saat terbit.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
+
+    /**
      * Format sel master `153` (K-50-15 membatalkan lima desimal untuk CETAK;
      * nilai snapshot tetap presisi penuh): Standar Reading · UUT · Correction
      * `0.00` (`D25:L34`, `D41:L50`, `D57:L61`), U95 `0.000` (`J35`, `J51`,

@@ -158,8 +158,11 @@ final class TataLetakSertifikat
         // G0-b (P3): Capacity/Graduation seperti sel master — satu angka
         // kapasitas (bukan "0–X") dan graduasi. `null` = bentuk lama (dibangun
         // dari rentang alat). Diisi `CertificateSnapshotBuilder` waktu terbit;
-        // isinya: `['graduasi' => 'resolusi'|'strip']` — `strip` mencetak `-`
-        // (labu ukur / pipet volume: master `I11` = `-`).
+        // isinya: `['graduasi' => 'resolusi'|'strip'|'baris']` — `strip` mencetak `-`
+        // (labu ukur / pipet volume: master `I11` = `-`); `baris` = profil
+        // menyusun 2-4 baris Capacity/Graduation sendiri
+        // (`CalibrationProfile::kapasitasBarisMaster`, B1 / R7: autoclave,
+        // spectrophotometer, thermohygro, gas detector).
         'kapasitas_master' => null,
         // Kelompok tabel hasil ikut SATUAN baris juga, bukan cuma `remark`.
         // Bentuk lama `false`: snapshot terbit tanpa `tata_letak` dikelompokkan
@@ -1081,8 +1084,8 @@ final class TataLetakSertifikat
     /** @return array{graduasi: string} */
     private static function kapasitasMaster(mixed $nilai): array
     {
-        if (! is_array($nilai) || array_keys($nilai) !== ['graduasi'] || ! in_array($nilai['graduasi'], ['resolusi', 'strip'], true)) {
-            throw new InvalidArgumentException('Tata letak sertifikat `kapasitas_master` harus `[graduasi => resolusi|strip]`.');
+        if (! is_array($nilai) || array_keys($nilai) !== ['graduasi'] || ! in_array($nilai['graduasi'], ['resolusi', 'strip', 'baris'], true)) {
+            throw new InvalidArgumentException('Tata letak sertifikat `kapasitas_master` harus `[graduasi => resolusi|strip|baris]`.');
         }
 
         return ['graduasi' => $nilai['graduasi']];

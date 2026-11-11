@@ -60,7 +60,7 @@ class UkuranHurufMengikutiMasterTest extends TestCase
     public function test_hanya_profil_yang_diaudit_punya_ukuran_master_dan_berada_di_rentang_baca(): void
     {
         $this->assertSame(
-            ['oven', 'timbangan', 'tits', 'conductivity_meter', 'pressure_gauge', 'vacuum_gauge', 'timer_stopwatch'],
+            ['oven', 'timbangan', 'tits', 'conductivity_meter', 'pressure_gauge', 'vacuum_gauge', 'timer_stopwatch', 'gas_detector', 'viscometer'],
             array_keys(FormatMasterSertifikat::FONT_MEDIAN_PT),
         );
         $this->assertNull(FormatMasterSertifikat::fontMasterPt('thermohygro'), 'Master 4,8 pt tak terbaca: sengaja tidak diikuti.');

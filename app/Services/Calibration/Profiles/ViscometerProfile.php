@@ -575,6 +575,71 @@ class ViscometerProfile extends CalibrationProfile
     }
 
     /**
+     * Kepala master viscometer (`5-viscometer…!B12:I13`, `master-olah-data-
+     * viscometer!B12:I13`) memakai DUA baris berlabel terpisah, bukan satu
+     * `Capacity/Graduation`: `Capacity : - cP` dan `Graduation : Variable cP`
+     * (master terbaru; master lama `0.1 cP`). B1 / R7.
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        $tataLetak = parent::tataLetakSertifikat($sesi);
+        $kepala = [];
+
+        foreach ($tataLetak['kepala'] as $baris) {
+            if (($baris[0]['kunci'] ?? null) === 'capacity_graduation') {
+                $kepala[] = [['kunci' => 'capacity', 'label' => 'Capacity'], null];
+                $kepala[] = [['kunci' => 'graduation', 'label' => 'Graduation'], null];
+
+                continue;
+            }
+
+            $kepala[] = $baris;
+        }
+
+        return [...$tataLetak, 'kepala' => $kepala];
+    }
+
+    /**
+     * Nilai dua baris kepala di atas. Capacity master selalu `-` (`INPUT
+     * DATA!E15` kedua workbook): viscometer ini berganti spindle & rentang,
+     * jadi tidak punya satu kapasitas. Graduation: `Variable` bila resolusi
+     * per titik yang ditulis teknisi (`spesifikasi_alat.resolusi_titik_N`)
+     * tidak seragam (master terbaru, `F13`), selain itu resolusi alat
+     * (master lama, `INPUT DATA!E16`). Satuan `cP`.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        $spek = is_array($sesi->spesifikasi_alat) ? $sesi->spesifikasi_alat : [];
+        $perTitik = [];
+
+        foreach (array_keys(self::TITIK) as $i) {
+            $nilai = $spek['resolusi_titik_'.($i + 1)] ?? null;
+
+            if (is_numeric($nilai)) {
+                $perTitik[] = (float) $nilai;
+            }
+        }
+
+        $beragam = $perTitik !== [] && max($perTitik) - min($perTitik) > 1e-9;
+        $resolusi = $sesi->equipment?->resolusi;
+
+        $graduasi = match (true) {
+            $beragam => 'Variable',
+            $resolusi === null => '-',
+            default => Angka::idRingkas((float) $resolusi, 6),
+        };
+
+        return [
+            'capacity' => '- '.self::SATUAN,
+            'graduation' => $graduasi.' '.self::SATUAN,
+        ];
+    }
+
+    /**
      * `Spindel No. : HA1, HA2, HA7` — `Speed (rpm) : 63, 62, 62`. Persis
      * posisinya di `SERTIFIKAT.csv` baris 18: satu baris di atas tabel
      * `CALIBRATION REPORT`, sekali per sertifikat.
