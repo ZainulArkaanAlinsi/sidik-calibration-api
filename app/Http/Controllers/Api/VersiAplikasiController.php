@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +41,29 @@ use Illuminate\Support\Facades\Log;
  *
  * Cache-nya 15 menit. Rilis baru telat kebaca paling lama segitu, dan itu
  * jauh lebih murah daripada kehabisan jatah.
+ *
+ * ## Sidik Studio (`?aplikasi=studio`)
+ *
+ * Studio Android adalah aplikasi lain (`com.ptsidik.studio`) dengan APK
+ * sendiri, tapi diterbitkan ke GitHub Release YANG SAMA dengan app lab
+ * (workflow terpisah `apk-studio-rilis.yml` di repo mobile, setelah rilis lab terbit). Tanpa
+ * parameter, perilaku endpoint ini TIDAK berubah.
+ *
+ * Dua hal yang beda dari jalur lab dan sengaja:
+ *
+ * 1. **Versi diambil dari NAMA ASET, bukan dari tag.** Tag rilis memakai
+ *    skema app lab (`v1.0.NNN+NNN`), sedangkan Studio ber-versi
+ *    `<major.minor studio/pubspec>.<NNN>` (mis. `0.1.NNN`, sama dengan
+ *    `versi-studio-windows.json`). Membandingkan versi Studio terpasang
+ *    (0.1.x) dengan versi tag (1.0.x) membuat SETIAP Studio selalu tampak
+ *    ketinggalan. Nama aset `sidik-studio-<versi>.apk` membawa versi yang benar.
+ * 2. **Rilis tanpa aset Studio = `tersedia: false`, dan jawaban itu ikut
+ *    di-cache.** Rilis lab terbit lebih dulu daripada job Studio, dan selama
+ *    Studio belum pernah terbit tiap pembukaan Studio akan menanya GitHub
+ *    lagi — menghabiskan jatah 60/jam yang dipakai bersama app lab.
+ *
+ * Jalur redirect (jatah API habis) tidak dipakai buat Studio: nama aset
+ * Studio memuat versi Studio yang tidak bisa ditebak dari tag.
  */
 class VersiAplikasiController extends Controller
 {
@@ -47,6 +71,15 @@ class VersiAplikasiController extends Controller
     public const REPO = 'ZainulArkaanAlinsi/sidik-calibration-mobile';
 
     public const KUNCI_CACHE = 'versi-aplikasi-terbaru';
+
+    /** Cache terpisah: jawaban Studio dan app lab tidak boleh saling timpa. */
+    public const KUNCI_CACHE_STUDIO = 'versi-aplikasi-terbaru-studio';
+
+    /** Nilai `?aplikasi=` untuk Sidik Studio. */
+    public const APLIKASI_STUDIO = 'studio';
+
+    /** `sidik-studio-0.1.123.apk` → `0.1.123`. Nama tetap tanpa versi tidak cocok. */
+    private const POLA_ASET_STUDIO = '/^sidik-studio-(\d+(?:\.\d+)+)\.apk$/i';
 
     /** Detik. Lihat docblock kelas. */
     public const UMUR_CACHE = 900;
@@ -57,13 +90,35 @@ class VersiAplikasiController extends Controller
      */
     public const BATAS_WAKTU = 5;
 
-    public function __invoke(): JsonResponse
+    public function __invoke(Request $request): JsonResponse
     {
+        $param = $request->query('aplikasi');
+
+        if ($param !== null && $param !== '' && $param !== self::APLIKASI_STUDIO) {
+            // Nilai yang tidak dikenal TIDAK jatuh ke APK lab: Studio yang
+            // salah kirim parameter bisa dipasangi APK app lab.
+            return response()->json([
+                'tersedia' => false,
+                'alasan' => 'Aplikasi tidak dikenal.',
+            ]);
+        }
+
+        $studio = $param === self::APLIKASI_STUDIO;
+
         $rilis = Cache::remember(
-            self::KUNCI_CACHE,
+            $studio ? self::KUNCI_CACHE_STUDIO : self::KUNCI_CACHE,
             self::UMUR_CACHE,
-            fn (): ?array => $this->ambilDariGithub(),
+            fn (): ?array => $this->ambilDariGithub($studio),
         );
+
+        // `[]` = rilis ada tapi tanpa APK Studio (cuma dihasilkan jalur Studio,
+        // dan sengaja ikut di-cache — lihat docblock kelas).
+        if ($rilis === []) {
+            return response()->json([
+                'tersedia' => false,
+                'alasan' => 'Rilis terbaru belum memuat APK Sidik Studio.',
+            ]);
+        }
 
         if ($rilis === null) {
             // Gagal tanya GitHub bukan alasan buat menggagalkan pembukaan
@@ -89,7 +144,7 @@ class VersiAplikasiController extends Controller
     /**
      * @return array<string, mixed>|null null = gagal / belum ada rilis.
      */
-    private function ambilDariGithub(): ?array
+    private function ambilDariGithub(bool $studio = false): ?array
     {
         try {
             $permintaan = Http::timeout(self::BATAS_WAKTU)
@@ -112,7 +167,7 @@ class VersiAplikasiController extends Controller
                 'pesan' => $e->getMessage(),
             ]);
 
-            return $this->ambilLewatRedirect();
+            return $studio ? null : $this->ambilLewatRedirect();
         }
 
         // 403/429 = jatah API habis, bukan "tidak ada rilis". 15 Sep 2026
@@ -124,7 +179,7 @@ class VersiAplikasiController extends Controller
                 'status' => $respons->status(),
             ]);
 
-            return $this->ambilLewatRedirect();
+            return $studio ? null : $this->ambilLewatRedirect();
         }
 
         if (! $respons->successful()) {
@@ -140,6 +195,10 @@ class VersiAplikasiController extends Controller
         $data = $respons->json();
         if (! is_array($data)) {
             return null;
+        }
+
+        if ($studio) {
+            return $this->rilisStudio($data);
         }
 
         $apk = $this->cariApk($data['assets'] ?? []);
@@ -228,6 +287,52 @@ class VersiAplikasiController extends Controller
     }
 
     /**
+     * Payload Studio dari rilis GitHub. `[]` = rilis tanpa APK Studio.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function rilisStudio(array $data): array
+    {
+        $assets = $data['assets'] ?? [];
+        $apk = null;
+        $versi = null;
+
+        foreach (is_array($assets) ? $assets : [] as $aset) {
+            if (! is_array($aset) || ! isset($aset['browser_download_url'])) {
+                continue;
+            }
+
+            if (preg_match(self::POLA_ASET_STUDIO, (string) ($aset['name'] ?? ''), $cocok) === 1) {
+                $apk = $aset;
+                $versi = $cocok[1];
+                break;
+            }
+        }
+
+        if ($apk === null || $versi === null) {
+            Log::info('Rilis terbaru belum memuat APK Sidik Studio.', [
+                'tag' => $data['tag_name'] ?? null,
+            ]);
+
+            return [];
+        }
+
+        $tag = (string) ($data['tag_name'] ?? '');
+
+        return [
+            'versi' => $versi,
+            'build' => $this->buildDariTag($tag),
+            'tag' => $tag,
+            'url_unduh' => (string) $apk['browser_download_url'],
+            'ukuran' => (int) ($apk['size'] ?? 0),
+            'catatan' => (string) ($data['body'] ?? ''),
+            'terbit_pada' => $data['published_at'] ?? null,
+            'wajib' => false,
+        ];
+    }
+
+    /**
      * @param  array<int, mixed>  $assets
      * @return array<string, mixed>|null
      */
@@ -239,6 +344,14 @@ class VersiAplikasiController extends Controller
             }
 
             $nama = (string) ($aset['name'] ?? '');
+
+            // Release yang sama sekarang juga memuat APK Studio. Tanpa
+            // pengecualian ini app lab bisa ditawari APK Studio kalau urutan
+            // aset di GitHub kebetulan menaruhnya lebih dulu.
+            if (str_starts_with(strtolower($nama), 'sidik-studio')) {
+                continue;
+            }
+
             if (str_ends_with(strtolower($nama), '.apk')
                 && isset($aset['browser_download_url'])) {
                 return $aset;
