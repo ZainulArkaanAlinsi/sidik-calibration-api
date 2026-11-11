@@ -1482,7 +1482,7 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 
 > ✅ **Live sejak 14 Jul — dan ADA DUA VERSINYA, ini penting buat nentuin isi QR-nya.**
 >
-> **1. `GET /verify/{qr_token}` (halaman web, bukan `/api`).** Ini yang harus ditaruh di QR sertifikat. Alasannya: yang scan itu orang luar (auditor, pelanggan) pakai **kamera HP biasa** — yang kebuka **browser**, bukan app kita. Kalau QR-nya diisi URL `/api/...`, yang muncul di layar mereka JSON mentah. Halaman webnya nampilin nomor sertifikat, alat, pemilik, tanggal, dan hasil PASS/FAIL dengan rapi + kop lab & nomor akreditasi. QR ngawur → halaman "Sertifikat tidak ditemukan" (404), bukan error mentah.
+> **1. `GET /verify/{qr_token}` (halaman web, bukan `/api`).** Ini yang harus ditaruh di QR sertifikat. Alasannya: yang scan itu orang luar (auditor, pelanggan) pakai **kamera HP biasa** — yang kebuka **browser**, bukan app kita. Kalau QR-nya diisi URL `/api/...`, yang muncul di layar mereka JSON mentah. Halaman webnya nampilin nomor sertifikat, alat, nomor seri, tanggal, dan hasil PASS/FAIL dengan rapi (kartu ringkasnya TANPA nama pelanggan — lihat catatan 11 Nov 2026 di bawah) + kop lab & nomor akreditasi. QR ngawur → halaman "Sertifikat tidak ditemukan" (404), bukan error mentah.
 >
 > **2. `GET /api/verify/{qr_token}` (JSON).** Ini buat kalau **mobile** mau nampilin hasil scan di dalam app (misal teknisi scan sertifikat lama pakai fitur scan di app):
 > ```json
@@ -1490,12 +1490,22 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 >     "nomor": "CAL/2026/07/0001", "status": "terbit", "keputusan": "PASS",
 >     "diterbitkan_pada": "2026-06-15T00:00:00Z", "berlaku_sampai": "2027-06-14T00:00:00Z",
 >     "kadaluarsa": false,
->     "alat": { "nama_alat": "Jangka Sorong Mitutoyo", "serial_number": "MT-500-196-30", "pemilik": "PT Maju Jaya" },
+>     "alat": { "nama_alat": "Jangka Sorong Mitutoyo", "serial_number": "MT-500-196-30" },
 >     "tanggal_kalibrasi": "2026-06-14T00:00:00Z",
 >     "diterbitkan_oleh": { "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)", "no_akreditasi": "LK-285-IDN" }
 > } }
 > ```
 > QR nggak ketemu → `404 { "message": "Sertifikat dengan kode QR ini tidak terdaftar." }`
+>
+> **11 Nov 2026 — `alat.pemilik` DIHAPUS dari JSON (breaking, disengaja).** Nama pelanggan adalah data
+> rahasia klien (ISO/IEC 17025 klausul 4.2) dan endpoint ini publik tanpa auth. JSON publik tidak pernah
+> memuat nama pelanggan, alamat, atau nomor order; `alat` sekarang persis `{ nama_alat, serial_number }`
+> (`serial_number` dipertahankan supaya pemindai bisa mencocokkannya dengan label alat). Halaman web:
+> kartu ringkas dan kartu lama (tanpa snapshot) tidak lagi menampilkan "Pemilik alat" — juga tidak yang
+> disamarkan. Konsumen dicek: aplikasi mobile lab dan pelanggan tidak memanggil `/api/verify` (hanya
+> membangun URL `/verify/{token}` untuk QR). Yang TIDAK berubah: "Tampilkan lembar lengkap" dan unduhan
+> PDF/Excel di halaman web tetap salinan sah sertifikat yang memuat identitas pelanggan (spesifikasi
+> poin 13) — keputusan produk tersendiri. Dijaga `VerifikasiPublikMinimalTest`.
 >
 > Dua-duanya **cuma nampilin sertifikat yang statusnya `terbit`** — yang masih `menunggu_generate` dianggap nggak ada. Isinya sengaja dibatesin (nggak ada data mentah pengukuran, nggak ada nama/email teknisi), karena ini halaman publik.
 >

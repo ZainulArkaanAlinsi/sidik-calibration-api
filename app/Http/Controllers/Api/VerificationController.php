@@ -11,13 +11,18 @@ use Illuminate\Http\JsonResponse;
  * Dipakai kalau nanti mobile mau nampilin hasil scan di dalam app.
  *
  * Isinya sama persis dengan halaman webnya — dibatesin, karena ini publik.
+ *
+ * TANPA nama pelanggan, alamat, dan nomor order: itu data rahasia klien
+ * (ISO/IEC 17025 klausul 4.2) dan yang scan QR orang luar. Yang tetap ada
+ * `serial_number`, supaya pemindai bisa mencocokkannya dengan label di alatnya.
+ * Dijaga `VerifikasiPublikMinimalTest`.
  */
 class VerificationController extends Controller
 {
     public function show(string $qrToken): JsonResponse
     {
         $certificate = Certificate::query()
-            ->with(['session.equipment.customer', 'organization'])
+            ->with(['session.equipment', 'organization'])
             ->where('qr_token', $qrToken)
             // Kembaran JSON halaman web: yang dibatalkan ikut menjawab (§38.2).
             ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK])
@@ -52,7 +57,6 @@ class VerificationController extends Controller
                 'alat' => [
                     'nama_alat' => $alat->nama_alat,
                     'serial_number' => $alat->serial_number,
-                    'pemilik' => $alat->customer->nama,
                 ],
                 'tanggal_kalibrasi' => $certificate->session->tanggal_kalibrasi?->toDateString(),
                 'diterbitkan_oleh' => [
