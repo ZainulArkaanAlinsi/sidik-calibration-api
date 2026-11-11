@@ -1,0 +1,1014 @@
+{
+    "tachometer:r9": {
+        "titik": [
+            {
+                "titik_ke": 1,
+                "titik_ukur": 60.0,
+                "nominal_standar": 60.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 59.98,
+                "nilai_terkoreksi": 59.779999999999994,
+                "koreksi": -0.22000000000000597,
+                "error": 0.22000000000000597,
+                "standar_deviasi": 0.04472135954999643,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.020000000000000285
+            },
+            {
+                "titik_ke": 2,
+                "titik_ukur": 80.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 80.16000000000001,
+                "nilai_terkoreksi": 79.96000000000001,
+                "koreksi": -0.03999999999999204,
+                "error": 0.03999999999999204,
+                "standar_deviasi": 0.05477225575052128,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742783387
+            },
+            {
+                "titik_ke": 3,
+                "titik_ukur": 100.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 99.85999999999999,
+                "nilai_terkoreksi": 99.65999999999998,
+                "koreksi": -0.3400000000000176,
+                "error": 0.3400000000000176,
+                "standar_deviasi": 0.08944271909999366,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.040000000000000924
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=0.21 rpm pada pita 100 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.105,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.040000000000000924,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.6179075993393444,
+        "derajat_kebebasan_efektif": 759019.0472421037,
+        "faktor_cakupan_k": 1.9599671100754232,
+        "ketidakpastian_diperluas": 3.1710456818462003,
+        "u95_sertifikat": 3.1710456818462003,
+        "type_b": 1.6174130579416008,
+        "ditolak": []
+    },
+    "tachometer:r40": {
+        "titik": [
+            {
+                "titik_ke": 4,
+                "titik_ukur": 120.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 120.0,
+                "nilai_terkoreksi": 119.8,
+                "koreksi": -0.20000000000000284,
+                "error": 0.20000000000000284,
+                "standar_deviasi": 0.15811388300841897,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.07071067811865475
+            },
+            {
+                "titik_ke": 5,
+                "titik_ukur": 150.0,
+                "nominal_standar": 200.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 150.34,
+                "nilai_terkoreksi": 150.14000000000001,
+                "koreksi": 0.14000000000001478,
+                "error": -0.14000000000001478,
+                "standar_deviasi": 0.0547722557505135,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.024494897427830387
+            },
+            {
+                "titik_ke": 6,
+                "titik_ukur": 200.0,
+                "nominal_standar": 200.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 200.11999999999998,
+                "nilai_terkoreksi": 199.92,
+                "koreksi": -0.0800000000000125,
+                "error": 0.0800000000000125,
+                "standar_deviasi": 0.19235384061670918,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.08602325267042435
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=0.2 rpm pada pita 200 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.1,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.08602325267042435,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.6193825983997727,
+        "derajat_kebebasan_efektif": 316645.8455087124,
+        "faktor_cakupan_k": 1.9599714764088714,
+        "ketidakpastian_diperluas": 3.173943702256437,
+        "u95_sertifikat": 3.173943702256437,
+        "type_b": 1.617096162879623,
+        "ditolak": []
+    },
+    "tachometer:r60": {
+        "titik": [
+            {
+                "titik_ke": 7,
+                "titik_ukur": 500.0,
+                "nominal_standar": 500.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 500.23999999999995,
+                "nilai_terkoreksi": 500.03999999999996,
+                "koreksi": 0.03999999999996362,
+                "error": -0.03999999999996362,
+                "standar_deviasi": 0.05477225575052907,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742783735
+            },
+            {
+                "titik_ke": 8,
+                "titik_ukur": 1000.0,
+                "nominal_standar": 500.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 1000.0,
+                "nilai_terkoreksi": 999.8,
+                "koreksi": -0.20000000000004547,
+                "error": 0.20000000000004547,
+                "standar_deviasi": 0.14142135623734164,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.06324555320338196
+            },
+            {
+                "titik_ke": 9,
+                "titik_ukur": 2000.0,
+                "nominal_standar": 2000.0,
+                "koreksi_standar": -0.3,
+                "rata_rata": 2000.1200000000001,
+                "nilai_terkoreksi": 1999.8200000000002,
+                "koreksi": -0.1799999999998363,
+                "error": 0.1799999999998363,
+                "standar_deviasi": 0.13038404810404775,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.05830951894845066
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=1.5 rpm pada pita 2000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.75,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.06324555320338196,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.7808705736240358,
+        "derajat_kebebasan_efektif": 1903.632625455695,
+        "faktor_cakupan_k": 1.961211359798415,
+        "ketidakpastian_diperluas": 3.492663599322179,
+        "u95_sertifikat": 3.492663599322179,
+        "type_b": 1.7797471730557688,
+        "ditolak": []
+    },
+    "tachometer:r79": {
+        "titik": [
+            {
+                "titik_ke": 10,
+                "titik_ukur": 3000.0,
+                "nominal_standar": 2000.0,
+                "koreksi_standar": -0.3,
+                "rata_rata": 2999.8599999999997,
+                "nilai_terkoreksi": 2999.5599999999995,
+                "koreksi": -0.4400000000005093,
+                "error": 0.4400000000005093,
+                "standar_deviasi": 0.05477225575046679,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0244948974278095
+            },
+            {
+                "titik_ke": 11,
+                "titik_ukur": 5000.0,
+                "nominal_standar": 5000.0,
+                "koreksi_standar": -0.4,
+                "rata_rata": 4999.76,
+                "nilai_terkoreksi": 4999.360000000001,
+                "koreksi": -0.6399999999994179,
+                "error": 0.6399999999994179,
+                "standar_deviasi": 0.05477225575071587,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742792089
+            },
+            {
+                "titik_ke": 12,
+                "titik_ukur": 7000.0,
+                "nominal_standar": 7000.0,
+                "koreksi_standar": -0.5,
+                "rata_rata": 6999.9,
+                "nilai_terkoreksi": 6999.4,
+                "koreksi": -0.6000000000003638,
+                "error": 0.6000000000003638,
+                "standar_deviasi": 0.15811388300856277,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.07071067811871906
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=1.6 rpm pada pita 7000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.8,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.07071067811871906,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.8027756377319972,
+        "derajat_kebebasan_efektif": 1544.3881169646193,
+        "faktor_cakupan_k": 1.96150161429612,
+        "ketidakpastian_diperluas": 3.5361473236250296,
+        "u95_sertifikat": 3.5361473236250296,
+        "type_b": 1.8013883534651822,
+        "ditolak": []
+    },
+    "tachometer:r98": {
+        "titik": [
+            {
+                "titik_ke": 13,
+                "titik_ukur": 10000.0,
+                "nominal_standar": 10000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 10000.880000000001,
+                "nilai_terkoreksi": 9999.880000000001,
+                "koreksi": -0.11999999999898137,
+                "error": 0.11999999999898137,
+                "standar_deviasi": 0.2683281573001375,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.12000000000007277
+            },
+            {
+                "titik_ke": 14,
+                "titik_ukur": 12000.0,
+                "nominal_standar": 10000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 12001.0,
+                "nilai_terkoreksi": 12000.0,
+                "koreksi": 0.0,
+                "error": -0.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            },
+            {
+                "titik_ke": 15,
+                "titik_ukur": 14000.0,
+                "nominal_standar": 15000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 14001.0,
+                "nilai_terkoreksi": 14000.0,
+                "koreksi": 0.0,
+                "error": -0.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=3.1 rpm pada pita 15000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 1.55,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.12000000000007277,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 2.2592919244754577,
+        "derajat_kebebasan_efektif": 270.67687601220814,
+        "faktor_cakupan_k": 1.968789021833191,
+        "ketidakpastian_diperluas": 4.448069138023664,
+        "u95_sertifikat": 5.0,
+        "type_b": 2.2561028345356955,
+        "ditolak": []
+    },
+    "tachometer:r117": {
+        "titik": [
+            {
+                "titik_ke": 16,
+                "titik_ukur": 15001.0,
+                "nominal_standar": 15000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 15000.88,
+                "nilai_terkoreksi": 14999.88,
+                "koreksi": -1.1200000000008004,
+                "error": 1.1200000000008004,
+                "standar_deviasi": 0.2683281573001375,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.12000000000007277
+            },
+            {
+                "titik_ke": 17,
+                "titik_ukur": 20001.0,
+                "nominal_standar": 20000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 20001.0,
+                "nilai_terkoreksi": 20000.0,
+                "koreksi": -1.0,
+                "error": 1.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            },
+            {
+                "titik_ke": 18,
+                "titik_ukur": 25002.0,
+                "nominal_standar": 25000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 25002.0,
+                "nilai_terkoreksi": 25001.0,
+                "koreksi": -1.0,
+                "error": 1.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=3.1 rpm pada pita 25000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 1.55,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.12000000000007277,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 2.2592919244754577,
+        "derajat_kebebasan_efektif": 270.67687601220814,
+        "faktor_cakupan_k": 1.968789021833191,
+        "ketidakpastian_diperluas": 4.448069138023664,
+        "u95_sertifikat": 5.0,
+        "type_b": 2.2561028345356955,
+        "ditolak": []
+    },
+    "centrifuge:r9": {
+        "titik": [
+            {
+                "titik_ke": 1,
+                "titik_ukur": 60.0,
+                "nominal_standar": 60.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 59.98,
+                "nilai_terkoreksi": 59.779999999999994,
+                "koreksi": -0.22000000000000597,
+                "error": 0.22000000000000597,
+                "standar_deviasi": 0.04472135954999643,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.020000000000000285
+            },
+            {
+                "titik_ke": 2,
+                "titik_ukur": 80.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 80.16000000000001,
+                "nilai_terkoreksi": 79.96000000000001,
+                "koreksi": -0.03999999999999204,
+                "error": 0.03999999999999204,
+                "standar_deviasi": 0.05477225575052128,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742783387
+            },
+            {
+                "titik_ke": 3,
+                "titik_ukur": 100.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 99.85999999999999,
+                "nilai_terkoreksi": 99.65999999999998,
+                "koreksi": -0.3400000000000176,
+                "error": 0.3400000000000176,
+                "standar_deviasi": 0.08944271909999366,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.040000000000000924
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=0.21 rpm pada pita 100 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.105,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.040000000000000924,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.6179075993393444,
+        "derajat_kebebasan_efektif": 759019.0472421037,
+        "faktor_cakupan_k": 1.9599671100754232,
+        "ketidakpastian_diperluas": 3.1710456818462003,
+        "u95_sertifikat": 3.1710456818462003,
+        "type_b": 1.6174130579416008,
+        "ditolak": []
+    },
+    "centrifuge:r40": {
+        "titik": [
+            {
+                "titik_ke": 4,
+                "titik_ukur": 120.0,
+                "nominal_standar": 100.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 120.0,
+                "nilai_terkoreksi": 119.8,
+                "koreksi": -0.20000000000000284,
+                "error": 0.20000000000000284,
+                "standar_deviasi": 0.15811388300841897,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.07071067811865475
+            },
+            {
+                "titik_ke": 5,
+                "titik_ukur": 150.0,
+                "nominal_standar": 200.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 150.34,
+                "nilai_terkoreksi": 150.14000000000001,
+                "koreksi": 0.14000000000001478,
+                "error": -0.14000000000001478,
+                "standar_deviasi": 0.0547722557505135,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.024494897427830387
+            },
+            {
+                "titik_ke": 6,
+                "titik_ukur": 200.0,
+                "nominal_standar": 200.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 200.11999999999998,
+                "nilai_terkoreksi": 199.92,
+                "koreksi": -0.0800000000000125,
+                "error": 0.0800000000000125,
+                "standar_deviasi": 0.19235384061670918,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.08602325267042435
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=0.2 rpm pada pita 200 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.1,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.08602325267042435,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.6193825983997727,
+        "derajat_kebebasan_efektif": 316645.8455087124,
+        "faktor_cakupan_k": 1.9599714764088714,
+        "ketidakpastian_diperluas": 3.173943702256437,
+        "u95_sertifikat": 3.173943702256437,
+        "type_b": 1.617096162879623,
+        "ditolak": []
+    },
+    "centrifuge:r60": {
+        "titik": [
+            {
+                "titik_ke": 7,
+                "titik_ukur": 500.0,
+                "nominal_standar": 500.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 500.23999999999995,
+                "nilai_terkoreksi": 500.03999999999996,
+                "koreksi": 0.03999999999996362,
+                "error": -0.03999999999996362,
+                "standar_deviasi": 0.05477225575052907,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742783735
+            },
+            {
+                "titik_ke": 8,
+                "titik_ukur": 1000.0,
+                "nominal_standar": 500.0,
+                "koreksi_standar": -0.2,
+                "rata_rata": 1000.0,
+                "nilai_terkoreksi": 999.8,
+                "koreksi": -0.20000000000004547,
+                "error": 0.20000000000004547,
+                "standar_deviasi": 0.14142135623734164,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.06324555320338196
+            },
+            {
+                "titik_ke": 9,
+                "titik_ukur": 2000.0,
+                "nominal_standar": 2000.0,
+                "koreksi_standar": -0.3,
+                "rata_rata": 2000.1200000000001,
+                "nilai_terkoreksi": 1999.8200000000002,
+                "koreksi": -0.1799999999998363,
+                "error": 0.1799999999998363,
+                "standar_deviasi": 0.13038404810404775,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.05830951894845066
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=1.5 rpm pada pita 2000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.75,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.06324555320338196,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.7808705736240358,
+        "derajat_kebebasan_efektif": 1903.632625455695,
+        "faktor_cakupan_k": 1.961211359798415,
+        "ketidakpastian_diperluas": 3.492663599322179,
+        "u95_sertifikat": 3.492663599322179,
+        "type_b": 1.7797471730557688,
+        "ditolak": []
+    },
+    "centrifuge:r79": {
+        "titik": [
+            {
+                "titik_ke": 10,
+                "titik_ukur": 5000.0,
+                "nominal_standar": 5000.0,
+                "koreksi_standar": -0.4,
+                "rata_rata": 4999.76,
+                "nilai_terkoreksi": 4999.360000000001,
+                "koreksi": -0.6399999999994179,
+                "error": 0.6399999999994179,
+                "standar_deviasi": 0.05477225575071587,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.02449489742792089
+            },
+            {
+                "titik_ke": 11,
+                "titik_ukur": 7000.0,
+                "nominal_standar": 7000.0,
+                "koreksi_standar": -0.5,
+                "rata_rata": 6999.9,
+                "nilai_terkoreksi": 6999.4,
+                "koreksi": -0.6000000000003638,
+                "error": 0.6000000000003638,
+                "standar_deviasi": 0.15811388300856277,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.07071067811871906
+            },
+            {
+                "titik_ke": 12,
+                "titik_ukur": 10000.0,
+                "nominal_standar": 10000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 10000.4,
+                "nilai_terkoreksi": 9999.4,
+                "koreksi": -0.6000000000003638,
+                "error": 0.6000000000003638,
+                "standar_deviasi": 0.5477225575051662,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.24494897427831783
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=1.6 rpm pada pita 10000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 0.8,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 0.1 rpm",
+                "distribusi": "persegi",
+                "u": 0.02886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.24494897427831783,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 1.8179658962697842,
+        "derajat_kebebasan_efektif": 1412.5158605193692,
+        "faktor_cakupan_k": 1.9616454798993113,
+        "ketidakpastian_diperluas": 3.5662045830287226,
+        "u95_sertifikat": 3.5662045830287226,
+        "type_b": 1.8013883534651822,
+        "ditolak": []
+    },
+    "centrifuge:r98": {
+        "titik": [
+            {
+                "titik_ke": 13,
+                "titik_ukur": 15000.0,
+                "nominal_standar": 15000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 15000.88,
+                "nilai_terkoreksi": 14999.88,
+                "koreksi": -0.12000000000080036,
+                "error": 0.12000000000080036,
+                "standar_deviasi": 0.2683281573001375,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.12000000000007277
+            },
+            {
+                "titik_ke": 14,
+                "titik_ukur": 20000.0,
+                "nominal_standar": 20000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 20001.0,
+                "nilai_terkoreksi": 20000.0,
+                "koreksi": 0.0,
+                "error": -0.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            },
+            {
+                "titik_ke": 15,
+                "titik_ukur": 25000.0,
+                "nominal_standar": 25000.0,
+                "koreksi_standar": -1.0,
+                "rata_rata": 25002.0,
+                "nilai_terkoreksi": 25001.0,
+                "koreksi": 1.0,
+                "error": -1.0,
+                "standar_deviasi": 0.0,
+                "jumlah_pengulangan": 5,
+                "type_a": 0.0
+            }
+        ],
+        "budget": [
+            {
+                "sumber": "ketidakpastian_standar",
+                "keterangan": "Sertifikat kalibrator Infrared Tachometer (U95=3.1 rpm pada pita 25000 rpm, k=2)",
+                "distribusi": "normal",
+                "u": 1.55,
+                "ci": 1.0,
+                "vi": 60.0
+            },
+            {
+                "sumber": "resolusi_standar",
+                "keterangan": "Daya baca tachometer standar 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "resolusi_alat",
+                "keterangan": "Daya baca alat yang dikalibrasi 1 rpm",
+                "distribusi": "persegi",
+                "u": 0.2886751345948129,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "drift_standar",
+                "keterangan": "Drift tachometer standar (setengah-lebar 2.75 rpm dari 7 sertifikat)",
+                "distribusi": "persegi",
+                "u": 1.5877132402714709,
+                "ci": 1.0,
+                "vi": 1000000.0
+            },
+            {
+                "sumber": "pengulangan_pembacaan",
+                "keterangan": "Pengulangan 5 pembacaan, simpangan baku terbesar di blok",
+                "distribusi": "t-student",
+                "u": 0.12000000000007277,
+                "ci": 1.0,
+                "vi": 4.0
+            }
+        ],
+        "ketidakpastian_gabungan": 2.2592919244754577,
+        "derajat_kebebasan_efektif": 270.67687601220814,
+        "faktor_cakupan_k": 1.968789021833191,
+        "ketidakpastian_diperluas": 4.448069138023664,
+        "u95_sertifikat": 4.448069138023664,
+        "type_b": 2.2561028345356955,
+        "ditolak": []
+    }
+}

@@ -30,6 +30,13 @@
     $blokCatatanPosisi = collect($snapshot['catatan_blok'] ?? [])->groupBy('posisi');
     $nilaiKepala = [...($snapshot['header_tambahan'] ?? []), ...$header];
 
+    // A3: ukuran huruf mengikuti median master (`SkalaUkuranSertifikat`). Hanya
+    // terisi bila `SertifikatSatuHalaman` mengirim `ukuranTabel`; selain itu
+    // `$cssSkala` kosong dan keluaran tidak berubah satu byte.
+    $ukuranTabel = ! ($web ?? false) && isset($ukuranTabel) && is_numeric($ukuranTabel) ? (float) $ukuranTabel : null;
+    $keluargaUkuran = ($keluargaUkuran ?? 'rapat') === 'padat' ? 'padat' : 'rapat';
+    $cssSkala = $ukuranTabel === null ? '' : \App\Support\SkalaUkuranSertifikat::css($ukuranTabel, $keluargaUkuran);
+
     $tgl = fn (?string $iso): string => $iso
         ? \Illuminate\Support\Carbon::parse($iso)->translatedFormat('d F Y')
         : '—';
@@ -607,7 +614,7 @@
             .lembar table.data { display: block; overflow-x: auto; width: 100%; }
         }
         @endif
-    </style>
+    {!! $cssSkala !!}</style>
 </head>
 {{-- Lembar Timbangan SELALU padat. Pemicu `> 12 baris` nggak kena
      lembarnya: tabel `hasil` cuma 10 baris, tapi yang dicetak DELAPAN bagian
@@ -625,7 +632,7 @@
      `longgar`. Kalau dikirim, `SertifikatSatuHalaman` sudah mengukur hasil
      render sungguhan tingkat demi tingkat — tebakan itu justru membuat
      Centrifuge 13 baris dipaksa ke tabel 8px padahal muat di ukuran rapat. --}}
-@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && count(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? [])) > 12) || ($snapshot['timbangan'] ?? null) !== null))
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && count(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? [])) > 12) || ($snapshot['timbangan'] ?? null) !== null || ($ukuranTabel !== null && $keluargaUkuran === 'padat')))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -643,7 +650,7 @@
      berlaku bersama `padat`, dan tidak untuk Autoklaf/Timbangan yang punya
      pemadatannya sendiri. Lihat `.cadangan-footer`. --}}
 @php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
-<body class="{{ $padat ? 'padat' : '' }}{{ isset($snapshot['tata_letak']) ? ' bentuk-master' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
+<body class="{{ $padat ? 'padat' : '' }}{{ isset($snapshot['tata_letak']) ? ' bentuk-master' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}{{ $ukuranTabel !== null ? ' skala-ukuran' : '' }}">
 @if ($web ?? false)
     @if ($ditarik ?? false)
         {{-- K-50-03: sertifikat ditarik ke lembar kerja untuk dikoreksi. Lembar

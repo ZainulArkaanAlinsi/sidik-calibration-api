@@ -2321,12 +2321,16 @@ abstract class CalibrationProfile
             ? FormatMasterSertifikat::ruangPracetakCm($this->kode())
             : null;
         $tanggal = FormatMasterSertifikat::tanggalUntukProfil($this->kode());
+        // A3: huruf mengikuti ukuran median master (hanya profil yang audit 11 Nov
+        // tandai menyimpang); dibekukan di snapshot BARU, yang lama tak tersentuh.
+        $fontMaster = FormatMasterSertifikat::fontMasterPt($this->kode());
 
         return [
             ...TataLetakSertifikat::MAYORITAS_MASTER,
             ...($garis === null ? [] : ['akhir_sertifikat_garis' => $garis]),
             ...($pracetak === null ? [] : ['kop_pracetak' => $pracetak]),
             ...($tanggal === null ? [] : ['tanggal_master' => $tanggal]),
+            ...($fontMaster === null ? [] : ['font_master_pt' => $fontMaster]),
         ];
     }
 
