@@ -94,6 +94,44 @@ tiap kali aplikasi dibuka dan tiap kali kembali dari background.
 }
 ```
 
+### `GET /app/info` — kontak, dokumen hukum, alamat lab (10 Nov 2026, additive)
+
+Dipakai layar Bantuan. **Publik** (tanpa token) dan **di luar gerbang `FITUR_PELANGGAN`** seperti
+`/app/status`, supaya layar "belum tersedia"/pemeliharaan tetap bisa menampilkan tombol hubungi lab.
+Nol query database; isinya dari env `PELANGGAN_INFO_*` (lewat `config/pelanggan.php`).
+
+Field yang belum diisi **selalu `null`** (bukan `""`, bukan 404, bukan error) dan aplikasi
+menyembunyikan tombolnya. Server tidak pernah mengarang nomor atau tautan; `whatsapp_url` tidak
+diturunkan dari `whatsapp`. `versi` dokumen ikut `PELANGGAN_VERSI_KEBIJAKAN_PRIVASI` /
+`PELANGGAN_VERSI_SYARAT_KETENTUAN` dan hanya dikirim bila `url`-nya terisi (kalau tidak, `null`).
+Kondisi default (semua env kosong):
+
+```json
+{
+  "data": {
+    "organisasi": { "nama": null, "alamat": null, "telepon": null },
+    "kontak": { "whatsapp": null, "whatsapp_url": null, "email": null, "jam_layanan": null },
+    "dokumen": {
+      "kebijakan_privasi": { "url": null, "versi": null },
+      "syarat_ketentuan": { "url": null, "versi": null },
+      "hapus_akun_url": null
+    },
+    "petunjuk_pengemasan": null
+  }
+}
+```
+
+| Field respons | Env |
+|---|---|
+| `organisasi.nama` / `.alamat` / `.telepon` | `PELANGGAN_INFO_NAMA_ORGANISASI` / `_ALAMAT_ORGANISASI` / `_TELEPON_ORGANISASI` |
+| `kontak.whatsapp` / `.whatsapp_url` | `PELANGGAN_INFO_WHATSAPP` / `_WHATSAPP_URL` |
+| `kontak.email` / `.jam_layanan` | `PELANGGAN_INFO_EMAIL` / `_JAM_LAYANAN` |
+| `dokumen.kebijakan_privasi.url` / `dokumen.syarat_ketentuan.url` | `PELANGGAN_INFO_KEBIJAKAN_PRIVASI_URL` / `_SYARAT_URL` |
+| `dokumen.hapus_akun_url` | `PELANGGAN_INFO_HAPUS_AKUN_URL` |
+| `petunjuk_pengemasan` | `PELANGGAN_INFO_PETUNJUK_PENGEMASAN` |
+
+Penjaga: `InfoAplikasiPelangganTest`, `KontrakResponsPelangganTest::test_bentuk_respons_app_info`.
+
 ### ~~`POST /auth/daftar`~~ · ~~`/auth/verifikasi-email`~~ · ~~`/auth/kirim-ulang-otp`~~ — DICABUT 18 Sep 2026
 
 Ketiganya menjawab **404**. Pendaftaran mandiri pelanggan tidak ada lagi.
@@ -635,7 +673,7 @@ Rute yang dipakai aplikasi: `auth/{terima-undangan,masuk,keluar,keluar-semua,lup
 atur-ulang-sandi}`, `beranda`, `alat` (daftar, `alat/{id}` termasuk `riwayat_sertifikat`, dan
 status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/nomor order/
 seri di PT sendiri — nomor PT lain = daftar kosong, `sertifikat/{id}`, `sertifikat/{id}/unduh`),
-`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`. `/anggota*` dan `/paket*` tidak (selain `?q=` nomor order di `/paket`, §9)
+`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`, `app/info`. `/anggota*` dan `/paket*` tidak (selain `?q=` nomor order di `/paket`, §9)
 disentuh. **`PATCH /alat/{id}` DICABUT 20 Okt 2026** (keputusan pemilik; balasan sekarang `405`/`404`):
 pelanggan tidak mengubah data alat, perubahan lewat lab. Field `terkunci`/`field_terkunci`/`catatan`/
 `resolusi` di detail alat tetap dikirim (kontrak tidak dipersempit). Rute tulis yang tersisa dikunci

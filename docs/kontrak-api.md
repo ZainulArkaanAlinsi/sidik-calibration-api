@@ -1321,11 +1321,17 @@ Yang MENGISI lembar (`teknisi_id`) atau yang mengonfirmasi hasil pindainya dijaw
 
 ```json
 {
-  "message": "Kamu ikut mengisi atau mengoreksi data sesi ini, jadi tidak bisa menyetujuinya sendiri. Minta Master Data lain.",
+  "message": "Kamu yang mengisi lembar kerja ini, jadi tidak bisa menyetujuinya sendiri. Minta Master Data atau super admin lain yang menyetujuinya.",
   "kode": "pemisahan_wewenang",
   "wewenang": { "bersih": false, "memblokir": true, "temuan": [{ "kode": "penyetuju_sama_dengan_teknisi", "pesan": "…" }] }
 }
 ```
+
+`message` spesifik per penyebab (10 Nov 2026): `penyetuju_sama_dengan_teknisi` → "Kamu yang mengisi
+lembar kerja ini…", `penyetuju_mengonfirmasi_pindai` → "Kamu yang mengonfirmasi hasil pindai sesi
+ini…", keduanya sekaligus → satu kalimat gabungan; semuanya diakhiri tindakan "Minta Master Data atau
+super admin lain yang menyetujuinya." Hanya kalimatnya yang berubah — `kode` `pemisahan_wewenang` dan
+status `422` tetap, jadi cabangkan pada `kode`, bukan teks.
 
 `abaikan_peringatan` **tidak** menembusnya. Tampilkan `wewenang.temuan[].pesan`, jangan
 tawarkan "lanjutkan". Aturan yang sama berlaku di tombol Setujui panel `/admin`.

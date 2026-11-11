@@ -448,3 +448,30 @@ services:
         value: "1.0"
       - key: PELANGGAN_VERSI_SYARAT_KETENTUAN
         value: "1.0"
+
+      # Layar Bantuan aplikasi pelanggan (`GET /api/pelanggan/v1/app/info`,
+      # publik). Kontak & tautan diisi pemilik di dashboard (`sync: false`,
+      # bukan nilai blueprint). Kosong = null → aplikasi menyembunyikan
+      # tombolnya; server tidak mengarang nomor atau tautan.
+      - key: PELANGGAN_INFO_NAMA_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_ALAMAT_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_TELEPON_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_WHATSAPP
+        sync: false
+      - key: PELANGGAN_INFO_WHATSAPP_URL
+        sync: false
+      - key: PELANGGAN_INFO_EMAIL
+        sync: false
+      - key: PELANGGAN_INFO_JAM_LAYANAN
+        sync: false
+      - key: PELANGGAN_INFO_KEBIJAKAN_PRIVASI_URL
+        sync: false
+      - key: PELANGGAN_INFO_SYARAT_URL
+        sync: false
+      - key: PELANGGAN_INFO_HAPUS_AKUN_URL
+        sync: false
+      - key: PELANGGAN_INFO_PETUNJUK_PENGEMASAN
+        sync: false

@@ -345,6 +345,16 @@ class KontrakResponsPelangganTest extends TestCase
         $this->aduKeFixture('app-status', $badan);
     }
 
+    /** `/app/info` dalam keadaan default (semua env kosong): kunci tetap ada, nilainya `null`. */
+    public function test_bentuk_respons_app_info(): void
+    {
+        config(['pelanggan.info' => array_fill_keys(array_keys(config('pelanggan.info')), null)]);
+
+        $badan = $this->getJson('/api/pelanggan/v1/app/info')->assertOk()->json();
+
+        $this->aduKeFixture('app-info', $badan);
+    }
+
     /**
      * Email OTP memang terkirim — fixture di atas tidak boleh hijau tanpa jalur
      * emailnya jalan.
