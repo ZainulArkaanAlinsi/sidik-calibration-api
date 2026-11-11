@@ -7,7 +7,6 @@ use App\Models\Organization;
 use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
 use App\Services\DataTampilanSertifikat;
-use App\Support\SamarkanNama;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,8 +20,9 @@ use Illuminate\Support\Facades\Storage;
  * hasilnya harus halaman yang kebaca manusia, bukan JSON mentah.
  *
  * Tanpa auth. Karena itu isinya sengaja dibatesin: cukup buat mastiin sertifikat
- * itu asli (nomor, alat, pemilik, tanggal, hasil) — nggak ada data mentah
- * pengukuran, harga, apalagi data akun.
+ * itu asli (nomor, alat, nomor seri, tanggal, hasil) — nggak ada nama pelanggan
+ * di kartu ringkasnya (ISO/IEC 17025 klausul 4.2), data mentah pengukuran,
+ * harga, apalagi data akun.
  */
 class VerificationController extends Controller
 {
@@ -58,9 +58,6 @@ class VerificationController extends Controller
         // Digantikan revisi: lembar lama tetap tampil sebagai riwayat, dengan
         // bilah yang menunjuk ke yang berlaku.
         $pengganti = $certificate->penggantiSah();
-        $pemilikSamar = SamarkanNama::untuk(
-            $certificate->snapshot['header']['owner'] ?? $certificate->session?->equipment?->customer?->nama,
-        );
 
         // Yang ditampilin LEMBAR SERTIFIKATNYA SENDIRI — blade yang sama persis
         // dengan yang dicetak jadi PDF, bukan ringkasan versi web.
@@ -84,7 +81,6 @@ class VerificationController extends Controller
                 'organization' => $certificate->organization,
                 'certificate' => $certificate,
                 'pengganti' => $pengganti,
-                'pemilikSamar' => $pemilikSamar,
                 'catatanKetidakpastian' => $settings['catatan_ketidakpastian'] ?? null,
                 'catatanPenggandaan' => $settings['catatan_penggandaan'] ?? null,
             ]);
@@ -96,7 +92,6 @@ class VerificationController extends Controller
             // dokumennya ditarik dan yang mana penggantinya.
             'ditarik' => $certificate->status === Certificate::STATUS_DITARIK,
             'pengganti' => $pengganti,
-            'pemilikSamar' => $pemilikSamar,
         ]);
     }
 

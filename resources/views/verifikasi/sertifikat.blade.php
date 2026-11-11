@@ -69,13 +69,6 @@
                 <dd class="mono">{{ $certificate->session->equipment->serial_number }}</dd>
             </div>
             <div class="baris">
-                <dt>Pemilik alat</dt>
-                {{-- Disamarkan sebagian: halaman ini sering di-screenshot &
-                     diteruskan. PDF-nya tetap memuat nama utuh. --}}
-                <dd>{{ $pemilikSamar ?? \App\Support\SamarkanNama::untuk($certificate->session->equipment->customer->nama) }}
-                    <span class="kecil">Disamarkan sebagian</span></dd>
-            </div>
-            <div class="baris">
                 <dt>Tgl kalibrasi</dt>
                 <dd>{{ $certificate->session->tanggal_kalibrasi?->translatedFormat('d F Y') }}</dd>
             </div>

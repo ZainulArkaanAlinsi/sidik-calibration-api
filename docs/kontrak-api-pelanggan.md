@@ -671,9 +671,9 @@ sekarang `404`): `/permintaan*` (daftar, buat, detail, batal, pesan, resi, foto 
 
 Rute yang dipakai aplikasi: `auth/{terima-undangan,masuk,keluar,keluar-semua,lupa-sandi,
 atur-ulang-sandi}`, `beranda`, `alat` (daftar, `alat/{id}` termasuk `riwayat_sertifikat`, dan
-status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/
+status jatuh tempo `aman|segera|lewat|belum_ada|nonaktif`), `sertifikat` (daftar + `?q=` nomor/alat/nomor order/
 seri di PT sendiri — nomor PT lain = daftar kosong, `sertifikat/{id}`, `sertifikat/{id}/unduh`),
-`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`, `app/info`. `/anggota*` dan `/paket*` tidak
+`notifikasi*`, `saya`, `preferensi-notifikasi`, `app/status`, `app/info`. `/anggota*` dan `/paket*` tidak (selain `?q=` nomor order di `/paket`, §9)
 disentuh. **`PATCH /alat/{id}` DICABUT 20 Okt 2026** (keputusan pemilik; balasan sekarang `405`/`404`):
 pelanggan tidak mengubah data alat, perubahan lewat lab. Field `terkunci`/`field_terkunci`/`catatan`/
 `resolusi` di detail alat tetap dikirim (kontrak tidak dipersempit). Rute tulis yang tersisa dikunci
@@ -761,3 +761,26 @@ Yang bisa dipertimbangkan (tidak memblokir, belum dikerjakan di repo aplikasi):
    pelanggan (`lib/`, `android/`). Pengingat jatuh tempo sudah memakai pola yang sama; perilaku
    kanal bawaan FCM di HP nyata **belum diverifikasi**.
 3. `kategori` baru tidak punya ikon khusus; kotak masuk memakai tampilan yang sama untuk semua baris.
+
+
+## 9. Pencarian dari NOMOR ORDER (additive, 11 Nov 2026)
+
+Tanpa migrasi, tanpa field respons baru, tanpa rute baru — hanya parameter `q` yang kini lebih luas.
+
+| Rute | Perubahan |
+|---|---|
+| `GET /sertifikat?q=` | Selain nomor sertifikat, nama alat, dan nomor seri, `q` kini juga mencocokkan **nomor order**: `calibration_sessions.nomor_order` (yang tercetak di sertifikat) dan `orders.nomor` (nomor order pelacakan) dari sertifikat tersebut. Pencocokan `LIKE %q%`, `max:100` karakter. |
+| `GET /paket?q=` | **Parameter baru** (opsional, `max:100`): mencari `orders.nomor` (`LIKE %q%`). Berlaku bersama `selesai`, `per_page`, dan pagination. |
+
+Aturan isolasi tidak berubah dan dijaga `IsolasiPerusahaanTest` serta `CariDariNomorOrderTest`:
+
+- Pencarian hanya berjalan **di dalam** himpunan milik perusahaan pemanggil (`LingkupData`). Nomor order PT
+  lain dijawab `200` dengan daftar kosong (`meta.total = 0`), sama persis dengan nomor yang tidak ada —
+  bukan `403`, bukan `404`.
+- Order yang dicocokkan lewat `orders.nomor` dikunci ke `customer_id` pemanggil (dari `Konteks`, tidak dari
+  request); sesi yang salah-tautan ke order PT lain tidak bisa dipakai menebak nomor itu.
+- Nomor order yang tercetak di sertifikat dibaca dari kolom `calibration_sessions.nomor_order`, bukan dari
+  `snapshot.header.order_number` (pencarian di dalam JSON tidak dibuktikan setara di MySQL; kolom
+  biasanya sama dengan isi snapshot karena Order Number wajib terisi sebelum sesi disetujui).
+
+Aplikasi pelanggan tidak wajib diubah; kolom pencarian yang sudah ada otomatis menerima nomor order.

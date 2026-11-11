@@ -698,9 +698,11 @@
         </div>
     @endif
 
-    {{-- Kartu ringkas: yang dicocokkan orang dengan kertasnya. Nama pemilik
-         DISAMARKAN sebagian (App\Support\SamarkanNama) — halaman ini sering
-         di-screenshot & diteruskan. Nama utuh tetap ada di lembar lengkap. --}}
+    {{-- Kartu ringkas: yang dicocokkan orang dengan kertasnya. TANPA nama
+         pemilik/pelanggan (data rahasia klien, ISO/IEC 17025 klausul 4.2) —
+         halaman ini sering di-screenshot & diteruskan. Nama utuh hanya ada di
+         lembar lengkap di balik "Tampilkan lembar lengkap" (salinan sah
+         sertifikat, token-gated). --}}
     <section class="ringkas" aria-label="Ringkasan sertifikat">
         <div class="ringkas-baris">
             <span class="ringkas-label">Nomor sertifikat</span>
@@ -719,10 +721,6 @@
         <div class="ringkas-baris">
             <span class="ringkas-label">Nomor seri</span>
             <span class="ringkas-nilai mono">{{ $isi($header['serial_number'] ?? null) }}</span>
-        </div>
-        <div class="ringkas-baris">
-            <span class="ringkas-label">Pemilik alat</span>
-            <span class="ringkas-nilai">{{ $isi($pemilikSamar ?? null) }} <span class="ringkas-catatan">Disamarkan sebagian</span></span>
         </div>
         <div class="ringkas-baris">
             <span class="ringkas-label">Tanggal kalibrasi</span>

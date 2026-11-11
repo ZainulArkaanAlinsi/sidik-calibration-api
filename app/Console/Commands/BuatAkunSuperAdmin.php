@@ -35,11 +35,16 @@ use Illuminate\Support\Str;
  *
  * Baca: aplikasi, panel `/admin`, seluruh rute `GET`/`HEAD`, dan lintas
  * organisasi di panel (tiap layarnya tercatat `App\Support\JejakLintasOrganisasi`).
- * Menulis: tidak ada — `EnsureUserHasRole` cuma meloloskan GET/HEAD, dan
- * `App\Filament\Concerns\HakTulisPanel` menyembunyikan aksi tulis di panel.
- * Itu bukan pekerjaan setengah jadi: K4 (siapa yang boleh mengesahkan
- * sertifikat) belum dijawab manajer teknis, dan tombol `approve` di panel
- * menerbitkan sertifikat berlogo akreditasi.
+ * Menulis di APLIKASI: boleh semua aksi tulis teknisi dan Master Data di
+ * organisasinya sendiri (K-49-14, 15 Okt 2026) lewat
+ * `EnsureUserHasRole::lolosTulisSuperAdmin()`; pemisahan wewenang tetap
+ * berlaku (yang mengisi lembar atau mengonfirmasi hasil pindai tidak bisa
+ * menyetujui sesi itu). Menulis di PANEL: tidak —
+ * `App\Filament\Concerns\HakTulisPanel` menyembunyikan aksi tulis di sana,
+ * dan `ScopesToOrganization` menutup create/edit/delete bawaan. Itu bukan
+ * pekerjaan setengah jadi: dua pintu tulis berarti dua tempat yang harus kompak
+ * menegakkan pemisahan wewenang, Order Number wajib, dan jejak audit.
+ * Lintas organisasi lewat API belum dibuka (tetap 404).
  *
  * Ringkasan itu dicetak sesudah akunnya jadi, supaya yang membuatnya tidak
  * menghabiskan waktu mencari tombol yang memang sengaja tidak ada.
@@ -62,7 +67,7 @@ class BuatAkunSuperAdmin extends Command
         {--organisasi=1 : organisasi tempat akunnya duduk}
         {--paksa : lewati konfirmasi (buat pemakaian terskrip)}';
 
-    protected $description = 'Bikin satu akun super admin — baca semua lab, nol wewenang menulis.';
+    protected $description = 'Bikin satu akun super admin — baca semua lab (panel baca saja), menulis di aplikasi organisasinya sendiri.';
 
     public function handle(): int
     {
@@ -133,10 +138,13 @@ class BuatAkunSuperAdmin extends Command
         $this->newLine();
         $this->info("Akun super admin dibuat: {$akun->email} (organisasi #{$organisasi}).");
         $this->line('  BISA   : login aplikasi & panel /admin, baca seluruh rute GET,');
-        $this->line('           dan baca lintas organisasi di panel (tiap layarnya tercatat).');
-        $this->line('  TIDAK  : menulis apa pun — tombol approve, retry, reset sandi,');
-        $this->line('           create/edit/delete semuanya tertutup sampai K4 dijawab');
-        $this->line('           manajer teknis. Itu disengaja, bukan setengah jadi.');
+        $this->line('           baca lintas organisasi di panel (tiap layarnya tercatat),');
+        $this->line('           dan semua aksi tulis teknisi + Master Data di APLIKASI untuk');
+        $this->line('           organisasinya sendiri (K-49-14).');
+        $this->line('  TERTAHAN: panel /admin baca saja (tombol approve, retry, reset sandi,');
+        $this->line('           create/edit/delete di sana tersembunyi/ditolak); lintas organisasi');
+        $this->line('           lewat API belum dibuka; yang mengisi lembar atau mengonfirmasi');
+        $this->line('           hasil pindai tidak bisa menyetujui sesi itu (pemisahan wewenang).');
         $this->newLine();
         $this->warn('Akun ini tidak muncul di daftar pengguna /admin dan tidak bisa diubah');
         $this->warn('lewat API — penjagaan yang sama yang bikin admin nggak bisa mencetaknya.');
