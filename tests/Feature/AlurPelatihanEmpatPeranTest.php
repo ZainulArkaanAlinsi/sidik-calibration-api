@@ -88,7 +88,10 @@ class AlurPelatihanEmpatPeranTest extends TestCase
         parent::setUp();
 
         $this->travelTo('2026-10-08 10:00:00');
-        $this->lab = Organization::factory()->create();
+        // id 1 DIKUNCI: `CalibrationCapabilitySeeder` (dipanggil payloadTits) menulis
+        // ke organisasi #1. Di SQLite id pertama otomatis 1; di MySQL AUTO_INCREMENT
+        // tidak kembali ke 1 antar-test, jadi tanpa ini FK equipment_categories gagal.
+        $this->lab = Organization::factory()->create(['id' => 1]);
         $this->labLain = Organization::factory()->create();
         $this->siapkanJalurPelanggan();
 
