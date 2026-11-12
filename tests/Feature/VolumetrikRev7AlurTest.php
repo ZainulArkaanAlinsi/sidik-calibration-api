@@ -622,8 +622,8 @@ class VolumetrikRev7AlurTest extends TestCase
     }
 
     /**
-     * Picnometer (Fixed lama) tidak ikut aturan Rev.7 (tekanan, standar
-     * termometer). Bentuk lembarnya K-50-15 ikut master Fixed 143 seperti
+     * Picnometer (Fixed lama) tidak ikut aturan Rev.7 (standar
+     * termometer; baris Tekanan Udara menyusul di Tahap B2). Bentuk lembarnya K-50-15 ikut master Fixed 143 seperti
      * labu ukur: kotak Class/Permitted Error & blok Suhu Dasar Volume.
      */
     public function test_sertifikat_picnometer_tidak_ikut_berubah(): void
@@ -654,10 +654,12 @@ class VolumetrikRev7AlurTest extends TestCase
         $this->assertNull($snapshot['catatan_atas_hasil']);
         $this->assertSamaPetaJson(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
         $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
-        $this->assertStringNotContainsString('hPa', (string) $snapshot['header']['env_condition']);
+        // Tahap B2: master Fixed `143!T13:Y13` mencetak Tekanan Udara, dan picnometer ikut
+        // bentuk Fixed (dulu tidak, sebelum baris itu dipasang untuk keluarga Fixed non-Rev.7).
+        $this->assertStringContainsString('Tekanan Udara 1001 hPa', (string) $snapshot['header']['env_condition']);
         // G1/R2 (K-50-15): master Fixed mencetak baris termometer SELALU
         // (`DATABASE!V22`), picnometer ikut lewat `StandarCetakMaster`. Aturan
-        // Rev.7 lain (tekanan, `standarTambahanSesi`, validator) tidak berlaku.
+        // Rev.7 lain (`standarTambahanSesi`, validator) tidak berlaku.
         $this->assertSame(['Analytical Balance', 'Termometer & Sensor Std.'], array_column($snapshot['standar_digunakan'], 'name'));
         $this->assertTrue($snapshot['hasil'][0]['standar_ringkas']);
     }

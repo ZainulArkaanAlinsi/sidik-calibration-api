@@ -1,0 +1,327 @@
+{
+    "versi": 1,
+    "desimal": 2,
+    "judul_uut": "Unit Under Test",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": false,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": null,
+    "satuan": "°C",
+    "satuan_cetak": "°C",
+    "header": {
+        "certificate_number": "UJI/00007",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 16",
+        "order_number": "DEMO-TIDS-ORD-001",
+        "address": "Alamat Sintetis 16, Jl. Contoh No. 16, Kota Contoh",
+        "received_date": "2026-03-24",
+        "equipment_name": "Temperature Recorder",
+        "manufacturer": "Graphtec",
+        "calibration_location": "Laboratorium",
+        "model_type": "GL240",
+        "calibration_date": "2026-03-25",
+        "serial_number": "DEMO-TIDS-GL840",
+        "calibration_method": "SIDIK-IK-CAL-0503_Rev.6",
+        "capacity_graduation": "-20–600 °C / 0.01 °C",
+        "env_condition": "T 23.1 °C ± 1.7 °C\n%RH 54 % ± 4.9 %",
+        "technician_id": "RK"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": -0.27,
+            "remark": null,
+            "unit_under_test": 0,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.27,
+            "u95": 1.749421665153,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9816890335758,
+            "desimal_k": 0,
+            "desimal": 2,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "r2": null
+        },
+        {
+            "titik_ke": 2,
+            "standard_value": 60.215,
+            "remark": null,
+            "unit_under_test": 60.394,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.17900000000001,
+            "u95": 1.749421665153,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9816890335758,
+            "desimal_k": 0,
+            "desimal": 2,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "r2": null
+        },
+        {
+            "titik_ke": 3,
+            "standard_value": 94.235,
+            "remark": null,
+            "unit_under_test": 93.48,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.755,
+            "u95": 1.749421665153,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9816890335758,
+            "desimal_k": 0,
+            "desimal": 2,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "r2": null
+        },
+        {
+            "titik_ke": 4,
+            "standard_value": 193.15,
+            "remark": null,
+            "unit_under_test": 192.212,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 0.93799999999999,
+            "u95": 1.749421665153,
+            "desimal_u95": 1,
+            "faktor_cakupan_k": 1.9816890335758,
+            "desimal_k": 0,
+            "desimal": 2,
+            "satuan": "°C",
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "format": {
+                "standar": "0.00",
+                "uut": "0.00",
+                "koreksi": "0.00",
+                "u95": "0.0",
+                "k": "0"
+            },
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": false,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date",
+        "kepala_titik_dua": true,
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "akhir_sertifikat_garis": {
+            "teks": "End of Certificate",
+            "tebal": true,
+            "miring": true,
+            "ukuran": 8,
+            "lebar": 0.28
+        },
+        "tanggal_master": {
+            "kepala": "en",
+            "terbit": "en",
+            "tambah_hari": null
+        },
+        "kolom_hasil": [
+            {
+                "kolom": "standar",
+                "judul": "Standard Reading (oC)",
+                "satuan": "",
+                "gabung": false
+            },
+            {
+                "kolom": "uut",
+                "judul": "Unit Under Test (oC)",
+                "satuan": "",
+                "gabung": false
+            },
+            {
+                "kolom": "koreksi",
+                "judul": "Correction (oC)",
+                "satuan": "",
+                "gabung": false
+            }
+        ],
+        "label_u95": "Uncertainty  95%  ±"
+    },
+    "standar_digunakan": [
+        {
+            "name": "Temperature Recorder Graptech GL840",
+            "merk_type": "Graptech/GL840",
+            "serial_number": "C305B1470",
+            "traceable_to": "LK-285-IDN"
+        },
+        {
+            "name": "Thermocouple Type K",
+            "merk_type": "Type K",
+            "serial_number": "TC-01,02",
+            "traceable_to": "LK-064-IDN"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-12",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "diyrlulvis",
+        "qr_payload": "http://localhost/verify/diyrlulvis",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}
