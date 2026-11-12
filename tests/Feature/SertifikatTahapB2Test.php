@@ -106,6 +106,28 @@ class SertifikatTahapB2Test extends TestCase
         return $halaman;
     }
 
+    /**
+     * Urutan kunci objek JSON tidak bermakna, dan kolom JSON MySQL menyusunnya
+     * ulang (panjang kunci, lalu abjad) sedangkan SQLite menyimpan teks apa
+     * adanya. Jadi snapshot yang dibaca balik dari DB tidak boleh dibandingkan
+     * `assertSame` mentah: kunci peta diurutkan di kedua sisi, sedangkan urutan
+     * daftar (baris, sel, blok) TETAP dibandingkan, begitu juga nilai dan tipenya.
+     */
+    private function kanonik(mixed $nilai): mixed
+    {
+        if (! is_array($nilai)) {
+            return $nilai;
+        }
+
+        $nilai = array_map(fn (mixed $isi): mixed => $this->kanonik($isi), $nilai);
+
+        if (! array_is_list($nilai)) {
+            ksort($nilai);
+        }
+
+        return $nilai;
+    }
+
     // ---- 1. Micrometer: Note Kerataan / Kesejajaran Muka Ukur ------------------
 
     public function test_micrometer_mencetak_note_kerataan_dan_kesejajaran_hanya_dari_isian(): void
@@ -116,13 +138,13 @@ class SertifikatTahapB2Test extends TestCase
             'kerataan_muka_ukur' => 'baik', 'kesejajaran_muka_ukur' => 'buruk',
         ]]);
 
-        $this->assertSame([[
+        $this->assertSame($this->kanonik([[
             'posisi' => 'bawah_hasil', 'judul' => 'Note :', 'baris' => [],
             'tabel' => [
                 ['Kerataan Muka Ukur dalam Kondisi', ':', 'Baik'],
                 ['Kesejajaran Muka Ukur dalam Kondisi', ':', 'Buruk'],
             ],
-        ]], $sertifikat->snapshot['catatan_blok']);
+        ]]), $this->kanonik($sertifikat->snapshot['catatan_blok']));
 
         $html = $this->html($sertifikat);
         $this->assertMatchesRegularExpression('#<td>Kerataan Muka Ukur dalam Kondisi</td>\s*<td>:</td>\s*<td>Baik</td>#u', $html);
