@@ -66,6 +66,8 @@ tidak (NFR-12).
 | `akun_belum_diverifikasi` | 403 | Token `pelanggan:menunggu` menyentuh data | Kembali ke S06 |
 | `undangan_tidak_berlaku` | 422 | Kode undangan salah / kedaluwarsa / sudah dipakai | Satu pesan saja — jangan tebak mana penyebabnya |
 | `undangan_akun_internal` | 422 | Email undangan ternyata akun internal PT Sidik | "Email ini akun internal, tidak bisa diundang" |
+| `sandi_akun_lama_salah` | 422 | Terima undangan, email sudah punya akun, `sandi` bukan sandi akun itu (§11) | Tandai kolom sandi, kode undangan tetap; tawarkan "Lupa sandi?" |
+| `undangan_organisasi_berbeda` | 422 | Terima undangan, akun terdaftar di laboratorium lain (§11) | Layar kontak PT Sidik |
 | `batas_anggota` | 422 | Perusahaan sudah penuh (`data.maks_anggota`) | Tampilkan angkanya, arahkan hubungi PT Sidik |
 | `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
 | `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |
@@ -184,8 +186,11 @@ emailnya.
 - Undangan **baru membatalkan yang lama** untuk pasangan email+perusahaan yang
   sama.
 - Email yang **sudah punya akun pelanggan** tidak dibuatkan akun kedua — dia
-  jadi anggota perusahaan tambahan (kasus konsultan). `nama` dan `sandi` yang
-  dikirim **diabaikan** untuk akun yang sudah ada.
+  jadi anggota perusahaan tambahan (kasus konsultan). **Sejak 12 Nov 2026 (§11)
+  kode saja tidak cukup:** `sandi` yang dikirim harus **sandi akun yang sudah
+  ada** (bukan sandi baru), diperiksa sebelum token terbit. `nama`, `telepon`,
+  dan `jabatan` yang dikirim tetap **diabaikan** untuk akun yang sudah ada, dan
+  sandi akun tidak pernah diubah oleh jalur ini.
 
 Balasan **201**, bentuknya sama dengan `masuk`:
 
@@ -211,14 +216,58 @@ Balasan **201**, bentuknya sama dengan `masuk`:
         }
       ],
       "pengajuan": null
-    }
+    },
+    "akun_sudah_ada": false
   }
 }
 ```
 
+- **`data.akun_sudah_ada`** (bool, additive 12 Nov 2026): `true` bila email itu **sudah punya akun
+  pelanggan sebelum undangan ini ditukar** (kasus konsultan: dia ditambahkan sebagai anggota
+  perusahaan baru; `nama`/`telepon`/`jabatan` yang dikirim diabaikan dan `sandi` hanya dipakai
+  membuktikan akun, lihat §11), `false` bila akun
+  baru dibuat oleh panggilan ini. Gunanya untuk teks layar sukses ("gunakan sandi akun Anda yang
+  sudah ada" vs "akun Anda sudah dibuat"). Hanya ada di balasan **201** ini — `masuk` tidak
+  memilikinya — dan klien lama yang tidak membacanya tidak terpengaruh. Nilainya hanya dikirim
+  kepada pemegang kode yang sah (email + kode cocok); semua kegagalan tetap satu jawaban yang sama.
+
 Semua kegagalan kode dijawab **satu pesan yang sama** (`undangan_tidak_berlaku`)
 — jangan tampilkan tebakan "mungkin sudah kedaluwarsa"; server memang tidak
 memberi tahu yang mana.
+
+**Kegagalan khusus email yang sudah punya akun** — hanya terlihat setelah kodenya
+terbukti sah, dan diperiksa berurutan (sandi lebih dulu supaya status dan
+laboratorium akun tidak terbaca tanpa sandinya):
+
+| Urutan | Kondisi | HTTP | `kode` |
+|---|---|---|---|
+| 1 | Akun internal PT Sidik | 422 | `undangan_akun_internal` (tidak berubah) |
+| 2 | Email terkunci: 5 kegagalan sandi per 15 menit, **satu ember dengan `masuk`** | 429 | `terlalu_sering` |
+| 3 | `sandi` bukan sandi akun itu | 422 | `sandi_akun_lama_salah` |
+| 4 | `users.organization_id` berbeda dari organisasi perusahaan/undangan | 422 | `undangan_organisasi_berbeda` |
+| 5 | Akun `pending_email` | 403 | `email_belum_diverifikasi` (sama dengan `masuk`) |
+| 6 | Akun `nonaktif` atau sudah dianonimkan | 403 | `akun_nonaktif` (sama dengan `masuk`) |
+
+Penolakan tidak memakai kode undangan: undangan tetap hidup dan bisa dicoba lagi
+dengan sandi yang benar. Pihak tanpa kode sah tidak pernah menerima salah satu
+kode di atas — jawabannya tetap `undangan_tidak_berlaku` apa pun status akunnya,
+dan kegagalan kode tidak menghitung ke ember sandi. Validasi field
+(`sandi` min 10 karakter dan bukan sandi bocor, dst.) tetap berjalan lebih dulu
+untuk semua orang. Bentuk galat: `{"kode": "...", "message": "..."}`.
+
+**Validasi kekuatan sandi ikut berlaku untuk sandi LAMA di pintu ini.** `sandi`
+selalu divalidasi lebih dulu (min 10 karakter DAN bukan sandi yang tercatat bocor),
+sebelum server tahu apakah email itu punya akun — kalau tidak, jawabannya bisa
+membedakan akun ada dari tidak ada. Akibatnya akun lama yang sandinya kurang dari
+10 karakter atau kini tercatat bocor mendapat galat validasi `errors.sandi` walau
+sandinya benar; jalan keluarnya `POST /auth/lupa-sandi`, lalu ulangi undangan.
+
+**Kode hanya bisa ditukar sekali, juga bila dua request datang bersamaan.** Server
+mengklaim undangan secara atomik (`UPDATE … WHERE dipakai_pada IS NULL AND
+dibatalkan_pada IS NULL`); request yang kalah dijawab `undangan_tidak_berlaku`.
+Klaim terjadi sesudah sandi terbukti dan dibatalkan bersama transaksinya bila
+`daftarkan` menolak (mis. `batas_anggota`), jadi sandi salah atau batas anggota
+tidak menghanguskan kode.
 
 ### `POST /auth/masuk` — REQ-AUTH-03/07/08/10
 
@@ -498,6 +547,49 @@ Semua peran boleh melihat.
 tanpa itu dia mengundang lagi, dan undangan kedua **membatalkan** kode yang sudah
 terkirim.
 
+**Yang dilihat staf berbeda (additive/penyempitan sisi server, 12 Nov 2026).** Contoh di atas adalah
+balasan untuk **PIC utama**. Untuk pemanggil berperan `staf` (`data.saya.peran = "staf"`) server
+sendiri yang membatasi — bukan hanya aplikasi:
+
+| Field | PIC utama | Staf |
+|---|---|---|
+| `undangan_menunggu` | daftar penuh | **selalu `[]`** (alamat email orang yang sedang diundang bukan urusan staf) |
+| `anggota[].orang.telepon` milik **rekan** | nomor | **`null`** |
+| `anggota[].orang.telepon` milik **diri sendiri** (`saya: true`) | nomor | nomor |
+
+Balasan staf (disalin dari fixture `tests/Fixtures/pelanggan/anggota-staf.json`; yang melihat adalah "Sari Staf",
+`saya: true` di barisnya sendiri, sementara perusahaan punya satu undangan menunggu yang TIDAK ikut dikirim):
+
+```json
+{
+  "data": {
+    "anggota": [
+      { "id": "<int>", "peran": "pic_utama", "status": "aktif", "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": { "id": "<int>", "nama": "Budi PIC", "email": "budi@contoh.test",
+                   "telepon": null, "jabatan": "QA Manager" },
+        "saya": false },
+      { "id": "<int>", "peran": "staf", "status": "aktif", "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": { "id": "<int>", "nama": "Sari Staf", "email": "sari@contoh.test",
+                   "telepon": "+628123456789", "jabatan": "QA Manager" },
+        "saya": true }
+    ],
+    "undangan_menunggu": [],
+    "maks_anggota": 50,
+    "saya": { "customer_id": "<int>", "member_id": "<int>", "peran": "staf" }
+  }
+}
+```
+
+Kunci `telepon` dan `undangan_menunggu` **tetap ada** di balasan staf (nilainya `null` / `[]`), jadi
+bentuk JSON tidak berubah dan klien tidak perlu cabang parsing baru. Nomor HP rekan tidak pernah dipakai
+layar mana pun di aplikasi 0.2.2 (`Anggota.dariJson` tidak membaca `telepon`; `DaftarAnggota.dariJson`
+memakai `?? const []` untuk `undangan_menunggu`), sehingga APK yang sudah terpasang aman. Peran yang
+dipakai adalah peran di perusahaan **aktif** (`X-Perusahaan-Id`): konsultan yang PIC utama di pabrik A dan
+staf di pabrik B melihat isi lengkap di A dan isi terbatas di B. `POST /anggota/{id}/nonaktifkan`
+(PIC utama saja) tetap memulangkan `orang.telepon` seperti biasa. Penjaga: `AnggotaDanPeranTest`.
+
 `saya` di tiap baris anggota dijawab server, jangan dihitung aplikasi dari id
 yang disimpan lokal (nilai yang gampang basi sesudah ganti akun).
 
@@ -739,6 +831,40 @@ Aturan pengiriman:
 
 Penjaga: `NotifikasiSertifikatTerbitPelangganTest` (14 kasus).
 
+#### Kabar susulan untuk anggota yang bergabung SESUDAH sertifikat terbit (12 Nov 2026)
+
+Kabar di atas hanya menjangkau anggota yang sudah aktif saat sertifikat terbit. Anggota yang
+diundang/diaktifkan belakangan **sudah bisa membuka** sertifikat perusahaannya (isolasi per
+`customer_id` dari `KonteksPerusahaan`, bukan per tanggal masuk; perusahaan lain tetap `404`),
+tapi dulu tidak pernah diberi tahu. Sekarang, di pintu tunggal `Keanggotaan::daftarkan()` (undangan
+ditukar di `POST /auth/terima-undangan`, atau admin menyetujui pengajuan), anggota yang BARU
+bergabung atau dihidupkan kembali dikabari **sekali, ringkas**. Tanpa rute baru, tanpa migrasi,
+tanpa field respons baru: muncul lewat `GET /notifikasi` dan push.
+
+| Kejadian | `kategori` | `tautan` | Saklar |
+|---|---|---|---|
+| Bergabung ke perusahaan yang sudah punya sertifikat berlaku | `pelanggan.sertifikat_tersedia` | `null` (buka beranda) | `status_permintaan` (bawaan menyala) |
+
+Isi (netral; layar kunci): `judul` "Sertifikat kalibrasi sudah tersedia", `isi` "{n} sertifikat
+kalibrasi perusahaan Anda sudah bisa dibuka di aplikasi." Hanya jumlah — tanpa nomor, nama alat,
+nama perusahaan, atau hasil.
+
+Aturan:
+
+- Satu kabar, bukan satu per sertifikat. Yang dihitung hanya sertifikat perusahaan itu sendiri
+  yang `terbit` dan belum digantikan (lewat `LingkupData`); `0` = tidak ada kabar.
+- Sekali per akun per perusahaan: `tanda_tangan` `pelanggan.sertifikat_tersedia:<customer_id>`.
+  Undangan ulang / pengaktifan kembali tidak mengirim lagi. Memanggil `daftarkan()` untuk anggota
+  yang sudah aktif bukan "bergabung".
+- Saklar `status_permintaan` dihormati, termasuk untuk anggota lama yang diundang kembali.
+- Perusahaan yang `organization_id`-nya beda dari keanggotaannya, anggota/akun nonaktif: dilewati.
+- Kegagalan tidak pernah menggagalkan pendaftaran anggota; log hanya `customer_member_id` dan
+  kelas galat. Dikirim sesudah transaksi commit (`DB::afterCommit`).
+
+Penjaga: `KabarSusulanAnggotaBaruTest`. Kebijakan produk yang masih terbuka (kabar ini
+satu kali atau tiap kali bergabung kembali, perlu tidaknya tautan ke daftar sertifikat) dicatat
+di `docs/pertanyaan-lab-notifikasi-susulan.md`.
+
 ### Catatan serah terima untuk aplikasi pelanggan (`sidik-pelanggan-mobile`, diperiksa pada `origin/main` 5d4d4a5)
 
 **Tidak ada yang wajib diubah agar notifikasi ini tampil dan bisa dibuka.**
@@ -784,3 +910,73 @@ Aturan isolasi tidak berubah dan dijaga `IsolasiPerusahaanTest` serta `CariDariN
   biasanya sama dengan isi snapshot karena Order Number wajib terisi sebelum sesi disetujui).
 
 Aplikasi pelanggan tidak wajib diubah; kolom pencarian yang sudah ada otomatis menerima nomor order.
+
+
+## 10. Tindak lanjut temuan aplikasi Pelanggan (additive/penyempitan sisi server, 12 Nov 2026)
+
+Tanpa migrasi, tanpa rute baru, tanpa versi `/v2`. `/pelanggan/v1` tidak berubah perilaku untuk klien lama.
+
+| Rute | Perubahan | Aman untuk app 0.2.2 karena |
+|---|---|---|
+| `GET /anggota` | Untuk pemanggil **staf**: `undangan_menunggu` = `[]` dan `anggota[].orang.telepon` milik rekan = `null` (milik diri sendiri tetap nomor). PIC utama tidak berubah. Rincian di §3 `GET /anggota`. | `DaftarAnggota.dariJson` membaca `undangan_menunggu` dengan `?? const []` dan sudah membuangnya untuk non-PIC; `Anggota.dariJson` tidak membaca `telepon`. |
+| `POST /auth/terima-undangan` | Field baru `data.akun_sudah_ada` (bool) di balasan **201**. Rincian di §1. | Kunci tambahan diabaikan klien yang tidak membacanya. |
+
+Pembatasan `GET /anggota` ditegakkan **di server** (`AnggotaController::index` tidak lagi menjalankan query
+undangan untuk staf, `AnggotaResource` mengisi `telepon` hanya bila pemintanya PIC utama atau barisnya milik
+dirinya sendiri) — aplikasi yang dimodifikasi atau `curl` dengan token staf memperoleh jawaban yang sama
+dengan aplikasi resmi. Penjaga: `AnggotaDanPeranTest`, `TerimaUndanganTest`, `IsolasiPerusahaanTest`,
+`KontrakResponsPelangganTest` (fixture PIC `anggota.json` tidak berubah; fixture baru `anggota-staf.json`;
+`terima-undangan.json` bertambah satu kunci, `akun_sudah_ada` — perubahan additive, tidak ada kunci yang hilang).
+
+
+## 11. Perbaikan keamanan: `terima-undangan` untuk email yang SUDAH punya akun (12 Nov 2026)
+
+**Ini satu-satunya perubahan perilaku `/pelanggan/v1` pada gelombang ini, dan disengaja.** Aturan
+"`/pelanggan/v1` hanya additive" (AGENTS.md §Modul Pelanggan butir 6) dikecualikan di sini karena yang
+diubah adalah lubang pengambilalihan akun, bukan fitur. Tanpa migrasi, tanpa rute baru, tanpa `/v2`.
+**Akun BARU tidak berubah sama sekali** (sandi di formulir tetap sandi baru yang disimpan, balasan 201
+sama persis).
+
+**Lubangnya.** Untuk email yang sudah punya akun pelanggan, server hanya memeriksa `role` lalu
+menerbitkan token — tanpa sandi, tanpa status, tanpa organisasi. Admin lab menerima kode polos undangan
+(`POST /api/customers/{c}/undangan` → `data.kode`), jadi dapat mengundang email pelanggan mana pun, menukar
+kodenya sendiri dengan `sandi` sembarang, dan memegang token akun itu (bukti: `UndanganAkunLamaTest::
+test_regresi_admin_lab_tidak_bisa_mengambil_alih_akun_pelanggan_lama`).
+
+**Aturan sekarang** (rincian urutan dan kode galat di §1 `terima-undangan`):
+
+- **(A) Sandi akun lama wajib benar** (`Hash::check`). Salah = **422 `sandi_akun_lama_salah`**. Kegagalan
+  dihitung di ember yang **sama** dengan `masuk` (5 per 15 menit per email → **429 `terlalu_sering`**),
+  jadi jatah menebak satu akun tidak berlipat ganda lewat dua pintu. Sandi benar mengosongkan hitungan,
+  seperti `masuk`. Tiap kegagalan mencatat satu baris `audit_logs` (`undangan_ditolak`,
+  `new_data.alasan = sandi_salah`, `percobaan_ke`, tanpa pelaku, tanpa sandi/kode/email).
+- **(E) Organisasi.** `users.organization_id` harus sama dengan organisasi perusahaan dan undangan; kalau
+  beda → **422 `undangan_organisasi_berbeda`** (alasan `organisasi_beda` di audit).
+- **(F) Status.** Kode dan status HTTP sama dengan `masuk` karena memakai satu method: `pending_email` →
+  403 `email_belum_diverifikasi`; `nonaktif` atau `dianonimkan_pada` terisi → 403 `akun_nonaktif`.
+  Satu-satunya beda: `message` `email_belum_diverifikasi` di jalur undangan menyuruh menghubungi PT Sidik
+  (tidak ada kode 6 digit untuk diminta; `kirim-ulang-otp` sudah dicabut).
+- **Satu kode, satu penukaran.** Klaim undangan atomik sesudah sandi terbukti (§1); dua request bersamaan
+  menghasilkan satu token, satu keanggotaan, satu audit `undangan_ditukar`.
+- **(D) Penukaran yang sah** mencatat satu baris `audit_logs` (`undangan_ditukar`, entitas `users`,
+  `changed_by` = akun itu, `old_data`/`new_data.jumlah_perusahaan_aktif`, `customer_id`, `peran`,
+  `diundang_oleh`, `undangan_id`, `ip`) dan mengirim **notifikasi netral** ke pemilik akun
+  (`kategori` `pelanggan.akun_ditautkan`, judul "Akun Anda ditautkan ke perusahaan lain", tanpa nama
+  perusahaan, IP, atau `tautan`; tidak melewati saklar `PreferensiNotifikasi`).
+- **Pihak tanpa kode sah tidak melihat apa pun dari butir di atas.** Kode salah / terpakai / kedaluwarsa
+  / dibatalkan tetap satu jawaban `undangan_tidak_berlaku` apa pun akunnya, tidak menyentuh ember sandi
+  (jadi tidak bisa dipakai mengunci login pemilik akun), dan tidak menulis audit. Pemeriksaan sandi,
+  organisasi, dan status hanya berjalan setelah kodenya terbukti sah; sandi lebih dulu supaya status dan
+  laboratorium akun tidak terbaca tanpa sandinya.
+- Akun internal tetap `undangan_akun_internal` dan sandinya tidak pernah diperiksa di pintu ini.
+
+**Dampak untuk aplikasi pelanggan 0.2.2 (tidak diubah di repo aplikasi oleh perbaikan ini).** Aplikasi itu
+selalu meminta "sandi baru" dan menebak "akun lama" dari jawaban; pengguna dengan email yang sudah punya
+akun yang mengisi sandi baru sekarang menerima **422 `sandi_akun_lama_salah`** (layar menampilkan
+`message` sebagai galat formulir, kode undangan tetap hidup) dan harus mengisi sandi akun lamanya. Dialog
+"sandi baru tidak dipakai" menjadi menyesatkan. Perubahan yang dibutuhkan aplikasi ditulis lengkap di
+`docs/perintah-frontend-undangan-akun-lama.md`.
+
+Penjaga: `UndanganAkunLamaTest` (regresi pengambilalihan, sukses + audit + notifikasi, akun baru tidak
+berubah, ember dibagi dengan `masuk`, organisasi, tiga status, pihak tanpa kode), `TerimaUndanganTest`
+(`test_akun_sudah_ada_true_…` kini mengirim sandi akun lama), `MasukKeluarTest` (refactor status `masuk`).

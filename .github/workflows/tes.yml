@@ -29,6 +29,35 @@
 #
 # URL itu RAHASIA: siapa pun yang punya bisa memicu deploy. Makanya Secret,
 # bukan Variable — Variable kebaca siapa saja yang bisa lihat repo.
+#
+# ## Suite dipecah jadi shard (12 Nov 2026)
+#
+# Satu push = satu deploy, jadi lamanya CI = lamanya semua perubahan menunggu.
+# Suite penuh makan ±45 menit di SQLite dan ±70 menit di MySQL (7.394 test).
+# Sekarang tiap suite dipecah per BERKAS test ke beberapa job paralel:
+#
+#   phpunit-shard (4 job SQLite)  --> job agregat `phpunit`
+#   mysql-shard   (6 job MySQL)   --> job agregat `PHPUnit MySQL 8.0`
+#
+# - Tiap shard job punya checkout, database, dan service MySQL sendiri, jadi
+#   jebakan `Storage::fake` di AGENTS.md (dua proses di SATU checkout) tidak
+#   kena. Jangan pernah memecah suite jadi proses paralel DI DALAM satu job.
+# - Pembagiannya `.github/ci/shard.php`: deterministik, diseimbangkan dari
+#   durasi terukur (`.github/ci/shard-data.json`). Langkah "Verifikasi
+#   pembagian shard" MENGGAGALKAN job kalau ada berkas test yang tidak
+#   kebagian shard, kebagian dua kali, atau ada *Test.php di luar suite yang
+#   tidak tercatat sengaja. Jalankan juga di lokal:
+#       php .github/ci/shard.php verify --profil=sqlite --of=4
+# - Tiap shard menjalankan `php artisan test -c phpunit.shard.xml`: salinan
+#   phpunit.xml / phpunit.mysql.xml yang HANYA `<testsuites>`-nya diganti
+#   daftar berkas shard itu. Env, memory_limit, dan `<source>` tidak berubah.
+#   Tidak ada test yang dilewati atau dilonggarkan.
+# - Mengubah jumlah shard = ubah daftar `matrix.shard` saja; jumlahnya dibaca
+#   dari `strategy.job-total`.
+# - Job `phpunit` dan `PHPUnit MySQL 8.0` tetap ada dengan nama yang sama
+#   (riwayat dan status wajib tidak putus). Keduanya merah kalau ADA shard yang
+#   gagal, dibatalkan, atau terlewat, dan `deploy` tetap `needs` keduanya —
+#   deploy cuma jalan kalau SEMUA shard SQLite dan MySQL hijau.
 name: Tes
 
 on:
@@ -47,8 +76,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  phpunit:
+  phpunit-shard:
+    name: SQLite shard ${{ matrix.shard }}/${{ strategy.job-total }}
     runs-on: ubuntu-latest
+    # Satu shard ±11 menit. 60 menit cuma pengaman kalau ada test yang menggantung.
+    timeout-minutes: 60
+
+    strategy:
+      # Biar semua shard selesai dan kelihatan mana saja yang merah; satu shard
+      # gagal tidak boleh membatalkan yang lain di tengah jalan.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    env:
+      SHARD: ${{ matrix.shard }}
+      SHARD_TOTAL: ${{ strategy.job-total }}
 
     steps:
       - uses: actions/checkout@v4
@@ -65,6 +108,12 @@ jobs:
           extensions: pdo_sqlite, gd, intl, bcmath, zip, exif
           coverage: none
 
+      # Duluan sebelum apa pun yang mahal: berkas test yang tidak kebagian shard
+      # (atau kebagian dua kali) harus menggagalkan build, bukan lolos diam-diam
+      # sebagai "hijau karena testnya tidak pernah jalan".
+      - name: Verifikasi pembagian shard
+        run: php .github/ci/shard.php verify --profil=sqlite --of="$SHARD_TOTAL"
+
       - name: Cache dependency Composer
         uses: actions/cache@v4
         with:
@@ -79,15 +128,52 @@ jobs:
       - run: cp .env.example .env
       - run: php artisan key:generate
 
-      - run: php artisan test
+      - name: Siapkan konfigurasi shard
+        run: php .github/ci/shard.php config --profil=sqlite --of="$SHARD_TOTAL" --shard="$SHARD"
 
-  mysql:
-    name: PHPUnit MySQL 8.0
+      - run: php artisan test -c phpunit.shard.xml
+
+  # Nama job dan namanya di GitHub (`phpunit`) sama persis dengan sebelum
+  # di-shard, supaya status wajib dan riwayat check tidak putus. Hijau hanya
+  # kalau SEMUA shard SQLite hijau.
+  phpunit:
+    name: phpunit
+    needs: [phpunit-shard]
+    # `!cancelled()`, bukan `always()`: shard yang gagal HARUS menjalankan job
+    # ini supaya merah dengan alasan yang jelas, tapi workflow yang dibatalkan
+    # tidak perlu menyalakannya.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - name: Semua shard SQLite harus hijau
+        env:
+          HASIL: ${{ needs.phpunit-shard.result }}
+        run: |
+          echo "Hasil gabungan shard SQLite: $HASIL"
+          if [ "$HASIL" != "success" ]; then
+            echo "::error::Shard SQLite tidak semuanya hijau (hasil: $HASIL). Buka job 'SQLite shard N/M' yang merah, dibatalkan, atau terlewat."
+            exit 1
+          fi
+
+  mysql-shard:
+    name: MySQL 8.0 shard ${{ matrix.shard }}/${{ strategy.job-total }}
+    runs-on: ubuntu-latest
+    # Satu shard ±12 menit. 60 menit cuma pengaman kalau ada test yang menggantung.
+    timeout-minutes: 60
     permissions:
       contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+
     env:
+      SHARD: ${{ matrix.shard }}
+      SHARD_TOTAL: ${{ strategy.job-total }}
       APP_ENV: testing
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
@@ -124,6 +210,11 @@ jobs:
           extensions: pdo_mysql, pdo_sqlite, gd, intl, bcmath, zip, exif
           coverage: none
 
+      # Sama seperti di shard SQLite: berkas test yang tidak kebagian shard
+      # menggagalkan build.
+      - name: Verifikasi pembagian shard
+        run: php .github/ci/shard.php verify --profil=mysql --of="$SHARD_TOTAL"
+
       - name: Cache dependency Composer
         uses: actions/cache@v4
         with:
@@ -144,8 +235,32 @@ jobs:
           docker exec -e MYSQL_PWD="$MYSQL_PWD" "$MYSQL_CONTAINER"
           mysql --user=root --execute="SET GLOBAL log_bin_trust_function_creators = 1;"
 
-      - name: Suite penuh MySQL
-        run: php artisan test -c phpunit.mysql.xml
+      - name: Siapkan konfigurasi shard
+        run: php .github/ci/shard.php config --profil=mysql --of="$SHARD_TOTAL" --shard="$SHARD"
+
+      - name: Suite MySQL (shard ini)
+        run: php artisan test -c phpunit.shard.xml
+
+  # Nama GitHub-nya (`PHPUnit MySQL 8.0`) dan id job (`mysql`) sama persis
+  # dengan sebelum di-shard. Hijau hanya kalau SEMUA shard MySQL hijau.
+  mysql:
+    name: PHPUnit MySQL 8.0
+    needs: [mysql-shard]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - name: Semua shard MySQL harus hijau
+        env:
+          HASIL: ${{ needs.mysql-shard.result }}
+        run: |
+          echo "Hasil gabungan shard MySQL: $HASIL"
+          if [ "$HASIL" != "success" ]; then
+            echo "::error::Shard MySQL tidak semuanya hijau (hasil: $HASIL). Buka job 'MySQL 8.0 shard N/M' yang merah, dibatalkan, atau terlewat."
+            exit 1
+          fi
 
   deploy:
     needs: [phpunit, mysql]
