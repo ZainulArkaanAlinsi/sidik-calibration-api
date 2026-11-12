@@ -341,7 +341,7 @@ class ImporAwalAcuanTest extends TestCase
 
         $paket = count(SkemaAcuanProfilTest::BERSKEMA);
         $this->assertStringContainsString('MODE DRY-RUN', $keluaran);
-        $this->assertStringContainsString('database                   : sqlite / '.DB::connection()->getDatabaseName(), $keluaran);
+        $this->assertStringContainsString('database                   : '.DB::connection()->getDriverName().' / '.DB::connection()->getDatabaseName(), $keluaran);
         $this->assertStringContainsString('[DRY-RUN] AKAN dibuat: paket baru + versi 1', $keluaran);
         $this->assertStringNotContainsString('versi 1 dibuat (aktif', $keluaran);
         $this->assertSame(2, self::ringkas($keluaran, 'organisasi diperiksa'));
