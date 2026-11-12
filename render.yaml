@@ -339,7 +339,7 @@ services:
       # menjatuhkan boot. Nyalain SATU deploy, baca deploy log, balikin ke
       # "false". Rollback = hapus baris paket yang baru dibuat (07 §2 tahap 2).
       - key: ACUAN_IMPOR_AWAL_ON_BOOT
-        value: "true"
+        value: "false"
 
       # Satu akun admin yang dibikin sendiri waktu boot, kalau emailnya belum
       # kedaftar. Kosongin kalau nggak dipakai — perintahnya diam total.
