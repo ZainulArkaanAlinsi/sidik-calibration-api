@@ -186,9 +186,13 @@ class EntrypointBootTest extends TestCase
         );
 
         $this->assertMatchesRegularExpression(
-            '/-\s*key:\s*ACUAN_IMPOR_AWAL_ON_BOOT\s*\n\s*value:\s*"false"/',
+            // SEMENTARA ("true" | "false"): commit impor awal 12 Nov 2026 menyalakannya
+            // untuk SATU deploy; commit berikutnya mengembalikan "false" dan
+            // mengembalikan asersi ini ke versi ketat. Tetap harus `value:` literal
+            // (bukan `sync: false`) supaya blueprint yang menimpa dashboard.
+            '/-\s*key:\s*ACUAN_IMPOR_AWAL_ON_BOOT\s*\n\s*value:\s*"(?:true|false)"/',
             (string) file_get_contents(base_path('render.yaml')),
-            'render.yaml harus mematok ACUAN_IMPOR_AWAL_ON_BOOT `value: "false"` (bukan sync: false, bukan true).',
+            'render.yaml harus mematok ACUAN_IMPOR_AWAL_ON_BOOT `value: "true"|"false"` (bukan sync: false).',
         );
     }
 
