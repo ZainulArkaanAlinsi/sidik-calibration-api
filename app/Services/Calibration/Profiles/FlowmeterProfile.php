@@ -1277,7 +1277,9 @@ abstract class FlowmeterProfile extends CalibrationProfile
      *
      * Yang TIDAK dicetak: `Measured Flowrate During Calibration (m3/h)`
      * (`148!K20:K22`) — angka ketik di master, tidak ada di data sesi
-     * (BLOCKER, menunggu field input).
+     * (BLOCKER, menunggu field input). Tahap B2 (12 Nov 2026) SENGAJA menahannya
+     * sampai `pertanyaan-lab-flowmeter-gravimetri.md` §7 dijawab dan field lembar
+     * dibuat; tanpa itu semua sertifikat baru mencetak kolom penuh `—`.
      *
      * @return array<string, mixed>
      */

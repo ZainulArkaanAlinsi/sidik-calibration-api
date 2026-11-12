@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\MicrometerCalculator;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Support\MicrometerMentah;
+use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
 /**
@@ -676,6 +677,42 @@ class MicrometerProfile extends CalibrationProfile
     }
 
     /**
+     * Blok `Note :` di bawah kalimat `k` (`165:167!B31:G33`, sama di keempat
+     * master): `Kerataan Muka Ukur dalam Kondisi : Baik` (`G32 = INPUT DATA!W25`)
+     * dan `Kesejajaran Muka Ukur dalam Kondisi : Buruk` (`G33 = W30`). Nilainya
+     * HANYA isian teknisi (`spesifikasi_alat.micrometer.kerataan_muka_ukur` /
+     * `kesejajaran_muka_ukur`, `baik`|`buruk`) — kosong = barisnya tidak
+     * dicetak, tidak pernah "Baik" karangan (pola yang sama dengan Height
+     * Gauge `Result of Paralelism`). Kedua kosong = tanpa blok.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function catatanSertifikat(CalibrationSession $sesi): array
+    {
+        $blok = is_array($sesi->spesifikasi_alat) && is_array($sesi->spesifikasi_alat[MicrometerMentah::KUNCI_SESI] ?? null)
+            ? $sesi->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]
+            : [];
+        $tabel = [];
+
+        foreach ([
+            'kerataan_muka_ukur' => 'Kerataan Muka Ukur dalam Kondisi',
+            'kesejajaran_muka_ukur' => 'Kesejajaran Muka Ukur dalam Kondisi',
+        ] as $kunci => $label) {
+            $nilai = strtolower(trim((string) ($blok[$kunci] ?? '')));
+
+            if (in_array($nilai, ['baik', 'buruk'], true)) {
+                $tabel[] = [$label, ':', ucfirst($nilai)];
+            }
+        }
+
+        return $tabel === [] ? [] : [[
+            'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+            'judul' => 'Note :',
+            'tabel' => $tabel,
+        ]];
+    }
+
+    /**
      * Format sel master (K-50-15 membatalkan lima desimal [desimalSertifikat]
      * & [desimalU95] untuk CETAK; nilai snapshot tetap presisi penuh):
      *
@@ -953,6 +990,16 @@ class MicrometerProfile extends CalibrationProfile
                 $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+                // Note sertifikat `165!B31:G33` (`G32 = INPUT DATA!W25`, `G33 = W30`):
+                // dua pemeriksaan kondisi muka ukur yang dicentang teknisi.
+                $this->field('spesifikasi_alat.micrometer.kerataan_muka_ukur', 'Kerataan Muka Ukur', 'pilihan', pilihan: [
+                    ['nilai' => 'baik', 'label' => 'Baik'],
+                    ['nilai' => 'buruk', 'label' => 'Buruk'],
+                ]),
+                $this->field('spesifikasi_alat.micrometer.kesejajaran_muka_ukur', 'Kesejajaran Muka Ukur', 'pilihan', pilihan: [
+                    ['nilai' => 'baik', 'label' => 'Baik'],
+                    ['nilai' => 'buruk', 'label' => 'Buruk'],
+                ]),
                 $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],

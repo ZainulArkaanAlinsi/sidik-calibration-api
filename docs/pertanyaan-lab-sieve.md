@@ -94,6 +94,8 @@ seharusnya **19,1487**; weft 19,1827 → **19,1927**. Tetap PASS.
 `INPUT DATA!F16` mengambil kolom 6 (Inspection) untuk tipe Inspection **dan** Calibration.
 Sieve 19 mm tipe Calibration: master menuntut 15, Tabel_MPE menuntut **30**. Sistem memakai kolom 7.
 
+**Tahap B2 (12 Nov 2026):** baris sertifikat `Minimum Number of Apertures Examined` (`169!L25 = INPUT DATA!F16`) kini tercetak. Angka yang dicetak = angka yang DITEGAKKAN sistem (kolom Calibration, mis. 30), bukan `F16` master (15) — kedua kolom beda pada 79 dari 96 baris Tabel_MPE, jadi sertifikat Calibration versi master menyatakan minimum yang lebih longgar daripada yang dituntut metode. Selisihnya tercatat di jejak sesi (`type_b_components`, `sumber = penyimpangan_master`, `SieveProfile::jejakMinimumOpeningMaster`). Angka hitung U95 tidak berubah. **Keputusan (riset lab, `08-keputusan-pertanyaan-lab.md`):** `F16` mengambil kolom Inspection untuk tipe Calibration adalah kerusakan salin-tempel; sertifikat mencetak kolom yang BENAR untuk tipenya (19 mm Calibration = 30), selisih terhadap master dicatat di jejak sesi. Dikunci `SertifikatTahapB2Test::test_sieve_tipe_calibration_…`.
+
 ## §6 — Nominal dijepret
 
 `INPUT DATA!Z16` mencari ukuran Tabel_MPE TERDEKAT. 19,5 mm dinilai dengan batas 20 mm,
