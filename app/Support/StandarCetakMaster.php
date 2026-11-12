@@ -33,14 +33,39 @@ namespace App\Support;
  * - dispensett, piston_pipette: Fixed Piston Volume `B30` = `DATABASE!V16`
  * - picnometer: tanpa workbook sendiri; mengikuti Fixed (`DATABASE!V22`)
  *
- * Belum terbukti dari master (tidak ada di tabel): tids, timbangan
- * (baris standarnya mengikuti data sesi, bukan sel tetap), hydrometer
- * (menaut lewat titik), thermohygro (sengaja tak tercetak).
+ * - hydrometer (B1 / R2): `SERTIFIKAT!B29:B31` = `DATABASE!V13` (neraca, menaut
+ *   lewat titik), `V14` Termometer & Sensor Std. dan `V16` Caliper — dua
+ *   baris terakhir tetap, urutan master
+ *
+ * Baris SENSOR acuan (B1 / R2) tidak tetap: master memilihnya per sesi lewat
+ * `'INPUT DATA'!P24` (`VLOOKUP … Standar_Sensor`), di app = kolom sesi
+ * `tipe_sensor`. Tabel [SENSOR_PER_TIPE] + hook
+ * `CalibrationProfile::tipeSensorStandarTercetak()` (oven/inkubator = enclosure
+ * `SERTIFIKAT!B54`, tids `B42`, thermocouple `B42`, thermometer glass `B43`).
+ *
+ * Belum terbukti dari master (tidak ada di tabel): timbangan (baris standarnya
+ * mengikuti data sesi, bukan sel tetap), thermohygro (sengaja tak tercetak).
  */
 final class StandarCetakMaster
 {
     /** Yokogawa/CA 150 Handy Cal + sensor, S/N 23P1005 (LK-285-IDN). */
     public const TERMOMETER_SENSOR = ['Termometer & Sensor Std.', '23P1005'];
+
+    /** Digital Caliper Tesa Cal-IP67, S/N LPI-0368 (hydrometer `DATABASE!V16`). */
+    public const CALIPER = ['Digital Caliper', 'Cal-IP67', 'LPI-0368'];
+
+    /**
+     * Sensor acuan menurut tipe sesi (`tipe_sensor`): `Thermocouple Type K`
+     * (`-/Type K`, TC-01,02, LK-064-IDN), `Thermocouple Type N` (TCN-06,11),
+     * `PRT PT100` (SH1/20). Pencocok NAMA dulu, serial belakangan.
+     *
+     * @var array<string, list<string>>
+     */
+    public const SENSOR_PER_TIPE = [
+        'Type K' => ['Thermocouple Type K', 'TC-01,02'],
+        'Type N' => ['Thermocouple Type N', 'TCN-06,11'],
+        'RTD' => ['PRT Pt-100', 'PRT PT100', 'SH1/20'],
+    ];
 
     /** @var array<string, list<list<string>>> */
     public const PER_PROFIL = [
@@ -58,7 +83,20 @@ final class StandarCetakMaster
         'buret_digital' => [self::TERMOMETER_SENSOR],
         'dispensett' => [self::TERMOMETER_SENSOR],
         'piston_pipette' => [self::TERMOMETER_SENSOR],
+        'hydrometer' => [self::TERMOMETER_SENSOR, self::CALIPER],
     ];
+
+    /**
+     * Pencocok baris sensor acuan untuk satu tipe sensor sesi (`Type K`,
+     * `Type N`, `RTD`); `null` bila tipe tidak dikenal (baris tidak dicetak,
+     * tidak ditebak).
+     *
+     * @return list<string>|null
+     */
+    public static function sensorUntukTipe(?string $tipe): ?array
+    {
+        return $tipe === null ? null : (self::SENSOR_PER_TIPE[$tipe] ?? null);
+    }
 
     /** @return list<list<string>> */
     public static function untukProfil(string $kode): array

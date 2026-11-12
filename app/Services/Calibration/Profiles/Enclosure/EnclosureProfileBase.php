@@ -1365,6 +1365,16 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         return in_array($merk, TabelKalibratorEnclosure::MERK, true) ? $merk : null;
     }
 
+    /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B54` = `Thermocouple Type
+     * K/N`, `-/Type K`, `TC-01,02`, `LK-064-IDN`): tipe dari kolom sesi
+     * `tipe_sensor`, yang sama dengan pemilih tabel koreksi (B1 / R2).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return $this->normalkanTipeSensor($sesi->tipe_sensor);
+    }
+
     /** Ejaan tipe sensor diseragamkan (`Type N`/`Type K`, alias `n`/`k`). */
     private function normalkanTipeSensor(mixed $tipe): ?string
     {

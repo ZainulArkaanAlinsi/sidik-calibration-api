@@ -1068,6 +1068,19 @@ class CertificateSnapshotBuilder
             ->unique('id')
             ->values();
 
+        // Baris yang master SELALU cetak (G1 / B1 R2) ikut URUTAN master: di
+        // ekor, sesudah standar tertaut, walau teknisi sudah mencentangnya
+        // (urutan centang = urutan id, bukan urutan lembar master).
+        $selalu = $profil?->standarSelaluTercetakSesi($sesi) ?? [];
+
+        if ($selalu !== []) {
+            $idSelalu = array_map(static fn (Standard $s): int => $s->id, $selalu);
+            $standar = $standar
+                ->reject(static fn (Standard $s): bool => in_array($s->id, $idSelalu, true))
+                ->concat($selalu)
+                ->values();
+        }
+
         return $standar
             ->map(fn (Standard $s): array => [
                 'name' => $s->nama,
@@ -1363,6 +1376,14 @@ class CertificateSnapshotBuilder
 
         if ($alat === null) {
             return null;
+        }
+
+        // B1 / R7: profil menyusun 2-4 baris sendiri; data sumber belum lengkap
+        // = bentuk lama (tidak ada angka yang ditebak).
+        if ($graduasi === 'baris') {
+            $baris = $profil?->kapasitasBarisMaster($sesi);
+
+            return $baris === null || $baris === [] ? $this->kapasitasGraduasi($sesi) : implode("\n", $baris);
         }
 
         $satuan = $alat->satuan ? ' '.$alat->satuan : '';

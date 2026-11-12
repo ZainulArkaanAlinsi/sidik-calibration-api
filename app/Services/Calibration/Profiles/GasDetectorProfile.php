@@ -536,7 +536,27 @@ class GasDetectorProfile extends CalibrationProfile
                 ['kunci' => 'serial_number', 'label' => 'Serial Number :'],
                 ['kunci' => 'traceable_to', 'label' => 'Traceable to SI through :'],
             ],
+            // B1 / R7: empat baris Capacity/Graduation (CO, H2S, CH4, O2).
+            'kapasitas_master' => ['graduasi' => 'baris'],
         ];
+    }
+
+    /**
+     * Capacity/Graduation master `SERTIFIKAT!F14:L17` (empat baris):
+     * `1999 CO / 1 ppm`, `200 H2S / 1 ppm`, `100 CH4 / 1 %LEL`, `30 O2 / 0.1 %`
+     * (`INPUT DATA!E14:H17`/`E18:I21`). Angkanya tabel [GAS] profil ini —
+     * rentang & resolusi per gas yang sama dengan blok `baris_rentang`
+     * lembar kerja (`INPUT DATA` E14:I21), jadi tidak ada data sesi yang
+     * ditebak. Keempat gas selalu tercetak, seperti master.
+     *
+     * @return list<string>
+     */
+    public function kapasitasBarisMaster(CalibrationSession $sesi): array
+    {
+        return array_map(
+            fn (array $g): string => $this->barisKapasitas($g['rentang'], null, $g['resolusi'], $g['satuan'], $g['kode']),
+            self::GAS,
+        );
     }
 
     /**

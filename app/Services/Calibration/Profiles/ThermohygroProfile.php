@@ -243,6 +243,34 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                 ['kolom' => 'u95', 'judul' => self::LABEL_U95_SUHU, 'satuan' => '', 'gabung' => true],
             ],
             'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
+            // B1 / R7: dua baris Capacity/Graduation (°C, %RH).
+            'kapasitas_master' => ['graduasi' => 'baris'],
+        ];
+    }
+
+    /**
+     * Capacity/Graduation master `SERTIFIKAT!F14:J15` (dua baris):
+     * `-10 - 60 oC / 0.1 oC` (`INPUT DATA!E15`/`E16`) dan
+     * `10 - 95 %RH / 1 %RH` (`E18`/`E19`). Dibaca dari isian teknisi
+     * `spesifikasi_alat.kapasitas`, `.resolusi`, `.kapasitas_kelembaban`,
+     * `.resolusi_kelembaban` — kotak Kapasitas/Resolusi Temp. dan Humi. di
+     * lembar kerja. Salah satu kosong = bentuk lama, tidak ditebak.
+     *
+     * @return list<string>|null
+     */
+    public function kapasitasBarisMaster(CalibrationSession $sesi): ?array
+    {
+        $spek = is_array($sesi->spesifikasi_alat) ? $sesi->spesifikasi_alat : [];
+
+        foreach (['kapasitas', 'resolusi', 'kapasitas_kelembaban', 'resolusi_kelembaban'] as $k) {
+            if (! is_scalar($spek[$k] ?? null) || trim((string) $spek[$k]) === '') {
+                return null;
+            }
+        }
+
+        return [
+            $this->barisKapasitas((string) $spek['kapasitas'], self::SATUAN_SUHU, (string) $spek['resolusi']),
+            $this->barisKapasitas((string) $spek['kapasitas_kelembaban'], self::SATUAN_RH, (string) $spek['resolusi_kelembaban']),
         ];
     }
 

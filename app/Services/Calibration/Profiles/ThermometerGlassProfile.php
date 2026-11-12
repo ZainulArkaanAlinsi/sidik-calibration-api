@@ -126,6 +126,16 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
 
     public function __construct(private readonly TabelKalibratorSuhu3Alat $tabel = new TabelKalibratorSuhu3Alat) {}
 
+    /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B43` = `PRT PT100`,
+     * `-/PT100`, `SH1/20`): probe standar termometer gelas SELALU PRT PT100
+     * ([NO_PROBE]), jadi tipenya tetap [TIPE_SENSOR_STANDAR] (B1 / R2).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return self::TIPE_SENSOR_STANDAR;
+    }
+
     public function kode(): string
     {
         return 'thermometer_glass';

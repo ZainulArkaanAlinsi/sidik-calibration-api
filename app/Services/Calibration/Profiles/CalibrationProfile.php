@@ -2348,6 +2348,48 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Baris Capacity/Graduation master yang BERTINGKAT (B1 / R7): autoclave
+     * (suhu + tekanan), spectrophotometer (nm + %T), thermohygro (°C + %RH),
+     * gas detector (CO/H2S/CH4/O2) — tiap baris `kapasitas satuan / resolusi
+     * satuan` seperti sel master (`F14`/`I14`, `F15`/`I15`, …). Dipakai hanya
+     * bila `tata_letak.kapasitas_master` = `['graduasi' => 'baris']`.
+     *
+     * `null` (bawaan, atau data sumbernya belum lengkap) = jatuh ke
+     * Capacity/Graduation lama yang dibangun dari rentang alat; tidak ada
+     * angka yang ditebak.
+     *
+     * @return list<string>|null
+     */
+    public function kapasitasBarisMaster(CalibrationSession $sesi): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Satu baris Capacity/Graduation master: `121 °C / 0.01 °C`. Angka
+     * numerik ditulis ringkas (tanpa nol belakang, tanpa pemisah ribuan);
+     * teks ketikan teknisi (`-10 - 60`, `200-700`) dibiarkan apa adanya;
+     * kosong = `-`.
+     */
+    protected function barisKapasitas(float|int|string|null $kapasitas, ?string $satuan, float|int|string|null $resolusi, ?string $satuanResolusi = null, ?string $penanda = null): string
+    {
+        $teks = static function (float|int|string|null $n): string {
+            if ($n === null || (is_string($n) && trim($n) === '')) {
+                return '-';
+            }
+
+            return is_string($n)
+                ? trim($n)
+                : rtrim(rtrim(number_format((float) $n, 6, ',', ''), '0'), ',');
+        };
+
+        $satuanResolusi ??= $satuan;
+
+        return trim($teks($kapasitas).($satuan ? ' '.$satuan : '').($penanda ? ' '.$penanda : ''))
+            .' / '.$teks($resolusi).($satuanResolusi ? ' '.$satuanResolusi : '');
+    }
+
+    /**
      * Blok catatan/legenda khas alat, dalam URUTAN master. Tiap blok:
      * `['posisi' => TataLetakSertifikat::POSISI_*, 'judul' => ?string,
      * 'baris' => list<string>, 'tabel' => list<list<string>>]`.
@@ -2753,6 +2795,17 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Tipe sensor acuan sesi (`Type K` / `Type N` / `RTD`) untuk baris sensor
+     * Standard Used yang master pilih per sesi (`'INPUT DATA'!P24` →
+     * `Standar_Sensor`). Bawaan `null` = profil tidak mencetak baris sensor
+     * (semua alat di luar enclosure, TIDS, Thermocouple, Thermometer Glass).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return null;
+    }
+
+    /**
      * Standar yang master SELALU cetak di tabel Standard Used walau tidak
      * dicentang teknisi (baris "Termometer & Sensor Std."; G1/R2). Datanya
      * tabel per kode profil `App\Support\StandarCetakMaster`, jadi tidak ada
@@ -2770,6 +2823,13 @@ abstract class CalibrationProfile
     public function standarSelaluTercetakSesi(CalibrationSession $sesi): array
     {
         $daftar = StandarCetakMaster::untukProfil($this->kode());
+
+        // Baris sensor acuan (B1 / R2): dipilih master per sesi, bukan sel tetap.
+        $sensor = StandarCetakMaster::sensorUntukTipe($this->tipeSensorStandarTercetak($sesi));
+
+        if ($sensor !== null) {
+            $daftar[] = $sensor;
+        }
 
         if ($daftar === [] || $sesi->organization_id === null) {
             return [];
