@@ -230,6 +230,18 @@ pakai standar kedaluwarsa tanpa ada yang tahu.
       `post_max_size = 12M`. Default PHP cuma **2M** — nginx boleh lolos, tapi
       PHP tetap menolak, dan gejalanya bikin bingung: request sampai ke server
       tapi `$request->file('foto')` kosong tanpa pesan yang jelas
+- [ ] **`serialize_precision = -1` di `php.ini`** (bawaan PHP; jangan disetel 14
+      atau 17). `RawMeasurement` memaksanya `-1` secara lokal saat menulis float
+      `pembacaan`/`titik_ukur` (`App\Support\AngkaFloatEksak`, nilai asal
+      dipulihkan, dicatat sekali per proses di log), jadi simpan lembar tidak
+      gagal walau setelannya menyimpang. Tapi bagian lain, mis. JSON respons,
+      tetap mengikuti setelan server: pada 14 angka terpotong, pada 17 muncul
+      noise `0.10000000000000001`. `json_float_shortest` di `/api/health`
+      melaporkan konfigurasi PHP worker yang menjawab, **bukan jaminan** seluruh
+      pool; `false` berarti `php.ini`-nya perlu dibetulkan. Penulis tes: SQLite
+      menyimpan float ber-noise apa adanya (tidak membulatkan ke 8 desimal),
+      MySQL `DECIMAL(20,8)` membulatkannya, jadi tes SQLite tidak membuktikan
+      apa yang tersimpan di MySQL.
 - [ ] `certbot --nginx -d api.pt-sidik.com` → HTTPS hidup, auto-renew aktif
 - [ ] HTTP di-redirect ke HTTPS
 

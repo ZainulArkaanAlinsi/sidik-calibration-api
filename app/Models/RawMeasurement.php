@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Support\AngkaFloatEksak;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use LogicException;
 
 /**
  * @mixin IdeHelperRawMeasurement
@@ -27,19 +27,19 @@ class RawMeasurement extends Model
         $this->attributes['titik_ukur'] = $this->decimalStorageValue($value);
     }
 
-    /** Keep PDO's float-to-string conversion from applying PHP's shorter precision. */
+    /**
+     * Keep PDO's float-to-string conversion from applying PHP's shorter precision.
+     * Encoding forces serialize_precision=-1 locally (see AngkaFloatEksak), so a
+     * misconfigured server does not block the write.
+     */
     private function decimalStorageValue(mixed $value): mixed
     {
         if (! is_float($value)) {
             return $value;
         }
 
-        if (ini_get('serialize_precision') !== '-1') {
-            throw new LogicException('Raw measurement float writes require serialize_precision=-1.');
-        }
-
-        // Encode before assigning so either exception leaves the old attribute intact.
-        return json_encode($value, JSON_THROW_ON_ERROR);
+        // Encode before assigning so any exception leaves the old attribute intact.
+        return AngkaFloatEksak::kodekan($value);
     }
 
     /** @return array<string, string> */
