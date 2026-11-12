@@ -1495,6 +1495,10 @@ Efek (satu transaksi): sertifikat `status: "ditarik"` (+ `ditarik_pada`, `ditari
 yang ditarik; tarik lagi → `-R2`). QR lama menampilkan "Sertifikat ini ditarik" + penggantinya;
 `GET /api/verify/{token}` → `status_dokumen: "ditarik"`, `digantikan_oleh`; unduh publik `410`.
 `status_dokumen` di resource sertifikat: `berlaku | digantikan | dibatalkan | ditarik | belum_terbit`.
+`digantikan_oleh` (verifikasi publik & resource lab) hanya menunjuk revisi yang berlaku (`terbit`);
+revisi yang `dibatalkan` TIDAK ditunjuk (`null`) tetapi pendahulunya tetap `digantikan` (K38-2).
+Halaman web `/verify/{token}` untuk kasus itu menampilkan bilah "sudah direvisi, revisinya
+dibatalkan" tanpa tautan "yang berlaku".
 
 ### `GET /api/calibrations/{id}/riwayat-persetujuan` — **admin & super admin saja** (6 Okt 2026)
 
