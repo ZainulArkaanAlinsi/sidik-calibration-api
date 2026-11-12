@@ -335,8 +335,14 @@ class TimerStopwatchProfile extends CalibrationProfile
      * [nilaiDalamSatuanAlat]). Satuan alat yang tidak dikenal → tanpa pecahan
      * (satu sel per kolom seperti sebelumnya); faktornya tidak ditebak.
      *
-     * `k_tunggal` SENGAJA belum diisi: `V29 = 'PERHITUNGAN U95%'!AC17` adalah
-     * `k` satu budget dan budget mana yang mewakili belum dijawab lab.
+     * `k_tunggal` = `baris_pertama` (B3a / R9): `V29 = 'PERHITUNGAN U95%'!AC17`
+     * adalah `k` SATU budget — budget yang sama dengan sel U95 di sebelahnya
+     * (`X19 = 'PERHITUNGAN U95%'!AC20`; `X20:X28` tak berrumus, jadi master
+     * hanya punya satu blok budget, milik baris pertama). Master mencetak
+     * satu `k` dengan tanda `=`; versi sebelumnya membiarkan `k` tiap baris
+     * tampil dan `≈ 1.9639997581` muncul karena k antar baris beda di digit
+     * ke-3. Budget mana yang MEWAKILI k pada sesi 5 titik tetap pertanyaan
+     * lab (laporan B3a); angka hitung tidak tersentuh.
      *
      * @return array<string, mixed>
      */
@@ -358,6 +364,7 @@ class TimerStopwatchProfile extends CalibrationProfile
 
         return [
             ...parent::tataLetakSertifikat($sesi),
+            'k_tunggal' => 'baris_pertama',
             'kolom_hasil' => [
                 $kolom('standar', 'Standard Value'),
                 $kolom('uut', 'Unit Under Test'),
@@ -402,15 +409,24 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
-     * Format sel: U95 `0.0` (`X19`), `k` `General` (`V29` `1.96516849139021`).
+     * Format sel: U95 `0.0` (`X19`), `k` `0.000` (`V29`).
      * Format Standard/UUT/Correction ada di pecahan kolom
      * ([tataLetakSertifikat]).
+     *
+     * `k`: `V29` berformat `General` di kolom selebar 6,2 karakter, sehingga
+     * Excel menampilkan `1.965168491390211` sebagai `1.965` — yang tercetak
+     * di `sertifikat.terang.pdf` master ("Coverage Factor( k ) = 1.965").
+     * Versi sebelumnya (`General` = 10 digit, `≈ 1.9639997581`) membaca
+     * NILAI sel, bukan TAMPILANNYA (B3a / R9). `0.000` setara tampilan itu
+     * untuk k yang tidak berakhir nol; Excel `General` membuang nol di
+     * belakang (k = 2.0003 tampil `2`, bukan `2.000`) dan itu tidak ditiru —
+     * kasus tepi yang hanya muncul di df ≈ 60.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['u95' => '0.0', 'k' => 'General'];
+        return ['u95' => '0.0', 'k' => '0.000'];
     }
 
     /** Sama seperti kelompok Putaran: lampiran maupun master tidak menyebut batas keberterimaan. */
