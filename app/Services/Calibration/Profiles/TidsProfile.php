@@ -584,11 +584,49 @@ class TidsProfile extends CalibrationProfile
      * "tidak ada" salah. Desimal tetap ikut resolusi alat (docblock
      * [desimalSertifikat]) — format sel kedua varian memang mengikutinya.
      *
+     * S-4 (banding ulang 12 Nov 2026):
+     *
+     * - `kapasitas_master` (R7/P3): `193!F14` = `'INPUT DATA'!E15` dan `I14` = `E16`
+     *   (`250 °C / 0.01 °C`) — kapasitas yang DIKETIK, bukan rentang `-20–600`.
+     *   Lihat [kapasitasCetakMaster].
+     * - `tanggal_master.tambah_hari` (R6/P2): Issuance Date `B48` =
+     *   `'INPUT DATA'!E67` = `P16+4` di workbook Recorder (Graptech) dan `P16+2` di
+     *   workbook Yokogawa K N; `P16` = Calibration Date (`O12`). Varian dari
+     *   keluarga standar sesi, sama dengan format sel di [formatKolomSertifikat];
+     *   keluarga tak dikenali = tanggal terbit sistem (tidak ditebak).
+     *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
-        return self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi));
+        $induk = self::tataLetakSuhuMaster(parent::tataLetakSertifikat($sesi));
+        $keluarga = $this->keluargaStandar($sesi->standard);
+        $tambahHari = match (true) {
+            $keluarga === null => null,
+            $keluarga === TabelStandarTids::KELUARGA_BERKANAL => 4,
+            default => 2,
+        };
+
+        return [
+            ...$induk,
+            'tanggal_master' => [
+                ...($induk['tanggal_master'] ?? ['kepala' => 'en', 'terbit' => 'en']),
+                'tambah_hari' => $tambahHari,
+            ],
+            'kapasitas_master' => ['graduasi' => 'resolusi'],
+        ];
+    }
+
+    /**
+     * Kapasitas yang dicetak master (`193!F14` = `INPUT DATA!E15`, diketik):
+     * isian `spesifikasi_alat.kapasitas` ("Kapasitas Alat"). Belum diisi = rentang
+     * atas alat terdaftar (`equipments.range_max`); tidak ada angka yang ditebak.
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $kapasitas = $sesi->spesifikasi_alat['kapasitas'] ?? null;
+
+        return is_numeric($kapasitas) ? (float) $kapasitas : parent::kapasitasCetakMaster($sesi);
     }
 
     /**

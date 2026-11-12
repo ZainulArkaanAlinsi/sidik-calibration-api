@@ -1441,17 +1441,22 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
                         <td>{!! $nP($b['histeresis'][2] ?? null, $dP) !!}</td>
                     </tr>
                 @endforeach
+{{-- S-4 (`u95_dalam_tabel`): baris terakhir KOTAK tabel, seperti master `E35:X35`. Di kolom 0 dan menempel ke @if supaya snapshot lama tidak bertambah satu byte pun. --}}@if ($tekMaster && $tataLetak['u95_dalam_tabel'] && ($tekanan['u95'] ?? null) !== null)
+                    <tr class="u95-dalam-tabel">
+                        <td colspan="8" style="text-align: center;"><b>Uncertainty U95% = &plusmn;</b> {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}</td>
+                    </tr>
+@endif
             </tbody>
         </table>
         @if (($tekanan['u95'] ?? null) !== null)
-            @if ($tekMaster)
+            @if ($tekMaster && ! $tataLetak['u95_dalam_tabel'])
                 <div class="ket-k">Uncertainty U95% = &plusmn; {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}</div>
             @endif
             <div class="ket-k">
                 @unless ($tekMaster)
                 Uncertainty U95% = &plusmn; {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}.
                 @endunless
-                The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
+                {{-- S-4: bunyi kalimat bisa ditimpa profil (`tata_letak.kalimat_k`, master `E36`); bawaan = bunyi lama. --}}{{ $tataLetak['kalimat_k'] ?? 'The uncertainty is taken at a confidence level 95 % and coverage factor ( k )' }} =
                 {{-- Master: `ROUND(k;1)` berformat General — 1,98 tercetak `2`,
                      4,30 tercetak `4,3`. Bukan `2,0`. --}}
                 @php($kP = round((float) ($tekanan['k_cetak'] ?? 2), 1))
@@ -1487,7 +1492,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
         @php($cetakKE = fn ($n) => $nE($n, 'k'))
         @php($kE = collect($spE)->pluck('faktor_cakupan_k')->filter(fn ($n) => $n !== null)->values())
 
-        <div class="judul-kelompok">A) SEBARAN SUHU</div>
+        <div class="judul-kelompok">{{ $tataLetak['judul_kelompok_master'] ? 'A) Sebaran Suhu' : 'A) SEBARAN SUHU' }}</div>
         @foreach ($blokPosisiE as $blokPosisi)
         <table class="data">
             <thead>
@@ -1541,7 +1546,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
             </div>
         @endif
 
-        <div class="judul-kelompok">B) KINERJA ENKLOSUR</div>
+        <div class="judul-kelompok">{{ $tataLetak['judul_kelompok_master'] ? 'B) Kinerja Enklosur' : 'B) KINERJA ENKLOSUR' }}</div>
         <table class="data">
             <thead>
                 <tr>

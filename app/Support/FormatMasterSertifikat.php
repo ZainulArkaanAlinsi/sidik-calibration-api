@@ -32,18 +32,26 @@ namespace App\Support;
  * Terbukti master (penjaga-angka, 10 Nov 2026): thermocouple +1 dan thermometer_glass +1
  * (`INPUT DATA!E68`/`E67` = `P16+1`), gas_detector/jangka_sorong/height_gauge +0, piston_pipette
  * dan dispensett +4 (Fixed Piston `D62` = `Q16+4`). Tetap `null` (nilai bentrok antar workbook atau
- * tak terbukti): flowmeter_totalizer/flowrate, ph_meter, timbangan, conductivity, tids, enclosure
- * (inkubator/oven/furnace/refrigerator), vacuum_gauge — dan TURBIDIMETER, yang DITAHAN
+ * tak terbukti): flowmeter_totalizer/flowrate, ph_meter, timbangan, conductivity — dan TURBIDIMETER, yang DITAHAN
  * (keputusan koordinator): master lama `+1` berlawanan dengan job Jun 2026 `+4` dan bukti kertas
  * lama bertentangan dengan PDF master, jadi tanggal terbit tetap tanggal terbit sistem sampai
  * pemilik memastikan.
+ *
+ * S-4 (12 Nov 2026): enclosure (bath, inkubator, oven, furnace, refrigerator) dan tids TIDAK lagi
+ * `null` di sini — N ditentukan PER VARIAN master oleh profilnya (`tata_letak.tanggal_master.tambah_hari`):
+ * Enclosure Constant Yokogawa `INPUT DATA!E168` = `P16+1`, Enclosure Recorder `E100` = `P16+4`;
+ * TIDS Recorder (Graptech) `E67` = `P16+4`, TIDS Yokogawa K N `E67` = `P16+2` (`P16` = Calibration
+ * Date). Kolom ke-4 di bawah tetap `null` karena satu profil punya dua workbook dengan N berbeda.
+ * `vacuum_gauge` +4: master vakum satu-satunya (lembar tersembunyi `Druck (kPa) vacum` di Druck07G)
+ * mengikuti SERTIFIKAT Druck07G yang `S11+4`.
  *
  * Issuance Date yang dibekukan = `min(tanggal kalibrasi + N, hari penerbitan)`
  * (`CertificateSnapshotBuilder::tanggalTerbitMaster`): sertifikat tidak pernah mengaku terbit
  * SESUDAH hari ia benar-benar diterbitkan.
  *
- * Profil TANPA baris di sini (bath, buret, buret_digital, picnometer): tidak
- * ada master di folder ekstraksi (P7) — tidak menyatakan apa pun.
+ * Profil TANPA baris di sini (buret, buret_digital, picnometer): tidak
+ * ada master di folder ekstraksi (P7) — tidak menyatakan apa pun. BATH punya master (S-4: memakai
+ * lembar SERTIFIKAT Enclosure Constant Yokogawa / Recorder lewat `EnclosureProfileBase`), jadi ada barisnya.
  *
  * Pilihan master baku bila >1 workbook (P6): lihat `docs/sertifikat-g0b-format-master.md`.
  */
@@ -98,6 +106,7 @@ final class FormatMasterSertifikat
         'inkubator' => [2.34, 'en', 'en', null],
         'oven' => [2.34, 'en', 'en', null],
         'furnace' => [2.34, 'en', 'en', null],
+        'bath' => [2.34, 'en', 'en', null],
         'refrigerator' => [2.34, 'en', 'en', null],
         'pressure_gauge' => [1.54, 'id', 'id', 4],
         'vacuum_gauge' => [1.54, 'id', 'id', 4],

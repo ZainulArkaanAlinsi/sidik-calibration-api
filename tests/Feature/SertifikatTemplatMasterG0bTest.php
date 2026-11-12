@@ -94,10 +94,14 @@ class SertifikatTemplatMasterG0bTest extends TestCase
             }
         }
 
-        // Empat profil tanpa master (P7).
-        foreach (['bath', 'buret', 'buret_digital', 'picnometer'] as $kode) {
+        // Tiga profil tanpa master (P7). Bath TIDAK lagi di daftar ini sejak S-4
+        // (12 Nov 2026): audit 11 Nov keliru menandainya "master hilang" — Bath memakai
+        // lembar SERTIFIKAT Enclosure Constant Yokogawa / Recorder lewat
+        // `EnclosureProfileBase` (diadu di `SertifikatS4BandingUlangTest`).
+        foreach (['buret', 'buret_digital', 'picnometer'] as $kode) {
             $this->assertArrayNotHasKey($kode, FormatMasterSertifikat::PER_PROFIL);
         }
+        $this->assertArrayHasKey('bath', FormatMasterSertifikat::PER_PROFIL);
     }
 
     public function test_ruang_pracetak_setinggi_margin_atas_master_dikurangi_margin_halaman(): void
@@ -206,8 +210,20 @@ class SertifikatTemplatMasterG0bTest extends TestCase
             $this->assertSame($n, $this->tataLetak($kode)['tanggal_master']['tambah_hari'], $kode);
         }
         // `Issuance Date` yang bentrok antar workbook / tak terbukti: tanggal terbit sistem.
-        foreach (['flowmeter_totalizer', 'flowmeter_flowrate', 'ph_meter', 'timbangan', 'conductivity_meter', 'tids', 'inkubator', 'oven', 'furnace', 'refrigerator'] as $kode) {
+        // S-4 (12 Nov 2026): `tids` dan kelima enclosure DIKELUARKAN dari daftar ini — mereka
+        // punya dua workbook dengan N berbeda, jadi N dipilih PER VARIAN oleh profilnya
+        // (`INPUT DATA!E67` TIDS Recorder `P16+4` / Yokogawa K N `P16+2`; Enclosure Constant
+        // Yokogawa `E168` `P16+1` / Recorder `E100` `P16+4`). Diadu per varian di
+        // `SertifikatS4BandingUlangTest`; di sini sesi kosong: TIDS tanpa standar = null,
+        // enclosure tanpa merk kalibrator = varian bawaan Constant Yokogawa (+1, sama dengan
+        // pemilihan diagram & format sel).
+        foreach (['flowmeter_totalizer', 'flowmeter_flowrate', 'ph_meter', 'timbangan', 'conductivity_meter', 'tids'] as $kode) {
             $this->assertNull($this->tataLetak($kode)['tanggal_master']['tambah_hari'], $kode);
+        }
+
+        foreach (['inkubator', 'oven', 'furnace', 'refrigerator', 'bath'] as $kode) {
+            $this->assertSame(1, $this->tataLetak($kode)['tanggal_master']['tambah_hari'], $kode);
+            $this->assertSame('en', $this->tataLetak($kode)['tanggal_master']['kepala'], $kode);
         }
     }
 
