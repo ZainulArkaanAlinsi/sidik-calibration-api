@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\SieveCalculator;
+use App\Services\Calibration\TabelStandarSieve;
 use App\Support\SieveMentah;
 use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
@@ -392,14 +393,21 @@ class SieveProfile extends CalibrationProfile
      *   tersimpan tiap parameter, angka yang sama yang diadu ke master di
      *   `SieveMasterTest`.
      *
-     * `Minimum Number of Apertures Examined` (`B25`) BELUM: angkanya lahir dari
-     * Tabel MPE di kalkulator dan tidak disimpan per sesi; menyalin
-     * pencariannya ke sini berarti dua jalur untuk satu angka.
+     * - `Minimum Number of Apertures Examined (openings and diameter) : <n>
+     *   Sample Openings Per Sieves` (`169!B25`, `L25 = INPUT DATA!F16`, `M25`),
+     *   satu baris di antara kalimat `k` dan Standard Deviation (Tahap B2).
+     *   Angkanya dari [SieveCalculator::minimumOpening] — fungsi yang SAMA yang
+     *   menegakkan minimum itu waktu menghitung, jadi tak ada dua jalur. Master
+     *   `F16` mengambil kolom Inspection untuk tipe Calibration; di sini kolom
+     *   tipe yang benar (penyimpangan lama, docblock kalkulator no. 3). Tanpa
+     *   blok sesi / ukuran di luar Tabel MPE / `all` tanpa jumlah total, baris
+     *   tidak dicetak (tidak mengarang angka).
      *
      * @return list<array<string, mixed>>
      */
     public function catatanSertifikat(CalibrationSession $sesi): array
     {
+        $minimum = $this->minimumApertureSertifikat($sesi);
         $stdev = [];
 
         foreach ($sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]) as $t) {
@@ -412,8 +420,28 @@ class SieveProfile extends CalibrationProfile
 
         return [
             ['posisi' => TataLetakSertifikat::POSISI_ATAS_HASIL, 'judul' => 'Hole Dimension'],
+            ...($minimum === null ? [] : [[
+                'posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL,
+                'baris' => ['Minimum Number of Apertures Examined (openings and diameter) : '.$minimum.' Sample Openings Per Sieves'],
+            ]]),
             ...($stdev === [] ? [] : [['posisi' => TataLetakSertifikat::POSISI_BAWAH_HASIL, 'tabel' => $stdev]]),
         ];
+    }
+
+    /** Lihat [catatanSertifikat]: `null` = tidak bisa ditentukan dari data sesi. */
+    private function minimumApertureSertifikat(CalibrationSession $sesi): ?int
+    {
+        $blok = SieveMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null || $blok['tipe'] === null || $blok['nominal'] === null) {
+            return null;
+        }
+
+        $mpe = (new TabelStandarSieve)->barisMpe((float) $blok['nominal'], $blok['satuan']);
+
+        return $mpe === null
+            ? null
+            : SieveCalculator::minimumOpening($mpe, (string) $blok['tipe'], $blok['jumlah_opening_total']);
     }
 
     /**
@@ -551,7 +579,7 @@ class SieveProfile extends CalibrationProfile
                 'standar_deviasi' => $p['simpangan_baku'],
                 'jumlah_pengulangan' => $p['jumlah'],
                 'type_a' => $this->typeA($p['budget']),
-                'type_b_components' => $this->jejakAudit($hasil, $p),
+                'type_b_components' => $this->jejakAudit($hasil, $p, (string) $blok['tipe']),
                 'type_b' => $p['type_b'],
                 'ketidakpastian_gabungan' => $p['ketidakpastian_gabungan'],
                 'faktor_cakupan_k' => $p['faktor_cakupan_k'],
@@ -687,7 +715,7 @@ class SieveProfile extends CalibrationProfile
      * @param  array<string, mixed>  $p
      * @return list<array<string, mixed>>
      */
-    private function jejakAudit(array $hasil, array $p): array
+    private function jejakAudit(array $hasil, array $p, string $tipe = ''): array
     {
         $baris = array_map(fn (array $b): array => $this->barisAudit($b), $p['budget']);
 
@@ -738,7 +766,50 @@ class SieveProfile extends CalibrationProfile
             'vi' => 0.0,
         ];
 
+        $selisihMinimum = $this->jejakMinimumOpeningMaster($hasil, $tipe);
+
+        if ($selisihMinimum !== null) {
+            $baris[] = $selisihMinimum;
+        }
+
         return $baris;
+    }
+
+    /**
+     * AGENTS.md §Olah data butir 4: minimum opening tipe Calibration. Master
+     * `INPUT DATA!F16` memakai kolom 6 (Inspection) untuk tipe Inspection DAN
+     * Calibration; Tabel_MPE punya kolom Calibration sendiri (kolom 7) dan
+     * keduanya beda pada 79 dari 96 baris. Yang ditegakkan DAN dicetak
+     * (`169!L25`) kolom tipenya; baris jejak ini menyebut selisih terhadap master.
+     * `null` bila bukan tipe Calibration atau tidak ada selisih.
+     *
+     * @param  array<string, mixed>  $hasil  hasil `SieveCalculator::hitungSesi`
+     * @return array<string, mixed>|null
+     */
+    public function jejakMinimumOpeningMaster(array $hasil, string $tipe): ?array
+    {
+        $minimum = $hasil['minimum_opening'] ?? null;
+        $minimumMaster = SieveCalculator::minimumOpening($hasil['mpe'] ?? [], 'inspection', $minimum);
+
+        if ($tipe !== 'calibration' || $minimum === null || $minimumMaster === null || $minimumMaster === $minimum) {
+            return null;
+        }
+
+        return [
+            'sumber' => 'penyimpangan_master',
+            'keterangan' => sprintf(
+                'Minimum opening tipe Calibration = %s (kolom Calibration Tabel_MPE, ukuran %s mm), yang ditegakkan '
+                .'dan dicetak di Minimum Number of Apertures Examined. Master `INPUT DATA!F16` (dicetak `169!L25`) '
+                .'memakai kolom Inspection untuk tipe Calibration = %s; selisih %s opening '
+                .'(docs/pertanyaan-lab-sieve.md §5). Angka hitung U95 tidak terpengaruh.',
+                $minimum, $hasil['nominal_mm'], $minimumMaster, abs($minimum - $minimumMaster),
+            ),
+            'distribusi' => 'jejak',
+            'nilai' => null,
+            'u_baku' => 0.0,
+            'ci' => 0.0,
+            'vi' => 0.0,
+        ];
     }
 
     /** @return array<string, mixed> */
