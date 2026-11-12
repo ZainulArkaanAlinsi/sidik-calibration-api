@@ -12,8 +12,11 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Support\JsonKanonik;
+use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 use Tests\Unit\SkemaAcuanProfilTest;
 
@@ -265,5 +268,236 @@ class ImporAwalAcuanTest extends TestCase
 
         $this->assertArrayNotHasKey('isi', $audit->new_data);
         $this->assertSame($versi->isi_sha256, $audit->new_data['isi_sha256']);
+    }
+
+    /** @return array{paket: int, versi: int, audit: int, audit_paket: int} */
+    private function cacahBaris(): array
+    {
+        return [
+            'paket' => DB::table('paket_acuan')->count(),
+            'versi' => DB::table('paket_acuan_versi')->count(),
+            'audit' => DB::table('audit_logs')->count(),
+            'audit_paket' => DB::table('audit_logs')->whereIn('entity_type', ['paket_acuan', 'paket_acuan_versi'])->count(),
+        ];
+    }
+
+    /**
+     * Angka di baris ringkasan "label    : angka". Tidak bergantung pada akhir
+     * baris (Windows memberi `\r\n`) maupun lebar kolom label.
+     */
+    private static function ringkas(string $keluaran, string $label): int
+    {
+        self::assertSame(
+            1,
+            preg_match('/^'.preg_quote($label, '/').'\s*:\s*(\d+)\s*$/m', $keluaran, $cocok),
+            "baris ringkasan '{$label}' tidak ada di keluaran",
+        );
+
+        return (int) $cocok[1];
+    }
+
+    /** Jalankan perintah dan kembalikan [kode keluar, teks keluaran]. */
+    private function jalankan(array $parameter): array
+    {
+        $kode = Artisan::call('acuan:impor-awal', $parameter);
+
+        return [$kode, Artisan::output()];
+    }
+
+    /**
+     * Dry-run HANYA membaca: nol INSERT/UPDATE/DELETE/DDL, nol `FOR UPDATE`,
+     * nol baris berubah di tabel mana pun — dan angkanya sudah menyebut apa
+     * yang akan ditulis jalan sungguhan.
+     */
+    public function test_dry_run_tidak_menulis_apa_pun_dan_menyebut_yang_akan_ditulis(): void
+    {
+        Organization::factory()->count(2)->create();
+        $this->sesi(Organization::query()->orderBy('id')->first(), 'Micrometer', '2025-03-10');
+
+        $sebelum = $this->cacahBaris();
+        $sql = [];
+        $transaksi = 0;
+        DB::listen(static function ($q) use (&$sql): void {
+            $sql[] = $q->sql;
+        });
+        Event::listen(TransactionBeginning::class, static function () use (&$transaksi): void {
+            $transaksi++;
+        });
+
+        [$kode, $keluaran] = $this->jalankan(['--dry-run' => true]);
+
+        $this->assertSame(0, $kode, $keluaran);
+        $this->assertSame($sebelum, $this->cacahBaris(), 'dry-run tidak boleh mengubah satu baris pun');
+        // `lockForUpdate` hanya berarti di dalam transaksi (dan SQLite membuang
+        // klausanya), jadi "nol transaksi" yang menjaganya.
+        $this->assertSame(0, $transaksi, 'dry-run tidak boleh membuka transaksi/kunci');
+        $sqlDryRun = $sql;
+
+        $menulis = array_values(array_filter($sqlDryRun, static fn (string $s): bool => (bool) preg_match(
+            '/^\s*(insert|update|delete|replace|create|alter|drop|truncate|pragma\s+\w+\s*=)|for\s+update/i',
+            $s,
+        )));
+        $this->assertSame([], $menulis, 'dry-run mengirim pernyataan tulis/kunci: '.implode(' | ', $menulis));
+
+        $paket = count(SkemaAcuanProfilTest::BERSKEMA);
+        $this->assertStringContainsString('MODE DRY-RUN', $keluaran);
+        $this->assertStringContainsString('database                   : sqlite / '.DB::connection()->getDatabaseName(), $keluaran);
+        $this->assertStringContainsString('[DRY-RUN] AKAN dibuat: paket baru + versi 1', $keluaran);
+        $this->assertStringNotContainsString('versi 1 dibuat (aktif', $keluaran);
+        $this->assertSame(2, self::ringkas($keluaran, 'organisasi diperiksa'));
+        $this->assertSame($paket, self::ringkas($keluaran, 'paket per organisasi'));
+        $this->assertSame(2 * $paket, self::ringkas($keluaran, 'kombinasi diperiksa'));
+        $this->assertSame(2 * $paket, self::ringkas($keluaran, 'paket baru'));
+        $this->assertSame(2 * $paket, self::ringkas($keluaran, 'versi 1 baru'));
+        $this->assertSame(0, self::ringkas($keluaran, 'galat (tidak ditimpa)'));
+        $this->assertStringContainsString(
+            'baris AKAN ditulis: paket_acuan '.(2 * $paket).', paket_acuan_versi '.(2 * $paket).', audit_logs '.(4 * $paket),
+            $keluaran,
+        );
+
+        // Kontrol detektor: jalan sungguhan MEMANG membuka transaksi per paket
+        // dan mengirim INSERT — kalau tidak, dua asersi nol di atas tak berarti.
+        $this->jalankan(['profil' => 'micrometer', '--organisasi' => Organization::query()->min('id')]);
+        $this->assertGreaterThan(0, $transaksi, 'detektor transaksi tidak bekerja');
+        $this->assertNotSame([], array_filter($sql, static fn (string $s): bool => (bool) preg_match('/^\s*insert/i', $s)), 'detektor INSERT tidak bekerja');
+    }
+
+    /**
+     * Angka dry-run = yang benar-benar tertulis jalan sungguhan: tiga tabel,
+     * dua `audit_logs` per paket baru, dan tidak ada tabel lain yang disentuh.
+     */
+    public function test_angka_dry_run_sama_dengan_baris_yang_tertulis_jalan_sungguhan(): void
+    {
+        Organization::factory()->count(2)->create();
+        $paket = count(SkemaAcuanProfilTest::BERSKEMA);
+        $sebelum = $this->cacahBaris();
+
+        [, $kering] = $this->jalankan(['--dry-run' => true]);
+        $this->assertSame($sebelum, $this->cacahBaris());
+
+        [$kode, $nyata] = $this->jalankan([]);
+        $this->assertSame(0, $kode, $nyata);
+
+        $sesudah = $this->cacahBaris();
+        $this->assertSame(2 * $paket, $sesudah['paket'] - $sebelum['paket']);
+        $this->assertSame(2 * $paket, $sesudah['versi'] - $sebelum['versi']);
+        $this->assertSame(4 * $paket, $sesudah['audit'] - $sebelum['audit']);
+        $this->assertSame(4 * $paket, $sesudah['audit_paket'] - $sebelum['audit_paket'], 'semua audit baru milik paket_acuan/paket_acuan_versi');
+
+        foreach (['paket_acuan_suntingan', 'paket_acuan_log', 'simulasi_acuan', 'uncertainty_calculations'] as $tabel) {
+            $this->assertSame(0, DB::table($tabel)->count(), "{$tabel} tidak boleh disentuh impor awal");
+        }
+
+        // Kalimat ringkasan dua jalan identik kecuali kata kerjanya.
+        $this->assertStringContainsString(
+            'baris AKAN ditulis: paket_acuan '.(2 * $paket).', paket_acuan_versi '.(2 * $paket).', audit_logs '.(4 * $paket),
+            $kering,
+        );
+        $this->assertStringContainsString(
+            'baris ditulis: paket_acuan '.(2 * $paket).', paket_acuan_versi '.(2 * $paket).', audit_logs '.(4 * $paket),
+            $nyata,
+        );
+
+        // Sesudah impor, dry-run melaporkan "tidak ada yang akan ditulis".
+        [$kode2, $kering2] = $this->jalankan(['--dry-run' => true]);
+        $this->assertSame(0, $kode2, $kering2);
+        $this->assertSame(0, self::ringkas($kering2, 'paket baru'));
+        $this->assertSame(0, self::ringkas($kering2, 'versi 1 baru'));
+        $this->assertSame(2 * $paket, self::ringkas($kering2, 'versi 1 sudah ada, sama'));
+        $this->assertStringContainsString('baris AKAN ditulis: paket_acuan 0, paket_acuan_versi 0, audit_logs 0', $kering2);
+        $this->assertSame($sesudah, $this->cacahBaris());
+    }
+
+    public function test_dry_run_paket_yang_sudah_ada_tanpa_versi_data_hanya_menghitung_versi(): void
+    {
+        $organisasi = Organization::factory()->create();
+        PaketAcuan::create([
+            'organization_id' => $organisasi->id,
+            'kode_profil' => 'micrometer',
+            'nama' => 'Micrometer',
+            'skema_versi' => 1,
+        ]);
+        $sebelum = $this->cacahBaris();
+
+        [$kode, $keluaran] = $this->jalankan(['profil' => 'micrometer', '--dry-run' => true]);
+
+        $this->assertSame(0, $kode, $keluaran);
+        $this->assertStringContainsString('paket sudah ada, versi 1', $keluaran);
+        $this->assertSame(0, self::ringkas($keluaran, 'paket baru'));
+        $this->assertSame(1, self::ringkas($keluaran, 'versi 1 baru'));
+        $this->assertStringContainsString('baris AKAN ditulis: paket_acuan 0, paket_acuan_versi 1, audit_logs 1', $keluaran);
+        $this->assertSame($sebelum, $this->cacahBaris());
+
+        // Jalan sungguhan menulis persis itu: paket yang ada dipakai, tidak diduplikasi.
+        [$kode, $nyata] = $this->jalankan(['profil' => 'micrometer']);
+        $this->assertSame(0, $kode, $nyata);
+        $this->assertStringContainsString('baris ditulis: paket_acuan 0, paket_acuan_versi 1, audit_logs 1', $nyata);
+
+        $sesudah = $this->cacahBaris();
+        $this->assertSame(0, $sesudah['paket'] - $sebelum['paket']);
+        $this->assertSame(1, $sesudah['versi'] - $sebelum['versi']);
+        $this->assertSame(1, $sesudah['audit'] - $sebelum['audit']);
+    }
+
+    /**
+     * Cabang galat dry-run sama dengan jalan sungguhan: versi 1 yang beda,
+     * hash tersimpan yang rusak, dan paket soft delete semuanya exit 1, dan
+     * tidak satu pun diubah.
+     */
+    public function test_dry_run_melaporkan_galat_yang_sama_dan_tidak_menyentuh_apa_pun(): void
+    {
+        Organization::factory()->create();
+        $this->artisan('acuan:impor-awal', ['profil' => 'micrometer'])->assertExitCode(0);
+
+        $isi = PaketAcuanVersi::query()->sole()->isiTerurai();
+        $isi['balok_ukur']['2.5'] = 2.50015;
+        $isiLain = JsonKanonik::serialisasi($isi);
+        $shaLain = JsonKanonik::sha256($isiLain);
+        DB::table('paket_acuan_versi')->update(['isi' => $isiLain, 'isi_sha256' => $shaLain]);
+        $sebelum = $this->cacahBaris();
+
+        [$kode, $keluaran] = $this->jalankan(['profil' => 'micrometer', '--dry-run' => true]);
+
+        $this->assertSame(1, $kode);
+        $this->assertStringContainsString('BEDA', $keluaran);
+        $this->assertStringContainsString($shaLain, $keluaran);
+        $this->assertStringContainsString(JsonKanonik::sha256(self::kanonik()), $keluaran);
+        $this->assertSame(1, self::ringkas($keluaran, 'galat (tidak ditimpa)'));
+        $this->assertSame($sebelum, $this->cacahBaris());
+        $this->assertSame($isiLain, PaketAcuanVersi::query()->sole()->isi);
+
+        // Hash tersimpan tidak cocok dengan isinya.
+        DB::table('paket_acuan_versi')->update(['isi_sha256' => str_repeat('0', 64)]);
+        [$kode, $keluaran] = $this->jalankan(['profil' => 'micrometer', '--dry-run' => true]);
+        $this->assertSame(1, $kode);
+        $this->assertStringContainsString('tidak cocok dengan isi_sha256', $keluaran);
+
+        // Paket soft delete.
+        PaketAcuan::query()->sole()->delete();
+        $sebelum = $this->cacahBaris();
+        [$kode, $keluaran] = $this->jalankan(['profil' => 'micrometer', '--dry-run' => true]);
+        $this->assertSame(1, $kode);
+        $this->assertStringContainsString('soft delete', $keluaran);
+        $this->assertSame($sebelum, $this->cacahBaris());
+        $this->assertSame(1, PaketAcuan::withTrashed()->count());
+    }
+
+    /** Jalan sungguhan mencetak ringkasan yang bisa dibaca di deploy log. */
+    public function test_jalan_sungguhan_mencetak_ringkasan_dan_jalan_kedua_menghitung_sama(): void
+    {
+        Organization::factory()->create();
+
+        [$kode, $pertama] = $this->jalankan(['profil' => 'micrometer']);
+        $this->assertSame(0, $kode, $pertama);
+        $this->assertStringContainsString('RINGKASAN', $pertama);
+        $this->assertStringNotContainsString('DRY-RUN', $pertama);
+        $this->assertSame(1, self::ringkas($pertama, 'paket baru'));
+        $this->assertStringContainsString('baris ditulis: paket_acuan 1, paket_acuan_versi 1, audit_logs 2', $pertama);
+
+        [$kode, $kedua] = $this->jalankan(['profil' => 'micrometer']);
+        $this->assertSame(0, $kode, $kedua);
+        $this->assertSame(0, self::ringkas($kedua, 'paket baru'));
+        $this->assertSame(1, self::ringkas($kedua, 'versi 1 sudah ada, sama'));
+        $this->assertStringContainsString('baris ditulis: paket_acuan 0, paket_acuan_versi 0, audit_logs 0', $kedua);
     }
 }
