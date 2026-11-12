@@ -199,6 +199,11 @@ sama. Itu sebabnya alat baru wajib menyambung `*Mentah`-nya ke
 `CalibrationValidator` **dan** `HitungUlangSesi` — pola ini sudah menggigit tujuh
 kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
 
+`RawMeasurement` memaksa `serialize_precision=-1` secara lokal saat menulis float
+`pembacaan`/`titik_ukur` (`App\Support\AngkaFloatEksak`), dan flag
+`json_float_shortest` di `/api/health` hanya melaporkan konfigurasi PHP worker yang
+menjawab, bukan jaminan.
+
 ### Lapisan lain
 
 | Lapisan | Tempat | Catatan |
