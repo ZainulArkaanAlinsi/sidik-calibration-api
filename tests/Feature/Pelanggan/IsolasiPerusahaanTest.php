@@ -389,4 +389,59 @@ class IsolasiPerusahaanTest extends TestCase
                 ->assertJsonPath('meta.total', 0);
         }
     }
+
+    /**
+     * `GET /sertifikat/garis-waktu` (rute tanpa ID, jadi tidak tersapu sapuan
+     * rute ber-parameter di atas -- kasusnya ditulis di sini): sertifikat B
+     * (dibuat di setUp) tidak pernah terhitung, terlihat, atau tertemu lewat
+     * nomor/serial/order-nya di garis waktu A, dan `customer_id` dari query
+     * string tidak dipercaya.
+     */
+    public function test_garis_waktu_sertifikat_tidak_menembus_perusahaan_lain(): void
+    {
+        $sertifikatB = Certificate::query()->findOrFail((int) $this->milikB['sertifikat']);
+        $sertifikatB->update(['nomor' => 'ISO/B/GARIS-1', 'diterbitkan_pada' => '2026-11-12']);
+        $sertifikatB->session->update(['nomor_order' => 'PO-GARIS-B-1']);
+        $serialB = (string) $sertifikatB->session->equipment->serial_number;
+
+        $garisWaktu = function (string $query = ''): array {
+            $this->permintaanBaru();
+
+            return $this->withHeaders($this->bearer($this->picA))
+                ->getJson('/api/pelanggan/v1/sertifikat/garis-waktu'.$query)
+                ->assertOk()
+                ->json('data');
+        };
+
+        // Kosong untuk A, di semua tingkat, walau B punya satu sertifikat terbit.
+        $this->assertSame(0, $garisWaktu()['total_dokumen']);
+        $this->assertSame([], $garisWaktu()['kelompok']);
+        $this->assertSame(0, $garisWaktu("?customer_id={$this->perusahaanB->getKey()}")['total_dokumen']);
+        $hari = $garisWaktu('?tingkat=hari&tahun=2026&bulan=11&pekan=46');
+        $this->assertSame([], $hari['item']);
+
+        // Tidak tertemu lewat pencarian terpadu: nomor, serial, order, dan nama PT B.
+        foreach (['ISO/B/GARIS-1', 'iso-b-garis-1', $serialB, 'PO-GARIS-B-1', $this->perusahaanB->nama] as $q) {
+            $this->assertSame(0, $garisWaktu('?q='.urlencode($q))['total_dokumen'], "q={$q}");
+        }
+
+        // Sisi positif: milik A sendiri terhitung (supaya "kosong" di atas bukan karena rute rusak).
+        $alatA = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+        ]);
+        Certificate::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'nomor' => 'ISO/A/GARIS-1',
+            'status' => Certificate::STATUS_TERBIT,
+            'diterbitkan_pada' => '2026-11-12',
+            'calibration_session_id' => CalibrationSession::factory()->create([
+                'organization_id' => $this->perusahaanA->organization_id,
+                'equipment_id' => $alatA->getKey(),
+            ])->getKey(),
+        ]);
+
+        $this->assertSame(1, $garisWaktu()['total_dokumen']);
+        $this->assertSame(1, $garisWaktu('?q=iso-a-garis-1')['total_dokumen']);
+    }
 }

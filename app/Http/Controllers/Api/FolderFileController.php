@@ -9,6 +9,7 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\FolderFile;
 use App\Services\BerkasPdfSertifikat;
+use App\Services\Pencarian\CariDokumenLab;
 use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -33,20 +34,33 @@ class FolderFileController extends Controller
 {
     use ScopesFolderAccess;
 
-    /** Semua file yang boleh dilihat, bisa disaring per folder. */
+    public function __construct(private readonly CariDokumenLab $cari) {}
+
+    /**
+     * Semua file yang boleh dilihat, bisa disaring per folder.
+     *
+     * `?q=` lewat `CariDokumenLab::berkas`: nama berkas DAN nomor sertifikat
+     * (dinormalisasi -- `CAL/2026/10/0001` menemukan `Sertifikat-CAL-2026-10-0001.pdf`),
+     * nomor seri alat, nomor order, nama alat/PT dari sertifikat atau lembar
+     * kerja yang ditautkan. Yang persis muncul duluan.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $file = $this->queryFileYangBolehDilihat($request)
             ->with(['certificate', 'uploader'])
             ->when(
                 $request->filled('folder_id'),
-                fn (Builder $query) => $query->where('folder_id', $request->integer('folder_id')),
+                fn (Builder $query) => $query->where('folder_files.folder_id', $request->integer('folder_id')),
             )
             ->when(
                 $request->filled('q'),
-                fn (Builder $query) => $query->where('nama', 'like', '%'.$request->string('q').'%'),
+                fn (Builder $query) => $this->cari->berkas(
+                    $query,
+                    $request->user()->organization_id,
+                    trim((string) $request->string('q')),
+                ),
             )
-            ->latest('id')
+            ->latest('folder_files.id')
             ->paginate(20)
             ->withQueryString();
 

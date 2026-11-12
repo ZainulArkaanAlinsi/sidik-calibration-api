@@ -12,6 +12,7 @@ use App\Http\Controllers\Pelanggan\PerangkatController;
 use App\Http\Controllers\Pelanggan\PreferensiNotifikasiController;
 use App\Http\Controllers\Pelanggan\SayaController;
 use App\Http\Controllers\Pelanggan\SertifikatController;
+use App\Http\Controllers\Pelanggan\SertifikatGarisWaktuController;
 use App\Models\CustomerMember;
 use Illuminate\Support\Facades\Route;
 
@@ -186,6 +187,11 @@ Route::middleware('fitur.pelanggan')->group(function () {
         Route::get('/alat', [AlatController::class, 'index'])->name('pelanggan.alat.index');
         Route::get('/alat/{alat}', [AlatController::class, 'show'])->name('pelanggan.alat.tampil');
         Route::get('/sertifikat', [SertifikatController::class, 'index'])->name('pelanggan.sertifikat.index');
+        // WAJIB di atas `/sertifikat/{sertifikat}`: tanpa itu "garis-waktu" dibaca
+        // sebagai ID sertifikat dan dijawab 404.
+        Route::get('/sertifikat/garis-waktu', SertifikatGarisWaktuController::class)
+            ->middleware('throttle:pelanggan-garis-waktu')
+            ->name('pelanggan.sertifikat.garis-waktu');
         Route::get('/sertifikat/{sertifikat}', [SertifikatController::class, 'show'])->name('pelanggan.sertifikat.tampil');
         Route::get('/sertifikat/{sertifikat}/unduh', [SertifikatController::class, 'unduh'])
             ->middleware('throttle:pelanggan-unduh')

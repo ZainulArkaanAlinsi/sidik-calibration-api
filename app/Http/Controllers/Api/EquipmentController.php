@@ -8,8 +8,11 @@ use App\Http\Resources\EquipmentResource;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\KonflikSerialAlat;
+use App\Services\Pencarian\CariDokumenLab;
 use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -21,6 +24,8 @@ use Illuminate\Support\Collection;
  */
 class EquipmentController extends Controller
 {
+    public function __construct(private readonly CariDokumenLab $cari) {}
+
     public function index(Request $request, CalibrationProfileRegistry $registry): AnonymousResourceCollection
     {
         $organisasi = $request->user()->organization_id;
@@ -71,14 +76,14 @@ class EquipmentController extends Controller
                     $organisasi,
                 ),
             )
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $keyword = '%'.$request->string('search').'%';
-
-                $query->where(fn ($q) => $q
-                    ->where('nama_alat', 'like', $keyword)
-                    ->orWhere('serial_number', 'like', $keyword)
-                    ->orWhere('merk', 'like', $keyword));
-            })
+            // Pencarian terpadu (`CariDokumenLab::alat`): nomor seri (persis
+            // duluan), nama, merek, nama PT, serta nomor sertifikat/order yang
+            // PERSIS. `%` dan `_` yang diketik dibaca sebagai huruf biasa.
+            ->when($request->filled('search'), fn (Builder $query) => $this->cari->alat(
+                $query,
+                $organisasi,
+                trim((string) $request->string('search')),
+            ))
             ->when($request->filled('category'), fn ($query) => $query->whereHas(
                 'category',
                 fn ($q) => $q->where('kode', $request->string('category')),
@@ -233,7 +238,17 @@ class EquipmentController extends Controller
 
     public function store(EquipmentRequest $request): JsonResponse
     {
-        $equipment = Equipment::create($this->payload($request));
+        try {
+            $equipment = Equipment::create($this->payload($request));
+        } catch (UniqueConstraintViolationException $galat) {
+            // Balapan: dua request lolos validasi bersamaan, indeks unik yang
+            // memutuskan. Dijawab 422 yang sama dengan validasi, bukan 500.
+            KonflikSerialAlat::terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                $request->input('serial_number'),
+            );
+        }
 
         return response()->json(
             ['data' => new EquipmentResource($equipment->load(['customer', 'category']))],
@@ -254,7 +269,16 @@ class EquipmentController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $equipment);
 
-        $equipment->update($this->payload($request));
+        try {
+            $equipment->update($this->payload($request));
+        } catch (UniqueConstraintViolationException $galat) {
+            KonflikSerialAlat::terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                $request->input('serial_number'),
+                $equipment->id,
+            );
+        }
 
         return response()->json([
             'data' => new EquipmentResource($equipment->fresh()->load(['customer', 'category'])),
