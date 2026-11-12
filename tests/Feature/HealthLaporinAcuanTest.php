@@ -54,6 +54,7 @@ class HealthLaporinAcuanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('status', 'ok')
             ->assertJsonPath('php_versi', PHP_VERSION)
+            ->assertJsonPath('json_float_shortest', true)
             ->assertJsonStructure([
                 'app',
                 'time',
