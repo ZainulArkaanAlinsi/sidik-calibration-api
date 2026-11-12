@@ -57,7 +57,15 @@ class VerificationController extends Controller
 
         // Digantikan revisi: lembar lama tetap tampil sebagai riwayat, dengan
         // bilah yang menunjuk ke yang berlaku.
-        $pengganti = $certificate->penggantiSah();
+        //
+        // Revisi yang DIBATALKAN tetap membuat lembar ini `digantikan` (K38-2),
+        // tapi bukan dokumen yang berlaku — jadi tidak ditunjuk sebagai
+        // `$pengganti`. Bilahnya tetap tampil lewat `$revisiDibatalkan`
+        // (tanpa tautan "yang berlaku"); tanpa itu lembar yang sudah
+        // digantikan akan tampil hijau "terverifikasi".
+        $revisi = $certificate->revisiPenentuStatus();
+        $pengganti = Certificate::yangSah($revisi);
+        $revisiDibatalkan = $revisi?->status === Certificate::STATUS_DIBATALKAN;
 
         // Yang ditampilin LEMBAR SERTIFIKATNYA SENDIRI — blade yang sama persis
         // dengan yang dicetak jadi PDF, bukan ringkasan versi web.
@@ -81,6 +89,7 @@ class VerificationController extends Controller
                 'organization' => $certificate->organization,
                 'certificate' => $certificate,
                 'pengganti' => $pengganti,
+                'revisiDibatalkan' => $revisiDibatalkan,
                 'catatanKetidakpastian' => $settings['catatan_ketidakpastian'] ?? null,
                 'catatanPenggandaan' => $settings['catatan_penggandaan'] ?? null,
             ]);
@@ -92,6 +101,7 @@ class VerificationController extends Controller
             // dokumennya ditarik dan yang mana penggantinya.
             'ditarik' => $certificate->status === Certificate::STATUS_DITARIK,
             'pengganti' => $pengganti,
+            'revisiDibatalkan' => $revisiDibatalkan,
         ]);
     }
 

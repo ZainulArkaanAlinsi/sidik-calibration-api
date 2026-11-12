@@ -424,7 +424,7 @@ class TerimaUndanganTest extends TestCase
             ->assertJsonPath('data.user.status', User::STATUS_AKTIF)
             ->assertJsonPath('data.user.butuh_verifikasi', false)
             ->assertJsonPath('data.user.keanggotaan.0.peran', CustomerMember::PERAN_PIC_UTAMA)
-            ->assertJsonStructure(['data' => ['token', 'kedaluwarsa_pada', 'kemampuan', 'user']]);
+            ->assertJsonStructure(['data' => ['token', 'kedaluwarsa_pada', 'kemampuan', 'user', 'akun_sudah_ada']]);
 
         $user = User::query()->where('email', 'budi@contoh.test')->firstOrFail();
 
@@ -527,9 +527,13 @@ class TerimaUndanganTest extends TestCase
 
         ['customer' => $kedua, 'kode' => $kode] = $this->undang((string) $konsultan->email);
 
-        $this->postJson('/api/pelanggan/v1/auth/terima-undangan',
+        $badan = $this->postJson('/api/pelanggan/v1/auth/terima-undangan',
             $this->formulir((string) $konsultan->email, $kode, ['nama' => 'Nama Baru Diabaikan']))
-            ->assertCreated();
+            ->assertCreated()
+            ->json();
+
+        // `true` yang SUNGGUHAN (bool), bukan "1"/"true" — klien bercabang pada tipenya.
+        $this->assertSame(true, $badan['data']['akun_sudah_ada']);
 
         $this->assertSame(1, User::query()->where('email', $konsultan->email)->count());
         $this->assertSame(2, CustomerMember::query()->where('user_id', $konsultan->id)->count());
@@ -541,6 +545,91 @@ class TerimaUndanganTest extends TestCase
                 'status' => CustomerMember::STATUS_AKTIF,
             ]);
         }
+    }
+
+    // ------------------------------------------------ data.akun_sudah_ada (12 Nov 2026)
+
+    /** Email yang belum punya akun: akun dibuat panggilan ini, jadi `false` (bool). */
+    public function test_akun_sudah_ada_false_untuk_akun_baru(): void
+    {
+        ['kode' => $kode] = $this->undang('budi@contoh.test');
+
+        $badan = $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir('budi@contoh.test', $kode))
+            ->assertCreated()
+            ->json();
+
+        $this->assertArrayHasKey('akun_sudah_ada', $badan['data']);
+        $this->assertSame(false, $badan['data']['akun_sudah_ada']);
+        $this->assertSame(1, User::query()->where('email', 'budi@contoh.test')->count());
+    }
+
+    /**
+     * Akun pelanggan yang SUDAH ada sebelum undangan ditukar: `true`, dan
+     * hash sandi lamanya tidak disentuh (tidak di-hash ulang, tidak ditimpa).
+     *
+     * Sejak 12 Nov 2026 `sandi` di formulir untuk akun lama adalah sandi akun
+     * itu yang SUDAH ada dan wajib cocok; sandi lain ditolak 422
+     * `sandi_akun_lama_salah` (lihat `UndanganAkunLamaTest`). Sebelumnya
+     * test ini mengirim sandi sembarang dan lolos — itulah lubangnya.
+     */
+    public function test_akun_sudah_ada_true_untuk_akun_pelanggan_lama_dan_sandi_tidak_ditimpa(): void
+    {
+        $konsultan = $this->anggota();
+        $hashLama = (string) $konsultan->fresh()->password;
+        ['kode' => $kode] = $this->undang((string) $konsultan->email);
+
+        $this->postJson('/api/pelanggan/v1/auth/terima-undangan',
+            $this->formulir((string) $konsultan->email, $kode, ['sandi' => $this->sandiBenar]))
+            ->assertCreated()
+            ->assertJsonPath('data.akun_sudah_ada', true);
+
+        $this->assertSame($hashLama, (string) $konsultan->fresh()->password);
+    }
+
+    /** Hanya balasan 201 yang membawa field itu: `masuk` tidak berubah bentuknya. */
+    public function test_masuk_tidak_memuat_akun_sudah_ada(): void
+    {
+        $user = $this->anggota();
+
+        $badan = $this->postJson('/api/pelanggan/v1/auth/masuk', ['email' => $user->email, 'sandi' => $this->sandiBenar])
+            ->assertOk()
+            ->json();
+
+        $this->assertArrayNotHasKey('akun_sudah_ada', $badan['data']);
+    }
+
+    /**
+     * Kode salah / sudah dipakai / email asing dijawab SATU bentuk yang sama,
+     * dan jawaban itu TIDAK bergantung pada apakah email-nya sudah punya akun:
+     * penebak kode tidak boleh memperoleh `akun_sudah_ada`, atau pembeda lain.
+     */
+    public function test_kegagalan_kode_tidak_membocorkan_apakah_email_sudah_punya_akun(): void
+    {
+        $punyaAkun = $this->anggota();
+        ['kode' => $kodeSah] = $this->undang('budi@contoh.test');
+
+        $bandingkan = function (string $emailAda, string $emailTidakAda, string $kode, string $skenario): void {
+            $this->permintaanBaru();
+            $ada = $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir($emailAda, $kode))->assertStatus(422);
+            $this->permintaanBaru();
+            $tidak = $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir($emailTidakAda, $kode))->assertStatus(422);
+
+            $this->assertSame($tidak->json(), $ada->json(), "Jawaban berbeda untuk skenario: {$skenario}");
+            $this->assertSame('undangan_tidak_berlaku', $ada->json('kode'));
+            $this->assertArrayNotHasKey('data', $ada->json());
+            $this->assertStringNotContainsString('akun_sudah_ada', (string) $ada->getContent());
+        };
+
+        // 1. kode ngawur
+        $bandingkan((string) $punyaAkun->email, 'tidak-ada@contoh.test', 'ZZZZZZZZ', 'kode salah');
+
+        // 2. kode sah milik email LAIN dipakai di email yang sudah punya akun
+        $bandingkan((string) $punyaAkun->email, 'tidak-ada@contoh.test', $kodeSah, 'kode milik email lain');
+
+        // 3. kode sah yang sudah terpakai
+        $this->permintaanBaru();
+        $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir('budi@contoh.test', $kodeSah))->assertCreated();
+        $bandingkan((string) $punyaAkun->email, 'tidak-ada@contoh.test', $kodeSah, 'kode sudah dipakai');
     }
 
     /** Akun LAB tidak bisa ditarik jadi anggota perusahaan lewat undangan. */

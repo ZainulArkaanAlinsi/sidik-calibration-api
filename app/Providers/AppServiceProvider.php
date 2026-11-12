@@ -369,6 +369,12 @@ class AppServiceProvider extends ServiceProvider
         // lain, dan pemanggilnya bukan pegawai lab.
         $perMenitPengguna('pelanggan-undang-anggota', 5);
 
+        // Ganti sandi SENDIRI akun lab (`POST /me/ganti-sandi`). Sempit: satu-satunya
+        // rute lab yang menerima tebakan sandi lama dari pemegang token. 5/menit per
+        // akun = angka yang sama dengan `pelanggan-sandi`. Ember sendiri supaya
+        // tebakan yang gagal tidak memakan jatah tulis lain (dan sebaliknya).
+        $perMenitPengguna('ganti-sandi-lab', 5);
+
         $perMenitPengguna('laporan-export', 20);
         $perMenitPengguna('pratinjau-hitung', 120);
         $perMenitPengguna('pratinjau-autoclave', 120);

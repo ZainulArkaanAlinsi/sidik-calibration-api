@@ -19,6 +19,7 @@
                 }
             ],
             "pengajuan": null
-        }
+        },
+        "akun_sudah_ada": false
     }
 }

@@ -1394,6 +1394,11 @@ class CalibrationRequest extends FormRequest
             'spesifikasi_alat.micrometer.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
             'spesifikasi_alat.micrometer.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
             'spesifikasi_alat.micrometer.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            // Note sertifikat (Tahap B2): kondisi muka ukur, dua pilihan.
+            // Kotak Class/Permitted Error sertifikat piston/dispensett/buret digital (Tahap B2).
+            'spesifikasi_alat.piston.kelas_toleransi' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'spesifikasi_alat.micrometer.kerataan_muka_ukur' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
+            'spesifikasi_alat.micrometer.kesejajaran_muka_ukur' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
             // Blok Height Gauge: enam kunci tingkat atas (satuan, kapasitas,
             // resolusi, paralelisme, blok Evaluation, kerataan muka ukur).
             // Batasnya dilonggarkan ke 12 dengan alasan yang sama seperti

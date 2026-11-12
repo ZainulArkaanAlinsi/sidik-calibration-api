@@ -493,14 +493,19 @@ class TimbanganProfile extends CalibrationProfile
      * ## Desimalnya dibekukan, dan tiga masternya nggak sepakat
      *
      * Tiga workbook memformat sel yang sama dengan jumlah desimal berbeda —
-     * LOP-nya `0` (kg-substitusi), `0.00` (kg), dan `0.00000` (gram) — jadi
-     * nggak ada satu aturan pun yang bisa meniru ketiganya. Yang dipakai:
-     * `d` = desimal dari resolusi (cocok di ketiganya buat nilai & koreksi),
-     * `max(d,2)` buat STDEV (cocok di ketiganya), dan `d+1` buat U95 & LOP —
-     * cocok di gram, satu digit lebih banyak dari kg & substitusi. Dipilih
-     * yang MELEBIH, bukan yang mengurang: `± 0,00 g` di kolom Limit of
-     * Performance itu angka yang nggak menyatakan apa-apa. Diangkat sebagai
-     * T14.
+     * LOP-nya `0` (substitusi), `0.00` (kg), dan `0.00000` (gram) — jadi
+     * nggak ada satu aturan pun yang bisa meniru ketiganya. Aturan lama
+     * (`d` buat nilai & koreksi, `max(d,2)` buat STDEV, `d+1` buat U95 & LOP)
+     * cocok di gram tapi satu digit lebih banyak dari kg & substitusi
+     * (T14, keputusan 1 Sep 2026 "melebih, bukan mengurang").
+     *
+     * **K-50-15 (18 Okt 2026, "sertifikat persis master") membatalkan pilihan
+     * itu.** Kunci `format` snapshot BARU memuat kode format sel tiap bagian
+     * cetak per varian ([formatCetakMaster]); blade memakainya menggantikan
+     * `desimal`/`desimal_stdev`/`desimal_u95`. Ketiga kunci lama TETAP ditulis
+     * (nilainya tidak berubah) karena snapshot terbit sebelum B3a hanya
+     * punya itu — pembacanya jatuh ke sana bila `format` tidak ada. Hanya
+     * cetak: tidak satu angka hitung pun berubah.
      *
      * @return array<string, mixed>|null
      */
@@ -555,6 +560,19 @@ class TimbanganProfile extends CalibrationProfile
             'u95_penimbangan' => (float) $t['u95_penimbangan'],
         ], $hasil['titik']);
 
+        $keterulangan = $this->bagianSertifikatKeterulangan($ket);
+        $eksentrisitas = $this->bagianSertifikatEksentrisitas($ekc);
+        $histeresis = $this->bagianSertifikatHisteresis($hasil, $spek, $resolusi);
+        $lop = $hasil['lop'] === null ? null : (float) $hasil['lop'];
+
+        // Nilai uji yang DIKETIK (bukan hasil hitung): format gram yang d-1
+        // tidak boleh memotongnya ([formatCetakMaster]).
+        $nilaiUji = [
+            'kapasitas' => array_map(static fn (array $r): float => (float) ($r['kapasitas'] ?? 0), is_array($keterulangan) ? $keterulangan : []),
+            'beban' => isset($eksentrisitas['beban']) ? [(float) $eksentrisitas['beban']] : [],
+            'hys_beban' => isset($histeresis['beban']) ? [(float) $histeresis['beban']] : [],
+        ];
+
         return [
             'varian' => $hasil['varian'],
             'satuan' => $hasil['satuan'],
@@ -562,11 +580,21 @@ class TimbanganProfile extends CalibrationProfile
             'desimal' => $desimal,
             'desimal_stdev' => max($desimal, 2),
             'desimal_u95' => $desimal + 1,
-            'keterulangan' => $this->bagianSertifikatKeterulangan($ket),
+            // Format sel SERTIFIKAT master per bagian cetak (K-50-15, B3a).
+            // Menang atas tiga kunci desimal di atas; snapshot lama tidak
+            // punya kunci ini dan tercetak seperti waktu terbit. Penjaga
+            // ketidakpastian: LOP/U95 tidak boleh tercetak `0`.
+            'format' => self::jagaFormatKetidakpastian(
+                self::formatCetakMaster((string) $hasil['varian'], $desimal, $nilaiUji),
+                $lop,
+                array_column($titikSertifikat, 'u95_koreksi'),
+                array_column($titikSertifikat, 'u95_penimbangan'),
+            ),
+            'keterulangan' => $keterulangan,
             'effect_of_tare' => $this->effectOfTare($spek),
-            'eksentrisitas' => $this->bagianSertifikatEksentrisitas($ekc),
-            'histeresis' => $this->bagianSertifikatHisteresis($hasil, $spek, $resolusi),
-            'lop' => $hasil['lop'] === null ? null : (float) $hasil['lop'],
+            'eksentrisitas' => $eksentrisitas,
+            'histeresis' => $histeresis,
+            'lop' => $lop,
             'titik' => $titikSertifikat,
             // SATU `k` buat seluruh bagian 7, diambil dari titik pertama —
             // persis masternya, yang nunjuk `'PERHITUNGAN U95%-Weighing'!R20`
@@ -575,6 +603,210 @@ class TimbanganProfile extends CalibrationProfile
                 ? (float) $hasil['titik'][0]['k_penimbangan']
                 : null,
         ];
+    }
+
+    /**
+     * Kode format sel lembar `SERTIFIKAT` master tiap bagian cetak, per varian
+     * (K-50-15, B3a): `kunci => 'General' | '0' | '0.00' | …`. `$d` = desimal
+     * resolusi neraca (`Angka::desimalDariResolusi`), yang di ketiga master
+     * sama dengan format sel resolusi `M12` (gram `0.0000`, kg `0.00`,
+     * substitusi `0.0`).
+     *
+     * Format master tertanam TETAP di tiap workbook (sampel satu neraca),
+     * jadi untuk neraca lain di varian yang sama format digeser RELATIF
+     * terhadap `d`, persis seperti jarak formatnya dari `M12` di sampel master.
+     * Di neraca sampel hasilnya identik dengan master (dijaga
+     * `TimbanganFormatCetakMasterTest`); selisih untuk neraca lain adalah
+     * pertanyaan lab, bukan tebakan kode.
+     *
+     * Sel rujukan (lembar `SERTIFIKAT` ketiga master; gram / kg / substitusi):
+     *
+     * | kunci            | sel                         | gram     | kg      | substitusi |
+     * |------------------|-----------------------------|----------|---------|------------|
+     * | kapasitas        | I19:I20                     | d-1 *    | General | General    |
+     * | stdev            | L19:L20                     | max(d,2) | max(d,2)| max(d,2)   |
+     * | maks_beda        | W19:W20                     | d        | d       | d          |
+     * | tare             | L23                         | d        | d       | d          |
+     * | nominal, koreksi | C28:C37, L28:L37            | d        | d       | d          |
+     * | u95              | U28:U37                     | d+1      | d+1     | d          |
+     * | beban            | F40 (kg/subst: General)     | d-1 *    | General | General    |
+     * | selisih          | G42:S42, W42                | d        | d       | d          |
+     * | hys_beban        | L45 (gram) / N45            | d-1 *    | d       | d          |
+     * | hys_batas        | R45 (gram) / U45            | d        | d       | d          |
+     * | lop              | M46 / O46                   | d+1      | d       | d-1        |
+     * | nominal_u        | C49:C53, O49:O53            | d-1 **   | d       | d+1        |
+     * | u95_penimbangan  | H49:H53, W49:W53            | d+1      | d+1     | d          |
+     *
+     * `stdev` = `max(d, 2)` di ketiganya (aturan lama, sudah cocok master).
+     * Yang berubah dari aturan lama `d+1`: `u95` & `u95_penimbangan`
+     * substitusi (`0.0`), `lop` kg (`0.00`) & substitusi (`0`: 13,66 kg tercetak
+     * `± 14`, membatalkan keputusan 1 Sep 2026 T14), `nominal_u` gram
+     * (`0.000`) & substitusi (`0.00`), serta `kapasitas`, `beban`, `hys_beban`
+     * gram (`0.000`) / `General` di kg & substitusi.
+     *
+     * `*` Gram `d-1` TIDAK boleh memotong nilai uji yang diketik: format
+     * dipakai `max(d-1, desimal nilai ujinya)` (`$nilaiUji`, paling banyak 6),
+     * jadi neraca 0,1 g dengan kapasitas 105,5 g tercetak `105.5`, bukan
+     * `106`. `**` Gram `nominal_u` di neraca `d <= 1` memakai `d` (sama dengan
+     * §3 nominal), bukan `d-1` (= bilangan bulat). Di neraca sampel master
+     * (d = 4, nilai bulat) keduanya identik dengan master.
+     *
+     * @param  array<string, list<float>>  $nilaiUji  `kapasitas`/`beban`/`hys_beban` yang diketik teknisi
+     * @return array<string, string>
+     */
+    public static function formatCetakMaster(string $varian, int $d, array $nilaiUji = []): array
+    {
+        $kode = static fn (int $n): string => $n <= 0 ? '0' : '0.'.str_repeat('0', $n);
+        $stdev = $kode(max($d, 2));
+        $ujiGram = static fn (string $kunci): string => $kode(max($d - 1, self::desimalNilai($nilaiUji[$kunci] ?? [])));
+
+        return match ($varian) {
+            VarianMasterTimbangan::GRAM => [
+                'kapasitas' => $ujiGram('kapasitas'),
+                'stdev' => $stdev,
+                'maks_beda' => $kode($d),
+                'tare' => $kode($d),
+                'nominal' => $kode($d),
+                'koreksi' => $kode($d),
+                'u95' => $kode($d + 1),
+                'beban' => $ujiGram('beban'),
+                'selisih' => $kode($d),
+                'hys_beban' => $ujiGram('hys_beban'),
+                'hys_batas' => $kode($d),
+                'lop' => $kode($d + 1),
+                'nominal_u' => $kode($d <= 1 ? $d : $d - 1),
+                'u95_penimbangan' => $kode($d + 1),
+            ],
+            VarianMasterTimbangan::KG => [
+                'kapasitas' => 'General',
+                'stdev' => $stdev,
+                'maks_beda' => $kode($d),
+                'tare' => $kode($d),
+                'nominal' => $kode($d),
+                'koreksi' => $kode($d),
+                'u95' => $kode($d + 1),
+                'beban' => 'General',
+                'selisih' => $kode($d),
+                'hys_beban' => $kode($d),
+                'hys_batas' => $kode($d),
+                'lop' => $kode($d),
+                'nominal_u' => $kode($d),
+                'u95_penimbangan' => $kode($d + 1),
+            ],
+            VarianMasterTimbangan::SUBSTITUSI => [
+                'kapasitas' => 'General',
+                'stdev' => $stdev,
+                'maks_beda' => $kode($d),
+                'tare' => $kode($d),
+                'nominal' => $kode($d),
+                'koreksi' => $kode($d),
+                'u95' => $kode($d),
+                'beban' => 'General',
+                'selisih' => $kode($d),
+                'hys_beban' => $kode($d),
+                'hys_batas' => $kode($d),
+                'lop' => $kode($d - 1),
+                'nominal_u' => $kode($d + 1),
+                'u95_penimbangan' => $kode($d),
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * Jumlah desimal terkecil (0..6) yang memuat semua `$nilai` apa adanya
+     * (galat biner diabaikan). Daftar kosong = 0.
+     *
+     * @param  list<float>  $nilai
+     */
+    private static function desimalNilai(array $nilai): int
+    {
+        $perlu = 0;
+
+        foreach ($nilai as $v) {
+            for ($n = 0; $n < 6; $n++) {
+                if (abs(round((float) $v, $n) - (float) $v) < 1e-9) {
+                    break;
+                }
+            }
+
+            $perlu = max($perlu, $n);
+        }
+
+        return $perlu;
+    }
+
+    /**
+     * Penjaga kolom ketidakpastian (peninjau B3a): format sel master bisa
+     * jatuh ke nol di neraca/besaran yang bukan sampelnya. `± 0` atau `0.0`
+     * untuk ketidakpastian bukan angka — dilebarkan satu desimal sampai nilai
+     * TERKECIL kolom itu tidak tercetak nol:
+     *
+     *  - `lop`, `u95` (§3), `u95_penimbangan` (§7): nilai bukan-nol yang
+     *    membulat ke nol di format-nya → tambah desimal.
+     *  - `lop` yang tercetak bilangan bulat SATU digit (format `0`, nilai < 10,
+     *    mis. 3,4 kg tercetak `3`) → satu desimal. LOP 13,66 tetap `14` (master
+     *    substitusi `O46`).
+     *
+     * Sengaja TIDAK memaksa dua angka penting di semua kolom: master sendiri
+     * mencetak U95 substitusi `0.5` (0,52) dan LOP kg `0.08` (0,0795), dan
+     * K-50-15 menuntut persis master. Format `General` dilewati.
+     *
+     * @param  array<string, string>  $format  hasil [formatCetakMaster]
+     * @param  list<float>  $u95Koreksi
+     * @param  list<float>  $u95Penimbangan
+     * @return array<string, string>
+     */
+    public static function jagaFormatKetidakpastian(array $format, ?float $lop, array $u95Koreksi, array $u95Penimbangan): array
+    {
+        $daftar = ['lop' => $lop === null ? [] : [$lop], 'u95' => $u95Koreksi, 'u95_penimbangan' => $u95Penimbangan];
+
+        foreach ($daftar as $kunci => $nilai) {
+            $desimal = isset($format[$kunci]) ? TataLetakSertifikat::desimalFormat($format[$kunci]) : null;
+            $bukanNol = array_values(array_filter(
+                array_map(static fn ($v): float => abs((float) $v), $nilai),
+                static fn (float $v): bool => $v > 0.0 && is_finite($v),
+            ));
+
+            if ($desimal === null || $bukanNol === []) {
+                continue;
+            }
+
+            $terkecil = min($bukanNol);
+            $baru = $desimal;
+
+            while ($baru < 8 && $terkecil < 0.5 * 10 ** (-$baru)) {
+                $baru++;
+            }
+
+            if ($kunci === 'lop' && $baru === 0 && round($terkecil) < 10) {
+                $baru = 1;
+            }
+
+            if ($baru !== $desimal) {
+                $format[$kunci] = '0.'.str_repeat('0', $baru);
+            }
+        }
+
+        return $format;
+    }
+
+    /**
+     * Satu angka bagian cetak Timbangan sebagai teks (koma desimal, belum
+     * diterapkan pemisah tata letak). `$kodeFormat` dari kunci `format`
+     * snapshot ([formatCetakMaster]); `null` (snapshot terbit sebelum B3a) =
+     * `$desimalBawaan` seperti dulu. `General` = presisi penuh, nol di
+     * belakang dibuang (sel master `General`: `50`, `1000`).
+     */
+    public static function teksAngkaCetak(float $nilai, int $desimalBawaan, ?string $kodeFormat): string
+    {
+        if ($kodeFormat === null) {
+            return Angka::id($nilai, $desimalBawaan);
+        }
+
+        $desimal = TataLetakSertifikat::desimalFormat($kodeFormat);
+
+        return $desimal === null ? Angka::nilaiStandar($nilai, 10) : Angka::id($nilai, $desimal);
     }
 
     /**

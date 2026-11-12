@@ -756,6 +756,19 @@ class TidsCalculator
                 $ganti['drift_standar'] = $driftTabel / $sqrt3;
             }
 
+            // S-4: kerusakan salin-tempel di LEMBAR SERTIFIKAT (bukan di hitungan) —
+            // dihitung/dicetak benar, selisihnya ditulis di sini (AGENTS.md, Olah data
+            // butir 4), bukan dibetulkan diam-diam.
+            $catatan[] = [
+                'kode' => 'tids_recorder_standard_used_bergeser',
+                'pesan' => 'Lembar SERTIFIKAT workbook Recorder mencetak baris pertama Standard used bergeser '
+                    .'satu kolom: Merk/Type `I41` = `\'INPUT DATA\'!X12` ("Temperature Recorder", nama tipe) dan '
+                    .'Serial Number `L41` = `DATABASE!S16` ("Graptech/GL840", merk/tipe) — workbook Yokogawa K N '
+                    .'untuk baris yang sama mencetak merk di `I41` dan serial di `L41`. Sertifikat ini mencetak '
+                    .'Merk/Type = Graptech/GL840 dan Serial Number = C305B1470 dari master standar lab, bukan '
+                    .'menyalin kolom yang bergeser.',
+            ];
+
             if ($ganti !== []) {
                 $catatan[] = [
                     'kode' => 'tids_recorder_sel_tetap',

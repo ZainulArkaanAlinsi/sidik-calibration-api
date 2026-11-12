@@ -19,6 +19,7 @@ use App\Models\Penugasan;
 use App\Models\User;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 /**
@@ -132,6 +133,63 @@ class MeIzinTest extends TestCase
 
             $this->assertSame('semua', $batasan['kalibrasi'], "Role {$role} harusnya lihat semua sesi.");
         }
+    }
+
+    /**
+     * `audit.lihat` (12 Nov 2026): izin TERSENDIRI untuk `GET /audit-logs*`, tanpa
+     * mengubah siapa yang boleh. Tetap admin dan super_admin; teknisi dan viewer
+     * tidak — dibuktikan dengan memanggil rutenya, bukan hanya membaca daftar.
+     */
+    public function test_audit_lihat_hanya_untuk_admin_dan_super_admin(): void
+    {
+        $this->assertArrayHasKey('audit.lihat', MatriksIzin::PETA);
+
+        foreach ([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN] as $role) {
+            $user = $this->akun($role);
+
+            $this->actingAs($user)->getJson(self::URL)->assertOk();
+            $this->assertContains('audit.lihat', $this->matriks->bolehUntuk($role), "Role {$role} harus punya audit.lihat.");
+            $this->assertContains('audit.lihat', $this->actingAs($user)->getJson(self::URL)->json('data.boleh'));
+
+            $this->actingAs($user)->getJson('/api/audit-logs')->assertOk();
+            $this->actingAs($user)->getJson('/api/audit-logs/export')->assertOk();
+        }
+
+        foreach ([User::ROLE_TEKNISI, User::ROLE_VIEWER] as $role) {
+            $user = $this->akun($role);
+
+            $this->assertNotContains('audit.lihat', $this->actingAs($user)->getJson(self::URL)->json('data.boleh'));
+
+            $this->actingAs($user)->getJson('/api/audit-logs')->assertForbidden();
+            $this->actingAs($user)->getJson('/api/audit-logs/export')->assertForbidden();
+        }
+    }
+
+    /**
+     * Satu izin menjawab dua rute (`/audit-logs` dan `/audit-logs/export`). Kalau
+     * salah satunya pindah ke gerbang `role:` yang berbeda, izinnya bohong untuk
+     * yang satunya — jadi gerbang keduanya harus identik.
+     */
+    public function test_audit_lihat_menjawab_daftar_dan_ekspor_dengan_gerbang_yang_sama(): void
+    {
+        $gerbang = function (string $uri): array {
+            foreach (Route::getRoutes() as $rute) {
+                if ($rute->uri() === $uri && in_array('GET', $rute->methods(), true)) {
+                    return array_values(array_filter(
+                        $rute->gatherMiddleware(),
+                        fn ($mw) => is_string($mw) && str_starts_with($mw, 'role:'),
+                    ));
+                }
+            }
+
+            $this->fail("Rute GET {$uri} tidak terdaftar.");
+        };
+
+        $daftar = $gerbang('api/audit-logs');
+        $ekspor = $gerbang('api/audit-logs/export');
+
+        $this->assertNotEmpty($daftar, 'Riwayat perubahan wajib berada di balik gerbang role.');
+        $this->assertSame($daftar, $ekspor);
     }
 
     // ------------------------------------------------------- anti-kebohongan

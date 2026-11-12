@@ -796,6 +796,12 @@ abstract class PistonVolumeProfile extends CalibrationProfile
      */
     public const SUHU_DASAR_VOLUME = 20.0;
 
+    /** Kunci `header_tambahan` kotak `Class/Permitted Error` (`160!O14`). */
+    public const KEPALA_KELAS_TOLERANSI = 'kelas_toleransi';
+
+    /** Isi sel master `INPUT DATA!I16`/`I17` selama tak diketik. */
+    public const KELAS_TOLERANSI_KOSONG = '- /± -';
+
     /**
      * Timpaan bentuk mayoritas, sama di 160 & 164:
      *
@@ -806,9 +812,16 @@ abstract class PistonVolumeProfile extends CalibrationProfile
      * - `160!G45` / `164!G47` "------------------ End of Certificate
      *   ------------------".
      *
-     * Kotak kepala `Class/Permitted Error` (`O14`) TIDAK dipasang: isinya
-     * `'INPUT DATA'!I16` yang diketik ("- /± -"), dan sesi piston tidak punya
-     * field kelas/toleransi — tidak ada yang bisa dicetak tanpa mengarang.
+     * Kotak kepala `Class/Permitted Error` (`160!O14:U14`, `164!O14:U14`)
+     * dipasang sejak Tahap B2 (sebelumnya ditahan: sesi piston tak punya
+     * field-nya). Isi master `T14 = 'INPUT DATA'!I16` (Fixed) / `I17`
+     * (Graduated) adalah TEKS YANG DIKETIK lab, dan sel itu sendiri berisi
+     * `- /± -` selama tak diisi, lalu satuan `U14 = 'INPUT DATA'!J16` (Fixed) / `J17`
+     * (Graduated), keduanya `= G15` (satuan kapasitas). Dicetak persis itu: isian teknisi
+     * (`spesifikasi_alat.piston.kelas_toleransi`) atau `- /± -` bila kosong
+     * — bawaan master sendiri, bukan karangan. Pertanyaan lab Tahap B2 no. 2.
+     * Kotak ditaruh di kolom kanan baris terakhir grid kepala (sebelahan
+     * Technician ID), cara yang sama dengan Volumetrik.
      *
      * @return array<string, mixed>
      */
@@ -816,7 +829,7 @@ abstract class PistonVolumeProfile extends CalibrationProfile
     {
         $tataLetak = parent::tataLetakSertifikat($sesi);
 
-        $tataLetak['kepala'] = array_map(
+        $kepala = array_map(
             static fn (array $baris): array => array_map(
                 static fn (?array $sel): ?array => ($sel['kunci'] ?? null) === 'env_condition'
                     ? [...$sel, 'label' => 'Environmental Condition']
@@ -825,12 +838,40 @@ abstract class PistonVolumeProfile extends CalibrationProfile
             ),
             $tataLetak['kepala'],
         );
+        $kelas = ['kunci' => self::KEPALA_KELAS_TOLERANSI, 'label' => 'Class/Permitted Error'];
+        $terakhir = array_key_last($kepala);
+
+        if ($kepala[$terakhir][1] === null) {
+            $kepala[$terakhir][1] = $kelas;
+        } else {
+            $kepala[] = [null, $kelas];
+        }
+
+        $tataLetak['kepala'] = $kepala;
 
         return [
             ...$tataLetak,
             'kalimat_k' => 'The uncertainty is taken at a confidence level 95 % and coverage factor (k)',
             'akhir_sertifikat' => '------------------ End of Certificate ------------------',
         ];
+    }
+
+    /**
+     * `160!T14:U14` / `164!T14:U14` = teks kelas/toleransi yang diketik +
+     * satuan kapasitas (`U14 = INPUT DATA!J16` Fixed / `J17` Graduated): `- /± - ml`. Kuncinya selalu ada
+     * karena sel kepala di [tataLetakSertifikat] menyebutnya.
+     *
+     * @return array<string, string|null>
+     */
+    public function isiTambahanKepala(CalibrationSession $sesi): array
+    {
+        $blok = is_array($sesi->spesifikasi_alat) && is_array($sesi->spesifikasi_alat[M::KUNCI_SESI] ?? null)
+            ? $sesi->spesifikasi_alat[M::KUNCI_SESI]
+            : [];
+        $ketik = trim((string) ($blok['kelas_toleransi'] ?? ''));
+        $satuan = trim((string) ($blok['satuan'] ?? '')) ?: ($sesi->equipment?->satuan ?: 'ml');
+
+        return [self::KEPALA_KELAS_TOLERANSI => ($ketik === '' ? self::KELAS_TOLERANSI_KOSONG : $ketik).' '.$satuan];
     }
 
     /**
@@ -911,6 +952,9 @@ abstract class PistonVolumeProfile extends CalibrationProfile
             $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.kapasitas', 'Capacity', 'angka',
                 ekstra: ['mempengaruhi_ketidakpastian' => true]),
             $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.satuan', 'Satuan', 'pilihan', pilihan: ['ml', 'µl']),
+            // `INPUT DATA!I16`/`I17` master "Class/Tolerance" — teks bebas yang
+            // dicetak di kotak Class/Permitted Error sertifikat; kosong = `- /± -`.
+            $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.kelas_toleransi', 'Class/Tolerance', 'teks'),
         ];
 
         if ($sub !== []) {
