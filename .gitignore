@@ -5,6 +5,8 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+# Dibuat sesaat oleh .github/ci/shard.php di tiap job CI (dan kalau dijalankan lokal).
+/phpunit.shard.xml
 /.codex
 /.cursor/
 /.idea

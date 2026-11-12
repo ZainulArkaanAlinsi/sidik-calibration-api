@@ -117,6 +117,19 @@ yang baru ada di 8.4 — di 8.3 config-nya fatal sebelum satu test pun jalan.
 Render; commit merah berhenti di GitHub dan tidak sampai ke server yang dipakai
 teknisi di lokasi.
 
+**CI memecah suite jadi shard** (12 Nov 2026): 4 job SQLite + 6 job MySQL, tiap job
+berkas test yang berbeda, lalu job agregat `phpunit` dan `PHPUnit MySQL 8.0`
+(nama lama, tetap) yang merah kalau ada satu shard saja yang tidak hijau. Deploy
+tetap menunggu keduanya. Tiap shard punya checkout dan database sendiri, jadi
+jebakan `Storage::fake` di atas tidak kena — dan jangan pernah menyalakan test
+paralel di dalam satu job. Pembaginya `.github/ci/shard.php`; langkah
+`Verifikasi pembagian shard` menggagalkan build kalau ada berkas test yang
+tidak kebagian shard. Berkas `*Test.php` BARU di luar `tests/Unit` dan
+`tests/Feature` ikut menggagalkannya, kecuali dicatat sengaja di
+`.github/ci/shard-data.json`. Cek di lokal tanpa menjalankan test:
+`php .github/ci/shard.php verify --profil=mysql --of=6`. Penjelasan lengkap di
+kepala `tes.yml`.
+
 ## Arsitektur
 
 ### Profil kalibrasi — sumbu utama repo ini
