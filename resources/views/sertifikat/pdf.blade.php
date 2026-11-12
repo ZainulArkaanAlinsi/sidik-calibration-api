@@ -1193,13 +1193,19 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
              berbeda, jadi aturannya diputus sekali di
              `TimbanganProfile::ringkasanSertifikat` (dan diangkat sebagai T14),
              bukan ditebak ulang tiap cetak. Sertifikat lama yang snapshot-nya
-             belum punya kuncinya jatuh ke turunan dari `desimal`. --}}
+             belum punya kuncinya jatuh ke turunan dari `desimal`.
+
+             K-50-15 / B3a: snapshot BARU memuat `format` (kode format sel
+             SERTIFIKAT master per bagian cetak, `TimbanganProfile::
+             formatCetakMaster`) yang menang atas tiga desimal di atas; `$nT`
+             menerima kuncinya sebagai argumen ketiga. Snapshot lama tidak
+             punya `format` dan tercetak persis seperti waktu terbit. --}}
         @php($sat = $timbangan['satuan'] ?? '')
         @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
         @php($dT = $timbangan['desimal'] ?? $desimal)
         @php($dS = $timbangan['desimal_stdev'] ?? max($dT, 2))
         @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
-        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak)))
+        @php($nT = fn ($v, $d, $kunci = null) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Services\Calibration\Profiles\TimbanganProfile::teksAngkaCetak((float) $v, $d, $kunci === null ? null : ($timbangan['format'][$kunci] ?? null)), $tataLetak)))
 
         {{-- Bagian 1 nggak dicetak sama sekali kalau nggak ada slot yang diisi.
              Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
@@ -1224,13 +1230,15 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
                     <tr>
                         <td class="kiri">
                             {{ $rpt['label'] ?? '' }} =
-                            {{ \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::nilaiStandar(
-                                ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
-                                $dT,
-                            ), $tataLetak) }}
+                            {{ \App\Support\TataLetakSertifikat::angka(isset($timbangan['format']['kapasitas']) && ($rpt['kapasitas'] ?? null) !== null
+                                ? \App\Services\Calibration\Profiles\TimbanganProfile::teksAngkaCetak((float) $rpt['kapasitas'], $dT, $timbangan['format']['kapasitas'])
+                                : \App\Support\Angka::nilaiStandar(
+                                    ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
+                                    $dT,
+                                ), $tataLetak) }}
                         </td>
-                        <td>{!! $nT($rpt['stdev'] ?? null, $dS) !!}</td>
-                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($rpt['stdev'] ?? null, $dS, 'stdev') !!}</td>
+                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT, 'maks_beda') !!}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -1243,7 +1251,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
              kebaca "tare-nya sempurna", yang artinya beda. --}}
         <div class="baris-angka">
             <span class="nama">2. EFFECT OF TARE</span>
-            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT) !!} {{ $sat }}
+            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT, 'tare') !!} {{ $sat }}
         </div>
 
         <div class="judul-kelompok">3. ACCURACY</div>
@@ -1258,9 +1266,9 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
             <tbody>
                 @forelse ($timbangan['titik'] ?? [] as $t)
                     <tr>
-                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($t['koreksi'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU) !!}</td>
+                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT, 'nominal') !!}</td>
+                        <td>{!! $nT($t['koreksi'] ?? null, $dT, 'koreksi') !!}</td>
+                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU, 'u95') !!}</td>
                     </tr>
                 @empty
                     <tr><td colspan="3">&mdash;</td></tr>
@@ -1272,7 +1280,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
         <div class="judul-kelompok">4. LOADING INFLUENCE ON SEVERAL POSITION</div>
         <div class="ket-k">
             @if (($ekc['beban'] ?? null) !== null)
-                Weight mass {!! $nT($ekc['beban'], $dT) !!} {{ $sat }} was moved to various position
+                Weight mass {!! $nT($ekc['beban'], $dT, 'beban') !!} {{ $sat }} was moved to various position
             @else
                 {{-- Bebannya nggak dicatat teknisi. Kalimat masternya nyebut
                      angka; nyetak `—` di tengah kalimat itu kebaca kayak data
@@ -1299,9 +1307,9 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
                          sepihak. --}}
                     <td class="kiri">Reading</td>
                     @foreach ($ekc['posisi'] ?? [] as $pos)
-                        <td>{!! $nT($pos['selisih'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($pos['selisih'] ?? null, $dT, 'selisih') !!}</td>
                     @endforeach
-                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT) !!}</td>
+                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT, 'selisih') !!}</td>
                 </tr>
             </tbody>
         </table>
@@ -1318,13 +1326,13 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{!! $nT($hys['beban'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($hys['beban'] ?? null, $dT, 'hys_beban') !!}</td>
                         {{-- PERBANDINGAN ke resolusi, bukan nilai histeresisnya
                              — `IF(hys <= resolusi, "<", ">")` lalu memajang
                              resolusinya. Nilai mentahnya ada di jejak audit
                              tiap titik (`type_b_components`, sumber
                              `histeresis`). --}}
-                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT) !!}</td>
+                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT, 'hys_batas') !!}</td>
                     </tr>
                 </tbody>
             </table>
@@ -1332,7 +1340,7 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
 
         <div class="baris-angka">
             <span class="nama">6. LIMIT OF PERFORMANCE</span>
-            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU) !!} {{ $sat }}
+            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU, 'lop') !!} {{ $sat }}
         </div>
 
         <div class="judul-kelompok">7. WEIGHING UNCERTAINTY</div>
@@ -1355,10 +1363,10 @@ table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text
                 @forelse (array_slice($tt, 0, $separuh) as $i => $kiri)
                     @php($kanan = $tt[$separuh + $i] ?? null)
                     <tr>
-                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU) !!}</td>
-                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU) !!}</td>
+                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT, 'nominal_u') !!}</td>
+                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU, 'u95_penimbangan') !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT, 'nominal_u') !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU, 'u95_penimbangan') !!}</td>
                     </tr>
                 @empty
                     <tr><td colspan="4">&mdash;</td></tr>

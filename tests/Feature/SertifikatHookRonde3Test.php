@@ -65,7 +65,8 @@ class SertifikatHookRonde3Test extends TestCase
      * Timer `183`: Standard, UUT, Correction dipecah `H | M | S | S(0,001)`
      * (`E18:W18`; dicetak `S(0.001)`, titik desimal bentuk master), baris pertama persis `E19:W19` (0.00 | 1.00 | 0.00 | 96 —
      * 0.00 | 1.00 | 0.00 | 137 — 0.00 | 0.00 | 0.00 | -41), blok Note
-     * (`E30:P32`) di bawah tabel. `k_tunggal` tidak diisi (menunggu lab).
+     * (`E30:P32`) di bawah tabel. `k_tunggal` = `baris_pertama` (B3a / R9):
+     * `V29` = `k` budget pertama (`AC17`), satu `k` dengan tanda `=`.
      */
     public function test_timer_kolom_h_m_s_dan_note(): void
     {
@@ -76,7 +77,12 @@ class SertifikatHookRonde3Test extends TestCase
             array_filter($s->snapshot['tata_letak']['kolom_hasil'], static fn (array $k): bool => isset($k['pecah'])),
             'kolom',
         ));
-        $this->assertNull(TataLetakSertifikat::untuk($s->snapshot)['k_tunggal']);
+        $this->assertSame('baris_pertama', TataLetakSertifikat::untuk($s->snapshot)['k_tunggal']);
+        // `183!V29` General di kolom 6,2 karakter -> `1.965` (3 desimal), satu `k` dengan `=`
+        // — bukan `≈ 1.9639997581` (k tiap baris, 10 digit) seperti sebelum B3a.
+        $this->assertSame('0.000', $s->snapshot['hasil'][0]['format']['k']);
+        $this->assertMatchesRegularExpression('#Coverage Factor \( k \) =\s*1[.,]96\d\s*</div>#u', $html);
+        $this->assertDoesNotMatchRegularExpression('#Coverage Factor \( k \) ≈#u', $html);
         $this->assertStringContainsString('<th colspan="4">Standard Value</th>', $html);
         $this->assertStringContainsString('<th colspan="4">Unit Under Test</th>', $html);
         $this->assertMatchesRegularExpression('#<tr class="satuan">\s*<th>H</th>\s*<th>M</th>\s*<th>S</th>\s*<th>S\(0\.001\)</th>\s*<th>H</th>#u', $html);

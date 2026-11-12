@@ -101,3 +101,18 @@ sesi hydrometer berat 4–5 titik.
 
 **Pertanyaan:** U95 titik ke-4 dan ke-5 master berat memang 5 desimal, atau
 seharusnya `0.0000` seperti titik 1–3?
+
+## 8. `k` tercetak `2` di Height Gauge dan Jangka Sorong (k hitung 2,086 dan 1,976)
+
+Sel `k` master Height Gauge (`SERTIFIKAT!O35`) dan Jangka Sorong (`O36`, `O52`, `O63`) berformat
+`General`, tetapi kolomnya hanya 2,44–2,45 karakter, sehingga Excel menampilkan `2` — itulah yang
+tercetak di `sertifikat.terang.pdf` kedua master. Sistem sekarang mencetak `Coverage Factor ( k ) = 2`
+(format `0`). Nilai k hitung yang dipakai U95 tidak berubah: Height Gauge 2,086 (selisih 4,3% dari 2),
+Jangka Sorong 1,976 (1,2%), Depth 1,960 (2,0%). Timer (`183!V29`, kolom 6,2 karakter) tercetak 3
+desimal (`1.965`). Dicatat di `StudioFormatSertifikatTest::BEDA_DIKETAHUI` (`height_gauge/-/k`,
+`jangka_sorong/-/k`, `timer_stopwatch/-/k`): peta sel mencatat kode format `General`, render mengikuti
+tampilan Excel.
+
+**Pertanyaan:** `k = 2` tercetak apa adanya diterima (persis master), atau lab menghendaki `k` hitung
+tercetak (`2,09` / `1,98`) karena U95 dihitung dengan k sebenarnya? Untuk Timer: `k` budget titik pertama
+mewakili seluruh sesi (`V29 = AC17`), atau budget lain?

@@ -538,6 +538,19 @@ class ViscometerProfile extends CalibrationProfile
     }
 
     /**
+     * Kolom Standard Value ditulis PENUH sebanyak desimal barisnya (B3a / R9,
+     * K-50-15): `SERTIFIKAT!C23` berformat `0.00` dan master mencetak `79.90`
+     * (`sertifikat.terang.pdf`), bukan `79.9`. Format tetap Excel tidak
+     * membuang nol di belakang. Baris lain tidak berubah: `C24` `0.0` →
+     * `755.7`, `C25` `0` → `2496` (tidak punya nol di belakang yang terbuang).
+     * Dibekukan per baris snapshot BARU (`standar_ringkas`).
+     */
+    public function nolBelakangStandarDibuang(): bool
+    {
+        return false;
+    }
+
+    /**
      * `k` dikunci 2, nggak dihitung dari `v_eff`.
      *
      * Sumbernya dokumen lab, bukan penyederhanaan: sel `k` di
