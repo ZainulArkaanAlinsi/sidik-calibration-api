@@ -991,7 +991,7 @@ alur layar ada di [`perintah-frontend-arsip-cari.md`](perintah-frontend-arsip-ca
 - Sertifikat perusahaan pemanggil dikelompokkan TAHUN > BULAN > PEKAN > HARI menurut `diterbitkan_pada`.
   Pekan = ISO 8601 (Senin–Minggu), **dipotong per bulan** supaya hitungan pekan menjumlah ke bulannya.
 - Parameter: `tingkat` (`tahun` | `bulan` | `pekan` | `hari`), induk `tahun` / `bulan` / `pekan`,
-  `tanggal`, `q`, `termasuk_digantikan` (bawaan tidak, sama dengan `/sertifikat`), `per_page` (≤50),
+  `tanggal`, `q` (2–100; biaya O(N) per lab, debounce ≥ 300 ms), `termasuk_digantikan` (bawaan tidak, sama\n  dengan `/sertifikat`), `per_page` (≤50),
   `page`. Induk yang tidak sesuai tingkat → `422`.
 - Respons: `data.{tingkat, induk, total_dokumen, kelompok[], item[]}` + `meta`. `item` (hanya tingkat
   `hari`) berbentuk **persis baris `GET /sertifikat`** (`SertifikatPelangganResource`) ditambah

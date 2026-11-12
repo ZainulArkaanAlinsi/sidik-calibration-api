@@ -41,7 +41,7 @@ final class LabelWaktu
     }
 
     /**
-     * `Pekan 46 (10–16 Nov 2026)`; satu hari saja: `Pekan 44 (1 Nov 2026)`.
+     * `Pekan 46 (9–15 Nov 2026)`; satu hari saja: `Pekan 44 (1 Nov 2026)`.
      * Rentang yang diberikan selalu di dalam SATU bulan (pekan dipotong per
      * bulan, lihat `LingkupGarisWaktu`).
      */

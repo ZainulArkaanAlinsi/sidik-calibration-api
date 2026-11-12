@@ -12,10 +12,24 @@ use Illuminate\Database\Query\Grammars\Grammar;
  *
  * `OR` yang melintasi tabel menutup jalan optimizer: tidak ada tabel yang bisa
  * disaring duluan, jadi tiap sertifikat menjalankan enam pencarian PK lalu
- * mengevaluasi semua `LIKE`. Diukur di MySQL lokal (10.000 sertifikat/sesi
- * sintetis): median 330-570 ms per ketukan. Subkueri `IN` yang TIDAK
- * berkorelasi dievaluasi sekali per tabel kecil (alat, order, PT), lalu
- * dicocokkan ke kolom FK -- median 80-170 ms pada data yang sama.
+ * mengevaluasi semua `LIKE`. Subkueri `IN` yang TIDAK berkorelasi dievaluasi
+ * sekali per tabel kecil (alat, order, PT), lalu dicocokkan ke kolom FK. Itu
+ * memangkas sekitar 2-4x, TETAPI tidak mengubah kelasnya.
+ *
+ * ## Biayanya tetap O(N) per organisasi -- jangan dibaca sebagai "cepat"
+ *
+ * `LIKE '%kata%'` dan `REPLACE(...)` (normalisasi nomor) tidak bisa memakai
+ * indeks, jadi tiap pencarian memindai seluruh baris laboratorium. Patokan jujur
+ * di MySQL lokal dengan 10.000 sertifikat/sesi sintetis (mesin berisik, selisih
+ * antarputaran sampai 2x): penulis mengukur median 60-340 ms per kueri;
+ * peninjau independen mengukur 0,6-1,8 s untuk Telusuri dan pencarian alat,
+ * sekitar 1,9 s untuk garis waktu ber-`q`, dan sekitar 3,7 s untuk Riwayat
+ * ber-`q` dan tanggal. Pegang kisaran 1-4 s pada 10.000 baris. Cukup untuk
+ * ribuan baris (produksi saat ini sekitar 17 sertifikat dan 25 sesi). Bila
+ * data mendekati 50 ribu baris atau lebih, jalannya adalah kolom nomor
+ * ternormalisasi yang diindeks (kolom baru: keputusan pemilik), bukan
+ * menyetel SQL ini lagi. Indeks tanggal (garis waktu, `dari`/`sampai`) benar
+ * dan terukur: 2-160 ms.
  *
  * Subkueri bersarang mengikuti rantai kepemilikan: sertifikat -> sesi -> alat
  * -> PT, dan sesi -> item -> order. Alias tiap tingkat berbeda (`sa`, `ea`,

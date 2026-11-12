@@ -256,6 +256,9 @@ class ArsipGarisWaktuTest extends TestCase
             'tingkat=pekan&tahun=2026&bulan=13',
             'tingkat=hari&tahun=2026&bulan=11&pekan=46&tanggal=12-11-2026',
             'per_page=51',
+            // `q`: rute baru, minimal 2 huruf dan harus teks.
+            'q=a',
+            'q[]=ab',
         ] as $query) {
             $this->actingAs($this->admin)->getJson("/api/arsip/garis-waktu?{$query}")
                 ->assertStatus(422);

@@ -163,7 +163,7 @@ class GarisWaktuSertifikatPelangganTest extends TestCase
 
     public function test_parameter_tidak_sesuai_tingkat_ditolak_422(): void
     {
-        foreach (['tingkat=bulan', 'tingkat=hari&tahun=2026&bulan=11', 'tingkat=pekan&tahun=2026&bulan=11&pekan=46', 'per_page=51', 'tingkat=minggu'] as $query) {
+        foreach (['tingkat=bulan', 'tingkat=hari&tahun=2026&bulan=11', 'tingkat=pekan&tahun=2026&bulan=11&pekan=46', 'per_page=51', 'tingkat=minggu', 'q=a', 'q[]=ab'] as $query) {
             $this->permintaanBaru();
             $this->withHeaders($this->bearer($this->pic))->getJson(self::URI."?{$query}")->assertStatus(422);
         }

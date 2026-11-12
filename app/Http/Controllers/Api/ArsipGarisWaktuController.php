@@ -34,7 +34,8 @@ class ArsipGarisWaktuController extends Controller
     {
         $data = $request->validate(LingkupGarisWaktu::aturan() + [
             'customer_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // `min:2`: rute baru, tak ada klien lama; pencarian O(N) per lab.
+            'q' => ['sometimes', 'nullable', 'string', 'min:2', 'max:100'],
             'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:50'],
         ]);
 

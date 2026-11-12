@@ -135,6 +135,20 @@ class RiwayatSesiDaftarTest extends TestCase
         $this->actingAs($this->admin)->getJson('/api/calibrations?sampai=2026-11-01')->assertOk();
     }
 
+    public function test_q_minimal_dua_huruf_dan_harus_teks(): void
+    {
+        $this->bangunDokumen($this->org, ['serial' => 'MIN-DUA-1']);
+
+        foreach (['q=a', 'q[]=ab', 'q='.str_repeat('a', 101)] as $query) {
+            $this->actingAs($this->admin)->getJson("/api/calibrations?{$query}")
+                ->assertStatus(422)->assertJsonValidationErrors('q');
+        }
+
+        // Dua huruf sudah boleh; tanpa q sama sekali tentu boleh.
+        $this->actingAs($this->admin)->getJson('/api/calibrations?q=MI')->assertOk();
+        $this->actingAs($this->admin)->getJson('/api/calibrations?q=')->assertOk();
+    }
+
     public function test_filter_customer_id_termasuk_alat_yang_sudah_dihapus(): void
     {
         $pt = Customer::factory()->create(['organization_id' => $this->org->id, 'nama' => 'PT Filter Satu']);

@@ -37,7 +37,8 @@ class SertifikatGarisWaktuController extends Controller
     public function __invoke(Request $request, Konteks $konteks): JsonResponse
     {
         $data = $request->validate(LingkupGarisWaktu::aturan() + [
-            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // `min:2`: rute baru, tak ada klien lama; pencarian O(N) per lab.
+            'q' => ['sometimes', 'nullable', 'string', 'min:2', 'max:100'],
             'termasuk_digantikan' => ['sometimes', 'boolean'],
             'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:50'],
         ]);

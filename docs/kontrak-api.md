@@ -3557,14 +3557,18 @@ nomor seri alat (yang terdaftar dan yang diketik teknisi di lembar), nomor serti
 Nomor **dinormalisasi** di kedua sisi: huruf besar/kecil, `/`, `-`, dan spasi diabaikan
 (`CAL/2026/10/0001` = `cal-2026-10-0001` = `cal 2026 10 0001`); revisi `-R<n>` ikut karena nomor dasar
 adalah awalan nomor revisinya. `%` dan `_` yang diketik dibaca sebagai huruf biasa. Hasil berperingkat:
-persis, lalu awalan, lalu mengandung. Selalu dikurung `organization_id` pemanggil. Berlaku di:
+persis, lalu awalan, lalu mengandung. Selalu dikurung `organization_id` pemanggil. **Biaya O(N) per
+laboratorium** (`LIKE '%…%'` dan normalisasi tidak memakai indeks): kira-kira 1–4 s pada 10.000 baris,
+cukup untuk ribuan baris (produksi kini ±17 sertifikat/±25 sesi); untuk data ≥ ±50 ribu baris perlu kolom
+nomor ternormalisasi (keputusan pemilik). Klien wajib debounce ≥ 300 ms dan mengirim `q`/`search` hanya bila
+≥ 2 karakter. `q`/`search` harus teks (larik → `422`, ≤100). Berlaku di:
 
 | Rute | Parameter | Catatan |
 |---|---|---|
 | `GET /sertifikat/telusuri` | `q` (2–100) | Dulu hanya `nomor`. Bentuk baris tidak berubah. |
-| `GET /arsip/berkas` | `q` | Dulu hanya nama berkas (`Sertifikat-CAL-2026-10-0001.pdf`, jadi `CAL/2026/10/0001` tak ketemu). Kini juga nomor sertifikat/seri/order/PT dari sertifikat atau lembar kerja yang ditautkan. |
-| `GET /calibrations` | `q` (≤100) | Baru. |
-| `GET /equipments` | `search` | Seri, nama, merek, PT; nomor sertifikat/order hanya bila **persis**. |
+| `GET /arsip/berkas` | `q` (≤100, tanpa `min` di server) | Dulu hanya nama berkas (`Sertifikat-CAL-2026-10-0001.pdf`, jadi `CAL/2026/10/0001` tak ketemu). Kini juga nomor sertifikat/seri/order/PT dari sertifikat atau lembar kerja yang ditautkan. |
+| `GET /calibrations` | `q` (2–100) | Baru; 1 huruf → `422`. |
+| `GET /equipments` | `search` (≤100) | Seri, nama, merek, PT; nomor sertifikat/order hanya bila **persis**. Tanpa `min` di server (klien lama mengirim 1 huruf). `urut=jatuh_tempo` menang atas peringkat. |
 
 **`GET /calibrations` (Riwayat)** — parameter baru, semua opsional: `q`, `dari` & `sampai`
 (`YYYY-MM-DD`, tanggal kalibrasi, kedua ujung termasuk), `customer_id`, `per_page` (1–50, bawaan 15;
@@ -3579,7 +3583,7 @@ sesinya sendiri apa pun parameternya.
 `arsip-garis-waktu` 60/menit. Arsip dikelompokkan TAHUN > BULAN > PEKAN > HARI menurut `diterbitkan_pada`
 sebagai **tampilan** (folder fisik PT › Tahun › Bulan › Jenis tidak disentuh). Parameter: `tingkat`
 (`tahun` bawaan | `bulan` | `pekan` | `hari`), induk `tahun` / `bulan` / `pekan` (wajib sesuai tingkat),
-`tanggal` (tingkat hari, mempersempit ke satu hari), `customer_id`, `q`, `per_page` (≤50, bawaan 20),
+`tanggal` (tingkat hari, mempersempit ke satu hari), `customer_id`, `q` (2–100), `per_page` (≤50, bawaan 20),
 `page`. Pekan = ISO 8601 (Senin–Minggu) **dipotong per bulan** supaya jumlah pekan menjumlah ke bulannya.
 Respons: `data.{tingkat, induk, total_dokumen, kelompok[{kunci,label,jumlah,mulai,selesai,telusuri}],
 item[]}` + `meta` (halaman `item`; `item` hanya terisi pada tingkat `hari`). Induk yang salah →

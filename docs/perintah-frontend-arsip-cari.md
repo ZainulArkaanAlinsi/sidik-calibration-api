@@ -5,7 +5,7 @@
 
 | | |
 |---|---|
-| Repo API | `sidik-calibration-api`, branch `feat/arsip-cari-terpadu-20261112`, commit `(belum di-commit — diisi pemilik setelah commit)` |
+| Repo API | `sidik-calibration-api`, branch `feat/arsip-cari-terpadu-20261112`, commit paket `031e78db` (perubahan sesudahnya ada di commit berikutnya pada branch yang sama) |
 | Status backend | Selesai. Tes SQLite dan MySQL lokal hijau (SQLite lokal 510 tes terarah, MySQL lokal 278 tes terarah); gerbang suite MySQL penuh dijalankan pemilik sebelum rilis |
 | Sifat perubahan | **ADITIF.** Tidak ada rute, field, atau urutan yang dihapus/diubah. App lama tetap jalan tanpa diubah |
 | Referensi lain (opsional) | `docs/kontrak-api.md` §19, `docs/kontrak-api-pelanggan.md` §12 |
@@ -56,8 +56,31 @@ pemisah (`/`, `-`, spasi) tidak mencocokkan nomor apa pun. Selalu dikurung ke la
 |---|---|---|
 | `GET /api/sertifikat/telusuri` | `q` wajib, 2–100 huruf | Dulu hanya kolom `nomor`. **Bentuk baris tidak berubah** |
 | `GET /api/arsip/berkas` | `q` | Dulu hanya nama berkas (`Sertifikat-CAL-2026-10-0001.pdf`, jadi mengetik `CAL/2026/10/0001` tidak menemukan apa-apa). Kini juga nomor sertifikat/seri/order/PT dari sertifikat atau lembar kerja yang ditautkan. Nama berkas tetap dicari. Bentuk baris tidak berubah |
-| `GET /api/calibrations` | `q` (≤100) | **Baru**, lihat §2 |
-| `GET /api/equipments` | `search` | Seri (persis dulu), nama, merek, nama PT. Nomor sertifikat dan nomor order hanya cocok bila **persis** — potongan seperti `2026` tidak memunculkan alat (agar pemilih alat tidak penuh derau). Bentuk baris tidak berubah |
+| `GET /api/calibrations` | `q`, 2–100 huruf | **Baru**, lihat §2. 1 huruf → `422` |
+| `GET /api/equipments` | `search` (≤100) | Seri (persis dulu), nama, merek, nama PT. Nomor sertifikat dan nomor order hanya cocok bila **persis** — potongan seperti `2026` tidak memunculkan alat (agar pemilih alat tidak penuh derau). Bentuk baris tidak berubah. Berurutan peringkat dulu; **`urut=jatuh_tempo` menang**: kunci tanggal jatuh tempo lebih dulu, peringkat pencarian hanya memutuskan yang tanggalnya sama |
+
+`q`/`search` harus berupa teks. Larik (`q[]=x`) dijawab `422` di semua rute di atas (dulu `500` di arsip dan alat).
+
+### Biaya pencarian dan kewajiban klien (JANGAN dibaca sebagai "cepat")
+
+Pencarian ini **O(N) per laboratorium**: `LIKE '%kata%'` dan normalisasi nomor tidak bisa memakai indeks, jadi
+tiap pencarian memindai semua baris lab. Patokan jujur di MySQL lokal dengan 10.000 sertifikat/sesi sintetis
+(mesin berisik): sekitar **1–4 detik** per pencarian (Telusuri dan pencarian alat 0,6–1,8 s; garis waktu ber-`q`
+sekitar 2 s; Riwayat ber-`q` + tanggal sekitar 4 s). Itu cukup untuk **ribuan** baris; produksi saat ini
+sekitar 17 sertifikat dan 25 sesi. Untuk data ≥ ±50 ribu baris jalannya adalah kolom nomor ternormalisasi yang
+diindeks (kolom baru, keputusan pemilik), bukan menyetel SQL lagi. Filter **tanggal** (garis waktu, `dari`/`sampai`)
+memakai indeks dan cepat (2–160 ms pada data yang sama).
+
+Karena itu klien **wajib**:
+
+* **Debounce ≥ 300 ms** — jangan mengirim permintaan per ketukan; batalkan/abaikan jawaban permintaan lama.
+* **Kirim `q`/`search` hanya bila ≥ 2 karakter** (setelah `trim`). Satu huruf mencocokkan hampir semua baris.
+* Kosong = jangan kirim parameternya sama sekali.
+
+Server menegakkan `min:2` hanya di rute BARU (`GET /calibrations?q`, `GET /arsip/garis-waktu?q`, garis waktu
+pelanggan `q`) dan di Telusuri (sejak dulu). `GET /equipments?search` dan `GET /arsip/berkas?q` **sengaja tidak**
+menolak 1 huruf: aplikasi lab yang sudah terpasang mengirim `search=` mulai dari satu huruf, dan itu tidak boleh
+menjadi `422`. Kewajiban ≥ 2 karakter di sana ada di klien.
 
 Contoh — mengetik nomor seri di Telusuri (`GET /api/sertifikat/telusuri?q=sn-0204`), sebelumnya kosong
 (contoh menampilkan satu baris):
@@ -97,7 +120,7 @@ Parameter **baru**, semuanya opsional dan boleh digabung:
 
 | Parameter | Isi | Catatan |
 |---|---|---|
-| `q` | kata cari (≤100) | aturan §1; saat diisi, peringkat mendahului urutan |
+| `q` | kata cari, 2–100 huruf | aturan §1 (termasuk debounce dan biaya O(N)); 1 huruf → `422`; saat diisi, peringkat mendahului urutan |
 | `dari`, `sampai` | `YYYY-MM-DD` | **tanggal kalibrasi**, kedua ujung termasuk. `sampai` < `dari` → `422`. Draf tanpa tanggal kalibrasi tidak ikut bila salah satunya diisi |
 | `customer_id` | id PT | termasuk sesi dari alat yang sudah dihapus |
 | `per_page` | 1–50 | bawaan **15** (sama seperti dulu); `51` → `422` |
@@ -127,7 +150,15 @@ halaman yang diminta layar.
 Memakai resource daftar tanpa relasi berat: **tidak ada** `titik`, `standar_acuan`, `metode_kalibrasi`,
 `reviewer`, `pembacaan_mentah`, `hasil_autoclave`, `spesifikasi_alat`. Kunci yang sama dengan bentuk penuh
 memakai **nama dan arti yang sama**, jadi `CalibrationHistoryItem.fromJson` bisa dipakai tanpa diubah.
-`hasil` hanya memuat `keputusan` (`PASS`/`FAIL`, atau `null`). Detail satu sesi tetap `GET /api/calibrations/{id}`.
+Dua beda dari bentuk penuh yang harus diketahui:
+
+* `hasil` hanya memuat `{ "keputusan": "PASS"|"FAIL" }`, dan **ada** begitu sesi punya keputusan, walau sesi
+  itu belum punya titik hitung (bentuk penuh memberi `hasil: null` bila belum ada titik hitung). Tanpa
+  keputusan, `hasil` = `null`.
+* Ada kunci tingkat atas **baru** `keputusan` (sama nilainya dengan `hasil.keputusan`) yang tidak ada di bentuk
+  penuh. Pembaca lama boleh mengabaikannya.
+
+Detail satu sesi tetap `GET /api/calibrations/{id}`.
 Alat dan PT yang sudah dihapus tetap bernama. Bungkusnya sama dengan bentuk penuh (`data`, `links`, `meta`);
 contoh di bawah memangkas `links` dan `meta.links` dan hanya menampilkan satu baris. `GET /api/calibrations?bentuk=ringan&q=sn-0204&per_page=5`:
 
@@ -221,7 +252,7 @@ app bisa menandai yang batal/ditarik). `menunggu_generate` dan `gagal` tidak iku
 | `pekan` | 1–53, nomor **pekan ISO** |
 | `tanggal` | `YYYY-MM-DD`, hanya tingkat `hari`, mempersempit ke satu hari |
 | `customer_id` | hanya sertifikat milik PT itu |
-| `q` | aturan §1, menyempitkan **semua** tingkat |
+| `q` | aturan §1 (2–100 huruf, 1 huruf → `422`; debounce ≥ 300 ms; biaya O(N) per lab), menyempitkan **semua** tingkat |
 | `per_page`, `page` | paginasi `item` (tingkat `hari` saja); `per_page` 1–50, bawaan 20 |
 
 ### Penelusuran bertingkat
@@ -561,8 +592,10 @@ Rute baru; rute pelanggan yang ada tidak berubah. Token pelanggan + akun terveri
   atau tertemu lewat `q`.
 * Seperti daftar `/sertifikat`: yang **sudah digantikan revisi** disembunyikan; `termasuk_digantikan=1` membukanya
   (status item `digantikan`). Yang dihitung: sertifikat `terbit` dan `dibatalkan`.
-* `q`: nomor sertifikat (dinormalisasi, revisi ikut), nomor seri, nomor order (hanya order perusahaan ini),
-  nama alat. **`q` di `GET /sertifikat` tidak diubah** — masih pencocokan harfiah seperti sebelumnya.
+* `q` (2–100 huruf, 1 huruf → `422`; debounce ≥ 300 ms): nomor sertifikat (dinormalisasi, revisi ikut), nomor
+  seri, nomor order (hanya order perusahaan ini), nama alat. Biayanya O(N) per laboratorium (lihat §1); data
+  perusahaan pemanggil jauh lebih sedikit dari seluruh lab, tetapi pencariannya tetap memindai baris lab.
+  **`q` di `GET /sertifikat` tidak diubah** — masih pencocokan harfiah seperti sebelumnya.
 * `item[]` berbentuk **persis baris `GET /sertifikat`** (model baris yang sudah ada bisa dipakai ulang)
   ditambah satu kunci: `nomor_order` (yang tercetak di PDF). Item tidak memuat `customer_id`/`perusahaan` —
   semuanya milik perusahaan pemanggil.
@@ -693,7 +726,8 @@ Tampilkan `errors.serial_number[0]` apa adanya di bawah kolom nomor seri; jangan
    `bentuk=ringan&per_page=50` dan `meta.last_page`. Hapus batas 20 halaman; tetap simpan batas pengaman
    (mis. berhenti bila `last_page` tidak masuk akal).
 2. Telusuri dan Arsip: tidak perlu mengubah apa pun agar `q` yang lebih luas bekerja — bentuk baris sama.
-   Cukup ubah teks petunjuk kolom cari ("nomor sertifikat, nomor seri, atau order").
+   Cukup ubah teks petunjuk kolom cari ("nomor sertifikat, nomor seri, atau order"). Tambahkan debounce ≥ 300 ms
+   dan kirim hanya bila ≥ 2 karakter (§1); itu kewajiban klien, server tidak menolak 1 huruf di arsip dan alat.
 3. Layar baru "Garis waktu": mulai dari `tingkat=tahun`, lalu ikuti `telusuri` tiap kelompok. Satu layar
    boleh dipakai untuk keempat tingkat (judul = `label` kelompok yang dibuka).
 4. Aplikasi Pelanggan: layar garis waktu yang sama dengan rute §4; model baris `item` = model baris
@@ -709,11 +743,22 @@ Tampilkan `errors.serial_number[0]` apa adanya di bawah kolom nomor seri; jangan
 * Tidak ada pencarian di dalam isi PDF atau snapshot sertifikat.
 * Aplikasi tidak boleh memakai garis waktu untuk **menghitung** apa pun (hitungan = tampilan server).
 
+## 7b. Catatan yang diterima atau jadi tindak lanjut (bukan perubahan kode)
+
+* **Pencarian alat dengan nomor sertifikat/order PERSIS** mencocokkan lewat sesi siapa pun di lab itu, termasuk
+  sesi teknisi lain. Teknisi dapat menebak hubungan alat–dokumen. Diterima: daftar alat memang satu lab untuk
+  semua peran, dan tidak ada isi dokumen yang ikut keluar (hanya baris alat yang sudah boleh dilihatnya).
+* **Tindak lanjut di luar paket:** `ExcelImporter.php:456` mencari alat tanpa menyertakan yang terhapus lalu
+  `Equipment::create`, jadi impor Excel dengan serial milik alat terhapus bisa gagal `500` (kelas bug yang sama
+  dengan §5, yang hanya menutup `POST/PUT /equipments`).
+* Migrasi indeks garis waktu tanpa guard `hasIndex` — sesuai konvensi repo (migrasi dijalankan sekali oleh
+  `migrate`).
+
 ## 8. Daftar kode galat
 
 | Status | Kapan |
 |---|---|
 | `401` | tanpa token, atau token tidak sah |
 | `403` | token dari aplikasi yang salah (mis. token lab di rute pelanggan) |
-| `422` | parameter salah (tingkat/induk, tanggal, `per_page`>50, `bentuk`), atau nomor seri bentrok (§5) |
+| `422` | parameter salah (tingkat/induk, tanggal, `per_page`>50, `bentuk`), `q`/`search` berupa larik atau >100 huruf, `q` 1 huruf di rute baru (§1), atau nomor seri bentrok (§5) |
 | `429` | throttle garis waktu terlampaui (60/menit per pengguna) |

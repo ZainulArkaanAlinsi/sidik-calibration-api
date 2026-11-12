@@ -22,7 +22,10 @@ class DaftarSesiRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // `min:2`: parameter ini baru, tidak ada klien lama yang mengirimnya.
+            // Pencarian O(N) per lab, jadi satu huruf (yang mencocokkan hampir
+            // semuanya) tidak layak dijalankan.
+            'q' => ['sometimes', 'nullable', 'string', 'min:2', 'max:100'],
             'dari' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             // `after_or_equal:dari` hanya dipasang bila `dari` diisi: tanpa
             // itu Laravel mencoba membaca kata "dari" sebagai tanggal.
@@ -40,6 +43,7 @@ class DaftarSesiRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'q.min' => 'Kata cari minimal 2 karakter.',
             'dari.date_format' => 'Tanggal `dari` harus berbentuk YYYY-MM-DD.',
             'sampai.date_format' => 'Tanggal `sampai` harus berbentuk YYYY-MM-DD.',
             'sampai.after_or_equal' => 'Tanggal `sampai` tidak boleh sebelum tanggal `dari`.',

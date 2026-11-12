@@ -40,7 +40,12 @@ class EquipmentController extends Controller
             'jatuh_tempo_dalam' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:3650'],
             'termasuk_lewat' => ['sometimes', 'boolean'],
             'urut' => ['sometimes', 'nullable', 'in:terbaru,jatuh_tempo'],
+            // String, bukan array (`search[]=x` dulu jatuh jadi 500). TANPA `min`:
+            // aplikasi lab lama mengirim `search=` mulai dari 1 huruf, dan itu
+            // tidak boleh menjadi 422. Klien baru wajib debounce dan >= 2 huruf.
+            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
         ]);
+        $urutJatuhTempo = ($saring['urut'] ?? null) === 'jatuh_tempo';
 
         $equipments = Equipment::query()
             ->with(['customer', 'category'])
@@ -76,13 +81,22 @@ class EquipmentController extends Controller
                     $organisasi,
                 ),
             )
+            // `urut=jatuh_tempo` MENANG atas peringkat pencarian: kunci tanggalnya
+            // dipasang SEBELUM peringkat, dan `id` (penentu akhir) sesudahnya.
+            // Kalau `id` ikut di sini, peringkat tidak akan pernah menentukan.
+            ->when(
+                $urutJatuhTempo,
+                fn (Builder $query) => $query
+                    ->orderByRaw('tanggal_jatuh_tempo IS NULL ASC')
+                    ->orderBy('tanggal_jatuh_tempo'),
+            )
             // Pencarian terpadu (`CariDokumenLab::alat`): nomor seri (persis
             // duluan), nama, merek, nama PT, serta nomor sertifikat/order yang
             // PERSIS. `%` dan `_` yang diketik dibaca sebagai huruf biasa.
-            ->when($request->filled('search'), fn (Builder $query) => $this->cari->alat(
+            ->when(filled($saring['search'] ?? null), fn (Builder $query) => $this->cari->alat(
                 $query,
                 $organisasi,
-                trim((string) $request->string('search')),
+                trim($saring['search']),
             ))
             ->when($request->filled('category'), fn ($query) => $query->whereHas(
                 'category',
@@ -102,13 +116,11 @@ class EquipmentController extends Controller
             })
             // Bawaan tetap terbaru dulu. `urut=jatuh_tempo`: yang paling lama
             // lewat di atas, alat tanpa jadwal di dasar — sama dengan daftar
-            // alat di aplikasi pelanggan.
+            // alat di aplikasi pelanggan (kunci tanggalnya dipasang di atas,
+            // sebelum peringkat pencarian).
             ->when(
-                ($saring['urut'] ?? null) === 'jatuh_tempo',
-                fn (Builder $query) => $query
-                    ->orderByRaw('tanggal_jatuh_tempo IS NULL ASC')
-                    ->orderBy('tanggal_jatuh_tempo')
-                    ->orderBy('id'),
+                $urutJatuhTempo,
+                fn (Builder $query) => $query->orderBy('id'),
                 fn (Builder $query) => $query->latest('id'),
             )
             ->paginate(15)

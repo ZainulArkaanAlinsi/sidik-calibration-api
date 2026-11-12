@@ -46,6 +46,11 @@ class FolderFileController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // String, bukan array (`q[]=x` dulu jatuh jadi 500). TANPA `min`: `q` ada
+        // sejak sebelum pencarian terpadu, dan klien lama boleh mengirim 1 huruf.
+        // Klien baru wajib debounce dan mengirim >= 2 huruf.
+        $request->validate(['q' => ['sometimes', 'nullable', 'string', 'max:100']]);
+
         $file = $this->queryFileYangBolehDilihat($request)
             ->with(['certificate', 'uploader'])
             ->when(

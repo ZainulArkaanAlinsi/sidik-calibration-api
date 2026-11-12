@@ -38,9 +38,14 @@ use Illuminate\Database\Query\JoinClause;
  *
  * KONDISI kecocokan (apa yang lolos) disusun `SubkueriCocok` sebagai kolom
  * sendiri + `fk IN (subkueri tak berkorelasi)` -- bukan `OR` di atas join enam
- * tabel, yang sekitar 3-4x lebih lambat (alasan dan angkanya di kelas itu). PERINGKAT
- * (urutan) memakai join ke sesi/alat/order, tetapi hanya dievaluasi untuk baris
- * yang sudah lolos kondisi.
+ * tabel. PERINGKAT (urutan) memakai join ke sesi/alat/order, tetapi hanya
+ * dievaluasi untuk baris yang sudah lolos kondisi.
+ *
+ * BIAYA: O(N) per organisasi. `LIKE '%kata%'` dan `REPLACE` tidak bisa memakai
+ * indeks, jadi tiap pencarian memindai semua baris lab: kira-kira 1-4 s pada
+ * 10.000 baris, cukup untuk ribuan baris. Angka dan jalan keluar skala (kolom
+ * nomor ternormalisasi bila data >= +-50 ribu) ada di `SubkueriCocok`. Klien
+ * wajib debounce dan mengirim `q` minimal 2 karakter.
  *
  * Tiap method mengurung hasil ke `$organisasiId` (diturunkan dari user oleh
  * pemanggil, bukan dari input). `$pelangganId` (hanya sertifikat) memagari
@@ -211,8 +216,9 @@ final class CariDokumenLab
         $cocok->selectRaw("{$ekspresi} as cocok_peringkat", $bindingPeringkat);
         // DISTINCT hanya pada turunan yang punya join (sertifikat, sesi, berkas):
         // ia mencegah MySQL menggabungkan turunan ke kueri luar, yang membuat
-        // tabel sasaran dipindai DUA kali (luar + dalam). Diukur pada 10.000
-        // sertifikat: median 192 -> 103 ms. Id sudah unik, jadi hasilnya tidak berubah.
+        // tabel sasaran dipindai DUA kali (luar + dalam): sekitar 2x lebih cepat
+        // pada 10.000 sertifikat (ukuran penulis, mesin berisik; kelas biayanya
+        // tetap O(N), lihat docblock kelas). Id sudah unik, hasilnya tidak berubah.
         // Alat tidak punya join dan justru melambat bila dimaterialisasi.
         if ($cocok->joins !== null) {
             $cocok->distinct();
