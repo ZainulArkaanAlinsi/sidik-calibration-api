@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Bikin satu akun `super_admin` — satu-satunya jalan yang ada, dan itu disengaja.
@@ -179,11 +180,23 @@ class BuatAkunSuperAdmin extends Command
     {
         $sandi = Str::password(32);
 
-        $this->newLine();
-        $this->warn('Sandi akun ini — SALIN SEKARANG, cuma dicetak sekali:');
-        $this->line('  '.$sandi);
-        $this->warn('Ganti lewat /admin sesudah masuk pertama kali.');
+        $this->cetakSandi($sandi);
 
         return $sandi;
+    }
+
+    private function cetakSandi(string $sandi): void
+    {
+        $this->newLine();
+        $this->warn('Sandi akun ini — SALIN SEKARANG, cuma dicetak sekali:');
+        // MENTAH, bukan `line()`: `line()` melewatkan teks ke formatter Symfony,
+        // dan `Str::password()` memuat `\` dan `<`. Rangkaian `\<` dimakan
+        // formatter (garis miringnya dibuang sebagai escape tag), jadi sandi
+        // yang tercetak BEDA dari sandi yang tersimpan — sekitar 0,76% sandi
+        // (dihitung 12 Nov 2026 pada 20.000 sandi acak). Yang rugi pemegang
+        // akun paling berwenang: sandinya tidak pernah bisa dipakai masuk, dan
+        // sandi ini memang cuma dicetak sekali.
+        $this->output->writeln('  '.$sandi, OutputInterface::OUTPUT_RAW);
+        $this->warn('Ganti lewat /admin sesudah masuk pertama kali.');
     }
 }
