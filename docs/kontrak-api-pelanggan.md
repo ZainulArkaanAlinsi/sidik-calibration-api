@@ -211,10 +211,19 @@ Balasan **201**, bentuknya sama dengan `masuk`:
         }
       ],
       "pengajuan": null
-    }
+    },
+    "akun_sudah_ada": false
   }
 }
 ```
+
+- **`data.akun_sudah_ada`** (bool, additive 12 Nov 2026): `true` bila email itu **sudah punya akun
+  pelanggan sebelum undangan ini ditukar** (kasus konsultan: dia ditambahkan sebagai anggota
+  perusahaan baru, dan `nama`/`sandi`/`telepon`/`jabatan` yang dikirim diabaikan), `false` bila akun
+  baru dibuat oleh panggilan ini. Gunanya untuk teks layar sukses ("gunakan sandi akun Anda yang
+  sudah ada" vs "akun Anda sudah dibuat"). Hanya ada di balasan **201** ini — `masuk` tidak
+  memilikinya — dan klien lama yang tidak membacanya tidak terpengaruh. Nilainya hanya dikirim
+  kepada pemegang kode yang sah (email + kode cocok); semua kegagalan tetap satu jawaban yang sama.
 
 Semua kegagalan kode dijawab **satu pesan yang sama** (`undangan_tidak_berlaku`)
 — jangan tampilkan tebakan "mungkin sudah kedaluwarsa"; server memang tidak
@@ -497,6 +506,49 @@ Semua peran boleh melihat.
 `undangan_menunggu` ikut supaya PIC utama tahu dia sudah mengundang seseorang —
 tanpa itu dia mengundang lagi, dan undangan kedua **membatalkan** kode yang sudah
 terkirim.
+
+**Yang dilihat staf berbeda (additive/penyempitan sisi server, 12 Nov 2026).** Contoh di atas adalah
+balasan untuk **PIC utama**. Untuk pemanggil berperan `staf` (`data.saya.peran = "staf"`) server
+sendiri yang membatasi — bukan hanya aplikasi:
+
+| Field | PIC utama | Staf |
+|---|---|---|
+| `undangan_menunggu` | daftar penuh | **selalu `[]`** (alamat email orang yang sedang diundang bukan urusan staf) |
+| `anggota[].orang.telepon` milik **rekan** | nomor | **`null`** |
+| `anggota[].orang.telepon` milik **diri sendiri** (`saya: true`) | nomor | nomor |
+
+Balasan staf (disalin dari fixture `tests/Fixtures/pelanggan/anggota-staf.json`; yang melihat adalah "Sari Staf",
+`saya: true` di barisnya sendiri, sementara perusahaan punya satu undangan menunggu yang TIDAK ikut dikirim):
+
+```json
+{
+  "data": {
+    "anggota": [
+      { "id": "<int>", "peran": "pic_utama", "status": "aktif", "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": { "id": "<int>", "nama": "Budi PIC", "email": "budi@contoh.test",
+                   "telepon": null, "jabatan": "QA Manager" },
+        "saya": false },
+      { "id": "<int>", "peran": "staf", "status": "aktif", "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": { "id": "<int>", "nama": "Sari Staf", "email": "sari@contoh.test",
+                   "telepon": "+628123456789", "jabatan": "QA Manager" },
+        "saya": true }
+    ],
+    "undangan_menunggu": [],
+    "maks_anggota": 50,
+    "saya": { "customer_id": "<int>", "member_id": "<int>", "peran": "staf" }
+  }
+}
+```
+
+Kunci `telepon` dan `undangan_menunggu` **tetap ada** di balasan staf (nilainya `null` / `[]`), jadi
+bentuk JSON tidak berubah dan klien tidak perlu cabang parsing baru. Nomor HP rekan tidak pernah dipakai
+layar mana pun di aplikasi 0.2.2 (`Anggota.dariJson` tidak membaca `telepon`; `DaftarAnggota.dariJson`
+memakai `?? const []` untuk `undangan_menunggu`), sehingga APK yang sudah terpasang aman. Peran yang
+dipakai adalah peran di perusahaan **aktif** (`X-Perusahaan-Id`): konsultan yang PIC utama di pabrik A dan
+staf di pabrik B melihat isi lengkap di A dan isi terbatas di B. `POST /anggota/{id}/nonaktifkan`
+(PIC utama saja) tetap memulangkan `orang.telepon` seperti biasa. Penjaga: `AnggotaDanPeranTest`.
 
 `saya` di tiap baris anggota dijawab server, jangan dihitung aplikasi dari id
 yang disimpan lokal (nilai yang gampang basi sesudah ganti akun).
@@ -784,3 +836,20 @@ Aturan isolasi tidak berubah dan dijaga `IsolasiPerusahaanTest` serta `CariDariN
   biasanya sama dengan isi snapshot karena Order Number wajib terisi sebelum sesi disetujui).
 
 Aplikasi pelanggan tidak wajib diubah; kolom pencarian yang sudah ada otomatis menerima nomor order.
+
+
+## 10. Tindak lanjut temuan aplikasi Pelanggan (additive/penyempitan sisi server, 12 Nov 2026)
+
+Tanpa migrasi, tanpa rute baru, tanpa versi `/v2`. `/pelanggan/v1` tidak berubah perilaku untuk klien lama.
+
+| Rute | Perubahan | Aman untuk app 0.2.2 karena |
+|---|---|---|
+| `GET /anggota` | Untuk pemanggil **staf**: `undangan_menunggu` = `[]` dan `anggota[].orang.telepon` milik rekan = `null` (milik diri sendiri tetap nomor). PIC utama tidak berubah. Rincian di §3 `GET /anggota`. | `DaftarAnggota.dariJson` membaca `undangan_menunggu` dengan `?? const []` dan sudah membuangnya untuk non-PIC; `Anggota.dariJson` tidak membaca `telepon`. |
+| `POST /auth/terima-undangan` | Field baru `data.akun_sudah_ada` (bool) di balasan **201**. Rincian di §1. | Kunci tambahan diabaikan klien yang tidak membacanya. |
+
+Pembatasan `GET /anggota` ditegakkan **di server** (`AnggotaController::index` tidak lagi menjalankan query
+undangan untuk staf, `AnggotaResource` mengisi `telepon` hanya bila pemintanya PIC utama atau barisnya milik
+dirinya sendiri) — aplikasi yang dimodifikasi atau `curl` dengan token staf memperoleh jawaban yang sama
+dengan aplikasi resmi. Penjaga: `AnggotaDanPeranTest`, `TerimaUndanganTest`, `IsolasiPerusahaanTest`,
+`KontrakResponsPelangganTest` (fixture PIC `anggota.json` tidak berubah; fixture baru `anggota-staf.json`;
+`terima-undangan.json` bertambah satu kunci, `akun_sudah_ada` — perubahan additive, tidak ada kunci yang hilang).

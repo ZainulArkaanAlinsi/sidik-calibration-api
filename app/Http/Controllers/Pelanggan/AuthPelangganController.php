@@ -113,6 +113,11 @@ class AuthPelangganController extends Controller
             // memegang tiga pabrik itu satu orang, bukan tiga akun.
             $user = User::query()->where('email', $data['email'])->first();
 
+            // Dibaca SEBELUM akun dibuat: sesudah `create()` pertanyaannya tidak
+            // bisa dijawab lagi. Dikirim hanya di balasan 201 (pemegang kode yang
+            // sah) — jalur gagal tidak pernah menyentuhnya.
+            $akunSudahAda = $user !== null;
+
             if ($user === null) {
                 $user = User::create([
                     'organization_id' => $perusahaan->organization_id,
@@ -161,11 +166,19 @@ class AuthPelangganController extends Controller
                 'dipakai_oleh' => $user->getKey(),
             ])->save();
 
-            return ['user' => $user->refresh(), 'anggota' => $anggota];
+            return ['user' => $user->refresh(), 'anggota' => $anggota, 'akun_sudah_ada' => $akunSudahAda];
         });
 
         return response()->json([
-            'data' => $this->bungkusToken($hasil['user'], $data['nama_perangkat'] ?? ''),
+            'data' => [
+                ...$this->bungkusToken($hasil['user'], $data['nama_perangkat'] ?? ''),
+                // Additive (12 Nov 2026), HANYA di balasan ini — `masuk` memakai
+                // `bungkusToken()` yang sama tapi tidak membawanya. `true` =
+                // email ini sudah punya akun pelanggan sebelum undangan
+                // ditukar (nama/sandi di formulir diabaikan); `false` = akun
+                // baru. Klien lama mengabaikan kunci yang tidak dikenalnya.
+                'akun_sudah_ada' => $hasil['akun_sudah_ada'],
+            ],
         ], 201);
     }
 
