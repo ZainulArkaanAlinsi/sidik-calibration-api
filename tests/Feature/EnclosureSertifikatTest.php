@@ -246,9 +246,16 @@ class EnclosureSertifikatTest extends TestCase
         $sertifikat = $this->terbitkan($this->sesi('2405.03.AV'));
         $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
 
+        // S-4 (12 Nov 2026): judul blok sertifikat BARU bercampur huruf besar-kecil persis sel
+        // master `171!B21` `A) Sebaran Suhu` dan `B39` `B) Kinerja Enklosur` — tes ini dulu
+        // mengunci bentuk kapital lama (`A) SEBARAN SUHU`); snapshot lama tetap kapital
+        // (dijaga `SertifikatS4BekuTest`).
+        $this->assertStringNotContainsString('A) SEBARAN SUHU', $html);
+        $this->assertStringNotContainsString('B) KINERJA ENKLOSUR', $html);
+
         foreach ([
-            'A) SEBARAN SUHU',
-            'B) KINERJA ENKLOSUR',
+            'A) Sebaran Suhu',
+            'B) Kinerja Enklosur',
             'Pembacaan Indikator Enklosur (°C)',
             'Standar dan Koreksi Indikator (°C)',
             'Sensor No. (No. 1 Sensor Acuan)',

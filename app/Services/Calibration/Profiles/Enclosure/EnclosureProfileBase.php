@@ -11,6 +11,7 @@ use App\Services\Calibration\EnclosureCalculator;
 use App\Services\Calibration\Profiles\BentukSertifikatSuhu;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
+use App\Support\FormatMasterSertifikat;
 use App\Support\GambarKhasSertifikat;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -406,6 +407,21 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         'constant_yokogawa' => [4 => 2, 5 => 2],
     ];
 
+    /**
+     * Ukuran huruf MEDIAN lembar `SERTIFIKAT` master Enclosure Recorder setelah
+     * diskala ke A4 (pt) — cara ukur sama dengan
+     * `FormatMasterSertifikat::FONT_MEDIAN_PT` (median huruf `sertifikat.terang.pdf`
+     * x 595,3 / lebar halaman; audit 11 Nov: oven 7,44). Dipakai varian Recorder
+     * profil yang belum menyatakan ukurannya sendiri (S-4: Bath, Furnace,
+     * Refrigerator); jatuh ke tangga lama bila 0,95-1,00 x ini tidak muat satu
+     * halaman (`SkalaUkuranSertifikat`).
+     *
+     * Satu sumber: nilainya DIBACA dari baris `oven` tabel
+     * `FormatMasterSertifikat::FONT_MEDIAN_PT` (Oven memakai lembar Recorder yang
+     * sama), tidak diketik ulang di sini.
+     */
+    public const FONT_MASTER_RECORDER_PT = FormatMasterSertifikat::FONT_MEDIAN_PT['oven'];
+
     /** @return array{varian: string, desimal: array<string, int|null>, desimal_setting_baris: array<int, int|null>, desimal_indikator_baris: array<int, int|null>} */
     public function formatCetakSertifikat(?string $merkKalibrator): array
     {
@@ -462,37 +478,71 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * `GambarKhasSertifikat`); ukuran & posisi beda per master, jadi varian
      * dipilih dari merk kalibrator seperti `formatCetakSertifikat`.
      *
+     * S-4 (banding ulang 12 Nov 2026; berlaku Bath, Furnace, Refrigerator, dan
+     * juga Oven/Inkubator karena satu kelas dasar dan satu pasang master):
+     *
+     * - `kapasitas_master` (R7/P3): `171!F14` = `INPUT DATA!E15` dan `I14` =
+     *   `E16` (`100 °C / 0.1 °C`) — satu angka kapasitas yang DIKETIK, bukan
+     *   rentang `0–100`. Lihat [kapasitasCetakMaster].
+     * - `tanggal_master.tambah_hari` (R6/P2): Issuance Date `171!B60` =
+     *   `'INPUT DATA'!E168` = `P16+1` (Constant Yokogawa) dan `172!B60` =
+     *   `'INPUT DATA'!E100` = `P16+4` (Recorder); `P16` = Calibration Date
+     *   (`O11`). Varian dipilih dari merk kalibrator, sama dengan diagram.
+     * - `judul_kelompok_master`: judul blok `A) Sebaran Suhu` (`171!B21`) dan
+     *   `B) Kinerja Enklosur` (`B39`) bercampur huruf besar-kecil, bukan kapital.
+     * - `font_master_pt` varian Recorder: huruf mengikuti median lembar `172`
+     *   ([FONT_MASTER_RECORDER_PT]) — Oven sudah begitu lewat
+     *   `FormatMasterSertifikat::FONT_MEDIAN_PT`; Bath/Furnace/Refrigerator Recorder
+     *   tercetak 0,81 x master (6,0 pt, mode padat) sebelum S-4. Varian Constant
+     *   Yokogawa tidak diubah (0,93 x master).
+     *
      * @return array<string, mixed>
      */
     public function tataLetakSertifikat(CalibrationSession $sesi): array
     {
+        $induk = parent::tataLetakSertifikat($sesi);
+        $recorder = $this->merkKalibrator($sesi->rawMeasurements->first()?->standard ?? $sesi->standard) === TabelKalibratorEnclosure::MERK_BERKANAL;
+        $fontMaster = $induk['font_master_pt'] ?? ($recorder ? self::FONT_MASTER_RECORDER_PT : null);
+
         return [
-            ...parent::tataLetakSertifikat($sesi),
+            ...$induk,
             'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
             'label_tanggal_terbit' => 'Issuance Date',
-            'gambar_khas' => GambarKhasSertifikat::untuk(
-                $this->merkKalibrator($sesi->rawMeasurements->first()?->standard ?? $sesi->standard) === TabelKalibratorEnclosure::MERK_BERKANAL
-                    ? 'enclosure_recorder'
-                    : 'enclosure_constant_yokogawa',
-            ),
+            'tanggal_master' => [
+                ...($induk['tanggal_master'] ?? ['kepala' => 'en', 'terbit' => 'en']),
+                'tambah_hari' => $recorder ? 4 : 1,
+            ],
+            'kapasitas_master' => ['graduasi' => 'resolusi'],
+            'judul_kelompok_master' => true,
+            ...($fontMaster === null ? [] : ['font_master_pt' => $fontMaster]),
+            'gambar_khas' => GambarKhasSertifikat::untuk($recorder ? 'enclosure_recorder' : 'enclosure_constant_yokogawa'),
         ];
     }
 
     /**
-     * Baris `Standar: … / Sensor: …` yang tercetak di atas tabel hasil.
+     * Kapasitas yang dicetak master (`171!F14` = `INPUT DATA!E15`, diketik):
+     * isian `spesifikasi_alat.kapasitas` ("Kapasitas Alat" di lembar kerja).
+     * Belum diisi = rentang atas alat terdaftar (`equipments.range_max`);
+     * tidak ada angka yang ditebak.
+     */
+    public function kapasitasCetakMaster(CalibrationSession $sesi): float|int|string|null
+    {
+        $kapasitas = $sesi->spesifikasi_alat['kapasitas'] ?? null;
+
+        return is_numeric($kapasitas) ? (float) $kapasitas : parent::kapasitasCetakMaster($sesi);
+    }
+
+    /**
+     * SENGAJA `null` (S-4, R5): lembar SERTIFIKAT master enclosure (`171`, `172`)
+     * tidak punya baris `Standar: …, Sensor: …, Enclosure: …` di bawah
+     * `Calibration Report :` — kalibrator dan sensor sudah ada di tabel
+     * Standard used (`B53:Q54`), jenis alat di Equipment Name (`F10`). Baris
+     * itu karangan aplikasi. Hanya sertifikat BARU kehilangannya (hasil hook
+     * ini dibekukan di `snapshot.catatan_atas_hasil`).
      */
     public function catatanAtasTabelHasil(CalibrationSession $sesi): ?string
     {
-        $merk = $this->merkKalibrator($sesi->rawMeasurements->first()?->standard ?? $sesi->standard);
-        $tipe = $this->normalkanTipeSensor($sesi->tipe_sensor);
-
-        $bagian = array_filter([
-            $merk !== null ? 'Standar: '.(TabelKalibratorEnclosure::MERK_TERCETAK[$merk] ?? $merk) : null,
-            $tipe !== null ? 'Sensor: '.$tipe : null,
-            'Enclosure: '.$this->namaAlatKemampuan(),
-        ]);
-
-        return $bagian === [] ? null : implode(', ', $bagian);
+        return null;
     }
 
     /**

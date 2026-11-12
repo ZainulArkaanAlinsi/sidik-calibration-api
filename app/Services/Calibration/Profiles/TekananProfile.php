@@ -392,6 +392,31 @@ abstract class TekananProfile extends CalibrationProfile
         return $varian === null ? [] : $this->formatSertifikatMaster($varian, $titikUkur);
     }
 
+    /**
+     * Bentuk lembar SERTIFIKAT keluarga Tekanan di atas bentuk mayoritas
+     * (S-4, banding ulang 12 Nov 2026; Pressure Gauge, Vacuum Gauge, Differential
+     * Pressure; keempat master — Druck 07G `E35:E36`, 13G, SPMK, Differential —
+     * sama bentuknya):
+     *
+     * - `u95_dalam_tabel`: `E35` `Uncertainty U95% = ±` + nilai + satuan adalah
+     *   BARIS TERAKHIR tabel berbingkai (sel `E35:X35` digabung, kotaknya menyambung
+     *   dengan tabel), bukan baris teks di bawah tabel.
+     * - `kalimat_k`: `E36` `The Uncertainty is taken at a Convidence Level 95 % and
+     *   Coverage Factor( k ) =` — huruf kapital `U`/`L`/`F`, tanpa spasi sebelum `(`.
+     *   "Convidence" tetap dikoreksi jadi "Confidence" (kebijakan G4: salah ketik di
+     *   dokumen terakreditasi tidak ditiru; ditanyakan ke lab).
+     *
+     * @return array<string, mixed>
+     */
+    public function tataLetakSertifikat(CalibrationSession $sesi): array
+    {
+        return [
+            ...parent::tataLetakSertifikat($sesi),
+            'u95_dalam_tabel' => true,
+            'kalimat_k' => 'The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor( k )',
+        ];
+    }
+
     /** Kolom sertifikat dicetak oleh blok `tekanan` sendiri; lihat [tabelSertifikatTekanan]. */
     public function nilaiStandarDariKoreksi(): bool
     {

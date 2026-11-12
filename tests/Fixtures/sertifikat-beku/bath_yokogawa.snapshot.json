@@ -1,0 +1,577 @@
+{
+    "versi": 1,
+    "desimal": 1,
+    "judul_uut": "Unit Under Test",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": true,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": "Standar: Yokogawa, Sensor: Type N, Enclosure: Bath",
+    "satuan": "°C",
+    "satuan_cetak": "°C",
+    "header": {
+        "certificate_number": "UJI/00001",
+        "page": "1 of 1",
+        "owner": "PT Sintetis S4 1",
+        "order_number": "S4.bath.1",
+        "address": "Alamat Sintetis S4 1",
+        "received_date": "2024-05-02",
+        "equipment_name": "Bath",
+        "manufacturer": "MerkSintetis",
+        "calibration_location": "Laboratorium",
+        "model_type": "Model-1",
+        "calibration_date": "2024-05-02",
+        "serial_number": "S4-BATH-yoko",
+        "calibration_method": "SIDIK-IK-CAL-0501_Rev.6",
+        "capacity_graduation": "0–100 °C / 0.1 °C",
+        "env_condition": null,
+        "technician_id": "DR"
+    },
+    "hasil": [],
+    "autoclave": null,
+    "timbangan": null,
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": {
+        "satuan": "°C",
+        "varian_master": "constant_yokogawa",
+        "desimal": {
+            "indikator": 1,
+            "terukur": 1,
+            "koreksi": 1,
+            "u95": 1,
+            "k": 0,
+            "setting": 1,
+            "indikator_kinerja": 1,
+            "kinerja": 1
+        },
+        "tanda_nol": true,
+        "posisi": [
+            {
+                "posisi": 1,
+                "no": 3
+            },
+            {
+                "posisi": 2,
+                "no": 4
+            },
+            {
+                "posisi": 3,
+                "no": 5
+            },
+            {
+                "posisi": 4,
+                "no": 6
+            },
+            {
+                "posisi": 5,
+                "no": 7
+            },
+            {
+                "posisi": 6,
+                "no": 8
+            },
+            {
+                "posisi": 7,
+                "no": 9
+            },
+            {
+                "posisi": 8,
+                "no": 10
+            },
+            {
+                "posisi": 9,
+                "no": 11
+            }
+        ],
+        "set_point": [
+            {
+                "titik_ke": 1,
+                "set_point": 15,
+                "indikator": 15,
+                "sensor_acuan": 3,
+                "posisi_acuan": 1,
+                "sensor": [
+                    {
+                        "posisi": 1,
+                        "no": 3,
+                        "channel": null,
+                        "terukur": 14.346250000000001,
+                        "koreksi": -0.6537499999999987
+                    },
+                    {
+                        "posisi": 2,
+                        "no": 4,
+                        "channel": null,
+                        "terukur": 14.50625,
+                        "koreksi": -0.49375000000000036
+                    },
+                    {
+                        "posisi": 3,
+                        "no": 5,
+                        "channel": null,
+                        "terukur": 14.40625,
+                        "koreksi": -0.59375
+                    },
+                    {
+                        "posisi": 4,
+                        "no": 6,
+                        "channel": null,
+                        "terukur": 14.446249999999997,
+                        "koreksi": -0.5537500000000026
+                    },
+                    {
+                        "posisi": 5,
+                        "no": 7,
+                        "channel": null,
+                        "terukur": 14.186249999999998,
+                        "koreksi": -0.8137500000000024
+                    },
+                    {
+                        "posisi": 6,
+                        "no": 8,
+                        "channel": null,
+                        "terukur": 14.54625,
+                        "koreksi": -0.45374999999999943
+                    },
+                    {
+                        "posisi": 7,
+                        "no": 9,
+                        "channel": null,
+                        "terukur": 14.38625,
+                        "koreksi": -0.6137499999999996
+                    },
+                    {
+                        "posisi": 8,
+                        "no": 10,
+                        "channel": null,
+                        "terukur": 14.466249999999999,
+                        "koreksi": -0.5337500000000013
+                    },
+                    {
+                        "posisi": 9,
+                        "no": 11,
+                        "channel": null,
+                        "terukur": 14.20625,
+                        "koreksi": -0.7937499999999993
+                    }
+                ],
+                "keseragaman": 0.3000000000000007,
+                "kestabilan": 0.10000000000000053,
+                "variasi_keseluruhan": 0.5,
+                "u95": 1.2247344436037,
+                "faktor_cakupan_k": 1.9616095253754
+            },
+            {
+                "titik_ke": 2,
+                "set_point": 35,
+                "indikator": 35,
+                "sensor_acuan": 3,
+                "posisi_acuan": 1,
+                "sensor": [
+                    {
+                        "posisi": 1,
+                        "no": 3,
+                        "channel": null,
+                        "terukur": 34.16625,
+                        "koreksi": -0.833750000000002
+                    },
+                    {
+                        "posisi": 2,
+                        "no": 4,
+                        "channel": null,
+                        "terukur": 34.16625,
+                        "koreksi": -0.833750000000002
+                    },
+                    {
+                        "posisi": 3,
+                        "no": 5,
+                        "channel": null,
+                        "terukur": 34.286249999999995,
+                        "koreksi": -0.7137500000000045
+                    },
+                    {
+                        "posisi": 4,
+                        "no": 6,
+                        "channel": null,
+                        "terukur": 34.02625,
+                        "koreksi": -0.9737500000000026
+                    },
+                    {
+                        "posisi": 5,
+                        "no": 7,
+                        "channel": null,
+                        "terukur": 33.82625,
+                        "koreksi": -1.1737499999999983
+                    },
+                    {
+                        "posisi": 6,
+                        "no": 8,
+                        "channel": null,
+                        "terukur": 34.24625,
+                        "koreksi": -0.7537499999999966
+                    },
+                    {
+                        "posisi": 7,
+                        "no": 9,
+                        "channel": null,
+                        "terukur": 34.04625,
+                        "koreksi": -0.9537499999999994
+                    },
+                    {
+                        "posisi": 8,
+                        "no": 10,
+                        "channel": null,
+                        "terukur": 34.22625,
+                        "koreksi": -0.7737499999999997
+                    },
+                    {
+                        "posisi": 9,
+                        "no": 11,
+                        "channel": null,
+                        "terukur": 34.40625000000001,
+                        "koreksi": -0.5937499999999929
+                    }
+                ],
+                "keseragaman": 0.3999999999999986,
+                "kestabilan": 0.10000000000000142,
+                "variasi_keseluruhan": 0.7000000000000028,
+                "u95": 1.2261948440466,
+                "faktor_cakupan_k": 1.9616016673597
+            },
+            {
+                "titik_ke": 3,
+                "set_point": 75,
+                "indikator": 75,
+                "sensor_acuan": 3,
+                "posisi_acuan": 1,
+                "sensor": [
+                    {
+                        "posisi": 1,
+                        "no": 3,
+                        "channel": null,
+                        "terukur": 74.7475,
+                        "koreksi": -0.2524999999999977
+                    },
+                    {
+                        "posisi": 2,
+                        "no": 4,
+                        "channel": null,
+                        "terukur": 74.7875,
+                        "koreksi": -0.21250000000000568
+                    },
+                    {
+                        "posisi": 3,
+                        "no": 5,
+                        "channel": null,
+                        "terukur": 75.10499999999999,
+                        "koreksi": 0.10499999999998977
+                    },
+                    {
+                        "posisi": 4,
+                        "no": 6,
+                        "channel": null,
+                        "terukur": 74.86749999999999,
+                        "koreksi": -0.1325000000000074
+                    },
+                    {
+                        "posisi": 5,
+                        "no": 7,
+                        "channel": null,
+                        "terukur": 74.7675,
+                        "koreksi": -0.2325000000000017
+                    },
+                    {
+                        "posisi": 6,
+                        "no": 8,
+                        "channel": null,
+                        "terukur": 75.18499999999999,
+                        "koreksi": 0.18499999999998806
+                    },
+                    {
+                        "posisi": 7,
+                        "no": 9,
+                        "channel": null,
+                        "terukur": 74.6475,
+                        "koreksi": -0.35250000000000625
+                    },
+                    {
+                        "posisi": 8,
+                        "no": 10,
+                        "channel": null,
+                        "terukur": 75.0075,
+                        "koreksi": 0.007499999999993179
+                    },
+                    {
+                        "posisi": 9,
+                        "no": 11,
+                        "channel": null,
+                        "terukur": 75.085,
+                        "koreksi": 0.08499999999999375
+                    }
+                ],
+                "keseragaman": 0.5575000000000045,
+                "kestabilan": 0.20000000000000284,
+                "variasi_keseluruhan": 0.7575000000000074,
+                "u95": 1.2448363699364,
+                "faktor_cakupan_k": 1.9615053768081
+            },
+            {
+                "titik_ke": 4,
+                "set_point": 100,
+                "indikator": 100,
+                "sensor_acuan": 3,
+                "posisi_acuan": 1,
+                "sensor": [
+                    {
+                        "posisi": 1,
+                        "no": 3,
+                        "channel": null,
+                        "terukur": 99.805,
+                        "koreksi": -0.19499999999999318
+                    },
+                    {
+                        "posisi": 2,
+                        "no": 4,
+                        "channel": null,
+                        "terukur": 99.785,
+                        "koreksi": -0.2150000000000034
+                    },
+                    {
+                        "posisi": 3,
+                        "no": 5,
+                        "channel": null,
+                        "terukur": 100.245,
+                        "koreksi": 0.24500000000000455
+                    },
+                    {
+                        "posisi": 4,
+                        "no": 6,
+                        "channel": null,
+                        "terukur": 100.163,
+                        "koreksi": 0.1629999999999967
+                    },
+                    {
+                        "posisi": 5,
+                        "no": 7,
+                        "channel": null,
+                        "terukur": 99.925,
+                        "koreksi": -0.07500000000000284
+                    },
+                    {
+                        "posisi": 6,
+                        "no": 8,
+                        "channel": null,
+                        "terukur": 99.66499999999999,
+                        "koreksi": -0.33500000000000796
+                    },
+                    {
+                        "posisi": 7,
+                        "no": 9,
+                        "channel": null,
+                        "terukur": 99.825,
+                        "koreksi": -0.17499999999999716
+                    },
+                    {
+                        "posisi": 8,
+                        "no": 10,
+                        "channel": null,
+                        "terukur": 100.085,
+                        "koreksi": 0.08499999999999375
+                    },
+                    {
+                        "posisi": 9,
+                        "no": 11,
+                        "channel": null,
+                        "terukur": 100.103,
+                        "koreksi": 0.10299999999999443
+                    }
+                ],
+                "keseragaman": 0.539999999999992,
+                "kestabilan": 0.10000000000000142,
+                "variasi_keseluruhan": 0.7399999999999949,
+                "u95": 1.2289357303635,
+                "faktor_cakupan_k": 1.9615870459985
+            }
+        ]
+    },
+    "catatan": [
+        "The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = 2",
+        "- Calibration results are not to be announced and only apply to related tools -"
+    ],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": true,
+        "judul_standar_digunakan": "Standard used :",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Type"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "Serial Number"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceable to SI through"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date",
+        "kepala_titik_dua": true,
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "akhir_sertifikat_garis": {
+            "teks": "End of Certificate",
+            "tebal": true,
+            "miring": true,
+            "ukuran": 8,
+            "lebar": 0.29
+        },
+        "gambar_khas": [
+            {
+                "berkas": "posisi-termokopel-enclosure",
+                "posisi": "atas_hasil",
+                "kiri": 0.41,
+                "lebar": 0.2844,
+                "tinggi": 0.2351,
+                "teks": [
+                    "Thermocouple Position :"
+                ],
+                "kiri_teks": 0.266,
+                "turun_teks_pt": 2,
+                "turun_gambar_pt": 0
+            }
+        ]
+    },
+    "standar_digunakan": [
+        {
+            "name": "Temperature Calibrator Yokogawa CA 150 Handy Cal",
+            "merk_type": "Yokogawa/CA 150 Handy Cal",
+            "serial_number": "23P1005",
+            "traceable_to": "LK-202-IDN"
+        },
+        {
+            "name": "Thermocouple Type N",
+            "merk_type": "Type N",
+            "serial_number": "TCN-06,11",
+            "traceable_to": "LK-064-IDN"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-12",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "ski1oax9ep",
+        "qr_payload": "http://localhost/verify/ski1oax9ep",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}
