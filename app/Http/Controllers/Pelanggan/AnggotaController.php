@@ -49,9 +49,25 @@ class AnggotaController extends Controller
         private readonly KodeUndangan $kodeUndangan,
     ) {}
 
-    /** REQ-ANG-03 — semua peran boleh MELIHAT. */
+    /**
+     * REQ-ANG-03 — semua peran boleh MELIHAT daftar anggota, tetapi yang
+     * dilihat staf lebih sempit dari yang dilihat PIC utama (12 Nov 2026):
+     *
+     * - `undangan_menunggu` selalu `[]` bagi staf. Alamat email orang yang
+     *   sedang diundang bukan urusan staf; query-nya pun tidak dijalankan.
+     * - `orang.telepon` rekan `null` bagi staf (milik sendiri tetap terbaca).
+     *
+     * Dipaksa di SERVER, bukan diserahkan ke aplikasi: aplikasi yang
+     * dimodifikasi atau `curl` dengan token staf harus memperoleh jawaban yang
+     * sama dengan aplikasi resmi. Yang dipakai adalah peran di perusahaan AKTIF
+     * (`Konteks`), jadi konsultan yang PIC utama di A dan staf di B dibatasi
+     * hanya di B. Kunci JSON-nya tidak berubah (`[]` / `null`), jadi APK yang
+     * terpasang tidak perlu ikut berubah.
+     */
     public function index(Request $request, Konteks $konteks): JsonResponse
     {
+        $picUtama = $konteks->picUtama();
+
         $anggota = CustomerMember::query()
             ->with('user')
             ->where('customer_id', $konteks->customerId)
@@ -59,21 +75,32 @@ class AnggotaController extends Controller
             ->orderBy('id')
             ->get();
 
-        $undangan = UndanganPelanggan::query()
-            ->where('customer_id', $konteks->customerId)
-            ->whereNull('dipakai_pada')
-            ->whereNull('dibatalkan_pada')
-            ->where('kedaluwarsa_pada', '>', now())
-            ->orderByDesc('id')
-            ->get();
+        $undangan = $picUtama
+            ? UndanganPelanggan::query()
+                ->where('customer_id', $konteks->customerId)
+                ->whereNull('dipakai_pada')
+                ->whereNull('dibatalkan_pada')
+                ->where('kedaluwarsa_pada', '>', now())
+                ->orderByDesc('id')
+                ->get()
+            : collect();
 
         return response()->json([
             'data' => [
-                'anggota' => AnggotaResource::collection($anggota)->resolve(),
+                // Tidak lewat `AnggotaResource::collection()`: koleksi itu
+                // membuat resource-nya sendiri sehingga tidak ada tempat
+                // menyatakan "pemintanya PIC utama". Hasilnya identik.
+                'anggota' => $anggota
+                    ->map(fn (CustomerMember $satu) => (new AnggotaResource($satu))
+                        ->bolehLihatTeleponRekan($picUtama)
+                        ->resolve())
+                    ->values()
+                    ->all(),
                 // Undangan yang belum ditukar ikut ditampilkan: tanpa itu PIC
                 // utama tidak punya cara tahu dia sudah mengundang seseorang,
                 // dan yang dia lakukan mengundang lagi — yang justru
-                // membatalkan kode yang sudah terkirim.
+                // membatalkan kode yang sudah terkirim. Staf tidak mengundang,
+                // jadi baginya selalu kosong.
                 'undangan_menunggu' => $undangan->map(fn (UndanganPelanggan $satu) => [
                     'id' => $satu->getKey(),
                     'email' => $satu->email,
@@ -150,7 +177,12 @@ class AnggotaController extends Controller
 
         return response()->json([
             'message' => 'Anggota dinonaktifkan. Seluruh sesinya dicabut.',
-            'data' => (new AnggotaResource($anggota->fresh()->load('user')))->resolve(),
+            // Rute ini dipagari `peran:pic_utama`, jadi `picUtama()` selalu true
+            // di sini; tetap ditulis lewat `Konteks` supaya resource-nya tidak
+            // pernah mendapat nilai dari tempat lain.
+            'data' => (new AnggotaResource($anggota->fresh()->load('user')))
+                ->bolehLihatTeleponRekan($konteks->picUtama())
+                ->resolve(),
         ]);
     }
 

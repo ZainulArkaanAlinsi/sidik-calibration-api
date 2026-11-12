@@ -462,6 +462,13 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // Jawabannya diturunkan dari middleware `role:` di rute-rute di bawah, jadi
     // nggak bisa beda dari penjagaan yang beneran jalan. Lihat `MatriksIzin`.
     Route::get('/me/permissions', [AuthController::class, 'permissions']);
+    // Ganti sandi SENDIRI — semua peran internal (admin, teknisi, viewer, dan
+    // super_admin lewat `lolosTulisSuperAdmin`, karena rute ini menerima
+    // admin/teknisi). Bukan izin di `MatriksIzin::PETA`: tiap akun yang sudah
+    // masuk berhak atas sandinya sendiri, jadi tidak ada tombol yang perlu
+    // disembunyikan. Throttle sempit per akun (`ganti-sandi-lab`).
+    Route::post('/me/ganti-sandi', [AuthController::class, 'gantiSandi'])
+        ->middleware('throttle:ganti-sandi-lab');
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Otorisasi channel privat buat realtime sync (Echo authEndpoint di mobile &

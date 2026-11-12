@@ -635,6 +635,20 @@ Dijaga `PintuDaftarMandiriTertutupTest`, yang menguji lewat HTTP (bukan dengan
 membaca daftar rute) dan ikut menjaring rute baru mana pun yang namanya
 berakhiran `register` atau `daftar`.
 
+**Kode undangan TIDAK cukup untuk akun yang sudah ada (12 Nov 2026).** Admin lab
+melihat kode polos undangannya, jadi kode hanya membuktikan "membaca email
+undangan", bukan "pemilik akun". `terimaUndangan()` untuk email yang sudah punya
+akun pelanggan wajib `Hash::check` sandi akun itu (ember kegagalan SATU dengan
+`masuk()`), menolak organisasi lain dan status `nonaktif`/`dianonimkan`/
+`pending_email` (satu method dengan `masuk()`), mencatat `audit_logs`, dan
+mengabari pemilik akun. Pihak tanpa kode sah tetap hanya menerima
+`undangan_tidak_berlaku`. Kode juga diklaim atomik (`klaimUndangan()`), jadi satu
+kode hanya bisa ditukar sekali walau dua request datang bersamaan. Ini perubahan
+perilaku `/pelanggan/v1` yang **disengaja** — pengecualian sadar atas butir 6
+§Modul Pelanggan, karena yang ditutup lubang pengambilalihan akun. Jangan
+melonggarkannya demi "konsultan lupa sandi" — jalannya `lupa-sandi`. Dijaga
+`UndanganAkunLamaTest`; kontrak `docs/kontrak-api-pelanggan.md` §11.
+
 **Yang SENGAJA ditinggal berdiri, jangan ikut dirapikan:**
 
 - **Mesin OTP** (`otp_pelanggan`, `KodeOtp`). Bukan lagi untuk verifikasi email,
