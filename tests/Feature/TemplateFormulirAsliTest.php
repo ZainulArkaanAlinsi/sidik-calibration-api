@@ -255,14 +255,69 @@ class TemplateFormulirAsliTest extends TestCase
 
     public function test_mode_uji_ikut_config(): void
     {
-        // Bawaan = mode uji nyala (K-50-11): semua formulir yang dipetakan
-        // dibuka sampai >=20 foto nyata; env OCR_FORMULIR_ASLI_UJI=false mematikan.
+        // phpunit*.xml menyetel OCR_FORMULIR_ASLI_UJI=true secara eksplisit
+        // (K-50-11: semua formulir yang dipetakan dibuka sampai >=20 foto
+        // nyata), jadi test ini memeriksa jalur config -> template, bukan
+        // bawaan kode — bawaan kode dijaga test di bawah.
         $this->assertTrue(config('ocr.formulir_asli.mode_uji'));
         $this->assertTrue($this->asli()['mode_uji']);
 
         Config::set('ocr.formulir_asli.mode_uji', false);
 
         $this->assertFalse($this->asli()['mode_uji']);
+    }
+
+    /**
+     * Bawaan KODE fail-closed: env hilang = mode uji MATI.
+     *
+     * Config-nya dimuat ulang dengan env yang dicabut/disetel di tempat
+     * `env()` membacanya — `Config::set()` melompati bagian itu dan tetap hijau
+     * walau bawaannya dibalik jadi true. Env tegas "true"/"false" tetap
+     * dihormati, jadi saklar produksi (render.yaml "false") dan pin test
+     * (phpunit "true") tidak bergeser.
+     */
+    public function test_bawaan_kode_mode_uji_mati_bila_env_hilang(): void
+    {
+        $this->assertFalse($this->modeUjiDenganEnv(null), 'env hilang harus fail-closed (false).');
+        $this->assertTrue($this->modeUjiDenganEnv('true'));
+        $this->assertFalse($this->modeUjiDenganEnv('false'));
+    }
+
+    /**
+     * Repository env Laravel immutable: variabel yang disetel dari luar (di
+     * sini `<env>` phpunit.xml) tidak bisa dicabut lewat
+     * `Env::getRepository()->clear()`. Jadi ketiga sumber bacanya — $_SERVER,
+     * $_ENV, putenv — disentuh langsung, lalu dipulihkan persis seperti semula.
+     */
+    private function modeUjiDenganEnv(?string $nilai): bool
+    {
+        $kunci = 'OCR_FORMULIR_ASLI_UJI';
+
+        $semula = [
+            'server' => $_SERVER[$kunci] ?? null,
+            'env' => $_ENV[$kunci] ?? null,
+            'putenv' => getenv($kunci),
+        ];
+
+        $setel = function (?string $server, ?string $env, string|false|null $put) use ($kunci): void {
+            $server === null ? $this->hapusKunci($_SERVER, $kunci) : $_SERVER[$kunci] = $server;
+            $env === null ? $this->hapusKunci($_ENV, $kunci) : $_ENV[$kunci] = $env;
+            putenv($put === false || $put === null ? $kunci : $kunci.'='.$put);
+        };
+
+        try {
+            $setel($nilai, $nilai, $nilai);
+
+            return (require base_path('config/ocr.php'))['formulir_asli']['mode_uji'];
+        } finally {
+            $setel($semula['server'], $semula['env'], $semula['putenv']);
+        }
+    }
+
+    /** @param  array<string, mixed>  $larik */
+    private function hapusKunci(array &$larik, string $kunci): void
+    {
+        unset($larik[$kunci]);
     }
 
     /**

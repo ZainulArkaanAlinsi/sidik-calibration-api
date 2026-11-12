@@ -661,6 +661,8 @@
             <div class="ket">
                 @if (($pengganti ?? null) !== null)
                     Digantikan oleh: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
+                @elseif ($revisiDibatalkan ?? false)
+                    Revisi penggantinya kemudian <strong>dibatalkan</strong>, jadi belum ada sertifikat pengganti yang berlaku. Hubungi laboratorium untuk informasi lebih lanjut.
                 @else
                     Sertifikat pengganti sedang disiapkan. Hubungi laboratorium untuk informasi lebih lanjut.
                 @endif
@@ -680,13 +682,25 @@
             <div class="cap">Sertifikat ini sudah direvisi</div>
             <div class="ket">
                 Yang berlaku: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
-                @if ($pengganti->status === \App\Models\Certificate::STATUS_DIBATALKAN)
-                    Revisi itu kemudian <strong>dibatalkan</strong>.
-                @endif
                 Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
             </div>
             <div class="aksi">
                 <a href="{{ route('verify', $pengganti->qr_token) }}">Buka yang berlaku</a>
+                <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF lama</a>
+            </div>
+        </div>
+    @elseif ($revisiDibatalkan ?? false)
+        {{-- K38-2: revisinya dibatalkan, tapi pendahulunya TETAP digantikan —
+             lembar ini bukan dokumen yang berlaku. Revisi yang dibatalkan juga
+             bukan "yang berlaku", jadi TIDAK ditunjuk (tanpa tautan). Tanpa
+             alasan pembatalan (D4). --}}
+        <div class="bilah digantikan" role="status">
+            <div class="cap">Sertifikat ini sudah direvisi</div>
+            <div class="ket">
+                Revisinya kemudian <strong>dibatalkan</strong>, jadi belum ada sertifikat pengganti yang berlaku. Hubungi laboratorium untuk informasi lebih lanjut.
+                Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
+            </div>
+            <div class="aksi">
                 <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF lama</a>
             </div>
         </div>
