@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\PerubahanDataOrganisasi;
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Models\Certificate;
 use App\Notifications\Pelanggan\SertifikatBerubah;
 use App\Notifications\SertifikatGagal;
@@ -79,6 +80,11 @@ class ReviseCertificate implements ShouldQueue
         } catch (\Throwable $e) {
             $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
             $this->kabarinKegagalan($sertifikat, $e);
+
+            // Kegagalan deterministik (lihat GenerateCertificate): jangan diulang antrean.
+            if ($e instanceof SertifikatLebihSatuHalamanException) {
+                $this->fail($e);
+            }
 
             throw $e;
         }

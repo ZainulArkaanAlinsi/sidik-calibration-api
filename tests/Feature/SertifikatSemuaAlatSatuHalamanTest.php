@@ -238,6 +238,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '002-UB.P-11-20 (Outside Micrometer)',
         '003-UB.P-11-20 (Digital Outside Micrometer)',
         '0106-CAL-1023 (Micrometer Digital)',
+        // Thermometer Glass masuk daftar ini 12 Nov 2026 (B1/R2, K-50-15): baris sensor
+        // acuan `PRT PT100` (`SERTIFIKAT!B43`) kini SELALU tercetak seperti master, jadi
+        // Standard Used bertambah satu baris dan sesi contoh lima titik tidak lagi muat di
+        // mode normal (sebab yang sama dengan Viscometer di bawah). Tetap SATU halaman,
+        // huruf 7,9 pt = 1,00 x master (rapat-1).
+        '0135-CAL-125 (Thermometer Glass)',
         '0312-CAL-624 (Thermohygrometer)',
         // Dial Indicator (alat ke-30, 15 Sep 2026) — sebab yang sama dengan
         // Height Gauge & Micrometer di atas: sesi contoh masternya SEPULUH titik
@@ -275,6 +281,18 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2406.51.S (Autoclave)',
         '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',
+        // Viscometer masuk daftar ini 10 Nov 2026 (G1/R2, K-50-15): baris
+        // `Termometer & Sensor Std.` (`SERTIFIKAT!B35`) kini SELALU tercetak
+        // seperti master, jadi Standard Used bertambah satu baris dan sesi
+        // contoh lima baris standar tidak lagi muat di mode normal. Tetap SATU
+        // halaman di mode padat.
+        //
+        // Daftar ini diukur dengan sakelar `sertifikat.kop_pracetak` MATI (bawaan,
+        // kop/judul/kode dokumen tetap tercetak). Dengan sakelar menyala (G0-b P1)
+        // Sieve Mesh, UTM, Gas Detector, dan Viscometer muat di mode normal
+        // (Viscometer hanya sisa 6 px, mepet `SertifikatPunyaMarginTest`) — ukur
+        // ulang daftar ini dan tes margin SEBELUM menyalakannya.
+        '2607.59.W (Viscometer)',
         // Load Cell (alat ke-41, 24 Sep 2026) — sebab yang sama dengan Height
         // Gauge & Micrometer: jumlah baris. Sertifikat masternya mencetak
         // SEPULUH titik, dan tiap angkanya dua desimal (resolusi 0,01 kN),

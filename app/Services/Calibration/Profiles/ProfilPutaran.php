@@ -496,7 +496,7 @@ abstract class ProfilPutaran extends CalibrationProfile
         $belumDihitung = [];
         $sekarang = Carbon::now();
 
-        foreach ($blok as $anggota) {
+        foreach ($blok as $indeksBlok => $anggota) {
             // Null-safe, dan itu bukan kehati-hatian berlebih: `standard` boleh
             // null (lihat kontrak `TimbanganProfile::hitungPerGrup`), dan sesi
             // yang kalibratornya di-soft-delete memulangkan null di sini. Tanpa
@@ -517,6 +517,10 @@ abstract class ProfilPutaran extends CalibrationProfile
                         ? null
                         : (float) $kemampuan->ketidakpastian_terbaik,
                     'satuan' => self::SATUAN,
+                    // Hanya untuk catatan audit penyimpangan dari master
+                    // (`type_b_components`); tidak memengaruhi angka apa pun.
+                    'alat' => $this->kode(),
+                    'blok_ke' => $indeksBlok + 1,
                 ],
             );
 
@@ -828,6 +832,20 @@ abstract class ProfilPutaran extends CalibrationProfile
             'ci' => 0.0,
             'vi' => 0.0,
         ];
+
+        // Penyimpangan SADAR dari master (drift K35 5/15 baris, pengulangan
+        // blok 1 Centrifuge = G34 tunggal, tiga kerusakan blok 5 Tachometer):
+        // AGENTS.md "Olah data" butir 4 menuntutnya terbaca di jejak sesi,
+        // bukan cuma di docblock. Catatan tambahan — angka di atas tidak berubah.
+        foreach ($hasil['catatan_audit'] ?? [] as $catatan) {
+            $jejak[] = [
+                'sumber' => $catatan['kode'],
+                'keterangan' => $catatan['pesan'],
+                'distribusi' => '-',
+                'nilai' => $hasil['u95_sertifikat'],
+                ...array_diff_key($catatan, array_flip(['kode', 'pesan'])),
+            ];
+        }
 
         return $jejak;
     }

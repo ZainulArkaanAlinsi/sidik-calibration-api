@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\TabelStandarAutoclave;
+use App\Support\GambarKhasSertifikat;
 
 /**
  * Profil Autoklaf (alat ke-8). Metode `SIDIK-IK-CAL-0531_Rev.4`, form
@@ -213,10 +214,12 @@ class AutoclaveProfile extends CalibrationProfile
      * dua (`G46:Q46`), `Issuance Date:` (`B54`), dan `End of Certificate`
      * sesudah tanda tangan (`E66`, spasi tepi master dibuang).
      *
+     * `Thermocouple Position : (For Temperature)` (`F19:F20`) + gambar posisi
+     * termokopel (`J19`, silinder 1-2-3) dicetak lewat `gambar_khas` (G2,
+     * `GambarKhasSertifikat`).
+     *
      * BELUM (bagian tabel autoklaf digambar `pdf.blade.php`, lapisan T):
-     * `Thermocouple Position : (For Temperature)` + gambar posisi (`F19`,
-     * gambar di `J19`), kepala `Sensor No. (oC)` bernomor (`F23:P24`), judul
-     * `C) Tekanan` (`B35`).
+     * kepala `Sensor No. (oC)` bernomor (`F23:P24`), judul `C) Tekanan` (`B35`).
      *
      * @return array<string, mixed>
      */
@@ -228,7 +231,47 @@ class AutoclaveProfile extends CalibrationProfile
             'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
             'label_tanggal_terbit' => 'Issuance Date:',
             'akhir_sertifikat' => '-------------- End of Certificate  --------------',
+            'gambar_khas' => GambarKhasSertifikat::untuk('autoclave'),
+            // B1 / R7: dua baris Capacity/Graduation (suhu, tekanan).
+            'kapasitas_master' => ['graduasi' => 'baris'],
         ];
+    }
+
+    /**
+     * Capacity/Graduation master `155!F14:J15` (dua baris): `121 oC / 0.01 oC`
+     * (`INPUT DATA!E15`/`E16`) dan `0.2 MPa / 0.001 MPa` (`H15`/`I15`/`H16`).
+     *
+     * - Suhu: kapasitas = `equipments.range_max`; resolusi = resolusi alat
+     *   yang DIPAKAI olah data (`lembar.suhu.resolusi_alat`, cadangan
+     *   `config/autoclave.php`) — angka yang sama dengan sel `E16` master.
+     * - Tekanan: satuan & resolusi dari `lembar.tekanan`, sama dengan olah
+     *   datanya. KAPASITAS tekanan (`H15` = 0.2) belum punya tempat di input
+     *   app (kolom `range_tekanan` hanya tampil di lembar kerja, tidak ikut
+     *   disimpan), jadi tercetak `-` — tidak ditebak. Pertanyaan lab di
+     *   `docs/pertanyaan-lab-sertifikat-b1.md`.
+     *
+     * Baris tekanan hanya bila sesi memuat blok tekanan.
+     *
+     * @return list<string>|null
+     */
+    public function kapasitasBarisMaster(CalibrationSession $sesi): ?array
+    {
+        $lembar = is_array($sesi->hasil_autoclave) ? ($sesi->hasil_autoclave['lembar'] ?? null) : null;
+
+        if (! is_array($lembar) || $sesi->equipment === null) {
+            return null;
+        }
+
+        $resolusiSuhu = $lembar['suhu']['resolusi_alat'] ?? config('autoclave.resolusi_alat.suhu');
+        $baris = [$this->barisKapasitas($sesi->equipment->range_max, self::SATUAN_SUHU, $resolusiSuhu)];
+
+        if (is_array($lembar['tekanan'] ?? null)) {
+            $satuan = (string) ($lembar['tekanan']['satuan'] ?? 'Bar');
+            $resolusi = $lembar['tekanan']['resolusi_alat'] ?? config('autoclave.resolusi_alat.tekanan');
+            $baris[] = $this->barisKapasitas(null, $satuan, $resolusi);
+        }
+
+        return $baris;
     }
 
     /**

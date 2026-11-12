@@ -662,14 +662,19 @@ class HeightGaugeProfile extends CalibrationProfile
     /**
      * Format sel master `184` (K-50-15 membatalkan lima desimal untuk CETAK;
      * nilai snapshot tetap presisi penuh): Standar Reading · UUT · Correction
-     * `0.00` (`D24:L33`), U95 `0.000` (`J34`), `k` `General` (`O35` — master
-     * mencetak k hitung penuh, `2.085963447265865`).
+     * `0.00` (`D24:L33`), U95 `0.000` (`J34`), `k` `0` (`O35`).
+     *
+     * `k`: selnya `General` TAPI kolom `O` hanya selebar 2,44 karakter, jadi
+     * Excel menampilkan `2.085963447265865` sebagai `2` — yang tercetak di
+     * `sertifikat.terang.pdf` master. Versi sebelumnya (`General` = 10 digit,
+     * `2.0930240544`) membaca NILAI sel, bukan TAMPILANNYA (B3a / R9). Cetak
+     * saja: U95 tetap dihitung dengan k sebenarnya.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'];
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => '0'];
     }
 
     /** Lihat [TITIK_DICETAK_SERTIFIKAT]. */

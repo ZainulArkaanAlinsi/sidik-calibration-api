@@ -18,6 +18,18 @@
                 </p>
             </div>
         </section>
+    @elseif ($revisiDibatalkan ?? false)
+        {{-- K38-2: revisinya dibatalkan, pendahulunya tetap digantikan, dan
+             revisi yang dibatalkan tidak ditunjuk sebagai "yang berlaku". --}}
+        <section class="kartu kartu-status kedaluwarsa" role="status">
+            <div>
+                <span class="label">Status sertifikat</span>
+                <h2 class="status">Digantikan</h2>
+                <p class="kecil">
+                    Sudah direvisi, lalu revisinya <strong>dibatalkan</strong>. Belum ada sertifikat pengganti yang berlaku; hubungi laboratorium untuk informasi lebih lanjut.
+                </p>
+            </div>
+        </section>
     @endif
 
     {{-- Status diturunkan dari "berlaku sampai" yang memang sudah tampil di
@@ -67,13 +79,6 @@
             <div class="baris">
                 <dt>Nomor seri</dt>
                 <dd class="mono">{{ $certificate->session->equipment->serial_number }}</dd>
-            </div>
-            <div class="baris">
-                <dt>Pemilik alat</dt>
-                {{-- Disamarkan sebagian: halaman ini sering di-screenshot &
-                     diteruskan. PDF-nya tetap memuat nama utuh. --}}
-                <dd>{{ $pemilikSamar ?? \App\Support\SamarkanNama::untuk($certificate->session->equipment->customer->nama) }}
-                    <span class="kecil">Disamarkan sebagian</span></dd>
             </div>
             <div class="baris">
                 <dt>Tgl kalibrasi</dt>

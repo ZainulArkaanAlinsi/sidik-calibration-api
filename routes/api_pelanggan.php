@@ -5,6 +5,7 @@ use App\Http\Controllers\Pelanggan\AnggotaController;
 use App\Http\Controllers\Pelanggan\AppStatusController;
 use App\Http\Controllers\Pelanggan\AuthPelangganController;
 use App\Http\Controllers\Pelanggan\BerandaController;
+use App\Http\Controllers\Pelanggan\InfoAplikasiController;
 use App\Http\Controllers\Pelanggan\NotifikasiController;
 use App\Http\Controllers\Pelanggan\PaketController;
 use App\Http\Controllers\Pelanggan\PerangkatController;
@@ -53,6 +54,12 @@ use Illuminate\Support\Facades\Route;
  * maintenance — dua layar yang justru paling dibutuhkan saat itu.
  */
 Route::get('/app/status', AppStatusController::class)->name('pelanggan.app.status');
+
+/*
+ * Kontak & dokumen untuk layar Bantuan — publik, tanpa token, dan juga di luar
+ * gerbang fitur: layar "belum tersedia"/pemeliharaan butuh tombol hubungi lab.
+ */
+Route::get('/app/info', InfoAplikasiController::class)->name('pelanggan.app.info');
 
 Route::middleware('fitur.pelanggan')->group(function () {
 

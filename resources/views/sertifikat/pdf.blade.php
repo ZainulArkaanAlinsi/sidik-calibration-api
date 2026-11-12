@@ -30,11 +30,24 @@
     $blokCatatanPosisi = collect($snapshot['catatan_blok'] ?? [])->groupBy('posisi');
     $nilaiKepala = [...($snapshot['header_tambahan'] ?? []), ...$header];
 
+    // A3: ukuran huruf mengikuti median master (`SkalaUkuranSertifikat`). Hanya
+    // terisi bila `SertifikatSatuHalaman` mengirim `ukuranTabel`; selain itu
+    // `$cssSkala` kosong dan keluaran tidak berubah satu byte.
+    $ukuranTabel = ! ($web ?? false) && isset($ukuranTabel) && is_numeric($ukuranTabel) ? (float) $ukuranTabel : null;
+    $keluargaUkuran = ($keluargaUkuran ?? 'rapat') === 'padat' ? 'padat' : 'rapat';
+    $cssSkala = $ukuranTabel === null ? '' : \App\Support\SkalaUkuranSertifikat::css($ukuranTabel, $keluargaUkuran);
+
     $tgl = fn (?string $iso): string => $iso
         ? \Illuminate\Support\Carbon::parse($iso)->translatedFormat('d F Y')
         : '—';
     $angka = fn ($nilai): string => \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id($nilai === null ? null : (float) $nilai, $desimal), $tataLetak);
     $isi = fn (?string $nilai): string => filled($nilai) ? $nilai : '—';
+    // G0-b (P2): tanggal seperti format sel master, bahasa bulan per lembar
+    // (`[$-421]` id `dd mmmm yyyy`, `[$-809]` en `d mmmm yyyy`) — bukan locale
+    // aplikasi. Hanya dipanggil bila snapshot memuat `tata_letak.tanggal_master`.
+    $tglMaster = fn (?string $iso, string $bahasa): string => $iso
+        ? \Illuminate\Support\Carbon::parse($iso)->locale($bahasa)->translatedFormat($bahasa === 'en' ? 'j F Y' : 'd F Y')
+        : '—';
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -601,7 +614,7 @@
             .lembar table.data { display: block; overflow-x: auto; width: 100%; }
         }
         @endif
-    </style>
+    {!! $cssSkala !!}</style>
 </head>
 {{-- Lembar Timbangan SELALU padat. Pemicu `> 12 baris` nggak kena
      lembarnya: tabel `hasil` cuma 10 baris, tapi yang dicetak DELAPAN bagian
@@ -619,7 +632,7 @@
      `longgar`. Kalau dikirim, `SertifikatSatuHalaman` sudah mengukur hasil
      render sungguhan tingkat demi tingkat — tebakan itu justru membuat
      Centrifuge 13 baris dipaksa ke tabel 8px padahal muat di ukuran rapat. --}}
-@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && count(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? [])) > 12) || ($snapshot['timbangan'] ?? null) !== null))
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && count(\App\Support\TataLetakSertifikat::barisDicetak($snapshot['hasil'] ?? [])) > 12) || ($snapshot['timbangan'] ?? null) !== null || ($ukuranTabel !== null && $keluargaUkuran === 'padat')))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -637,7 +650,7 @@
      berlaku bersama `padat`, dan tidak untuk Autoklaf/Timbangan yang punya
      pemadatannya sendiri. Lihat `.cadangan-footer`. --}}
 @php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
-<body class="{{ $padat ? 'padat' : '' }}{{ isset($snapshot['tata_letak']) ? ' bentuk-master' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
+<body class="{{ $padat ? 'padat' : '' }}{{ isset($snapshot['tata_letak']) ? ' bentuk-master' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}{{ $ukuranTabel !== null ? ' skala-ukuran' : '' }}">
 @if ($web ?? false)
     @if ($ditarik ?? false)
         {{-- K-50-03: sertifikat ditarik ke lembar kerja untuk dikoreksi. Lembar
@@ -648,6 +661,8 @@
             <div class="ket">
                 @if (($pengganti ?? null) !== null)
                     Digantikan oleh: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
+                @elseif ($revisiDibatalkan ?? false)
+                    Revisi penggantinya kemudian <strong>dibatalkan</strong>, jadi belum ada sertifikat pengganti yang berlaku. Hubungi laboratorium untuk informasi lebih lanjut.
                 @else
                     Sertifikat pengganti sedang disiapkan. Hubungi laboratorium untuk informasi lebih lanjut.
                 @endif
@@ -667,13 +682,25 @@
             <div class="cap">Sertifikat ini sudah direvisi</div>
             <div class="ket">
                 Yang berlaku: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
-                @if ($pengganti->status === \App\Models\Certificate::STATUS_DIBATALKAN)
-                    Revisi itu kemudian <strong>dibatalkan</strong>.
-                @endif
                 Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
             </div>
             <div class="aksi">
                 <a href="{{ route('verify', $pengganti->qr_token) }}">Buka yang berlaku</a>
+                <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF lama</a>
+            </div>
+        </div>
+    @elseif ($revisiDibatalkan ?? false)
+        {{-- K38-2: revisinya dibatalkan, tapi pendahulunya TETAP digantikan —
+             lembar ini bukan dokumen yang berlaku. Revisi yang dibatalkan juga
+             bukan "yang berlaku", jadi TIDAK ditunjuk (tanpa tautan). Tanpa
+             alasan pembatalan (D4). --}}
+        <div class="bilah digantikan" role="status">
+            <div class="cap">Sertifikat ini sudah direvisi</div>
+            <div class="ket">
+                Revisinya kemudian <strong>dibatalkan</strong>, jadi belum ada sertifikat pengganti yang berlaku. Hubungi laboratorium untuk informasi lebih lanjut.
+                Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
+            </div>
+            <div class="aksi">
                 <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF lama</a>
             </div>
         </div>
@@ -692,9 +719,11 @@
         </div>
     @endif
 
-    {{-- Kartu ringkas: yang dicocokkan orang dengan kertasnya. Nama pemilik
-         DISAMARKAN sebagian (App\Support\SamarkanNama) — halaman ini sering
-         di-screenshot & diteruskan. Nama utuh tetap ada di lembar lengkap. --}}
+    {{-- Kartu ringkas: yang dicocokkan orang dengan kertasnya. TANPA nama
+         pemilik/pelanggan (data rahasia klien, ISO/IEC 17025 klausul 4.2) —
+         halaman ini sering di-screenshot & diteruskan. Nama utuh hanya ada di
+         lembar lengkap di balik "Tampilkan lembar lengkap" (salinan sah
+         sertifikat, token-gated). --}}
     <section class="ringkas" aria-label="Ringkasan sertifikat">
         <div class="ringkas-baris">
             <span class="ringkas-label">Nomor sertifikat</span>
@@ -713,10 +742,6 @@
         <div class="ringkas-baris">
             <span class="ringkas-label">Nomor seri</span>
             <span class="ringkas-nilai mono">{{ $isi($header['serial_number'] ?? null) }}</span>
-        </div>
-        <div class="ringkas-baris">
-            <span class="ringkas-label">Pemilik alat</span>
-            <span class="ringkas-nilai">{{ $isi($pemilikSamar ?? null) }} <span class="ringkas-catatan">Disamarkan sebagian</span></span>
         </div>
         <div class="ringkas-baris">
             <span class="ringkas-label">Tanggal kalibrasi</span>
@@ -752,7 +777,7 @@
       SERTIFIKAT master tidak memuat kop gambar, dan kertasnya bisa saja sudah
       berkop cetak. Bawaannya `true` — bentuk lama.
     --}}
-    @if (! $tataLetak['kop'])
+    @if (! $tataLetak['kop'] || filled($tataLetak['kop_pracetak']))
     @elseif (! empty($kop))
         <div class="kop-gambar"><img src="{{ $kop }}" alt="Kop surat"></div>
     @else
@@ -790,7 +815,14 @@
     </div>
     @endif
 
-    @if (filled($tataLetak['judul']))
+{{-- Kertas berkop PRACETAK (G0-b P1): kop, judul, dan kode dokumen tidak
+     dicetak; ruang kosong setinggi margin atas master menggantikan kop. Gaya
+     inline & direktif di kolom 0 sengaja: cetak ulang snapshot lama harus
+     keluar IDENTIK byte demi byte (komentar Blade meninggalkan newline-nya,
+     jadi `@if` menempel di ujung komentar). --}}@if (filled($tataLetak['kop_pracetak']))
+<div style="height: {{ $tataLetak['kop_pracetak'] }}cm; font-size: 0; line-height: 0;"></div>
+@endif
+    @if (filled($tataLetak['judul']) && ! filled($tataLetak['kop_pracetak']))
         <div class="judul">{{ $tataLetak['judul'] }}</div>
     @endif
     @if (filled($header['catatan_revisi'] ?? null))
@@ -804,7 +836,18 @@
          boleh). Bawaannya grid lama 8 × 2 (`TataLetakSertifikat::BAWAAN`).
          Sel ber-`\n` (Capacity/Graduation bertingkat, Env. Condition
          bertumpuk) dicetak `pre-line`. --}}
-    <table class="info{{ $tataLetak['kepala'] !== \App\Support\TataLetakSertifikat::BAWAAN['kepala'] ? ' kepala-master' : '' }}">
+{{-- Kolom titik dua kepala (G0-a R3): aturannya cuma ikut terbit bila snapshot
+     menyatakan `kepala_titik_dua`, supaya cetak ulang snapshot lama IDENTIK
+     byte demi byte (komentar Blade meninggalkan newline-nya, jadi `@if`
+     menempel di ujung komentar). Selektor `.titik-dua` lebih lemah dari aturan
+     `body.longgar-*`, jadi pelebaran label tingkat longgar tetap menang. --}}@if ($tataLetak['kepala_titik_dua'])
+<style>
+table.info.titik-dua td.lbl { width: 17%; }
+table.info.titik-dua td.val { width: 31.5%; }
+table.info.titik-dua td.sep { width: 1%; padding-left: 0; padding-right: 0; text-align: center; }
+</style>
+@endif
+    <table class="info{{ $tataLetak['kepala'] !== \App\Support\TataLetakSertifikat::BAWAAN['kepala'] ? ' kepala-master' : '' }}{{ $tataLetak['kepala_titik_dua'] ? ' titik-dua' : '' }}">
         @php($rentangKepala = \App\Support\TataLetakSertifikat::rentangKepala($tataLetak['kepala']))
         @foreach ($tataLetak['kepala'] as $iKepala => $barisKepala)
             <tr>
@@ -813,11 +856,11 @@
                     @php($atrRs = $rsKepala > 1 ? ' rowspan="'.$rsKepala.'"' : '')
                     @if ($rsKepala === 0)
                     @elseif ($selKepala === null)
-                        <td class="lbl"></td><td class="val"></td>
+                        <td class="lbl"></td>{!! $tataLetak['kepala_titik_dua'] ? '<td class="sep"></td>' : '' !!}<td class="val"></td>
                     @else
                         @php($kunciKepala = $selKepala['kunci'])
-                        @php($teksKepala = in_array($kunciKepala, \App\Support\TataLetakSertifikat::KUNCI_TANGGAL, true) ? $tgl($nilaiKepala[$kunciKepala] ?? null) : $isi($nilaiKepala[$kunciKepala] ?? null))
-                        <td class="lbl"{!! $atrRs !!}>{{ $selKepala['label'] }}</td><td class="val{{ $kunciKepala === 'equipment_name' ? ' alat' : '' }}{{ $kunciKepala === 'capacity_graduation' || str_contains($teksKepala, "\n") ? ' tumpuk' : '' }}"{!! $atrRs !!}>{{ $teksKepala }}</td>
+                        @php($teksKepala = in_array($kunciKepala, \App\Support\TataLetakSertifikat::KUNCI_TANGGAL, true) ? ($tataLetak['tanggal_master'] !== null ? $tglMaster($nilaiKepala[$kunciKepala] ?? null, $tataLetak['tanggal_master']['kepala']) : $tgl($nilaiKepala[$kunciKepala] ?? null)) : $isi($nilaiKepala[$kunciKepala] ?? null))
+                        <td class="lbl"{!! $atrRs !!}>{{ $selKepala['label'] }}</td>{!! $tataLetak['kepala_titik_dua'] ? '<td class="sep"'.$atrRs.'>:</td>' : '' !!}<td class="val{{ $kunciKepala === 'equipment_name' ? ' alat' : '' }}{{ $kunciKepala === 'capacity_graduation' || str_contains($teksKepala, "\n") ? ' tumpuk' : '' }}"{!! $atrRs !!}>{{ $teksKepala }}</td>
                     @endif
                 @endforeach
             </tr>
@@ -838,6 +881,7 @@
         <div class="catatan-atas-hasil">{{ $snapshot['catatan_atas_hasil'] }}</div>
     @endif
     @include('sertifikat._blok-catatan', ['blok' => $blokCatatanPosisi->get(\App\Support\TataLetakSertifikat::POSISI_ATAS_HASIL, [])])
+@include('sertifikat._gambar-khas', ['gambar' => $tataLetak['gambar_khas']])
     {{-- Kolom "Remark" cuma dicetak kalau alatnya emang punya keterangan
          parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
          alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
@@ -1163,13 +1207,19 @@
              berbeda, jadi aturannya diputus sekali di
              `TimbanganProfile::ringkasanSertifikat` (dan diangkat sebagai T14),
              bukan ditebak ulang tiap cetak. Sertifikat lama yang snapshot-nya
-             belum punya kuncinya jatuh ke turunan dari `desimal`. --}}
+             belum punya kuncinya jatuh ke turunan dari `desimal`.
+
+             K-50-15 / B3a: snapshot BARU memuat `format` (kode format sel
+             SERTIFIKAT master per bagian cetak, `TimbanganProfile::
+             formatCetakMaster`) yang menang atas tiga desimal di atas; `$nT`
+             menerima kuncinya sebagai argumen ketiga. Snapshot lama tidak
+             punya `format` dan tercetak persis seperti waktu terbit. --}}
         @php($sat = $timbangan['satuan'] ?? '')
         @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
         @php($dT = $timbangan['desimal'] ?? $desimal)
         @php($dS = $timbangan['desimal_stdev'] ?? max($dT, 2))
         @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
-        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Support\Angka::id((float) $v, $d), $tataLetak)))
+        @php($nT = fn ($v, $d, $kunci = null) => $v === null ? '&mdash;' : e(\App\Support\TataLetakSertifikat::angka(\App\Services\Calibration\Profiles\TimbanganProfile::teksAngkaCetak((float) $v, $d, $kunci === null ? null : ($timbangan['format'][$kunci] ?? null)), $tataLetak)))
 
         {{-- Bagian 1 nggak dicetak sama sekali kalau nggak ada slot yang diisi.
              Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
@@ -1194,13 +1244,15 @@
                     <tr>
                         <td class="kiri">
                             {{ $rpt['label'] ?? '' }} =
-                            {{ \App\Support\TataLetakSertifikat::angka(\App\Support\Angka::nilaiStandar(
-                                ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
-                                $dT,
-                            ), $tataLetak) }}
+                            {{ \App\Support\TataLetakSertifikat::angka(isset($timbangan['format']['kapasitas']) && ($rpt['kapasitas'] ?? null) !== null
+                                ? \App\Services\Calibration\Profiles\TimbanganProfile::teksAngkaCetak((float) $rpt['kapasitas'], $dT, $timbangan['format']['kapasitas'])
+                                : \App\Support\Angka::nilaiStandar(
+                                    ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
+                                    $dT,
+                                ), $tataLetak) }}
                         </td>
-                        <td>{!! $nT($rpt['stdev'] ?? null, $dS) !!}</td>
-                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($rpt['stdev'] ?? null, $dS, 'stdev') !!}</td>
+                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT, 'maks_beda') !!}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -1213,7 +1265,7 @@
              kebaca "tare-nya sempurna", yang artinya beda. --}}
         <div class="baris-angka">
             <span class="nama">2. EFFECT OF TARE</span>
-            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT) !!} {{ $sat }}
+            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT, 'tare') !!} {{ $sat }}
         </div>
 
         <div class="judul-kelompok">3. ACCURACY</div>
@@ -1228,9 +1280,9 @@
             <tbody>
                 @forelse ($timbangan['titik'] ?? [] as $t)
                     <tr>
-                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($t['koreksi'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU) !!}</td>
+                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT, 'nominal') !!}</td>
+                        <td>{!! $nT($t['koreksi'] ?? null, $dT, 'koreksi') !!}</td>
+                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU, 'u95') !!}</td>
                     </tr>
                 @empty
                     <tr><td colspan="3">&mdash;</td></tr>
@@ -1242,7 +1294,7 @@
         <div class="judul-kelompok">4. LOADING INFLUENCE ON SEVERAL POSITION</div>
         <div class="ket-k">
             @if (($ekc['beban'] ?? null) !== null)
-                Weight mass {!! $nT($ekc['beban'], $dT) !!} {{ $sat }} was moved to various position
+                Weight mass {!! $nT($ekc['beban'], $dT, 'beban') !!} {{ $sat }} was moved to various position
             @else
                 {{-- Bebannya nggak dicatat teknisi. Kalimat masternya nyebut
                      angka; nyetak `—` di tengah kalimat itu kebaca kayak data
@@ -1269,9 +1321,9 @@
                          sepihak. --}}
                     <td class="kiri">Reading</td>
                     @foreach ($ekc['posisi'] ?? [] as $pos)
-                        <td>{!! $nT($pos['selisih'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($pos['selisih'] ?? null, $dT, 'selisih') !!}</td>
                     @endforeach
-                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT) !!}</td>
+                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT, 'selisih') !!}</td>
                 </tr>
             </tbody>
         </table>
@@ -1288,13 +1340,13 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{!! $nT($hys['beban'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($hys['beban'] ?? null, $dT, 'hys_beban') !!}</td>
                         {{-- PERBANDINGAN ke resolusi, bukan nilai histeresisnya
                              — `IF(hys <= resolusi, "<", ">")` lalu memajang
                              resolusinya. Nilai mentahnya ada di jejak audit
                              tiap titik (`type_b_components`, sumber
                              `histeresis`). --}}
-                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT) !!}</td>
+                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT, 'hys_batas') !!}</td>
                     </tr>
                 </tbody>
             </table>
@@ -1302,7 +1354,7 @@
 
         <div class="baris-angka">
             <span class="nama">6. LIMIT OF PERFORMANCE</span>
-            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU) !!} {{ $sat }}
+            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU, 'lop') !!} {{ $sat }}
         </div>
 
         <div class="judul-kelompok">7. WEIGHING UNCERTAINTY</div>
@@ -1325,10 +1377,10 @@
                 @forelse (array_slice($tt, 0, $separuh) as $i => $kiri)
                     @php($kanan = $tt[$separuh + $i] ?? null)
                     <tr>
-                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU) !!}</td>
-                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT) !!}</td>
-                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU) !!}</td>
+                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT, 'nominal_u') !!}</td>
+                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU, 'u95_penimbangan') !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT, 'nominal_u') !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU, 'u95_penimbangan') !!}</td>
                     </tr>
                 @empty
                     <tr><td colspan="4">&mdash;</td></tr>
@@ -1571,7 +1623,7 @@
              `judul_sebaran`) — sertifikat lama jatuh ke judul lamanya. --}}
         @php($kolomHasil = \App\Support\TataLetakSertifikat::kolomHasil($snapshot, $tataLetak, $r2 !== null))
         @php($susunanLama = $tataLetak['kolom_hasil'] === null)
-        @php($u95Kolom = collect($kolomHasil)->contains(fn ($k) => $k['kolom'] === 'u95'))
+        @php($u95Kolom = collect($kolomHasil)->contains(fn ($k) => $k['kolom'] === 'u95' || ($tataLetak['u95_relatif_menggantikan_baris'] && $k['kolom'] === 'u95_relatif')))
         @php($barisSatuan = (bool) $tataLetak['satuan_baris_sendiri'])
         {{-- Judul kolom U95 bawaan nyebut `k` cuma kalau alat ini emang
              MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis kayak masternya
@@ -1812,7 +1864,7 @@
         --}}
         <tr>
             <td style="width: 38%;">
-                <div>{{ $tataLetak['label_tanggal_terbit'] }} {{ $tgl($footer['issuance_date'] ?? null) }}</div>
+                <div>{{ $tataLetak['label_tanggal_terbit'] }} {{ $tataLetak['tanggal_master'] !== null ? $tglMaster($footer['issuance_date'] ?? null, $tataLetak['tanggal_master']['terbit']) : $tgl($footer['issuance_date'] ?? null) }}</div>
 
                 {{--
                   Ruang tanda tangan. Tingginya dipatok di CSS, jadi tata letaknya
@@ -1909,8 +1961,23 @@
     @if (filled($tataLetak['akhir_sertifikat']))
         <div class="akhir-sertifikat">{{ $tataLetak['akhir_sertifikat'] }}</div>
     @endif
+{{-- "End of Certificate" berbentuk GRUP garis-teks-garis (G0-a R1; 51 lembar
+     master: `grpSp` "Group 10" di dalam print area, `<lembar>.objek.json`).
+     Garis hitam 0,75 pt kiri & kanan ±21 % lebar grup, teks di tengah ±58 %,
+     rata tengah halaman. Gaya & lebar dibekukan di `tata_letak.
+     akhir_sertifikat_garis` (`AkhirSertifikatMaster`); `null` = tidak dicetak
+     (snapshot lama). Gaya inline & direktif di kolom 0 sengaja: cetak ulang
+     snapshot lama harus keluar IDENTIK byte demi byte (komentar Blade
+     meninggalkan newline-nya, jadi `@if` menempel di ujung komentar). --}}@if (filled($tataLetak['akhir_sertifikat_garis']))
+@php($ag = $tataLetak['akhir_sertifikat_garis'])
+<table style="width: {{ round($ag['lebar'] * 100, 1) }}%; margin: 2px auto 0 auto; border-collapse: collapse;"><tr>
+<td style="width: 21%; padding: 0; vertical-align: middle;"><div style="border-top: 0.75pt solid #000; height: 0; font-size: 1px; line-height: 1px;"></div></td>
+<td style="width: 58%; padding: 0 4px; text-align: center; white-space: nowrap; line-height: 1.1; font-size: {{ $ag['ukuran'] }}px; font-weight: {{ $ag['tebal'] ? 'bold' : 'normal' }}; font-style: {{ $ag['miring'] ? 'italic' : 'normal' }};">{{ $ag['teks'] }}</td>
+<td style="width: 21%; padding: 0; vertical-align: middle;"><div style="border-top: 0.75pt solid #000; height: 0; font-size: 1px; line-height: 1px;"></div></td>
+</tr></table>
+@endif
 
-    <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
+    <div{!! filled($tataLetak['kop_pracetak']) ? ' style="display: none;"' : '' !!} class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
     @if ($longgar !== 0)
         <div class="cadangan-footer"></div>
     @endif

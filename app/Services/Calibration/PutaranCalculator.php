@@ -99,8 +99,8 @@ class PutaranCalculator
      * Hitung satu blok (sampai tiga titik) sekaligus.
      *
      * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>}>  $titik
-     * @param  array{resolusi_uut: float, cmc: float|null, satuan: string}  $konteks
-     * @return array{titik: list<array<string, mixed>>, budget: list<array<string, mixed>>, ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float, u95_sertifikat: float, type_b: float, ditolak: list<array{titik_ke: int, alasan: string}>}
+     * @param  array{resolusi_uut: float, cmc: float|null, satuan: string, alat?: string|null, blok_ke?: int|null}  $konteks  `alat` (`centrifuge`/`tachometer`) dan `blok_ke` (1-based, urutan blok tiga titik di lembar master) HANYA menentukan catatan audit; angka tidak bergantung pada keduanya.
+     * @return array{titik: list<array<string, mixed>>, budget: list<array<string, mixed>>, ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float, u95_sertifikat: float, type_b: float, ditolak: list<array{titik_ke: int, alasan: string}>, catatan_audit: list<array<string, mixed>>}
      */
     public function hitungBlok(array $titik, array $konteks): array
     {
@@ -185,7 +185,7 @@ class PutaranCalculator
                 'titik' => [], 'budget' => [], 'ketidakpastian_gabungan' => 0.0,
                 'derajat_kebebasan_efektif' => null, 'faktor_cakupan_k' => 2.0,
                 'ketidakpastian_diperluas' => 0.0, 'u95_sertifikat' => 0.0,
-                'type_b' => 0.0, 'ditolak' => $ditolak,
+                'type_b' => 0.0, 'ditolak' => $ditolak, 'catatan_audit' => [],
             ];
         }
 
@@ -196,7 +196,7 @@ class PutaranCalculator
                 'titik' => [], 'budget' => [], 'ketidakpastian_gabungan' => 0.0,
                 'derajat_kebebasan_efektif' => null, 'faktor_cakupan_k' => 2.0,
                 'ketidakpastian_diperluas' => 0.0, 'u95_sertifikat' => 0.0,
-                'type_b' => 0.0, 'ditolak' => $ditolak,
+                'type_b' => 0.0, 'ditolak' => $ditolak, 'catatan_audit' => [],
             ];
         }
 
@@ -228,6 +228,8 @@ class PutaranCalculator
             'u95_sertifikat' => $u95,
             'type_b' => $typeB,
             'ditolak' => $ditolak,
+            // Catatan tambahan SAJA — tidak ada angka di atas yang bergantung padanya.
+            'catatan_audit' => $this->catatanPenyimpangan($dihitung, $budget, $agregat, $konteks),
         ];
     }
 
@@ -334,6 +336,252 @@ class PutaranCalculator
                 'vi' => (float) max($nPengulangan - 1, 1),
             ],
         ];
+    }
+
+    /**
+     * Pita sertifikat kalibrator yang dirujuk blok 5 Tachometer di master
+     * (`'SERTIFIKAT KALIBRATOR'!F15`) — pita 5000 rpm, 1,6 rpm — padahal
+     * titik tertingginya bernaung di pita `F18` (15000 rpm, 3,1 rpm).
+     */
+    private const NOMINAL_PITA_RUJUKAN_MASTER_BLOK5 = 5000.0;
+
+    /** Daya baca standar yang dipakai budget master di blok 5 Tachometer (fixture `waktu-frekuensi-master.json`). */
+    private const RESOLUSI_STANDAR_MASTER_BLOK5 = 0.1;
+
+    /**
+     * Catatan audit penyimpangan SADAR dari master (AGENTS.md "Olah data"
+     * butir 4): tiap catatan menyebut sel master, nilai master vs nilai
+     * aplikasi, selisihnya, dan dasarnya — supaya orang yang membuka jejak
+     * sesi tahu angka ini berbeda dari master tanpa membuka kode.
+     *
+     * Hanya MENCATAT. Tidak ada nilai di `$budget`/`$agregat` yang diubah; versi
+     * master dihitung di salinan terpisah, lewat agregasi yang sama
+     * (`GumCalculator::agregasiBudget`).
+     *
+     * Kunci baku seperti `pengulangan_standar_dibagi_n`
+     * (ThermometerGlassCalculator): `kode`/`pesan`, plus angka terstruktur untuk
+     * yang membaca JSON-nya.
+     *
+     * @param  list<array<string, mixed>>  $dihitung
+     * @param  list<array<string, mixed>>  $budget
+     * @param  array{ketidakpastian_diperluas: float}  $agregat
+     * @param  array<string, mixed>  $konteks
+     * @return list<array<string, mixed>>
+     */
+    private function catatanPenyimpangan(array $dihitung, array $budget, array $agregat, array $konteks): array
+    {
+        $alat = $konteks['alat'] ?? null;
+        $blokKe = (int) ($konteks['blok_ke'] ?? 0);
+        $satuan = (string) $konteks['satuan'];
+        $cmc = (float) ($konteks['cmc'] ?? 0.0);
+        $sqrt3 = sqrt(3);
+
+        $posisi = [];
+        foreach ($budget as $i => $k) {
+            $posisi[$k['sumber']] = $i;
+        }
+
+        $uApp = static fn (string $sumber): float => (float) $budget[$posisi[$sumber]]['u'];
+        $viApp = static fn (string $sumber): float => (float) $budget[$posisi[$sumber]]['vi'];
+
+        /** @var list<array<string, mixed>> $beda */
+        $beda = [];
+
+        if ($alat === 'tachometer' && $blokKe === 5) {
+            // Blok 5 Tachometer: tiga kerusakan sekaligus (docs/pertanyaan-lab-waktu-frekuensi.md §2).
+            $nominalTertinggi = max(array_map(static fn (array $t): float => (float) $t['nominal_standar'], $dihitung));
+            $pitaMaster = $this->tabel->u95Sertifikat(self::NOMINAL_PITA_RUJUKAN_MASTER_BLOK5);
+            $pitaApp = $this->tabel->u95Sertifikat($nominalTertinggi);
+
+            if ($pitaMaster !== null) {
+                $beda[] = [
+                    'kode' => 'putaran_pita_sertifikat_blok5_f15',
+                    'sel' => "PERHITUNGAN U95% blok 5 (baris 98-109) -> 'SERTIFIKAT KALIBRATOR'!F15",
+                    'sumber' => 'ketidakpastian_standar',
+                    'u_master' => $pitaMaster / 2.0,
+                    'vi_master' => $viApp('ketidakpastian_standar'),
+                    'uraian' => sprintf(
+                        'Pita U95 sertifikat kalibrator: master %s %s (F15, pita %s %s); aplikasi %s %s (F18, pita nominal tertinggi blok %s %s).',
+                        self::angka($pitaMaster), $satuan, self::angka(self::NOMINAL_PITA_RUJUKAN_MASTER_BLOK5), $satuan,
+                        self::angka((float) $pitaApp), $satuan, self::angka($nominalTertinggi), $satuan,
+                    ),
+                    'dasar' => 'Titik tertinggi blok ini bernaung di pita F18; lima blok tetangga memakai pita nominal tertingginya sendiri (docs/pertanyaan-lab-waktu-frekuensi.md §2).',
+                ];
+            }
+
+            // Temuan audit 11 Nov 2026: budget master blok 5 memakai daya baca
+            // standar 0,1 rpm (ter-cache u = 0,0289), sedangkan aturan ambang
+            // [AMBANG_RESOLUSI_STANDAR] memberi 1 rpm untuk nominal 15000.
+            // Tanpa baris ini U95 'versi master' tidak bisa direkonsiliasi ke 1,6949.
+            $resolusiApp = $this->resolusiStandar($nominalTertinggi);
+
+            if (abs($resolusiApp - self::RESOLUSI_STANDAR_MASTER_BLOK5) > 1e-12) {
+                $beda[] = [
+                    'kode' => 'putaran_resolusi_standar_blok5_ambang',
+                    'sel' => 'PERHITUNGAN U95% blok 5 -> komponen daya baca tachometer standar (ter-cache u = 0,028868 = 0,1/2/sqrt(3))',
+                    'sumber' => 'resolusi_standar',
+                    'u_master' => (self::RESOLUSI_STANDAR_MASTER_BLOK5 / 2.0) / $sqrt3,
+                    'vi_master' => $viApp('resolusi_standar'),
+                    'uraian' => sprintf(
+                        'Daya baca tachometer standar: master %s %s di blok ini; aplikasi %s %s (aturan ambang %s %s untuk nominal tertinggi blok %s %s).',
+                        self::angka(self::RESOLUSI_STANDAR_MASTER_BLOK5), $satuan,
+                        self::angka($resolusiApp), $satuan,
+                        self::angka(self::AMBANG_RESOLUSI_STANDAR), $satuan,
+                        self::angka($nominalTertinggi), $satuan,
+                    ),
+                    'dasar' => 'Aplikasi menuruti aturan ambang budget (keputusan pemilik 1 Sep 2026, docs/pertanyaan-lab-waktu-frekuensi.md §11); angka master di blok ini 0,1 padahal nominalnya di atas ambang. Belum ada jawaban lab untuk blok ini secara khusus.',
+                ];
+            }
+
+            $beda[] = [
+                'kode' => 'putaran_drift_blok5_tautan_luar_k54',
+                'sel' => "PERHITUNGAN U95% blok 5 -> '[1]Drift Std Kalibrator'!K54",
+                'sumber' => 'drift_standar',
+                'u_master' => 0.0,
+                'vi_master' => $viApp('drift_standar'),
+                'uraian' => sprintf(
+                    'Drift standar: master 0 %s (tautan ke workbook LAIN, sel K54 kosong, nilai tinggal cache); aplikasi setengah-lebar %s %s.',
+                    $satuan, self::angka($this->tabel->driftSetengahLebar()), $satuan,
+                ),
+                'dasar' => 'Kerusakan salin-tempel (tautan luar [1]); blok lain memakai K35 (docs/pertanyaan-lab-waktu-frekuensi.md §2).',
+            ];
+
+            $beda[] = [
+                'kode' => 'putaran_pengulangan_blok5_baris_kosong',
+                'sel' => 'PERHITUNGAN U95% blok 5 -> MAX(PERHITUNGAN!G113:L113)',
+                'sumber' => 'pengulangan_pembacaan',
+                'u_master' => 0.0,
+                'vi_master' => $viApp('pengulangan_pembacaan'),
+                'uraian' => sprintf(
+                    'Pengulangan: master 0 %s (baris 113 kosong); aplikasi simpangan baku terbesar blok / sqrt(n) = %s %s.',
+                    $satuan, self::angka($uApp('pengulangan_pembacaan')), $satuan,
+                ),
+                'dasar' => 'Kerusakan salin-tempel; lima blok lain memakai baris 34/49/64/79/94 (docs/pertanyaan-lab-waktu-frekuensi.md §2).',
+            ];
+        } elseif ($alat === 'centrifuge' || $alat === 'tachometer') {
+            // Drift kalibrator: berlaku di SEMUA blok selain blok 5 Tachometer
+            // (di blok itu master malah memakai 0, lihat atas).
+            $driftMaster = $this->tabel->driftSetengahLebar(lengkap: false);
+            $driftApp = $this->tabel->driftSetengahLebar();
+
+            if (abs($driftApp - $driftMaster) > 1e-12) {
+                $beda[] = [
+                    'kode' => 'putaran_drift_standar_kolom_k_tidak_lengkap',
+                    'sel' => "PERHITUNGAN U95%!K35 = MAX(K13:K34)/2 atas tabel 'Drift Std Kalibrator' kolom K",
+                    'sumber' => 'drift_standar',
+                    'u_master' => $driftMaster / $sqrt3,
+                    'vi_master' => $viApp('drift_standar'),
+                    'uraian' => sprintf(
+                        'Drift standar: master setengah-lebar %s %s (kolom K hanya berrumus di 5 dari 15 baris berdata); aplikasi %s %s (seluruh 15 baris), selisih %s %s.',
+                        self::angka($driftMaster), $satuan, self::angka($driftApp), $satuan,
+                        self::angka($driftApp - $driftMaster, true), $satuan,
+                    ),
+                    'dasar' => 'Rumus kolom K tidak ikut tersalin di master (docs/pertanyaan-lab-waktu-frekuensi.md §3); dilengkapi, arah aplikasi lebih besar ditegakkan WaktuFrekuensiMasterTest::test_drift_lengkap_lebih_besar_dari_versi_master.',
+                ];
+            }
+        }
+
+        if ($alat === 'centrifuge' && $blokKe === 1 && $dihitung !== []) {
+            // G34 = pengulangan kolom PERTAMA blok (titik dengan titik_ke terkecil) saja.
+            $pertama = $dihitung[0];
+
+            $beda[] = [
+                'kode' => 'putaran_pengulangan_blok1_sel_tunggal_g34',
+                'sel' => 'PERHITUNGAN U95% blok 1 -> PERHITUNGAN!G34 (satu sel)',
+                'sumber' => 'pengulangan_pembacaan',
+                'u_master' => (float) $pertama['type_a'],
+                'vi_master' => (float) max((int) $pertama['jumlah_pengulangan'] - 1, 1),
+                'uraian' => sprintf(
+                    'Pengulangan: master %s %s (hanya sel G34 = titik pertama blok); aplikasi %s %s (simpangan baku terbesar sebaris, MAX(G34:L34)).',
+                    self::angka((float) $pertama['type_a']), $satuan, self::angka($uApp('pengulangan_pembacaan')), $satuan,
+                ),
+                'dasar' => 'Sepuluh blok lain di kedua workbook memakai MAX() sebaris, dan workbook Tachometer memakai MAX(G34:L34) di blok yang sama (WaktuFrekuensiMasterTest::test_blok_rusak_centrifuge_dihitung_lebih_besar).',
+            ];
+        }
+
+        if ($beda === []) {
+            return [];
+        }
+
+        $u95AppHitung = (float) $agregat['ketidakpastian_diperluas'];
+        $u95AppCetak = max($u95AppHitung, $cmc);
+
+        $catatan = [];
+        $semua = [];
+
+        foreach ($beda as $b) {
+            $ganti = [$b['sumber'] => ['u' => $b['u_master'], 'vi' => $b['vi_master']]];
+            $semua[$b['sumber']] = $ganti[$b['sumber']];
+            $u95Master = $this->u95DenganPengganti($budget, $ganti);
+
+            $catatan[] = [
+                'kode' => $b['kode'],
+                'pesan' => sprintf(
+                    '%s Efek komponen ini saja pada U95 blok sebelum lantai CMC: master %s %s, aplikasi %s %s, selisih %s %s. Sel master: %s. Dasar: %s',
+                    $b['uraian'],
+                    self::angka($u95Master), $satuan, self::angka($u95AppHitung), $satuan,
+                    self::angka($u95AppHitung - $u95Master, true), $satuan,
+                    $b['sel'], $b['dasar'],
+                ),
+                'sel_master' => $b['sel'],
+                'komponen' => $b['sumber'],
+                'u_baku_master' => $b['u_master'],
+                'u_baku_aplikasi' => $uApp($b['sumber']),
+                'u95_blok_master_terisolasi' => $u95Master,
+                'u95_blok_aplikasi' => $u95AppHitung,
+            ];
+        }
+
+        $u95MasterSemua = $this->u95DenganPengganti($budget, $semua);
+        $u95MasterCetak = max($u95MasterSemua, $cmc);
+
+        $catatan[] = [
+            'kode' => 'putaran_ringkasan_penyimpangan_master',
+            'pesan' => sprintf(
+                'Dengan SEMUA penyimpangan di atas disamakan dengan master, U95 blok ini %s %s sebelum lantai CMC dan %s %s tercetak (lantai CMC %s %s); '
+                .'aplikasi %s %s sebelum lantai dan %s %s tercetak, selisih tercetak %s %s.',
+                self::angka($u95MasterSemua), $satuan, self::angka($u95MasterCetak), $satuan, self::angka($cmc), $satuan,
+                self::angka($u95AppHitung), $satuan, self::angka($u95AppCetak), $satuan,
+                self::angka($u95AppCetak - $u95MasterCetak, true), $satuan,
+            ),
+            'u95_blok_master_semua' => $u95MasterSemua,
+            'u95_cetak_master' => $u95MasterCetak,
+            'u95_cetak_aplikasi' => $u95AppCetak,
+            'lantai_cmc' => $cmc,
+        ];
+
+        return $catatan;
+    }
+
+    /**
+     * U95 blok (sebelum lantai CMC) bila komponen tertentu diganti nilai master.
+     * Salinan `$budget` — yang asli tidak tersentuh.
+     *
+     * @param  list<array<string, mixed>>  $budget
+     * @param  array<string, array{u: float, vi: float}>  $ganti  dikunci `sumber` komponen
+     */
+    private function u95DenganPengganti(array $budget, array $ganti): float
+    {
+        $komponen = array_map(static function (array $k) use ($ganti): array {
+            $g = $ganti[$k['sumber']] ?? null;
+
+            return [
+                'u' => $g === null ? $k['u'] : $g['u'],
+                'ci' => $k['ci'],
+                'vi' => $g === null ? $k['vi'] : $g['vi'],
+            ];
+        }, $budget);
+
+        return (float) ($this->gum ??= new GumCalculator)->agregasiBudget($komponen)['ketidakpastian_diperluas'];
+    }
+
+    /** Angka untuk teks audit — tanpa pembulatan semu: 6 desimal, nol belakang dibuang. */
+    private static function angka(float $nilai, bool $bertanda = false): string
+    {
+        $teks = rtrim(rtrim(number_format($nilai, 6, '.', ''), '0'), '.');
+        $teks = ($teks === '' || $teks === '-0') ? '0' : $teks;
+
+        return $bertanda && $nilai > 0 ? '+'.$teks : $teks;
     }
 
     /** @param  list<float>  $nilai */

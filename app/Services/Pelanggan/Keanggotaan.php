@@ -9,6 +9,7 @@ use App\Models\DeviceToken;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * SATU-SATUNYA jalan baris `customer_members` lahir atau dimatikan.
@@ -83,7 +84,16 @@ class Keanggotaan
     ): CustomerMember {
         $this->pastikanMuat($perusahaan);
 
-        return CustomerMember::query()->updateOrCreate(
+        // Baru bergabung = barisnya belum ada, atau ada tapi tidak aktif.
+        // Memanggil `daftarkan()` untuk anggota yang SUDAH aktif bukan
+        // "bergabung" dan tidak memicu kabar susulan.
+        $sebelumnya = CustomerMember::query()
+            ->where('customer_id', $perusahaan->getKey())
+            ->where('user_id', $orang->getKey())
+            ->value('status');
+        $baruBergabung = $sebelumnya !== CustomerMember::STATUS_AKTIF;
+
+        $anggota = CustomerMember::query()->updateOrCreate(
             ['customer_id' => $perusahaan->getKey(), 'user_id' => $orang->getKey()],
             [
                 'organization_id' => $perusahaan->organization_id,
@@ -94,6 +104,24 @@ class Keanggotaan
                 'dinonaktifkan_pada' => null,
             ],
         );
+
+        if ($baruBergabung) {
+            // Kabar susulan sertifikat yang sudah terbit SEBELUM orang ini
+            // masuk. Sesudah commit (pemanggil membungkus ini dalam transaksi),
+            // dan tidak pernah menggagalkan pendaftaran anggotanya.
+            DB::afterCommit(function () use ($anggota): void {
+                try {
+                    app(KabarSertifikatUntukAnggotaBaru::class)->kabari($anggota);
+                } catch (\Throwable $e) {
+                    Log::warning('Anggota pelanggan bergabung, tapi kabar susulan sertifikat gagal.', [
+                        'customer_member_id' => $anggota->getKey(),
+                        'galat' => $e::class,
+                    ]);
+                }
+            });
+        }
+
+        return $anggota;
     }
 
     /**

@@ -199,8 +199,9 @@ class CalibrationSessionsTable
                         if (! $wewenang['bersih']) {
                             Notification::make()
                                 ->title('Kamu tidak bisa menyetujui sesi ini.')
-                                ->body(implode("\n", array_column($wewenang['temuan'], 'pesan'))
-                                    ?: 'Masuk ulang lalu coba lagi.')
+                                ->body($wewenang['temuan'] === []
+                                    ? 'Masuk ulang lalu coba lagi.'
+                                    : PemisahanWewenang::pesanPersetujuan($wewenang))
                                 ->danger()
                                 ->persistent()
                                 ->send();

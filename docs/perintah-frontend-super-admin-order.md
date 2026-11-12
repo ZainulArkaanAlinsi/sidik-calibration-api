@@ -114,5 +114,5 @@ mengesahkan sesi itu:
 | `kode` | Status | Arti |
 |---|---|---|
 | `nomor_order_wajib` | 422 | Order Number kosong saat Setujui. Isi lewat `PATCH …/admin`, lalu setujui lagi. |
-| `pemisahan_wewenang` | 422 | Penyetuju/pengesah ikut mengisi/mengoreksi/mengonfirmasi pindai sesi ini. Minta orang lain. |
+| `pemisahan_wewenang` | 422 | Penyetuju mengisi lembar atau mengonfirmasi hasil pindai sesi ini (mengoreksi tidak lagi memblokir, K-50-02). Minta Master Data/super admin lain yang menyetujui. |
 | `bukan_aplikasi_ini` | 403 | Token internal dipakai ke rute pelanggan (atau sebaliknya). |

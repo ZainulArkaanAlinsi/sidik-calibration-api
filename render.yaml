@@ -280,6 +280,17 @@ services:
       - key: DATA_ACUAN_SUMBER
         value: json
 
+      # Kertas berkop PRACETAK (G0-b P1, config/sertifikat.php): "false" = kop /
+      # logo KAN, judul, dan kode dokumen tetap tercetak di PDF sertifikat
+      # baru. "true" = diganti ruang kosong setinggi margin atas master. Mati
+      # dulu: PDF yang sampai ke pelanggan lewat app/QR kehilangan identitas
+      # lab tanpa kop, dan ruang kosong yang dipotong bisa menimpa kop kertas
+      # fisik bila lebih tinggi — jenis kertasnya belum dipastikan pemilik.
+      # Dipatok `value` (keputusan lewat commit yang ditinjau, pola
+      # DATA_ACUAN_SUMBER): ubah ke "true" SESUDAH pemilik memastikan kertas.
+      - key: SERTIFIKAT_KOP_PRACETAK
+        value: "false"
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
@@ -310,6 +321,25 @@ services:
       # docker/entrypoint.sh cuma persamaan dengan string "true".
       - key: BANGUN_ULANG_ON_BOOT
         sync: false
+
+      # Impor awal data acuan (`acuan:impor-awal`): versi 1 `aktif` tiap paket
+      # dari database/data/*.json, semua profil, semua organisasi — rollout
+      # Studio Data Acuan tahap 2 (docs/studio-data-acuan/07-Migrasi-Rollout.md).
+      # Satu-satunya jalan di produksi: paket gratis Render nggak punya shell.
+      #
+      # Dipatok `value: "false"`, BUKAN `sync: false` — sama pola SEED_ON_BOOT
+      # dan DATA_ACUAN_SUMBER. Ini tulis ke database produksi, jadi
+      # menyalakannya harus lewat commit yang ditinjau (ganti ke "true" di
+      # sini, setelah cadangan + sensus 07 §1), dan commit berikutnya
+      # mengembalikannya ke "false". Arah timpa blueprint di sini aman: lupa
+      # dimatikan di dashboard cuma berarti saklarnya mati lagi di deploy
+      # berikutnya, bukan impor yang jalan tiap boot.
+      #
+      # Perintahnya idempoten dan nggak pernah menimpa; gagalnya nggak
+      # menjatuhkan boot. Nyalain SATU deploy, baca deploy log, balikin ke
+      # "false". Rollback = hapus baris paket yang baru dibuat (07 §2 tahap 2).
+      - key: ACUAN_IMPOR_AWAL_ON_BOOT
+        value: "false"
 
       # Satu akun admin yang dibikin sendiri waktu boot, kalau emailnya belum
       # kedaftar. Kosongin kalau nggak dipakai — perintahnya diam total.
@@ -418,3 +448,30 @@ services:
         value: "1.0"
       - key: PELANGGAN_VERSI_SYARAT_KETENTUAN
         value: "1.0"
+
+      # Layar Bantuan aplikasi pelanggan (`GET /api/pelanggan/v1/app/info`,
+      # publik). Kontak & tautan diisi pemilik di dashboard (`sync: false`,
+      # bukan nilai blueprint). Kosong = null → aplikasi menyembunyikan
+      # tombolnya; server tidak mengarang nomor atau tautan.
+      - key: PELANGGAN_INFO_NAMA_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_ALAMAT_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_TELEPON_ORGANISASI
+        sync: false
+      - key: PELANGGAN_INFO_WHATSAPP
+        sync: false
+      - key: PELANGGAN_INFO_WHATSAPP_URL
+        sync: false
+      - key: PELANGGAN_INFO_EMAIL
+        sync: false
+      - key: PELANGGAN_INFO_JAM_LAYANAN
+        sync: false
+      - key: PELANGGAN_INFO_KEBIJAKAN_PRIVASI_URL
+        sync: false
+      - key: PELANGGAN_INFO_SYARAT_URL
+        sync: false
+      - key: PELANGGAN_INFO_HAPUS_AKUN_URL
+        sync: false
+      - key: PELANGGAN_INFO_PETUNJUK_PENGEMASAN
+        sync: false

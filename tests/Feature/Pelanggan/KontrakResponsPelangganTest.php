@@ -6,6 +6,7 @@ use App\Mail\Pelanggan\KodeOtpEmail;
 use App\Mail\Pelanggan\UndanganEmail;
 use App\Models\CustomerMember;
 use App\Models\PengajuanAkunPelanggan;
+use App\Models\UndanganPelanggan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -300,6 +301,45 @@ class KontrakResponsPelangganTest extends TestCase
         $this->aduKeFixture('anggota', $badan);
     }
 
+    /**
+     * Daftar anggota dilihat STAF (12 Nov 2026): kunci yang sama dengan yang
+     * dilihat PIC utama, tetapi `undangan_menunggu` = `[]` dan telepon rekan =
+     * `null`. Dibekukan supaya penyempitan sisi server ini tidak bisa berubah
+     * jadi kunci yang HILANG diam-diam bagi aplikasi yang sudah terpasang.
+     */
+    public function test_bentuk_respons_daftar_anggota_untuk_staf(): void
+    {
+        $pic = $this->anggota(CustomerMember::PERAN_PIC_UTAMA);
+        $pic->forceFill(['name' => 'Budi PIC', 'email' => 'budi@contoh.test'])->save();
+
+        $perusahaan = $pic->keanggotaan()->first()->customer;
+        $perusahaan->forceFill(['nama' => 'PT Contoh Pelanggan', 'maks_anggota' => 50])->save();
+
+        $staf = $this->pelanggan(tambahan: ['name' => 'Sari Staf', 'email' => 'sari@contoh.test']);
+        CustomerMember::create([
+            'organization_id' => $perusahaan->organization_id,
+            'customer_id' => $perusahaan->id,
+            'user_id' => $staf->id,
+            'peran' => CustomerMember::PERAN_STAF,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+
+        // Ada satu undangan menunggu: bentuk `[]` harus terbukti karena DIBUANG
+        // server, bukan karena kebetulan memang tidak ada undangan.
+        UndanganPelanggan::factory()->create([
+            'organization_id' => $perusahaan->organization_id,
+            'customer_id' => $perusahaan->id,
+            'email' => 'diundang@contoh.test',
+        ]);
+
+        $badan = $this->withHeaders($this->bearer($staf))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('anggota-staf', $badan);
+    }
+
     public function test_bentuk_respons_hapus_akun(): void
     {
         $user = $this->anggota();
@@ -343,6 +383,16 @@ class KontrakResponsPelangganTest extends TestCase
         $badan = $this->getJson('/api/pelanggan/v1/app/status')->assertOk()->json();
 
         $this->aduKeFixture('app-status', $badan);
+    }
+
+    /** `/app/info` dalam keadaan default (semua env kosong): kunci tetap ada, nilainya `null`. */
+    public function test_bentuk_respons_app_info(): void
+    {
+        config(['pelanggan.info' => array_fill_keys(array_keys(config('pelanggan.info')), null)]);
+
+        $badan = $this->getJson('/api/pelanggan/v1/app/info')->assertOk()->json();
+
+        $this->aduKeFixture('app-info', $badan);
     }
 
     /**

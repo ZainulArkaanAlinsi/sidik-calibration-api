@@ -21,6 +21,7 @@ class VersiAplikasiTest extends TestCase
     {
         parent::setUp();
         Cache::forget(VersiAplikasiController::KUNCI_CACHE);
+        Cache::forget(VersiAplikasiController::KUNCI_CACHE_STUDIO);
     }
 
     /** @param  array<int, array<string, mixed>>  $assets */
@@ -254,5 +255,191 @@ class VersiAplikasiTest extends TestCase
         $this->getJson('/api/app/versi-terbaru')->assertOk();
 
         Http::assertSent(fn ($r) => ! $r->hasHeader('Authorization'));
+    }
+
+    // ------------------------------------------ Sidik Studio (?aplikasi=studio)
+
+    /** Rilis yang memuat APK lab DAN APK Studio, urutan asetnya bisa diatur. */
+    private function rilisDenganStudio(bool $studioDulu = false): array
+    {
+        $dasar = 'https://github.com/x/y/releases/download/v1.0.600+600/';
+        $aset = fn (string $nama, int $ukuran): array => [
+            'name' => $nama,
+            'size' => $ukuran,
+            'browser_download_url' => $dasar.$nama,
+        ];
+
+        $lab = $aset('sidik-kalibrasi-1.0.600.apk', 70000000);
+        $labTetap = $aset('sidik-kalibrasi.apk', 70000000);
+        $studio = $aset('sidik-studio-0.1.600.apk', 55000000);
+        $studioTetap = $aset('sidik-studio.apk', 55000000);
+
+        $assets = $studioDulu
+            ? [$studioTetap, $studio, $labTetap, $lab]
+            : [$lab, $labTetap, $studio, $studioTetap];
+
+        return $this->rilis('v1.0.600+600', $assets);
+    }
+
+    public function test_studio_memakai_versi_dari_nama_aset_bukan_dari_tag(): void
+    {
+        // Tag memakai skema app lab (1.0.600); Studio ber-versi 0.1.600.
+        // Kalau yang dipulangkan 1.0.600, Studio 0.1.x selalu merasa tertinggal.
+        Http::fake(['api.github.com/*' => Http::response($this->rilisDenganStudio(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson([
+                'tersedia' => true,
+                'versi' => '0.1.600',
+                'build' => 600,
+                'tag' => 'v1.0.600+600',
+                'ukuran' => 55000000,
+                'wajib' => false,
+            ])
+            ->assertJsonPath(
+                'url_unduh',
+                'https://github.com/x/y/releases/download/v1.0.600+600/sidik-studio-0.1.600.apk',
+            );
+    }
+
+    public function test_studio_memilih_aset_studio_walau_aset_lab_lebih_dulu(): void
+    {
+        Http::fake(['api.github.com/*' => Http::response($this->rilisDenganStudio(studioDulu: false), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertJsonPath('url_unduh', 'https://github.com/x/y/releases/download/v1.0.600+600/sidik-studio-0.1.600.apk');
+    }
+
+    public function test_lab_tanpa_parameter_tidak_pernah_dapat_apk_studio_walau_asetnya_duluan(): void
+    {
+        // Release yang sama kini memuat APK Studio. Urutan aset di GitHub tidak
+        // dijamin, dan app lab tidak boleh ditawari APK Studio.
+        Http::fake(['api.github.com/*' => Http::response($this->rilisDenganStudio(studioDulu: true), 200)]);
+
+        $url = $this->getJson('/api/app/versi-terbaru')
+            ->assertOk()
+            ->assertJson(['tersedia' => true, 'versi' => '1.0.600', 'build' => 600])
+            ->json('url_unduh');
+
+        // Aset lab pertama (urutan lama: aset .apk pertama yang bukan Studio).
+        $this->assertStringContainsString('/sidik-kalibrasi', $url);
+        $this->assertStringNotContainsString('sidik-studio', $url);
+    }
+
+    public function test_rilis_tanpa_aset_studio_dijawab_tidak_tersedia_bukan_error(): void
+    {
+        // Rilis lab terbit lebih dulu daripada job Studio.
+        Http::fake(['api.github.com/*' => Http::response($this->rilis(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+
+        // Jalur lab pada rilis yang sama tetap jalan.
+        $this->getJson('/api/app/versi-terbaru')
+            ->assertOk()
+            ->assertJson(['tersedia' => true, 'versi' => '1.4.0']);
+    }
+
+    public function test_aset_studio_tanpa_versi_di_nama_tidak_dipakai(): void
+    {
+        // `sidik-studio.apk` (tautan tetap) tidak memuat versi — tanpa versi
+        // yang benar perbandingan di Studio tidak bisa dipercaya.
+        Http::fake(['api.github.com/*' => Http::response($this->rilis('v1.0.600+600', [[
+            'name' => 'sidik-studio.apk',
+            'size' => 55000000,
+            'browser_download_url' => 'https://x/sidik-studio.apk',
+        ]]), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+    }
+
+    public function test_jawaban_tanpa_aset_studio_ikut_di_cache(): void
+    {
+        // Studio belum pernah terbit = tiap pembukaan Studio menanya GitHub lagi
+        // kalau jawabannya tidak di-cache, memakan jatah 60/jam yang dibagi
+        // dengan app lab.
+        Http::fake(['api.github.com/*' => Http::response($this->rilis(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')->assertJson(['tersedia' => false]);
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')->assertJson(['tersedia' => false]);
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_cache_studio_dan_lab_terpisah(): void
+    {
+        Http::fake(['api.github.com/*' => Http::response($this->rilisDenganStudio(), 200)]);
+
+        $lab = $this->getJson('/api/app/versi-terbaru')->assertJson(['versi' => '1.0.600']);
+        $studio = $this->getJson('/api/app/versi-terbaru?aplikasi=studio')->assertJson(['versi' => '0.1.600']);
+
+        $this->assertNotSame($lab->json('url_unduh'), $studio->json('url_unduh'));
+        $this->assertTrue(Cache::has(VersiAplikasiController::KUNCI_CACHE));
+        $this->assertTrue(Cache::has(VersiAplikasiController::KUNCI_CACHE_STUDIO));
+
+        // Dua kunci = dua pertanyaan ke GitHub, bukan satu jawaban dipakai bersama.
+        Http::assertSentCount(2);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')->assertOk();
+        $this->getJson('/api/app/versi-terbaru')->assertOk();
+        Http::assertSentCount(2);
+    }
+
+    public function test_studio_github_mati_tetap_200_dan_gagal_tidak_ikut_di_cache(): void
+    {
+        Http::fakeSequence('api.github.com/*')
+            ->push('', 500)
+            ->push($this->rilisDenganStudio(), 200);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => true, 'versi' => '0.1.600']);
+    }
+
+    public function test_studio_jatah_api_habis_tidak_jatuh_ke_redirect_lab(): void
+    {
+        // Redirect menyusun URL `sidik-kalibrasi-<versi>.apk` — itu APK lab.
+        Http::fake([
+            'api.github.com/*' => Http::response(['message' => 'rate limit'], 403),
+            'github.com/*' => Http::response('', 302, [
+                'Location' => 'https://github.com/x/y/releases/tag/v1.0.600%2B600',
+            ]),
+        ]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+    }
+
+    public function test_parameter_aplikasi_tidak_dikenal_tidak_mendapat_apk_lab(): void
+    {
+        Http::fake(['api.github.com/*' => Http::response($this->rilisDenganStudio(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=lainnya')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi[]=studio')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_parameter_aplikasi_kosong_sama_dengan_tanpa_parameter(): void
+    {
+        Http::fake(['api.github.com/*' => Http::response($this->rilis(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru?aplikasi=')
+            ->assertOk()
+            ->assertJson(['tersedia' => true, 'versi' => '1.4.0']);
     }
 }

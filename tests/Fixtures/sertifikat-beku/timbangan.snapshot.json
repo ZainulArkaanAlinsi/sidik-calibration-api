@@ -1,0 +1,507 @@
+{
+    "versi": 1,
+    "desimal": 2,
+    "judul_uut": "The Reading",
+    "judul_standar": "Standard Value",
+    "u95_per_titik": true,
+    "judul_koreksi": "Correction",
+    "judul_sebaran": null,
+    "desimal_koreksi": null,
+    "faktor_cakupan_tetap": null,
+    "catatan_atas_hasil": null,
+    "satuan": "kg",
+    "satuan_cetak": "kg",
+    "header": {
+        "certificate_number": "UJI/00041",
+        "page": "1 of 1",
+        "owner": "PELANGGAN SINTETIS 19",
+        "order_number": "2505.03.A",
+        "address": "Alamat Sintetis 19, Jl. Contoh No. 19, Kota Contoh",
+        "received_date": "2025-05-02",
+        "equipment_name": "Timbangan",
+        "manufacturer": "Bestar",
+        "calibration_location": "Insitu (Lokasi Sintetis)",
+        "model_type": "-",
+        "calibration_date": "2025-05-02",
+        "serial_number": "TB-100",
+        "calibration_method": "SIDIK-IK-CAL-0505_Rev.7",
+        "capacity_graduation": "0–100 kg / 0.02 kg",
+        "env_condition": null,
+        "technician_id": "RK"
+    },
+    "hasil": [
+        {
+            "titik_ke": 1,
+            "standard_value": 10.000007,
+            "remark": null,
+            "unit_under_test": 10,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": 7.0000000000903e-6,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9612864605532,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 2,
+            "standard_value": 19.9997,
+            "remark": null,
+            "unit_under_test": 20,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.0002999999999993,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9615595283729,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 3,
+            "standard_value": 29.999707,
+            "remark": null,
+            "unit_under_test": 30,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.00029299999999921,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9615595283729,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 4,
+            "standard_value": 39.9994,
+            "remark": null,
+            "unit_under_test": 40.02,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.020600000000002,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617021535365,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 5,
+            "standard_value": 49.999407,
+            "remark": null,
+            "unit_under_test": 50.02,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.020592999999998,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617021535365,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 6,
+            "standard_value": 59.9991,
+            "remark": null,
+            "unit_under_test": 60.02,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.020900000000005,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617668819056,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 7,
+            "standard_value": 69.999107,
+            "remark": null,
+            "unit_under_test": 70.02,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.020893000000001,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617655127657,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 8,
+            "standard_value": 79.9988,
+            "remark": null,
+            "unit_under_test": 80.04,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.041200000000003,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617834753937,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 9,
+            "standard_value": 89.998807,
+            "remark": null,
+            "unit_under_test": 90.04,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.041192999999993,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.961782080946,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        },
+        {
+            "titik_ke": 10,
+            "standard_value": 99.9985,
+            "remark": null,
+            "unit_under_test": 100.02,
+            "sebaran": null,
+            "koreksi_kosong": false,
+            "correction": -0.021499999999989,
+            "u95": 0.033,
+            "desimal_u95": null,
+            "faktor_cakupan_k": 1.9617710018377,
+            "desimal_k": null,
+            "desimal": 2,
+            "satuan": null,
+            "tanda_nol": true,
+            "standar_ringkas": true,
+            "r2": null
+        }
+    ],
+    "autoclave": null,
+    "timbangan": {
+        "varian": "kg",
+        "satuan": "kg",
+        "resolusi": 0.02,
+        "desimal": 2,
+        "desimal_stdev": 2,
+        "desimal_u95": 3,
+        "keterulangan": [
+            {
+                "label": "Half Capacity",
+                "kapasitas": 50,
+                "stdev": 0.0063245553203355,
+                "maks_beda": 0.01999999999999602
+            },
+            {
+                "label": "Full Capacity",
+                "kapasitas": 100,
+                "stdev": 0.006324555320339994,
+                "maks_beda": 0.020000000000010232
+            }
+        ],
+        "effect_of_tare": null,
+        "eksentrisitas": {
+            "beban": null,
+            "posisi": [
+                {
+                    "label": "Center",
+                    "selisih": 0
+                },
+                {
+                    "label": "Front",
+                    "selisih": 0
+                },
+                {
+                    "label": "Back",
+                    "selisih": -0.019999999999999574
+                },
+                {
+                    "label": "Left",
+                    "selisih": 0
+                },
+                {
+                    "label": "Right",
+                    "selisih": 0
+                }
+            ],
+            "maks_beda": 0.019999999999999574
+        },
+        "histeresis": {
+            "beban": 20,
+            "pembanding": "<",
+            "batas": 0.02
+        },
+        "lop": 0.07953615325625438,
+        "titik": [
+            {
+                "titik_ke": 1,
+                "titik_ukur": 10.000007,
+                "koreksi": 7.000000000090267e-6,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 2,
+                "titik_ukur": 19.9997,
+                "koreksi": -0.0002999999999993008,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 3,
+                "titik_ukur": 29.999707,
+                "koreksi": -0.00029299999999921056,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 4,
+                "titik_ukur": 39.9994,
+                "koreksi": -0.020600000000001728,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 5,
+                "titik_ukur": 49.999407000000005,
+                "koreksi": -0.020592999999998085,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 6,
+                "titik_ukur": 59.9991,
+                "koreksi": -0.02090000000000458,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 7,
+                "titik_ukur": 69.999107,
+                "koreksi": -0.02089300000000094,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 8,
+                "titik_ukur": 79.9988,
+                "koreksi": -0.041200000000003456,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 9,
+                "titik_ukur": 89.99880700000001,
+                "koreksi": -0.04119299999999271,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            },
+            {
+                "titik_ke": 10,
+                "titik_ukur": 99.9985,
+                "koreksi": -0.021499999999988972,
+                "u95_koreksi": 0.033,
+                "u95_penimbangan": 0.033
+            }
+        ],
+        "k_penimbangan": 1.9811803594140498
+    },
+    "flowmeter": null,
+    "tekanan": null,
+    "enclosure": null,
+    "catatan": [],
+    "tata_letak": {
+        "kepala": [
+            [
+                {
+                    "kunci": "certificate_number",
+                    "label": "Certificate Number"
+                },
+                {
+                    "kunci": "owner",
+                    "label": "Owner"
+                }
+            ],
+            [
+                {
+                    "kunci": "page",
+                    "label": "Page"
+                },
+                {
+                    "kunci": "address",
+                    "label": "Address"
+                }
+            ],
+            [
+                {
+                    "kunci": "order_number",
+                    "label": "Order Number"
+                },
+                {
+                    "kunci": "calibration_location",
+                    "label": "Calibration Location"
+                }
+            ],
+            [
+                {
+                    "kunci": "received_date",
+                    "label": "Received Date"
+                },
+                {
+                    "kunci": "calibration_date",
+                    "label": "Calibration Date"
+                }
+            ],
+            [
+                {
+                    "kunci": "equipment_name",
+                    "label": "Equipment Name"
+                },
+                {
+                    "kunci": "calibration_method",
+                    "label": "Calibration Method"
+                }
+            ],
+            [
+                {
+                    "kunci": "manufacturer",
+                    "label": "Manufacturer"
+                },
+                {
+                    "kunci": "env_condition",
+                    "label": "Env. Condition"
+                }
+            ],
+            [
+                {
+                    "kunci": "model_type",
+                    "label": "Model/Type"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "serial_number",
+                    "label": "Serial Number"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "capacity_graduation",
+                    "label": "Capacity/Graduation"
+                },
+                null
+            ],
+            [
+                {
+                    "kunci": "technician_id",
+                    "label": "Technician ID"
+                },
+                null
+            ]
+        ],
+        "env_bertumpuk": true,
+        "judul_laporan": "Calibration Report :",
+        "satuan_baris_sendiri": true,
+        "judul_standar_digunakan": "8. STANDARD USED",
+        "kolom_standar_digunakan": [
+            {
+                "kunci": "name",
+                "label": "Name"
+            },
+            {
+                "kunci": "nominal_mass",
+                "label": "Nominal Mass"
+            },
+            {
+                "kunci": "merk_type",
+                "label": "Merk/Class"
+            },
+            {
+                "kunci": "serial_number",
+                "label": "SN"
+            },
+            {
+                "kunci": "traceable_to",
+                "label": "Traceability"
+            }
+        ],
+        "label_tanggal_terbit": "Issuance Date",
+        "pisah_per_satuan": true,
+        "format_k": "0",
+        "pemisah_desimal": ".",
+        "akhir_sertifikat": "------- End of Certificate -------"
+    },
+    "catatan_blok": [
+        {
+            "posisi": "sesudah_standar",
+            "judul": null,
+            "baris": [
+                "- Calibration results are not to be announced and only apply to related tools -"
+            ],
+            "tabel": []
+        }
+    ],
+    "standar_digunakan": [
+        {
+            "name": "Anak Timbangan M2",
+            "merk_type": "RC/M2",
+            "serial_number": "A-J",
+            "traceable_to": "LK-279-IDN",
+            "nominal_mass": "20 kg"
+        }
+    ],
+    "footer": {
+        "issuance_date": "2026-11-09",
+        "penandatangan": "Alex Misramto",
+        "jabatan": "Technical Manager",
+        "kode_dokumen": "SIDIK-FM-CAL-2403_Rev. 0"
+    },
+    "meta": {
+        "keputusan": null,
+        "qr_token": "xh0yu2euij",
+        "qr_payload": "http://localhost/verify/xh0yu2euij",
+        "organization": {
+            "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+            "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+            "no_akreditasi": "LK-285-IDN",
+            "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+            "dalam_lingkup_akreditasi": true
+        }
+    }
+}

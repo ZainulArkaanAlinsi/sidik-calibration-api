@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\PerubahanDataOrganisasi;
+use App\Exceptions\SertifikatLebihSatuHalamanException;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
@@ -13,6 +14,7 @@ use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
+use App\Services\Pelanggan\KabarSertifikatTerbit;
 use App\Services\PenerimaNotifikasi;
 use App\Services\SertifikatSatuHalaman;
 use App\Services\SinkronJadwalAlat;
@@ -337,6 +339,15 @@ class GenerateCertificate implements ShouldQueue
             // dokumen yang dari sisi lab kelihatan udah selesai.
             $this->kabarinKegagalan($sertifikat, $e);
 
+            // Sertifikat yang tak muat satu halaman itu kegagalan DETERMINISTIK:
+            // mengulang job sama saja merender lembar yang sama tiga kali (dan
+            // mengabari admin tiga kali). Ditandai gagal-final supaya antrean
+            // tidak mengulang; nomor, snapshot, dan sesi `disetujui` tetap, dan
+            // admin menerbitkan ulang lewat tombol retry setelah isinya diperbaiki.
+            if ($e instanceof SertifikatLebihSatuHalamanException) {
+                $this->fail($e);
+            }
+
             throw $e;
         }
 
@@ -355,6 +366,23 @@ class GenerateCertificate implements ShouldQueue
             Log::warning('Sertifikat terbit, tapi penautan folder/notifikasi gagal.', [
                 'certificate_id' => $sertifikat->id,
                 'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Anggota perusahaan pemilik alat. Langkah TERPISAH dari blok di atas:
+        // penautan folder atau kabar ke teknisi yang meledak tidak boleh ikut
+        // menahan kabar ke pelanggan. `kabari()` menelan galatnya sendiri;
+        // `try` di sini menutup sisanya (mis. container gagal membuatnya),
+        // karena galat apa pun yang lolos dari sini me-retry job dan mencetak
+        // nomor baru. Job yang diulang untuk sertifikat yang sudah terbit
+        // berhenti di `sudahTerbit()` jauh di atas, dan `kabari()` masih
+        // punya penjaga ganda per sertifikat.
+        try {
+            app(KabarSertifikatTerbit::class)->kabari($sertifikat);
+        } catch (\Throwable $e) {
+            Log::warning('Sertifikat terbit, tapi mengabari pelanggan gagal.', [
+                'certificate_id' => $sertifikat->id,
+                'galat' => $e::class,
             ]);
         }
     }

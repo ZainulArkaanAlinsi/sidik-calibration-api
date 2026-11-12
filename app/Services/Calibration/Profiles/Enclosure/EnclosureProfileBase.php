@@ -11,6 +11,7 @@ use App\Services\Calibration\EnclosureCalculator;
 use App\Services\Calibration\Profiles\BentukSertifikatSuhu;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
+use App\Support\GambarKhasSertifikat;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -456,9 +457,10 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * used tanpa titik dua (`I52:Q52`) dan `Issuance Date` tanpa titik dua
      * (`B59`), sama di kedua master.
      *
-     * BELUM: `Thermocouple Position :` (`F18`) — keterangan sebuah GAMBAR
-     * posisi sensor (`171!J17`, `172!I17`); blok catatan hanya teks/tabel,
-     * jadi tanpa gambarnya labelnya tidak ditulis.
+     * `Thermocouple Position :` (`F18`) + GAMBAR posisi sensor kubus 1-9
+     * (`171!J17`, `172!I17`) dicetak lewat `gambar_khas` (G2,
+     * `GambarKhasSertifikat`); ukuran & posisi beda per master, jadi varian
+     * dipilih dari merk kalibrator seperti `formatCetakSertifikat`.
      *
      * @return array<string, mixed>
      */
@@ -468,6 +470,11 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ...parent::tataLetakSertifikat($sesi),
             'kolom_standar_digunakan' => self::kolomStandarSuhuMaster(),
             'label_tanggal_terbit' => 'Issuance Date',
+            'gambar_khas' => GambarKhasSertifikat::untuk(
+                $this->merkKalibrator($sesi->rawMeasurements->first()?->standard ?? $sesi->standard) === TabelKalibratorEnclosure::MERK_BERKANAL
+                    ? 'enclosure_recorder'
+                    : 'enclosure_constant_yokogawa',
+            ),
         ];
     }
 
@@ -1356,6 +1363,16 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         }
 
         return in_array($merk, TabelKalibratorEnclosure::MERK, true) ? $merk : null;
+    }
+
+    /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B54` = `Thermocouple Type
+     * K/N`, `-/Type K`, `TC-01,02`, `LK-064-IDN`): tipe dari kolom sesi
+     * `tipe_sensor`, yang sama dengan pemilih tabel koreksi (B1 / R2).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return $this->normalkanTipeSensor($sesi->tipe_sensor);
     }
 
     /** Ejaan tipe sensor diseragamkan (`Type N`/`Type K`, alias `n`/`k`). */

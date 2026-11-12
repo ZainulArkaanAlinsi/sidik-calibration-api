@@ -269,6 +269,54 @@ class IsolasiPerusahaanTest extends TestCase
     }
 
     /**
+     * `GET /anggota` untuk STAF perusahaan A: tidak ada apa pun milik B (anggota,
+     * undangan, telepon, email), dan `undangan_menunggu` kosong walau A sendiri
+     * punya undangan menunggu. Untuk PIC utama A: undangan A terlihat, undangan
+     * B tidak — penyempitan sisi server (12 Nov 2026) tidak boleh menggeser
+     * batas antar-perusahaan ke arah mana pun.
+     */
+    public function test_daftar_anggota_staf_dan_pic_tidak_memuat_apa_pun_milik_perusahaan_lain(): void
+    {
+        $staf = $this->pelanggan(tambahan: ['telepon' => '+6282200000002']);
+        CustomerMember::create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'user_id' => $staf->getKey(),
+            'peran' => CustomerMember::PERAN_STAF,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+
+        $anggotaB = CustomerMember::query()->findOrFail((int) $this->milikB['anggota'])->load('user');
+        $anggotaB->user->forceFill(['telepon' => '+6289900000009'])->save();
+        $emailUndanganB = (string) UndanganPelanggan::query()->findOrFail((int) $this->milikB['undangan'])->email;
+
+        $emailUndanganA = 'undangan-milik-a@contoh.test';
+        UndanganPelanggan::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'email' => $emailUndanganA,
+        ]);
+
+        $this->permintaanBaru();
+        $balasanStaf = $this->withHeaders($this->bearer($staf))->getJson('/api/pelanggan/v1/anggota')->assertOk();
+
+        $this->assertSame([], $balasanStaf->json('data.undangan_menunggu'));
+        $this->assertCount(2, $balasanStaf->json('data.anggota'));
+
+        $this->permintaanBaru();
+        $balasanPic = $this->withHeaders($this->bearer($this->picA))->getJson('/api/pelanggan/v1/anggota')->assertOk();
+
+        $this->assertSame([$emailUndanganA], collect($balasanPic->json('data.undangan_menunggu'))->pluck('email')->all());
+
+        foreach ([$balasanStaf, $balasanPic] as $balasan) {
+            $isi = (string) $balasan->getContent();
+            foreach ([$anggotaB->user->email, '+6289900000009', $emailUndanganB] as $milikB) {
+                $this->assertStringNotContainsString((string) $milikB, $isi, 'Data perusahaan B bocor ke /anggota perusahaan A.');
+            }
+        }
+    }
+
+    /**
      * K-50-05: pencarian nomor sertifikat (`GET /sertifikat?q=`) hanya melihat
      * PT sendiri — nomor PT lain dijawab daftar kosong, sama dengan "tidak ada".
      */
@@ -304,5 +352,41 @@ class IsolasiPerusahaanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.nomor', 'ISO/A/0001');
+    }
+
+    /**
+     * Pencarian dari NOMOR ORDER (`GET /sertifikat?q=` dan `GET /paket?q=`)
+     * hanya melihat PT sendiri -- nomor order PT lain dijawab daftar kosong.
+     * Rincian di `CariDariNomorOrderTest`.
+     */
+    public function test_cari_nomor_order_tidak_menembus_perusahaan_lain(): void
+    {
+        $alatB = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        Certificate::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'nomor' => 'ISO/B/0009',
+            'status' => Certificate::STATUS_TERBIT,
+            'calibration_session_id' => CalibrationSession::factory()->create([
+                'organization_id' => $this->perusahaanB->organization_id,
+                'equipment_id' => $alatB->getKey(),
+                'nomor_order' => 'PO-MILIK-B-4711',
+            ])->getKey(),
+        ]);
+        Order::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'nomor' => 'ORD/B/4712',
+        ]);
+
+        foreach (['/sertifikat?q=PO-MILIK-B-4711', '/paket?q=ORD/B/4712'] as $uri) {
+            $this->permintaanBaru();
+            $this->withHeaders($this->bearer($this->picA))
+                ->getJson('/api/pelanggan/v1'.$uri)
+                ->assertOk()
+                ->assertJsonPath('meta.total', 0);
+        }
     }
 }

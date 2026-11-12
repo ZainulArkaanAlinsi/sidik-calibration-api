@@ -396,6 +396,130 @@ class RevisiSertifikatTest extends TestCase
             ->assertSee("Revisi ke-1, menggantikan {$asal->nomor}");
     }
 
+    /**
+     * Revisi yang DIBATALKAN bukan dokumen yang berlaku: tidak boleh ditunjuk
+     * sebagai pengganti (sama dengan resource pelanggan, API #247) — tapi
+     * pendahulunya TETAP `digantikan` (K38-2), jadi QR lama tidak boleh
+     * berbalik tampil hijau "terverifikasi". Dua pertanyaan, dua jawaban.
+     *
+     * @return array{0: Certificate, 1: Certificate} [asal, revisi yang sudah dibatalkan]
+     */
+    private function asalDenganRevisiDibatalkan(): array
+    {
+        $asal = $this->sertifikatTerbit();
+        $revisi = Certificate::findOrFail($this->revisi($asal)->json('data.id'));
+
+        $this->actingAs($this->admin)->postJson("/api/certificates/{$revisi->id}/batalkan", ['alasan' => 'x'])->assertOk();
+
+        return [$asal->fresh(), $revisi->fresh()];
+    }
+
+    /** Kontrol: sebelum dibatalkan, revisi TERBIT memang ditunjuk (jangan sampai fix ini mematikan pointer sama sekali). */
+    public function test_revisi_terbit_tetap_ditunjuk_sebagai_pengganti_sah(): void
+    {
+        $asal = $this->sertifikatTerbit();
+        $revisi = Certificate::findOrFail($this->revisi($asal)->json('data.id'));
+
+        $this->assertSame($revisi->id, $asal->penggantiSah()?->id);
+        $this->assertSame($revisi->id, $asal->revisiPenentuStatus()?->id);
+
+        $this->getJson("/api/verify/{$asal->qr_token}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh.nomor', $revisi->nomor);
+
+        $this->actingAs($this->admin)->getJson("/api/certificates/{$asal->id}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh.id', $revisi->id)
+            ->assertJsonPath('data.digantikan_oleh.status', Certificate::STATUS_TERBIT);
+    }
+
+    public function test_model_revisi_dibatalkan_bukan_pengganti_sah_tapi_tetap_menentukan_status(): void
+    {
+        [$asal, $revisi] = $this->asalDenganRevisiDibatalkan();
+
+        $this->assertSame(Certificate::STATUS_DIBATALKAN, $revisi->status);
+        $this->assertNull($asal->penggantiSah(), 'Revisi yang dibatalkan tidak boleh dihitung pengganti sah.');
+        $this->assertSame($revisi->id, $asal->revisiPenentuStatus()?->id);
+        $this->assertSame(Certificate::DOKUMEN_DIGANTIKAN, $asal->statusDokumen(), 'K38-2: pendahulu tetap digantikan.');
+    }
+
+    public function test_verifikasi_publik_json_revisi_dibatalkan_tidak_ditunjuk_tapi_tetap_digantikan(): void
+    {
+        [$asal, $revisi] = $this->asalDenganRevisiDibatalkan();
+
+        $this->getJson("/api/verify/{$asal->qr_token}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh', null);
+
+        // Revisinya sendiri menjawab dibatalkan, tanpa alasan (D4).
+        $this->getJson("/api/verify/{$revisi->qr_token}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'dibatalkan')
+            ->assertJsonPath('data.digantikan_oleh', null);
+    }
+
+    public function test_verifikasi_publik_web_revisi_dibatalkan_tidak_menunjuk_dan_tidak_tampil_terverifikasi(): void
+    {
+        [$asal, $revisi] = $this->asalDenganRevisiDibatalkan();
+
+        $this->get("/verify/{$asal->qr_token}")
+            ->assertOk()
+            ->assertSee('Sertifikat ini sudah direvisi')
+            ->assertSee('dibatalkan')
+            ->assertSee(route('verify.download', $asal->qr_token), false)
+            // Tidak ada penunjuk ke revisi yang dibatalkan, dan tidak ada "yang berlaku".
+            ->assertDontSee($revisi->nomor)
+            ->assertDontSee(route('verify', $revisi->qr_token), false)
+            ->assertDontSee('Yang berlaku')
+            ->assertDontSee('Buka yang berlaku')
+            // Lembar yang sudah digantikan tidak boleh berbalik jadi hijau.
+            ->assertDontSee('Sertifikat terverifikasi')
+            ->assertDontSee('Salah ketik nomor seri');
+    }
+
+    /** Sertifikat lama tanpa snapshot memakai kartu ringkas — jalur tampilan yang berbeda. */
+    public function test_verifikasi_publik_kartu_ringkas_revisi_dibatalkan_tetap_digantikan_tanpa_penunjuk(): void
+    {
+        [$asal, $revisi] = $this->asalDenganRevisiDibatalkan();
+        $asal->forceFill(['snapshot' => null])->save();
+
+        $this->get("/verify/{$asal->qr_token}")
+            ->assertOk()
+            ->assertSee('Digantikan')
+            ->assertSee('dibatalkan')
+            ->assertDontSee($revisi->nomor)
+            ->assertDontSee(route('verify', $revisi->qr_token), false)
+            ->assertDontSee('Yang berlaku');
+    }
+
+    public function test_resource_lab_revisi_dibatalkan_tidak_ditunjuk_tapi_status_dokumen_tetap_digantikan(): void
+    {
+        [$asal, $revisi] = $this->asalDenganRevisiDibatalkan();
+
+        $this->actingAs($this->admin)->getJson("/api/certificates/{$asal->id}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'digantikan')
+            ->assertJsonPath('data.digantikan_oleh', null)
+            // Sudah punya revisi (walau batal): tidak boleh direvisi/dibatalkan lagi.
+            ->assertJsonPath('data.bisa_direvisi', false)
+            ->assertJsonPath('data.bisa_dibatalkan', false);
+
+        $this->actingAs($this->admin)->getJson("/api/certificates/{$revisi->id}")
+            ->assertOk()
+            ->assertJsonPath('data.status_dokumen', 'dibatalkan')
+            ->assertJsonPath('data.revisi_dari.id', $asal->id);
+
+        // Jalur daftar memakai resource yang sama.
+        $baris = collect($this->actingAs($this->admin)->getJson('/api/certificates')->assertOk()->json('data'))
+            ->firstWhere('id', $asal->id);
+        $this->assertNotNull($baris, 'Sertifikat asal harus ada di daftar.');
+        $this->assertNull($baris['digantikan_oleh']);
+        $this->assertSame('digantikan', $baris['status_dokumen']);
+    }
+
     public function test_qr_sertifikat_batal_menyatakan_dibatalkan_tanpa_alasan_dan_unduh_410(): void
     {
         $asal = $this->sertifikatTerbit();
@@ -420,14 +544,24 @@ class RevisiSertifikatTest extends TestCase
             ->assertJsonMissingPath('data.alasan_pembatalan');
     }
 
-    public function test_kartu_ringkas_menyamarkan_nama_pemilik(): void
+    /**
+     * Kartu ringkas TIDAK menampilkan nama pelanggan sama sekali (ISO/IEC
+     * 17025 klausul 4.2); lembar lengkap tetap ada di balik tombolnya.
+     * Rincian di `VerifikasiPublikMinimalTest`.
+     */
+    public function test_kartu_ringkas_tidak_menampilkan_nama_pemilik(): void
     {
         $asal = $this->sertifikatTerbit();
 
-        $this->get("/verify/{$asal->qr_token}")
+        $html = $this->get("/verify/{$asal->qr_token}")
             ->assertOk()
-            ->assertSee('PT Con•• Jaya')
-            ->assertSee('Disamarkan sebagian')
-            ->assertSee('Tampilkan lembar lengkap');
+            ->assertSee('Tampilkan lembar lengkap')
+            ->getContent();
+
+        $ringkas = substr($html, 0, (int) strpos($html, 'class="lembar-lengkap"'));
+        $this->assertNotSame('', $ringkas);
+        $this->assertStringNotContainsString('PT Contoh Jaya', $ringkas);
+        $this->assertStringNotContainsString('PT Con••', $ringkas);
+        $this->assertStringNotContainsString('Disamarkan sebagian', $ringkas);
     }
 }

@@ -41,6 +41,21 @@ class SertifikatBerubah extends NotifikasiSistem
         return new self($sertifikat->id, (string) $sertifikat->nomor, null, true, $sertifikat->catatan_pelanggan);
     }
 
+    /**
+     * Tanda tangan per sertifikat & jenis kabar, supaya job penerbitan yang
+     * diulang tidak mengirim kabar revisi/pembatalan yang sama dua kali
+     * (`KabarSertifikatTerbit`). Tidak dipakai `PenjagaNotifikasiUlang`.
+     */
+    public static function tandaTanganUntuk(int $sertifikatId, bool $dibatalkan): string
+    {
+        return ($dibatalkan ? 'pelanggan.sertifikat_dibatalkan:' : 'pelanggan.sertifikat_direvisi:').$sertifikatId;
+    }
+
+    protected function tandaTangan(): ?string
+    {
+        return self::tandaTanganUntuk($this->sertifikatId, $this->dibatalkan);
+    }
+
     protected function judul(): string
     {
         return $this->dibatalkan ? 'Sertifikat dibatalkan' : 'Sertifikat direvisi';

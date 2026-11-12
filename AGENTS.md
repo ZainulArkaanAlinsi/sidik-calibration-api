@@ -117,6 +117,19 @@ yang baru ada di 8.4 — di 8.3 config-nya fatal sebelum satu test pun jalan.
 Render; commit merah berhenti di GitHub dan tidak sampai ke server yang dipakai
 teknisi di lokasi.
 
+**CI memecah suite jadi shard** (12 Nov 2026): 4 job SQLite + 6 job MySQL, tiap job
+berkas test yang berbeda, lalu job agregat `phpunit` dan `PHPUnit MySQL 8.0`
+(nama lama, tetap) yang merah kalau ada satu shard saja yang tidak hijau. Deploy
+tetap menunggu keduanya. Tiap shard punya checkout dan database sendiri, jadi
+jebakan `Storage::fake` di atas tidak kena — dan jangan pernah menyalakan test
+paralel di dalam satu job. Pembaginya `.github/ci/shard.php`; langkah
+`Verifikasi pembagian shard` menggagalkan build kalau ada berkas test yang
+tidak kebagian shard. Berkas `*Test.php` BARU di luar `tests/Unit` dan
+`tests/Feature` ikut menggagalkannya, kecuali dicatat sengaja di
+`.github/ci/shard-data.json`. Cek di lokal tanpa menjalankan test:
+`php .github/ci/shard.php verify --profil=mysql --of=6`. Penjelasan lengkap di
+kepala `tes.yml`.
+
 ## Arsitektur
 
 ### Profil kalibrasi — sumbu utama repo ini
@@ -621,6 +634,20 @@ merasa `terimaUndangan()` kurang lengkap tanpa `daftar()` — itu bukan kelupaan
 Dijaga `PintuDaftarMandiriTertutupTest`, yang menguji lewat HTTP (bukan dengan
 membaca daftar rute) dan ikut menjaring rute baru mana pun yang namanya
 berakhiran `register` atau `daftar`.
+
+**Kode undangan TIDAK cukup untuk akun yang sudah ada (12 Nov 2026).** Admin lab
+melihat kode polos undangannya, jadi kode hanya membuktikan "membaca email
+undangan", bukan "pemilik akun". `terimaUndangan()` untuk email yang sudah punya
+akun pelanggan wajib `Hash::check` sandi akun itu (ember kegagalan SATU dengan
+`masuk()`), menolak organisasi lain dan status `nonaktif`/`dianonimkan`/
+`pending_email` (satu method dengan `masuk()`), mencatat `audit_logs`, dan
+mengabari pemilik akun. Pihak tanpa kode sah tetap hanya menerima
+`undangan_tidak_berlaku`. Kode juga diklaim atomik (`klaimUndangan()`), jadi satu
+kode hanya bisa ditukar sekali walau dua request datang bersamaan. Ini perubahan
+perilaku `/pelanggan/v1` yang **disengaja** — pengecualian sadar atas butir 6
+§Modul Pelanggan, karena yang ditutup lubang pengambilalihan akun. Jangan
+melonggarkannya demi "konsultan lupa sandi" — jalannya `lupa-sandi`. Dijaga
+`UndanganAkunLamaTest`; kontrak `docs/kontrak-api-pelanggan.md` §11.
 
 **Yang SENGAJA ditinggal berdiri, jangan ikut dirapikan:**
 

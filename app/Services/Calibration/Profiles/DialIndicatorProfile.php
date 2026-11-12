@@ -834,4 +834,15 @@ class DialIndicatorProfile extends CalibrationProfile
     {
         return $this->kalk ??= new DialIndicatorCalculator;
     }
+
+    /**
+     * Master mencetak koreksi yang membulat ke nol sebagai `0.00` — bukan `-0.00`
+     * (PDF master master-olah-data-dial-indicator `SERTIFIKAT`; G0-b P4, keputusan pemilik 10 Nov 2026 "persis master").
+     * Hanya cetak: `tanda_nol` dibekukan per baris snapshot, nilai antara dan
+     * pembulatan tidak berubah.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
 }

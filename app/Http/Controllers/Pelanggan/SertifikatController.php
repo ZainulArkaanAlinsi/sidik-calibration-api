@@ -18,6 +18,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * `/sertifikat` — daftar, detail, dan unduh PDF sertifikat milik pelanggan.
  *
+ * `?q=` mencari nomor sertifikat, nama alat, nomor seri, dan NOMOR ORDER
+ * (lihat `index()`), semuanya hanya di sertifikat perusahaan pemanggil.
+ *
  * Daftarnya bawaan cuma sertifikat yang MASIH BERLAKU sebagai dokumen: yang
  * sudah digantikan revisi disembunyikan, supaya pelanggan tidak mengirim
  * nomor lama ke auditornya. `?termasuk_digantikan=1` membuka semuanya.
@@ -37,12 +40,24 @@ class SertifikatController extends Controller
             // scopeBelumDigantikan`). Yang DIBATALKAN tetap tampil — dengan
             // statusnya — supaya pelanggan tahu dokumen itu tidak sah lagi.
             ->when(! $request->boolean('termasuk_digantikan'), fn (Builder $q) => $q->belumDigantikan())
-            ->when(filled($data['q'] ?? null), fn (Builder $q) => $q->where(function (Builder $cari) use ($data): void {
+            ->when(filled($data['q'] ?? null), fn (Builder $q) => $q->where(function (Builder $cari) use ($data, $konteks): void {
                 $kata = '%'.$data['q'].'%';
                 $cari->where('nomor', 'like', $kata)
                     ->orWhereHas('session.equipment', fn (Builder $a) => $a->withTrashed()
                         ->where(fn (Builder $b) => $b->where('nama_alat', 'like', $kata)
-                            ->orWhere('serial_number', 'like', $kata)));
+                            ->orWhere('serial_number', 'like', $kata)))
+                    // NOMOR ORDER: yang tercetak di sertifikat
+                    // (`calibration_sessions.nomor_order`) atau nomor paket/order
+                    // pelacakannya (`orders.nomor`). Keduanya hanya mencari DI
+                    // DALAM himpunan `LingkupData::sertifikat()` (satu grup
+                    // `where(function ...)`, jadi `or` di sini tidak pernah
+                    // melonggarkan penyaring perusahaan), dan order-nya sendiri
+                    // dikunci ke `customer_id` pemanggil -- bukan dari request.
+                    ->orWhereHas('session', fn (Builder $s) => $s
+                        ->where(fn (Builder $b) => $b->where('nomor_order', 'like', $kata)
+                            ->orWhereHas('orderItem.order', fn (Builder $o) => $o
+                                ->where('customer_id', $konteks->customerId)
+                                ->where('nomor', 'like', $kata))));
             }))
             ->with(self::RELASI)
             ->orderByDesc('diterbitkan_pada')

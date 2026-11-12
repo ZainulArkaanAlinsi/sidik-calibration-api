@@ -25,7 +25,7 @@ Semua field lama tetap. Tambahan:
 | `status_dokumen` | string | `berlaku` · `digantikan` · `dibatalkan` · `belum_terbit` — label yang ditampilkan |
 | `revisi_ke` | int | 0 = asli; 1 = `-R1`, dst. |
 | `revisi_dari` | `{id, nomor}` \| null | pendahulu langsung |
-| `digantikan_oleh` | `{id, nomor, status}` \| null | revisi terbaru atas sertifikat ini, **status apa pun** (jadi revisi yang masih `menunggu_generate` ikut tampil) |
+| `digantikan_oleh` | `{id, nomor, status}` \| null | revisi terbaru atas sertifikat ini, **kecuali yang `dibatalkan`** (12 Nov 2026): revisi yang masih `menunggu_generate`/`gagal` tetap tampil dengan `status`-nya, tapi revisi yang sudah dibatalkan bukan dokumen yang berlaku sehingga `null` — sama dengan aplikasi pelanggan & verifikasi publik. `status_dokumen` TETAP `digantikan` (K38-2: pembatalan revisi tidak menghidupkan pendahulunya). Revisi yang dibatalkan masih bisa dicapai dari sertifikatnya sendiri lewat `revisi_dari` |
 | `alasan_revisi` | string \| null | internal — hanya di aplikasi lab |
 | `dibatalkan_pada` | ISO \| null | |
 | `dibatalkan_oleh` | `{id, nama}` \| null | |

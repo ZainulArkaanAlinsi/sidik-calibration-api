@@ -126,6 +126,16 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
 
     public function __construct(private readonly TabelKalibratorSuhu3Alat $tabel = new TabelKalibratorSuhu3Alat) {}
 
+    /**
+     * Baris sensor acuan Standard Used (`SERTIFIKAT!B43` = `PRT PT100`,
+     * `-/PT100`, `SH1/20`): probe standar termometer gelas SELALU PRT PT100
+     * ([NO_PROBE]), jadi tipenya tetap [TIPE_SENSOR_STANDAR] (B1 / R2).
+     */
+    protected function tipeSensorStandarTercetak(CalibrationSession $sesi): ?string
+    {
+        return self::TIPE_SENSOR_STANDAR;
+    }
+
     public function kode(): string
     {
         return 'thermometer_glass';
@@ -180,7 +190,9 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
      * Bentuk lembar SERTIFIKAT master `176` (K-50-15): judul `Standard Reading
      * (oC)` tanpa baris satuan (`E20:L20`), label `Uncertainty  95%  ±`
      * (`E35`), Standard used tanpa titik dua (`B41:Q41`), `Issuance Date`
-     * tanpa titik dua (`B48`). Tidak ada `End of Certificate`.
+     * tanpa titik dua (`B48`). `End of Certificate` ADA: grup garis-teks-garis `H58:N60` di
+     * dalam print area (`176` objek.json "Group 10"; bukan sel teks) — dicetak lewat
+     * `AkhirSertifikatMaster` (G0-a). Docblock lama "tidak ada" salah (PDF master memuatnya).
      *
      * @return array<string, mixed>
      */

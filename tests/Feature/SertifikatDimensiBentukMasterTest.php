@@ -85,12 +85,16 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         // ---- Jangka Sorong (`153`) --------------------------------------------
         [$s, $html] = $this->terbitkan('001-CAL-126');
         $this->assertSame('Standar Reading', $s->snapshot['judul_standar']);
-        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'],
+        // B3a / R9: `k` `0`, bukan `General`. `153!O36` berformat General tetapi
+        // kolom O hanya 2,45 karakter, jadi Excel menampilkan 1.9759… sebagai `2`
+        // (`sertifikat.terang.pdf`: blok Outside, Inside, dan Depth `2`).
+        $this->assertSamaPetaJson(['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => '0'],
             $s->snapshot['hasil'][0]['format']);
-        // `153!D27:L27` 100.00 | 100.05 | -0.05, `J35` 0.033, `O36` k General.
+        // `153!D27:L27` 100.00 | 100.05 | -0.05, `J35` 0.033, `O36` k tampil `2`.
         $this->assertMatchesRegularExpression('#<td>100[.,]00</td>\s*<td>100[.,]05</td>\s*<td>-0[.,]05</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>0[.,]033 mm</td>#u', $html);
-        $this->assertMatchesRegularExpression('#Coverage Factor \( k \) =\s*1[.,]97\d{4,}#u', $html);
+        $this->assertMatchesRegularExpression('#Coverage Factor \( k \) =\s*2\s*</div>#u', $html);
+        $this->assertStringNotContainsString('1.97612', $html, 'k 10 digit (nilai sel, bukan tampilan) tidak boleh tercetak lagi.');
 
         // ---- Height Gauge (`184`) ---------------------------------------------
         [$s, $html] = $this->terbitkan('001-UBLK-05.26');
@@ -100,6 +104,9 @@ class SertifikatDimensiBentukMasterTest extends TestCase
         $this->assertSame(3, substr_count($this->tabelHasil($html), '<tr>') - 1, 'Tiga baris data tercetak (+1 baris judul).');
         $this->assertMatchesRegularExpression('#<td>25[.,]00</td>\s*<td>24[.,]99</td>\s*<td>0[.,]01</td>#u', $html);
         $this->assertMatchesRegularExpression('#<td>0[.,]01\d mm</td>#u', $html);
+        // B3a / R9: `184!O35` General di kolom 2,44 karakter -> `2` (bukan 10 digit).
+        $this->assertSame('0', $s->snapshot['hasil'][0]['format']['k']);
+        $this->assertMatchesRegularExpression('#Coverage Factor \( k \) =\s*2\s*</div>#u', $html);
         $this->assertStringContainsString('<td>Result of Paralelism :</td>', $html);
         $this->assertStringContainsString('<td>Good</td>', $html);
 

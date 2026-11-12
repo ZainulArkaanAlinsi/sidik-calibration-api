@@ -426,30 +426,90 @@ class TimbanganSertifikatTest extends TestCase
     /**
      * Angkanya beneran nyampe ke lembarnya — bukan cuma judulnya.
      *
-     * Desimalnya: `d` = 1 (resolusi 0,1 kg) buat nilai & koreksi, `max(d,2)`
-     * buat STDEV, `d+1` buat U95 & LOP. Lihat T14 soal kenapa nggak bisa
-     * meniru ketiga master sekaligus.
+     * Desimal tiap bagian dibaca dari format sel `SERTIFIKAT` master per
+     * varian (`TimbanganProfile::formatCetakMaster`, K-50-15 / B3a). Untuk
+     * substitusi (resolusi 0,1 kg, d = 1): nilai & koreksi `0.0`, STDEV
+     * `0.00`, U95 `0.0` (`U28:U37`, `H49:W53`), LOP `0` (`O46`).
      */
     public function test_lembar_cetak_bawa_angkanya(): void
     {
         // K-50-15 (pemilik 20 Okt 2026, "ikut master semua"): sertifikat baru
-        // bertitik desimal seperti tampilan sel master; desimalnya tidak berubah.
+        // bertitik desimal seperti tampilan sel master.
         $html = $this->htmlSertifikat(self::SESI_SUB);
 
-        // §1 STDEV Full Capacity 0,0316 -> 2 desimal.
+        // §1 STDEV Full Capacity 0,0316 -> 2 desimal (`L20` `0.00`).
         $this->assertStringContainsString('0.03', $html);
         // §3 koreksi kumulatif titik terakhir — 13,3, BUKAN 1,5.
         $this->assertStringContainsString('13.3', $html);
-        // §3 & §7 U95 0,52 -> 2 desimal.
-        $this->assertStringContainsString('0.52', $html);
+        // §3 & §7 U95 0,52 -> 1 desimal (`U28:U37`, `H49:W53` berformat `0.0`).
+        // Dulu d+1 (`0.52`): T14, dibatalkan K-50-15 — master mencetak `0.5`.
+        $this->assertStringContainsString('<td>0.5</td>', $html);
+        $this->assertStringNotContainsString('0.52', $html);
         // §4 Maximum Difference 0,2.
         $this->assertStringContainsString('0.2', $html);
         // §5 perbandingan, bukan nilai.
         $this->assertStringContainsString('&lt; 0.1', $html);
-        // §6 LOP 13,66.
-        $this->assertStringContainsString('13.66', $html);
-        // §7 kalimat faktor cakupan, `K` bulat.
+        // §6 LOP 13,66 -> `O46` berformat `0`: `± 14 kg`. Dulu `13.66`
+        // (keputusan 1 Sep 2026, T14) — dibatalkan K-50-15 "persis master".
+        $this->assertMatchesRegularExpression('#=\s*&plusmn;\s*14\s*kg#u', $html);
+        $this->assertStringNotContainsString('13.66', $html);
+        // §7 nominal `0.00` (`C49:O53`, d+1), kalimat faktor cakupan, `K` bulat.
+        $this->assertStringContainsString('<td>200.01</td>', $html);
         $this->assertStringContainsString('coverage factor ( K ) =', $html);
+    }
+
+    /**
+     * K-50-15 / B3a: kg dan gram juga persis master (bagian yang dulu salah
+     * hanya LOP kg `0.08` bukan `0.080`; gram: kapasitas/nominal §7 `0.000`).
+     * Sesi seeder = sesi master (`011-CAL-525` kg, `019-CAL-425` gram), jadi
+     * teks cetak bisa diadu ke `sertifikat.terang.pdf` masing-masing.
+     */
+    public function test_kg_dan_gram_cetak_persis_format_sel_master(): void
+    {
+        // kg (`New_Master_Olda_Timbangan_kg`): LOP `O46` `0.00` -> 0.08,
+        // U95 `0.000` -> 0.033, kapasitas `I19` General -> 50 / 100.
+        $kg = $this->htmlSertifikat('011-CAL-525');
+        $this->assertMatchesRegularExpression('#=\s*&plusmn;\s*0\.08\s*kg#u', $kg);
+        $this->assertStringNotContainsString('0.080', $kg);
+        $this->assertStringContainsString('<td>0.033</td>', $kg);
+        $this->assertMatchesRegularExpression('#Half Capacity =\s*50\s*</td>#u', $kg);
+        $this->assertMatchesRegularExpression('#Full Capacity =\s*100\s*</td>#u', $kg);
+        // Hysterisis: Load `N45` `0.00`, batas `U45` `0.00`.
+        $this->assertMatchesRegularExpression('#<td>20\.00</td>\s*<td>&lt; 0\.02</td>#u', $kg);
+
+        // gram (`New_Master_Olda_Timbangan_gram`): kapasitas `I19:I20` `0.000`
+        // -> 25.000 / 50.000, LOP `M46` `0.00000` -> 0.00077, §7 nominal
+        // `C49:O53` `0.000` -> 5.000 (§3 nominal tetap `0.0000` -> 5.0000).
+        $gram = $this->htmlSertifikat('019-CAL-425');
+        $this->assertMatchesRegularExpression('#Half Capacity =\s*25\.000\s*</td>#u', $gram);
+        $this->assertMatchesRegularExpression('#Full Capacity =\s*50\.000\s*</td>#u', $gram);
+        $this->assertMatchesRegularExpression('#=\s*&plusmn;\s*0\.00077\s*g#u', $gram);
+        $this->assertMatchesRegularExpression('#<td>5\.0000</td>\s*<td>0\.0000</td>\s*<td>0\.00057</td>#u', $gram);
+        $this->assertMatchesRegularExpression('#<td>5\.000</td>\s*<td>0\.00060</td>#u', $gram);
+        // Hysterisis `L45` `0.000` (load), `R45` `0.0000` (batas).
+        $this->assertMatchesRegularExpression('#<td>20\.000</td>\s*<td>&lt; 0\.0001</td>#u', $gram);
+    }
+
+    /**
+     * Sertifikat TERBIT sebelum B3a tidak punya kunci `format` di blok
+     * timbangannya dan HARUS tercetak seperti waktu terbit (d, max(d,2),
+     * d+1) — termasuk `13.66` dan `0.52`. Gerbang sertifikat beku.
+     */
+    public function test_snapshot_lama_tanpa_format_tercetak_seperti_waktu_terbit(): void
+    {
+        $sertifikat = $this->terbitkan(self::SESI_SUB);
+        $this->assertIsArray($sertifikat->snapshot['timbangan']['format'] ?? null, 'Snapshot BARU memuat format sel master.');
+
+        $lama = $sertifikat->snapshot;
+        unset($lama['timbangan']['format']);
+        $html = view('sertifikat.pdf', [
+            ...app(DataTampilanSertifikat::class)->untuk($sertifikat),
+            'snapshot' => $lama,
+        ])->render();
+
+        $this->assertStringContainsString('13.66', $html);
+        $this->assertStringContainsString('0.52', $html);
+        $this->assertStringNotContainsString('<td>0.5</td>', $html);
     }
 
     /**

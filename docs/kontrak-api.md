@@ -203,7 +203,18 @@ Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu ken
 }
 ```
 
-Jumlah izin sekarang (dihitung ulang 15 Okt 2026): **super_admin 63 · admin 61 · teknisi 28 · viewer 18.**
+Jumlah izin sekarang (dihitung ulang 12 Nov 2026 dari `MatriksIzin::bolehUntuk()`): **super_admin 64 · admin 63 · teknisi 28 · viewer 19.**
+
+**`audit.lihat` (baru, 12 Nov 2026).** Izin tersendiri untuk riwayat perubahan data: `GET /api/audit-logs` dan
+`GET /api/audit-logs/export` (dua rute itu satu gerbang `role:admin`, dijaga `MeIzinTest`). **Siapa yang boleh tidak
+berubah**: `admin` dan `super_admin` ada di `boleh`; `teknisi` dan `viewer` tidak (rutenya tetap `403`).
+Sebelumnya aplikasi terpaksa menebaknya dari `pengguna.kelola` (sama-sama admin-only) — tebakan yang putus
+diam-diam kalau salah satu rutenya pindah blok. Menu "Riwayat Perubahan" cukup digerbangi `boleh.contains('audit.lihat')`.
+Nama izinnya stabil; `test/fixtures/nama_izin.json` di repo mobile digenerate dari `MatriksIzin::PETA` oleh
+`docs/skrip/gen-nama-izin-mobile.php` (keluarannya 64 nama). Fixture itu **perlu digenerate ulang di repo mobile**
+begitu aplikasi lab mulai memakai `audit.lihat` (menambah `NamaIzin` baru) — `nama_izin_test.dart` menuntut tiap
+nama yang dipakai aplikasi ada di fixture. Sebelum itu tidak ada yang rusak: nama tambahan di server tidak
+dituntut siapa pun, dan aplikasi lama mengabaikan nama yang tidak dikenalnya. Jangan sunting fixture dengan tangan.
 
 **`super_admin` sejak 15 Okt 2026 (K-49-14):** `boleh`-nya = gabungan admin + teknisi
 (semua izin tulis keduanya, di organisasinya sendiri). `batasan`-nya `semua`. Yang TIDAK
@@ -251,6 +262,48 @@ dan `sertifikat.tarik` (admin & super admin).
 
 ### `POST /api/logout`
 Response `200`: `{ "message": "Berhasil logout." }`
+
+### `POST /api/me/ganti-sandi` — ganti sandi SENDIRI (additive, 12 Nov 2026)
+
+Semua peran internal yang sudah masuk lewat aplikasi lab: `admin`, `teknisi`, `viewer`, **dan `super_admin`**.
+Ini bukan "menulis data lab" — hanya sandi akun pemanggil sendiri, jadi `viewer` pun boleh. Rute baru; klien lama
+tidak terpengaruh. Panduan layar untuk tim frontend: `docs/perintah-frontend-ganti-sandi-lab.md`.
+
+Request (`Authorization: Bearer <token aplikasi lab>`):
+```json
+{ "sandi_lama": "…", "sandi": "…", "sandi_confirmation": "…" }
+```
+- `sandi_lama` wajib; harus cocok dengan sandi sekarang.
+- `sandi` wajib, **minimal 10 karakter**, tidak boleh sandi yang pernah bocor (cek k-anonymity ke Have I Been
+  Pwned; bila layanan itu tidak terjangkau server tidak memblokir), dan **tidak boleh sama** dengan `sandi_lama`.
+  Aturannya sama dengan ganti sandi pelanggan (`POST /pelanggan/v1/saya/ganti-sandi`).
+- `sandi_confirmation` wajib sama dengan `sandi` (aturan `confirmed` Laravel).
+
+Response `200`:
+```json
+{ "message": "Sandi berhasil diganti.", "data": { "sesi_dicabut": 2 } }
+```
+`sesi_dicabut` = jumlah token **lain** milik akun itu yang dihapus (HP lain, Sidik Studio untuk akun
+`STUDIO_AKUN`, dst.). **Token yang sedang dipakai dipertahankan** — layar berikutnya tidak 401, pengguna tidak
+diusir. Peran (`role`), status, dan data akun lain tidak disentuh.
+
+| Status | `kode` | Artinya | Aplikasi |
+|---|---|---|---|
+| 422 | `sandi_lama_salah` | `sandi_lama` tidak cocok | Tampilkan di bawah kolom sandi lama; bercabang pada `kode`, bukan `message` |
+| 422 | — (galat validasi Laravel: `message` + `errors.{sandi_lama,sandi,sandi_confirmation}`) | sandi baru < 10 karakter / bocor / sama dengan lama / konfirmasi tidak cocok / ada yang kosong | Tampilkan `errors.<field>[0]` di kolom yang bersangkutan |
+| 401 | — | tanpa token, token tidak valid, atau akun nonaktif (`kode: akun_nonaktif`) | Layar masuk |
+| 403 | `bukan_aplikasi_ini` | token bukan token aplikasi lab (token aplikasi Pelanggan atau token Sidik Studio) | Tidak untuk dipanggil dari aplikasi itu |
+| 429 | — | lebih dari **5 percobaan per menit per akun** | "Tunggu sebentar" |
+
+Jejak audit: satu baris `audit_logs` (`entity_type = users`, `entity_id` = id pemanggil, `action = diubah`,
+`changed_by` = pemanggil) dengan `old_data.password` dan `new_data.password` = `"[disensor]"` — **tidak ada**
+sandi, polos maupun hash, di jejak, log, maupun balasan. Dilihat lewat `GET /api/audit-logs` (izin `audit.lihat`).
+Pembeda dari reset oleh admin (`POST /users/{id}/reset-password`): `changed_by == entity_id`.
+Dijaga `GantiSandiLabTest`.
+
+> Catatan: sandi **awal** akun yang dibuat admin tetap diketahui admin (belum ada "wajib ganti saat pertama
+> masuk" — lihat `AGENTS.md` §Akun Lahir dari Undangan). Endpoint ini yang menutup kesenjangan itu secara
+> sukarela: pengguna mengganti sandi awalnya sendiri.
 
 ### Approval akun (admin-only) — dibutuhin biar register-nya ada gunanya
 - **`GET /api/users?status=pending`** — daftar akun yang nunggu disetujui
@@ -1321,11 +1374,17 @@ Yang MENGISI lembar (`teknisi_id`) atau yang mengonfirmasi hasil pindainya dijaw
 
 ```json
 {
-  "message": "Kamu ikut mengisi atau mengoreksi data sesi ini, jadi tidak bisa menyetujuinya sendiri. Minta Master Data lain.",
+  "message": "Kamu yang mengisi lembar kerja ini, jadi tidak bisa menyetujuinya sendiri. Minta Master Data atau super admin lain yang menyetujuinya.",
   "kode": "pemisahan_wewenang",
   "wewenang": { "bersih": false, "memblokir": true, "temuan": [{ "kode": "penyetuju_sama_dengan_teknisi", "pesan": "…" }] }
 }
 ```
+
+`message` spesifik per penyebab (10 Nov 2026): `penyetuju_sama_dengan_teknisi` → "Kamu yang mengisi
+lembar kerja ini…", `penyetuju_mengonfirmasi_pindai` → "Kamu yang mengonfirmasi hasil pindai sesi
+ini…", keduanya sekaligus → satu kalimat gabungan; semuanya diakhiri tindakan "Minta Master Data atau
+super admin lain yang menyetujuinya." Hanya kalimatnya yang berubah — `kode` `pemisahan_wewenang` dan
+status `422` tetap, jadi cabangkan pada `kode`, bukan teks.
 
 `abaikan_peringatan` **tidak** menembusnya. Tampilkan `wewenang.temuan[].pesan`, jangan
 tawarkan "lanjutkan". Aturan yang sama berlaku di tombol Setujui panel `/admin`.
@@ -1436,6 +1495,10 @@ Efek (satu transaksi): sertifikat `status: "ditarik"` (+ `ditarik_pada`, `ditari
 yang ditarik; tarik lagi → `-R2`). QR lama menampilkan "Sertifikat ini ditarik" + penggantinya;
 `GET /api/verify/{token}` → `status_dokumen: "ditarik"`, `digantikan_oleh`; unduh publik `410`.
 `status_dokumen` di resource sertifikat: `berlaku | digantikan | dibatalkan | ditarik | belum_terbit`.
+`digantikan_oleh` (verifikasi publik & resource lab) hanya menunjuk revisi yang berlaku (`terbit`);
+revisi yang `dibatalkan` TIDAK ditunjuk (`null`) tetapi pendahulunya tetap `digantikan` (K38-2).
+Halaman web `/verify/{token}` untuk kasus itu menampilkan bilah "sudah direvisi, revisinya
+dibatalkan" tanpa tautan "yang berlaku".
 
 ### `GET /api/calibrations/{id}/riwayat-persetujuan` — **admin & super admin saja** (6 Okt 2026)
 
@@ -1482,7 +1545,7 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 
 > ✅ **Live sejak 14 Jul — dan ADA DUA VERSINYA, ini penting buat nentuin isi QR-nya.**
 >
-> **1. `GET /verify/{qr_token}` (halaman web, bukan `/api`).** Ini yang harus ditaruh di QR sertifikat. Alasannya: yang scan itu orang luar (auditor, pelanggan) pakai **kamera HP biasa** — yang kebuka **browser**, bukan app kita. Kalau QR-nya diisi URL `/api/...`, yang muncul di layar mereka JSON mentah. Halaman webnya nampilin nomor sertifikat, alat, pemilik, tanggal, dan hasil PASS/FAIL dengan rapi + kop lab & nomor akreditasi. QR ngawur → halaman "Sertifikat tidak ditemukan" (404), bukan error mentah.
+> **1. `GET /verify/{qr_token}` (halaman web, bukan `/api`).** Ini yang harus ditaruh di QR sertifikat. Alasannya: yang scan itu orang luar (auditor, pelanggan) pakai **kamera HP biasa** — yang kebuka **browser**, bukan app kita. Kalau QR-nya diisi URL `/api/...`, yang muncul di layar mereka JSON mentah. Halaman webnya nampilin nomor sertifikat, alat, nomor seri, tanggal, dan hasil PASS/FAIL dengan rapi (kartu ringkasnya TANPA nama pelanggan — lihat catatan 11 Nov 2026 di bawah) + kop lab & nomor akreditasi. QR ngawur → halaman "Sertifikat tidak ditemukan" (404), bukan error mentah.
 >
 > **2. `GET /api/verify/{qr_token}` (JSON).** Ini buat kalau **mobile** mau nampilin hasil scan di dalam app (misal teknisi scan sertifikat lama pakai fitur scan di app):
 > ```json
@@ -1490,12 +1553,22 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 >     "nomor": "CAL/2026/07/0001", "status": "terbit", "keputusan": "PASS",
 >     "diterbitkan_pada": "2026-06-15T00:00:00Z", "berlaku_sampai": "2027-06-14T00:00:00Z",
 >     "kadaluarsa": false,
->     "alat": { "nama_alat": "Jangka Sorong Mitutoyo", "serial_number": "MT-500-196-30", "pemilik": "PT Maju Jaya" },
+>     "alat": { "nama_alat": "Jangka Sorong Mitutoyo", "serial_number": "MT-500-196-30" },
 >     "tanggal_kalibrasi": "2026-06-14T00:00:00Z",
 >     "diterbitkan_oleh": { "nama": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)", "no_akreditasi": "LK-285-IDN" }
 > } }
 > ```
 > QR nggak ketemu → `404 { "message": "Sertifikat dengan kode QR ini tidak terdaftar." }`
+>
+> **11 Nov 2026 — `alat.pemilik` DIHAPUS dari JSON (breaking, disengaja).** Nama pelanggan adalah data
+> rahasia klien (ISO/IEC 17025 klausul 4.2) dan endpoint ini publik tanpa auth. JSON publik tidak pernah
+> memuat nama pelanggan, alamat, atau nomor order; `alat` sekarang persis `{ nama_alat, serial_number }`
+> (`serial_number` dipertahankan supaya pemindai bisa mencocokkannya dengan label alat). Halaman web:
+> kartu ringkas dan kartu lama (tanpa snapshot) tidak lagi menampilkan "Pemilik alat" — juga tidak yang
+> disamarkan. Konsumen dicek: aplikasi mobile lab dan pelanggan tidak memanggil `/api/verify` (hanya
+> membangun URL `/verify/{token}` untuk QR). Yang TIDAK berubah: "Tampilkan lembar lengkap" dan unduhan
+> PDF/Excel di halaman web tetap salinan sah sertifikat yang memuat identitas pelanggan (spesifikasi
+> poin 13) — keputusan produk tersendiri. Dijaga `VerifikasiPublikMinimalTest`.
 >
 > Dua-duanya **cuma nampilin sertifikat yang statusnya `terbit`** — yang masih `menunggu_generate` dianggap nggak ada. Isinya sengaja dibatesin (nggak ada data mentah pengukuran, nggak ada nama/email teknisi), karena ini halaman publik.
 >
@@ -1791,6 +1864,7 @@ Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat laya
   > walau belum ada logonya.
 - **`GET /api/customers?search=&page=`** · **`POST`** · **`GET/PUT/DELETE /api/customers/{id}`** — CRUD pelanggan. Field: `nama`, `alamat`, `contact_person`, `telepon`, `email` (+ `jumlah_alat` di response).
 - **Pelanggan yang masih punya alat nggak bisa dihapus** → `422`. Kalau dipaksa, alat & riwayat kalibrasinya jadi yatim. Mobile: tampilin pesannya apa adanya.
+- **`POST /api/customers/{id}/undangan`** `{email, peran}` — undang anggota pelanggan (admin + super_admin; teknisi/viewer `403`, lab lain `404`). Balasan `201` memuat **`data.kode`** (8 karakter, kode polos yang sama dengan di email), `data.berlaku_sampai`, dan `data.email_terkirim` (bool). ⚠️ **`kode` hanya muncul SEKALI, di balasan ini** — server cuma menyimpan hash-nya; tampilkan sekarang, jangan di-log. `email_terkirim: false` = galat kirim atau mailer server belum sungguhan (`log`) → bacakan kodenya langsung. Rincian: `kontrak-api-pelanggan.md` §4.
 
 Teknisi & viewer yang nembak endpoint ini dapat `403`.
 

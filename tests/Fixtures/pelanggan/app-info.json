@@ -1,0 +1,27 @@
+{
+    "data": {
+        "organisasi": {
+            "nama": null,
+            "alamat": null,
+            "telepon": null
+        },
+        "kontak": {
+            "whatsapp": null,
+            "whatsapp_url": null,
+            "email": null,
+            "jam_layanan": null
+        },
+        "dokumen": {
+            "kebijakan_privasi": {
+                "url": null,
+                "versi": null
+            },
+            "syarat_ketentuan": {
+                "url": null,
+                "versi": null
+            },
+            "hapus_akun_url": null
+        },
+        "petunjuk_pengemasan": null
+    }
+}

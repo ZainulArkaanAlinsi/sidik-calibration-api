@@ -57,6 +57,9 @@ class PemisahanWewenang
     /** 03-SDD §3 — kode error pengesahan versi data acuan (BR-08). */
     public const KODE_PENGESAH_IKUT_MENYUNTING = 'pengesah_ikut_menyunting';
 
+    /** Apa yang harus dilakukan — sama untuk tiap penyebab, ditulis sekali. */
+    private const TINDAKAN_MINTA_ORANG_LAIN = 'Minta Master Data atau super admin lain yang menyetujuinya.';
+
     /**
      * Periksa satu rencana PERSETUJUAN sesi (API `approve()` dan panel).
      *
@@ -74,19 +77,51 @@ class PemisahanWewenang
             $temuan[] = [
                 'kode' => self::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI,
                 'pesan' => 'Kamu yang mengisi lembar kerja ini, jadi tidak bisa menyetujuinya sendiri. '
-                    .'Minta Master Data lain.',
+                    .self::TINDAKAN_MINTA_ORANG_LAIN,
             ];
         }
 
         if ($this->pernahMengonfirmasiPindai($sesi, $penyetuju)) {
             $temuan[] = [
                 'kode' => self::KODE_PENYETUJU_MEMVERIFIKASI_OCR,
-                'pesan' => 'Kamu yang mengonfirmasi hasil pindai sesi ini, jadi pemeriksaannya harus '
-                    .'oleh orang lain.',
+                'pesan' => 'Kamu yang mengonfirmasi hasil pindai sesi ini, jadi tidak bisa menyetujuinya '
+                    .'sendiri. '.self::TINDAKAN_MINTA_ORANG_LAIN,
             ];
         }
 
         return $this->hasil($temuan);
+    }
+
+    /**
+     * Pesan `message` tingkat atas untuk 422 `pemisahan_wewenang` (API dan
+     * tombol Setujui panel): spesifik per penyebab, berisi apa yang terjadi DAN
+     * apa yang harus dilakukan.
+     *
+     * Satu penyebab → pesan temuannya apa adanya. Dua penyebab sekaligus →
+     * satu kalimat gabungan, supaya anjuran "minta orang lain" tidak tercetak
+     * dua kali. Kode galat & status HTTP ditetapkan pemanggil dan tidak
+     * bergantung pada teks ini.
+     *
+     * @param  array{temuan: list<array{kode: string, pesan: string}>}  $wewenang  keluaran `periksaPersetujuan()`
+     */
+    public static function pesanPersetujuan(array $wewenang): string
+    {
+        $temuan = $wewenang['temuan'] ?? [];
+
+        if (count($temuan) === 1) {
+            return $temuan[0]['pesan'];
+        }
+
+        $kode = array_column($temuan, 'kode');
+
+        if (in_array(self::KODE_PENYETUJU_SAMA_DENGAN_TEKNISI, $kode, true)
+            && in_array(self::KODE_PENYETUJU_MEMVERIFIKASI_OCR, $kode, true)) {
+            return 'Kamu yang mengisi lembar kerja ini dan mengonfirmasi hasil pindainya, jadi tidak bisa '
+                .'menyetujuinya sendiri. '.self::TINDAKAN_MINTA_ORANG_LAIN;
+        }
+
+        return 'Kamu ikut mengerjakan sesi ini (mengisi lembar atau mengonfirmasi hasil pindai), jadi tidak '
+            .'bisa menyetujuinya sendiri. '.self::TINDAKAN_MINTA_ORANG_LAIN;
     }
 
     /**

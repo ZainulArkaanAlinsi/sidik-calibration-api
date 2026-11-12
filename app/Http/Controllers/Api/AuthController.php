@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\IdentitasKlien;
+use App\Http\Requests\GantiSandiSendiriRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -11,8 +12,10 @@ use App\Services\MatriksIzin;
 use App\Services\Studio\AkunStudio;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -147,6 +150,60 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Berhasil logout.']);
+    }
+
+    /**
+     * Ganti sandi SENDIRI — semua peran internal, termasuk `viewer` dan
+     * `super_admin` (mengganti sandi sendiri bukan "menulis data lab").
+     *
+     * Pola `Pelanggan\SayaController::gantiSandi()`, dengan tiga beda yang
+     * disengaja:
+     *
+     * 1. **Throttle sempit per akun** (`ganti-sandi-lab`, di rute): jalur ini
+     *    menerima tebakan sandi lama dari siapa pun yang memegang token.
+     * 2. **Jejak audit lewat model, bukan tulisan tangan.** `User` memakai
+     *    `Diaudit`, jadi `save()` di bawah otomatis menulis satu baris
+     *    `audit_logs` (`users`, `diubah`, `changed_by` = pemanggil) dengan
+     *    kolom `password` disensor di nilai lama DAN baru — tidak ada sandi,
+     *    polos maupun hash, di jejak. Tidak ada `catatAudit()` kedua di sini:
+     *    dua baris untuk satu peristiwa membuat jejaknya terbaca seperti dua
+     *    pergantian.
+     * 3. **Hanya kolom `password` yang disentuh.** `role`, `status`, dan
+     *    `organization_id` tidak ikut — `forceFill` satu kunci, bukan
+     *    `update($request->validated())`.
+     *
+     * Token yang sedang dipakai DIPERTAHANKAN dan token lain dicabut
+     * (termasuk token Sidik Studio akun yang sama): orang yang mengganti sandi
+     * hampir selalu curiga ada sesi lain, dan mengusir sesinya sendiri terbaca
+     * seperti kegagalan, bukan keberhasilan.
+     */
+    public function gantiSandi(GantiSandiSendiriRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $user = $request->user();
+
+        if (! Hash::check($data['sandi_lama'], (string) $user->password)) {
+            return response()->json([
+                'kode' => 'sandi_lama_salah',
+                'message' => 'Sandi lama tidak cocok.',
+            ], 422);
+        }
+
+        $sekarang = $user->currentAccessToken();
+        $idSekarang = $sekarang instanceof PersonalAccessToken ? $sekarang->getKey() : null;
+
+        $dicabut = DB::transaction(function () use ($user, $data, $idSekarang): int {
+            $user->forceFill(['password' => Hash::make($data['sandi'])])->save();
+
+            return $user->tokens()
+                ->when($idSekarang !== null, fn ($kueri) => $kueri->whereKeyNot($idSekarang))
+                ->delete();
+        });
+
+        return response()->json([
+            'message' => 'Sandi berhasil diganti.',
+            'data' => ['sesi_dicabut' => $dicabut],
+        ]);
     }
 
     /**
