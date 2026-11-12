@@ -75,7 +75,12 @@ class CertificateResource extends JsonResource
                 'id' => $this->revision_of,
                 'nomor' => $this->revisionOf?->nomor,
             ],
-            'digantikan_oleh' => $this->revisiTerakhir === null ? null : [
+            // Revisi yang DIBATALKAN bukan pengganti: ia bukan dokumen yang
+            // berlaku, jadi tidak ditunjuk (null) — sama dengan resource
+            // pelanggan & verifikasi publik. `status_dokumen` di atas tetap
+            // `digantikan` (K38-2). Revisi yang masih diantre/gagal tetap
+            // ditunjuk, lengkap dengan `status`-nya: lab perlu melihatnya.
+            'digantikan_oleh' => $this->revisiTerakhir === null || $this->revisiTerakhir->status === Certificate::STATUS_DIBATALKAN ? null : [
                 'id' => $this->revisiTerakhir->id,
                 'nomor' => $this->revisiTerakhir->nomor,
                 'status' => $this->revisiTerakhir->status,

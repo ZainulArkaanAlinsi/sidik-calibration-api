@@ -10,9 +10,14 @@ use App\Http\Requests\Pelanggan\MasukRequest;
 use App\Http\Requests\Pelanggan\TerimaUndanganRequest;
 use App\Http\Resources\Pelanggan\AkunResource;
 use App\Mail\Pelanggan\KodeOtpEmail;
+use App\Models\AuditLog;
+use App\Models\Customer;
+use App\Models\CustomerMember;
 use App\Models\OtpPelanggan;
 use App\Models\PersetujuanDokumen;
+use App\Models\UndanganPelanggan;
 use App\Models\User;
+use App\Notifications\Pelanggan\UndanganDitukarDiAkunAnda;
 use App\Services\Pelanggan\Keanggotaan;
 use App\Services\Pelanggan\KodeOtp;
 use App\Services\Pelanggan\KodeUndangan;
@@ -88,6 +93,21 @@ class AuthPelangganController extends Controller
      *
      * Email TIDAK diverifikasi OTP di jalur ini, dan itu disengaja: kodenya
      * sendiri sudah membuktikan orangnya membaca email di alamat itu.
+     *
+     * ## Email yang SUDAH punya akun: kode saja TIDAK cukup (12 Nov 2026)
+     *
+     * Kode membuktikan orangnya membaca email undangan — bukan bahwa dia
+     * pemilik AKUN yang sudah ada. Admin lab melihat kode polos undangannya
+     * (`POST /api/customers/{c}/undangan` membalas `data.kode`), jadi dulu
+     * admin lab bisa mengundang email pelanggan mana pun lalu menukar kodenya
+     * dan mendapat token akun itu tanpa sandi. Sekarang akun lama wajib
+     * membuktikan sandinya (`periksaAkunLama()`), dengan penguncian yang
+     * SATU ember dengan `masuk()`, penolakan organisasi lain, dan penolakan
+     * status yang sama dengan `masuk()`. Semua itu baru terlihat SESUDAH kode
+     * terbukti sah: pihak tanpa kode tetap hanya menerima
+     * `undangan_tidak_berlaku`, apa pun status akunnya.
+     *
+     * Akun BARU tidak tersentuh sama sekali oleh aturan itu.
      */
     public function terimaUndangan(TerimaUndanganRequest $request, KodeUndangan $kodeUndangan, Keanggotaan $keanggotaan): JsonResponse
     {
@@ -98,11 +118,7 @@ class AuthPelangganController extends Controller
         // Membedakannya bikin endpoint ini bisa dipakai memeriksa undangan mana
         // yang pernah ada buat sebuah email.
         if ($undangan === null || $undangan->customer === null) {
-            return $this->tolak(
-                'undangan_tidak_berlaku',
-                'Kode undangan tidak cocok, sudah dipakai, atau sudah kedaluwarsa.',
-                422,
-            );
+            return $this->tolakUndanganTidakBerlaku();
         }
 
         $hasil = DB::transaction(function () use ($data, $undangan, $keanggotaan, $request) {
@@ -113,7 +129,18 @@ class AuthPelangganController extends Controller
             // memegang tiga pabrik itu satu orang, bukan tiga akun.
             $user = User::query()->where('email', $data['email'])->first();
 
+            // Dibaca SEBELUM akun dibuat: sesudah `create()` pertanyaannya tidak
+            // bisa dijawab lagi. Dikirim hanya di balasan 201 (pemegang kode yang
+            // sah) — jalur gagal tidak pernah menyentuhnya.
+            $akunSudahAda = $user !== null;
+
             if ($user === null) {
+                // Klaim atomik SEBELUM akun dibuat: yang kalah balapan tidak boleh
+                // meninggalkan akun yatim (lihat `klaimUndangan()`).
+                if (! $this->klaimUndangan($undangan)) {
+                    return ['ditolak' => $this->tolakUndanganTidakBerlaku()];
+                }
+
                 $user = User::create([
                     'organization_id' => $perusahaan->organization_id,
                     'name' => $data['nama'],
@@ -152,7 +179,29 @@ class AuthPelangganController extends Controller
                     'Email ini terdaftar sebagai akun internal PT Sidik dan tidak bisa menerima undangan.',
                     422,
                 );
+            } else {
+                // Akun pelanggan yang SUDAH ada: kode saja tidak cukup, pemegangnya
+                // harus membuktikan sandi akun itu (lihat docblock method ini).
+                //
+                // Penolakan DIKEMBALIKAN, bukan dilempar: lemparan membatalkan
+                // transaksi ini dan ikut membuang baris audit "ditolak" yang
+                // baru ditulis `periksaAkunLama()`. Penghitung percobaannya
+                // hidup di cache dan selamat dari rollback, jadi auditnya pun
+                // harus selamat — kalau tidak, kunci menyala tanpa jejak.
+                $penolakan = $this->periksaAkunLama($user, $undangan, $perusahaan, $data['sandi'], $request);
+
+                if ($penolakan !== null) {
+                    return ['ditolak' => $penolakan];
+                }
+
+                // SESUDAH sandi terbukti: penolakan sandi tidak boleh menghanguskan
+                // kode (pemiliknya masih boleh mencoba lagi).
+                if (! $this->klaimUndangan($undangan)) {
+                    return ['ditolak' => $this->tolakUndanganTidakBerlaku()];
+                }
             }
+
+            $perusahaanAktifSebelum = $akunSudahAda ? $this->jumlahPerusahaanAktif($user) : 0;
 
             $anggota = $keanggotaan->daftarkan($perusahaan, $user, $undangan->peran, $undangan->pembuat);
 
@@ -161,11 +210,33 @@ class AuthPelangganController extends Controller
                 'dipakai_oleh' => $user->getKey(),
             ])->save();
 
-            return ['user' => $user->refresh(), 'anggota' => $anggota];
+            if ($akunSudahAda) {
+                $this->catatPenukaranAkunLama($user, $undangan, $anggota, $perusahaanAktifSebelum, $request);
+            }
+
+            return ['user' => $user->refresh(), 'anggota' => $anggota, 'akun_sudah_ada' => $akunSudahAda];
         });
 
+        if (isset($hasil['ditolak'])) {
+            return $hasil['ditolak'];
+        }
+
+        // Sesudah commit, di luar transaksi: kabar ini pelengkap dan tidak boleh
+        // membatalkan penukaran yang sudah sah.
+        if ($hasil['akun_sudah_ada']) {
+            $this->kabariPemilikAkun($hasil['user']);
+        }
+
         return response()->json([
-            'data' => $this->bungkusToken($hasil['user'], $data['nama_perangkat'] ?? ''),
+            'data' => [
+                ...$this->bungkusToken($hasil['user'], $data['nama_perangkat'] ?? ''),
+                // Additive (12 Nov 2026), HANYA di balasan ini — `masuk` memakai
+                // `bungkusToken()` yang sama tapi tidak membawanya. `true` =
+                // email ini sudah punya akun pelanggan sebelum undangan
+                // ditukar (nama/sandi di formulir diabaikan); `false` = akun
+                // baru. Klien lama mengabaikan kunci yang tidak dikenalnya.
+                'akun_sudah_ada' => $hasil['akun_sudah_ada'],
+            ],
         ], 201);
     }
 
@@ -173,7 +244,7 @@ class AuthPelangganController extends Controller
     public function masuk(MasukRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $kunci = 'pelanggan-masuk-gagal|'.sha1(mb_strtolower($data['email']));
+        $kunci = $this->kunciGagalMasuk($data['email']);
 
         // Penguncian per EMAIL, bukan per IP, dan bukan lewat middleware
         // `throttle:`. Dua sebab: middleware menghitung SEMUA permintaan
@@ -211,16 +282,10 @@ class AuthPelangganController extends Controller
 
         RateLimiter::clear($kunci);
 
-        if ($user->status === User::STATUS_PENDING_EMAIL) {
-            return $this->tolak(
-                'email_belum_diverifikasi',
-                'Email Anda belum diverifikasi. Minta kode baru lalu masukkan 6 digitnya.',
-                403,
-            );
-        }
+        $alasanTertutup = $this->alasanAkunTertutup($user);
 
-        if ($user->status === User::STATUS_NONAKTIF || $user->dianonimkan_pada !== null) {
-            return $this->tolak('akun_nonaktif', 'Akun ini sudah tidak aktif. Hubungi PT Sidik.', 403);
+        if ($alasanTertutup !== null) {
+            return $this->balasanAkunTertutup($alasanTertutup);
         }
 
         return response()->json(['data' => $this->bungkusToken($user, $data['nama_perangkat'] ?? '')]);
@@ -300,7 +365,7 @@ class AuthPelangganController extends Controller
             $user->tokens()->delete();
         });
 
-        RateLimiter::clear('pelanggan-masuk-gagal|'.sha1((string) $user->email));
+        RateLimiter::clear($this->kunciGagalMasuk((string) $user->email));
 
         return response()->json(['message' => 'Sandi berhasil diganti. Silakan masuk dengan sandi baru.']);
     }
@@ -319,6 +384,271 @@ class AuthPelangganController extends Controller
             ->where('email', mb_strtolower($email))
             ->where('role', User::ROLE_PELANGGAN)
             ->first();
+    }
+
+    /**
+     * Ember penghitung kegagalan sandi per EMAIL — SATU ember untuk `masuk()`
+     * dan penukaran undangan di akun lama.
+     *
+     * Dua ember terpisah memberi penebak sandi dua kali jatah (lima di
+     * `masuk`, lima lagi di `terima-undangan`) untuk akun yang sama. Satu
+     * ember memastikan jatah menebak satu akun tetap lima per 15 menit
+     * apa pun pintunya.
+     */
+    private function kunciGagalMasuk(string $email): string
+    {
+        return 'pelanggan-masuk-gagal|'.sha1(mb_strtolower($email));
+    }
+
+    /**
+     * Status akun yang menutup pintu token pelanggan — SATU tempat, dipakai
+     * `masuk()` dan penukaran undangan di akun lama, supaya dua pintu itu tidak
+     * bisa berbeda diam-diam soal akun mana yang boleh dapat token. Hasilnya
+     * `kode` galat (juga dipakai sebagai alasan di audit), atau `null` bila
+     * akunnya boleh.
+     */
+    private function alasanAkunTertutup(User $user): ?string
+    {
+        if ($user->status === User::STATUS_PENDING_EMAIL) {
+            return 'email_belum_diverifikasi';
+        }
+
+        if ($user->status === User::STATUS_NONAKTIF || $user->dianonimkan_pada !== null) {
+            return 'akun_nonaktif';
+        }
+
+        return null;
+    }
+
+    /**
+     * Balasan untuk [alasanAkunTertutup()]. Kode dan status HTTP-nya sama di
+     * dua pintu; hanya kalimat `email_belum_diverifikasi` yang beda, karena di
+     * jalur undangan tidak ada kode 6 digit untuk diminta (`kirim-ulang-otp`
+     * sudah dicabut) — satu-satunya jalan keluarnya menghubungi PT Sidik.
+     */
+    private function balasanAkunTertutup(string $alasan, bool $lewatUndangan = false): JsonResponse
+    {
+        return match ($alasan) {
+            'email_belum_diverifikasi' => $this->tolak(
+                'email_belum_diverifikasi',
+                $lewatUndangan
+                    ? 'Email akun ini belum diverifikasi, jadi undangan belum bisa ditukar. Hubungi PT Sidik.'
+                    : 'Email Anda belum diverifikasi. Minta kode baru lalu masukkan 6 digitnya.',
+                403,
+            ),
+            default => $this->tolak('akun_nonaktif', 'Akun ini sudah tidak aktif. Hubungi PT Sidik.', 403),
+        };
+    }
+
+    /**
+     * Satu jawaban buat semua kegagalan KODE undangan — termasuk kalah balapan
+     * di [klaimUndangan()]. Dikunci di satu method supaya kalimatnya tidak bisa
+     * berbeda antara jalur "kode salah" dan jalur "kode sudah dipakai orang lain".
+     */
+    private function tolakUndanganTidakBerlaku(): JsonResponse
+    {
+        return $this->tolak(
+            'undangan_tidak_berlaku',
+            'Kode undangan tidak cocok, sudah dipakai, atau sudah kedaluwarsa.',
+            422,
+        );
+    }
+
+    /**
+     * Klaim undangan secara ATOMIK: `UPDATE … WHERE dipakai_pada IS NULL AND
+     * dibatalkan_pada IS NULL`, sukses hanya bila tepat satu baris berubah.
+     *
+     * `KodeUndangan::tukar()` cuma MEMBACA. Tanpa klaim ini dua request yang
+     * bersamaan sama-sama lolos `tukar()` dan sama-sama menukar kode yang sama
+     * (dua token, dua keanggotaan, dua audit). Pola yang sama dengan
+     * `PersetujuanAkun::kunciTransisi()`: pemenangnya ditentukan basis data, bukan
+     * urutan baca. Di MySQL, UPDATE kedua menunggu kunci baris yang pertama lalu
+     * mengevaluasi ulang syaratnya dan mendapati 0 baris.
+     *
+     * Dipanggil DI DALAM transaksi, setelah semua penolakan yang tidak boleh
+     * menghanguskan kode (sandi salah, organisasi, status) dan sebelum
+     * `daftarkan()`: kalau `daftarkan()` melempar (mis. `batas_anggota`),
+     * rollback ikut membatalkan klaim ini dan kodenya hidup lagi.
+     */
+    private function klaimUndangan(UndanganPelanggan $undangan): bool
+    {
+        return UndanganPelanggan::query()
+            ->whereKey($undangan->getKey())
+            ->whereNull('dipakai_pada')
+            ->whereNull('dibatalkan_pada')
+            ->update(['dipakai_pada' => now()]) === 1;
+    }
+
+    /**
+     * Pemegang kode yang SAH menukar undangan di akun pelanggan yang sudah ada.
+     * `null` = lolos; selain itu balasan penolakannya.
+     *
+     * ## Urutan pemeriksaan, dan kenapa urutannya itu
+     *
+     * 1. **Kunci** (429) — ember yang sama dengan `masuk()`.
+     * 2. **Sandi** (422 `sandi_akun_lama_salah`) — gagal menghitung ke ember.
+     * 3. **Organisasi** (422), 4. **Status** (403) — SESUDAH sandi cocok,
+     *    persis seperti `masuk()` memeriksa status sesudah sandi: kalau
+     *    didahulukan, penebak sandi bisa membaca status dan laboratorium akun
+     *    itu tanpa pernah menyebut sandinya.
+     *
+     * Semuanya hanya terlihat oleh pemegang kode yang sah. Kegagalan KODE
+     * sudah dijawab `undangan_tidak_berlaku` di pemanggil, sebelum akun mana
+     * pun diperiksa, dan tidak menyentuh ember maupun audit: orang tanpa kode
+     * tidak boleh bisa mengunci login pemilik akun, apalagi menebak sandinya.
+     *
+     * Dipanggil DI DALAM transaksi pemanggil, dan penolakan dikembalikan
+     * (bukan dilempar) supaya baris audit-nya ikut commit.
+     */
+    private function periksaAkunLama(
+        User $user,
+        UndanganPelanggan $undangan,
+        Customer $perusahaan,
+        string $sandi,
+        Request $request,
+    ): ?JsonResponse {
+        $kunci = $this->kunciGagalMasuk((string) $user->email);
+
+        if (RateLimiter::tooManyAttempts($kunci, self::MAKS_GAGAL_MASUK)) {
+            return $this->tolak(
+                'terlalu_sering',
+                'Terlalu banyak percobaan sandi untuk email ini. Coba lagi dalam '.ceil(RateLimiter::availableIn($kunci) / 60).' menit.',
+                429,
+            );
+        }
+
+        if (! Hash::check($sandi, (string) $user->password)) {
+            RateLimiter::hit($kunci, self::KUNCI_MASUK_DETIK);
+
+            $this->catatPenolakanUndangan($user, $undangan, $request, 'sandi_salah', [
+                'percobaan_ke' => RateLimiter::attempts($kunci),
+            ]);
+
+            return $this->tolak(
+                'sandi_akun_lama_salah',
+                'Email ini sudah punya akun SIDIK Pelanggan. Isi kolom sandi dengan sandi akun Anda yang sudah ada, bukan sandi baru.',
+                422,
+            );
+        }
+
+        RateLimiter::clear($kunci);
+
+        if ((int) $user->organization_id !== (int) $perusahaan->organization_id
+            || (int) $user->organization_id !== (int) $undangan->organization_id) {
+            $this->catatPenolakanUndangan($user, $undangan, $request, 'organisasi_beda');
+
+            return $this->tolak(
+                'undangan_organisasi_berbeda',
+                'Akun Anda terdaftar di laboratorium lain, jadi undangan ini tidak bisa ditukar di akun itu. Hubungi PT Sidik.',
+                422,
+            );
+        }
+
+        $alasanTertutup = $this->alasanAkunTertutup($user);
+
+        if ($alasanTertutup !== null) {
+            $this->catatPenolakanUndangan($user, $undangan, $request, $alasanTertutup);
+
+            return $this->balasanAkunTertutup($alasanTertutup, lewatUndangan: true);
+        }
+
+        return null;
+    }
+
+    private function jumlahPerusahaanAktif(User $user): int
+    {
+        return CustomerMember::query()
+            ->where('user_id', $user->getKey())
+            ->where('status', CustomerMember::STATUS_AKTIF)
+            ->count();
+    }
+
+    /**
+     * Konteks undangan yang sama di semua baris audit penukaran. TANPA sandi,
+     * TANPA kode, TANPA email — baris audit bisa dibaca banyak orang dan
+     * diekspor ke CSV.
+     *
+     * @return array<string, mixed>
+     */
+    private function jejakUndangan(UndanganPelanggan $undangan, Request $request): array
+    {
+        return [
+            'undangan_id' => $undangan->getKey(),
+            'customer_id' => $undangan->customer_id,
+            'diundang_oleh' => $undangan->dibuat_oleh,
+            'ip' => $request->ip(),
+        ];
+    }
+
+    /**
+     * Jejak penukaran yang SAH di akun lama. `changed_by` = akun itu sendiri:
+     * sandinya baru saja terbukti, jadi dialah yang bertindak.
+     */
+    private function catatPenukaranAkunLama(
+        User $user,
+        UndanganPelanggan $undangan,
+        CustomerMember $anggota,
+        int $perusahaanAktifSebelum,
+        Request $request,
+    ): void {
+        AuditLog::create([
+            'organization_id' => $undangan->organization_id,
+            'entity_type' => $user->getTable(),
+            'entity_id' => $user->getKey(),
+            'action' => AuditLog::ACTION_UNDANGAN_DITUKAR,
+            'old_data' => ['jumlah_perusahaan_aktif' => $perusahaanAktifSebelum],
+            'new_data' => [
+                ...$this->jejakUndangan($undangan, $request),
+                'peran' => $anggota->peran,
+                'jumlah_perusahaan_aktif' => $this->jumlahPerusahaanAktif($user),
+            ],
+            'changed_by' => $user->getKey(),
+            'note' => 'Undangan ditukar di akun pelanggan yang sudah ada (sandi akun terbukti).',
+        ]);
+    }
+
+    /**
+     * Jejak penukaran yang DITOLAK sesudah kodenya sah. `changed_by` kosong:
+     * pelakunya tidak terbukti siapa pun, dan menulis nama pemilik akun di
+     * situ menuduh orang yang justru jadi sasaran.
+     *
+     * @param  array<string, mixed>  $tambahan
+     */
+    private function catatPenolakanUndangan(User $user, UndanganPelanggan $undangan, Request $request, string $alasan, array $tambahan = []): void
+    {
+        AuditLog::create([
+            'organization_id' => $undangan->organization_id,
+            'entity_type' => $user->getTable(),
+            'entity_id' => $user->getKey(),
+            'action' => AuditLog::ACTION_UNDANGAN_DITOLAK,
+            'old_data' => null,
+            'new_data' => [
+                ...$this->jejakUndangan($undangan, $request),
+                'alasan' => $alasan,
+                ...$tambahan,
+            ],
+            'changed_by' => null,
+            'note' => 'Penukaran undangan ditolak di akun pelanggan yang sudah ada: '.$alasan,
+        ]);
+    }
+
+    /**
+     * Kabar netral ke pemilik akun bahwa undangan ditukar di akunnya.
+     *
+     * Gagal kirim TIDAK menggagalkan penukaran yang sudah sah (sama seperti
+     * `PersetujuanAkun::kabari()`), dan log-nya memuat id + kelas galat saja:
+     * pesan galat antrean/email bisa memuat alamat email pemiliknya.
+     */
+    private function kabariPemilikAkun(User $user): void
+    {
+        try {
+            $user->notify(UndanganDitukarDiAkunAnda::baru());
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengabari pemilik akun soal undangan yang ditukar.', [
+                'user_id' => $user->getKey(),
+                'galat' => $e::class,
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */

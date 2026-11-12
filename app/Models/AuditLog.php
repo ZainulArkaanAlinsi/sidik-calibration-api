@@ -61,6 +61,25 @@ class AuditLog extends Model
     public const ACTION_DIUNDUH_PELANGGAN = 'diunduh_pelanggan';
 
     /**
+     * Kode undangan DITUKAR di akun pelanggan yang SUDAH ada (12 Nov 2026).
+     *
+     * Entitasnya `users` (akun yang kena), `changed_by` = akun itu sendiri
+     * (sandinya terbukti), `old_data`/`new_data` memuat jumlah perusahaan
+     * aktifnya sebelum/sesudah. Tidak menyimpan sandi atau kode. 16 karakter
+     * — muat di `string(20)`.
+     */
+    public const ACTION_UNDANGAN_DITUKAR = 'undangan_ditukar';
+
+    /**
+     * Penukaran undangan di akun pelanggan yang sudah ada DITOLAK setelah
+     * kodenya sah: sandi salah, organisasi beda, atau akun tidak aktif.
+     * `new_data.alasan` menyebut yang mana; `changed_by` kosong karena
+     * pelakunya tidak terbukti siapa pun. Kegagalan kode TIDAK dicatat di
+     * sini — itu bukan urusan akun mana pun. 16 karakter.
+     */
+    public const ACTION_UNDANGAN_DITOLAK = 'undangan_ditolak';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan

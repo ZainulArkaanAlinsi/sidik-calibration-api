@@ -136,6 +136,13 @@ class MatriksIzin
         'tanda-tangan.kelola' => ['POST', 'api/organization/tanda-tangan'],
         'pengguna.kelola' => ['GET', 'api/users'],
         'pengguna.setujui' => ['POST', 'api/users/{user}/approve'],
+        // Riwayat perubahan data (12 Nov 2026). Izin TERSENDIRI untuk
+        // `GET /audit-logs*` (daftar + `/export`): sebelumnya aplikasi harus
+        // menebaknya dari `pengguna.kelola` (sama-sama admin-only), dan tebakan
+        // itu putus diam-diam begitu salah satu rutenya pindah blok. Siapa yang
+        // boleh TIDAK berubah — dibaca dari `role:admin` di rutenya: admin dan
+        // super_admin (aturan baca), bukan teknisi/viewer.
+        'audit.lihat' => ['GET', 'api/audit-logs'],
 
         // --- lain-lain
         'impor.excel' => ['POST', 'api/imports/excel'],

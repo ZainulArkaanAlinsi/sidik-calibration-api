@@ -287,7 +287,13 @@ return [
         // K-50-11 (16 Okt 2026): SEMUA formulir yang dipetakan dibuka dalam mode
         // uji (sel maks kuning, peta terverifikasi=false) sampai >=20 foto
         // nyata per formulir. OCR_FORMULIR_ASLI_UJI=false = saklar mati.
-        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', true),
+        //
+        // Bawaan KODE = false (fail-closed): env yang hilang/terhapus tidak boleh
+        // menyalakan tombol pindai sendiri. Menyalakannya keputusan eksplisit
+        // pemilik proyek lewat env `OCR_FORMULIR_ASLI_UJI=true` (render.yaml
+        // memakunya "false"; kedua phpunit*.xml menyetel "true" supaya test
+        // mode uji tidak bergantung pada `.env` mesin penjalan).
+        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', false),
         // Versi ambang KHUSUS formulir asli (`geometri.jangkar_teks`,
         // `centang`). Yang dicatat tiap pindai asli adalah gabungannya dengan
         // `aturan_versi` di atas (`FormulirAsli::aturanVersi()`), karena jalur
