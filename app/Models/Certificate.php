@@ -97,14 +97,44 @@ class Certificate extends Model
             ->whereIn('pengganti.status', self::STATUS_PENGGANTI));
     }
 
-    /** Revisi sah (terbit/dibatalkan) yang menggantikan baris ini, atau null. */
-    public function penggantiSah(): ?self
+    /**
+     * Revisi (terbit/dibatalkan) yang MENENTUKAN STATUS baris ini — yang
+     * membuatnya `digantikan` — atau null.
+     *
+     * Ini jawaban untuk "apakah baris ini sudah digantikan?", BUKAN untuk
+     * "siapa penggantinya yang berlaku?" (itu `penggantiSah()`): revisi yang
+     * dibatalkan tetap membuat pendahulunya `digantikan` (K38-2), tapi ia
+     * bukan dokumen yang berlaku sehingga tidak boleh ditunjuk sebagai
+     * pengganti.
+     */
+    public function revisiPenentuStatus(): ?self
     {
         return self::query()
             ->where('revision_of', $this->getKey())
             ->whereIn('status', self::STATUS_PENGGANTI)
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * Revisi yang dihitung sebagai PENGGANTI SAH: hanya yang `terbit`. Revisi
+     * yang dibatalkan (juga yang masih diantre atau gagal) bukan dokumen yang
+     * berlaku, jadi tidak ada yang bisa ditunjuk sebagai "yang berlaku
+     * sekarang" — sama dengan `SertifikatPelangganResource::digantikan_oleh`.
+     * Statusnya tetap `digantikan` lewat `revisiPenentuStatus()`.
+     */
+    public function penggantiSah(): ?self
+    {
+        return self::yangSah($this->revisiPenentuStatus());
+    }
+
+    /**
+     * Saring satu revisi yang sudah dipegang pemanggil (tanpa query lagi):
+     * hanya `terbit` yang lolos sebagai pengganti sah.
+     */
+    public static function yangSah(?self $revisi): ?self
+    {
+        return $revisi?->status === self::STATUS_TERBIT ? $revisi : null;
     }
 
     /**
@@ -116,7 +146,7 @@ class Certificate extends Model
      */
     public function statusDokumen(): string
     {
-        return self::labelDokumen((string) $this->status, $this->penggantiSah()?->status);
+        return self::labelDokumen((string) $this->status, $this->revisiPenentuStatus()?->status);
     }
 
     /**

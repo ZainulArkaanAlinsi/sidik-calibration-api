@@ -35,14 +35,22 @@ class VerificationController extends Controller
         }
 
         $alat = $certificate->session->equipment;
-        $pengganti = in_array($certificate->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DITARIK], true) ? $certificate->penggantiSah() : null;
+        // DUA pertanyaan, jangan disatukan (sama dengan resource pelanggan):
+        // - `status_dokumen`: revisi terbit ATAU dibatalkan sama-sama
+        //   membuatnya `digantikan` (K38-2 — pembatalan revisi tidak
+        //   menghidupkan pendahulunya).
+        // - `digantikan_oleh`: hanya revisi TERBIT. Revisi yang dibatalkan
+        //   bukan dokumen yang berlaku, jadi tidak boleh ditunjuk publik
+        //   sebagai penggantinya.
+        $revisi = in_array($certificate->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DITARIK], true) ? $certificate->revisiPenentuStatus() : null;
+        $pengganti = Certificate::yangSah($revisi);
 
         return response()->json([
             'data' => [
                 'nomor' => $certificate->nomor,
                 'status' => $certificate->status,
                 // §38.2 — tanpa alasan apa pun (D4).
-                'status_dokumen' => Certificate::labelDokumen((string) $certificate->status, $pengganti?->status),
+                'status_dokumen' => Certificate::labelDokumen((string) $certificate->status, $revisi?->status),
                 'digantikan_oleh' => $pengganti === null ? null : [
                     'nomor' => $pengganti->nomor,
                     'diterbitkan_pada' => $pengganti->diterbitkan_pada?->toDateString(),

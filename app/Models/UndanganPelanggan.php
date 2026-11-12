@@ -23,7 +23,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class UndanganPelanggan extends Model
 {
-    use Diaudit, HasFactory;
+    use Diaudit {
+        kolomRahasia as protected kolomRahasiaDasar;
+    }
+    use HasFactory;
 
     protected $table = 'undangan_pelanggan';
 
@@ -38,6 +41,24 @@ class UndanganPelanggan extends Model
             'dipakai_pada' => 'datetime',
             'dibatalkan_pada' => 'datetime',
         ];
+    }
+
+    /**
+     * `kode_hash` ikut disensor di `audit_logs`.
+     *
+     * Itu bcrypt dari kode undangan — kredensial berumur 7 hari yang menukar
+     * keanggotaan perusahaan. `audit_logs` menyalin nilai tiap kolom yang
+     * berubah, jadi tanpa ini hash-nya tersimpan di tabel kedua yang dibaca
+     * jauh lebih banyak orang (admin lab, asesor, ekspor audit): satu
+     * kebocoran jadi dua. Daftar dasar trait (`password`, dst.) tetap berlaku.
+     * Yang tercatat tinggal penanda `[disensor]` — undangan terbit/berubah
+     * tetap kelihatan, isi kredensialnya tidak.
+     *
+     * @return list<string>
+     */
+    protected function kolomRahasia(): array
+    {
+        return [...$this->kolomRahasiaDasar(), 'kode_hash'];
     }
 
     /** @return BelongsTo<Customer, $this> */

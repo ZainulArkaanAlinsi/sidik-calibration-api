@@ -739,6 +739,40 @@ Aturan pengiriman:
 
 Penjaga: `NotifikasiSertifikatTerbitPelangganTest` (14 kasus).
 
+#### Kabar susulan untuk anggota yang bergabung SESUDAH sertifikat terbit (12 Nov 2026)
+
+Kabar di atas hanya menjangkau anggota yang sudah aktif saat sertifikat terbit. Anggota yang
+diundang/diaktifkan belakangan **sudah bisa membuka** sertifikat perusahaannya (isolasi per
+`customer_id` dari `KonteksPerusahaan`, bukan per tanggal masuk; perusahaan lain tetap `404`),
+tapi dulu tidak pernah diberi tahu. Sekarang, di pintu tunggal `Keanggotaan::daftarkan()` (undangan
+ditukar di `POST /auth/terima-undangan`, atau admin menyetujui pengajuan), anggota yang BARU
+bergabung atau dihidupkan kembali dikabari **sekali, ringkas**. Tanpa rute baru, tanpa migrasi,
+tanpa field respons baru: muncul lewat `GET /notifikasi` dan push.
+
+| Kejadian | `kategori` | `tautan` | Saklar |
+|---|---|---|---|
+| Bergabung ke perusahaan yang sudah punya sertifikat berlaku | `pelanggan.sertifikat_tersedia` | `null` (buka beranda) | `status_permintaan` (bawaan menyala) |
+
+Isi (netral; layar kunci): `judul` "Sertifikat kalibrasi sudah tersedia", `isi` "{n} sertifikat
+kalibrasi perusahaan Anda sudah bisa dibuka di aplikasi." Hanya jumlah — tanpa nomor, nama alat,
+nama perusahaan, atau hasil.
+
+Aturan:
+
+- Satu kabar, bukan satu per sertifikat. Yang dihitung hanya sertifikat perusahaan itu sendiri
+  yang `terbit` dan belum digantikan (lewat `LingkupData`); `0` = tidak ada kabar.
+- Sekali per akun per perusahaan: `tanda_tangan` `pelanggan.sertifikat_tersedia:<customer_id>`.
+  Undangan ulang / pengaktifan kembali tidak mengirim lagi. Memanggil `daftarkan()` untuk anggota
+  yang sudah aktif bukan "bergabung".
+- Saklar `status_permintaan` dihormati, termasuk untuk anggota lama yang diundang kembali.
+- Perusahaan yang `organization_id`-nya beda dari keanggotaannya, anggota/akun nonaktif: dilewati.
+- Kegagalan tidak pernah menggagalkan pendaftaran anggota; log hanya `customer_member_id` dan
+  kelas galat. Dikirim sesudah transaksi commit (`DB::afterCommit`).
+
+Penjaga: `KabarSusulanAnggotaBaruTest`. Kebijakan produk yang masih terbuka (kabar ini
+satu kali atau tiap kali bergabung kembali, perlu tidaknya tautan ke daftar sertifikat) dicatat
+di `docs/pertanyaan-lab-notifikasi-susulan.md`.
+
 ### Catatan serah terima untuk aplikasi pelanggan (`sidik-pelanggan-mobile`, diperiksa pada `origin/main` 5d4d4a5)
 
 **Tidak ada yang wajib diubah agar notifikasi ini tampil dan bisa dibuka.**
