@@ -37,8 +37,11 @@ Paket gratis Render tidak punya shell ("Shell is not supported for free compute 
 **Syarat — semuanya sebelum sakelar disentuh:**
 
 1. §1 selesai: cadangan produksi terverifikasi + sensus baca-saja. Boot tidak bisa memeriksanya;
-   yang menyalakan yang bertanggung jawab. Tahap 2 menulis ke produksi (tabel `paket_acuan` dan
-   `paket_acuan_versi`), jadi urutannya mengikuti `docs/aturan-akses-database.md`.
+   yang menyalakan yang bertanggung jawab. Tahap 2 menulis ke produksi (tabel `paket_acuan`,
+   `paket_acuan_versi`, dan `audit_logs` — dua baris audit per paket baru, karena kedua model
+   memakai `Diaudit`), jadi urutannya mengikuti `docs/aturan-akses-database.md`. Langkah persisnya,
+   termasuk dry-run baca-saja (`acuan:impor-awal --dry-run`) dan kalimat izin:
+   `docs/runbook-impor-acuan-produksi.md`.
 2. Tahap 1 (migrasi) sudah live dan `/api/health` memulangkan `deploy.versi` yang cocok.
 3. `DATA_ACUAN_SUMBER` masih `json` — tahap 2 tidak mengubah angka siapa pun.
 
@@ -49,7 +52,9 @@ Paket gratis Render tidak punya shell ("Shell is not supported for free compute 
    deploy (AGENTS.md §Git Workflow).
 2. Buka deploy log, cari tahap `impor awal data acuan`. Per paket per organisasi tercetak
    `versi 1 dibuat (aktif, berlaku_mulai …), sha256 …` atau `versi 1 sudah ada, sama`. Cocokkan
-   `sha256 kanonik` tiap `kode_profil` dengan JSON di repo (`JsonKanonik`).
+   `sha256 kanonik` tiap `kode_profil` dengan JSON di repo (`JsonKanonik`). Blok `RINGKASAN` di
+   akhir menyebut paket baru, versi 1 baru, yang sudah ada & sama, galat, dan baris yang ditulis —
+   angkanya harus sama dengan hasil `acuan:impor-awal --dry-run` yang disebut di kalimat izin.
 3. Boot tetap lanjut walau impor gagal (`|| true`, kode keluarnya dicetak). Galat per paket
    (berkas hilang, paket soft delete, versi 1 lama **BEDA** dari berkas) tidak menimpa apa pun
    dan harus diputuskan manusia sebelum tahap 3.
@@ -62,6 +67,10 @@ Paket gratis Render tidak punya shell ("Shell is not supported for free compute 
 hitung yang distempel `paket_acuan_versi_id` (tahap 3 belum jalan). Itu tulis ke produksi, jadi
 lewat urutan `docs/aturan-akses-database.md` butir 4 (rencana tertulis → cadangan → dry-run →
 eksekusi atas instruksi terpisah); mengembalikan sakelar ke `false` saja TIDAK menghapus apa pun.
+Jebakan yang membuat "hapus baris paket" tidak sesederhana kedengarannya: `paket_acuan` memakai
+soft delete, dan baris yang ter-soft-delete tetap memegang unique `(organization_id, kode_profil)`,
+jadi impor ulang menolaknya ("paket sudah dihapus"). Hapus permanen, versi dulu baru paket —
+urutan dan syaratnya di runbook.
 
 Sakelar `DATA_ACUAN_SUMBER` wajib masuk `.env.example` **dan** `render.yaml` (AGENTS.md §Alur
 Kerja 9). Nilainya di `render.yaml` ditulis `value:` eksplisit dengan komentar, supaya tidak
@@ -100,7 +109,13 @@ ketimpa diam-diam seperti kejadian `ARSIP_DRIVER` 1 Sep.
 
 ## 6. Pemantauan sesudah rilis
 
-- `/api/health` → `data_acuan.versi_aktif_tanpa_simulasi` harus 0.
+- `/api/health` → `data_acuan.sumber` (satu-satunya isi blok `data_acuan` di `routes/api.php`;
+  yang menjawab "tahap 3 sudah jalan?" adalah nilainya, `json` atau `db`). Indikator
+  `data_acuan.versi_aktif_tanpa_simulasi` yang dirancang di 03-SDD §3 **belum dibangun**. Bila
+  nanti dibangun: versi 1 hasil impor awal berstatus `aktif` TANPA simulasi (impor bukan
+  pengesahan), jadi indikatornya harus mengecualikan versi 1 hasil impor atau selalu menunjukkan
+  25 × organisasi. Sampai ada, jumlah versi dibaca lewat sensus baca-saja
+  (`docs/runbook-impor-acuan-produksi.md` §4 langkah 10).
 - Log `Siaran perubahan data gagal.` (dari `siarkanAman`) untuk jenis `data_acuan`.
 - Kueri harian: hasil hitung baru tanpa `paket_acuan_versi_id` untuk profil yang sudah termigrasi
   = **cacat jalur simpan**, bukan data lama (pola AGENTS.md §Olah data 2).
