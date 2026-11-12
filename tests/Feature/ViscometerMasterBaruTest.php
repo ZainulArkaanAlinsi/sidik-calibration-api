@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 use App\Services\CalibrationValidator;
+use App\Services\CertificateSnapshotBuilder;
+use App\Support\TataLetakSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,6 +163,42 @@ class ViscometerMasterBaruTest extends TestCase
         $this->assertSame(2, $profil->desimalSertifikatTitik(79.895696400626));
         $this->assertSame(1, $profil->desimalSertifikatTitik(755.7464788732395));
         $this->assertSame(0, $profil->desimalSertifikatTitik(2891.0219092331767));
+    }
+
+    /**
+     * K-50-15 / B3a (R9): kolom Standard Value ditulis PENUH sebanyak desimal
+     * barisnya, bukan nol di belakangnya dibuang. `SERTIFIKAT!C23` berformat
+     * `0.00` dan `sertifikat.terang.pdf` master mencetak `79.90` (bukan
+     * `79.9`); `C24` `0.0` -> `755.7`; `C25` `0` -> bilangan bulat.
+     *
+     * Hanya cetak: `standard_value` di snapshot tetap presisi penuh, dan
+     * `standar_ringkas` dibekukan per baris (snapshot terbit sebelum B3a tidak
+     * punya `false` dan tercetak ringkas seperti waktu terbit).
+     */
+    public function test_standard_value_ditulis_penuh_seperti_format_sel_master(): void
+    {
+        $visco = $this->sesi();
+
+        $snapshot = app(CertificateSnapshotBuilder::class)->bangun(
+            $visco,
+            new Certificate(['nomor' => 'UJI-VISCO-B3A', 'qr_token' => 'uji-visco-b3a']),
+        );
+
+        $this->assertFalse($snapshot['hasil'][0]['standar_ringkas']);
+
+        $teks = array_map(
+            static fn (array $b): string => TataLetakSertifikat::teksSel($b, 'standar', $snapshot, 2),
+            $snapshot['hasil'],
+        );
+
+        $this->assertSame('79.90', $teks[0], 'C23 `0.00`: nol di belakang TIDAK dibuang.');
+        $this->assertSame('755.7', $teks[1], 'C24 `0.0`.');
+        $this->assertSame('2891', $teks[2], 'C25 `0`: tanpa desimal.');
+
+        // Snapshot lama (tanpa `false`): bentuk ringkas waktu terbit.
+        $lama = $snapshot;
+        $lama['hasil'][0]['standar_ringkas'] = true;
+        $this->assertSame('79.9', TataLetakSertifikat::teksSel($lama['hasil'][0], 'standar', $lama, 2));
     }
 
     /**

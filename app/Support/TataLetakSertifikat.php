@@ -182,6 +182,14 @@ final class TataLetakSertifikat
         // semua snapshot terbit sebelum G2). Entri dari profil lewat
         // [GambarKhasSertifikat].
         'gambar_khas' => null,
+        // S-4: judul blok enclosure `A) Sebaran Suhu` / `B) Kinerja Enklosur`
+        // bercampur huruf besar-kecil seperti sel master (`171!B21`, `B39`);
+        // bentuk lama `false` = kapital (`A) SEBARAN SUHU`).
+        'judul_kelompok_master' => false,
+        // S-4: baris `Uncertainty U95% = ± … <satuan>` blok tekanan berada DI
+        // DALAM kotak tabel (master `SERTIFIKAT!E35:X35`, baris terakhir tabel
+        // berbingkai), bukan baris teks di bawahnya. Bentuk lama `false`.
+        'u95_dalam_tabel' => false,
     ];
 
     /**
@@ -328,7 +336,7 @@ final class TataLetakSertifikat
 
         foreach ($timpaan as $kunci => $nilai) {
             $hasil[$kunci] = match ($kunci) {
-                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan', 'kepala_titik_dua', 'u95_relatif_menggantikan_baris' => self::bool($kunci, $nilai),
+                'kop', 'env_bertumpuk', 'pisah_per_remark', 'satuan_baris_sendiri', 'pisah_per_satuan', 'kepala_titik_dua', 'u95_relatif_menggantikan_baris', 'judul_kelompok_master', 'u95_dalam_tabel' => self::bool($kunci, $nilai),
                 'akhir_sertifikat_garis' => $nilai === null ? null : self::garisAkhir($nilai),
                 'gambar_khas' => $nilai === null ? null : GambarKhasSertifikat::normalisasi($nilai),
                 'kop_pracetak' => $nilai === null ? null : self::tinggiPracetak($nilai),

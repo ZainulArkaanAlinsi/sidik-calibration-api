@@ -288,6 +288,10 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // Versi PHP yang benar-benar jalan — supaya status tambalan keamanan PHP
     // (mis. CVE-2026-109618/109619, butuh >= 8.4.27) bisa dicek tanpa Shell.
     'php_versi' => PHP_VERSION,
+
+    // Melaporkan konfigurasi PHP worker yang menjawab, bukan jaminan: tulis raw
+    // memaksa -1 sendiri (AngkaFloatEksak); bagian lain tetap membaca setelan server.
+    'json_float_shortest' => ini_get('serialize_precision') === '-1',
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.

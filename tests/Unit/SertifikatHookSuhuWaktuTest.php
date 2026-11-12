@@ -193,9 +193,12 @@ class SertifikatHookSuhuWaktuTest extends TestCase
         $this->assertTrue($tl['kolom_hasil'][3]['gabung']);
         $this->assertSame([], $timer->catatanSertifikat($this->sesi()));
 
-        // X19 `0.0`, V29 General.
+        // X19 `0.0`, V29 General di kolom 6,2 karakter -> tampil `1.965` (B3a / R9):
+        // `0.000`, bukan `General` (10 digit).
         $format = TataLetakSertifikat::normalisasiFormat($timer->formatKolomSertifikat($this->sesi(), 60.0, null));
-        $this->assertSame(['u95' => '0.0', 'k' => 'General'], $format);
+        $this->assertSame(['u95' => '0.0', 'k' => '0.000'], $format);
+        $this->assertSame('1,965', TataLetakSertifikat::formatAngka(1.965168491390211, $format['k']));
+        $this->assertSame('baris_pertama', $tl['k_tunggal'], 'V29 = k budget pertama (AC17), satu k dengan tanda `=`.');
         $this->assertSame('0,8', TataLetakSertifikat::formatAngka(0.81, $format['u95']));
     }
 

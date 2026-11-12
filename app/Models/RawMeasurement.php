@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AngkaFloatEksak;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class RawMeasurement extends Model
 {
+    public function setPembacaanAttribute(mixed $value): void
+    {
+        $this->attributes['pembacaan'] = $this->decimalStorageValue($value);
+    }
+
+    public function setTitikUkurAttribute(mixed $value): void
+    {
+        $this->attributes['titik_ukur'] = $this->decimalStorageValue($value);
+    }
+
+    /**
+     * Keep PDO's float-to-string conversion from applying PHP's shorter precision.
+     * Encoding forces serialize_precision=-1 locally (see AngkaFloatEksak), so a
+     * misconfigured server does not block the write.
+     */
+    private function decimalStorageValue(mixed $value): mixed
+    {
+        if (! is_float($value)) {
+            return $value;
+        }
+
+        // Encode before assigning so any exception leaves the old attribute intact.
+        return AngkaFloatEksak::kodekan($value);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

@@ -304,6 +304,12 @@ Empat hal yang berbeda dari master, dan alasannya:
 keterulangan), `d+1` (U95 §3 & §7, LOP). Kuncinya `desimal`, `desimal_stdev`, `desimal_u95` di
 blok snapshot; sertifikat lama yang belum punya kuncinya jatuh ke turunan `desimal`.
 
+**K-50-15 / B3a (12 Nov 2026) menggantikan aturan di atas untuk snapshot BARU:** blok `timbangan`
+memuat `format` (`kunci => kode format sel master`, per varian; lihat T14 dan
+`TimbanganProfile::formatCetakMaster`) yang menang atas `desimal`/`desimal_stdev`/`desimal_u95`.
+Contoh: LOP kg `0.08`, LOP substitusi `14`, U95 substitusi `0.5`, kapasitas §1 kg/substitusi `50`.
+Snapshot lama tanpa `format` tetap tercetak seperti waktu terbit.
+
 **Kolom `Correction` varian substitusi itu KUMULATIF** (`Cn`), bukan `ΔI` per langkah. Master
 mencetak `FC!T50..T86` — 0,0059 · 1,5118 · 2,4177 … 13,309. Sampai sebelum ini yang tersimpan di
 `uncertainty_calculations.koreksi` adalah `ΔI`, jadi sertifikat, Excel, dan API bertiga menerbitkan

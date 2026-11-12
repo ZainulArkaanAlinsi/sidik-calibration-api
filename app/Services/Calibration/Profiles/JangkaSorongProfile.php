@@ -558,15 +558,21 @@ class JangkaSorongProfile extends CalibrationProfile
      * Format sel master `153` (K-50-15 membatalkan lima desimal untuk CETAK;
      * nilai snapshot tetap presisi penuh): Standar Reading · UUT · Correction
      * `0.00` (`D25:L34`, `D41:L50`, `D57:L61`), U95 `0.000` (`J35`, `J51`,
-     * `J62`), `k` `General` (`O36`, `O52`, `O63` — master mencetak k hitung
-     * penuh, `1.97590533089662`) — bukan `0` bawaan bentuk master (K-50-15,
-     * pemilik 20 Okt 2026). Cetak saja: U95 tetap dihitung dengan k sebenarnya.
+     * `J62`), `k` `0` (`O36`, `O52`, `O63`).
+     *
+     * `k`: selnya berformat `General` TAPI kolomnya sempit (`O` lebar 2,45
+     * karakter), sehingga Excel menampilkan `1.9759053…` sebagai `2` — itu
+     * yang tercetak di `sertifikat*.terang.pdf` master (blok Outside & Inside
+     * `2`, Depth `2`). Versi sebelumnya (`General` = 10 digit,
+     * `1.9761224936`) membaca NILAI sel, bukan TAMPILANNYA (B3a / R9). `0`
+     * menghasilkan `2` untuk k di sekitar 2. Cetak saja: U95 tetap dihitung
+     * dengan k sebenarnya.
      *
      * @return array<string, string>
      */
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
-        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => 'General'];
+        return ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.000', 'k' => '0'];
     }
 
     /**

@@ -32,9 +32,10 @@ use Tests\TestCase;
  *
  * Peta = render tidak membuktikan peta = master per sel (temuan F-3, 22 Okt
  * 2026): `test_entri_peta_sama_dengan_format_tiap_sel_master` mengadu tiap sel
- * ke number_format master yang dibekukan. Satu-satunya beda master vs render
- * yang tersisa dipatok di [BEDA_DIKETAHUI] (Tekanan baris 7-13, Hydrometer berat
- * U95 titik 4-5; menunggu lab).
+ * ke number_format master yang dibekukan. Beda master vs render yang tersisa
+ * dipatok di [BEDA_DIKETAHUI]: Tekanan baris 7-13 dan Hydrometer berat U95
+ * titik 4-5 (menunggu lab), serta `k` Height Gauge / Jangka Sorong / Timer
+ * (B3a: sel `General` di kolom sempit; render mengikuti TAMPILAN Excel).
  */
 class StudioFormatSertifikatTest extends TestCase
 {
@@ -191,6 +192,16 @@ class StudioFormatSertifikatTest extends TestCase
         // titik 1-3 (`S17:S19`) `0.0000` — diduga salin-tempel. Render tetap
         // `0.0000` sampai lab menjawab pertanyaan format #7.
         'hydrometer/berat/u95_baris_4_5' => ['0.00000', '0.0000'],
+        // B3a / R9 (K-50-15, "sertifikat persis master"): sel `k` Height Gauge
+        // (`184!O35`), Jangka Sorong (`153!O36/O52/O63`), dan Timer (`183!V29`)
+        // berformat `General` di KOLOM SEMPIT (2,44 / 2,45 / 6,2 karakter), jadi
+        // yang TAMPIL di Excel (`sertifikat.terang.pdf`) `2` / `2` / `1.965`.
+        // Render memakai tampilan itu (`0` / `0` / `0.000`), bukan kode format
+        // sel: tampilan Excel != number_format. Peta sel TIDAK diubah (ia mencatat
+        // kode format sel apa adanya).
+        'height_gauge/-/k' => ['General', '0'],
+        'jangka_sorong/-/k' => ['General', '0'],
+        'timer_stopwatch/-/k' => ['General', '0.000'],
     ];
 
     /** Satu berkas, bukan subdirektori: `StudioPetaSelXlsmTest` membaca `peta-sel-xlsm/<paket>/*.json`. */

@@ -88,6 +88,49 @@ class MicrometerSesiTest extends TestCase
     }
 
     /**
+     * Tahap B2: dua pilihan kondisi muka ukur (Note sertifikat `165:167!B31:G33`)
+     * hanya `baik`|`buruk`. Nilai lain ditolak 422 — bukan diam-diam dicetak
+     * sebagai kondisi alat di dokumen terakreditasi.
+     */
+    public function test_kerataan_dan_kesejajaran_muka_ukur_selain_baik_buruk_ditolak(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        foreach (['kerataan_muka_ukur', 'kesejajaran_muka_ukur'] as $kunci) {
+            $payload = $this->payload($alat);
+            $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI][$kunci] = 'rusak';
+
+            $this->actingAs($teknisi)
+                ->postJson('/api/calibrations', $payload)
+                ->assertStatus(422)
+                ->assertJsonValidationErrors(['spesifikasi_alat.micrometer.'.$kunci]);
+        }
+    }
+
+    /**
+     * Tahap B2: HP lama yang belum mengirim kedua field baru tetap diterima, dan
+     * yang mengirim nilai sah tersimpan apa adanya.
+     */
+    public function test_payload_tanpa_field_note_muka_ukur_tetap_lolos(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+        $this->assertArrayNotHasKey('kerataan_muka_ukur', (array) CalibrationSession::findOrFail($id)->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]);
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI] += ['kerataan_muka_ukur' => 'baik', 'kesejajaran_muka_ukur' => 'buruk'];
+        $id = $this->actingAs($teknisi)->postJson('/api/calibrations', $payload)->assertSuccessful()->json('data.id');
+        $blok = CalibrationSession::findOrFail($id)->spesifikasi_alat[MicrometerMentah::KUNCI_SESI];
+
+        $this->assertSame('baik', $blok['kerataan_muka_ukur']);
+        $this->assertSame('buruk', $blok['kesejajaran_muka_ukur']);
+    }
+
+    /**
      * Tumpukan balok ukur DITURUNKAN server dari varian kertas, lalu disimpan
      * bersama pembacaannya sebagai baris ber-`peran_sensor` yang TERPISAH.
      *

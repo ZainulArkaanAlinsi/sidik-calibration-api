@@ -423,6 +423,36 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
     }
 
     /**
+     * Baris `Tekanan Udara <P> hPa ± <U> hPa` di Environmental Condition
+     * (`143!T13:Y13`, `144!T13:Y13`) untuk SEMUA turunan keluarga ini (Fixed
+     * non-Rev.7 seperti picnometer, dan Graduated: buret, gelas ukur, pipet
+     * ukur). Nilainya `U13 = PERHITUNGAN!G19 = AVERAGE(E19:F19)` — rata-rata
+     * tekanan BACAAN tanpa koreksi thermobarometer, persis [FixedVolumetric
+     * GlasswareRev7Profile::tekananEnvSertifikat] dan tekanan yang masuk
+     * hitungan densitas udara.
+     * Tekanan dicetak TANPA koreksi thermobarometer sementara suhu & RH di baris
+     * yang sama terkoreksi: ditiru dari master, pertanyaan lab volumetric no. 22
+     * (`FixedVolumetricGlasswareRev7Profile` mewarisi metode ini). Sesi Volumetrik tanpa tekanan tidak bisa
+     * menerbitkan volume, jadi `null` di sini hanya berarti data belum ada.
+     *
+     * Master Graduated `144!V13:Y13` rusak salin-tempel (`#REF!` pada satuan,
+     * `±`, dan satuan U; nilai `X13 = PERHITUNGAN!P19` tetap sehat). Dicetak
+     * `hPa ± U hPa` seperti master Fixed `143!V13:Y13` — pertanyaan lab
+     * Tahap B2 no. 1 (`docs/pertanyaan-lab-sertifikat-b2.md`).
+     *
+     * Hanya cetak: snapshot lama tidak punya baris ini dan tidak dibangun ulang.
+     */
+    public function tekananEnvSertifikat(CalibrationSession $sesi): ?float
+    {
+        $terisi = array_values(array_filter(
+            [$sesi->tekanan_awal, $sesi->tekanan_akhir],
+            static fn ($p): bool => $p !== null,
+        ));
+
+        return $terisi === [] ? null : array_sum(array_map('floatval', $terisi)) / count($terisi);
+    }
+
+    /**
      * Tidak ada PASS/FAIL. Tidak satu sel pun di kedua workbook membandingkan
      * hasil dengan batas keberterimaan; sertifikatnya berhenti di Correction +
      * U95%. Toleransi kelas tetap diisi — sebagai masukan diameter meniskus
