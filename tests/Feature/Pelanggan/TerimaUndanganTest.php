@@ -564,8 +564,13 @@ class TerimaUndanganTest extends TestCase
     }
 
     /**
-     * Akun pelanggan yang SUDAH ada sebelum undangan ditukar: `true`, dan sandi
-     * lamanya tidak ditimpa oleh `sandi` di formulir (yang diabaikan).
+     * Akun pelanggan yang SUDAH ada sebelum undangan ditukar: `true`, dan
+     * hash sandi lamanya tidak disentuh (tidak di-hash ulang, tidak ditimpa).
+     *
+     * Sejak 12 Nov 2026 `sandi` di formulir untuk akun lama adalah sandi akun
+     * itu yang SUDAH ada dan wajib cocok; sandi lain ditolak 422
+     * `sandi_akun_lama_salah` (lihat `UndanganAkunLamaTest`). Sebelumnya
+     * test ini mengirim sandi sembarang dan lolos — itulah lubangnya.
      */
     public function test_akun_sudah_ada_true_untuk_akun_pelanggan_lama_dan_sandi_tidak_ditimpa(): void
     {
@@ -574,7 +579,7 @@ class TerimaUndanganTest extends TestCase
         ['kode' => $kode] = $this->undang((string) $konsultan->email);
 
         $this->postJson('/api/pelanggan/v1/auth/terima-undangan',
-            $this->formulir((string) $konsultan->email, $kode, ['sandi' => 'SandiLain#2026Baru']))
+            $this->formulir((string) $konsultan->email, $kode, ['sandi' => $this->sandiBenar]))
             ->assertCreated()
             ->assertJsonPath('data.akun_sudah_ada', true);
 
