@@ -182,21 +182,6 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
     }
 
     /**
-     * Rata-rata tekanan BACAAN, tanpa koreksi thermobarometer — `SERTIFIKAT!U13
-     * = PERHITUNGAN!G19 = AVERAGE(E19:F19)`, padahal suhu & RH di baris yang
-     * sama memakai `G + M` (terkoreksi). Ditiru; pertanyaan lab volumetric no. 22.
-     */
-    public function tekananEnvSertifikat(CalibrationSession $sesi): ?float
-    {
-        $terisi = array_values(array_filter(
-            [$sesi->tekanan_awal, $sesi->tekanan_akhir],
-            static fn ($p): bool => $p !== null,
-        ));
-
-        return $terisi === [] ? null : array_sum(array_map('floatval', $terisi)) / count($terisi);
-    }
-
-    /**
      * Standar yang tidak ketemu di master tidak boleh hilang diam-diam: masa
      * berlakunya tidak bisa diperiksa dan barisnya tidak tercetak.
      */

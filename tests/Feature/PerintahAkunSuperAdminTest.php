@@ -2,11 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\BuatAkunSuperAdmin;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Console\OutputStyle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use ReflectionMethod;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\TestCase;
 
 /**
@@ -46,6 +51,32 @@ class PerintahAkunSuperAdminTest extends TestCase
         parent::setUp();
 
         $this->organisasi = Organization::factory()->create();
+    }
+
+    /**
+     * Sandi yang TERCETAK harus sama persis dengan yang TERSIMPAN.
+     *
+     * `Str::password()` memuat `\` dan `<`. Dicetak lewat `line()`, formatter
+     * Symfony memakan garis miring di depan `<` (dianggap escape tag), jadi
+     * sekitar 0,76% sandi acak tercetak berbeda dari yang di-hash — pemegang
+     * akunnya tidak pernah bisa masuk, dan sandinya cuma dicetak sekali. Di CI
+     * itu muncul sebagai kegagalan acak 401 pada login super admin
+     * (`AlurPelatihanEmpatPeranTest`), karena tes itu membaca sandi dari layar.
+     */
+    public function test_sandi_tercetak_sama_persis_dengan_yang_disimpan_walau_berisi_karakter_formatter(): void
+    {
+        $perintah = new BuatAkunSuperAdmin;
+        $buffer = new BufferedOutput;
+        $perintah->setOutput(new OutputStyle(new ArrayInput([]), $buffer));
+        $cetak = new ReflectionMethod($perintah, 'cetakSandi');
+
+        foreach (['ab\\<cd', 'x\\<info>y', '<fg=red>z</>', '\\<\\<\\>', 'ujung\\', '<<>>\\<?:'] as $sandi) {
+            $buffer->fetch();
+            $cetak->invoke($perintah, $sandi);
+            $keluaran = $buffer->fetch();
+
+            $this->assertStringContainsString(PHP_EOL."  {$sandi}".PHP_EOL, $keluaran, "Sandi {$sandi} tercetak berbeda.");
+        }
     }
 
     public function test_bikin_akun_super_admin(): void

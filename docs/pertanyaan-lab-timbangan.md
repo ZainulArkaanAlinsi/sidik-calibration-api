@@ -346,3 +346,23 @@ mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitu
 > bisa memutusnya; yang dibutuhkan keputusan lab. Satu pertanyaan saja yang benar-benar mengikat:
 > **§6 Limit of Performance lembar substitusi diformat nol desimal** — disengaja (`± 14 kg`), atau
 > sel yang lupa diformat (`± 13,66 kg`)? Sisanya kami samakan mengikuti dua master lainnya.
+
+> **DIGANTI K-50-15 (B3a, 12 Nov 2026): format cetak = format sel master per varian.** Keputusan
+> pemilik 18 Okt 2026 ("sertifikat persis lembar `SERTIFIKAT` master") membatalkan pilihan
+> `d` / `max(d,2)` / `d+1` dan keputusan 1 Sep di atas. Snapshot BARU memuat kunci `timbangan.format`
+> (`TimbanganProfile::formatCetakMaster`): kode format tiap bagian cetak, per varian, persis sel
+> master — mis. kg LOP `0.08` (bukan `0.080`), substitusi U95 `0.5` dan LOP `± 14 kg`, gram
+> kapasitas `25.000` dan §7 nominal `5.000`. Kapasitas §1 dan `Weight mass` §4 kg & substitusi
+> berformat `General` (`50`, `20`). Sertifikat yang sudah terbit tidak punya kunci `format` dan
+> tercetak seperti waktu terbit. Hanya cetak: tidak ada angka hitung yang berubah.
+>
+> **Pertanyaan yang tersisa (tidak menahan):** format sel master tertanam tetap pada SATU neraca
+> sampel per workbook (gram 0,0001 g; kg 0,02 kg; substitusi 0,1 kg). Untuk neraca lain di varian
+> yang sama, kode menggeser format relatif terhadap desimal resolusi (jarak yang sama dengan sampel).
+> Apakah lab mengubah format sel workbook per neraca, atau memakai format sampel apa adanya?
+>
+> **Penjaga (peninjau B3a):** LOP dan U95 tidak pernah dicetak `0`. Format sel dilebarkan satu desimal
+> bila nilai terkecil kolom itu membulat ke nol (LOP 0,4 kg substitusi tercetak `0,4`, bukan `0`), dan
+> LOP substitusi yang tercetak bilangan bulat satu digit (3,4 kg) dicetak satu desimal. LOP 13,66 tetap
+> `14` dan U95 0,52 tetap `0,5` (persis master). Gram `d-1` (kapasitas, beban uji, beban histeresis)
+> tidak memotong nilai uji: neraca 0,1 g dengan kapasitas 105,5 g tercetak `105.5`, bukan `106`.

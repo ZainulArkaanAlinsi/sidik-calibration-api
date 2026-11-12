@@ -92,6 +92,28 @@ class SieveCalculator
     }
 
     /**
+     * Jumlah MINIMUM opening yang harus diperiksa untuk satu baris Tabel MPE dan
+     * tipe sieve — satu-satunya tempat pencariannya, dipakai [hitungSesi] DAN
+     * sertifikat (`Minimum Number of Apertures Examined`, `169!B25:M25`), supaya
+     * angka yang dicetak tidak mungkin berbeda dari yang ditegakkan.
+     *
+     * `all` (Tabel MPE) = seluruh opening sieve, yaitu `$jumlahTotal`; `null`
+     * bila tabelnya tidak memberi angka atau `all` tanpa jumlah total.
+     *
+     * @param  array<string, mixed>  $mpe  hasil `TabelStandarSieve::barisMpe`
+     */
+    public static function minimumOpening(array $mpe, string $tipe, int|float|null $jumlahTotal = null): ?int
+    {
+        $mentah = $mpe['min_opening'][$tipe] ?? null;
+
+        if ($mentah === 'all') {
+            return $jumlahTotal !== null && $jumlahTotal > 0 ? (int) $jumlahTotal : null;
+        }
+
+        return is_numeric($mentah) ? (int) $mentah : null;
+    }
+
+    /**
      * Hitung SATU sesi.
      *
      * @param  array<string, array<int, float>>  $opening  parameter => [nomor opening => nilai mm]
@@ -189,7 +211,7 @@ class SieveCalculator
         // Kolom yang BENAR per tipe — master mengambil kolom Inspection untuk
         // tipe Calibration (`F16`). Lihat docblock kelas no. 3.
         $minimumMentah = $mpe['min_opening'][$tipe] ?? null;
-        $minimum = is_numeric($minimumMentah) ? (int) $minimumMentah : null;
+        $minimum = self::minimumOpening($mpe, (string) $tipe, $konteks['jumlah_opening_total'] ?? null);
 
         if ($minimumMentah === 'all') {
             $total = $konteks['jumlah_opening_total'] ?? null;
@@ -200,8 +222,6 @@ class SieveCalculator
                     .'Isi jumlah total opening sieve di blok sesi supaya kelengkapannya bisa dinilai.',
                     self::angka($nominalMm), $tipe,
                 ));
-            } else {
-                $minimum = (int) $total;
             }
         }
 

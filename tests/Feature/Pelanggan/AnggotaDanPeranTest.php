@@ -80,6 +80,155 @@ class AnggotaDanPeranTest extends TestCase
         }
     }
 
+    // ------------------------------------------- staf vs PIC utama (12 Nov 2026)
+
+    /**
+     * Server = penjaga, bukan aplikasi: staf TIDAK menerima alamat email orang
+     * yang sedang diundang, walau lewat curl dengan token staf yang sah.
+     */
+    public function test_staf_menerima_undangan_menunggu_kosong_walau_ada_undangan(): void
+    {
+        ['pic' => $pic, 'staf' => $staf, 'perusahaan' => $perusahaan] = $this->perusahaanBerisi();
+
+        UndanganPelanggan::factory()->create([
+            'organization_id' => $perusahaan->organization_id,
+            'customer_id' => $perusahaan->id,
+            'email' => 'diundang-rahasia@contoh.test',
+        ]);
+
+        $badanStaf = $this->withHeaders($this->bearer($staf))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk();
+
+        // Kuncinya TETAP ada dan bentuknya list (bukan hilang / bukan objek).
+        $this->assertSame([], $badanStaf->json('data.undangan_menunggu'));
+        $this->assertStringContainsString('"undangan_menunggu":[]', $badanStaf->getContent());
+        $this->assertStringNotContainsString('diundang-rahasia@contoh.test', (string) $badanStaf->getContent());
+
+        // Pembanding positif: PIC utama di perusahaan yang sama MASIH melihatnya.
+        $this->permintaanBaru();
+        $this->withHeaders($this->bearer($pic))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.undangan_menunggu')
+            ->assertJsonPath('data.undangan_menunggu.0.email', 'diundang-rahasia@contoh.test');
+    }
+
+    /**
+     * Telepon rekan hanya untuk PIC utama dan untuk diri sendiri. Nomor dibuat
+     * BERBEDA per orang supaya assertion tidak bisa lolos karena kebetulan sama.
+     */
+    public function test_staf_tidak_menerima_telepon_rekan_tapi_menerima_miliknya_sendiri(): void
+    {
+        ['pic' => $pic, 'staf' => $staf] = $this->perusahaanBerisi();
+        $pic->forceFill(['telepon' => '+6281100000001'])->save();
+        $staf->forceFill(['telepon' => '+6282200000002'])->save();
+
+        $balasan = $this->withHeaders($this->bearer($staf))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk();
+
+        $baris = collect($balasan->json('data.anggota'));
+        $milikPic = $baris->firstWhere('saya', false);
+        $milikStaf = $baris->firstWhere('saya', true);
+
+        // Kunci `telepon` TETAP ada (bentuk JSON tidak berubah), nilainya null.
+        $this->assertArrayHasKey('telepon', $milikPic['orang']);
+        $this->assertNull($milikPic['orang']['telepon']);
+        $this->assertSame('+6282200000002', $milikStaf['orang']['telepon']);
+
+        // Field lain rekan TIDAK ikut hilang — yang dipersempit cuma telepon.
+        $this->assertSame($pic->name, $milikPic['orang']['nama']);
+        $this->assertSame($pic->email, $milikPic['orang']['email']);
+        $this->assertSame($pic->jabatan, $milikPic['orang']['jabatan']);
+        $this->assertSame('pic_utama', $milikPic['peran']);
+
+        // Dan nomor PIC tidak muncul di mana pun di badan balasan.
+        $this->assertStringNotContainsString('+6281100000001', (string) $balasan->getContent());
+    }
+
+    /** PIC utama melihat telepon SEMUA anggota, seperti sebelum penyempitan. */
+    public function test_pic_utama_tetap_menerima_telepon_semua_anggota(): void
+    {
+        ['pic' => $pic, 'staf' => $staf] = $this->perusahaanBerisi();
+        $pic->forceFill(['telepon' => '+6281100000001'])->save();
+        $staf->forceFill(['telepon' => '+6282200000002'])->save();
+
+        $balasan = $this->withHeaders($this->bearer($pic))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk();
+
+        $nomor = collect($balasan->json('data.anggota'))->pluck('orang.telepon')->sort()->values()->all();
+
+        $this->assertSame(['+6281100000001', '+6282200000002'], $nomor);
+    }
+
+    /**
+     * Peran dibaca dari perusahaan AKTIF (header), bukan dari akunnya: konsultan
+     * yang PIC utama di A dan staf di B melihat isi lengkap di A, terbatas di B.
+     */
+    public function test_pembatasan_mengikuti_peran_di_perusahaan_aktif(): void
+    {
+        ['pic' => $konsultan, 'perusahaan' => $perusahaanA] = $this->perusahaanBerisi();
+        $konsultan->forceFill(['telepon' => '+6281100000001'])->save();
+
+        $perusahaanB = $this->perusahaan();
+        $picB = $this->pelanggan(tambahan: ['telepon' => '+6283300000003']);
+        foreach ([[$picB, CustomerMember::PERAN_PIC_UTAMA], [$konsultan, CustomerMember::PERAN_STAF]] as [$orang, $peran]) {
+            CustomerMember::create([
+                'organization_id' => $perusahaanB->organization_id,
+                'customer_id' => $perusahaanB->id,
+                'user_id' => $orang->id,
+                'peran' => $peran,
+                'status' => CustomerMember::STATUS_AKTIF,
+            ]);
+        }
+
+        foreach ([$perusahaanA, $perusahaanB] as $pt) {
+            UndanganPelanggan::factory()->create([
+                'organization_id' => $pt->organization_id,
+                'customer_id' => $pt->id,
+                'email' => 'undangan-'.$pt->id.'@contoh.test',
+            ]);
+        }
+
+        $sesi = $this->bearer($konsultan);
+
+        $this->permintaanBaru();
+        $diA = $this->withHeaders($sesi + ['X-Perusahaan-Id' => (string) $perusahaanA->id])
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk()
+            ->assertJsonPath('data.saya.peran', CustomerMember::PERAN_PIC_UTAMA)
+            ->assertJsonCount(1, 'data.undangan_menunggu');
+
+        $this->assertContains('+6281100000001', collect($diA->json('data.anggota'))->pluck('orang.telepon')->all());
+
+        $this->permintaanBaru();
+        $diB = $this->withHeaders($sesi + ['X-Perusahaan-Id' => (string) $perusahaanB->id])
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk()
+            ->assertJsonPath('data.saya.peran', CustomerMember::PERAN_STAF);
+
+        $this->assertSame([], $diB->json('data.undangan_menunggu'));
+        $this->assertNotContains('+6283300000003', collect($diB->json('data.anggota'))->pluck('orang.telepon')->all());
+        $this->assertStringNotContainsString('+6283300000003', (string) $diB->getContent());
+        // Telepon diri sendiri (konsultan) di B tetap terbaca.
+        $this->assertContains('+6281100000001', collect($diB->json('data.anggota'))->pluck('orang.telepon')->all());
+    }
+
+    /** Rute nonaktifkan itu milik PIC utama, jadi balasannya tetap lengkap seperti dulu. */
+    public function test_nonaktifkan_oleh_pic_utama_tetap_memulangkan_telepon(): void
+    {
+        ['pic' => $pic, 'staf' => $staf] = $this->perusahaanBerisi();
+        $staf->forceFill(['telepon' => '+6282200000002'])->save();
+        $anggotaStaf = CustomerMember::query()->where('user_id', $staf->id)->firstOrFail();
+
+        $this->withHeaders($this->bearer($pic))
+            ->postJson("/api/pelanggan/v1/anggota/{$anggotaStaf->id}/nonaktifkan")
+            ->assertOk()
+            ->assertJsonPath('data.orang.telepon', '+6282200000002');
+    }
+
     /** Anggota perusahaan LAIN tidak pernah ikut terjaring. */
     public function test_daftar_disaring_ke_perusahaan_konteks(): void
     {
