@@ -38,8 +38,9 @@ class TelusuriSertifikatController extends Controller
 
         $kueri = Certificate::query()->where('certificates.organization_id', $user->organization_id);
 
-        // `%` dan `_` dari input diperlakukan sebagai huruf biasa di dalam
-        // `CariDokumenLab`; peringkat (persis dulu) mendahului urutan di bawah.
+        // `%` dari input diperlakukan sebagai huruf biasa di dalam
+        // `CariDokumenLab`, dan `_` sebagai pemisah nomor (bukan wildcard);
+        // peringkat (persis dulu) mendahului urutan di bawah.
         $this->cari->sertifikat($kueri, $user->organization_id, $data['q']);
 
         $hasil = $kueri

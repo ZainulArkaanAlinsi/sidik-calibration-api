@@ -8,14 +8,17 @@ use Illuminate\Database\Query\Grammars\Grammar;
  * Menyusun SQL "cocok" untuk SATU kata cari: kondisi `WHERE` dan peringkatnya.
  *
  * Ada tiga jenis kolom, dan bedanya menentukan cara membandingkan:
- *  - `kunci`     pengenal yang diketik apa adanya (nomor seri, nomor order);
- *  - `nomor`     nomor dokumen yang dibandingkan dalam bentuk ternormalisasi
- *                (`NormalisasiNomor`) di KEDUA sisi;
+ *  - `kunci`     pengenal yang diketik apa adanya. Sejak 13 Nov 2026 TIDAK ada
+ *                kolom yang memakainya: nomor seri pindah ke `nomor` supaya
+ *                `SN-12/3` dan `sn 12 3` sama. Dipertahankan untuk pengenal
+ *                baru yang memang harus persis (bukan nomor);
+ *  - `nomor`     nomor dokumen DAN nomor seri yang dibandingkan dalam bentuk
+ *                ternormalisasi (`NormalisasiNomor`) di KEDUA sisi;
  *  - `deskripsi` teks bebas (nama alat, nama PT) -- hanya "mengandung".
  *
  * Peringkat (kecil = lebih relevan): 0 persis pada kolom kunci/nomor, 1 diawali
  * kata cari, 2 sisanya (mengandung). Kata cari yang cuma berisi pemisah
- * (`/`, `-`, spasi) tidak punya bentuk ternormalisasi, jadi kolom `nomor` dilewati
+ * (`/`, `-`, `.`, `_`, spasi) tidak punya bentuk ternormalisasi, jadi kolom `nomor` dilewati
  * -- kalau tidak, `LIKE '%%'` mencocokkan semuanya.
  *
  * Hanya MERANGKAI SQL. Nilainya selalu lewat binding, nama kolom selalu dari

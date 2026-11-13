@@ -161,6 +161,22 @@ class GarisWaktuSertifikatPelangganTest extends TestCase
         $this->assertSame($milikku['sertifikat']->id, $this->ambil('tingkat=hari&tahun=2026&bulan=11&pekan=46&q=cal-2026-11-0001')['data']['item'][0]['id']);
     }
 
+    public function test_q_menerima_titik_garis_bawah_dan_serial_berpemisah_beda(): void
+    {
+        $this->saya(['terbit' => '2026-11-12', 'nomor' => 'CAL/2026/11/0001', 'serial' => 'PL-SERI/9.A']);
+        $this->saya(['terbit' => '2026-11-12', 'nomor' => 'CAL/2026/11/0002', 'serial' => 'PL-LAIN-2']);
+        $this->bangunDokumen($this->milikLain->organization, [
+            'pt' => $this->milikLain, 'terbit' => '2026-11-12', 'nomor' => 'CAL/2026/11/0003', 'serial' => 'PL-SERI/9.A2',
+        ]);
+
+        // Seri PT lain ikut cocok dengan potongan yang sama (`pl seri 9 a` ada di `9.A2`):
+        // kalau pagar perusahaan bocor, hitungannya jadi 2. Seri unik per lab, jadi tidak bisa persis sama.
+        foreach (['cal.2026.11.0001', 'CAL_2026_11_0001', 'pl seri 9 a', 'PL-SERI-9-A', 'pl_seri_9_a'] as $q) {
+            $this->assertSame(1, $this->ambil('q='.urlencode($q))['data']['total_dokumen'], "q={$q}");
+        }
+        $this->assertSame(0, $this->ambil('q='.urlencode('cal.2026.11.0003'))['data']['total_dokumen']);
+    }
+
     public function test_parameter_tidak_sesuai_tingkat_ditolak_422(): void
     {
         foreach (['tingkat=bulan', 'tingkat=hari&tahun=2026&bulan=11', 'tingkat=pekan&tahun=2026&bulan=11&pekan=46', 'per_page=51', 'tingkat=minggu', 'q=a', 'q[]=ab'] as $query) {

@@ -5478,6 +5478,81 @@ dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup
 5. **Sesi tanpa set** tidak diperiksa `titik_di_luar_cmc` (supaya sesi lama tidak berubah
    perilakunya) — nominal Tekanan yang diketik tanpa set tetap lolos seperti sebelumnya.
 
+## §56 — Kata cari `q` tidak peduli pemisah: aplikasi Pelanggan dan arsip Lab — 13 Nov 2026
+
+**Masalah.** Pelanggan mengetik `CAL-2026-10-0001`, sertifikatnya `CAL/2026/10/0001`, hasil kosong.
+`Pelanggan\SertifikatController::index` memakai `LIKE '%q%'` apa adanya, dan `%`/`_` yang diketik ikut
+menjadi wildcard SQL.
+
+**Keadaan nyata sebelum perubahan (dibaca dari kode, bukan dari bunyi tugas).**
+
+- Sisi Lab/arsip (PR #258, `CariDokumenLab`) SUDAH menyamakan `/`, `-`, spasi untuk nomor sertifikat dan nomor
+  order (`REPLACE` di kedua sisi). Celahnya tinggal dua: nomor **seri** dicocokkan apa adanya, dan `.`/`_`
+  bukan pemisah.
+- Rute pelanggan `GET /sertifikat`, `/alat`, `/paket` TIDAK memakai `CariDokumenLab`; ketiganya `LIKE` harfiah.
+  Garis waktu pelanggan memakai `CariDokumenLab` (sudah menyamakan `/ - spasi`).
+
+**Yang dikerjakan (API saja, nol migrasi, nol kolom, nol indeks, nol rute, nol field respons baru).**
+
+1. `App\Services\Pencarian\PolaCari::like(string $q): ?string` — memecah `q` di rangkaian pemisah
+   (spasi, `-`, `/`, `\`, `_`, `.`, `%`), membuang potongan kosong, memakai paling banyak 8 potongan pertama,
+   dan merangkainya `'%'.implode('%', $potongan).'%'`. Tak ada potongan = `null`. Tanpa klausa `ESCAPE`
+   (tidak portabel SQLite/MySQL): `%`, `_`, dan `\` tidak pernah tersisa di pola.
+   Pasangannya `NormalisasiNomor::PEMISAH` dijadikan `public`, dan `PolaCari` menurunkan pemisahnya dari situ,
+   supaya dua jalur tidak berbeda pendapat; `PolaCariTest` merah kalau salah satu menambah pemisah sendirian.
+2. Dipasang di `Pelanggan\SertifikatController::index` (nomor, nama alat, nomor seri, Order Number tercetak,
+   `orders.nomor`), `Pelanggan\AlatController::index` (nama, seri, no. identifikasi, merek), dan
+   `Pelanggan\PaketController::index` (`orders.nomor`). Semuanya tetap di dalam himpunan `LingkupData`.
+3. Sisi Lab: `NormalisasiNomor` ditambah `.` dan `_` (lima `REPLACE`, bukan tiga), dan nomor **seri**
+   (`equipments.serial_number`, `calibration_sessions.alat_serial_number`) pindah dari `RumusCocok::kunci`
+   (apa adanya) ke `RumusCocok::nomor` (dinormalisasi di kedua sisi). Berlaku di semua rute yang memakai
+   `CariDokumenLab`: Telusuri, Riwayat, `GET /equipments?search`, `GET /arsip/berkas`, garis waktu arsip, dan
+   garis waktu pelanggan. Peringkat persis/awalan/mengandung ikut bekerja untuk seri berpemisah beda.
+
+**Keputusan yang diambil (jangan ditanya ulang kecuali pemilik mengubahnya).**
+
+- **Kata yang hanya tanda baca (`%`, `-`, `...`) dijawab daftar KOSONG, bukan daftar utuh.** Permintaan
+  awalnya memuat dua kalimat yang bisa dibaca bertentangan ("kosong = null, jangan menyaring" dan "`%` saja
+  tidak menampilkan semuanya"). Dipilih yang kedua, sama dengan perilaku lab sejak #258
+  (`test_kata_cari_yang_hanya_pemisah_tidak_mencocokkan_semuanya`). Helper-nya tetap mengembalikan `null`;
+  keputusan "kosong" ada di tiga controller (satu baris `whereRaw('1 = 0')` tiap tempat) — membaliknya jadi
+  "tanpa penyaring" hanya mengubah tiga baris itu.
+- `%` dijadikan **pemisah**, bukan dibuang: `100%X` tetap menemukan seri `100%X`, dan `%` yang diketik tak pernah
+  jadi "cocokkan semuanya". `\` juga pemisah: karakter lolos bawaan `LIKE` di MySQL (tidak di SQLite), dan
+  `abc\ def` akan menjadi `%abc\%def%` yang MySQL baca sebagai `%` harfiah.
+- Sisi Lab TIDAK memakai `PolaCari`. Alasannya: `CariDokumenLab` sudah punya normalisasi dua sisi yang
+  presisi (potongan harus berimpit setelah pemisah dilepas) plus peringkat persis/awalan yang tidak bisa
+  dipertahankan oleh pola `%a%b%`; menggantinya juga mematahkan kontrak teruji `%` harfiah di #258. Yang
+  disamakan antara dua sisi adalah **himpunan pemisahnya**, bukan SQL-nya.
+- Penyimpangan yang disadari: di sisi pelanggan `CAL 2026 0001` (melewati bulan) menemukan `CAL/2026/10/0001`;
+  di sisi Lab tidak (potongan harus berimpit). Samakan hanya bila pemilik meminta.
+
+**Test.** `Tests\Unit\Pencarian\PolaCariTest` (pemisah campuran, `%`/`_`/`\` yang diketik, potongan berlebih,
+hanya pemisah, huruf besar kecil, 100 karakter, byte rusak, selaras dengan `NormalisasiNomor`);
+`Tests\Feature\Pelanggan\CariPemisahBedaTest` (17: nomor sertifikat/seri/Order Number/paket, perusahaan lain
+tetap kosong dan sama dengan nomor yang tidak ada, `%` saja kosong, bentuk respons sama);
+`Tests\Feature\CariPemisahBedaLabTest` (11, termasuk peringkat serial alat/sesi/berkas); satu kasus di `GarisWaktuSertifikatPelangganTest`. Dua test lama
+disesuaikan karena kontraknya memang bergeser: `NormalisasiDanPolaLikeTest::test_sql_kolom_…` (tiga → lima
+`REPLACE`) dan nama `CariDokumenLabTest::test_persen_diperlakukan_…` (isi asersi tidak berubah).
+
+**Bukti.** Uji mutasi mandiri di salinan unik di luar worktree: 30 mutan (13 pada helper dan himpunan
+pemisah, 11 pada pemasangan di tiga controller pelanggan termasuk pagar order milik perusahaan, 6 pada
+pemasangan serial di `CariDokumenLab`/`SubkueriCocok`), **30 terbunuh oleh kegagalan asersi, 0 selamat**. Satu
+mutan ekuivalen (`+` pada regex pemisah) dihapus dengan menyederhanakan kodenya. Tes baru berjalan merah dulu
+terhadap controller lama (10 dari 17 gagal), lalu hijau setelah controller diubah — itu juga bukti worktree
+menjalankan kodenya sendiri. Diulang di MySQL lokal (`asmo_db_test`, lewat `jalankan-test-mysql.ps1`) untuk kelas yang sama: delapan kelas hijau (`CariPemisahBedaTest` 17, `CariPemisahBedaLabTest` 11, `CariDokumenLabTest` 15, `GarisWaktuSertifikatPelangganTest` 10, `IsolasiPerusahaanTest` 8, `CariDariNomorOrderTest` 8, `TelusuriSertifikatTest` 4, `KataCariValidasiDanUrutanTest` 5). Suite MySQL penuh tetap belum.
+
+**Risiko yang diterima.** Hasil lebih LONGGAR — itu tujuannya: kata berpemisah kini bisa mengembalikan lebih
+banyak baris (`0001` atau `10` cocok dengan banyak nomor). Isolasi perusahaan tidak berubah (pencarian tetap
+di dalam `LingkupData`). Kontrak `/pelanggan/v1` additive: nol perubahan bentuk respons. `q` di
+`GET /sertifikat`, `/alat`, `/paket` yang berisi `%`/`_` kini bukan wildcard dan yang hanya tanda baca dijawab
+kosong — perubahan perilaku untuk kasus yang dulu mengembalikan semuanya. Kontrak untuk aplikasi Pelanggan
+(teks petunjuk yang boleh dilonggarkan) ada di `docs/kontrak-api-pelanggan.md` §13.
+
+**Belum.** Gate MySQL penuh dan SQLite penuh (CI yang menjalankan). `PelacakanController` (`GET /pelacakan`,
+nomor order + seri) dan `OrderController` (`GET /orders`, nomor) di sisi Lab masih `LIKE` harfiah — di luar
+"rute arsip", belum disentuh. Tanda hubung Unicode (– —) dan spasi tak-terputus belum dianggap pemisah.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
@@ -6209,3 +6284,4 @@ Supaya tidak dibangun ulang:
 | G31 | **Revisi 15 Okt: Tolak & pengesahan dicabut, No. Sertifikat diketik, tarik sertifikat, edit admin + bandingkan** (K-50-01/02/03/04/07/13) — §52 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API) — migrasi additive (`input_asli`, enum `ditarik`), `PemisahanWewenang` dipersempit, `kalibrasi:pindahkan-pengesahan`. Kontrak HP: `docs/perintah-frontend-revisi-1510.md`. Gate MySQL penuh belum |
 | G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |
 | G32 | **Sertifikat persis master — B3a / R9: desimal & faktor cakupan `k`** (K-50-15) | **DIKERJAKAN** (12 Nov 2026, branch `fix/sertifikat-desimal-k-persis-master-b3a`, belum commit). Hanya TAMPILAN CETAK, snapshot BARU saja: Timbangan memakai kode format sel `SERTIFIKAT` master per varian (`timbangan.format`, `TimbanganProfile::formatCetakMaster`; aturan `d+1` T14 dan LOP substitusi `13,66` dibatalkan, LOP kg `0.08`, substitusi `± 14`, gram kapasitas `25.000`); `k` Jangka Sorong & Height Gauge `0` (sel `General` di kolom sempit tampil `2`), Timer `0.000` + `k_tunggal = baris_pertama`; Viscometer Standard Value `79.90`. Penjaga: LOP/U95 tidak pernah tercetak `0`; gram `d-1` tidak memotong nilai uji. Angka hitung identik sebelum/sesudah (7 sesi, `uncertainty_calculations` baris-per-baris). Turbidimeter dan varian (R10) tidak disentuh. Pertanyaan lab: `docs/pertanyaan-lab-format-sertifikat.md` #8 (k `2` vs `2,09`/`1,98`), `docs/pertanyaan-lab-timbangan.md` T14 (format per neraca). **PERHATIAN:** `php artisan sertifikat:bangun-ulang --termasuk-terbit` membangun ulang snapshot sertifikat TERBIT dari kode yang berjalan, jadi teks cetak (desimal timbangan, `k` jangka/height/timer, `79.90`) ikut berubah di dokumen yang sudah di tangan pelanggan. JANGAN dijalankan tanpa meninjau keluaran dry-run (bawaannya dry-run) dan tanpa `--oleh`/`--alasan` yang sengaja. Gate MySQL penuh belum dijalankan. |
+| G33 | **Kata cari `q` tidak peduli pemisah** — aplikasi Pelanggan (`/sertifikat`, `/alat`, `/paket`) dan arsip Lab (nomor seri, `.`/`_`) — §56 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-cari-longgar-20261113`, belum commit). `PolaCari` baru + nol migrasi/kolom/indeks/rute/field respons. Kata yang hanya tanda baca kini dijawab daftar kosong (dulu `%` menampilkan semuanya). Mutasi 30/30 terbunuh. Gate SQLite+MySQL penuh belum (CI). Kontrak untuk aplikasi Pelanggan: `docs/kontrak-api-pelanggan.md` §13 |

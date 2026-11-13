@@ -8,6 +8,7 @@ use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use App\Services\Pencarian\PolaCari;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,7 +42,16 @@ class AlatController extends Controller
 
         $alat = $lingkup->alat()
             ->when(filled($data['q'] ?? null), fn (Builder $q) => $q->where(function (Builder $cari) use ($data): void {
-                $kata = '%'.$data['q'].'%';
+                // Longgar soal pemisah (`PolaCari`): `SN 123 4` menemukan
+                // `SN-123/4`. Kata yang cuma tanda baca (`%`, `-`) tidak punya
+                // pola, dan jawabannya daftar KOSONG, bukan daftar utuh.
+                $kata = PolaCari::like($data['q']);
+                if ($kata === null) {
+                    $cari->whereRaw('1 = 0');
+
+                    return;
+                }
+
                 $cari->where('nama_alat', 'like', $kata)
                     ->orWhere('serial_number', 'like', $kata)
                     ->orWhere('no_identifikasi', 'like', $kata)

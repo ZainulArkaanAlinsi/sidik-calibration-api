@@ -3554,11 +3554,13 @@ diabaikan app lama. Contoh respons nyata dan alur per layar ada di
 **Pencarian terpadu `q`** (`App\Services\Pencarian\CariDokumenLab`; satu aturan, empat layar). Mencocokkan:
 nomor seri alat (yang terdaftar dan yang diketik teknisi di lembar), nomor sertifikat, nomor order
 (`orders.nomor` dan `calibration_sessions.nomor_order`), nomor sesi, nama alat, merek, dan nama PT.
-Nomor **dinormalisasi** di kedua sisi: huruf besar/kecil, `/`, `-`, dan spasi diabaikan
-(`CAL/2026/10/0001` = `cal-2026-10-0001` = `cal 2026 10 0001`); revisi `-R<n>` ikut karena nomor dasar
-adalah awalan nomor revisinya. `%` dan `_` yang diketik dibaca sebagai huruf biasa. Hasil berperingkat:
+Nomor **dinormalisasi** di kedua sisi: huruf besar/kecil, `/`, `-`, `.`, `_`, dan spasi diabaikan
+(`CAL/2026/10/0001` = `cal-2026-10-0001` = `cal.2026.10.0001` = `cal 2026 10 0001`); **nomor seri ikut
+dinormalisasi sejak 13 Nov 2026** (`SN-123/4` = `sn 123 4`); revisi `-R<n>` ikut karena nomor dasar
+adalah awalan nomor revisinya. `%` yang diketik dibaca sebagai huruf biasa; `_` bukan wildcard (ia pemisah
+nomor). Hasil berperingkat:
 persis, lalu awalan, lalu mengandung. Selalu dikurung `organization_id` pemanggil. **Biaya O(N) per
-laboratorium** (`LIKE '%…%'` dan normalisasi tidak memakai indeks): kira-kira 1–4 s pada 10.000 baris,
+laboratorium** (`LIKE '%…%'` dan normalisasi tidak memakai indeks): kira-kira 1–4 s pada 10.000 baris (diukur SEBELUM normalisasi nomor seri 13 Nov 2026; sesudahnya mikro-benchmark MySQL lokal pada 50 rb baris: 1 kolom mentah 46 ms, 3 REPLACE 186 ms, 5 REPLACE 247 ms; 4 kolom 144/632/981 ms; belum diukur ulang pada 10.000 baris),
 cukup untuk ribuan baris (produksi kini ±17 sertifikat/±25 sesi); untuk data ≥ ±50 ribu baris perlu kolom
 nomor ternormalisasi (keputusan pemilik). Klien wajib debounce ≥ 300 ms dan mengirim `q`/`search` hanya bila
 ≥ 2 karakter. `q`/`search` harus teks (larik → `422`, ≤100). Berlaku di:

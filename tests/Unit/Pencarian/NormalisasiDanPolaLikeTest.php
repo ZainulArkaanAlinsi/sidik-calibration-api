@@ -19,6 +19,8 @@ class NormalisasiDanPolaLikeTest extends TestCase
             'spasi' => ['cal 2026 10 0001', 'CAL2026100001'],
             'campuran + spasi ujung' => ['  Cal/2026-10 0001 ', 'CAL2026100001'],
             'revisi ikut' => ['CAL/2026/10/0001-R1', 'CAL2026100001R1'],
+            'titik' => ['cal.2026.10.0001', 'CAL2026100001'],
+            'garis bawah' => ['CAL_2026_10_0001', 'CAL2026100001'],
         ];
     }
 
@@ -39,12 +41,15 @@ class NormalisasiDanPolaLikeTest extends TestCase
     public function test_kata_yang_cuma_pemisah_tidak_punya_kunci(): void
     {
         $this->assertSame('', NormalisasiNomor::kunci(' / - '));
+        $this->assertSame('', NormalisasiNomor::kunci(' . _ '));
     }
 
-    public function test_sql_kolom_membungkus_tiga_replace(): void
+    public function test_sql_kolom_membungkus_lima_replace_sesuai_himpunan_pemisah(): void
     {
+        // Lima, dalam urutan `NormalisasiNomor::PEMISAH`: tiga pertama tidak
+        // berubah sejak PR #258; `.` dan `_` ditambahkan 13 Nov 2026.
         $this->assertSame(
-            "REPLACE(REPLACE(REPLACE(`c`.`nomor`, '/', ''), '-', ''), ' ', '')",
+            "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`c`.`nomor`, '/', ''), '-', ''), ' ', ''), '.', ''), '_', '')",
             NormalisasiNomor::sqlKolom('`c`.`nomor`'),
         );
     }

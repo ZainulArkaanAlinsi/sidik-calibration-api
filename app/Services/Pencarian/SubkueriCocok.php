@@ -24,7 +24,9 @@ use Illuminate\Database\Query\Grammars\Grammar;
  * antarputaran sampai 2x): penulis mengukur median 60-340 ms per kueri;
  * peninjau independen mengukur 0,6-1,8 s untuk Telusuri dan pencarian alat,
  * sekitar 1,9 s untuk garis waktu ber-`q`, dan sekitar 3,7 s untuk Riwayat
- * ber-`q` dan tanggal. Pegang kisaran 1-4 s pada 10.000 baris. Cukup untuk
+ * ber-`q` dan tanggal. Pegang kisaran 1-4 s pada 10.000 baris
+ * (diukur sebelum 13 Nov 2026; nomor seri kini 5 REPLACE, sekitar 5x lebih lambat per
+ * kolom pada 50 ribu baris, belum diukur ulang pada 10.000). Cukup untuk
  * ribuan baris (produksi saat ini sekitar 17 sertifikat dan 25 sesi). Bila
  * data mendekati 50 ribu baris atau lebih, jalannya adalah kolom nomor
  * ternormalisasi yang diindeks (kolom baru: keputusan pemilik), bukan
@@ -69,7 +71,7 @@ final class SubkueriCocok
      */
     public function kondisiAlat(string $a): array
     {
-        $rumus = $this->rumus()->kunci("{$a}.serial_number")->deskripsi("{$a}.nama_alat", "{$a}.merk");
+        $rumus = $this->rumus()->nomor("{$a}.serial_number")->deskripsi("{$a}.nama_alat", "{$a}.merk");
 
         if ($this->pelangganId === null) {
             $rumus->lewatRelasi(
@@ -91,7 +93,7 @@ final class SubkueriCocok
      */
     public function kondisiSesi(string $a, bool $denganSertifikat): array
     {
-        $rumus = $this->rumus()->kunci("{$a}.alat_serial_number")->nomor("{$a}.nomor_order");
+        $rumus = $this->rumus()->nomor("{$a}.alat_serial_number", "{$a}.nomor_order");
 
         if ($denganSertifikat) {
             $rumus->nomor("{$a}.nomor_sesi");
