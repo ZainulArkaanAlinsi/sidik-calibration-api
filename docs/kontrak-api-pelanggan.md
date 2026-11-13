@@ -980,3 +980,26 @@ akun yang mengisi sandi baru sekarang menerima **422 `sandi_akun_lama_salah`** (
 Penjaga: `UndanganAkunLamaTest` (regresi pengambilalihan, sukses + audit + notifikasi, akun baru tidak
 berubah, ember dibagi dengan `masuk`, organisasi, tiga status, pihak tanpa kode), `TerimaUndanganTest`
 (`test_akun_sudah_ada_true_…` kini mengirim sandi akun lama), `MasukKeluarTest` (refactor status `masuk`).
+
+
+## 12. Garis waktu sertifikat (additive, 12 Nov 2026)
+
+Rute baru `GET /sertifikat/garis-waktu`, satu rute, tanpa migrasi data dan tanpa perubahan pada rute yang
+ada (`/sertifikat`, `/sertifikat/{id}`, `/sertifikat/{id}/unduh` tidak berubah). Contoh respons nyata dan
+alur layar ada di [`perintah-frontend-arsip-cari.md`](perintah-frontend-arsip-cari.md) §7.
+
+- Sertifikat perusahaan pemanggil dikelompokkan TAHUN > BULAN > PEKAN > HARI menurut `diterbitkan_pada`.
+  Pekan = ISO 8601 (Senin–Minggu), **dipotong per bulan** supaya hitungan pekan menjumlah ke bulannya.
+- Parameter: `tingkat` (`tahun` | `bulan` | `pekan` | `hari`), induk `tahun` / `bulan` / `pekan`,
+  `tanggal`, `q` (2–100; biaya O(N) per lab, debounce ≥ 300 ms), `termasuk_digantikan` (bawaan tidak, sama\n  dengan `/sertifikat`), `per_page` (≤50),
+  `page`. Induk yang tidak sesuai tingkat → `422`.
+- Respons: `data.{tingkat, induk, total_dokumen, kelompok[], item[]}` + `meta`. `item` (hanya tingkat
+  `hari`) berbentuk **persis baris `GET /sertifikat`** (`SertifikatPelangganResource`) ditambah
+  `nomor_order` (dari snapshot, yang tercetak di PDF) — model baris di app bisa dipakai ulang.
+- `q` memakai pencarian terpadu: nomor sertifikat dinormalisasi (huruf, `/`, `-`, spasi diabaikan; revisi
+  ikut), nomor seri, nomor order, nama alat. Order hanya dari order milik perusahaan pemanggil. **`q` di
+  `GET /sertifikat` tidak diubah** (masih `LIKE` harfiah).
+- Isolasi: kueri dasarnya `LingkupData::sertifikat()` — `customer_id` dari `KonteksPerusahaan`, tidak dari
+  request (`?customer_id=` diabaikan). Sertifikat perusahaan lain tidak pernah terhitung, tampil, atau
+  tertemu; kasusnya di `IsolasiPerusahaanTest` dan `GarisWaktuSertifikatPelangganTest`.
+- Throttle `pelanggan-garis-waktu` 60/menit per pengguna.

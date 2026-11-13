@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Services\KonflikSerialAlat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -23,7 +24,12 @@ class EquipmentRequest extends FormRequest
             'nama_alat' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'serial_number' => [
                 $wajibKalauBikinBaru, 'string', 'max:100',
-                // Unik per organisasi, bukan global — dua PT boleh punya serial sama.
+                // Unik per LABORATORIUM (`organization_id` = lab, BUKAN PT
+                // pelanggan): dua lab boleh punya serial sama, dua PT pelanggan
+                // di lab yang sama TIDAK. Ini yang menyaring alat yang masih
+                // hidup; alat yang sudah dihapus ikut memegang nomor serinya
+                // (indeks DB tidak mengabaikan soft delete) dan diperiksa di
+                // `after()` supaya pesannya sendiri.
                 Rule::unique('equipments', 'serial_number')
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at')
@@ -128,7 +134,7 @@ class EquipmentRequest extends FormRequest
         return [
             'nama_alat.required' => 'Nama alat wajib diisi.',
             'serial_number.required' => 'Nomor seri wajib diisi.',
-            'serial_number.unique' => 'Nomor seri sudah dipakai alat lain.',
+            'serial_number.unique' => KonflikSerialAlat::PESAN_DIPAKAI_ALAT_LAIN,
             'kategori.required' => 'Kategori wajib diisi.',
             'kategori.exists' => 'Kategori itu nggak ada. Ambil daftarnya dari GET /api/categories.',
             'pelanggan_id.required' => 'Pelanggan wajib diisi.',
@@ -159,6 +165,25 @@ class EquipmentRequest extends FormRequest
     public function after(): array
     {
         return [
+            // Nomor seri yang dipegang alat yang sudah dihapus. Dilewati bila
+            // `unique` di atas sudah menolaknya (alat hidup yang memegang).
+            function (Validator $validator): void {
+                $serial = $this->input('serial_number');
+
+                if (! is_string($serial) || $validator->errors()->has('serial_number')) {
+                    return;
+                }
+
+                $pesan = KonflikSerialAlat::pesanBilaDipegangAlatDihapus(
+                    $this->user()->organization_id,
+                    $serial,
+                    $this->route('equipment')?->id,
+                );
+
+                if ($pesan !== null) {
+                    $validator->errors()->add('serial_number', $pesan);
+                }
+            },
             function (Validator $validator): void {
                 $rentang = $this->input('resolusi_rentang');
 

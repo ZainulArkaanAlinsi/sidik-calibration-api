@@ -3544,6 +3544,56 @@ dibanding `mayor.minor.patch`; akhiran `-beta`/`+45` diabaikan; versi tidak terb
 `0.0.0`. Request tanpa header (aplikasi lapangan) tidak pernah kena. Header ini bukan kontrol
 akses — izin tetap dari server.
 
+## 19. Arsip & pencarian terpadu (additive, 12 Nov 2026)
+
+Satu pencarian untuk empat layar, garis waktu arsip, dan Riwayat yang bisa dimuat sampai habis. Semuanya
+**additive**: rute lama, field lama, dan urutan lama tidak berubah; kunci baru di request/respons boleh
+diabaikan app lama. Contoh respons nyata dan alur per layar ada di
+[`perintah-frontend-arsip-cari.md`](perintah-frontend-arsip-cari.md) (berdiri sendiri).
+
+**Pencarian terpadu `q`** (`App\Services\Pencarian\CariDokumenLab`; satu aturan, empat layar). Mencocokkan:
+nomor seri alat (yang terdaftar dan yang diketik teknisi di lembar), nomor sertifikat, nomor order
+(`orders.nomor` dan `calibration_sessions.nomor_order`), nomor sesi, nama alat, merek, dan nama PT.
+Nomor **dinormalisasi** di kedua sisi: huruf besar/kecil, `/`, `-`, dan spasi diabaikan
+(`CAL/2026/10/0001` = `cal-2026-10-0001` = `cal 2026 10 0001`); revisi `-R<n>` ikut karena nomor dasar
+adalah awalan nomor revisinya. `%` dan `_` yang diketik dibaca sebagai huruf biasa. Hasil berperingkat:
+persis, lalu awalan, lalu mengandung. Selalu dikurung `organization_id` pemanggil. **Biaya O(N) per
+laboratorium** (`LIKE '%…%'` dan normalisasi tidak memakai indeks): kira-kira 1–4 s pada 10.000 baris,
+cukup untuk ribuan baris (produksi kini ±17 sertifikat/±25 sesi); untuk data ≥ ±50 ribu baris perlu kolom
+nomor ternormalisasi (keputusan pemilik). Klien wajib debounce ≥ 300 ms dan mengirim `q`/`search` hanya bila
+≥ 2 karakter. `q`/`search` harus teks (larik → `422`, ≤100). Berlaku di:
+
+| Rute | Parameter | Catatan |
+|---|---|---|
+| `GET /sertifikat/telusuri` | `q` (2–100) | Dulu hanya `nomor`. Bentuk baris tidak berubah. |
+| `GET /arsip/berkas` | `q` (≤100, tanpa `min` di server) | Dulu hanya nama berkas (`Sertifikat-CAL-2026-10-0001.pdf`, jadi `CAL/2026/10/0001` tak ketemu). Kini juga nomor sertifikat/seri/order/PT dari sertifikat atau lembar kerja yang ditautkan. |
+| `GET /calibrations` | `q` (2–100) | Baru; 1 huruf → `422`. |
+| `GET /equipments` | `search` (≤100) | Seri, nama, merek, PT; nomor sertifikat/order hanya bila **persis**. Tanpa `min` di server (klien lama mengirim 1 huruf). `urut=jatuh_tempo` menang atas peringkat. |
+
+**`GET /calibrations` (Riwayat)** — parameter baru, semua opsional: `q`, `dari` & `sampai`
+(`YYYY-MM-DD`, tanggal kalibrasi, kedua ujung termasuk), `customer_id`, `per_page` (1–50, bawaan 15;
+51 → `422`), `bentuk=ringan`. `bentuk=ringan` memakai resource daftar tanpa relasi berat
+(`CalibrationRingkasResource`: tanpa `titik`, standar, metode, reviewer, pembacaan; kunci yang sama
+dengan bentuk penuh memakai nama dan arti yang sama; `hasil` hanya memuat `keputusan`). Urutan tetap
+`id` menurun (unik) — saat `q` diisi, peringkat mendahului — sehingga memuat halaman demi halaman tidak
+menggandakan atau melewatkan baris. `ringkas=1` yang sudah ada tidak berubah. Teknisi tetap hanya
+sesinya sendiri apa pun parameternya.
+
+**`GET /arsip/garis-waktu`** — semua peran internal (teknisi: sertifikat sesinya sendiri); throttle
+`arsip-garis-waktu` 60/menit. Arsip dikelompokkan TAHUN > BULAN > PEKAN > HARI menurut `diterbitkan_pada`
+sebagai **tampilan** (folder fisik PT › Tahun › Bulan › Jenis tidak disentuh). Parameter: `tingkat`
+(`tahun` bawaan | `bulan` | `pekan` | `hari`), induk `tahun` / `bulan` / `pekan` (wajib sesuai tingkat),
+`tanggal` (tingkat hari, mempersempit ke satu hari), `customer_id`, `q` (2–100), `per_page` (≤50, bawaan 20),
+`page`. Pekan = ISO 8601 (Senin–Minggu) **dipotong per bulan** supaya jumlah pekan menjumlah ke bulannya.
+Respons: `data.{tingkat, induk, total_dokumen, kelompok[{kunci,label,jumlah,mulai,selesai,telusuri}],
+item[]}` + `meta` (halaman `item`; `item` hanya terisi pada tingkat `hari`). Induk yang salah →
+`422`. Dokumen yang dihitung: `terbit`, `dibatalkan`, `ditarik` dengan tanggal terbit.
+
+**`POST/PUT /equipments`** — nomor seri yang dipegang alat yang sudah **dihapus** (soft delete) kini `422`
+dengan pesan sendiri (`errors.serial_number[0]`), bukan lolos validasi lalu `500`; balapan (indeks unik
+yang memutuskan) dijawab `422` yang sama. Alat lama **tidak** dipulihkan otomatis. Unik per laboratorium
+(tidak berubah).
+
 ---
 
 ## Akun buat nyoba (seeder)

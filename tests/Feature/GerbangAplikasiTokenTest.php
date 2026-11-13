@@ -239,6 +239,8 @@ class GerbangAplikasiTokenTest extends TestCase
             'pelanggan-koreksi',
             'pelanggan-alat-tulis',
             'pelanggan-foto',
+            // Garis waktu sertifikat (12 Nov 2026).
+            'pelanggan-garis-waktu',
         ];
 
         foreach ($wajib as $nama) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\Pencarian\CariDokumenLab;
 use App\Services\TahapPaket;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -13,14 +14,18 @@ use Illuminate\Http\Request;
 /**
  * "Telusuri No. Sertifikat" (K-50-05) — pengganti Pelacakan paket.
  *
- * Pencarian di SERVER (bukan menyaring daftar yang sudah dimuat HP) berdasarkan
- * nomor sertifikat, termasuk revisinya (`…-R1`). Satu organisasi saja;
- * teknisi cuma melihat sertifikat dari sesinya sendiri, sama dengan
- * `CertificateController::index`.
+ * Pencarian di SERVER (bukan menyaring daftar yang sudah dimuat HP) lewat
+ * `CariDokumenLab`: nomor sertifikat (dinormalisasi, termasuk revisinya
+ * `…-R1`), nomor seri alat, nomor order, dan nama alat/PT; yang persis muncul
+ * duluan. Satu organisasi saja; teknisi cuma melihat sertifikat dari sesinya
+ * sendiri, sama dengan `CertificateController::index`.
  */
 class TelusuriSertifikatController extends Controller
 {
-    public function __construct(private readonly TahapPaket $tahap) {}
+    public function __construct(
+        private readonly TahapPaket $tahap,
+        private readonly CariDokumenLab $cari,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -30,12 +35,14 @@ class TelusuriSertifikatController extends Controller
         ]);
 
         $user = $request->user();
-        // `%` dan `_` dari input diperlakukan sebagai huruf biasa.
-        $kata = '%'.addcslashes($data['q'], '\%_').'%';
 
-        $hasil = Certificate::query()
-            ->where('organization_id', $user->organization_id)
-            ->where('nomor', 'like', $kata)
+        $kueri = Certificate::query()->where('certificates.organization_id', $user->organization_id);
+
+        // `%` dan `_` dari input diperlakukan sebagai huruf biasa di dalam
+        // `CariDokumenLab`; peringkat (persis dulu) mendahului urutan di bawah.
+        $this->cari->sertifikat($kueri, $user->organization_id, $data['q']);
+
+        $hasil = $kueri
             ->when(
                 $user->role === User::ROLE_TEKNISI,
                 fn (Builder $q) => $q->whereHas('session', fn (Builder $s) => $s->where('teknisi_id', $user->id)),
@@ -49,8 +56,8 @@ class TelusuriSertifikatController extends Controller
                 'session.orderItem.sesiTerakhir.certificate',
                 'revisiTerakhir',
             ])
-            ->orderBy('nomor')
-            ->orderByDesc('id')
+            ->orderBy('certificates.nomor')
+            ->orderByDesc('certificates.id')
             ->paginate($data['per_page'] ?? 20)
             ->withQueryString();
 

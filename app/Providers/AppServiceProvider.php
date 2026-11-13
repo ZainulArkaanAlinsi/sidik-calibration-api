@@ -398,6 +398,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('pelacakan-tahap', 60);
         // Telusuri No. Sertifikat (baca; diketik per huruf di HP).
         $perMenitPengguna('sertifikat-telusuri', 60);
+        // Garis waktu arsip, sisi lab dan sisi pelanggan (ember terpisah). Baca;
+        // satu ketukan = satu tingkat, dan pencarian `q` bisa diketik per huruf.
+        $perMenitPengguna('arsip-garis-waktu', 60);
+        $perMenitPengguna('pelanggan-garis-waktu', 60);
         // Sembunyikan/tampilkan sesi di Riwayat (§47). Cuma preferensi tampilan,
         // jadi longgar — orang yang merapikan daftarnya menekan banyak baris
         // berturut-turut. Ember sendiri supaya tidak memakan jatah tulis lain.

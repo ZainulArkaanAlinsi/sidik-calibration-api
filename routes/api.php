@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
 use App\Http\Controllers\Api\Admin\PengajuanAkunController;
+use App\Http\Controllers\Api\ArsipGarisWaktuController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AutoclaveController;
@@ -521,6 +522,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/arsip/berkas', [FolderFileController::class, 'index']);
     Route::get('/arsip/berkas/{folderFile}/unduh', [FolderFileController::class, 'download'])
         ->name('arsip.berkas.unduh');
+    // Garis waktu arsip (hari/pekan/bulan/tahun menurut tanggal terbit) --
+    // TAMPILAN, bukan folder. Teknisi cuma sertifikat sesinya sendiri.
+    Route::get('/arsip/garis-waktu', ArsipGarisWaktuController::class)
+        ->middleware('throttle:arsip-garis-waktu');
 
     // Metode kalibrasi (IK) — bacanya semua role buat dropdown & tampilan detail.
     Route::get('/calibration-methods', [CalibrationMethodController::class, 'index']);

@@ -6,7 +6,9 @@ use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AutoclaveStoreRequest;
 use App\Http\Requests\CalibrationRequest;
+use App\Http\Requests\DaftarSesiRequest;
 use App\Http\Resources\CalibrationResource;
+use App\Http\Resources\CalibrationRingkasResource;
 use App\Jobs\GenerateCertificate;
 use App\Models\AuditLog;
 use App\Models\CalibrationCapability;
@@ -38,6 +40,7 @@ use App\Services\Calibration\TabelStandarSieve;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Services\CalibrationValidator;
+use App\Services\DaftarSesiKalibrasi;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
@@ -174,12 +177,25 @@ class CalibrationController extends Controller
     // yang beneran dilaporkan. Kolomnya udah dinaikin ke decimal(12,8).
     private const DESIMAL_K = 8;           // faktor_cakupan_k: decimal(12, 8)
 
-    public function index(Request $request): AnonymousResourceCollection
+    /**
+     * Daftar sesi (Riwayat, antrean, draf).
+     *
+     * Parameter TAMBAHAN, semuanya opsional (`DaftarSesiRequest`): `q` (pencarian
+     * terpadu `CariDokumenLab` -- nomor sesi/sertifikat/order, nomor seri, nama
+     * alat/PT), `dari`/`sampai` (tanggal kalibrasi), `customer_id`, `per_page`
+     * (maks 50), dan `bentuk=ringan` (resource tanpa relasi berat). Tanpa satu
+     * pun dari mereka respons dan urutannya tidak berubah.
+     *
+     * Urutan SELALU diakhiri `id` menurun (unik), sehingga memuat halaman demi
+     * halaman tidak menggandakan atau melewatkan baris; saat `q` diisi, yang
+     * paling cocok (persis, lalu awalan) mendahului.
+     */
+    public function index(DaftarSesiRequest $request, DaftarSesiKalibrasi $daftar): AnonymousResourceCollection
     {
         $user = $request->user();
 
         $sesi = CalibrationSession::query()
-            ->with(self::RELASI)
+            ->with($request->ringan() ? DaftarSesiKalibrasi::relasiRingan() : self::RELASI)
             // `tersembunyi` = akun YANG LOGIN pernah menyembunyikan sesi ini dari
             // Riwayat-nya (§47). Satu subquery EXISTS di query yang sama, bukan
             // query per baris. Daftarnya sengaja TIDAK disaring: HP yang memilih
@@ -199,11 +215,15 @@ class CalibrationController extends Controller
                 $request->filled('equipment_id'),
                 fn ($query) => $query->where('equipment_id', $request->integer('equipment_id')),
             )
+            // Sebelum `latest('id')`: peringkat pencarian harus mendahului urutan.
+            ->tap(fn ($query) => $daftar->terapkan($query, $user->organization_id, $request->validated()))
             ->latest('id')
-            ->paginate(15)
+            ->paginate($request->perHalaman())
             ->withQueryString();
 
-        return CalibrationResource::collection($sesi);
+        return $request->ringan()
+            ? CalibrationRingkasResource::collection($sesi)
+            : CalibrationResource::collection($sesi);
     }
 
     /**
