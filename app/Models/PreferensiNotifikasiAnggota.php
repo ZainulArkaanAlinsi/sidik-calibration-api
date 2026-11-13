@@ -20,6 +20,7 @@ class PreferensiNotifikasiAnggota extends Model
             'status_permintaan' => 'boolean',
             'pesan_lab' => 'boolean',
             'ringkasan_email_mingguan' => 'boolean',
+            'tahap_alat' => 'boolean',
         ];
     }
 

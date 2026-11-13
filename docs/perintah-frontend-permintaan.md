@@ -230,9 +230,12 @@ konsultan di dua pabrik punya dua set). `PUT` throttle `pelanggan-preferensi` (3
   "pengingat_jadwal": true,
   "status_permintaan": true,
   "pesan_lab": true,
-  "ringkasan_email_mingguan": false
+  "ringkasan_email_mingguan": false,
+  "tahap_alat": true
 } }
 ```
+
+(`tahap_alat` kunci kelima, ditambah 13 Nov 2026 -- lihat `docs/perintah-frontend-pelacakan-pelanggan.md`.)
 
 `PUT`: kirim **sebagian** — yang tidak dikirim tidak berubah (satu ketukan = satu
 kunci). Nilai harus boolean, kalau tidak 422. Kunci asing diabaikan. Jawabannya
@@ -244,6 +247,7 @@ seluruh set terkini. Anggota yang belum pernah menyetel mendapat bawaan di atas.
 | `status_permintaan` | "permintaan diterima" dan "permintaan ditolak" |
 | `pesan_lab` | balasan admin di utas |
 | `ringkasan_email_mingguan` | **disimpan saja** — pengirim email mingguan belum ada |
+| `tahap_alat` | perubahan tahap alat di paket yang berjalan ("Sedang dikalibrasi", "Siap diambil", …); bawaan menyala |
 
 Saklar mati = notifikasinya **tidak dikirim sama sekali** (bukan cuma disenyapkan).
 Notifikasi OS yang dimatikan di HP tetap masuk ke kotak Notifikasi di dalam aplikasi.

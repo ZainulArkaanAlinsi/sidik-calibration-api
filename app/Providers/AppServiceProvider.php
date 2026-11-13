@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\CalibrationSession;
+use App\Observers\SesiKabarTahapAlat;
 use App\Services\Acuan\SumberAcuan;
 use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
@@ -167,6 +169,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->rateLimiters();
+
+        // Kabar perubahan tahap alat ke pelanggan (tahap turunan dari status sesi).
+        // Sesi tanpa `order_item_id` berhenti di baris pertama observer.
+        CalibrationSession::observe(SesiKabarTahapAlat::class);
 
         // Bawaan Laravel nunjuk ke route web `password.reset` yang nggak ada di
         // project API-only ini. Diganti deep link ke app Flutter — mobile daftarin

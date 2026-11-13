@@ -32,6 +32,15 @@ class PreferensiNotifikasi
     public const RINGKASAN_EMAIL_MINGGUAN = 'ringkasan_email_mingguan';
 
     /**
+     * Perubahan tahap alat di paket yang sedang berjalan ("Sedang dikalibrasi",
+     * "Siap diambil", ...). Kategori BARU 13 Nov 2026, bawaan MENYALA: kabar
+     * tentang pekerjaan yang sedang dinanti pelanggan, bukan promosi. Pengirimnya
+     * `KabarTahapAlat`. Disimpan di kolom `tahap_alat` (migrasi additive
+     * `2026_11_13_100000`) karena satu saklar = satu kolom di tabelnya.
+     */
+    public const TAHAP_ALAT = 'tahap_alat';
+
+    /**
      * Nilai bagi anggota yang belum pernah menyentuh layarnya. Kabar yang
      * menyangkut pekerjaannya menyala; ringkasan email mati — email yang tidak
      * diminta itu spam. Pengirimnya `RingkasanMingguan` (sejak 1 Okt 2026) dan
@@ -44,6 +53,7 @@ class PreferensiNotifikasi
         self::STATUS_PERMINTAAN => true,
         self::PESAN_LAB => true,
         self::RINGKASAN_EMAIL_MINGGUAN => false,
+        self::TAHAP_ALAT => true,
     ];
 
     /** @return list<string> */

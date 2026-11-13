@@ -33,7 +33,13 @@ class PaketPelangganResource extends JsonResource
             $sertifikat = $item->sesiTerakhir?->certificate;
 
             return [
+                // `id` = id baris item di paket (`order_items.id`, kunci teknis);
+                // `equipment_id` = alatnya, penghubung ke `GET /alat/{id}` (additive,
+                // 13 Nov 2026). Dua-duanya bukan kunci TAMPIL: yang ditampilkan ke
+                // pelanggan nama + merk + nomor seri, dengan Order Number sebagai
+                // pengait kedua.
                 'id' => $item->id,
+                'equipment_id' => $item->equipment_id,
                 'nama' => $item->equipment?->nama_alat,
                 'merk' => $item->equipment?->merk,
                 'serial' => $item->equipment?->serial_number,

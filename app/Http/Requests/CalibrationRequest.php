@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Rules\AngkaTerhingga;
+use App\Rules\ItemOrderMilikAlat;
 use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
@@ -1229,6 +1230,12 @@ class CalibrationRequest extends FormRequest
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at'),
             ],
+
+            // Item order alat ini, bila klien sudah tahu. Tanpa ini server memilih sendiri
+            // (`PenautanSesiKeOrder`). Hanya dibaca saat membuat sesi (POST).
+            ...($this->isMethod('POST')
+                ? ['order_item_id' => ['sometimes', 'nullable', 'integer', new ItemOrderMilikAlat($organizationId)]]
+                : []),
 
             // "7. Satuan Refracto" — satu-satunya kolom lembar kerja yang nulis
             // balik ke DATA MASTER alat (`equipments.satuan`), bukan ke sesinya.

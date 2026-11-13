@@ -81,13 +81,24 @@ class AlatPelangganResource extends JsonResource
      */
     public ?array $konteksStatus = null;
 
+    /**
+     * Paket aktif terbaru alat ini (`sedang_dikerjakan`), diisi controller lewat
+     * [denganPaketAktif()] dari `PaketAktifAlat` (empat kueri per halaman).
+     * Sengaja BUKAN dihitung di sini: resource tidak tahu perusahaan pemanggil.
+     * `false` = belum diisi -> kuncinya TIDAK dikirim (jangan berbohong dengan
+     * `null`, yang artinya "tidak ada paket aktif").
+     *
+     * @var array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string}|null|false
+     */
+    public array|null|false $paketAktif = false;
+
     public function toArray(Request $request): array
     {
         /** @var Equipment $alat */
         $alat = $this->resource;
         $hari = self::hariKeJatuhTempo($alat);
 
-        return [
+        $dasar = [
             'id' => $alat->id,
             'nama' => $alat->nama_alat,
             'merk' => $alat->merk,
@@ -116,6 +127,26 @@ class AlatPelangganResource extends JsonResource
                 ($this->konteksStatus ?? self::konteks([$alat])[$alat->id])['pernah_terbit'],
             ),
         ];
+
+        // Additive (13 Nov 2026): aplikasi lama mengabaikan kunci yang tidak dikenalnya.
+        // Lima kunci saja (`paket_id`, `order_item_id`, `nomor_order`, `tahap`,
+        // `tahap_label`); tidak ada nama teknisi, kode, nomor sesi, kondisi terima,
+        // catatan, atau status hitung.
+        if ($this->paketAktif !== false) {
+            $dasar['sedang_dikerjakan'] = $this->paketAktif;
+        }
+
+        return $dasar;
+    }
+
+    /**
+     * @param  array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string}|null  $paketAktif
+     */
+    public function denganPaketAktif(?array $paketAktif): self
+    {
+        $this->paketAktif = $paketAktif;
+
+        return $this;
     }
 
     public function denganSertifikat(?Certificate $sertifikat): self

@@ -51,6 +51,19 @@ return [
     ),
 
     /*
+     * Kabar tahap TURUNAN ke pelanggan ("Sedang dikalibrasi", "Hasil sedang diperiksa",
+     * "Sedang dikerjakan ulang") dari observer `SesiKabarTahapAlat`.
+     *
+     * Default FALSE, dan itu disengaja (13 Nov 2026): tiap alat menghasilkan kabar di
+     * tiap perpindahan, dan aplikasi pelanggan belum punya layar preferensi untuk
+     * mematikannya. Dinyalakan setelah layar itu ada. TIDAK menyentuh kabar tahap FISIK
+     * (petugas menandai "Siap diambil"/"Sudah diserahkan" di `PelacakanController`) maupun
+     * kabar "sertifikat terbit" -- keduanya tetap jalan. Dibaca lewat config (bukan
+     * `env()` di kode) supaya `config:cache` tidak membuatnya diam-diam null.
+     */
+    'kabar_tahap_turunan' => (bool) env('KABAR_TAHAP_TURUNAN', false),
+
+    /*
      * Isi `GET /app/info` — kontak lab, dokumen hukum, alamat, petunjuk
      * pengemasan (layar Bantuan aplikasi pelanggan).
      *

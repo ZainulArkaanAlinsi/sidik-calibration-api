@@ -85,6 +85,52 @@ final class LingkupData
     }
 
     /**
+     * Paket yang masih berjalan: `paket()` tanpa yang `selesai`.
+     *
+     * @return Builder<Order>
+     */
+    public function paketAktif(): Builder
+    {
+        return $this->paket()->where('status', '!=', Order::STATUS_SELESAI);
+    }
+
+    /**
+     * Relasi eager-load untuk `PaketPelangganResource` — SATU-SATUNYA tempat
+     * item paket dimuat untuk pelanggan (`/paket`, `/paket/{id}`, `/beranda`).
+     *
+     * Item yang alatnya milik PELANGGAN LAIN disembunyikan (item-nya, bukan
+     * paketnya): order PT A yang dulu sempat dibuat memuat alat PT B tidak
+     * boleh membocorkan nama + nomor seri alat itu ke PT A, dan nilai `tahap`/
+     * `jumlah_alat`/`garis_waktu` paket dihitung dari item yang TERLIHAT saja.
+     * Alat tanpa pemilik (`customer_id` null) tetap tampil — sama dengan aturan
+     * tulis di `OrderRequest`. Alat yang dihapus lunak tetap dihitung: paketnya
+     * memang pernah memuat alat itu.
+     *
+     * Sengaja TANPA `items.teknisi`: nama teknisi bukan urusan pelanggan.
+     *
+     * @return array<int|string, mixed>
+     */
+    public function relasiPaket(): array
+    {
+        $customerId = $this->konteks->customerId;
+        $organizationId = $this->perusahaan()->organization_id;
+
+        return [
+            'items' => fn ($q) => $q
+                ->select(['id', 'order_id', 'equipment_id', 'tahap_fisik', 'tahap_fisik_pada', 'diserahkan_kepada'])
+                ->whereHas('equipment', fn (Builder $alat) => $alat
+                    ->withTrashed()
+                    ->where('organization_id', $organizationId)
+                    ->where(fn (Builder $pemilik) => $pemilik
+                        ->whereNull('customer_id')
+                        ->orWhere('customer_id', $customerId))),
+            'items.equipment' => fn ($q) => $q->withTrashed()->select(['id', 'nama_alat', 'merk', 'serial_number']),
+            'items.sesiTerakhir',
+            'items.sesiTerakhir.certificate',
+        ];
+    }
+
+    /**
      * Permintaan kalibrasi milik perusahaan ini — semua status.
      *
      * Berbeda dari `paket()`, yang dibatalkan TIDAK disembunyikan: pelanggan

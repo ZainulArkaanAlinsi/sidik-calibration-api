@@ -5553,6 +5553,280 @@ kosong — perubahan perilaku untuk kasus yang dulu mengembalikan semuanya. Kont
 nomor order + seri) dan `OrderController` (`GET /orders`, nomor) di sisi Lab masih `LIKE` harfiah — di luar
 "rute arsip", belum disentuh. Tanda hubung Unicode (– —) dan spasi tak-terputus belum dianggap pemisah.
 
+## §57 — Pelacakan alat untuk pelanggan: integritas order, penjaga tampilan, field additive, notifikasi tahap — 13 Nov 2026
+
+**Permintaan pemilik (13 Nov 2026).** Pelanggan melihat sampai mana alatnya: tahap per alat di aplikasi Pelanggan,
+dikenali dari identitas yang dia mengerti, dan dikabari saat tahapnya berpindah.
+
+**Keputusan pemilik (final, jangan ditanya ulang).**
+
+- **Kunci tampil** untuk pelanggan: nama alat + merk + nomor seri = identitas utama; Order Number = pengait kedua.
+  **Kunci teknis**: `order_items.id` dengan `equipment_id` sebagai penghubung. Nama PT bukan kunci.
+- Nama penerima serah terima `diserahkan_kepada` **tetap tampil** seperti sekarang -- dicatat **"perlu konfirmasi
+  lab"** (di bawah).
+- Notifikasi perubahan tahap = **kategori preferensi BARU**, bawaan **menyala**.
+- Tidak ada data internal ke pelanggan: nama teknisi/reviewer, kode, nomor sesi, kondisi terima, catatan,
+  status/peringatan hitung.
+
+**Keadaan nyata sebelum perubahan (dibaca dari kode di `origin/main` 7b85eb8b).**
+
+- Tahap per alat SUDAH dipaparkan: `GET /paket` dan `/paket/{id}` (`PaketPelangganResource`: id item, nama, merk,
+  serial, `tahap`, `tahap_label`, `diserahkan_kepada`, `sertifikat_id`). `equipment_id` tidak dikirim di item paket;
+  `AlatPelangganResource` tidak memuat tahap.
+- Hanya dua tahap yang DISIMPAN (`order_items.tahap_fisik`: `siap_diambil`, `diserahkan`); enam lainnya DITURUNKAN
+  `TahapPaket` dari status sesi & sertifikat. Pemindahan tahap fisik cuma di
+  `PelacakanController::tandaiTahapFisik` -- tanpa notifikasi.
+- **Celah integritas.** `OrderRequest` hanya mengecek alat ada di ORGANISASI (`Rule::exists … organization_id`); tidak
+  ada yang membandingkan `equipments.customer_id` dengan `orders.customer_id`. Akibatnya order PT A bisa memuat alat
+  PT B di lab yang sama, dan PT A melihat nama + nomor seri alat PT B di `/paket`. `OrderTest` hanya menguji lintas
+  ORGANISASI.
+
+**Yang dikerjakan** (branch `feat/api-pelacakan-pelanggan-20261113`, belum commit).
+
+| Bagian | Isi | Berkas |
+|---|---|---|
+| **A. Integritas order** | `POST /api/orders` dan `PUT /api/orders/{id}` menolak `422` (pesan Indonesia, menyebut nama + nomor seri alat, galat di `items.N.equipment_id`) bila `equipments.customer_id` TIDAK null dan berbeda dari pelanggan order. Alat tanpa pemilik (null) lolos -- keputusan; kolomnya `NOT NULL` hari ini, jadi cabang itu cuma penjaga. Ikut dijaga: mengganti `customer_id` lewat PUT tanpa menyentuh `items` ditolak bila alat yang tinggal (semua item; atau yang sudah bersesi bila `items` dikirim, sesuai `gantiItems`) milik pelanggan lama. PUT yang tidak menyentuh `customer_id`/`items` (mis. ganti status) TIDAK diblokir oleh order lama yang sudah tercampur. Order lab lain tetap `404`, bukan `422` | `OrderRequest` |
+| **B. Penjaga tampilan** | Item paket yang alatnya milik pelanggan lain (atau lab lain) disembunyikan -- item-nya, bukan paketnya -- di `/paket`, `/paket/{id}` (termasuk `garis_waktu`), **dan `/beranda`** (`paket_berjalan` memuat item lewat resource yang sama; tidak disebut di tugas, tapi bocor lewat situ juga). `jumlah_alat`/`tahap` dihitung dari item yang terlihat. Satu tempat: `LingkupData::relasiPaket()` | `LingkupData`, `PaketController`, `BerandaController` |
+| **C. Field additive** | `equipment_id` di tiap item paket; `sedang_dikerjakan` `{paket_id, order_item_id, nomor_order, tahap, tahap_label}` atau `null` di `GET /alat`, `/alat/{id}`, `/beranda` (`perlu_perhatian`); empat kueri per halaman (tanpa N+1) | `PaketPelangganResource`, `AlatPelangganResource`, `PaketAktifAlat`, `AlatController`, `BerandaController` |
+| **D. Notifikasi tahap** | `KabarTahapAlat` + `TahapAlatBerubah` (kategori `pelanggan.tahap_alat`, tautan baru `pelanggan_paket`), saklar `tahap_alat` bawaan menyala. Titik pemicu: `tandaiTahapFisik` (fisik) dan observer `SesiKabarTahapAlat` pada `CalibrationSession` (turunan) | `KabarTahapAlat`, `TahapAlatBerubah`, `SesiKabarTahapAlat`, `PreferensiNotifikasi`, `PreferensiNotifikasiAnggota`, `PelacakanController`, `AppServiceProvider`, migrasi |
+| **E. Dokumen** | `docs/kontrak-api-pelanggan.md` §14, `docs/perintah-frontend-pelacakan-pelanggan.md` (baru), `docs/perintah-frontend-permintaan.md` §2.7, bagian ini | -- |
+| **F. Penautan sesi -> item order** | sesi BARU otomatis tertaut ke item order aktif alatnya (`calibration_sessions.order_item_id`) di `store` dan `simpanAutoclave`; menghidupkan tahap turunan, kabar tahap, dan dua penjaga order lab. Rincian, aturan, dan kueri sensus di bagian F di bawah | `PenautanSesiKeOrder`, `ItemOrderMilikAlat`, `CalibrationController`, `CalibrationRequest`, `AutoclaveStoreRequest` |
+
+**Satu migrasi, tak terhindarkan** (`2026_11_13_100000_tambah_tahap_alat_ke_preferensi_notifikasi_anggota`): kolom
+boolean `tahap_alat` default `true` di `preferensi_notifikasi_anggota`. Satu saklar = satu kolom di tabel itu
+(`PreferensiNotifikasi::penerima()` membaca kolomnya di SQL, `simpan()` menulisnya, controller memvalidasi dari
+daftar `BAWAAN`); kategori tanpa kolom membuat `simpan()` gagal. Additive, baris lama ikut menyala, `down()` ada.
+`GET /preferensi-notifikasi` kini membawa lima kunci; satu test lama (`assertExactJson` empat kunci) disesuaikan
+karena kontraknya memang bertambah.
+
+**Aturan notifikasi (rincian di kontrak §14.4).** Hanya perubahan yang terlihat pelanggan; `sertifikat_terbit`
+TIDAK lewat sini (sudah ada `pelanggan.sertifikat_terbit`; kabar kedua untuk kejadian yang sama hanya mengganda) --
+keputusan pembangun yang bisa dibalik dengan satu baris di `KabarTahapAlat::kirim()`; mundur dari sertifikat
+terbit (tarik/revisi) bukan urusan di sini (`SertifikatBerubah`); order `dibatalkan` dan item beralat pelanggan lain
+dilewati; sekali per peristiwa per akun (`tanda_tangan`); tidak pernah menggagalkan serah terima / simpan sesi.
+Satu notifikasi per ALAT per perubahan, bukan per paket -- menggabungkan 12 alat dalam satu paket adalah keputusan
+produk tersendiri.
+
+**TEMUAN (di luar tugas, tidak disentuh).**
+
+1. **`calibration_sessions.order_item_id` tidak ditulis oleh jalur mana pun di `app/`** (dicari `order_item_id` /
+   `orderItem` di seluruh `app/`: hanya dibaca; kolom ada di `$fillable` `CalibrationSession`, tetapi
+   `CalibrationRequest` tidak memvalidasinya dan `atributDariRequest` tidak membawanya). Yang menautkan sesi ke
+   item paket hari ini hanyalah factory test dan data yang diisi di luar API. Akibat nyata: tahap TURUNAN di `/paket`
+   (sedang dikalibrasi, hasil diperiksa, dikerjakan ulang, sertifikat terbit) tidak lepas dari "Alat diterima lab"
+   untuk sesi yang dibuat lewat aplikasi, dan notifikasi tahap turunan di bagian D tidak akan terkirim sampai
+   tautannya ditulis. Yang praktis terkirim hari ini hanya tahap FISIK. **Perlu keputusan pemilik** (menautkan sesi
+   ke item paket saat lembar kerja dibuat dari order -- bagian terpisah; atau cukup dengan tahap fisik).
+   **DITUTUP di bagian F di bawah** (keputusan pemilik 13 Nov 2026: tahap alat harus hidup untuk pelanggan).
+2. `docs/notifikasi-belum-nyala.md` ada di repo **mobile** (`sidik-calibration-mobile`), bukan di repo API, jadi tidak
+   disentuh di sini. Teks koreksinya (FCM sudah ada di API; Tolak sebagai pemicu dicabut K-50-01) disiapkan untuk
+   diterapkan di repo itu.
+3. `/beranda` ikut memuat item paket -- lihat B.
+
+**F. Penautan sesi kalibrasi ke item order (perbaikan lanjutan, 13 Nov 2026 -- keputusan pemilik: tahap alat harus
+hidup untuk pelanggan).** Menutup temuan 1: `calibration_sessions.order_item_id` tidak ditulis jalur mana pun di `app/`.
+Dampaknya lebih luas dari yang semula dilaporkan -- selain tahap turunan `/paket` dan kabar tahap, dua penjaga order lab
+yang bergantung pada `has('calibrationSessions')` ikut mati (`OrderController::destroy` tak pernah menolak menghapus order
+bersesi; `gantiItems` tak pernah mempertahankan item bersesi).
+
+| Aspek | Aturan (`App\Services\PenautanSesiKeOrder`, nol migrasi) |
+|---|---|
+| Titik | `POST /api/calibrations` (`store`) dan `POST /api/calibrations/autoclave` (`simpanAutoclave`) -- satu-satunya dua tempat sesi dibuat. Hanya saat sesi DIBUAT: `PUT` tidak menulis, dan kiriman ulang `client_request_id` (replay) tidak menautkan ulang |
+| Kandidat "aktif" | item belum `diserahkan` (`order_items.tahap_fisik` null atau bukan `diserahkan` -- satu-satunya tahap tersimpan yang mengakhiri perjalanan di `TahapPaket`); **dan** order belum `selesai`/`dibatalkan` serta tidak dihapus lunak (penyempurnaan atas definisi "belum diserahkan", sama dengan `LingkupData::paketAktif()`: tanpa ini item lama yang tahap fisiknya tak pernah dicatat akan selamanya "aktif" dan menang atas order yang sebenarnya); `orders.customer_id` = `equipments.customer_id`; `orders.organization_id` = organisasi sesi; `order_items.equipment_id` = alat sesi |
+| Tepat satu kandidat | ditautkan |
+| Dua atau lebih kandidat | **TIDAK ditautkan** (`null`, perilaku lama) dan semua kandidat (nomor order + id item) dicatat di jejak audit sesi, supaya admin bisa menautkannya kemudian. Keputusan pemilik 13 Nov 2026: kode tidak pernah menulis `selesai` dan `diserahkan` jarang dicatat, jadi "order terlama" bisa order basi dan memicu kabar ke pelanggan untuk order yang salah -- menebak lebih buruk daripada tidak menautkan. Aturan "order terlama" yang sempat ada DIHAPUS |
+| Penautan gagal | **tidak pernah menggagalkan pembuatan sesi**: `tentukan` dan `catat` menelan semua galat (log peringatan `equipment_id` + kelas galat, tanpa pesan galat) dan jatuh ke tanpa tautan. Lembar kerja yang sudah diisi teknisi tidak boleh hilang karena pelengkap ini. Bila hanya penulisan catatan audit yang gagal, tautannya tetap tersimpan (jejak "dibikin" `Diaudit` memuat `order_item_id`) |
+| Tidak ada kandidat | `order_item_id` = `null` (perilaku lama) |
+| Kiriman klien | `order_item_id` opsional di body `POST` (belum dikirim aplikasi mana pun). Bila ada dan tidak null: harus item order untuk alat itu, di order organisasi yang sama dan milik pelanggan alat itu (`App\Rules\ItemOrderMilikAlat`), kalau tidak `422` pada `order_item_id` (pesan sama untuk id yang tak ada / milik lab lain -- tidak mengakui keberadaan baris). Yang valid dipakai apa adanya dan TIDAK ditimpa pilihan otomatis. `null` = tidak dikirim |
+| Jejak | satu baris `audit_logs` per sesi: tertaut (`diubah`, `order_item_id` null -> id; catatan "Tertaut otomatis ke item order {nomor} (item #id)." atau "Tertaut atas kiriman klien ke item order {nomor} …") atau ambigu (`diubah` tanpa data, catatan "Tidak tertaut otomatis: ada N item order aktif untuk alat ini: ORD/… (item #…), … Tautkan manual setelah dipastikan order mana yang sedang dikerjakan."; maksimal 10 kandidat disebut, sisanya "dan lainnya") |
+
+**Efek ke penjaga order lab (sekarang hidup, dites).** `DELETE /api/orders/{id}` untuk order yang itemnya bersesi dijawab `422`
+dengan pesan yang sudah ada ("… Ubah statusnya jadi "dibatalkan" biar riwayatnya nggak putus.") dan jalan keluarnya
+(`PUT status = dibatalkan`) berhasil; order tanpa sesi tetap bisa dihapus. Mengganti isi order lewat `PUT items` mempertahankan item
+bersesi (sesuai `gantiItems`), dan mengganti pelanggan order yang masih memuat alat bersesi pelanggan lama ditolak oleh `OrderRequest`
+(bagian A). Efek ke pelanggan: `/paket` menurunkan "Sedang dikalibrasi" dst. untuk sesi baru (tampilan, hidup). **Kabarnya (kabar tahap TURUNAN) bawaan
+MATI** -- lihat "Sakelar `KABAR_TAHAP_TURUNAN`" di bawah.
+
+**Sakelar `KABAR_TAHAP_TURUNAN` (keputusan pemilik 13 Nov 2026, bawaan `false`).** Setiap alat menembak satu notifikasi per perpindahan tahap turunan
+(diukur peninjau: 4 kabar per alat per anggota, 12 alat = 48 per anggota per paket, ditambah 2 tiap putaran revisi; draf massal pagi hari menembak
+push beruntun), dan aplikasi Pelanggan belum punya layar preferensi untuk mematikannya. Karena itu observer `SesiKabarTahapAlat` baru mengirim bila
+`config('pelanggan.kabar_tahap_turunan')` (env `KABAR_TAHAP_TURUNAN`) menyala; mati = berhenti di baris pertama, nol kueri. Sakelar ini HANYA untuk
+kabar turunan: kabar tahap FISIK (petugas menandai "Siap diambil"/"Sudah diserahkan", `PelacakanController`) dan "sertifikat terbit" (kategori yang
+sudah ada) tetap jalan. Kunci ada di `config/pelanggan.php`, `.env.example` dan `render.yaml` (`value: "false"`); menyalakannya = perintah pemilik, satu per satu,
+setelah layar preferensi (saklar `tahap_alat`) ada di aplikasi Pelanggan. Tampilan tahap di `/paket` dan `sedang_dikerjakan` TIDAK bergantung pada sakelar.
+
+**Keterbatasan yang DIKENAL (tidak dikerjakan sekarang; keputusan pemilik 13 Nov 2026).**
+
+1. **Tidak ada pindah/lepas tautan.** Tautan yang salah bersifat lengket: menghapus order ditolak `422`, mengganti isi order mempertahankan item bersesi, dan
+   satu-satunya jalan keluar "batalkan" membatalkan SELURUH order; `PUT /api/calibrations/{id}` tidak menulis `order_item_id`. Tindak lanjut yang
+   disarankan: endpoint admin `PUT /api/calibrations/{id}/tautan-order` (set/lepas, hanya sesi yang belum final, alasan wajib, dicatat di jejak audit
+   lama -> baru) -- sekaligus jalan untuk menautkan sesi yang tidak ditautkan karena ambigu.
+2. **Sesi yang lahir SEBELUM item order didaftarkan tidak tertaut** sampai ada mekanisme tautan susulan (penautan hanya terjadi saat sesi dibuat; lembar
+   kerja sering dibuat sebelum order dicatat di meja depan). Solusi yang disarankan: tautan susulan saat item order dibuat/ditambah
+   (`OrderController::store`/`update`/`gantiItems`): cari sesi alat itu yang belum final (`draft`/`menunggu_approval`/`perlu_revisi`), belum bertaut, di
+   organisasi dan pelanggan yang sama, dan tautkan HANYA bila tepat satu item aktif (aturan yang sama), dengan catatan jejak audit.
+3. Sesi LAMA (sebelum perubahan ini) tidak di-backfill -- keputusan terpisah di bawah.
+
+**Keputusan TERPISAH, belum dikerjakan: backfill sesi lama.** Sesi yang sudah ada TIDAK ditautkan (itu TULIS ke produksi;
+menunggu instruksi yang menyebut tabel + jumlah barisnya, `docs/aturan-akses-database.md` butir 1). Untuk memutuskannya, pemilik bisa
+menjalankan satu SELECT baca-saja yang menghitung sesi tak tertaut yang alatnya kini punya item order aktif (definisi aktif sama dengan
+di atas; hasilnya satu angka):
+
+```sql
+SELECT COUNT(*) AS sesi_tak_tertaut_beritem_aktif
+FROM calibration_sessions s
+JOIN equipments e ON e.id = s.equipment_id
+WHERE s.order_item_id IS NULL
+  AND EXISTS (
+    SELECT 1
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id AND o.deleted_at IS NULL
+    WHERE oi.equipment_id = s.equipment_id
+      AND (oi.tahap_fisik IS NULL OR oi.tahap_fisik <> 'diserahkan')
+      AND o.organization_id = s.organization_id
+      AND o.customer_id = e.customer_id
+      AND o.status NOT IN ('selesai', 'dibatalkan')
+  );
+```
+
+Tabel: `calibration_sessions`, `equipments`, `order_items`, `orders`; membaca saja. Kueri ini dijalankan oleh
+`PenautanSesiKeOrderTest::test_kueri_sensus_di_dokumen_menghitung_sesi_tak_tertaut_yang_punya_item_aktif` langsung dari teks di
+dokumen ini, jadi isinya tidak bisa menyimpang diam-diam. Hati-hati menafsirkan angkanya: alat yang dikalibrasi ulang tahun depan
+punya sesi LAMA tak tertaut dan item BARU aktif -- sesi lama itu terhitung walau memang bukan bagian order yang baru.
+
+Karena sesi baru hanya ditautkan bila tepat satu kandidat, ada satu SELECT baca-saja lagi untuk mengukur seberapa sering alat punya LEBIH dari satu item
+order aktif (alat itu tidak akan tertaut otomatis sampai ada pindah/lepas tautan atau salah satu order ditutup):
+
+```sql
+SELECT COUNT(*) AS alat_dengan_banyak_item_aktif
+FROM (
+  SELECT oi.equipment_id
+  FROM order_items oi
+  JOIN orders o ON o.id = oi.order_id AND o.deleted_at IS NULL
+  JOIN equipments e ON e.id = oi.equipment_id
+  WHERE (oi.tahap_fisik IS NULL OR oi.tahap_fisik <> 'diserahkan')
+    AND o.organization_id = e.organization_id
+    AND o.customer_id = e.customer_id
+    AND o.status NOT IN ('selesai', 'dibatalkan')
+  GROUP BY oi.equipment_id
+  HAVING COUNT(*) > 1
+) ambigu;
+```
+
+Dijaga `PenautanSesiKeOrderTest::test_kueri_sensus_ambigu_di_dokumen_menghitung_alat_dengan_lebih_dari_satu_item_aktif` (dijalankan dari teks ini).
+
+**Perlu konfirmasi lab.** `diserahkan_kepada` (nama kurir/petugas yang mengambil alat) terlihat oleh SEMUA anggota
+perusahaan di `/paket`. Sesuai putusan pemilik perilakunya tidak diubah; lab perlu menjawab apakah nama orang itu
+boleh terlihat staf, atau hanya PIC utama. Nama itu tidak dimasukkan ke notifikasi.
+
+**Kueri BACA-SAJA untuk pemilik** (Claude tidak pernah mengakses DB produksi; pemilik yang menjalankan, hanya
+`SELECT`, hasilnya angka -- tidak ada nama pelanggan yang keluar). Menghitung baris `order_items` yang alatnya milik
+pelanggan berbeda dari pelanggan order-nya, di order yang belum dihapus:
+
+```sql
+SELECT COUNT(*)                      AS item_tercampur,
+       COUNT(DISTINCT oi.order_id)   AS order_terdampak,
+       COUNT(DISTINCT o.customer_id) AS pelanggan_order_terdampak
+FROM order_items oi
+JOIN orders     o ON o.id = oi.order_id AND o.deleted_at IS NULL
+JOIN equipments e ON e.id = oi.equipment_id
+WHERE e.customer_id IS NOT NULL
+  AND e.customer_id <> o.customer_id;
+```
+
+Tabel: `order_items` (perkiraan puluhan sampai ratusan baris), `orders`, `equipments`; membaca saja. Hasil `0` = tidak ada
+yang perlu dibereskan, dan penjaga A + B cukup. Bila `> 0`, daftar id (tanpa nama) untuk diperbaiki lewat aplikasi lab:
+
+```sql
+SELECT o.id AS order_id, o.nomor, oi.id AS order_item_id, oi.equipment_id,
+       e.customer_id AS pemilik_alat, o.customer_id AS pelanggan_order
+FROM order_items oi
+JOIN orders     o ON o.id = oi.order_id AND o.deleted_at IS NULL
+JOIN equipments e ON e.id = oi.equipment_id
+WHERE e.customer_id IS NOT NULL
+  AND e.customer_id <> o.customer_id
+ORDER BY o.id, oi.id
+LIMIT 100;
+```
+
+Membereskan baris-baris itu (memindah alat atau mengganti pelanggan order) adalah TULIS ke produksi dan menunggu
+instruksi terpisah yang menyebut tabel + jumlah barisnya (`docs/aturan-akses-database.md` butir 1).
+
+**Test.** `OrderAlatLintasPelangganTest` (A, 10), `PelacakanAlatPelangganTest` (B + C, 13), `KabarTahapAlatTest` (D, 28),
+`PenautanSesiKeOrderTest` (F, 24), tambahan `IsolasiPerusahaanTest` (2 kasus) dan `PreferensiNotifikasiTest` (2 baru, 1 disesuaikan).
+
+**Bukti.**
+
+- **Merah dulu, lalu hijau.** Lima kelas (tiga baru + `IsolasiPerusahaanTest` + `PreferensiNotifikasiTest`) dijalankan
+  terhadap kode LAMA: 11 berkas sumber dikembalikan sementara ke `origin/main` (migrasi dan kelas baru dibiarkan) ->
+  **66 tes: 23 gagal + 8 error + 35 lulus** (merah = kasus perilaku baru: order tercampur lolos 201/200, item PT B bocor
+  di tiga pintu, nol notifikasi, saklar tak tersimpan; error = kunci `sedang_dikerjakan` / konstanta
+  `PreferensiNotifikasi::TAHAP_ALAT` yang belum ada di kode lama; 35 lulus = kasus positif + penjaga). Sumber lalu dipulihkan (dicek `cmp` per berkas) dan kelas yang sama hijau. Worktree memakai `vendor`
+  salinan sungguhan (bukan symlink), jadi `base_path()` = worktree; tes baru hijau di sini sedangkan checkout utama
+  tidak punya fiturnya.
+- **SQLite lokal.** Tiga kelas baru (10 + 13 + 19 = 42 tes) hijau, dan bersama `PreferensiNotifikasiTest` (14) + `IsolasiPerusahaanTest` (10) **66 dari 66 lulus** pada kode akhir; regresi terarah 279 tes (26 pola kelas: OrderTest*, IsolasiPerusahaanTest,
+  PreferensiNotifikasiTest, DataPelangganTest, StatusAlatPelangganTest, PelacakanPaketTest,
+  NotifikasiSertifikatTerbitPelangganTest, KabarSusulanAnggotaBaruTest, CariDariNomorOrderTest, CariPemisahBedaTest,
+  KontrakResponsPelangganTest, PengecualianTulisPelangganTest, BatasAntarLabTest, SapuRuteIsolasiOrganisasiTest, dll.):
+  273 lulus + 6 error `Class "PhpOffice\PhpSpreadsheet\Cell\Coordinate" not found` (`SapuRuteIsolasiOrganisasiTest` 2,
+  `StudioBersamaPaketTest` 4) -- `vendor` salinan checkout utama lebih tua dari `composer.lock` `origin/main`
+  (tidak memuat `phpoffice/phpspreadsheet`). Setelah `vendor` disamakan dengan lock (disalin dari worktree lain ber-lock
+  identik) keenamnya **lulus 6/6**; bukan akibat perubahan ini.
+- **MySQL lokal** (`asmo_db_test`, lewat `jalankan-test-mysql.ps1`): 9 kelas (tiga baru, `IsolasiPerusahaanTest`,
+  `PreferensiNotifikasiTest`, `OrderTest*`, `DataPelangganTest`, `PelacakanPaketTest`, `StatusAlatPelangganTest`) -- **121
+  tes, 121 lulus**. Suite MySQL penuh tetap belum (gate sebelum modul disebut selesai).
+- **Mutasi mandiri**, salinan unik di luar worktree (`C:\Users\USER\mut-pelacakan-0113`, `…b`, `…c`): **35 mutan** (A 6:
+  pemilik alat dibalik/dimatikan, ganti pelanggan, org lab lain, indeks galat; B 5: saringan pemilik/organisasi item,
+  tiga pintu tanpa penjaga; C 8: diserahkan/terbaru/selesai/lingkup perusahaan, `equipment_id`, N+1, detail tanpa
+  `sedang_dikerjakan`, kunci tak dikirim; D 16: saklar salah, idempotensi mati, `sertifikat_terbit` dobel, mundur dari
+  sertifikat, tahap tak berubah, alat pelanggan lain, order dibatalkan, penerima = semua pelanggan, sesi baru, sesi
+  lama, penanda peristiwa, titik pemicu fisik, bawaan saklar, isi tanpa Order Number, tautan salah, pembanding
+  sebelum). Garis dasar tanpa perubahan hijau (10 / 23 / 33 tes). Putaran 1: 34 terbunuh, **1 selamat** (D16: pembanding
+  sebelum/sesudah di `PelacakanController` tertutupi penjaga duplikat karena dua penandaan jatuh di detik yang sama) ->
+  tes diperkuat (waktu digeser antar penandaan). Putaran 2 (semua diulang, nama tes yang gagal dicatat): **35 dari 35
+  terbunuh oleh kegagalan asersi, 0 selamat, 0 yang hanya mati karena TypeError**.
+
+**Bukti putaran perbaikan 2 (13 Nov 2026; peninjau independen: LULUS, 0 blokir).**
+
+- *Antrean sesudah commit* (`KabarTahapAlat`): tes dengan antrean `database` -- 0 job di dalam transaksi, ada sesudah commit, rollback = 0
+  job dan 0 notifikasi, jalur fisik diantre bukan sinkron. Mutan `Notification::sendNow` (selamat di putaran 1) kini terbunuh.
+- *Galat jalur kabar* (`PelacakanController`): `tahapTampilAman()` + `kabariTahapFisik()` -- membaca tahap sebelum dan sesudah, memilih penerima,
+  dan mengantre semuanya di dalam try/catch; galat pada pembacaan SEBELUM maupun SESUDAH penyimpanan tidak menggagalkan atau mendahului tahap fisik
+  (tes dengan `KabarTahapAlat` yang melempar), pengirim push yang melempar juga tidak.
+- *Default migrasi*: tes skema (NOT NULL, default menyala) + baris yang ditulis tanpa kolom itu terbaca menyala; mutan `default(false)` terbunuh.
+- *F, merah dulu*: tiga berkas sumber (`CalibrationController`, `CalibrationRequest`, `AutoclaveStoreRequest`) dikembalikan ke `origin/main` ->
+  `PenautanSesiKeOrderTest` **18 tes: 13 gagal, 5 lulus** (kasus "tidak tertaut" memang sudah benar di kode lama); dipulihkan (dicek `cmp`) -> 18/18.
+- *Regresi SQLite terarah* (kelas yang disentuh + `IsolasiPerusahaanTest` + `OrderTest` + 20 kelas penciptaan sesi/kalibrasi/Autoklaf/profil):
+  **539 tes, 538 lulus + 1 error** `RiwayatPersetujuanSesiTest::test_modal_riwayat_di_panel_kerender_dengan_alasan_lama`
+  ("No application encryption key": worktree tanpa `.env`/`APP_KEY`; lulus 5/5 bila `APP_KEY` diberikan lewat variabel lingkungan; bukan dari perubahan ini).
+- *MySQL lokal* (`asmo_db_test`, `jalankan-test-mysql.ps1`): 10 kelas (PenautanSesiKeOrderTest, KabarTahapAlatTest, PreferensiNotifikasiTest, OrderAlatLintasPelangganTest, PelacakanAlatPelangganTest, IsolasiPerusahaanTest, OrderTest*, ChaosSimpanLembarKerjaTest, AutoclaveStoreTest, PelacakanPaketTest) -- **137 tes, 137 lulus**.
+- *Mutasi mandiri* (salinan unik di luar worktree): **19 mutan baru** -- antrean 1 (`sendNow`), galat 2 (try/catch dilonggarkan), default 1, penautan 15
+  (tautan tak ditulis di `store`/`simpanAutoclave`, item pelanggan lain, order lab lain, item sudah diserahkan, urutan terbalik, tanpa pemecah id order,
+  kiriman klien ditimpa/diabaikan, order selesai/dibatalkan/terhapus, validasi klien: alat lain / lab lain / pelanggan lain, jejak audit tak ditulis).
+  Garis dasar hijau. Putaran 1: 18 terbunuh, **1 selamat** (T12: saringan organisasi di `ItemOrderMilikAlat` tertutupi saringan alat) -> tes diperkuat
+  (alat DAN pelanggan sama, hanya organisasi order beda) -> putaran 2 **19 dari 19 terbunuh**; semua mati oleh asersi, bukan karena galat kompilasi.
+
+**Bukti putaran perbaikan 3 (13 Nov 2026; keputusan pemilik atas temuan R1-R5 peninjau putaran 2).**
+
+- *R1 isolasi penautan*: `PenautanSesiKeOrder::tentukan()` dan `catat()` menelan semua galat (log peringatan `equipment_id` + kelas galat); tes: penautan
+  melempar -> `POST /api/calibrations` dan `POST /api/calibrations/autoclave` tetap `201`, `order_item_id` null, pesan galat (yang bisa memuat data
+  pelanggan) tidak ikut tercatat; bila hanya penulisan catatan audit yang gagal, sesi dan tautannya tetap tersimpan.
+- *R2 tepat satu kandidat*: dua atau lebih item aktif -> TIDAK ditautkan dan semua kandidat dicatat di jejak audit; aturan "order terlama" dihapus (kode,
+  tes, dokumen). Satu SELECT sensus baru (alat dengan lebih dari satu item aktif), dijalankan tes dari teks dokumen.
+- *R3/R4*: ditulis sebagai keterbatasan yang dikenal beserta usulan solusi (di atas); tidak dikerjakan.
+- *R5 volume*: kabar tahap TURUNAN bawaan MATI lewat `KABAR_TAHAP_TURUNAN` (`config/pelanggan.php`, `.env.example`, `render.yaml` `value: "false"`; paritas dijaga
+  `BlueprintDanEnvExampleSejalanTest`); tahap FISIK dan "sertifikat terbit" tidak terpengaruh. Kabar turunan menunggu layar preferensi di aplikasi Pelanggan.
+- *Regresi SQLite terarah* (set yang sama dengan putaran 2 + `BlueprintDanEnvExampleSejalanTest` + `EntrypointBootTest`): **554 tes: 553 lulus + 1 error** `RiwayatPersetujuanSesiTest::test_modal_riwayat_di_panel_kerender_dengan_alasan_lama` (sama dengan putaran 2: worktree tanpa `.env`/`APP_KEY`; lulus 5/5 bila `APP_KEY` diberikan lewat variabel lingkungan; bukan dari perubahan ini).
+- *MySQL lokal* (`asmo_db_test`, `jalankan-test-mysql.ps1`): 11 kelas (PenautanSesiKeOrderTest, KabarTahapAlatTest, PreferensiNotifikasiTest, OrderAlatLintasPelangganTest, PelacakanAlatPelangganTest, IsolasiPerusahaanTest, OrderTest*, ChaosSimpanLembarKerjaTest, AutoclaveStoreTest, PelacakanPaketTest, BlueprintDanEnvExampleSejalanTest) -- **147 tes, 147 lulus**.
+- *Mutasi mandiri* (salinan unik di luar worktree): **25 mutan** -- R1 2 (try/catch dilonggarkan di `tentukan`/`catat`), R2 4 (menebak kandidat pertama, ambang
+  bergeser, kandidat tak dicatat, daftar kandidat hilang dari catatan), sakelar 7 (created/updated mengabaikan sakelar, sakelar terbalik, bawaan config/blueprint/`.env.example`
+  menyala, tahap fisik ikut mati), penautan 12 (diulang terhadap kode baru). Garis dasar hijau. **25 dari 25 terbunuh** oleh asersi. Dua mutan putaran 2 (urutan order
+  terlama/terbaru, pemecah `orders.id`) dipensiunkan karena aturannya sudah dihapus.
+
+**Belum.** Gate MySQL penuh dan SQLite penuh (CI yang menjalankan). Backfill sesi LAMA ke item order (keputusan terpisah,
+tulis ke produksi; kueri sensus di bagian F). Tahap turunan dan kabarnya belum teruji pada data produksi nyata. Aplikasi Pelanggan perlu memetakan tautan
+`pelanggan_paket` dan layar preferensi memuat saklar `tahap_alat` (`docs/perintah-frontend-pelacakan-pelanggan.md`).
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
@@ -6285,3 +6559,4 @@ Supaya tidak dibangun ulang:
 | G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |
 | G32 | **Sertifikat persis master — B3a / R9: desimal & faktor cakupan `k`** (K-50-15) | **DIKERJAKAN** (12 Nov 2026, branch `fix/sertifikat-desimal-k-persis-master-b3a`, belum commit). Hanya TAMPILAN CETAK, snapshot BARU saja: Timbangan memakai kode format sel `SERTIFIKAT` master per varian (`timbangan.format`, `TimbanganProfile::formatCetakMaster`; aturan `d+1` T14 dan LOP substitusi `13,66` dibatalkan, LOP kg `0.08`, substitusi `± 14`, gram kapasitas `25.000`); `k` Jangka Sorong & Height Gauge `0` (sel `General` di kolom sempit tampil `2`), Timer `0.000` + `k_tunggal = baris_pertama`; Viscometer Standard Value `79.90`. Penjaga: LOP/U95 tidak pernah tercetak `0`; gram `d-1` tidak memotong nilai uji. Angka hitung identik sebelum/sesudah (7 sesi, `uncertainty_calculations` baris-per-baris). Turbidimeter dan varian (R10) tidak disentuh. Pertanyaan lab: `docs/pertanyaan-lab-format-sertifikat.md` #8 (k `2` vs `2,09`/`1,98`), `docs/pertanyaan-lab-timbangan.md` T14 (format per neraca). **PERHATIAN:** `php artisan sertifikat:bangun-ulang --termasuk-terbit` membangun ulang snapshot sertifikat TERBIT dari kode yang berjalan, jadi teks cetak (desimal timbangan, `k` jangka/height/timer, `79.90`) ikut berubah di dokumen yang sudah di tangan pelanggan. JANGAN dijalankan tanpa meninjau keluaran dry-run (bawaannya dry-run) dan tanpa `--oleh`/`--alasan` yang sengaja. Gate MySQL penuh belum dijalankan. |
 | G33 | **Kata cari `q` tidak peduli pemisah** — aplikasi Pelanggan (`/sertifikat`, `/alat`, `/paket`) dan arsip Lab (nomor seri, `.`/`_`) — §56 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-cari-longgar-20261113`, belum commit). `PolaCari` baru + nol migrasi/kolom/indeks/rute/field respons. Kata yang hanya tanda baca kini dijawab daftar kosong (dulu `%` menampilkan semuanya). Mutasi 30/30 terbunuh. Gate SQLite+MySQL penuh belum (CI). Kontrak untuk aplikasi Pelanggan: `docs/kontrak-api-pelanggan.md` §13 |
+| G34 | **Pelacakan alat untuk pelanggan** — order tak boleh memuat alat pelanggan lain, item tercampur disembunyikan di `/paket` `/paket/{id}` `/beranda`, `equipment_id` + `sedang_dikerjakan`, notifikasi tahap (`pelanggan.tahap_alat`, saklar baru) — §57 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-pelacakan-pelanggan-20261113`, belum commit). Satu migrasi additive (kolom saklar `tahap_alat`). Merah dulu terhadap kode lama (66 tes: 35 lulus, 23 gagal, 8 error) lalu hijau 66/66; MySQL lokal 121/121; mutasi 35/35 terbunuh. **Putaran 2 (13 Nov): `calibration_sessions.order_item_id` tidak ditulis jalur mana pun -> sesi BARU kini otomatis tertaut ke item order aktif alatnya (bagian F; sesi lama tidak di-backfill, ada kueri sensus)**, tes antrean-sesudah-commit, kabar fisik tahan galat, default migrasi; 19 mutan baru terbunuh. **Putaran 3 (13 Nov, keputusan pemilik): penautan tidak pernah menggagalkan pembuatan sesi; ditautkan HANYA bila tepat satu kandidat (ambigu = tidak, semua kandidat dicatat); kabar tahap TURUNAN bawaan MATI (`KABAR_TAHAP_TURUNAN`, tahap fisik dan sertifikat terbit tetap); tidak ada pindah/lepas tautan dan tautan susulan = keterbatasan dikenal; 25 mutan terbunuh.** `diserahkan_kepada` tetap tampil, perlu konfirmasi lab. Kontrak HP: `docs/perintah-frontend-pelacakan-pelanggan.md`. Gate MySQL/SQLite penuh belum |

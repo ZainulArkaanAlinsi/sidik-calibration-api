@@ -8,6 +8,7 @@ use App\Http\Resources\PaketLacakResource;
 use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\Pelanggan\KabarTahapAlat;
 use App\Services\PenjagaOrganisasi;
 use App\Services\TahapPaket;
 use Illuminate\Http\JsonResponse;
@@ -44,7 +45,10 @@ class PelacakanController extends Controller
         'items.sesiTerakhir.certificate',
     ];
 
-    public function __construct(private readonly TahapPaket $tahap) {}
+    public function __construct(
+        private readonly TahapPaket $tahap,
+        private readonly KabarTahapAlat $kabarTahap,
+    ) {}
 
     /**
      * Daftar paket, disortif yang paling perlu dilihat duluan.
@@ -191,6 +195,8 @@ class PelacakanController extends Controller
         }
 
         $sebelum = $orderItem->only(['tahap_fisik', 'tahap_fisik_pada', 'diserahkan_kepada']);
+        // Tahap yang DILIHAT pelanggan sebelum dipindah -- pembanding kabar `KabarTahapAlat`.
+        $tahapSebelum = $this->kabarTahap->tahapTampilAman($orderItem);
 
         $orderItem->fill([
             'tahap_fisik' => $data['tahap_fisik'],
@@ -215,6 +221,10 @@ class PelacakanController extends Controller
         ]);
 
         PerubahanDataOrganisasi::siarkanAman($order->organization_id, 'paket', 'diubah', $order->id);
+
+        // Kabar ke anggota perusahaan pemilik paket (saklar `tahap_alat`). Hanya bila tahap
+        // yang DILIHAT pelanggan benar-benar berpindah; tidak pernah menggagalkan serah terima.
+        $this->kabarTahap->kabariTahapFisik($orderItem, $tahapSebelum);
 
         return response()->json([
             'message' => $data['tahap_fisik'] === TahapPaket::DISERAHKAN
