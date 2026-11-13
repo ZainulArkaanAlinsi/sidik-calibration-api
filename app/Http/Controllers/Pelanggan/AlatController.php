@@ -7,6 +7,7 @@ use App\Http\Resources\Pelanggan\AlatPelangganResource;
 use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
 use App\Models\Certificate;
 use App\Models\Equipment;
+use App\Services\Pelanggan\PaketAktifAlat;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use App\Services\Pencarian\PolaCari;
 use App\Support\Pelanggan\Konteks;
@@ -28,6 +29,8 @@ use Illuminate\Validation\Rule;
 class AlatController extends Controller
 {
     public const SARING = ['semua', 'segera', 'lewat'];
+
+    public function __construct(private readonly PaketAktifAlat $paketAktif) {}
 
     public function index(Request $request, Konteks $konteks): JsonResponse
     {
@@ -71,12 +74,14 @@ class AlatController extends Controller
 
         $terakhir = $this->sertifikatTerakhir($lingkup, collect($alat->items())->pluck('id'));
         $konteksStatus = AlatPelangganResource::konteks($alat->items());
+        $paketAktif = $this->paketAktif->untuk($lingkup, $alat->items());
 
         return response()->json([
             'data' => collect($alat->items())
                 ->map(fn (Equipment $a) => (new AlatPelangganResource($a))
                     ->denganSertifikat($terakhir->get($a->id))
                     ->denganKonteks($konteksStatus[$a->id])
+                    ->denganPaketAktif($paketAktif[$a->id])
                     ->resolve($request))
                 ->values(),
             'meta' => [
@@ -136,6 +141,7 @@ class AlatController extends Controller
             // dibatalkan atau pendahulu yang digantikan bukan dokumen alat ini.
             ->denganSertifikat($riwayat->first(fn (Certificate $c) => $c->status === Certificate::STATUS_TERBIT
                 && ! in_array($c->revisiTerakhir?->status, Certificate::STATUS_PENGGANTI, true)))
+            ->denganPaketAktif($this->paketAktif->untuk($lingkup, [$baris])[$baris->id])
             ->resolve($request)
             + AlatPelangganResource::rincianUbah($baris, self::terkunci($baris))
             + [

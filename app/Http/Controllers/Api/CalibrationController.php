@@ -46,6 +46,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
+use App\Services\PenautanSesiKeOrder;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
@@ -516,6 +517,8 @@ class CalibrationController extends Controller
                 // udah kesimpen kalau nggak mau hasil hitungnya ikut satuan lama.
                 $this->simpanSatuanAlat($request);
 
+                $tautan = $this->tautanOrderSesiBaru($request);
+
                 $sesi = CalibrationSession::create([
                     ...$this->atributDenganTitikSesi($request, null),
                     'organization_id' => $request->user()->organization_id,
@@ -523,7 +526,9 @@ class CalibrationController extends Controller
                     'client_request_id' => $clientRequestId,
                     'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
                     'status' => CalibrationSession::STATUS_DRAFT,
+                    'order_item_id' => $tautan['order_item_id'],
                 ]);
+                app(PenautanSesiKeOrder::class)->catat($sesi, $tautan);
 
                 return $this->isiUlangPengukuran($sesi, $request);
             });
@@ -576,6 +581,8 @@ class CalibrationController extends Controller
         $snapshot = $this->snapshotAutoclave($request);
 
         $sesi = DB::transaction(function () use ($request, $clientRequestId, $snapshot): CalibrationSession {
+            $tautan = $this->tautanOrderSesiBaru($request);
+
             $sesi = CalibrationSession::create([
                 ...$this->atributDariRequest($request),
                 'organization_id' => $request->user()->organization_id,
@@ -586,7 +593,9 @@ class CalibrationController extends Controller
                 // Autoklaf nggak divonis PASS/FAIL (AutoclaveProfile::punyaToleransi=false).
                 'keputusan' => null,
                 'hasil_autoclave' => $snapshot,
+                'order_item_id' => $tautan['order_item_id'],
             ]);
+            app(PenautanSesiKeOrder::class)->catat($sesi, $tautan);
 
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
             // pembacaan awal/akhir + koreksi sertifikat thermohygro, sama persis
@@ -6052,6 +6061,21 @@ class CalibrationController extends Controller
      * sama persis, disalin. Penjagaan yang disalin cuma dijaga ingatan; yang
      * ketiga nanti lahir tanpa penjagaannya lagi.
      */
+    /**
+     * Item order yang ditautkan ke sesi BARU: yang dikirim klien (sudah divalidasi
+     * `ItemOrderMilikAlat`) atau pilihan otomatis. Aturan lengkap di `PenautanSesiKeOrder`.
+     *
+     * @return array{order_item_id: int|null, catatan: string|null}
+     */
+    private function tautanOrderSesiBaru(Request $request): array
+    {
+        return app(PenautanSesiKeOrder::class)->tentukan(
+            (int) $request->user()->organization_id,
+            $request->integer('equipment_id'),
+            $request->filled('order_item_id') ? $request->integer('order_item_id') : null,
+        );
+    }
+
     private function replay(Request $request, ?string $clientRequestId): ?JsonResponse
     {
         if ($clientRequestId === null) {

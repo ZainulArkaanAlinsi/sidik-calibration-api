@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
 use App\Models\CalibrationSession;
+use App\Rules\ItemOrderMilikAlat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
@@ -63,6 +64,10 @@ class AutoclaveStoreRequest extends FormRequest
                 'required',
                 Rule::exists('equipments', 'id')->where('organization_id', $org)->whereNull('deleted_at'),
             ],
+            // Item order alat ini, bila klien sudah tahu (selain itu dipilih server).
+            ...($this->isMethod('POST')
+                ? ['order_item_id' => ['sometimes', 'nullable', 'integer', new ItemOrderMilikAlat($org)]]
+                : []),
             'client_request_id' => ['sometimes', 'nullable', 'uuid'],
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
             'status' => ['sometimes', Rule::in([

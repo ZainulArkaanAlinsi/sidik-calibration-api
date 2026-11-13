@@ -438,6 +438,13 @@ services:
       - key: PELANGGAN_PESAN_MAINTENANCE
         value: "Aplikasi sedang dalam perbaikan. Silakan coba lagi sebentar lagi."
 
+      # Kabar tahap TURUNAN ke pelanggan (observer `SesiKabarTahapAlat`). MATI sampai
+      # aplikasi pelanggan punya layar preferensi untuk mematikannya. Tahap FISIK dan
+      # "sertifikat terbit" tidak ikut sakelar ini. Menyalakannya = ubah nilai di sini
+      # (perintah pemilik, satu per satu), bukan di dashboard.
+      - key: KABAR_TAHAP_TURUNAN
+        value: "false"
+
       # Batas akhir masa transisi token internal tanpa ability (03-SDD §3.1).
       # Diisi tanggal `Y-m-d` waktu deploy Fase 4; kosong = tanpa batas.
       - key: PELANGGAN_CUTOFF_TOKEN_LAMA

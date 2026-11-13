@@ -13,7 +13,9 @@ use App\Notifications\Pelanggan\AlatAndaJatuhTempo;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use App\Services\Pelanggan\PreferensiNotifikasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Tests\Concerns\JalurPelanggan;
 use Tests\TestCase;
 
@@ -64,6 +66,36 @@ class PreferensiNotifikasiTest extends TestCase
 
     // ------------------------------------------------------------------ endpoint
 
+    public function test_kolom_tahap_alat_default_menyala_dan_baris_tanpa_kolom_itu_ikut_menyala(): void
+    {
+        // Skema: boolean NOT NULL, default MENYALA. Mutan `default(false)` atau tanpa default
+        // membuat SEMUA baris preferensi lama diam-diam mematikan kabar tahap.
+        $kolom = collect(Schema::getColumns('preferensi_notifikasi_anggota'))->firstWhere('name', 'tahap_alat');
+
+        $this->assertNotNull($kolom, 'Kolom tahap_alat tidak ada.');
+        $this->assertFalse($kolom['nullable'], 'tahap_alat harus NOT NULL.');
+        $this->assertContains(strtolower(trim((string) $kolom['default'], "'\"")), ['1', 'true'], 'Default tahap_alat bukan menyala.');
+
+        // Perilaku: baris yang ditulis TANPA menyebut kolomnya (seperti baris lama saat kolom
+        // ditambahkan) terbaca menyala, baik lewat tabel maupun lewat penerima kabar.
+        DB::table('preferensi_notifikasi_anggota')->insert([
+            'customer_member_id' => $this->anggotaPic->id,
+            'pengingat_jadwal' => true,
+            'status_permintaan' => true,
+            'pesan_lab' => true,
+            'ringkasan_email_mingguan' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertSame(1, (int) DB::table('preferensi_notifikasi_anggota')->where('customer_member_id', $this->anggotaPic->id)->value('tahap_alat'));
+        $this->assertSame(
+            [$this->pic->id],
+            app(PreferensiNotifikasi::class)->penerima($this->perusahaan, PreferensiNotifikasi::TAHAP_ALAT)->pluck('id')->all(),
+        );
+        $this->assertTrue(app(PreferensiNotifikasi::class)->untuk($this->anggotaPic)[PreferensiNotifikasi::TAHAP_ALAT]);
+    }
+
     public function test_bawaan_untuk_anggota_yang_belum_pernah_menyetel(): void
     {
         $this->panggil($this->pic, 'GET', '/preferensi-notifikasi')
@@ -73,10 +105,36 @@ class PreferensiNotifikasiTest extends TestCase
                 'status_permintaan' => true,
                 'pesan_lab' => true,
                 'ringkasan_email_mingguan' => false,
+                // Kategori BARU 13 Nov 2026 (kabar tahap alat), bawaan MENYALA.
+                'tahap_alat' => true,
             ]]);
 
         // Membaca tidak membuat baris.
         $this->assertDatabaseCount('preferensi_notifikasi_anggota', 0);
+    }
+
+    public function test_tahap_alat_bisa_dimatikan_sendiri_tanpa_menyentuh_saklar_lain(): void
+    {
+        $this->panggil($this->pic, 'PUT', '/preferensi-notifikasi', ['tahap_alat' => false])
+            ->assertOk()
+            ->assertJsonPath('data.tahap_alat', false)
+            ->assertJsonPath('data.pengingat_jadwal', true)
+            ->assertJsonPath('data.status_permintaan', true)
+            ->assertJsonPath('data.pesan_lab', true)
+            ->assertJsonPath('data.ringkasan_email_mingguan', false);
+
+        $this->assertDatabaseHas('preferensi_notifikasi_anggota', [
+            'customer_member_id' => $this->anggotaPic->id,
+            'tahap_alat' => false,
+        ]);
+
+        $this->panggil($this->pic, 'PUT', '/preferensi-notifikasi', ['pesan_lab' => false])
+            ->assertOk()
+            ->assertJsonPath('data.tahap_alat', false);
+
+        $this->panggil($this->pic, 'PUT', '/preferensi-notifikasi', ['tahap_alat' => 'mungkin'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tahap_alat');
     }
 
     public function test_simpan_sebagian_tidak_mengubah_yang_tidak_dikirim(): void

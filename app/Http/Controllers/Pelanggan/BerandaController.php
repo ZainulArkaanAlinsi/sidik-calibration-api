@@ -9,6 +9,7 @@ use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Order;
+use App\Services\Pelanggan\PaketAktifAlat;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
@@ -53,6 +54,7 @@ class BerandaController extends Controller
             ->limit(self::BATAS)
             ->get();
         $konteksStatus = AlatPelangganResource::konteks($perluPerhatian);
+        $paketAktif = app(PaketAktifAlat::class)->untuk($lingkup, $perluPerhatian);
 
         // Yang berlaku saja — beranda bukan tempat riwayat.
         $sertifikatTerbaru = $lingkup->sertifikat()
@@ -64,14 +66,8 @@ class BerandaController extends Controller
             ->limit(self::BATAS)
             ->get();
 
-        $paketBerjalan = $lingkup->paket()
-            ->where('status', '!=', Order::STATUS_SELESAI)
-            ->with([
-                'items' => fn ($q) => $q->select(['id', 'order_id', 'equipment_id', 'tahap_fisik', 'tahap_fisik_pada', 'diserahkan_kepada']),
-                'items.equipment' => fn ($q) => $q->withTrashed()->select(['id', 'nama_alat', 'merk', 'serial_number']),
-                'items.sesiTerakhir',
-                'items.sesiTerakhir.certificate',
-            ])
+        $paketBerjalan = $lingkup->paketAktif()
+            ->with($lingkup->relasiPaket())
             ->orderByDesc('tanggal_masuk')
             ->orderByDesc('id')
             ->limit(3)
@@ -93,6 +89,7 @@ class BerandaController extends Controller
                 'perlu_perhatian' => $perluPerhatian
                     ->map(fn (Equipment $a) => (new AlatPelangganResource($a))
                         ->denganKonteks($konteksStatus[$a->id])
+                        ->denganPaketAktif($paketAktif[$a->id])
                         ->resolve($request))
                     ->values(),
                 'sertifikat_terbaru' => $sertifikatTerbaru

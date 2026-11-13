@@ -29,7 +29,8 @@ class PaketController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ]);
 
-        $paket = (new LingkupData($konteks))->paket()
+        $lingkup = new LingkupData($konteks);
+        $paket = $lingkup->paket()
             // Bawaan: yang masih berjalan. Paket selesai tetap bisa dibuka lewat
             // `?selesai=1` — riwayatnya berguna, tapi bukan yang dicari tiap hari.
             ->when(
@@ -53,7 +54,7 @@ class PaketController extends Controller
 
                 $q->where('nomor', 'like', $kata);
             })
-            ->with($this->relasi())
+            ->with($lingkup->relasiPaket())
             ->orderByDesc('tanggal_masuk')
             ->orderByDesc('id')
             ->paginate($data['per_page'] ?? 20);
@@ -73,9 +74,10 @@ class PaketController extends Controller
 
     public function show(Request $request, Konteks $konteks, string $paket): JsonResponse
     {
-        $baris = (new LingkupData($konteks))->paket()
+        $lingkup = new LingkupData($konteks);
+        $baris = $lingkup->paket()
             ->whereKey($paket)
-            ->with($this->relasi())
+            ->with($lingkup->relasiPaket())
             ->firstOrFail();
 
         return response()->json([
@@ -87,20 +89,6 @@ class PaketController extends Controller
         ]);
     }
 
-    /**
-     * Relasi yang dibutuhkan `TahapPaket` + resource pelanggan. Sengaja TANPA
-     * `items.teknisi`: nama teknisi bukan urusan pelanggan, dan yang tidak
-     * dimuat tidak mungkin ikut bocor lewat resource yang nanti diubah orang.
-     *
-     * @return array<int|string, mixed>
-     */
-    private function relasi(): array
-    {
-        return [
-            'items' => fn ($q) => $q->select(['id', 'order_id', 'equipment_id', 'tahap_fisik', 'tahap_fisik_pada', 'diserahkan_kepada']),
-            'items.equipment' => fn ($q) => $q->withTrashed()->select(['id', 'nama_alat', 'merk', 'serial_number']),
-            'items.sesiTerakhir',
-            'items.sesiTerakhir.certificate',
-        ];
-    }
+    // Relasi eager-load (termasuk penyembunyian item beralat pelanggan lain)
+    // ada di `LingkupData::relasiPaket()` -- satu tempat, dipakai juga `/beranda`.
 }

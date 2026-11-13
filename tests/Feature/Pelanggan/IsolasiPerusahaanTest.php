@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerMember;
 use App\Models\Equipment;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\UndanganPelanggan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -388,6 +389,69 @@ class IsolasiPerusahaanTest extends TestCase
                 ->assertOk()
                 ->assertJsonPath('meta.total', 0);
         }
+    }
+
+    /**
+     * Pelacakan alat (13 Nov 2026), sisi 1: order PT A yang tercampur alat PT B
+     * (celah lama di `OrderRequest`) tidak boleh membocorkan nama/merk/nomor seri
+     * alat B lewat TIGA pintu yang memuat item paket -- `/paket`, `/paket/{id}`,
+     * `/beranda`. Item-nya disembunyikan; paketnya tetap tampil.
+     */
+    public function test_item_paket_beralat_perusahaan_lain_disembunyikan_di_semua_pintu(): void
+    {
+        $alatB = Equipment::query()->findOrFail((int) $this->milikB['alat']);
+        $alatB->update(['nama_alat' => 'Alat Rahasia Milik B', 'merk' => 'MerkRahasiaB', 'serial_number' => 'SN-RAHASIA-B-42']);
+        $alatA = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'nama_alat' => 'Alat Milik A',
+        ]);
+        $paketA = Order::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'status' => Order::STATUS_DIPROSES,
+        ]);
+        OrderItem::factory()->create(['order_id' => $paketA->getKey(), 'equipment_id' => $alatA->getKey()]);
+        OrderItem::factory()->create(['order_id' => $paketA->getKey(), 'equipment_id' => $alatB->getKey()]);
+
+        foreach (['/paket', "/paket/{$paketA->getKey()}", '/beranda'] as $uri) {
+            $this->permintaanBaru();
+            $respons = $this->withHeaders($this->bearer($this->picA))->getJson('/api/pelanggan/v1'.$uri)->assertOk();
+
+            foreach (['Alat Rahasia Milik B', 'MerkRahasiaB', 'SN-RAHASIA-B-42'] as $rahasia) {
+                $this->assertStringNotContainsString($rahasia, (string) $respons->getContent(), "{$uri} membocorkan `{$rahasia}`.");
+            }
+
+            $this->assertStringContainsString('Alat Milik A', (string) $respons->getContent(), "{$uri}: paket A ikut hilang.");
+        }
+    }
+
+    /**
+     * Pelacakan alat, sisi 2: `sedang_dikerjakan` di kartu alat A hanya melihat
+     * paket A. Order PT B yang memuat alat A (celah lama yang sama, arah
+     * sebaliknya) tidak terlihat dari sisi A -- tidak nomornya, tidak tahapnya.
+     */
+    public function test_sedang_dikerjakan_tidak_menembus_perusahaan_lain(): void
+    {
+        $alatA = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+        ]);
+        $paketB = Order::query()->findOrFail((int) $this->milikB['paket']);
+        $paketB->update(['nomor' => 'ORD/MILIK-B-9001', 'status' => Order::STATUS_DIPROSES]);
+        OrderItem::factory()->create(['order_id' => $paketB->getKey(), 'equipment_id' => $alatA->getKey()]);
+
+        foreach (['/alat', "/alat/{$alatA->getKey()}", '/beranda'] as $uri) {
+            $this->permintaanBaru();
+            $respons = $this->withHeaders($this->bearer($this->picA))->getJson('/api/pelanggan/v1'.$uri)->assertOk();
+
+            $this->assertStringNotContainsString('ORD/MILIK-B-9001', (string) $respons->getContent(), "{$uri} membocorkan order perusahaan lain.");
+        }
+
+        $this->permintaanBaru();
+        $this->assertNull(
+            $this->withHeaders($this->bearer($this->picA))->getJson("/api/pelanggan/v1/alat/{$alatA->getKey()}")->json('data.sedang_dikerjakan'),
+        );
     }
 
     /**

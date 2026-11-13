@@ -1060,3 +1060,93 @@ kirim parameternya. Debounce ≥ 300 ms tetap dianjurkan; biaya pencarian tidak 
 Dijaga `Tests\Feature\Pelanggan\CariPemisahBedaTest` (tiga rute daftar), `GarisWaktuSertifikatPelangganTest` (garis
 waktu), dan `Tests\Unit\Pencarian\PolaCariTest` (aturan di atas); `IsolasiPerusahaanTest` dan
 `CariDariNomorOrderTest` tidak diubah dan tetap hijau.
+
+
+## 14. Pelacakan alat: `equipment_id`, `sedang_dikerjakan`, penjaga tampilan, notifikasi tahap (additive, 13 Nov 2026)
+
+PRD: `docs/permintaan-user-7.md` §57. Kontrak untuk aplikasi Pelanggan:
+`docs/perintah-frontend-pelacakan-pelanggan.md`. **Tidak ada rute baru, tidak ada field yang dihapus atau
+diganti nama.** Satu migrasi additive (kolom saklar `tahap_alat`, bawaan menyala).
+
+### 14.1 `equipment_id` di item paket
+
+`GET /paket` (`data[].alat[]`), `GET /paket/{id}` (`data.alat[]`), `GET /beranda` (`data.paket_berjalan[].alat[]`):
+tiap item membawa `equipment_id` (= `id` di `GET /alat/{id}`). Urutan kunci item sekarang:
+`id`, `equipment_id`, `nama`, `merk`, `serial`, `tahap`, `tahap_label`, `diserahkan_kepada`, `sertifikat_id`.
+`id` tetap `order_items.id` (kunci teknis); satu alat bisa muncul di beberapa paket, jadi `equipment_id`
+bukan kunci unik daftar item.
+
+### 14.2 `sedang_dikerjakan` di objek alat
+
+`GET /alat` (`data[]`), `GET /alat/{id}` (`data`), `GET /beranda` (`data.perlu_perhatian[]`):
+
+```json
+"sedang_dikerjakan": { "paket_id": 120, "order_item_id": 981, "nomor_order": "ORD/2026/11/0042",
+                       "tahap": "menunggu_pemeriksaan", "tahap_label": "Hasil sedang diperiksa" }
+```
+
+atau `null`. Kuncinya SELALU ada di tiga rute itu. Aturan (`App\Services\Pelanggan\PaketAktifAlat`):
+
+| Aturan | Isi |
+|---|---|
+| Lingkup | hanya paket **perusahaan pemanggil** yang berjalan: `LingkupData::paketAktif()` (bukan `selesai`, bukan `dibatalkan`, `customer_id` + `organization_id` disaring). Order perusahaan lain yang memuat alat ini tidak pernah terlihat |
+| Diserahkan | alat dengan tahap `diserahkan` → `null`; paket berjalan lain (bila ada) dipakai |
+| Beberapa paket | yang terbaru: `tanggal_masuk`, lalu `order_id`, lalu id item |
+| `tahap` | tahap yang dilihat pelanggan (pengesahan dilipat ke `menunggu_pemeriksaan`), sama dengan `/paket` |
+| Biaya | empat kueri per halaman, berapa pun jumlah alatnya (dijaga `PelacakanAlatPelangganTest`) |
+
+Lima kunci itu saja. Tidak ada nama teknisi/pereview, kode teknisi, nomor sesi, kondisi terima, catatan,
+status/peringatan hitung.
+
+### 14.3 Penjaga tampilan: item beralat pelanggan lain disembunyikan
+
+Item paket yang `equipments.customer_id`-nya **tidak null dan berbeda** dari perusahaan pemanggil (atau yang
+`organization_id`-nya beda) **tidak dikirim** di `GET /paket`, `GET /paket/{id}` (termasuk `garis_waktu`), dan
+`GET /beranda` (`paket_berjalan`). Yang disembunyikan **itemnya**, bukan paketnya; `jumlah_alat`,
+`jumlah_selesai`, `tahap`, dan `garis_waktu` dihitung dari item yang terlihat. Alat tanpa pemilik (`customer_id`
+null) tetap tampil; alat yang dihapus lunak tetap dihitung. Satu tempat: `LingkupData::relasiPaket()`.
+Dijaga `IsolasiPerusahaanTest` (tiga pintu) dan `PelacakanAlatPelangganTest`.
+
+Ini juga menambal sisi tulis: `POST /api/orders` dan `PUT /api/orders/{id}` (aplikasi Lab) menolak `422` bila alat
+milik pelanggan lain (`OrderRequest`; `docs/permintaan-user-7.md` §57).
+
+### 14.4 Saklar `tahap_alat` dan notifikasi `pelanggan.tahap_alat`
+
+`GET /preferensi-notifikasi` dan `PUT /preferensi-notifikasi` sekarang membawa **lima** kunci:
+
+```json
+{ "data": { "pengingat_jadwal": true, "status_permintaan": true, "pesan_lab": true,
+            "ringkasan_email_mingguan": false, "tahap_alat": true } }
+```
+
+`tahap_alat` bawaan **menyala** (anggota tanpa baris preferensi pun menerima), per anggota per perusahaan seperti
+saklar lain. `PUT` sebagian tetap berlaku; nilai bukan boolean → `422`.
+
+| Kejadian | `kategori` | `tautan` | Saklar |
+|---|---|---|---|
+| Tahap yang dilihat pelanggan untuk satu alat berubah (fisik: `siap_diambil`, `diserahkan`; turunan, **bawaan MATI**: `dikalibrasi`, `perlu_diulang`, `menunggu_pemeriksaan`) | `pelanggan.tahap_alat` | `{tipe: "pelanggan_paket", id: <id paket>}` (**tipe baru**) | `tahap_alat` |
+
+Isi: `judul` "Status alat Anda diperbarui"; `isi` "{nama} {merk} (No. seri {serial}): {tahap_label}. Order {nomor}.".
+Tidak memuat nama perusahaan, nama teknisi/penerima/pereview, kode internal, nomor sesi, kondisi terima, catatan,
+PASS/FAIL. Aturan pengiriman (`App\Services\Pelanggan\KabarTahapAlat`):
+
+- Hanya bila tahap versi pelanggan **benar-benar berpindah**. Tahap fisik menang atas turunan, jadi perubahan sesi
+  sesudah tahap fisik dicatat tidak dikabarkan; `disetujui` tidak mengubah "Hasil sedang diperiksa" (tidak dikabarkan).
+- `sertifikat_terbit` **tidak** lewat kategori ini (sudah ada `pelanggan.sertifikat_terbit`); mundur dari tahap
+  sertifikat (ditarik/direvisi) juga tidak (itu `pelanggan.sertifikat_direvisi`).
+- Penerima: anggota aktif + akun aktif perusahaan pemilik order, lewat `PreferensiNotifikasi::penerima(…, 'tahap_alat')`.
+  PT lain di lab yang sama tidak menerima apa pun; order `dibatalkan` dan item beralat pelanggan lain dilewati.
+- Sekali per peristiwa per akun (`tanda_tangan` `pelanggan.tahap_alat:<item>:<tahap>:<peristiwa>`); tahap yang sama
+  pada peristiwa baru tetap dikirim.
+- Dikirim lewat `ShouldQueueAfterCommit` dan saluran `database`/`broadcast`/`push` yang ada. Kegagalan tidak pernah
+  menggagalkan serah terima atau penyimpanan sesi; log hanya `order_item_id` + kelas galat.
+- Titik pemicu: `POST /api/pelacakan/item/{item}/tahap-fisik` (fisik) dan observer `SesiKabarTahapAlat` pada
+  `CalibrationSession` (turunan; hanya sesi ber-`order_item_id`). Sejak 13 Nov 2026 sesi BARU otomatis tertaut ke item
+  order aktif alatnya saat dibuat bila ada TEPAT SATU kandidat (`PenautanSesiKeOrder`, `docs/permintaan-user-7.md` §57 F); ambigu atau sesi lama tidak.
+- **Kabar tahap TURUNAN bawaan MATI** (env `KABAR_TAHAP_TURUNAN`, config `pelanggan.kabar_tahap_turunan`) sampai aplikasi Pelanggan punya layar preferensi;
+  kabar tahap FISIK dan `pelanggan.sertifikat_terbit` tidak terpengaruh. Tampilan `/paket` tetap hidup.
+- Tautan `pelanggan_paket` belum dipetakan aplikasi Pelanggan (`lib/screens/tautan.dart` mengenal `pelanggan_sertifikat` dan
+  `pelanggan_alat`): tipe yang belum dikenal menghasilkan `null` dan pemanggil yang memutuskan (push -> kotak masuk). Isi
+  notifikasi tetap terbaca utuh.
+
+Penjaga: `KabarTahapAlatTest` (19 kasus), `PreferensiNotifikasiTest`.
