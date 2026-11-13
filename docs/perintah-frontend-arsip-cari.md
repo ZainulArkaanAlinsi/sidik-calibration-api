@@ -23,8 +23,8 @@ cari apa adanya, memuat halaman sampai habis, dan menampilkan garis waktu arsip.
 
 1. **Frontend TIDAK menghitung apa pun.** Pengelompokan, nomor pekan, label (`Pekan 46 (9–15 Nov 2026)`),
    jumlah, dan peringkat hasil datang dari server. Jangan menghitung pekan ISO atau mengurutkan ulang di HP.
-2. **Kirim kata cari apa adanya.** Jangan membuang `/`, `-`, spasi, atau mengubah huruf. Server menyamakan
-   `CAL/2026/10/0001`, `cal-2026-10-0001`, dan `cal 2026 10 0001`. Jangan menyaring daftar di HP sebagai
+2. **Kirim kata cari apa adanya.** Jangan membuang `/`, `-`, `.`, `_`, spasi, atau mengubah huruf. Server menyamakan
+   `CAL/2026/10/0001`, `cal-2026-10-0001`, `cal.2026.10.0001`, dan `cal 2026 10 0001`. Jangan menyaring daftar di HP sebagai
    pengganti `q` — itulah yang membuat Riwayat dulu terbatas 300 sesi.
 3. **Garis waktu adalah TAMPILAN.** Folder arsip fisik (PT › Tahun › Bulan › Jenis) tidak berubah, jangan
    diubah. Garis waktu hanya cara lain melihat sertifikat yang sama, menurut **tanggal terbit**.
@@ -42,15 +42,16 @@ Satu layanan server (`CariDokumenLab`) dipakai oleh empat rute lab. Aturannya sa
 
 | Yang dicocokkan | Cara |
 |---|---|
-| Nomor seri alat | yang terdaftar **dan** yang diketik teknisi di lembar kerja; huruf besar/kecil tak berpengaruh |
-| Nomor sertifikat | **dinormalisasi**: huruf besar/kecil, `/`, `-`, dan spasi diabaikan di kedua sisi. Revisi `-R<n>` ikut (nomor dasar adalah awalan nomor revisinya) |
+| Nomor seri alat | yang terdaftar **dan** yang diketik teknisi di lembar kerja; **dinormalisasi seperti nomor sertifikat** sejak 13 Nov 2026 (`SN-123/4` = `sn 123 4` = `SN.123.4`); dulu dicocokkan apa adanya |
+| Nomor sertifikat | **dinormalisasi**: huruf besar/kecil, `/`, `-`, `.`, `_`, dan spasi diabaikan di kedua sisi (`.` dan `_` sejak 13 Nov 2026). Revisi `-R<n>` ikut (nomor dasar adalah awalan nomor revisinya) |
 | Nomor order | `orders.nomor` dan `calibration_sessions.nomor_order`, dinormalisasi seperti nomor sertifikat |
 | Nomor sesi | `KAL/…`, dinormalisasi (Riwayat, Arsip) |
 | Nama alat, merek, nama PT | mengandung kata cari |
 
 Urutan hasil: **persis** dulu, lalu **awalan**, lalu **mengandung**. Yang peringkatnya sama berurut seperti
-semula (lihat tiap rute). `%` dan `_` yang diketik dibaca sebagai huruf biasa. Kata cari yang hanya berisi
-pemisah (`/`, `-`, spasi) tidak mencocokkan nomor apa pun. Selalu dikurung ke laboratorium pemanggil.
+semula (lihat tiap rute). `%` yang diketik dibaca sebagai huruf biasa; `_` bukan wildcard (ia pemisah nomor,
+dilepas di kedua sisi). Kata cari yang hanya berisi pemisah (`/`, `-`, `.`, `_`, spasi) tidak mencocokkan nomor
+apa pun. Selalu dikurung ke laboratorium pemanggil.
 
 | Rute | Parameter | Perubahan |
 |---|---|---|
@@ -595,7 +596,8 @@ Rute baru; rute pelanggan yang ada tidak berubah. Token pelanggan + akun terveri
 * `q` (2–100 huruf, 1 huruf → `422`; debounce ≥ 300 ms): nomor sertifikat (dinormalisasi, revisi ikut), nomor
   seri, nomor order (hanya order perusahaan ini), nama alat. Biayanya O(N) per laboratorium (lihat §1); data
   perusahaan pemanggil jauh lebih sedikit dari seluruh lab, tetapi pencariannya tetap memindai baris lab.
-  **`q` di `GET /sertifikat` tidak diubah** — masih pencocokan harfiah seperti sebelumnya.
+  Sejak 13 Nov 2026 `q` di `GET /sertifikat`, `/alat`, dan `/paket` juga tidak peduli pemisah
+  (`kontrak-api-pelanggan.md` §13) — potongan dicocokkan berurutan, bukan lagi harfiah.
 * `item[]` berbentuk **persis baris `GET /sertifikat`** (model baris yang sudah ada bisa dipakai ulang)
   ditambah satu kunci: `nomor_order` (yang tercetak di PDF). Item tidak memuat `customer_id`/`perusahaan` —
   semuanya milik perusahaan pemanggil.
@@ -762,3 +764,9 @@ Tampilkan `errors.serial_number[0]` apa adanya di bawah kolom nomor seri; jangan
 | `403` | token dari aplikasi yang salah (mis. token lab di rute pelanggan) |
 | `422` | parameter salah (tingkat/induk, tanggal, `per_page`>50, `bentuk`), `q`/`search` berupa larik atau >100 huruf, `q` 1 huruf di rute baru (§1), atau nomor seri bentrok (§5) |
 | `429` | throttle garis waktu terlampaui (60/menit per pengguna) |
+
+## 9. Perbedaan perilaku kata cari antar layar (13 Nov 2026)
+
+* Rute pelanggan (`/sertifikat`, `/alat`, `/paket`) memakai `PolaCari`: `/ - . _`, spasi, tab, dan baris baru memisahkan kata; `%` dan `\` juga diperlakukan sebagai pemisah. Pencarian Lab (arsip/Telusuri) menyamakan `/ - . _` dan spasi, tetapi TIDAK tab dan baris baru. Contoh: `CAL 2026 0001` ditemukan di app Pelanggan, tidak di Lab.
+* Tanda hubung Unicode (en dash) dan spasi tak terputus (NBSP) bukan pemisah di kedua sisi: `CAL<NBSP>2026` memberi 0 hasil. Klien sebaiknya menormalkannya sebelum mengirim.
+* `GET /pelacakan` dan `GET /orders` tetap `LIKE` harfiah: `ORD-2026-11-0007` ditemukan di Telusuri tetapi tidak di layar order/pelacakan.

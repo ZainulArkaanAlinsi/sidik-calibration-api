@@ -15,9 +15,11 @@ use Illuminate\Database\Query\JoinClause;
  * Pencarian terpadu dokumen lab: SATU kata cari `q` untuk empat layar.
  *
  * Kata cari dicocokkan ke:
- *  - nomor seri alat (yang terdaftar DAN yang diketik teknisi di lembar kerja);
+ *  - nomor seri alat (yang terdaftar DAN yang diketik teknisi di lembar kerja),
+ *    dinormalisasi seperti nomor dokumen;
  *  - nomor sertifikat, dinormalisasi (`NormalisasiNomor`): `CAL/2026/10/0001`,
- *    `cal-2026-10-0001`, dan `cal 2026 10 0001` sama; revisi `-R<n>` ikut;
+ *    `cal-2026-10-0001`, `cal.2026.10.0001`, dan `cal 2026 10 0001` sama;
+ *    revisi `-R<n>` ikut;
  *  - nomor order: `orders.nomor` dan `calibration_sessions.nomor_order`;
  *  - nama alat, merek, dan nama PT/pelanggan.
  * Persis diprioritaskan, lalu awalan, lalu mengandung (`RumusCocok`).
@@ -53,7 +55,10 @@ use Illuminate\Database\Query\JoinClause;
  */
 final class CariDokumenLab
 {
-    /** Nomor seri pada rantai sesi (alias: s = sesi, e = alat). Dicocokkan apa adanya. */
+    /**
+     * Nomor seri pada rantai sesi (alias: s = sesi, e = alat). Dinormalisasi
+     * seperti nomor dokumen: `SN-12/3`, `sn 12 3`, dan `SN.12.3` sama.
+     */
     private const SERIAL = ['e.serial_number', 's.alat_serial_number'];
 
     /** Nomor order (alias: s = sesi, o = order). Dinormalisasi seperti nomor sertifikat. */
@@ -78,7 +83,7 @@ final class CariDokumenLab
             $cocok->leftJoin('calibration_sessions as s', 's.id', '=', 'c.calibration_session_id');
             $this->rantaiAlat($cocok, 's.equipment_id');
             $this->rantaiOrder($cocok, 's.order_item_id');
-            $peringkat = $this->rumus($cocok, $q)->nomor('c.nomor', ...self::NOMOR_ORDER)->kunci(...self::SERIAL);
+            $peringkat = $this->rumus($cocok, $q)->nomor('c.nomor', ...self::NOMOR_ORDER, ...self::SERIAL);
         }
 
         return $this->tempel($kueri, $cocok, $sub->kondisiSertifikat('c'), 'c.id', $peringkat);
@@ -97,7 +102,7 @@ final class CariDokumenLab
         if ($urut) {
             $this->rantaiAlat($cocok, 's.equipment_id');
             $this->rantaiOrder($cocok, 's.order_item_id');
-            $peringkat = $this->rumus($cocok, $q)->nomor('s.nomor_sesi', ...self::NOMOR_ORDER)->kunci(...self::SERIAL);
+            $peringkat = $this->rumus($cocok, $q)->nomor('s.nomor_sesi', ...self::NOMOR_ORDER, ...self::SERIAL);
         }
 
         return $this->tempel($kueri, $cocok, $sub->kondisiSesi('s', true), 's.id', $peringkat);
@@ -127,7 +132,7 @@ final class CariDokumenLab
 
         $peringkat = null;
         if ($urut) {
-            $peringkat = $this->rumus($cocok, $q)->kunci('e.serial_number');
+            $peringkat = $this->rumus($cocok, $q)->nomor('e.serial_number');
             foreach ($persis as [$sql, $bindingPersis]) {
                 $peringkat->lewatRelasi($sql, $bindingPersis, persis: true);
             }
@@ -162,7 +167,7 @@ final class CariDokumenLab
             );
             $this->rantaiAlat($cocok, 's.equipment_id');
             $this->rantaiOrder($cocok, 's.order_item_id');
-            $peringkat = $this->rumus($cocok, $q)->nomor('c.nomor', 's.nomor_sesi', ...self::NOMOR_ORDER)->kunci(...self::SERIAL);
+            $peringkat = $this->rumus($cocok, $q)->nomor('c.nomor', 's.nomor_sesi', ...self::NOMOR_ORDER, ...self::SERIAL);
         }
 
         return $this->tempel($kueri, $cocok, $sub->kondisiBerkas('ff'), 'ff.id', $peringkat);

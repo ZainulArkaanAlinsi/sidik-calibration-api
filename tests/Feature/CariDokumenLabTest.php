@@ -152,8 +152,11 @@ class CariDokumenLabTest extends TestCase
         $this->assertSame([$d['sertifikat']->id], $this->sertifikat('derajat DIGITAL'));
     }
 
-    public function test_persen_dan_garis_bawah_diperlakukan_sebagai_huruf_biasa(): void
+    public function test_persen_diperlakukan_sebagai_huruf_biasa_dan_garis_bawah_bukan_wildcard(): void
     {
+        // Sejak 13 Nov 2026 `_` juga pemisah nomor (dilepas di kedua sisi), jadi
+        // `A_B` cocok dengan serial `A_B` tetapi tetap tidak dengan `AXB`:
+        // bukan wildcard satu karakter. `%` masih harfiah.
         $garisBawah = $this->bangunDokumen($this->org, ['serial' => 'A_B']);
         $bukan = $this->bangunDokumen($this->org, ['serial' => 'AXB']);
         $persen = $this->bangunDokumen($this->org, ['serial' => '100%X']);

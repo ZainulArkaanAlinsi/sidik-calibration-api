@@ -7,6 +7,7 @@ use App\Http\Resources\Pelanggan\SertifikatPelangganResource;
 use App\Models\AuditLog;
 use App\Models\Certificate;
 use App\Services\BerkasPdfSertifikat;
+use App\Services\Pencarian\PolaCari;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * `/sertifikat` — daftar, detail, dan unduh PDF sertifikat milik pelanggan.
  *
  * `?q=` mencari nomor sertifikat, nama alat, nomor seri, dan NOMOR ORDER
- * (lihat `index()`), semuanya hanya di sertifikat perusahaan pemanggil.
+ * (lihat `index()`), semuanya hanya di sertifikat perusahaan pemanggil. Pemisah
+ * (`/ - . _` dan spasi) tidak berpengaruh -- lihat `PolaCari`.
  *
  * Daftarnya bawaan cuma sertifikat yang MASIH BERLAKU sebagai dokumen: yang
  * sudah digantikan revisi disembunyikan, supaya pelanggan tidak mengirim
@@ -41,7 +43,19 @@ class SertifikatController extends Controller
             // statusnya — supaya pelanggan tahu dokumen itu tidak sah lagi.
             ->when(! $request->boolean('termasuk_digantikan'), fn (Builder $q) => $q->belumDigantikan())
             ->when(filled($data['q'] ?? null), fn (Builder $q) => $q->where(function (Builder $cari) use ($data, $konteks): void {
-                $kata = '%'.$data['q'].'%';
+                // Longgar soal pemisah: `CAL-2026-10-0001` menemukan
+                // `CAL/2026/10/0001` (`PolaCari`). Kata yang cuma tanda baca
+                // (`%`, `-`) tidak punya pola, dan jawabannya daftar KOSONG --
+                // bukan daftar utuh. Tetap di dalam grup `where(function ...)`
+                // ini, jadi `or` di bawah tidak pernah melonggarkan penyaring
+                // perusahaan milik `LingkupData::sertifikat()`.
+                $kata = PolaCari::like($data['q']);
+                if ($kata === null) {
+                    $cari->whereRaw('1 = 0');
+
+                    return;
+                }
+
                 $cari->where('nomor', 'like', $kata)
                     ->orWhereHas('session.equipment', fn (Builder $a) => $a->withTrashed()
                         ->where(fn (Builder $b) => $b->where('nama_alat', 'like', $kata)

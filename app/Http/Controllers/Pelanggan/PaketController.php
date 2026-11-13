@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pelanggan;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Pelanggan\PaketPelangganResource;
 use App\Models\Order;
+use App\Services\Pencarian\PolaCari;
 use App\Services\TahapPaket;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
@@ -38,7 +39,20 @@ class PaketController extends Controller
             )
             // `?q=` mencari NOMOR order. Di atas himpunan `LingkupData::paket()`
             // (sudah dikunci ke perusahaan pemanggil), bukan menggantikannya.
-            ->when(filled($data['q'] ?? null), fn ($q) => $q->where('nomor', 'like', '%'.$data['q'].'%'))
+            // Longgar soal pemisah (`PolaCari`): `ORD-2026-11-0007` menemukan
+            // `ORD/2026/11/0007`. Kata yang cuma tanda baca (`%`, `-`) tidak
+            // punya pola, dan jawabannya daftar KOSONG, bukan daftar utuh.
+            ->when(filled($data['q'] ?? null), function ($q) use ($data): void {
+                $kata = PolaCari::like($data['q']);
+
+                if ($kata === null) {
+                    $q->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $q->where('nomor', 'like', $kata);
+            })
             ->with($this->relasi())
             ->orderByDesc('tanggal_masuk')
             ->orderByDesc('id')

@@ -895,8 +895,8 @@ Tanpa migrasi, tanpa field respons baru, tanpa rute baru — hanya parameter `q`
 
 | Rute | Perubahan |
 |---|---|
-| `GET /sertifikat?q=` | Selain nomor sertifikat, nama alat, dan nomor seri, `q` kini juga mencocokkan **nomor order**: `calibration_sessions.nomor_order` (yang tercetak di sertifikat) dan `orders.nomor` (nomor order pelacakan) dari sertifikat tersebut. Pencocokan `LIKE %q%`, `max:100` karakter. |
-| `GET /paket?q=` | **Parameter baru** (opsional, `max:100`): mencari `orders.nomor` (`LIKE %q%`). Berlaku bersama `selesai`, `per_page`, dan pagination. |
+| `GET /sertifikat?q=` | Selain nomor sertifikat, nama alat, dan nomor seri, `q` kini juga mencocokkan **nomor order**: `calibration_sessions.nomor_order` (yang tercetak di sertifikat) dan `orders.nomor` (nomor order pelacakan) dari sertifikat tersebut. Pencocokan memakai `PolaCari` (§13; sebelum 13 Nov 2026 `LIKE %q%` harfiah), `max:100` karakter. |
+| `GET /paket?q=` | **Parameter baru** (opsional, `max:100`): mencari `orders.nomor` (`PolaCari`, §13). Berlaku bersama `selesai`, `per_page`, dan pagination. |
 
 Aturan isolasi tidak berubah dan dijaga `IsolasiPerusahaanTest` serta `CariDariNomorOrderTest`:
 
@@ -910,6 +910,9 @@ Aturan isolasi tidak berubah dan dijaga `IsolasiPerusahaanTest` serta `CariDariN
   biasanya sama dengan isi snapshot karena Order Number wajib terisi sebelum sesi disetujui).
 
 Aplikasi pelanggan tidak wajib diubah; kolom pencarian yang sudah ada otomatis menerima nomor order.
+
+> **Diperbarui 13 Nov 2026 (§13):** pencocokan tidak lagi `LIKE %q%` harfiah — pemisah (`/ - . _` dan spasi)
+> tidak berpengaruh, dan `%`/`_` yang diketik bukan wildcard.
 
 
 ## 10. Tindak lanjut temuan aplikasi Pelanggan (additive/penyempitan sisi server, 12 Nov 2026)
@@ -997,9 +1000,63 @@ alur layar ada di [`perintah-frontend-arsip-cari.md`](perintah-frontend-arsip-ca
   `hari`) berbentuk **persis baris `GET /sertifikat`** (`SertifikatPelangganResource`) ditambah
   `nomor_order` (dari snapshot, yang tercetak di PDF) — model baris di app bisa dipakai ulang.
 - `q` memakai pencarian terpadu: nomor sertifikat dinormalisasi (huruf, `/`, `-`, spasi diabaikan; revisi
-  ikut), nomor seri, nomor order, nama alat. Order hanya dari order milik perusahaan pemanggil. **`q` di
-  `GET /sertifikat` tidak diubah** (masih `LIKE` harfiah).
+  ikut), nomor seri, nomor order, nama alat. Order hanya dari order milik perusahaan pemanggil. Sejak
+  13 Nov 2026 `GET /sertifikat?q=` juga tidak peduli pemisah (§13), dan `.` serta `_` ikut jadi pemisah di
+  garis waktu.
 - Isolasi: kueri dasarnya `LingkupData::sertifikat()` — `customer_id` dari `KonteksPerusahaan`, tidak dari
   request (`?customer_id=` diabaikan). Sertifikat perusahaan lain tidak pernah terhitung, tampil, atau
   tertemu; kasusnya di `IsolasiPerusahaanTest` dan `GarisWaktuSertifikatPelangganTest`.
 - Throttle `pelanggan-garis-waktu` 60/menit per pengguna.
+
+
+## 13. Kata cari `q` tidak peduli pemisah (additive, 13 Nov 2026)
+
+Tanpa migrasi, tanpa rute baru, tanpa field respons baru, tanpa parameter baru. Hanya cara server membaca `q`
+yang berubah, di tiga rute daftar:
+
+| Rute | Kolom yang dicari |
+|---|---|
+| `GET /sertifikat?q=` | nomor sertifikat, nama alat, nomor seri, Order Number tercetak (`calibration_sessions.nomor_order`), nomor order pelacakan (`orders.nomor`) |
+| `GET /alat?q=` | nama alat, nomor seri, nomor identifikasi, merek |
+| `GET /paket?q=` | nomor order (`orders.nomor`) |
+
+`GET /sertifikat/garis-waktu?q=` sudah tidak peduli `/ - spasi` sejak §12; kini `.` dan `_` ikut, dan nomor seri
+dibandingkan dengan cara yang sama.
+
+**Aturannya** (`App\Services\Pencarian\PolaCari`):
+
+1. `q` dipecah di rangkaian pemisah: spasi/tab, `-`, `/`, `\`, `_`, `.`, dan `%`. Tiap potongan harus muncul di
+   kolom **berurutan**, apa pun pemisah yang tersimpan di antaranya. `CAL-2026-10-0001`, `cal 2026 10 0001`,
+   `CAL.2026.10.0001`, `CAL_2026_10_0001`, dan `CAL\2026\10\0001` semuanya menemukan `CAL/2026/10/0001`. Sebaliknya
+   nomor yang tersimpan `ISO-A-0001` ditemukan oleh `iso/a/0001`.
+2. Potongan boleh **dilewati di tengah** (`CAL 2026 0001` menemukan `CAL/2026/10/0001`), tetapi tidak boleh
+   **tertukar urutannya** (`CAL 0001 2026` tidak menemukan apa-apa). Tiap potongan dicocokkan sebagai teks
+   "mengandung", seperti dulu.
+3. Huruf besar/kecil tidak berpengaruh.
+4. Paling banyak **8 potongan pertama** yang dipakai; sisanya diabaikan. `max:100` karakter tetap, 101 → `422`.
+5. Kata tanpa pemisah berperilaku sama seperti sebelumnya (`%kata%`); hasilnya tidak pernah lebih sedikit dari dulu.
+6. **`%` dan `_` yang diketik bukan wildcard lagi** — keduanya jadi pemisah. Kata yang **hanya** berisi pemisah
+   (`%`, `-`, `/`, `_`, `.`, spasi) dijawab `200` dengan `data: []` dan `meta.total: 0`, **bukan** daftar utuh.
+   (Dulu `%` dan `_` mencocokkan semuanya.) Kata kosong tetap berarti "tanpa `q`" seperti biasa.
+7. **Hasil bisa lebih banyak dari dulu** untuk kata yang berpemisah — itu tujuannya. Potongan pendek seperti `0001`
+   atau `10` bisa mencocokkan beberapa nomor; layar sebaiknya menampilkan semua baris yang kembali, bukan
+   mengambil baris pertama saja.
+
+**Yang tidak berubah:** bentuk respons (`data[]`, `meta`), `per_page`, `termasuk_digantikan`, `saring`, `selesai`,
+urutan hasil, throttle, dan isolasi perusahaan. Pencarian tetap hanya berjalan **di dalam** himpunan
+`LingkupData` perusahaan pemanggil: nomor, seri, atau order milik PT lain dijawab `200` + daftar kosong, persis
+sama dengan nomor yang tidak ada (bukan `403`/`404`), sebanyak apa pun pemisahnya dilonggarkan.
+
+**Untuk aplikasi Pelanggan.** Teks petunjuk kolom cari Arsip (app Pelanggan PR #19, 13 Nov 2026) yang menulis
+"Tulis nomor persis seperti di sertifikat." sudah tidak benar setelah perubahan ini. Pengganti yang disarankan:
+
+> Cari nomor sertifikat, nomor seri, atau Order Number. Tanda `/`, `-`, `.`, `_`, dan spasi boleh berbeda dari
+> yang tercetak — misalnya `CAL-2026-10-0001` untuk `CAL/2026/10/0001`.
+
+Aplikasi **tidak perlu** membersihkan atau mengubah huruf kata cari sebelum mengirim (kirim apa adanya, boleh
+`trim`), dan tidak perlu menahan kata yang hanya berisi tanda baca — server menjawab kosong. Kosong = jangan
+kirim parameternya. Debounce ≥ 300 ms tetap dianjurkan; biaya pencarian tidak berubah kelasnya.
+
+Dijaga `Tests\Feature\Pelanggan\CariPemisahBedaTest` (tiga rute daftar), `GarisWaktuSertifikatPelangganTest` (garis
+waktu), dan `Tests\Unit\Pencarian\PolaCariTest` (aturan di atas); `IsolasiPerusahaanTest` dan
+`CariDariNomorOrderTest` tidak diubah dan tetap hijau.
