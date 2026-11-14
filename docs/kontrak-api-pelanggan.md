@@ -1082,9 +1082,11 @@ bukan kunci unik daftar item.
 
 ```json
 "sedang_dikerjakan": { "paket_id": 120, "order_item_id": 981, "nomor_order": "ORD/2026/11/0042",
-                       "tahap": "menunggu_pemeriksaan", "tahap_label": "Hasil sedang diperiksa" }
+                       "tahap": "menunggu_pemeriksaan", "tahap_label": "Hasil sedang diperiksa",
+                       "garis_waktu": [ { "kode": "diterima", "label": "Alat diterima lab", "lewat": true, "sekarang": false }, "..." ] }
 ```
 
+(Kunci `garis_waktu` ditambahkan 14 Nov 2026, lengkap di §15.2; contoh di atas memotong isinya.)
 atau `null`. Kuncinya SELALU ada di tiga rute itu. Aturan (`App\Services\Pelanggan\PaketAktifAlat`):
 
 | Aturan | Isi |
@@ -1095,8 +1097,8 @@ atau `null`. Kuncinya SELALU ada di tiga rute itu. Aturan (`App\Services\Pelangg
 | `tahap` | tahap yang dilihat pelanggan (pengesahan dilipat ke `menunggu_pemeriksaan`), sama dengan `/paket` |
 | Biaya | empat kueri per halaman, berapa pun jumlah alatnya (dijaga `PelacakanAlatPelangganTest`) |
 
-Lima kunci itu saja. Tidak ada nama teknisi/pereview, kode teknisi, nomor sesi, kondisi terima, catatan,
-status/peringatan hitung.
+Enam kunci itu saja (lima yang asli dari 13 Nov 2026, `garis_waktu` dari 14 Nov 2026, §15.2). Tidak ada nama
+teknisi/pereview, kode teknisi, nomor sesi, kondisi terima, catatan, status/peringatan hitung.
 
 ### 14.3 Penjaga tampilan: item beralat pelanggan lain disembunyikan
 
@@ -1150,3 +1152,112 @@ PASS/FAIL. Aturan pengiriman (`App\Services\Pelanggan\KabarTahapAlat`):
   notifikasi tetap terbaca utuh.
 
 Penjaga: `KabarTahapAlatTest` (19 kasus), `PreferensiNotifikasiTest`.
+
+
+## 15. Beranda "Jejak": hitungan `ringkasan`, `garis_waktu` per alat, nilai tahap terkunci (additive, 14 Nov 2026)
+
+PRD: `docs/permintaan-user-7.md` §59. Kontrak untuk aplikasi Pelanggan: `docs/perintah-frontend-pelacakan-pelanggan.md`
+§6. **Tidak ada rute baru, tidak ada migrasi, tidak ada field yang dihapus atau diganti nama.** Semua kunci baru
+OPSIONAL dari sisi aplikasi (aplikasi lama mengabaikannya; aplikasi baru jatuh ke perilaku lama bila kuncinya tidak ada).
+
+### 15.1 `data.ringkasan` di `GET /beranda`: empat hitungan baru
+
+Lima kunci lama tidak berubah (`jumlah_alat`, `lewat_jatuh_tempo`, `segera_jatuh_tempo`, `paket_berjalan`,
+`notifikasi_belum_dibaca`), empat kunci baru ditambahkan di belakangnya. Semuanya bilangan bulat >= 0, dihitung dari
+seluruh data perusahaan pemanggil (`LingkupData`: `customer_id` + `organization_id`), **tidak ikut batas daftar**
+(5 sertifikat, 3 paket) di bawahnya.
+
+| Kunci | Definisi persis | Diadu ke |
+|---|---|---|
+| `alat_berlaku` | Alat **aktif** dengan `status_alat` = `terkalibrasi` ATAU `mendekati_jadwal`: sudah pernah dikalibrasi (sertifikat terbit di sistem atau `tanggal_kalibrasi_terakhir` terisi) dan jatuh temponya hari ini atau sesudahnya, atau tidak berjadwal. **Tidak** termasuk `lewat_jadwal`, `belum_pernah`, `nonaktif` | jumlah `status_alat` `terkalibrasi` + `mendekati_jadwal` di `GET /alat` |
+| `alat_belum_pernah` | Alat **aktif** dengan `status_alat` = `belum_pernah`: tidak ada sertifikat `terbit` di sistem DAN `tanggal_kalibrasi_terakhir` kosong | jumlah `status_alat == "belum_pernah"` di `GET /alat` |
+| `paket_siap_diambil` | Paket **berjalan** (bukan `selesai`, bukan `dibatalkan`) perusahaan ini yang `tahap`-nya `siap_diambil` menurut `TahapPaket`, dari item yang TERLIHAT (item beralat pelanggan lain tersembunyi, sama dengan `/paket`). Tahap paket = tahap alat yang paling tertinggal: semua alat terlihat `siap_diambil` atau `diserahkan`, sekurangnya satu `siap_diambil` | jumlah `tahap == "siap_diambil"` di `GET /paket` |
+| `sertifikat_baru_7_hari` | Sertifikat `terbit`, belum digantikan, milik perusahaan ini (kepemilikan dari alat sesinya, termasuk alat yang dihapus lunak), dengan `diterbitkan_pada` dari 7 hari lalu sampai hari ini (kolom tanggal; hari ini dan tanggal-7 ikut, tanggal di depan hari ini TIDAK). Revisi yang terbit dihitung satu kali; pendahulunya (digantikan) dan yang `dibatalkan` tidak | himpunan yang sama dengan `sertifikat_terbaru`, tanpa `limit` |
+
+Catatan yang perlu diketahui aplikasi:
+
+- `jumlah_alat` **tetap** semua alat aktif, termasuk yang `belum_pernah`. `alat_berlaku` + `alat_belum_pernah` <=
+  `jumlah_alat`; selisihnya persis alat `lewat_jadwal` (aktif). Jangan memakai `lewat_jatuh_tempo`/`segera_jatuh_tempo`
+  sebagai pecahan dari `jumlah_alat`: dua kunci lama itu dihitung dari tanggal jatuh tempo saja dan tidak peduli
+  `belum_pernah`.
+- **Keputusan pemilik (14 Nov 2026): alat `mendekati_jadwal` IKUT `alat_berlaku`.** Sertifikatnya belum jatuh tempo, jadi
+  nama "berlaku" tidak boleh mengecualikannya; jendela 30 hari itu urusan `segera_jatuh_tempo`. (Versi pertama hari yang sama
+  menghitung `terkalibrasi` saja, mengikuti `kebutuhan-api-pelanggan.md` §7a di `sidik-pelanggan-mobile`; teks di repo itu
+  perlu ikut diubah.) Aplikasi **tidak terpengaruh**: kalimat "Semua alat Anda berlaku." hanya tercapai bila daftar
+  perhatian kosong, dan alat `mendekati_jadwal` sudah mengisinya lewat `segera_jatuh_tempo`. Kalimat itu hanya aman dipakai
+  bila `alat_berlaku` = `jumlah_alat`.
+- Biaya (`App\Services\Pelanggan\RingkasanBerandaPelanggan`): satu kueri `count()` per angka untuk `alat_berlaku`,
+  `alat_belum_pernah`, `sertifikat_baru_7_hari`. `paket_siap_diambil` memakai `TahapPaket` yang sama dengan `/paket` (tahap
+  sengaja tidak disimpan, jadi tidak diulang dalam SQL) dengan **lima kueri tetap**, berapa pun jumlah paketnya, dan hanya
+  memuat paket berjalan yang punya sekurangnya satu item `tahap_fisik` = `siap_diambil` (prasaring SQL di kueri `orders`
+  yang sama: nol kueri tambahan; sah karena `siap_diambil` hanya lahir dari kolom itu, dikunci `TahapPaketTerkunciTest`).
+  **Batas skala belum diukur** (perusahaan dengan ratusan paket yang berisi item siap). Tidak ada N+1; dijaga `RingkasanBerandaPelangganTest::test_jumlah_kueri_beranda_tidak_bertambah_dengan_banyaknya_alat_paket_dan_sertifikat`.
+
+### 15.2 `sedang_dikerjakan.garis_waktu`: jejak tahap per alat
+
+`GET /alat` (`data[]`), `GET /alat/{id}` (`data`), `GET /beranda` (`data.perlu_perhatian[]`): `sedang_dikerjakan` (§14.2)
+sekarang membawa **enam** kunci, `garis_waktu` yang baru di belakang:
+
+```json
+"sedang_dikerjakan": {
+  "paket_id": 120, "order_item_id": 981, "nomor_order": "ORD/2026/11/0042",
+  "tahap": "menunggu_pemeriksaan", "tahap_label": "Hasil sedang diperiksa",
+  "garis_waktu": [
+    { "kode": "diterima",             "label": "Alat diterima lab",       "lewat": true,  "sekarang": false },
+    { "kode": "dikalibrasi",          "label": "Sedang dikalibrasi",      "lewat": true,  "sekarang": false },
+    { "kode": "menunggu_pemeriksaan", "label": "Hasil sedang diperiksa",  "lewat": false, "sekarang": true  },
+    { "kode": "sertifikat_terbit",    "label": "Sertifikat sudah terbit", "lewat": false, "sekarang": false },
+    { "kode": "siap_diambil",         "label": "Siap diambil",            "lewat": false, "sekarang": false },
+    { "kode": "diserahkan",           "label": "Sudah diserahkan",        "lewat": false, "sekarang": false }
+  ]
+}
+```
+
+Bentuknya **sama persis** dengan `garis_waktu` di `GET /paket/{id}` (`[{kode, label, lewat, sekarang}]`): satu fungsi,
+`TahapPaket::garisWaktu($tahap, untukPelanggan: true)`, dipanggil dengan **tahap ALAT itu** (bukan tahap paket; paket
+berisi dua alat bisa membuat dua jejak berbeda). Tidak ada kueri tambahan. Tidak ada kunci `status` terpisah: `lewat`
+(sudah dilalui), `sekarang` (di sini), dan keduanya `false` = nanti. Bila `sedang_dikerjakan` `null`, tidak ada jejak.
+
+### 15.3 Nilai yang TERKUNCI (urutan dan label tahap)
+
+Aplikasi Pelanggan masih menyimpan **salinan** urutan tahap (`lib/models/garis_tahap_pelanggan.dart` di
+`sidik-pelanggan-mobile`, portasi `_garisServer` di `test/beranda_jejak_test.dart`) untuk layar yang belum membaca
+`garis_waktu`. Nilai berikut dikunci `Tests\Unit\TahapPaketTerkunciTest`; mengubah salah satunya membuat tes merah
+dengan pesan **"beri tahu app Pelanggan (salinan Dart)"**.
+
+`TahapPaket::URUTAN` (awal ke akhir) dan `LABEL_PELANGGAN`:
+
+| # | Kode | Label pelanggan |
+|---|---|---|
+| 0 | `diterima` | Alat diterima lab |
+| 1 | `dikalibrasi` | Sedang dikalibrasi |
+| 2 | `perlu_diulang` | Sedang dikerjakan ulang |
+| 3 | `menunggu_pemeriksaan` | Hasil sedang diperiksa |
+| 4 | `menunggu_pengesahan` | Hasil sedang diperiksa |
+| 5 | `sertifikat_terbit` | Sertifikat sudah terbit |
+| 6 | `siap_diambil` | Siap diambil |
+| 7 | `diserahkan` | Sudah diserahkan |
+
+Aturan jejak untuk pelanggan (`garisWaktu(..., untukPelanggan: true)`), semuanya terkunci:
+
+- `menunggu_pengesahan` **dilipat** ke `menunggu_pemeriksaan` (kode itu tidak pernah terlihat di `tahap` maupun
+  `garis_waktu`; `PaketPelangganResource::untukPelanggan`).
+- Jejak berisi **enam** langkah: `diterima`, `dikalibrasi`, `menunggu_pemeriksaan`, `sertifikat_terbit`, `siap_diambil`,
+  `diserahkan`. `perlu_diulang` HANYA muncul (langkah ketiga, jadi **tujuh** langkah) saat tahapnya memang `perlu_diulang`.
+- `lewat` = posisinya di `URUTAN` lebih awal dari tahap sekarang; `sekarang` = posisi yang sama; tepat satu langkah
+  `sekarang`.
+- **Kode tahap yang tidak dikenal** (hanya mungkin lahir dari perubahan `TahapPaket`; `order_items.tahap_fisik` berupa enum
+  `siap_diambil`/`diserahkan`): `garisWaktu()` menandai langkah pertama, `diterima`, sebagai `sekarang` dan tidak menandai
+  satu pun `lewat`. Di `sedang_dikerjakan`, `tahap` membawa kode itu apa adanya dan `tahap_label` jatuh ke kode itu sendiri.
+  Aplikasi sebaiknya menampilkan `tahap_label` dan `garis_waktu` dari server, bukan menafsirkan kode.
+- **Perbedaan yang SENGAJA antara server dan salinan Dart:** untuk kode asing server menandai `diterima` sebagai `sekarang`;
+  salinan Dart tidak menandai langkah mana pun (aplikasi tidak mengarang tik "sekarang" untuk kode yang tidak
+  dikenalnya). Keduanya dibiarkan berbeda; jejak dari server yang dipakai, salinan Dart hanya cadangan.
+
+### 15.4 Isolasi dan penjaga
+
+Semua angka dan jejak di-scope perusahaan DAN lab (`LingkupData`); `customer_id` di query string tidak dipercaya. Order
+PT B yang memuat alat PT A tidak menggeser `paket_siap_diambil` A dan tidak melahirkan `sedang_dikerjakan`/`garis_waktu`
+di alat A. Resource pelanggan tetap berdiri sendiri (tidak mewarisi Resource internal). Penjaga:
+`RingkasanBerandaPelangganTest`, `GarisWaktuAlatPelangganTest`, `TahapPaketTerkunciTest`, `IsolasiPerusahaanTest`
+(`test_ringkasan_beranda_dan_garis_waktu_alat_tidak_menembus_perusahaan_lain`), `PelacakanAlatPelangganTest`.

@@ -11,6 +11,7 @@ use App\Models\Equipment;
 use App\Models\Order;
 use App\Services\Pelanggan\PaketAktifAlat;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use App\Services\Pelanggan\RingkasanBerandaPelanggan;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,8 @@ use Illuminate\Http\Request;
  * Satu, bukan lima: layar pertama di HP dengan sinyal lapangan yang lemah
  * tidak boleh menunggu lima perjalanan bolak-balik sebelum menampilkan apa
  * pun. Tiap bagian dibatasi jumlahnya; daftar lengkapnya ada di rutenya
- * masing-masing (`/alat`, `/sertifikat`, `/paket`).
+ * masing-masing (`/alat`, `/sertifikat`, `/paket`). Pembatasan itu hanya untuk
+ * DAFTAR: hitungan di `ringkasan` tidak ikut terpotong.
  *
  * Urutan bagian = urutan kepentingan di layar: yang PERLU TINDAKAN (alat
  * lewat/segera jatuh tempo) lebih dulu dari yang sekadar kabar (sertifikat
@@ -85,6 +87,9 @@ class BerandaController extends Controller
                     'segera_jatuh_tempo' => $jumlahSegera,
                     'paket_berjalan' => $lingkup->paket()->where('status', '!=', Order::STATUS_SELESAI)->count(),
                     'notifikasi_belum_dibaca' => $request->user()->unreadNotifications()->count(),
+                    // Additive (14 Nov 2026): hitungan PASTI, tidak ikut batas daftar di bawah
+                    // (5 sertifikat, 3 paket). Definisi di `RingkasanBerandaPelanggan`.
+                    ...app(RingkasanBerandaPelanggan::class)->hitung($lingkup),
                 ],
                 'perlu_perhatian' => $perluPerhatian
                     ->map(fn (Equipment $a) => (new AlatPelangganResource($a))

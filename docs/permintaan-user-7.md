@@ -5939,6 +5939,68 @@ instruksi terpisah yang menyebut tabel + jumlah barisnya (`docs/aturan-akses-dat
 tulis ke produksi; kueri sensus di bagian F). Tahap turunan dan kabarnya belum teruji pada data produksi nyata. Aplikasi Pelanggan perlu memetakan tautan
 `pelanggan_paket` dan layar preferensi memuat saklar `tahap_alat` (`docs/perintah-frontend-pelacakan-pelanggan.md`).
 
+## §59 — Beranda "Jejak" pelanggan: hitungan `ringkasan` pasti, `garis_waktu` per alat, tahap terkunci — 14 Nov 2026
+
+**Permintaan (tinjauan Beranda Pelanggan, 14 Nov 2026; `docs/kebutuhan-api-pelanggan.md` §7 di `sidik-pelanggan-mobile`).**
+Aplikasi Pelanggan terpaksa menebak karena server tidak memberi: (1) berapa alat yang BENAR-BENAR berlaku (`jumlah_alat`
+ikut menghitung `belum_pernah`); (2) "N sertifikat baru" dihitung dari `sertifikat_terbaru` yang dipotong lima; (3) paket
+siap diambil hanya terlihat dari tiga paket terbaru; (4) jejak tahap per alat tidak ada di `/beranda` dan `/alat`, jadi
+aplikasi menyalin `TahapPaket::garisWaktu` ke Dart (risiko drift).
+
+**Keadaan nyata sebelum perubahan (dibaca dari kode di `origin/main` d8dc320a).**
+
+- `BerandaController` `ringkasan` sudah ada (lima kunci: `jumlah_alat`, `lewat_jatuh_tempo`, `segera_jatuh_tempo`,
+  `paket_berjalan`, `notifikasi_belum_dibaca`); `jumlah_alat` = semua alat aktif termasuk `belum_pernah`.
+- `sertifikat_terbaru` `limit(5)`, `paket_berjalan` `limit(3)`: pagar daftar, bukan hitungan.
+- `sedang_dikerjakan` (§57) hanya lima kunci; `garis_waktu` hanya di `GET /paket/{id}`.
+- `TahapPaket::URUTAN` / `LABEL_PELANGGAN` tidak dikunci tes mana pun; salinan Dart-nya bisa melenceng diam-diam.
+- `order_items.tahap_fisik` berupa enum (`siap_diambil`, `diserahkan`): kode tahap asing hanya mungkin dari perubahan `TahapPaket`.
+
+**Yang dikerjakan** (branch `feat/api-beranda-ringkasan-20261114`, belum commit; nol migrasi, nol rute, nol kolom).
+
+| Bagian | Isi | Berkas |
+|---|---|---|
+| **A. `ringkasan` +4 kunci** | `alat_berlaku` (= `status_alat` `terkalibrasi` + `mendekati_jadwal`; keputusan pemilik), `alat_belum_pernah`, `paket_siap_diambil` (tahap paket versi pelanggan = `siap_diambil`, dari item terlihat; prasaring SQL `whereHas('items', tahap_fisik = siap_diambil)`), `sertifikat_baru_7_hari` (terbit, belum digantikan, 7 hari lalu s.d. hari ini, tanpa batas lima). Satu `count()` per angka untuk tiga angka; `paket_siap_diambil` memakai `TahapPaket` yang sama dengan `/paket` (lima kueri tetap, bukan N+1) | `RingkasanBerandaPelanggan` (baru), `BerandaController` |
+| **B. `garis_waktu` per alat** | `sedang_dikerjakan` +kunci ke-enam, `TahapPaket::garisWaktu($tahapAlat, untukPelanggan: true)`, bentuk sama dengan `/paket/{id}`; nol kueri tambahan | `PaketAktifAlat`, `AlatPelangganResource` (komentar) |
+| **C. Penjaga tahap** | `TahapPaketTerkunciTest`: urutan, label pelanggan, jejak tiap kode (nilai terketik), lipatan pengesahan, enam/tujuh langkah, perilaku kode asing; pesan gagal "BERI TAHU app Pelanggan (salinan Dart ...)" | tes baru |
+| **D. Isolasi** | semua angka lewat `LingkupData` (perusahaan + lab); `IsolasiPerusahaanTest` memuat field baru; tanpa Resource baru; tanpa data internal | tes |
+| **E. Dokumen** | `docs/kontrak-api-pelanggan.md` §15, `docs/perintah-frontend-pelacakan-pelanggan.md` §6, bagian ini | -- |
+
+**Keputusan.**
+
+1. **`alat_berlaku` = `status_alat` `terkalibrasi` + `mendekati_jadwal` (keputusan pemilik, 14 Nov 2026, atas rekomendasi peninjau).**
+   Versi pertama hari yang sama menghitung `terkalibrasi` saja (mengikuti `kebutuhan-api-pelanggan.md` §7a di
+   `sidik-pelanggan-mobile`), padahal sertifikat alat `mendekati_jadwal` masih berlaku: nama "berlaku" tidak boleh
+   mengecualikannya. Klausa jadwalnya sekarang `tanggal_jatuh_tempo` kosong ATAU `>=` hari ini. **Aplikasi tidak terpengaruh**:
+   kalimat "Semua alat Anda berlaku." hanya tercapai bila daftar perhatian kosong, dan alat `mendekati_jadwal` sudah mengisinya
+   lewat `segera_jatuh_tempo`. **Teks `docs/kebutuhan-api-pelanggan.md` (repo mobile, baris 269: "`status_alat` = `terkalibrasi`")
+   perlu ikut diubah di repo itu**; repo itu tidak saya sentuh.
+2. **Jendela `sertifikat_baru_7_hari` = hari kalender, hari ini dan 7 hari ke belakang (8 tanggal), tanggal di depan hari ini
+   tidak dihitung.** Sama dengan `hitungSertifikatBaru` di aplikasi (`-7 <= selisih hari <= 0`).
+3. **Bentuk `garis_waktu` mengikuti `/paket`** (`kode`, `label`, `lewat`, `sekarang`), bukan kunci `status` baru: satu bentuk, satu sumber.
+4. **Kode tahap asing: server dan salinan Dart SENGAJA berbeda.** Server (`garisWaktu()`) menandai `diterima` sebagai `sekarang`;
+   salinan Dart tidak menandai langkah mana pun (aplikasi tidak mengarang tik "sekarang" untuk kode yang tidak dikenalnya).
+   Keduanya dibiarkan; jejak dari server yang dipakai, salinan Dart hanya cadangan. Kolom `tahap_fisik` berupa enum, jadi kasusnya
+   hanya mungkin lahir dari perubahan `TahapPaket`. Terkunci `TahapPaketTerkunciTest`.
+5. **Prasaring `paket_siap_diambil`.** `siap_diambil` hanya lahir dari `tahap_fisik` (`TahapPaket::untukItem` menurunkan paling jauh
+   `sertifikat_terbit`), jadi kueri hanya memuat paket berjalan yang punya sekurangnya satu item `tahap_fisik = siap_diambil`;
+   keputusan akhir tetap `TahapPaket::untukPaket` atas item terlihat. Asumsi dikunci
+   `TahapPaketTerkunciTest::siap_diambil_dan_diserahkan_hanya_lahir_dari_tahap_fisik`; hasil tak berubah (kasus tepi di
+   `RingkasanBerandaPelangganTest::test_prasaring_paket_tidak_mengubah_hasil_untuk_kasus_tepi`), kueri tetap lima dan tidak
+   tumbuh dengan data. **Batas skala belum diukur** (perusahaan dengan ratusan paket berisi item siap).
+
+**Bukti (14 Nov 2026, SQLite in-memory; worktree dengan `vendor` SUNGGUHAN, kelas yang dimuat dibuktikan `ReflectionClass::getFileName()` menunjuk ke worktree).**
+
+- *Merah dulu*: tes baru dijalankan terhadap `BerandaController` + `PaketAktifAlat` dari `origin/main` (di salinan, bukan di worktree): 26 tes, **1 lulus, 10 gagal, 15 error**. Terhadap kode baru: hijau.
+- *Tes baru*: `TahapPaketTerkunciTest` 9/9 (termasuk penjaga asumsi prasaring: `siap_diambil`/`diserahkan` hanya lahir dari `tahap_fisik`), `RingkasanBerandaPelangganTest` 14/14 (termasuk kasus tepi prasaring dan tes bahwa prasaring benar-benar menyempitkan muatan item), `GarisWaktuAlatPelangganTest` 12/12 (8 skenario tahap x tiga rute x diadu ke `/paket/{id}`), `IsolasiPerusahaanTest` +1 kasus; `PelacakanAlatPelangganTest` satu kasus lama diubah dari "lima kunci" menjadi "enam kunci" (lima kunci asli dijaga nilai dan urutannya).
+- *Regresi terarah*: putaran pertama (sebelum perubahan definisi/prasaring): seluruh `tests/Feature/Pelanggan` + `TahapPaketTerkunciTest` + `PelacakanPaketTest` + `BatasAntarLabTest` **417 tes, 410 lulus, 7 error** -- semuanya `HapusAkunTest` ("No application encryption key", worktree tanpa `.env`); dengan `APP_KEY` dari variabel lingkungan **18/18 lulus**, bukan dari perubahan ini. Putaran akhir (sesudah `alat_berlaku` = terkalibrasi + mendekati, prasaring paket, dan rebase lokal ke `origin/main` 425f4384): Ringkasan + TahapPaketTerkunci + GarisWaktuAlat + Isolasi + PelacakanAlat + StatusAlat + DataPelanggan + PelacakanPaket + KontrakResponsPelanggan **103/103**.
+- *Diadu ke jawaban yang sudah ada*: `alat_berlaku`/`alat_belum_pernah` ke jumlah `status_alat` di `/alat` (alat impor, `menunggu_generate`, `dibatalkan`, hari ke-30/31, tanpa jadwal, nonaktif); `paket_siap_diambil` ke jumlah `tahap == siap_diambil` di `/paket`; `garis_waktu` alat ke `garis_waktu` `/paket/{id}`.
+- *Mutasi mandiri* (salinan unik di luar worktree, `vendor` salinan sendiri, garis dasar hijau; diulang penuh sesudah perubahan 14 Nov): **42 mutan, 42 terbunuh oleh asersi** (tidak satu pun mati karena galat kompilasi). Angka salah (berlaku tanpa klausa jadwal, `>=` jadi `>`, mendekati dikecualikan lagi, kemarin masih berlaku, `tanggal_kalibrasi_terakhir` diabaikan, status sertifikat diabaikan, nonaktif ikut, paket selesai ikut, "ada satu item siap" menggantikan "paling tertinggal", `jumlah_alat` mengecualikan belum pernah) 10; tanpa scope PT/lab, `customer_id` dari query string, item paket beralat PT lain tak disembunyikan 6; batas 5 sertifikat / 3 paket kembali 2; jendela tanggal (8 hari, 6 hari, masa depan, dibatalkan, pendahulu digantikan) 5; N+1 (item paket tak di-eager-load, sertifikat dimuat satu-satu) 2, yang pertama diadu juga hanya ke tes jumlah kueri (34 -> 54 kueri); urutan kunci/field internal bocor (kunci ringkasan, `nomor_sesi`, label internal) 4; urutan tahap bertukar, label berubah (2), pengesahan tak dilipat, `perlu_diulang` selalu tampil, `lewat` bergeser, kode asing tak lagi jatuh ke `diterima`, langkah pengesahan muncul untuk pelanggan 8; `garis_waktu` per alat hilang 1; prasaring paket (salah status, terlalu sempit, dihapus [mati oleh tes muatan item, bukan oleh hasil], asumsi `tahap_fisik` runtuh di `TahapPaket`) 4.
+
+**Belum.** Gate MySQL penuh dan SQLite penuh (CI). Tes dijalankan di SQLite in-memory saja. Aplikasi Pelanggan belum membaca
+`garis_waktu`/`ringkasan` baru di build terpasang (kunci opsional). Hitungan `paket_siap_diambil` memuat paket berjalan yang
+punya item siap (lima kueri tetap, prasaring SQL); batas skalanya (ratusan paket berisi item siap) belum diukur.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
@@ -6671,5 +6733,6 @@ Supaya tidak dibangun ulang:
 | G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |
 | G35 | **Huruf Sieve kembali sepadan master + gerbang rasio huruf semua profil** (SISA-PEKERJAAN P0-1) — §58 | **DIKERJAKAN** (13 Nov 2026, branch `fix/huruf-sieve-20261113`, belum commit). `FONT_MEDIAN_PT['sieve'] = 8.52`: huruf 7,1 -> 8,2 pt (0,96 x master), tetap satu halaman, nol angka hitung berubah. Gerbang baru di `SertifikatSemuaAlatSatuHalamanTest`: rasio huruf per profil (48) dikunci baseline dua arah `tests/Fixtures/sertifikat-huruf/baseline-huruf-master.json`, 0,90-1,10 x master, Thermohygro satu-satunya pengecualian. Tiap sesi dan `master_pt` terkunci (fixture + hash). Mutasi 28/28 terbunuh. Gate SQLite+MySQL penuh belum (CI) |
 | G32 | **Sertifikat persis master — B3a / R9: desimal & faktor cakupan `k`** (K-50-15) | **DIKERJAKAN** (12 Nov 2026, branch `fix/sertifikat-desimal-k-persis-master-b3a`, belum commit). Hanya TAMPILAN CETAK, snapshot BARU saja: Timbangan memakai kode format sel `SERTIFIKAT` master per varian (`timbangan.format`, `TimbanganProfile::formatCetakMaster`; aturan `d+1` T14 dan LOP substitusi `13,66` dibatalkan, LOP kg `0.08`, substitusi `± 14`, gram kapasitas `25.000`); `k` Jangka Sorong & Height Gauge `0` (sel `General` di kolom sempit tampil `2`), Timer `0.000` + `k_tunggal = baris_pertama`; Viscometer Standard Value `79.90`. Penjaga: LOP/U95 tidak pernah tercetak `0`; gram `d-1` tidak memotong nilai uji. Angka hitung identik sebelum/sesudah (7 sesi, `uncertainty_calculations` baris-per-baris). Turbidimeter dan varian (R10) tidak disentuh. Pertanyaan lab: `docs/pertanyaan-lab-format-sertifikat.md` #8 (k `2` vs `2,09`/`1,98`), `docs/pertanyaan-lab-timbangan.md` T14 (format per neraca). **PERHATIAN:** `php artisan sertifikat:bangun-ulang --termasuk-terbit` membangun ulang snapshot sertifikat TERBIT dari kode yang berjalan, jadi teks cetak (desimal timbangan, `k` jangka/height/timer, `79.90`) ikut berubah di dokumen yang sudah di tangan pelanggan. JANGAN dijalankan tanpa meninjau keluaran dry-run (bawaannya dry-run) dan tanpa `--oleh`/`--alasan` yang sengaja. Gate MySQL penuh belum dijalankan. |
+| G36 | **Beranda "Jejak" pelanggan: hitungan `ringkasan` pasti (`alat_berlaku`, `alat_belum_pernah`, `paket_siap_diambil`, `sertifikat_baru_7_hari`), `sedang_dikerjakan.garis_waktu` per alat, dan tahap terkunci (`TahapPaketTerkunciTest`)** — §59 | **DIKERJAKAN** (14 Nov 2026, branch `feat/api-beranda-ringkasan-20261114`, belum commit). Additive murni: nol migrasi/rute/kolom, field lama tidak berubah. `alat_berlaku` = `status_alat` `terkalibrasi` + `mendekati_jadwal` (keputusan pemilik 14 Nov 2026; teks `kebutuhan-api-pelanggan.md` di repo mobile perlu ikut diubah, lihat §59). Isi bukti & mutasi di §59. Kontrak: `docs/kontrak-api-pelanggan.md` §15, HP: `docs/perintah-frontend-pelacakan-pelanggan.md` §6. Gate MySQL/SQLite penuh belum (CI) |
 | G33 | **Kata cari `q` tidak peduli pemisah** — aplikasi Pelanggan (`/sertifikat`, `/alat`, `/paket`) dan arsip Lab (nomor seri, `.`/`_`) — §56 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-cari-longgar-20261113`, belum commit). `PolaCari` baru + nol migrasi/kolom/indeks/rute/field respons. Kata yang hanya tanda baca kini dijawab daftar kosong (dulu `%` menampilkan semuanya). Mutasi 30/30 terbunuh. Gate SQLite+MySQL penuh belum (CI). Kontrak untuk aplikasi Pelanggan: `docs/kontrak-api-pelanggan.md` §13 |
 | G34 | **Pelacakan alat untuk pelanggan** — order tak boleh memuat alat pelanggan lain, item tercampur disembunyikan di `/paket` `/paket/{id}` `/beranda`, `equipment_id` + `sedang_dikerjakan`, notifikasi tahap (`pelanggan.tahap_alat`, saklar baru) — §57 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-pelacakan-pelanggan-20261113`, belum commit). Satu migrasi additive (kolom saklar `tahap_alat`). Merah dulu terhadap kode lama (66 tes: 35 lulus, 23 gagal, 8 error) lalu hijau 66/66; MySQL lokal 121/121; mutasi 35/35 terbunuh. **Putaran 2 (13 Nov): `calibration_sessions.order_item_id` tidak ditulis jalur mana pun -> sesi BARU kini otomatis tertaut ke item order aktif alatnya (bagian F; sesi lama tidak di-backfill, ada kueri sensus)**, tes antrean-sesudah-commit, kabar fisik tahan galat, default migrasi; 19 mutan baru terbunuh. **Putaran 3 (13 Nov, keputusan pemilik): penautan tidak pernah menggagalkan pembuatan sesi; ditautkan HANYA bila tepat satu kandidat (ambigu = tidak, semua kandidat dicatat); kabar tahap TURUNAN bawaan MATI (`KABAR_TAHAP_TURUNAN`, tahap fisik dan sertifikat terbit tetap); tidak ada pindah/lepas tautan dan tautan susulan = keterbatasan dikenal; 25 mutan terbunuh.** `diserahkan_kepada` tetap tampil, perlu konfirmasi lab. Kontrak HP: `docs/perintah-frontend-pelacakan-pelanggan.md`. Gate MySQL/SQLite penuh belum |

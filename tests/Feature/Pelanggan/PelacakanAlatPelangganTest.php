@@ -218,7 +218,7 @@ class PelacakanAlatPelangganTest extends TestCase
         return collect($respons->json('data'))->firstWhere('id', $alat->id)['sedang_dikerjakan'];
     }
 
-    public function test_alat_di_paket_aktif_membawa_sedang_dikerjakan_dengan_lima_kunci_saja(): void
+    public function test_alat_di_paket_aktif_membawa_sedang_dikerjakan_dengan_enam_kunci_saja(): void
     {
         $alat = $this->alat($this->ptA);
         $order = $this->order($this->ptA, ['nomor' => 'ORD/2026/11/0007']);
@@ -233,14 +233,20 @@ class PelacakanAlatPelangganTest extends TestCase
 
         $sedang = $this->sedangDikerjakan($alat);
 
-        // Pengesahan dilipat ke pemeriksaan, sama dengan `/paket`.
+        // Pengesahan dilipat ke pemeriksaan, sama dengan `/paket`. Lima kunci asli (13 Nov)
+        // tidak berubah nilai maupun urutan; `garis_waktu` (14 Nov) ditambahkan di belakang.
+        $this->assertSame(
+            ['paket_id', 'order_item_id', 'nomor_order', 'tahap', 'tahap_label', 'garis_waktu'],
+            array_keys($sedang),
+        );
         $this->assertSame([
             'paket_id' => $order->id,
             'order_item_id' => $item->id,
             'nomor_order' => 'ORD/2026/11/0007',
             'tahap' => TahapPaket::MENUNGGU_PEMERIKSAAN,
             'tahap_label' => 'Hasil sedang diperiksa',
-        ], $sedang);
+        ], array_slice($sedang, 0, 5, true));
+        $this->assertSame((new TahapPaket)->garisWaktu(TahapPaket::MENUNGGU_PEMERIKSAAN, untukPelanggan: true), $sedang['garis_waktu']);
 
         $isi = $this->ambil('/alat')->getContent();
         foreach (['Teknisi Rahasia', 'KONDISI-TERIMA-INTERNAL', 'CATATAN-INTERNAL-ITEM', TahapPaket::MENUNGGU_PENGESAHAN, 'nomor_sesi'] as $internal) {

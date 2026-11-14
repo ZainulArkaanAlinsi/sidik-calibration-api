@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteTerdaftar;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\Concerns\JalurPelanggan;
 use Tests\TestCase;
 
@@ -452,6 +453,95 @@ class IsolasiPerusahaanTest extends TestCase
         $this->assertNull(
             $this->withHeaders($this->bearer($this->picA))->getJson("/api/pelanggan/v1/alat/{$alatA->getKey()}")->json('data.sedang_dikerjakan'),
         );
+    }
+
+    /**
+     * Beranda "Jejak" (14 Nov 2026), sisi isolasi untuk field baru: keempat hitungan
+     * `data.ringkasan` (`alat_berlaku`, `alat_belum_pernah`, `paket_siap_diambil`,
+     * `sertifikat_baru_7_hari`) dan `sedang_dikerjakan.garis_waktu` hanya melihat PT A.
+     *
+     * PT B diberi satu set yang kalau bocor menggeser TIAP angka: alat berlaku, alat belum pernah,
+     * sertifikat terbit hari ini (dari setUp), dan paket siap diambil -- ditambah order B yang
+     * memuat alat A (celah lama). Angka A harus tetap hanya milik A.
+     */
+    public function test_ringkasan_beranda_dan_garis_waktu_alat_tidak_menembus_perusahaan_lain(): void
+    {
+        $alatB = Equipment::query()->findOrFail((int) $this->milikB['alat']);
+        $alatB->update(['status' => Equipment::STATUS_AKTIF, 'tanggal_kalibrasi_terakhir' => now()->subMonth(), 'tanggal_jatuh_tempo' => now()->addDays(200)]);
+        Equipment::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'status' => Equipment::STATUS_AKTIF,
+            'tanggal_kalibrasi_terakhir' => null,
+        ]);
+        $paketB = Order::query()->findOrFail((int) $this->milikB['paket']);
+        $paketB->update(['nomor' => 'ORD/MILIK-B-7777', 'status' => Order::STATUS_DIPROSES]);
+        OrderItem::factory()->create(['order_id' => $paketB->getKey(), 'equipment_id' => $alatB->getKey(), 'tahap_fisik' => 'siap_diambil', 'tahap_fisik_pada' => now()]);
+
+        // Alat A (belum pernah dikalibrasi) yang tercatat di order B.
+        $alatA = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'status' => Equipment::STATUS_AKTIF,
+            'tanggal_kalibrasi_terakhir' => null,
+        ]);
+        OrderItem::factory()->create(['order_id' => $paketB->getKey(), 'equipment_id' => $alatA->getKey(), 'tahap_fisik' => 'siap_diambil', 'tahap_fisik_pada' => now()]);
+
+        $baru = fn (array $r): array => array_intersect_key($r, array_flip(['alat_berlaku', 'alat_belum_pernah', 'paket_siap_diambil', 'sertifikat_baru_7_hari']));
+        $ambil = function (string $uri): TestResponse {
+            $this->permintaanBaru();
+
+            return $this->withHeaders($this->bearer($this->picA))->getJson('/api/pelanggan/v1'.$uri)->assertOk();
+        };
+
+        $beranda = $ambil('/beranda');
+        $this->assertSame(
+            ['alat_berlaku' => 0, 'alat_belum_pernah' => 1, 'paket_siap_diambil' => 0, 'sertifikat_baru_7_hari' => 0],
+            $baru($beranda->json('data.ringkasan')),
+            'Hitungan beranda A ikut data B.',
+        );
+        $this->assertSame(1, $beranda->json('data.ringkasan.jumlah_alat'));
+        // `customer_id` di query string bukan milik pemanggil.
+        $this->assertSame(
+            $baru($beranda->json('data.ringkasan')),
+            $baru($ambil("/beranda?customer_id={$this->perusahaanB->getKey()}")->json('data.ringkasan')),
+        );
+        foreach (['/alat', "/alat/{$alatA->getKey()}", '/beranda'] as $uri) {
+            $isi = (string) $ambil($uri)->getContent();
+            $this->assertStringNotContainsString('ORD/MILIK-B-7777', $isi, "{$uri} membocorkan order B.");
+            $this->assertStringNotContainsString('garis_waktu', $isi, "{$uri}: alat A tidak sedang dikerjakan di paket A, jejaknya tidak boleh ada.");
+        }
+
+        // Sekarang data A sendiri: angka A naik, angka B tetap tidak ikut.
+        $alatAAktif = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'status' => Equipment::STATUS_AKTIF,
+            'tanggal_kalibrasi_terakhir' => now()->subMonth(),
+            'tanggal_jatuh_tempo' => now()->addDays(200),
+        ]);
+        Certificate::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'calibration_session_id' => CalibrationSession::factory()->create([
+                'organization_id' => $this->perusahaanA->organization_id,
+                'equipment_id' => $alatAAktif->getKey(),
+            ])->getKey(),
+        ]);
+        $paketA = Order::factory()->create([
+            'organization_id' => $this->perusahaanA->organization_id,
+            'customer_id' => $this->perusahaanA->getKey(),
+            'status' => Order::STATUS_DIPROSES,
+        ]);
+        OrderItem::factory()->create(['order_id' => $paketA->getKey(), 'equipment_id' => $alatAAktif->getKey(), 'tahap_fisik' => 'siap_diambil', 'tahap_fisik_pada' => now()]);
+
+        $this->assertSame(
+            ['alat_berlaku' => 1, 'alat_belum_pernah' => 1, 'paket_siap_diambil' => 1, 'sertifikat_baru_7_hari' => 1],
+            $baru($ambil('/beranda')->json('data.ringkasan')),
+        );
+        $sedang = $ambil("/alat/{$alatAAktif->getKey()}")->json('data.sedang_dikerjakan');
+        $this->assertSame($paketA->getKey(), $sedang['paket_id']);
+        $this->assertSame('siap_diambil', collect($sedang['garis_waktu'])->firstWhere('sekarang', true)['kode']);
+        $this->assertStringNotContainsString('ORD/MILIK-B-7777', (string) $ambil('/beranda')->getContent());
     }
 
     /**

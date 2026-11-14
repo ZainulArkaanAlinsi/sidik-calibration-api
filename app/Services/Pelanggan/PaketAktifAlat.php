@@ -24,6 +24,11 @@ use App\Support\Pelanggan\LingkupData;
  *   paket TERBARU (`tanggal_masuk`, lalu `order_id`, lalu id item).
  * - Tahap = tahap yang DILIHAT pelanggan (pengesahan dilipat ke pemeriksaan),
  *   sama persis dengan `/paket`.
+ * - `garis_waktu` = `TahapPaket::garisWaktu($tahap, untukPelanggan: true)` untuk
+ *   tahap ALAT itu (bukan tahap paket): satu fungsi dengan `/paket/{id}`.
+ *   Kode tahap yang tak dikenal `garisWaktu()` menandai `diterima` sebagai
+ *   `sekarang` (terkunci `TahapPaketTerkunciTest`). Kolom `tahap_fisik` berupa
+ *   enum, jadi kode asing hanya mungkin lahir dari perubahan `TahapPaket`.
  *
  * ## Biaya
  *
@@ -37,8 +42,8 @@ class PaketAktifAlat
 
     /**
      * @param  iterable<Equipment>  $alat
-     * @return array<int, array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string}|null>
-     *                                                                                                                            id alat -> objek, atau null; setiap id alat yang diminta ada kuncinya
+     * @return array<int, array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string, garis_waktu: list<array{kode: string, label: string, lewat: bool, sekarang: bool}>}|null>
+     *                                                                                                                                                                                                                id alat -> objek, atau null; setiap id alat yang diminta ada kuncinya
      */
     public function untuk(LingkupData $lingkup, iterable $alat): array
     {
@@ -84,6 +89,10 @@ class PaketAktifAlat
                 'nomor_order' => (string) $item->order->nomor,
                 'tahap' => $terpilih['kode'],
                 'tahap_label' => TahapPaket::LABEL_PELANGGAN[$terpilih['kode']] ?? $terpilih['kode'],
+                // Additive (14 Nov 2026): jejak tahap ALAT ini, bentuk dan sumber yang
+                // sama dengan `garis_waktu` di `GET /paket/{id}`. Aplikasi tidak
+                // menyalin urutan tahap. Tanpa kueri tambahan (murni dari `kode`).
+                'garis_waktu' => $this->tahap->garisWaktu($terpilih['kode'], untukPelanggan: true),
             ];
         }
 
