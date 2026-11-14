@@ -6001,6 +6001,96 @@ aplikasi menyalin `TahapPaket::garisWaktu` ke Dart (risiko drift).
 `garis_waktu`/`ringkasan` baru di build terpasang (kunci opsional). Hitungan `paket_siap_diambil` memuat paket berjalan yang
 punya item siap (lima kueri tetap, prasaring SQL); batas skalanya (ratusan paket berisi item siap) belum diukur.
 
+## §60 — Kunci `asli` di `GET /api/worksheet-templates`: beranda Lab tahu formulir asli yang siap dipindai — 15 Nov 2026
+
+**Permintaan (rencana tombol "Pindai lembar kerja" di beranda app Lab, PR 1 dari 3).** Kesiapan formulir ASLI
+(`siap_pindai`, `mode_uji`) hanya bisa dibaca per kode lewat `GET /worksheet-templates/{kode}?kertas=asli`; beranda yang
+ingin tahu "ada lembar yang boleh dipindai?" butuh satu panggilan per entri (daftar nyata: **48**, bukan "~29"). Diminta:
+satu kunci tambahan per entri daftar, tanpa migrasi dan tanpa mengubah kunci lama.
+
+**Keadaan nyata sebelum perubahan (dibaca dari kode di `origin/main` 7dc0134d).**
+
+- Daftar = `WorksheetScanController::templates()` (`routes/api.php:716`, bukan ~570) → `TemplateLembarKerja::daftar()` (tujuh kunci;
+  `siap_pindai` di situ = lembar CETAK bermarker). Terukur (SQLite in-memory, laptop kerja): 48 entri, 113 kueri
+  (2–3 per profil, nol tergantung jumlah baris), ±195–228 ms hangat, 10,4 KB.
+- Kesiapan asli = `FormulirAsli::cari()` (`siap_pindai` di `:237`, `perlu_konfirmasi_lab` di `:247`, `mode_uji` di `:251` sebelum
+  perubahan). `config/ocr.php`: `formulir_asli.mode_uji` = env `OCR_FORMULIR_ASLI_UJI` (bawaan kode `false`, `render.yaml`
+  memakunya `"false"`, kedua `phpunit*.xml` `"true"`).
+- **`perlu_konfirmasi_lab` ADA sumbernya di server** (perencana menulis tak ditemukan di `app/`): `FormulirAsli.php:247` membacanya dari
+  peta formulir, lima peta menyalakannya (`turbidimeter`, `chlorine_meter`, `refractometer`, `conductivity_meter`, `do_meter`), dan
+  pemroses pindai menolak formulir itu apa pun saklarnya (`PemrosesScanLembarKerja.php:715`). Jadi kuncinya DIKIRIM, tidak dihilangkan.
+- 55 peta + 39 draf di `database/ocr-templates/asli/`, **nol yang `terverifikasi: true`**: produksi (saklar mati) = tidak ada yang boleh dipindai.
+
+**Yang dikerjakan** (branch `feat/api-templat-asli-20261114`, belum commit; nol migrasi, nol rute, nol kolom, nol kunci lama berubah).
+
+| Bagian | Isi | Berkas |
+|---|---|---|
+| **A. Sumber tunggal** | `FormulirAsli::cari()` dipecah: badan dipindah ke `cariDariProfil()` (perilaku `cari()` tak berubah, `$cetakBawaan` opsional); `ringkasanUntukDaftar()` memanggil `cariDariProfil()` dengan lembar yang SUDAH dibangun daftar dan menyalin lima nilai dari array yang sama dengan `?kertas=asli`. Tidak ada aturan kesiapan baru | `FormulirAsli` |
+| **B. Titik sambung** | `TemplateLembarKerja::daftar($konteks, ?callable $tambahan = null)`: kunci tambahan ditempel SESUDAH ketujuh kunci lama (`+`, kunci lama menang). Tanpa `$tambahan` keluarannya persis lama. Callback, bukan `FormulirAsli` di sini, karena `FormulirAsli` sudah bergantung ke kelas ini | `TemplateLembarKerja` |
+| **C. Rute** | `templates()` memasang `asli` memakai konteks organisasi yang sama dengan `template()` | `WorksheetScanController` |
+| **D. Tes** | `DaftarTemplateAsliTest` (12 tes) | tes baru |
+| **E. Dokumen** | `docs/perintah-frontend-templat-asli.md`, pointer di `docs/perintah-frontend-ocr-lembar-kerja.md` §1 dan `docs/SPEC-ocr-template-lokal.md` §6, bagian ini | -- |
+
+**Bentuk (tiap entri, kunci ke-8):** `asli: {ada, kode_dokumen, revisi, siap_pindai, mode_uji, perlu_konfirmasi_lab}`.
+`ada: false` (404 di `?kertas=asli`) = semua bendera `false`, kode/revisi `null`.
+
+**Keputusan.**
+
+1. **`ada: false` memaksa `mode_uji: false`.** `mode_uji` di `?kertas=asli` adalah nilai saklar global; untuk kode tanpa formulir yang
+   bisa dibuka, "boleh dicoba" tidak bermakna dan akan menyalakan tombol di beranda untuk jenis yang tak punya apa pun.
+2. **`perlu_konfirmasi_lab` dikirim, tidak diturunkan di klien.** Aturan "boleh" yang selaras server:
+   `ada && !perlu_konfirmasi_lab && (siap_pindai || mode_uji)`. Saklar mati di produksi → **0 dari 48** boleh (tombol tersembunyi);
+   saklar nyala (build uji) → 40 dari 48 (45 ada, 5 perlu konfirmasi).
+3. **Daftar menjawab "tanpa alat dan tanpa kode FM".** Template ber-banyak formulir (Micrometer 0522.A–D) dijawab `ada: false` persis
+   seperti `?kertas=asli` (404: server tidak menebak). `gas_detector` dan `height_gauge` memang belum punya peta. Tiga entri `ada: false`
+   dari 48; keputusan "perlu tahu formulir apa saja yang ada per template?" sengaja tidak diambil di sini (akan menambah kunci di luar
+   permintaan) — lihat Belum.
+4. **Tidak ada tembolok.** Biaya ditimbang di bawah; tembolok per proses hanya menyelamatkan pembacaan draf yang dipakai bersama (45 pembacaan
+   untuk 39 berkas draf berbeda; lima Enclosure berbagi satu draf) dan berisiko basi karena tes dan lab menulis ulang peta di proses yang
+   sama; tembolok lintas permintaan akan jadi sumber kebenaran kedua untuk `siap_pindai`. Klien cukup meng-cache daftar (isinya hanya
+   berubah saat deploy).
+5. **`kode_dokumen` di daftar (cetak, `…-0509_Rev.4`) dan `asli.kode_dokumen` (`…-0509` + `revisi: "4"`) bukan string yang sama**, tapi
+   untuk ke-45 entri `ada` sama setelah `_Rev.n` dipisah (diperiksa tes sementara 15 Nov, nol beda). Klaim perencana yang belum
+   terverifikasi itu sekarang terverifikasi, dengan catatan bentuknya.
+
+**Biaya (14–15 Nov 2026, SQLite in-memory, laptop kerja lemah, CLI tanpa opcache; BUKAN angka produksi).**
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Kueri daftar | 113 | **115** (+2) |
+| Waktu hangat | ±195–228 ms | ±430–520 ms |
+| Ukuran respons | 10.404 B | 16.751 B |
+
+- **+2 kueri, tetap dan tidak tumbuh dengan data**: satu-satunya profil yang `cari()` bangun dua kali adalah Anak Timbangan 0541 Rev.0 (peta mencetak
+  X1–X3, bawaan profil 1; 2 kueri per pembangunan), sama dengan `?kertas=asli`. Dipaku tes `test_jumlah_kueri_tetap`: `<=` kueri daftar lama + 2, dan
+  jumlah yang sama sesudah 25 baris `standards` + 10 alat ditambahkan. Profil ke-N yang kelak butuh pembangunan kedua akan menggagalkan tes itu, sengaja.
+- **Biaya tambahan ≈ 220–228 ms per permintaan di mesin ini**; baca dan urai berkas (55 peta + 46 draf, ±1,6 MB draf) ≈ 81–104 ms, sisanya
+  pencocokan titik→kotak di `cari()`. Ditimbang dan **tidak dibatasi** dengan tembolok (keputusan 4); batasnya statis (jumlah berkas formulir,
+  bukan jumlah data lab). Kalau terukur lambat di produksi, jalan keluarnya: tembolok sisi klien, atau mempercepat `kotakTunggal()` (bukan
+  perubahan perilaku, tapi menyentuh `cari()` yang dipakai pindai), atau lapis tembolok berkunci isi berkas — masing-masing keputusan terpisah.
+
+**Bukti (15 Nov 2026, SQLite in-memory; worktree dengan `vendor` SUNGGUHAN, kelas yang dimuat dibuktikan `ReflectionClass::getFileName()` menunjuk ke salinan).**
+
+- *Tes baru*: `DaftarTemplateAsliTest` 12/12 (bentuk & tipe enam kunci; kunci lama sama nilai dan urutan dengan `daftar()` tanpa tambahan; `asli` = `?kertas=asli` untuk
+  tiap dari 48 kode; saklar mati; saklar nyala; `perlu_konfirmasi_lab` dari peta; formulir terverifikasi → `siap_pindai: true` terlepas dari saklar;
+  tidak terverifikasi; Micrometer tidak ditebak; kueri tetap; isolasi lintas lab; pagar akses).
+- *Regresi terarah*: `DaftarTemplate*` + `TemplateFormulirAsli` + `FormulirAsliPengulanganKertas` + `LembarKerjaTidakBocor*` + `IdentitasTabelUnik` +
+  `PindaiFormulirAsli` + `GeometriFormulirAsliSemua` + `BatasAntarLab`: **972 tes lulus** (605.152 asersi).
+- *Mutasi mandiri* (salinan unik di luar worktree, `vendor` salinan sendiri, garis dasar 12/12 hijau; salinan dihapus sesudahnya): **15 mutan, 14 terbunuh oleh
+  asersi** (tidak satu pun karena galat kompilasi), **1 selamat dan ekuivalen**. Pemetaan saklar (`mode_uji` selalu `true`, dibalik, `siap_pindai` ikut `mode_uji`,
+  `mode_uji` menyala untuk kode tanpa formulir) 4/4; kesamaan dengan `?kertas=asli` (`perlu_konfirmasi_lab` dibuang, `revisi` kosong, kode bersufiks `_Rev.n`,
+  `jumlah_pengulangan` diteruskan) 4/4; kunci lama (satu kunci hilang, `asli` di depan, `jumlah_sel` dihitung dari hal lain) 3/3; isolasi & N+1 (konteks tanpa
+  organisasi, lembar dibangun ulang tanpa memakai `$cetak` milik daftar, pembangunan kedua tanpa organisasi) 3/3. **Dua temuan dari mutasi**: (1) mutan
+  `jumlah_sel` SELAMAT di putaran pertama karena tes kunci-lama membandingkan ke `daftar()` yang sama dengan yang dimutasi; tes diperkuat dengan pembanding dari rute detail
+  (`versi`, `kode_dokumen`, `judul`, `siap_pindai`, `alasan_belum_siap`, `count(sel)`), lalu terbunuh. (2) Mutan "kode FM diminta diambil dari profil" selamat dan
+  **ekuivalen pada data sekarang**: jalur "diminta" memilih peta yang sama dengan jalur bawaan selama kode profil cocok persis, yang berlaku untuk ke-48 kode; tidak ada
+  tes yang bisa membedakannya tanpa menciptakan peta palsu. Mutan `jumlah_pengulangan` hanya terbunuh oleh tes kueri (+106 kueri), bukan oleh tes kesamaan
+  (data nyata tidak membedakan).
+
+**Belum.** Gate MySQL penuh dan SQLite penuh (CI): tes dijalankan di SQLite in-memory saja, terarah. Belum diukur di server produksi. Belum ada jawaban
+untuk "template ber-banyak formulir ada formulirnya atau tidak" di daftar (butuh kunci tambahan seperti `jumlah_formulir`; keputusan pemilik/mobile).
+Nomor §60 dipilih berdasarkan `origin/main` 7dc0134d; bila PR lain sudah memakainya, ganti nomor saat rebase.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook

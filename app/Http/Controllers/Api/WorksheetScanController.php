@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use App\Models\WorksheetScan;
 use App\Models\WorksheetScanCell;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Ocr\FormulirAsli;
 use App\Services\Ocr\PemrosesScanLembarKerja;
 use App\Services\Ocr\TemplateLembarKerja;
@@ -58,6 +59,12 @@ class WorksheetScanController extends Controller
      *
      * Dipakai HP buat mutusin tombol kamera nyala atau nggak — jangan hardcode
      * daftarnya di aplikasi, soalnya alat baru nambah terus.
+     *
+     * Tiap entri membawa kunci `asli` (ADDITIVE, 14 Nov 2026): kesiapan formulir
+     * ASLI lab untuk kode itu, jawaban yang sama dengan
+     * `GET /worksheet-templates/{kode}?kertas=asli` tanpa alat — lihat
+     * `FormulirAsli::ringkasanUntukDaftar()`. Beranda mobile memakainya supaya
+     * tidak perlu satu panggilan `?kertas=asli` per kode.
      */
     public function templates(Request $request): JsonResponse
     {
@@ -65,8 +72,19 @@ class WorksheetScanController extends Controller
         // bawah. Tanpa ini `daftar()` membangun kedua puluh empat lembar tanpa
         // konteks, dan saringan organisasi di profil mati untuk semuanya
         // sekaligus — lihat [konteksOrganisasi] & `daftar()`.
+        //
+        // Konteks yang SAMA dipakai untuk `asli`: `?kertas=asli` tanpa
+        // `equipment_id` memakainya juga, dan `$template` yang diteruskan sudah
+        // dibangun dengan konteks itu — tidak ada pembangunan kedua.
+        $konteks = $this->konteksOrganisasi($request);
+
         return response()->json([
-            'data' => $this->template->daftar($this->konteksOrganisasi($request)),
+            'data' => $this->template->daftar(
+                $konteks,
+                fn (CalibrationProfile $profil, array $template): array => [
+                    'asli' => $this->formulirAsli->ringkasanUntukDaftar($profil, $konteks, $template),
+                ],
+            ),
         ]);
     }
 

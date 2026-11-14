@@ -66,12 +66,22 @@ Daftar lembar kerja yang dikenal sistem. Untuk layar "pilih lembar kerja".
       "kode_dokumen": "SIDIK-FM-CAL-0509_Rev.4",
       "judul": "Calibration Worksheet - pH Meter",
       "jumlah_sel": 60,
-      "siap_pindai": false,
-      "alasan_belum_siap": "geometri_belum_diverifikasi"
+      "siap_pindai": true,
+      "alasan_belum_siap": null,
+      "asli": {
+        "ada": true,
+        "kode_dokumen": "SIDIK-FM-CAL-0509",
+        "revisi": "4",
+        "siap_pindai": false,
+        "mode_uji": true,
+        "perlu_konfirmasi_lab": false
+      }
     }
   ]
 }
 ```
+
+> **Kunci `asli` (15 Nov 2026, additive):** kesiapan formulir ASLI lab (kertas SIDIK-FM-CAL tanpa marker) untuk kode itu, jawaban yang sama dengan `?kertas=asli` tanpa alat — supaya beranda tidak perlu satu panggilan per kode. `siap_pindai` di tingkat atas tetap milik lembar CETAK; yang di dalam `asli` milik formulir asli. Kontrak lengkap & aturan "boleh dipindai": `docs/perintah-frontend-templat-asli.md`.
 
 ### 2. `GET /api/worksheet-templates/{kode}`
 
