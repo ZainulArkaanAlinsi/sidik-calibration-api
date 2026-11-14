@@ -142,6 +142,11 @@ final class FormatMasterSertifikat
      *                              0,90 x; audit 06 `gas-detector-uli-skin-std-rigaz`)
      *     viscometer         8,8   (B1: Capacity + Graduation 2 baris; audit 06
      *                              `5-viscometer-86068360-terbaru`)
+     *     sieve              8,52  (B2: baris "Minimum Number of Apertures" menurunkan tangga lama
+     *                              `longgar -1` -> `-2`, 7,9 -> 7,1 pt = 0,83 x master pada alamat
+     *                              pelanggan dua baris; audit 13 Nov `master-olah-data-sieve-mesh`,
+     *                              `master_page.json`. Diukur: ukuran master dicapai penuh, 8,2 pt
+     *                              = 0,96 x, tetap satu halaman)
      *
      * Thermohygro SENGAJA tidak ada: lembar master dicetak skala 50 % (4,8 pt),
      * menyamakannya berarti huruf < 5 pt yang tak terbaca.
@@ -158,6 +163,7 @@ final class FormatMasterSertifikat
         'timer_stopwatch' => 7.2,
         'gas_detector' => 7.9,
         'viscometer' => 8.8,
+        'sieve' => 8.52,
     ];
 
     /** Ukuran huruf median master (pt) untuk profil ini, atau `null` bila tak dinyatakan. */

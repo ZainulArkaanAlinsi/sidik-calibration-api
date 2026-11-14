@@ -1,0 +1,294 @@
+{
+    "_sumber": "Ekstraksi ukuran huruf lembar SERTIFIKAT tiap workbook master (karakter bukan-spasi, halaman 1 PDF master, pypdfium2) dari audit sertifikat 11-13 Nov 2026: `_agents_workspace/audit-sertifikat-20261113/skrip/master_page.json` (kunci `master`, medan `pdf.font_median_pt` dan `pdf.kertas_pt[0]`). master_pt = median_pdf_pt x 595,3 / lebar_halaman_pt (diskala ke lebar A4), dibulatkan dua desimal. Master pertama per profil; Bath/Furnace/Refrigerator = Enclosure Constant Yokogawa.",
+    "_aturan": "Berkas ini TOLOK UKUR gerbang huruf (Tests\\Concerns\\GerbangHurufSertifikat). Mengubah satu angka di sini bukan perbaikan melainkan keputusan: tes GerbangHurufSertifikatTest memeriksa (1) master_pt = median x 595,3 / lebar, (2) master_pt di baseline-huruf-master.json sama dengan di sini, dan (3) sha256 berkas ini sama dengan HASH_MASTER_PT di tes itu. Ketiganya wajib disunting bersama dan alasannya (ekstraksi ulang master mana) ditulis di deskripsi PR.",
+    "profil": {
+        "anak_timbangan": {
+            "master": "anak-timbangan-f2-imte-lq-197-hal-1|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "autoclave": {
+            "master": "master-olah-data-autoclave|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "bath": {
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "buret": {
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "buret_digital": {
+            "master": "master-olah-data-graduated-piston-volume|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "centrifuge": {
+            "master": "master-olda-centrifuge|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 838.5,
+            "master_pt": 7.08
+        },
+        "chlorine_meter": {
+            "master": "master-olah-data-chlorine-meter|sertifikat",
+            "median_pdf_pt": 9.07,
+            "lebar_halaman_pt": 661.5,
+            "master_pt": 8.16
+        },
+        "conductivity_meter": {
+            "master": "master-olah-data-conductivity|sertifikat-style-1",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 676.5,
+            "master_pt": 7.92
+        },
+        "dial_indicator": {
+            "master": "master-olah-data-dial-indicator|sertifikat",
+            "median_pdf_pt": 8.96,
+            "lebar_halaman_pt": 753.6,
+            "master_pt": 7.08
+        },
+        "differential_pressure": {
+            "master": "master-olda-pressure-differential|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "dispensett": {
+            "master": "master-olah-data-fixed-piston-volume|sertifikat",
+            "median_pdf_pt": 9.07,
+            "lebar_halaman_pt": 692.2,
+            "master_pt": 7.8
+        },
+        "do_meter": {
+            "master": "master-olah-data-do-meter|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 676.5,
+            "master_pt": 7.92
+        },
+        "flowmeter_flowrate": {
+            "master": "master-olda-ultrasonic-flowrate-100-300-lpm-2026|sertifikat",
+            "median_pdf_pt": 10.08,
+            "lebar_halaman_pt": 793.8,
+            "master_pt": 7.56
+        },
+        "flowmeter_totalizer": {
+            "master": "1-2-master-olda-flowmeter-totalizer-dini-2026-140-2500l|sertifikat",
+            "median_pdf_pt": 10.02,
+            "lebar_halaman_pt": 753.6,
+            "master_pt": 7.92
+        },
+        "furnace": {
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "gas_detector": {
+            "master": "gas-detector-uli-skin-std-rigaz|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 676.5,
+            "master_pt": 7.92
+        },
+        "gelas_ukur": {
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "height_gauge": {
+            "master": "master-olda-height-gauge-600-mm-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "hydrometer": {
+            "master": "hydrometer-0-600-0-650-gml|sertifikat",
+            "median_pdf_pt": 8.96,
+            "lebar_halaman_pt": 717.2,
+            "master_pt": 7.44
+        },
+        "inkubator": {
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "jangka_sorong": {
+            "master": "master-olah-data-caliper-2026-std-caliper-checker-gb|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 826.8,
+            "master_pt": 6.48
+        },
+        "labu_ukur": {
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "load_cell": {
+            "master": "master-olah-data-gaya-load-cell|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 783.3,
+            "master_pt": 6.84
+        },
+        "micrometer": {
+            "master": "master-olah-data-micrometer-50-75mm|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 783.3,
+            "master_pt": 6.84
+        },
+        "oven": {
+            "master": "master-olah-data-suhu-enclosure-recorder|sertifikat",
+            "median_pdf_pt": 10.05,
+            "lebar_halaman_pt": 804.5,
+            "master_pt": 7.44
+        },
+        "ph_meter": {
+            "master": "ph-meter-imte-wq-129|sertifikat",
+            "median_pdf_pt": 8.97,
+            "lebar_halaman_pt": 654.2,
+            "master_pt": 8.16
+        },
+        "picnometer": {
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "pipet_ukur": {
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "pipet_volume": {
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 708.7,
+            "master_pt": 7.56
+        },
+        "piston_pipette": {
+            "master": "master-olah-data-fixed-piston-volume|sertifikat",
+            "median_pdf_pt": 9.07,
+            "lebar_halaman_pt": 692.2,
+            "master_pt": 7.8
+        },
+        "pressure_gauge": {
+            "master": "master-olda-pressure-druck07g-0-8-2bar-new|sertifikat",
+            "median_pdf_pt": 9.04,
+            "lebar_halaman_pt": 735.0,
+            "master_pt": 7.32
+        },
+        "proving_ring": {
+            "master": "master-olah-data-gaya-profing-ring|sertifikat",
+            "median_pdf_pt": 9.08,
+            "lebar_halaman_pt": 763.2,
+            "master_pt": 7.08
+        },
+        "refractometer": {
+            "master": "master-olah-data-refractometer|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 647.1,
+            "master_pt": 8.28
+        },
+        "refrigerator": {
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "sieve": {
+            "master": "master-olah-data-sieve-mesh|sertifikat",
+            "median_pdf_pt": 11.06,
+            "lebar_halaman_pt": 773.1,
+            "master_pt": 8.52
+        },
+        "spectrophotometer": {
+            "master": "master-olah-data-spectrofotometer|sertifikat",
+            "median_pdf_pt": 9.97,
+            "lebar_halaman_pt": 915.9,
+            "master_pt": 6.48
+        },
+        "tachometer": {
+            "master": "master-olda-tachometer|sertifikat",
+            "median_pdf_pt": 10.0,
+            "lebar_halaman_pt": 902.0,
+            "master_pt": 6.6
+        },
+        "thermocouple": {
+            "master": "master-olah-data-suhu-thermocouple|sertifikat",
+            "median_pdf_pt": 10.05,
+            "lebar_halaman_pt": 744.2,
+            "master_pt": 8.04
+        },
+        "thermohygro": {
+            "master": "master-olah-data-suhu-kelembapan|sertifikat",
+            "median_pdf_pt": 10.0,
+            "lebar_halaman_pt": 1240.2,
+            "master_pt": 4.8
+        },
+        "thermometer_glass": {
+            "master": "master-olah-data-suhu-thermometer-glass|sertifikat",
+            "median_pdf_pt": 10.02,
+            "lebar_halaman_pt": 753.6,
+            "master_pt": 7.92
+        },
+        "tids": {
+            "master": "master-olah-data-suhu-tids-recorder-graptech|sertifikat",
+            "median_pdf_pt": 9.95,
+            "lebar_halaman_pt": 726.0,
+            "master_pt": 8.16
+        },
+        "timbangan": {
+            "master": "new-master-olda-timbangan-kg|sertifikat",
+            "median_pdf_pt": 10.06,
+            "lebar_halaman_pt": 875.5,
+            "master_pt": 6.84
+        },
+        "timer_stopwatch": {
+            "master": "master-olda-timer-dan-stopwatch|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 744.2,
+            "master_pt": 7.2
+        },
+        "tits": {
+            "master": "master-olah-data-suhu-tits-fungsi-measure-utk-uut|sertifikat",
+            "median_pdf_pt": 10.05,
+            "lebar_halaman_pt": 744.2,
+            "master_pt": 8.04
+        },
+        "turbidimeter": {
+            "master": "master-olah-data-turbidimeter|sertifikat",
+            "median_pdf_pt": 9.0,
+            "lebar_halaman_pt": 676.5,
+            "master_pt": 7.92
+        },
+        "utm": {
+            "master": "master-olah-data-gaya-utm|sertifikat",
+            "median_pdf_pt": 8.96,
+            "lebar_halaman_pt": 753.6,
+            "master_pt": 7.08
+        },
+        "vacuum_gauge": {
+            "master": "master-olda-pressure-druck07g-0-8-2bar-new|sertifikat",
+            "median_pdf_pt": 9.04,
+            "lebar_halaman_pt": 735.0,
+            "master_pt": 7.32
+        },
+        "viscometer": {
+            "master": "5-viscometer-86068360-terbaru|sertifikat",
+            "median_pdf_pt": 9.03,
+            "lebar_halaman_pt": 613.7,
+            "master_pt": 8.76
+        }
+    }
+}

@@ -1,0 +1,450 @@
+{
+    "_catatan": "Baseline gerbang huruf sertifikat (ratchet DUA ARAH): rasio = median huruf app / median huruf lembar SERTIFIKAT master, per profil. TURUN dari baseline = gagal; NAIK tanpa baseline baru = gagal juga (kunci dengan SIDIK_TULIS_BASELINE=1 php artisan test --filter=SertifikatSemuaAlatSatuHalamanTest, lalu sebut kenaikannya di PR). Rasio di luar 0,90-1,10 hanya boleh lewat `pengecualian` beralasan, bukan lewat baseline. Aturan: tests/Concerns/GerbangHurufSertifikat.php.",
+    "_sumber": "master_pt = median ukuran huruf PDF lembar SERTIFIKAT master (karakter bukan-spasi, halaman 1) x (595,3 / lebar halaman master) — audit sertifikat 11-13 Nov 2026 (skrip banding48.py, master_page.json). Master pertama per profil (bath/furnace/refrigerator: Enclosure Constant Yokogawa); profil bermaster ganda dengan huruf berbeda mengikuti konvensi STATUS-48-PROFIL. app_pt = ukuran TERBURUK (terkecil) antar sesi profil itu pada sapuan SertifikatSemuaAlatSatuHalamanTest, dibulatkan seperti yang ditulis dompdf ke PDF (1 desimal). Diukur dengan nama pelanggan 21 karakter dan alamat 50 karakter (PEMILIK_UJI/ALAMAT_UJI di tes itu): data seeder yang lebih pendek menyembunyikan regresi huruf Sieve 13 Nov 2026, jadi mengubah panjang kedua teks itu menggeser seluruh baseline.",
+    "pengecualian": {
+        "thermohygro": {
+            "alasan": "Master Thermohygrometer dicetak skala 50 % (4,8 pt) untuk 20 baris tetap; app hanya mencetak baris berisi data. Menyamakan hurufnya berarti < 5 pt yang tak terbaca. Keputusan audit 13 Nov 2026 (SISA-PEKERJAAN P3-4): sengaja membengkak 1,48x, bukan cacat. Rasio tetap dikunci di baseline supaya tidak bergeser diam-diam."
+        }
+    },
+    "profil": {
+        "anak_timbangan": {
+            "master_pt": 6.48,
+            "master": "anak-timbangan-f2-imte-lq-197-hal-1|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.1,
+            "sesi": {
+                "DEMO-AT-001": 7.1
+            }
+        },
+        "autoclave": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-autoclave|sertifikat",
+            "app_pt": 6.4,
+            "rasio": 0.99,
+            "sesi": {
+                "2406.51.S": 6.4
+            }
+        },
+        "bath": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "HURUF.bath.1": 6.0
+            }
+        },
+        "buret": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-005": 8.2
+            }
+        },
+        "buret_digital": {
+            "master_pt": 7.56,
+            "master": "master-olah-data-graduated-piston-volume|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-BD-GRD-001": 8.2
+            }
+        },
+        "centrifuge": {
+            "master_pt": 7.08,
+            "master": "master-olda-centrifuge|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.0,
+            "sesi": {
+                "0133-CAL-324": 7.1
+            }
+        },
+        "chlorine_meter": {
+            "master_pt": 8.16,
+            "master": "master-olah-data-chlorine-meter|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.0,
+            "sesi": {
+                "2406.32.C": 8.2
+            }
+        },
+        "conductivity_meter": {
+            "master_pt": 7.92,
+            "master": "master-olah-data-conductivity|sertifikat-style-1",
+            "app_pt": 7.9,
+            "rasio": 1.0,
+            "sesi": {
+                "2405.32.A.NK": 7.9,
+                "DEMO-COND-MSCM": 7.9
+            }
+        },
+        "dial_indicator": {
+            "master_pt": 7.08,
+            "master": "master-olah-data-dial-indicator|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.0,
+            "sesi": {
+                "0392-CAL-324": 7.1
+            }
+        },
+        "differential_pressure": {
+            "master_pt": 7.56,
+            "master": "master-olda-pressure-differential|sertifikat",
+            "app_pt": 7.9,
+            "rasio": 1.04,
+            "sesi": {
+                "DEMO-DP-ADT-001": 7.9
+            }
+        },
+        "dispensett": {
+            "master_pt": 7.8,
+            "master": "master-olah-data-fixed-piston-volume|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.05,
+            "sesi": {
+                "DEMO-DS-FIX-001": 8.2
+            }
+        },
+        "do_meter": {
+            "master_pt": 7.92,
+            "master": "master-olah-data-do-meter|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.04,
+            "sesi": {
+                "2406.50.S": 8.2
+            }
+        },
+        "flowmeter_flowrate": {
+            "master_pt": 7.56,
+            "master": "master-olda-ultrasonic-flowrate-100-300-lpm-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-FM-FLW-001": 8.2
+            }
+        },
+        "flowmeter_totalizer": {
+            "master_pt": 7.92,
+            "master": "1-2-master-olda-flowmeter-totalizer-dini-2026-140-2500l|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.04,
+            "sesi": {
+                "DEMO-FM-GRAV-TOT-001": 8.2,
+                "DEMO-FM-TOT-001": 8.2
+            }
+        },
+        "furnace": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "HURUF.furnace.1": 6.0
+            }
+        },
+        "gas_detector": {
+            "master_pt": 7.92,
+            "master": "gas-detector-uli-skin-std-rigaz|sertifikat",
+            "app_pt": 7.9,
+            "rasio": 1.0,
+            "sesi": {
+                "2602.03.A": 7.9
+            }
+        },
+        "gelas_ukur": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-004": 8.2
+            }
+        },
+        "height_gauge": {
+            "master_pt": 7.56,
+            "master": "master-olda-height-gauge-600-mm-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "001-UBLK-05.26": 8.2
+            }
+        },
+        "hydrometer": {
+            "master_pt": 7.44,
+            "master": "hydrometer-0-600-0-650-gml|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.1,
+            "sesi": {
+                "DEMO-HYD-001": 8.2
+            }
+        },
+        "inkubator": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "2405.03.AV": 6.0
+            }
+        },
+        "jangka_sorong": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-caliper-2026-std-caliper-checker-gb|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "001-CAL-126": 6.0
+            }
+        },
+        "labu_ukur": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-002": 8.2
+            }
+        },
+        "load_cell": {
+            "master_pt": 6.84,
+            "master": "master-olah-data-gaya-load-cell|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.04,
+            "sesi": {
+                "DEMO-LC-001": 7.1
+            }
+        },
+        "micrometer": {
+            "master_pt": 6.84,
+            "master": "master-olah-data-micrometer-50-75mm|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.04,
+            "sesi": {
+                "002-UB.P-11-20": 7.1,
+                "003-UB.P-11-20": 7.1,
+                "0106-CAL-1023": 7.1
+            }
+        },
+        "oven": {
+            "master_pt": 7.44,
+            "master": "master-olah-data-suhu-enclosure-recorder|sertifikat",
+            "app_pt": 7.4,
+            "rasio": 0.99,
+            "sesi": {
+                "2406.25.AI": 7.4
+            }
+        },
+        "ph_meter": {
+            "master_pt": 8.16,
+            "master": "ph-meter-imte-wq-129|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.0,
+            "sesi": {
+                "2405.13.A": 8.2
+            }
+        },
+        "picnometer": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-003": 8.2
+            }
+        },
+        "pipet_ukur": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-graduated-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-006": 8.2
+            }
+        },
+        "pipet_volume": {
+            "master_pt": 7.56,
+            "master": "new-master-olah-data-fixed-volumetric-glassware-2026|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.08,
+            "sesi": {
+                "DEMO-VOL-001": 8.2
+            }
+        },
+        "piston_pipette": {
+            "master_pt": 7.8,
+            "master": "master-olah-data-fixed-piston-volume|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.05,
+            "sesi": {
+                "DEMO-PP-FIX-001": 8.2
+            }
+        },
+        "pressure_gauge": {
+            "master_pt": 7.32,
+            "master": "master-olda-pressure-druck07g-0-8-2bar-new|sertifikat",
+            "app_pt": 7.3,
+            "rasio": 1.0,
+            "sesi": {
+                "DEMO-PG-13G-001": 7.3
+            }
+        },
+        "proving_ring": {
+            "master_pt": 7.08,
+            "master": "master-olah-data-gaya-profing-ring|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.0,
+            "sesi": {
+                "DEMO-PR-001": 7.1
+            }
+        },
+        "refractometer": {
+            "master_pt": 8.28,
+            "master": "master-olah-data-refractometer|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 0.99,
+            "sesi": {
+                "2211.11.R": 8.2
+            }
+        },
+        "refrigerator": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-suhu-enclosure-constant-yokogawa|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "HURUF.refrigerator.1": 6.0
+            }
+        },
+        "sieve": {
+            "master_pt": 8.52,
+            "master": "master-olah-data-sieve-mesh|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 0.96,
+            "sesi": {
+                "0736-CAL-526": 8.2
+            }
+        },
+        "spectrophotometer": {
+            "master_pt": 6.48,
+            "master": "master-olah-data-spectrofotometer|sertifikat",
+            "app_pt": 6.0,
+            "rasio": 0.93,
+            "sesi": {
+                "DEMO-SPECTRO-NIAGA": 6.0
+            }
+        },
+        "tachometer": {
+            "master_pt": 6.6,
+            "master": "master-olda-tachometer|sertifikat",
+            "app_pt": 6.4,
+            "rasio": 0.97,
+            "sesi": {
+                "0140-CAL-424": 6.4
+            }
+        },
+        "thermocouple": {
+            "master_pt": 8.04,
+            "master": "master-olah-data-suhu-thermocouple|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.02,
+            "sesi": {
+                "0513-CAL-1124": 8.2
+            }
+        },
+        "thermohygro": {
+            "master_pt": 4.8,
+            "master": "master-olah-data-suhu-kelembapan|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.48,
+            "sesi": {
+                "0312-CAL-624": 7.1
+            }
+        },
+        "thermometer_glass": {
+            "master_pt": 7.92,
+            "master": "master-olah-data-suhu-thermometer-glass|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.04,
+            "sesi": {
+                "0135-CAL-125": 8.2
+            }
+        },
+        "tids": {
+            "master_pt": 8.16,
+            "master": "master-olah-data-suhu-tids-recorder-graptech|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.0,
+            "sesi": {
+                "DEMO-TIDS-001": 8.2
+            }
+        },
+        "timbangan": {
+            "master_pt": 6.84,
+            "master": "new-master-olda-timbangan-kg|sertifikat",
+            "app_pt": 6.8,
+            "rasio": 0.99,
+            "sesi": {
+                "011-CAL-525": 6.8,
+                "0136-CAL-123": 6.8,
+                "019-CAL-425": 6.8
+            }
+        },
+        "timer_stopwatch": {
+            "master_pt": 7.2,
+            "master": "master-olda-timer-dan-stopwatch|sertifikat",
+            "app_pt": 7.2,
+            "rasio": 1.0,
+            "sesi": {
+                "015-CAL-424": 7.2
+            }
+        },
+        "tits": {
+            "master_pt": 8.04,
+            "master": "master-olah-data-suhu-tits-fungsi-measure-utk-uut|sertifikat",
+            "app_pt": 8.0,
+            "rasio": 1.0,
+            "sesi": {
+                "22506.01.A": 8.0,
+                "2606.08.C": 8.0
+            }
+        },
+        "turbidimeter": {
+            "master_pt": 7.92,
+            "master": "master-olah-data-turbidimeter|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 1.04,
+            "sesi": {
+                "2406.32.A": 8.2
+            }
+        },
+        "utm": {
+            "master_pt": 7.08,
+            "master": "master-olah-data-gaya-utm|sertifikat",
+            "app_pt": 7.1,
+            "rasio": 1.0,
+            "sesi": {
+                "DEMO-UTM-001": 7.1
+            }
+        },
+        "vacuum_gauge": {
+            "master_pt": 7.32,
+            "master": "master-olda-pressure-druck07g-0-8-2bar-new|sertifikat",
+            "app_pt": 7.3,
+            "rasio": 1.0,
+            "sesi": {
+                "DEMO-VG-07G-001": 7.3
+            }
+        },
+        "viscometer": {
+            "master_pt": 8.76,
+            "master": "5-viscometer-86068360-terbaru|sertifikat",
+            "app_pt": 8.2,
+            "rasio": 0.94,
+            "sesi": {
+                "2607.59.W": 8.2
+            }
+        }
+    }
+}

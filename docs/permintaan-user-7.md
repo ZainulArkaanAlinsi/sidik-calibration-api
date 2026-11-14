@@ -5478,6 +5478,118 @@ dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup
 5. **Sesi tanpa set** tidak diperiksa `titik_di_luar_cmc` (supaya sesi lama tidak berubah
    perilakunya) — nominal Tekanan yang diketik tanpa set tetap lolos seperti sebelumnya.
 
+## §58 — Huruf Sieve kembali sepadan master + gerbang rasio huruf untuk semua profil — 13 Nov 2026
+
+**Masalah (audit sertifikat 13 Nov, kode `7b85eb8b`, SISA-PEKERJAAN P0-1).** Huruf sertifikat `sieve` turun dari 0,93 ke 0,83 x
+master (7,9 -> 7,1 pt) sesudah baris "Minimum Number of Apertures" (Tahap B2, PR #251) ditambah. Tidak ada tes yang merah.
+
+**Penyebab (terbukti dengan ukuran, bukan dugaan).**
+
+1. `sieve` tidak ada di `FormatMasterSertifikat::FONT_MEDIAN_PT`, jadi tidak punya penentu ukuran huruf per profil dan jatuh ke tangga
+   kerapatan kasar (`longgar -2 ... rapat-2`, loncatan 13,5 / 12,5 / 11 / 10,5 / 9,5 px). Baris B2 menambah tinggi lembar, dan dengan
+   alamat pelanggan dua baris tangga turun dari `longgar -1` (10,5 px = 7,9 pt) ke `longgar -2` (9,5 px = 7,1 pt).
+2. **Data seeder tidak mereproduksi regresinya.** Alamat seeder Sieve cuma 32 karakter; diukur di kode `7b85eb8b` dengan data seeder
+   Sieve TETAP 7,9 pt, dengan alamat 50 karakter (seperti penanda sintetis audit) 7,1 pt. Gerbang yang diukur dengan data seeder akan
+   lolos tepat di regresi yang dibuatnya, jadi gerbang baru merender dengan nama & alamat sepanjang data nyata.
+3. Gerbang yang ada tidak melihatnya: `SertifikatSemuaAlatSatuHalamanTest` hanya menghitung halaman (dan membedakan normal lawan
+   padat), `UkuranHurufMengikutiMasterTest` hanya memagari 9 profil.
+
+**Yang dikerjakan (hanya tata letak/huruf; nol angka hitung, nol migrasi, nol kolom, nol baris dihapus).**
+
+1. `FONT_MEDIAN_PT['sieve'] = 8.52` (median huruf lembar `SERTIFIKAT` master Sieve Mesh, audit 13 Nov `master_page.json`). Snapshot BARU
+   membawa `tata_letak.font_master_pt`; `SertifikatSatuHalaman::isiMengikutiMaster` memilih ukuran tabel terbesar yang muat (maks 11 px
+   = normal): Sieve kini 11 px keluarga `rapat` = **8,2 pt = 0,96 x master**, SATU halaman (diukur 7,1 -> 8,2 pt pada alamat panjang;
+   sertifikat terbit sebelumnya beku di snapshot-nya dan tidak berubah).
+2. Gerbang rasio huruf untuk SEMUA profil terdaftar (48), memperluas `SertifikatSemuaAlatSatuHalamanTest` (bukan tes baru yang
+   menyemai ulang): sesudah sapuan 52 sesi bawaan (49 terbit + 3 ditahan; angka "58" audit = 52 + 6 sesi sintetis Enclosure
+   S-4), tiap sertifikat (ditambah 3 sesi sintetis Bath/Furnace/Refrigerator = 55 sesi) dirender ulang lewat `SertifikatSatuHalaman` dengan nama & alamat
+   pelanggan panjang, median huruf PDF-nya diukur, dan rasionya terhadap median huruf master dikunci per profil di
+   `tests/Fixtures/sertifikat-huruf/baseline-huruf-master.json` (ratchet DUA ARAH, pola `token_only_baseline.json` repo mobile):
+   - rasio TURUN dari baseline = merah; NAIK di atas baseline tanpa baseline baru = merah dengan pesan "kunci dengan
+     `SIDIK_TULIS_BASELINE=1 php artisan test --filter=SertifikatSemuaAlatSatuHalamanTest`" (perintah itu menolak menulis bila ada
+     rasio yang turun atau keluar ambang);
+   - rasio wajib dalam 0,90 - 1,10 (SEPADAN audit) kecuali `pengecualian` beralasan di baseline: **baseline sendiri tidak bisa
+     dipakai menerima rasio di bawah 0,90**;
+   - profil yang terdaftar tetapi tidak terukur, tidak ada di baseline, atau ada di baseline tapi tidak terdaftar = merah;
+   - ukuran TERBURUK antar sesi menentukan nilai profil, DAN tiap sesi dikunci sendiri (`sesi` di baseline): profil bersesi banyak
+     (micrometer 3, timbangan 3, tits 2, conductivity 2, flowmeter totalizer 2) tidak bisa mengecil di sesi yang bukan terburuk;
+   - tiap sertifikat juga wajib SATU halaman setelah tangga pemadatan habis, dengan header panjang.
+3. Alat ukur: `Tests\Concerns\PengukurHurufCanvas` (canvas dompdf yang mencatat ukuran huruf tiap teks, pembulatan sama dengan yang
+   ditulis dompdf ke PDF, dicocokkan ke PDF lewat md5) dan penilainya `Tests\Concerns\GerbangHurufSertifikat`. Diuji cepat (tanpa
+   render sapuan) oleh `Tests\Unit\GerbangHurufSertifikatTest` (21 kasus: median, pengukur lawan render dompdf sungguhan, tiap
+   aturan penilai, ratchet per sesi, keutuhan baseline, pengikat `master_pt`).
+
+**Keputusan yang diambil (jangan ditanya ulang kecuali pemilik mengubahnya).**
+
+- **Tolok ukur = `master_pt` di baseline JSON (ekstraksi audit), BUKAN `FONT_MEDIAN_PT`.** Kalau gerbang membaca `FONT_MEDIAN_PT`,
+  mengecilkan angka itu menggeser tolok ukurnya sendiri dan regresi tampak sepadan. `selarasDenganFontMedian` mengikat keduanya
+  (selisih <= 0,05 pt). `master_pt` = master pertama tiap profil (konvensi STATUS-48-PROFIL; Bath/Furnace/Refrigerator = Enclosure
+  Constant Yokogawa; profil bermaster ganda dengan huruf berbeda, mis. Jangka Sorong, tetap dibandingkan ke yang pertama).
+- **`master_pt` tidak bisa disunting diam-diam (temuan tinjauan 14 Nov).** Tanpa pengikat, huruf yang sungguh mengecil bisa
+  disembunyikan dengan menyunting `master_pt`, `app_pt`, dan `rasio` baseline bersama (mutan Jangka Sorong 5,7 / 5,4 / 0,95 lolos
+  25/25). Sekarang `master_pt` juga tinggal di `tests/Fixtures/sertifikat-huruf/master-pt.json` bersama sumbernya (kunci master,
+  median huruf PDF master, lebar halamannya; ekstraksi `master_page.json` audit 13 Nov), dan `GerbangHurufSertifikatTest` menjatuhkan
+  bila (1) `master_pt` fixture != median x 595,3 / lebar, (2) `master_pt` baseline != fixture, atau (3) sha256 fixture != `HASH_MASTER_PT`
+  di tes itu. Mengubah satu `master_pt` = menyunting tiga berkas dengan alasan di deskripsi PR. Yang tidak terkunci: ketiga angka
+  ekstraksi itu sendiri bisa disunting bersama + hash, tetapi itu kini keputusan terang di diff, bukan satu angka di JSON.
+- **Thermohygro = satu-satunya pengecualian** (rasio 1,48 x dikunci apa adanya): master dicetak skala 50 % (4,8 pt) untuk 20 baris
+  tetap, menyamakannya berarti < 5 pt yang tak terbaca (SISA-PEKERJAAN P3-4). Pengecualian lain wajib alasan >= 20 karakter dan
+  masuk diff PR.
+- Bath/Furnace/Refrigerator tidak punya sesi seeder: dibuat sintetis dari grid master Yokogawa (pola `SertifikatS4BandingUlangTest`),
+  HANYA varian Yokogawa. Varian Recorder ketiganya tidak diukur sendiri (kelas dasar sama dengan Oven yang ikut gerbang).
+- Tiga profil tekanan yang ditahan (keputusan TM) diukur lewat snapshot tanpa terbit; tidak ada sertifikat diterbitkan.
+- Ambang 0,90 / 1,10 dan toleransi 0,004 (pembulatan dua desimal rasio) ada di `GerbangHurufSertifikat` (kode, bukan JSON), supaya
+  melonggarkannya terlihat di diff dan dijaga `GerbangHurufSertifikatTest`.
+
+**Test.** `Tests\Unit\GerbangHurufSertifikatTest`; `Tests\Unit\UkuranHurufMengikutiMasterTest` (daftar `FONT_MEDIAN_PT` + `sieve`);
+`Tests\Feature\SertifikatSemuaAlatSatuHalamanTest` (52/52 sesi bawaan tetap satu halaman, daftar `BUTUH_PADAT` TIDAK berubah, plus gerbang huruf: 55 sesi satu halaman dengan header panjang).
+Angka terukur per profil cocok dengan audit 13 Nov untuk 46 dari 48 profil; yang berbeda hanya Sieve (7,1 -> 8,2, memang perbaikannya)
+dan TIDS (audit 7,9, di sini 8,2; keduanya 0,97-1,00 x master, dalam ambang).
+
+**Bukti.** (a) Kode yang berjalan dibuktikan per proses (worktree dan salinan mutasi memuat `vendor` salinan sungguhan; jalur
+`App\Services\SertifikatSatuHalaman` dicetak di log tiap jalan). (b) Sapuan `SertifikatSemuaAlatSatuHalamanTest` hijau (1 test, 160
+asersi, 912 dtk SQLite): 52/52 sesi bawaan satu halaman, `BUTUH_PADAT` tidak berubah, 48/48 profil dan 55/55 sesi lolos gerbang huruf. Kelas sertifikat
+terkait (`SertifikatTahapB2`, `SertifikatDimensiBentukMaster`, `DimensiSertifikat`, `JangkaSorongSieveSesi`, `SertifikatS4BandingUlang`,
+`SertifikatBekuTidakBerubah`, `SertifikatSatuHalaman`, `SertifikatPunyaMargin`, `TataLetakSertifikat`, `SertifikatBentukMasterPadat`,
+`SertifikatTemplatMasterG0b`, `SertifikatCocokMaster`, `AnakTimbanganSertifikatSatuHalaman`, `GerbangHurufSertifikat`,
+`UkuranHurufMengikutiMaster`): 115 test, 1.796 asersi, hijau. (c) Uji mutasi mandiri di salinan unik di luar worktree: **20 mutan,
+20 terbunuh oleh kegagalan asersi, 0 selamat** — 16 cepat (ambang bawah/atas/toleransi dilonggarkan, pemeriksaan "tidak terukur"
+dan cabang NAIK/TURUN dibuang, baseline Sieve dinaikkan tangan / diturunkan ke 0,83 / dihapus, `tulis` menerima TURUN, pembulatan
+pengukur dan median genap diubah, `FONT_MEDIAN_PT['sieve']` digeser ke 7,1 atau dicabut, alasan pengecualian tak diperiksa, cek
+ambang dilewati) dan 4 serentak di satu sapuan penuh pada profil berbeda (Sieve dicabut dari `FONT_MEDIAN_PT` -> gerbang menjawab
+"sieve 7,1 pt / 8,52 = 0,83 MENYUSUT" persis angka audit; baseline Oven dinaikkan tangan -> TURUN; baseline Chlorine diturunkan
+tangan -> NAIK tanpa baseline; TIDS dikeluarkan dari pengukuran -> TIDAK terukur). (d) Putaran 2 (14 Nov, sesudah tinjauan), 8 mutan
+lagi, **8/8 terbunuh**: mutan peninjau (Jangka Sorong `master_pt`/`app_pt`/`rasio` disunting bersama, dulu lolos 25/25) kini
+dibunuh `test_master_pt_baseline_wajib_sama_dengan_fixture_ekstraksi_master`; `master_pt` fixture dan baseline disunting bersama
+tanpa menyentuh median; ekstraksi disunting konsisten (hanya hash sha256 yang menahan); cabang TURUN per sesi dibuang;
+pemeriksaan per sesi tidak dipanggil; pembanding baseline-fixture dimatikan; serta dua mutan di satu sapuan penuh (baseline sesi
+Micrometer yang bukan terburuk dinaikkan tangan -> "TURUN dari baseline sesi ini 1.15"; satu sesi Conductivity dihapus dari
+baseline -> "terukur tetapi BELUM dibekukan"). Sapuan hijau sesudah baseline per sesi dibekukan: 160 asersi (CPU ~1.100 dtk; jam
+dinding 52 menit karena mesin tersendat).
+
+**Belum / risiko yang diterima.** Gate MySQL penuh dan SQLite penuh (CI). Sapuan jadi lebih lama (+61 render ulang bertangga;
+sapuan 15-17 menit di SQLite lokal). Median huruf bersifat diskret (kelipatan 0,1 pt) dan profil di batas dua tingkat tangga
+(TIDS contohnya) bisa berpindah 0,1 pt karena perubahan teks seeder; itu muncul sebagai merah dengan pesan jelas dan baseline
+dibekukan ulang secara sadar. Alamat uji (50 karakter) adalah penanda dua baris, bukan jaminan terburuk: alamat tiga baris tetap
+mungkin menurunkan huruf di produksi (tangga A3 turun sampai 0,95 x master lalu jatuh ke tangga lama). Untuk Sieve sendiri
+tinjauan 14 Nov mengukur 8,2 pt, satu halaman, sampai alamat 119 dan sekitar 170 karakter dan lokasi onsite beralamat; profil lain
+tidak diuji.
+
+**Utang yang dicatat (bukan dikerjakan di sini).**
+
+- **Flake satu kali, penyebab belum ditemukan:** dari empat sapuan penuh tinjauan 14 Nov, satu gagal di asersi LAMA `BUTUH_PADAT`
+  (`SertifikatSemuaAlatSatuHalamanTest`, baris 474-481 sebelum perubahan ini): Thermocouple `0513-CAL-1124` tiba-tiba butuh mode
+  padat. Tiga sapuan lain dan probe terpisah (Thermocouple satu halaman di mode normal 6 dari 6 render, dengan canvas pengukur
+  maupun canvas bawaan) hijau; kepala tes itu sudah mencatat flake serupa yang tak berhasil direproduksi. Bukan akibat perubahan ini
+  (jalur asersinya tak disentuh selain memasang canvas pengukur). **Kalau merah di CI pada asersi `BUTUH_PADAT`: ulang job dulu,
+  jangan menyunting daftar, dan laporkan** (job, shard, nama alat).
+- Bobot sapuan di `.github/ci/shard-data.json` (baris 299 SQLite 115,82 dtk, baris 774 MySQL 104,64 dtk, run CI 12 Nov) basi:
+  tinjauan mengukur fase gerbang baru +25,6 % (364 dtk dari 1424 dtk), perkiraan CI 116 -> ~146 dtk. Segarkan sesudah run CI
+  pertama: `php .github/ci/shard.php bobot run.txt`. Dampak kecil, tak mendesak.
+- Header yang ditekan di gerbang hanya nama pemilik dan alamat. Lokasi onsite (`calibration_location`), nama alat/merk/model/seri
+  panjang, dan titik ukur maksimum (P1-8 SISA-PEKERJAAN) belum ikut; menambah satu pass header sangat panjang untuk profil paling
+  mepet (TIDS, Thermocouple, Thermometer Glass) berisiko menurunkan baseline karena input buatan, jadi ditunda sebagai pekerjaan sendiri.
+
 ## §56 — Kata cari `q` tidak peduli pemisah: aplikasi Pelanggan dan arsip Lab — 13 Nov 2026
 
 **Masalah.** Pelanggan mengetik `CAL-2026-10-0001`, sertifikatnya `CAL/2026/10/0001`, hasil kosong.
@@ -6557,6 +6669,7 @@ Supaya tidak dibangun ulang:
 | G30 | **Super admin semua aksi tulis + Order Number wajib** (K-49-14) — §51 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`) — super admin lolos tiap rute tulis admin/teknisi lewat `EnsureUserHasRole::lolosTulisSuperAdmin()`, cabang "admin boleh X" pindah ke `User::punyaHakAdmin()`, pemisahan wewenang tetap memblokir (approve & sahkan), `approve()` + panel menolak sesi tanpa Order Number (`422 nomor_order_wajib`). Panel tetap baca saja untuk super admin. **Sebagian dibalik §52 (K-50-01/02/07).** Kontrak HP: `docs/perintah-frontend-super-admin-order.md`. Gate MySQL penuh belum |
 | G31 | **Revisi 15 Okt: Tolak & pengesahan dicabut, No. Sertifikat diketik, tarik sertifikat, edit admin + bandingkan** (K-50-01/02/03/04/07/13) — §52 | **DIKERJAKAN** (15 Okt 2026, branch `feat/super-admin-semua-aksi`, G1 API) — migrasi additive (`input_asli`, enum `ditarik`), `PemisahanWewenang` dipersempit, `kalibrasi:pindahkan-pengesahan`. Kontrak HP: `docs/perintah-frontend-revisi-1510.md`. Gate MySQL penuh belum |
 | G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |
+| G35 | **Huruf Sieve kembali sepadan master + gerbang rasio huruf semua profil** (SISA-PEKERJAAN P0-1) — §58 | **DIKERJAKAN** (13 Nov 2026, branch `fix/huruf-sieve-20261113`, belum commit). `FONT_MEDIAN_PT['sieve'] = 8.52`: huruf 7,1 -> 8,2 pt (0,96 x master), tetap satu halaman, nol angka hitung berubah. Gerbang baru di `SertifikatSemuaAlatSatuHalamanTest`: rasio huruf per profil (48) dikunci baseline dua arah `tests/Fixtures/sertifikat-huruf/baseline-huruf-master.json`, 0,90-1,10 x master, Thermohygro satu-satunya pengecualian. Tiap sesi dan `master_pt` terkunci (fixture + hash). Mutasi 28/28 terbunuh. Gate SQLite+MySQL penuh belum (CI) |
 | G32 | **Sertifikat persis master — B3a / R9: desimal & faktor cakupan `k`** (K-50-15) | **DIKERJAKAN** (12 Nov 2026, branch `fix/sertifikat-desimal-k-persis-master-b3a`, belum commit). Hanya TAMPILAN CETAK, snapshot BARU saja: Timbangan memakai kode format sel `SERTIFIKAT` master per varian (`timbangan.format`, `TimbanganProfile::formatCetakMaster`; aturan `d+1` T14 dan LOP substitusi `13,66` dibatalkan, LOP kg `0.08`, substitusi `± 14`, gram kapasitas `25.000`); `k` Jangka Sorong & Height Gauge `0` (sel `General` di kolom sempit tampil `2`), Timer `0.000` + `k_tunggal = baris_pertama`; Viscometer Standard Value `79.90`. Penjaga: LOP/U95 tidak pernah tercetak `0`; gram `d-1` tidak memotong nilai uji. Angka hitung identik sebelum/sesudah (7 sesi, `uncertainty_calculations` baris-per-baris). Turbidimeter dan varian (R10) tidak disentuh. Pertanyaan lab: `docs/pertanyaan-lab-format-sertifikat.md` #8 (k `2` vs `2,09`/`1,98`), `docs/pertanyaan-lab-timbangan.md` T14 (format per neraca). **PERHATIAN:** `php artisan sertifikat:bangun-ulang --termasuk-terbit` membangun ulang snapshot sertifikat TERBIT dari kode yang berjalan, jadi teks cetak (desimal timbangan, `k` jangka/height/timer, `79.90`) ikut berubah di dokumen yang sudah di tangan pelanggan. JANGAN dijalankan tanpa meninjau keluaran dry-run (bawaannya dry-run) dan tanpa `--oleh`/`--alasan` yang sengaja. Gate MySQL penuh belum dijalankan. |
 | G33 | **Kata cari `q` tidak peduli pemisah** — aplikasi Pelanggan (`/sertifikat`, `/alat`, `/paket`) dan arsip Lab (nomor seri, `.`/`_`) — §56 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-cari-longgar-20261113`, belum commit). `PolaCari` baru + nol migrasi/kolom/indeks/rute/field respons. Kata yang hanya tanda baca kini dijawab daftar kosong (dulu `%` menampilkan semuanya). Mutasi 30/30 terbunuh. Gate SQLite+MySQL penuh belum (CI). Kontrak untuk aplikasi Pelanggan: `docs/kontrak-api-pelanggan.md` §13 |
 | G34 | **Pelacakan alat untuk pelanggan** — order tak boleh memuat alat pelanggan lain, item tercampur disembunyikan di `/paket` `/paket/{id}` `/beranda`, `equipment_id` + `sedang_dikerjakan`, notifikasi tahap (`pelanggan.tahap_alat`, saklar baru) — §57 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-pelacakan-pelanggan-20261113`, belum commit). Satu migrasi additive (kolom saklar `tahap_alat`). Merah dulu terhadap kode lama (66 tes: 35 lulus, 23 gagal, 8 error) lalu hijau 66/66; MySQL lokal 121/121; mutasi 35/35 terbunuh. **Putaran 2 (13 Nov): `calibration_sessions.order_item_id` tidak ditulis jalur mana pun -> sesi BARU kini otomatis tertaut ke item order aktif alatnya (bagian F; sesi lama tidak di-backfill, ada kueri sensus)**, tes antrean-sesudah-commit, kabar fisik tahan galat, default migrasi; 19 mutan baru terbunuh. **Putaran 3 (13 Nov, keputusan pemilik): penautan tidak pernah menggagalkan pembuatan sesi; ditautkan HANYA bila tepat satu kandidat (ambigu = tidak, semua kandidat dicatat); kabar tahap TURUNAN bawaan MATI (`KABAR_TAHAP_TURUNAN`, tahap fisik dan sertifikat terbit tetap); tidak ada pindah/lepas tautan dan tautan susulan = keterbatasan dikenal; 25 mutan terbunuh.** `diserahkan_kepada` tetap tampil, perlu konfirmasi lab. Kontrak HP: `docs/perintah-frontend-pelacakan-pelanggan.md`. Gate MySQL/SQLite penuh belum |
