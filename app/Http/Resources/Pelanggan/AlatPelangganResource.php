@@ -88,7 +88,7 @@ class AlatPelangganResource extends JsonResource
      * `false` = belum diisi -> kuncinya TIDAK dikirim (jangan berbohong dengan
      * `null`, yang artinya "tidak ada paket aktif").
      *
-     * @var array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string}|null|false
+     * @var array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string, garis_waktu: list<array{kode: string, label: string, lewat: bool, sekarang: bool}>}|null|false
      */
     public array|null|false $paketAktif = false;
 
@@ -129,9 +129,9 @@ class AlatPelangganResource extends JsonResource
         ];
 
         // Additive (13 Nov 2026): aplikasi lama mengabaikan kunci yang tidak dikenalnya.
-        // Lima kunci saja (`paket_id`, `order_item_id`, `nomor_order`, `tahap`,
-        // `tahap_label`); tidak ada nama teknisi, kode, nomor sesi, kondisi terima,
-        // catatan, atau status hitung.
+        // Enam kunci saja (`paket_id`, `order_item_id`, `nomor_order`, `tahap`,
+        // `tahap_label`, `garis_waktu` [14 Nov 2026]); tidak ada nama teknisi, kode,
+        // nomor sesi, kondisi terima, catatan, atau status hitung.
         if ($this->paketAktif !== false) {
             $dasar['sedang_dikerjakan'] = $this->paketAktif;
         }
@@ -140,7 +140,7 @@ class AlatPelangganResource extends JsonResource
     }
 
     /**
-     * @param  array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string}|null  $paketAktif
+     * @param  array{paket_id: int, order_item_id: int, nomor_order: string, tahap: string, tahap_label: string, garis_waktu: list<array{kode: string, label: string, lewat: bool, sekarang: bool}>}|null  $paketAktif
      */
     public function denganPaketAktif(?array $paketAktif): self
     {

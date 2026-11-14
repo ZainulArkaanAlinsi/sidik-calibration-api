@@ -160,3 +160,53 @@ Perilaku yang perlu diketahui desainer/penguji:
 - [ ] Nyalakan lagi → notifikasi datang, isinya memuat nama, merk, nomor seri, tahap, Order Number —
       dan tidak memuat nama teknisi, nama penerima, atau catatan.
 - [ ] Ketuk notifikasi (push, aplikasi tertutup) membuka detail paket.
+
+
+## 6. Tambahan 14 Nov 2026: Beranda "Jejak" -- hitungan `ringkasan` dan `garis_waktu` per alat
+
+Menjawab `docs/kebutuhan-api-pelanggan.md` §7 di `sidik-pelanggan-mobile`. PRD `docs/permintaan-user-7.md` §59; kontrak
+rute `docs/kontrak-api-pelanggan.md` §15. **Additive:** tidak ada rute baru, tidak ada migrasi, tidak ada field yang berubah
+arti. Semua kunci di bawah OPSIONAL: bila hilang (server lama), pakai perilaku sekarang.
+
+### 6a. `data.ringkasan` di `GET /beranda`: empat hitungan baru
+
+| Kunci | Pakai untuk | Catatan |
+|---|---|---|
+| `alat_berlaku` | "Semua alat Anda berlaku." hanya bila `alat_berlaku` = `jumlah_alat` | Sama dengan jumlah `status_alat` = `terkalibrasi` + `mendekati_jadwal` (sertifikat belum jatuh tempo; keputusan pemilik 14 Nov 2026). Hanya `lewat_jadwal`, `belum_pernah`, `nonaktif` yang tidak. **Aplikasi tidak terpengaruh**: kalimat "Semua alat Anda berlaku." hanya tercapai bila daftar perhatian kosong, dan alat `mendekati_jadwal` sudah mengisinya lewat `segera_jatuh_tempo`. Versi pertama hari yang sama menghitung `terkalibrasi` saja (sesuai `docs/kebutuhan-api-pelanggan.md` §7a); teks itu perlu ikut diubah di repo aplikasi |
+| `alat_belum_pernah` | Kalimat "N alat belum pernah dikalibrasi." | `jumlah_alat` tetap ikut menghitung alat ini |
+| `paket_siap_diambil` | "N paket siap diambil." dan tautan "Lihat semua paket" bila > yang terlihat di `paket_berjalan` | Seluruh paket berjalan perusahaan, **tidak** dipotong tiga terbaru. Paket "siap" bila SEMUA alat yang terlihat sudah siap diambil/diserahkan (tahap paket = alat paling tertinggal) |
+| `sertifikat_baru_7_hari` | "N sertifikat baru terbit." | Seluruh sertifikat terbit, belum digantikan, dari 7 hari lalu sampai hari ini; **tidak** dipotong lima. Definisi tanggal sama dengan `hitungSertifikatBaru` di aplikasi |
+
+Angkanya selalu bilangan bulat >= 0. Bila kuncinya ada, **angka server menang** atas hitungan dari daftar. Jangan
+menjumlahkan keempatnya dan jangan menafsirkan selisihnya: `alat_berlaku` + `alat_belum_pernah` <= `jumlah_alat`, dan
+`lewat_jatuh_tempo`/`segera_jatuh_tempo` bukan pecahan dari `jumlah_alat` (keduanya dihitung dari tanggal jatuh tempo saja).
+Selisih `jumlah_alat` - `alat_berlaku` - `alat_belum_pernah` = alat `lewat_jadwal`.
+
+### 6b. `sedang_dikerjakan.garis_waktu`: aplikasi tidak perlu menyalin urutan tahap
+
+`sedang_dikerjakan` di `GET /alat`, `GET /alat/{id}`, dan `GET /beranda` (`perlu_perhatian[]`) kini membawa kunci ke-enam:
+
+```json
+"garis_waktu": [ { "kode": "diterima", "label": "Alat diterima lab", "lewat": true, "sekarang": false }, "..." ]
+```
+
+Bentuknya sama persis dengan `garis_waktu` di `GET /paket/{id}`, tetapi untuk **tahap alat itu**. Pakai untuk `JejakTahap`:
+satu tik per elemen, `lewat` = terisi, `sekarang` = tanda posisi, keduanya `false` = belum. Tampilkan `label` dari server.
+Bila kuncinya tidak ada (server lama), salinan di `lib/models/garis_tahap_pelanggan.dart` tetap dipakai sebagai cadangan.
+
+- Enam langkah; tujuh hanya saat alat sedang "Sedang dikerjakan ulang" (`perlu_diulang`, langkah ketiga).
+- Kode tahap internal `menunggu_pengesahan` tidak pernah muncul (dilipat ke `menunggu_pemeriksaan`).
+- Kode tahap yang belum dikenal aplikasi: tampilkan `tahap_label` dan `garis_waktu` apa adanya; jangan memetakan kode ke ikon
+  dengan `switch` tanpa cabang bawaan. Bila server kelak menambah tahap, urutan baru datang lewat `garis_waktu` tanpa rilis aplikasi.
+- Perbedaan sengaja server vs salinan Dart: untuk kode tahap asing `garis_waktu` dari server menandai `diterima` sebagai
+  `sekarang`; salinan Dart tidak menandai langkah mana pun (tidak mengarang tik "sekarang"). Jangan "menyamakan" keduanya.
+- Nilai yang dikunci server (urutan, label) ada di `docs/kontrak-api-pelanggan.md` §15.3. Mengubahnya di server membuat tes
+  merah ("beri tahu app Pelanggan"); selama salinan Dart masih ada, keduanya harus diubah bersama.
+
+### 6c. Daftar periksa penguji
+
+- [ ] `/beranda` menampilkan "N paket siap diambil" yang benar saat paket siap lebih dari tiga atau tersingkir dari tiga paket terbaru.
+- [ ] "N sertifikat baru terbit" tetap angka (bukan "Ada sertifikat baru") saat sertifikat baru lebih dari lima.
+- [ ] Perusahaan dengan alat `belum_pernah` tidak pernah melihat "Semua alat Anda berlaku."
+- [ ] Jejak di kartu alat sama dengan jejak di detail paket untuk paket berisi satu alat; beda bila alatnya beda tahap.
+- [ ] Akun PT A tidak melihat satu angka atau jejak pun yang berasal dari PT B.
