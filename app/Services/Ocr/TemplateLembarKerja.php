@@ -92,17 +92,27 @@ class TemplateLembarKerja
      * ini lahir justru karena ada yang tidak ingat. Parameter wajib memindahkan
      * penjagaannya dari ingatan ke tanda tangan fungsi.
      *
+     * ## `$tambahan` — kunci ADDITIVE per entri
+     *
+     * Opsional. Dipanggil sekali per profil dengan template yang SUDAH dibangun
+     * di sini, dan hasilnya (kunci => nilai) ditempel SESUDAH ketujuh kunci
+     * bawaan — tidak pernah menimpa satu pun dari mereka. Dipakai
+     * `WorksheetScanController::templates()` untuk kunci `asli`; callback
+     * (bukan `FormulirAsli` di sini) karena `FormulirAsli` sudah bergantung ke
+     * kelas ini. Tanpa `$tambahan`, keluarannya persis seperti sebelum ada.
+     *
      * @param  Equipment  $konteks  alat semu pembawa `organization_id` pemanggil
+     * @param  (callable(CalibrationProfile, array<string, mixed>): array<string, mixed>)|null  $tambahan
      * @return list<array<string, mixed>>
      */
-    public function daftar(Equipment $konteks): array
+    public function daftar(Equipment $konteks, ?callable $tambahan = null): array
     {
         $hasil = [];
 
         foreach ($this->registry->semua() as $profil) {
             $template = $this->dariProfil($profil, $konteks);
 
-            $hasil[] = [
+            $baris = [
                 'template_id' => $template['template_id'],
                 'versi' => $template['versi'],
                 'kode_dokumen' => $template['kode_dokumen'],
@@ -111,6 +121,9 @@ class TemplateLembarKerja
                 'siap_pindai' => $template['siap_pindai'],
                 'alasan_belum_siap' => $template['alasan_belum_siap'],
             ];
+
+            // `+`, bukan `array_merge`: kunci bawaan menang kalau ada tabrakan.
+            $hasil[] = $tambahan === null ? $baris : $baris + $tambahan($profil, $template);
         }
 
         return $hasil;

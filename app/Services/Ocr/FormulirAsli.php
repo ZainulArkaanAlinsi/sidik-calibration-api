@@ -4,6 +4,7 @@ namespace App\Services\Ocr;
 
 use App\Models\Equipment;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 
 /**
  * Template pindai untuk formulir ASLI lab (`kertas: "asli"`) — kertas
@@ -107,13 +108,76 @@ class FormulirAsli
             return null;
         }
 
+        return $this->cariDariProfil($profil, $alat, $jumlahPengulangan, $kodeDokumen);
+    }
+
+    /**
+     * Ringkasan kesiapan formulir asli untuk SATU entri `GET /worksheet-templates`
+     * (kunci `asli`), tanpa membangun lembarnya dua kali.
+     *
+     * Bukan aturan kedua: isinya DITURUNKAN dari array yang persis sama dengan
+     * jawaban `?kertas=asli` untuk kode itu ([cari] tanpa `equipment_id`,
+     * `jumlah_pengulangan`, dan `kode_dokumen`) — `siap_pindai`, `mode_uji`,
+     * `perlu_konfirmasi_lab`, `kode_dokumen`, `revisi` tidak punya jalur hitung
+     * sendiri di sini. Jawaban `?kertas=asli` yang BUKAN template (404: kode
+     * tidak dikenal, belum dipetakan, atau petanya tidak bisa dipilih tanpa
+     * kode FM dari kertas) menjadi `ada: false` dengan semua bendera `false` —
+     * tidak ada formulir yang bisa dibuka, jadi `mode_uji` pun tidak berlaku.
+     *
+     * `$cetak` = `TemplateLembarKerja::dariProfil($profil, $konteks)` yang SUDAH
+     * dibangun pemanggil (daftar template membangunnya untuk kolom lamanya).
+     * Memakainya ulang menjaga jumlah kueri tidak berlipat; hasilnya sama
+     * dengan [cari] karena `cari()` memulai dari pemanggilan yang sama.
+     *
+     * @param  array<string, mixed>  $cetak  template bawaan profil untuk `$konteks`
+     * @return array{ada: bool, kode_dokumen: string|null, revisi: string|null, siap_pindai: bool, mode_uji: bool, perlu_konfirmasi_lab: bool}
+     */
+    public function ringkasanUntukDaftar(CalibrationProfile $profil, Equipment $konteks, array $cetak): array
+    {
+        $hasil = $this->cariDariProfil($profil, $konteks, null, null, $cetak);
+
+        if (! is_array($hasil)) {
+            return [
+                'ada' => false,
+                'kode_dokumen' => null,
+                'revisi' => null,
+                'siap_pindai' => false,
+                'mode_uji' => false,
+                'perlu_konfirmasi_lab' => false,
+            ];
+        }
+
+        return [
+            'ada' => true,
+            'kode_dokumen' => $hasil['kode_dokumen'],
+            'revisi' => $hasil['revisi'],
+            'siap_pindai' => $hasil['siap_pindai'],
+            'mode_uji' => $hasil['mode_uji'],
+            'perlu_konfirmasi_lab' => $hasil['perlu_konfirmasi_lab'],
+        ];
+    }
+
+    /**
+     * Badan [cari] sesudah profilnya ditemukan.
+     *
+     * @param  array<string, mixed>|null  $cetakBawaan  `dariProfil($profil, $alat)` yang sudah dibangun
+     *                                                  pemanggil; null = dibangun di sini (jalur `cari()`)
+     * @return array<string, mixed>|string|null
+     */
+    private function cariDariProfil(
+        CalibrationProfile $profil,
+        ?Equipment $alat,
+        ?int $jumlahPengulangan,
+        ?string $kodeDokumen,
+        ?array $cetakBawaan = null,
+    ): array|string|null {
         $semuaPeta = $this->semuaPeta($profil->kode());
 
         if ($semuaPeta === []) {
             return null;
         }
 
-        $cetak = $this->template->dariProfil($profil, $alat);
+        $cetak = $cetakBawaan ?? $this->template->dariProfil($profil, $alat);
         $peta = $this->pilihPeta($semuaPeta, $cetak['kode_dokumen'] ?? null, $kodeDokumen);
 
         if (is_string($peta)) {

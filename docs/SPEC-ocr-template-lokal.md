@@ -205,6 +205,12 @@ daftarnya di APK** — alat baru nambah terus.
 `siap_pindai: false` → **tombol kamera dimatiin** buat alat itu. Lebih baik
 teknisi ngetik daripada koordinat rancangan dipakai naruh angka di sertifikat.
 
+**Kunci `asli` per entri (15 Nov 2026, additive).** Entri juga membawa
+`"asli": {ada, kode_dokumen, revisi, siap_pindai, mode_uji, perlu_konfirmasi_lab}` — kesiapan
+formulir ASLI lab untuk kode itu, sama dengan `GET /worksheet-templates/{kode}?kertas=asli`
+tanpa alat (`FormulirAsli::ringkasanUntukDaftar()`). `siap_pindai` tingkat atas tetap milik
+lembar CETAK. Kontrak & aturan baca: `docs/perintah-frontend-templat-asli.md`.
+
 ### `GET /api/worksheet-templates/{kode}`
 
 Query opsional: `equipment_id` (Conductivity milih satuan dari resolusi alat),
