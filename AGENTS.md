@@ -217,7 +217,10 @@ Jangan menulis pembaca SQL-JSON-path (`type_b_components->…`) atau membaca/men
 kolom itu lewat `DB::table()`; keduanya melihat bentuk objek. Kunci yang tidak
 sepadan dengan kolom (selisih > 5,5e-9, mis. |x| ≳ 1e6) ditolak diam-diam dan angka
 dibaca dari kolom seperti dulu. Baris lama tanpa kunci tidak bergeser — mencetak
-ulang dengan angka master = hitung ulang sesinya.
+ulang dengan angka master = hitung ulang sesinya. Yang BELUM tertutup: layar approval
+dan aplikasi mobile masih menampilkan kolom 8 desimal (0,755) sementara sertifikat
+mencetak 0,75 (butuh keputusan kontrak angka siap-cetak), dan pembaca Rev7,
+Thermohygro, Proving Ring, dan Sieve masih membaca kolom.
 
 ### Lapisan lain
 

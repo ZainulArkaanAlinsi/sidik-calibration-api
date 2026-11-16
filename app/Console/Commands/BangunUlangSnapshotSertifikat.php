@@ -117,6 +117,16 @@ class BangunUlangSnapshotSertifikat extends Command
      * 1e-14 = 45–90 ULP: menutup derau pergeseran dan pencetakan 15 angka
      * penting, dan di bawah apa pun yang tercetak (sel master paling banyak 15
      * angka penting). Perubahan yang betul-betul beda tetap terdeteksi.
+     *
+     * Kenapa tidak lebih ketat (mis. 2e-15): JSON MySQL mengembalikan 15 angka
+     * penting, galat relatifnya sampai 5e-15, jadi toleransi di bawah itu
+     * membuat sapuan menulis ulang tiap kali lagi. Batas yang DIKETAHUI: selisih
+     * sekecil efek PK-1 sendiri (0.755 vs 0.7549999999999955, 6e-15 relatif)
+     * tidak terlihat oleh pembanding ini, padahal cetaknya 0,76 vs 0,75. Dalam
+     * praktik satu snapshot utuh memuat sel lain yang derau/perubahannya lebih
+     * besar (peninjau PK-1, 16 Nov: 0 dari 71 sertifikat TIDS tertelan), tapi
+     * sertifikat lama yang hanya perlu bergeser SATU titik seri bisa terlewat:
+     * cetak ulangnya lewat hitung ulang sesi, bukan sapuan ini.
      */
     private const TOLERANSI_DERAU_FLOAT = 1e-14;
 

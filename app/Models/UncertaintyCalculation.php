@@ -57,7 +57,11 @@ class UncertaintyCalculation extends Model
      * Isi jejak dibaca MENTAH ([PresisiPenuh::jejakMentah]), bukan lewat
      * atribut: atribut menyembunyikan kunci beku (cast [JejakTypeB]) dan, untuk
      * penulis yang mengisi string JSON mentah, mengembalikan string. Hook ini
-     * tidak boleh melempar apa pun bentuk jejaknya.
+     * tidak melempar karena BENTUK jejaknya. Satu pengecualian yang disengaja:
+     * server dengan `serialize_precision` salah membuat pengkodean float
+     * ([\App\Support\AngkaFloatEksak::kodekan]) melempar `RuntimeException`
+     * — gagal tertutup, lebih baik berhenti daripada menyimpan float yang
+     * diam-diam terpotong.
      *
      * @param  array<string, mixed>  $options
      */

@@ -104,10 +104,12 @@ final class PresisiPenuh
      * dibulatkan) tidak boleh menggantinya. Tanpa apa pun yang perlu dibekukan,
      * jejaknya dipulangkan apa adanya (null tetap null).
      *
-     * Dipanggil dari `UncertaintyCalculation::save()`, jadi TIDAK PERNAH
-     * melempar: jejak yang bukan daftar/peta (string JSON mentah dari penulis
-     * yang mengisi atribut mentah, angka, dsb.) tidak bisa disisipi kunci dan
-     * dipulangkan apa adanya — baris itu dibaca dari kolom, seperti dulu.
+     * Dipanggil dari `UncertaintyCalculation::save()`, jadi tidak melempar
+     * karena BENTUK jejak: jejak yang bukan daftar/peta (string JSON mentah dari
+     * penulis yang mengisi atribut mentah, angka, dsb.) tidak bisa disisipi
+     * kunci dan dipulangkan apa adanya — baris itu dibaca dari kolom, seperti
+     * dulu. Pengecualian yang disengaja: `AngkaFloatEksak::kodekan` melempar
+     * `RuntimeException` bila `serialize_precision` server salah (gagal tertutup).
      *
      * @param  array<string, mixed>  $nilai
      */
