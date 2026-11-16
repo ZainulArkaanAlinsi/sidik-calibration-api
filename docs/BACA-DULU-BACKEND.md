@@ -56,6 +56,29 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 16 Nov 2026 — `GET /api/health` -> `push`: push FCM siap atau belum
+
+Halaman ini belum punya bagian khusus `/api/health`; ini yang pertama untuk blok
+`push`. Isinya TIGA boolean, tanpa auth, tanpa request keluar:
+
+| Kunci | Arti |
+|---|---|
+| `push.proyek_terisi` | `FCM_PROJECT_ID` tidak kosong |
+| `push.kredensial_terbaca` | `FCM_CREDENTIALS` menunjuk berkas yang terbaca, JSON valid, `type` = `service_account`, punya `client_email` dan `private_key`, dan `project_id` di berkas (kalau ada) sama dengan `FCM_PROJECT_ID` |
+| `push.siap` | keduanya `true` |
+
+`siap=false` berarti `AppServiceProvider` memakai `PengirimPushMati`: notifikasi
+tetap masuk lonceng dan disiarkan Reverb, tapi HP yang aplikasinya ketutup tidak
+dapat apa-apa — dan tidak ada error yang menandainya. Jalur berkas, email akun,
+`project_id`, dan materi kunci tidak pernah ikut di respons atau log.
+
+`siap=true` hanya berarti **bentuknya benar dan cocok dengan `FCM_PROJECT_ID`**.
+Itu BUKAN bukti Google menerima kredensialnya (itu butuh request keluar; kegagalan
+sungguhannya muncul di log `Kredensial FCM nggak kebaca` / `Push ditolak FCM`).
+Dijaga `HealthLaporinPushTest`.
+
+---
+
 ## 9 Okt 2026 — Studio Data Acuan P1: fondasi server (CR-48), branch `feat/studio-data-acuan`
 
 **Belum di `main`.** Status per 9 Okt: B1–B4 selesai dan dua suite penuh hijau di worktree

@@ -127,44 +127,51 @@ class HealthLaporinPelangganTest extends TestCase
     }
 
     /**
-     * Pasangan lapis kedua: peringatan keras di boot.
+     * Pasangan lapis kedua: satu baris informasi di log boot.
      *
-     * Health menjawab "sekarang keadaannya apa"; entrypoint menjawab "kenapa
-     * nilainya begitu" di detik dia dipakai. Dua-duanya perlu, karena log
-     * deploy jarang dibaca kalau deploy-nya sukses, sementara health butuh ada
-     * yang ingat mengetuknya.
+     * Health menjawab "sekarang keadaannya apa"; entrypoint menjawab "apa yang
+     * diharapkan blueprint" di detik server nyala. Sejak M7 `render.yaml`
+     * mematok `true`, jadi nyala itu normal dan baris ini informasi — peringatan
+     * lamanya ("render.yaml mematoknya false ... bakal ketimpa") sudah basi dan
+     * bilang hal yang kebalik.
      *
-     * Polanya sama persis dengan `SEED_ON_BOOT` & `BANGUN_ULANG_ON_BOOT` yang
-     * sudah lebih dulu berteriak di berkas yang sama.
+     * Yang dijaga: baris itu menyebut nilai blueprint yang SEKARANG. Kalau
+     * `render.yaml` berubah, teks ini wajib ikut — bukan basi diam-diam lagi.
      */
-    public function test_entrypoint_berteriak_kalau_fitur_nyala(): void
+    public function test_entrypoint_mencatat_fitur_nyala_sesuai_blueprint(): void
     {
         $entrypoint = (string) file_get_contents(base_path('docker/entrypoint.sh'));
+        $blueprint = (string) file_get_contents(base_path('render.yaml'));
+
+        $gerbang = '[ "${FITUR_PELANGGAN}" = "true" ]';
 
         $this->assertStringContainsString(
-            '[ "${FITUR_PELANGGAN}" = "true" ]',
+            $gerbang,
             $entrypoint,
-            'Gerbang peringatan FITUR_PELANGGAN hilang dari entrypoint.',
+            'Gerbang FITUR_PELANGGAN hilang dari entrypoint.',
         );
 
-        $this->assertStringContainsString(
-            '/api/pelanggan/v1 kebuka',
-            $entrypoint,
-            'Peringatannya wajib menyebut APA yang terbuka, bukan cuma nama variabelnya.',
+        $this->assertSame(
+            1,
+            preg_match('/key:\s*FITUR_PELANGGAN\s*\n\s*value:\s*"([^"]*)"/', $blueprint, $cocok),
+            'FITUR_PELANGGAN nggak ketemu (atau nggak ber-`value:`) di render.yaml — polanya yang rusak.',
         );
 
-        $this->assertStringContainsString(
-            'ketimpa balik diam-diam di deploy berikutnya',
-            $entrypoint,
-            'Peringatannya wajib menyebut bahwa nilainya nggak bertahan.',
-        );
-
-        // SENGAJA peringatan, bukan `exit 1`. Kalau suatu saat ini berubah jadi
-        // gerbang keras, yang hilang bukan cuma satu saklar — seluruh server
-        // yang dipakai teknisi di lokasi ikut mati.
-        $blok = substr($entrypoint, (int) strpos($entrypoint, '[ "${FITUR_PELANGGAN}" = "true" ]'));
+        $blok = substr($entrypoint, (int) strpos($entrypoint, $gerbang));
         $blok = substr($blok, 0, (int) strpos($blok, "\nfi"));
 
+        $this->assertStringContainsString(
+            "/api/pelanggan/v1 aktif (render.yaml: {$cocok[1]})",
+            $blok,
+            'Baris informasi entrypoint nggak sama dengan nilai FITUR_PELANGGAN di render.yaml.',
+        );
+
+        $this->assertStringNotContainsString('mematoknya', $blok, 'Teks lama (blueprint "false") muncul lagi.');
+        $this->assertStringNotContainsString('ketimpa balik', $blok, 'Teks peringatan lama muncul lagi.');
+
+        // SENGAJA informasi, bukan `exit 1`. Kalau suatu saat ini berubah jadi
+        // gerbang keras, yang hilang bukan cuma satu saklar — seluruh server
+        // yang dipakai teknisi di lokasi ikut mati.
         $this->assertStringNotContainsString('exit 1', $blok, 'Blok ini nggak boleh matiin boot.');
     }
 }
