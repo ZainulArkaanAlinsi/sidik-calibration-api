@@ -271,6 +271,71 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         ];
     })(),
 
+    // Kesiapan push FCM — pertanyaan "HP yang aplikasinya ketutup bakal dapat
+    // notifikasi atau nggak" yang selama ini cuma terjawab dari dashboard Render
+    // atau dari keluhan teknisi. Kegagalannya senyap: `AppServiceProvider` diam-
+    // diam jatuh ke `PengirimPushMati` kalau salah satu setelan kurang, dan
+    // notifikasi tetap masuk lonceng, jadi nggak ada yang kelihatan rusak.
+    //
+    // HANYA tiga boolean. Jalur berkas, `client_email`, `project_id`, dan materi
+    // kunci TIDAK pernah ikut — di respons maupun di log — karena endpoint ini
+    // publik tanpa auth dan berkas itu kunci server. Nol request ke Google;
+    // yang dikerjakan satu `is_file` + satu pembacaan kecil dari disk lokal.
+    //
+    // Gagal baca (tak ada, izin, JSON rusak, bentuk salah) = false, tanpa
+    // melempar: health yang dipakai buat mendiagnosis nggak boleh ikut 500
+    // gara-gara setelan yang sedang didiagnosis.
+    //
+    // `is_file` dulu (bukan langsung `file_get_contents`) karena itu gerbang yang
+    // SAMA dengan `AppServiceProvider` buat memilih pengirim asli, dan karena dia
+    // menolak `http://`/`ftp://` — nilai `FCM_CREDENTIALS` nggak boleh bikin
+    // endpoint publik ini membuka koneksi keluar.
+    'push' => (function (): array {
+        $projectId = config('services.fcm.project_id');
+        $proyekTerisi = is_string($projectId) && trim($projectId) !== '';
+
+        $kredensialTerbaca = (function () use ($projectId): bool {
+            $jalur = config('services.fcm.credentials');
+
+            if (! is_string($jalur) || trim($jalur) === '') {
+                return false;
+            }
+
+            try {
+                if (! is_file($jalur)) {
+                    return false;
+                }
+
+                // Service account Google ~2,4 KB; 64 KB cukup longgar dan menjaga
+                // endpoint publik ini nggak membaca berkas besar yang salah tunjuk.
+                $isi = @file_get_contents($jalur, false, null, 0, 65536);
+                $berkas = is_string($isi) ? json_decode($isi, true) : null;
+            } catch (Throwable) {
+                return false;
+            }
+
+            if (! is_array($berkas) || ($berkas['type'] ?? null) !== 'service_account') {
+                return false;
+            }
+
+            foreach (['client_email', 'private_key'] as $kunci) {
+                if (! is_string($berkas[$kunci] ?? null) || trim($berkas[$kunci]) === '') {
+                    return false;
+                }
+            }
+
+            // Berkas milik proyek Firebase lain mengirim ke URL proyek ini dan
+            // ditolak 403 — "kredensial terbaca" tapi push tetap nggak jalan.
+            return ! isset($berkas['project_id']) || $berkas['project_id'] === $projectId;
+        })();
+
+        return [
+            'siap' => $proyekTerisi && $kredensialTerbaca,
+            'proyek_terisi' => $proyekTerisi,
+            'kredensial_terbaca' => $kredensialTerbaca,
+        ];
+    })(),
+
     // Status sumber acuan dari config yang sudah dimuat (termasuk config:cache).
     // Hanya nama sumber; tidak membocorkan isi paket atau mengubah rollout.
     'data_acuan' => [
