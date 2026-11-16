@@ -100,6 +100,36 @@ class BangunUlangSnapshotSertifikat extends Command
      */
     private const KUNCI_DITAMPILKAN = 6;
 
+    /**
+     * Selisih RELATIF dua bilangan desimal yang masih dianggap SAMA saat
+     * snapshot lama (dibaca dari kolom JSON) diadu ke yang baru dibangun.
+     *
+     * Kolom JSON MySQL tidak menjamin double kembali persis: angka 16-17 digit
+     * bisa pulang bergeser satu ULP (bukti: `PembulatanTitikSeriMasterTest`,
+     * komponen budget 0.37202150475476453 → 0.3720215047547646). Sebelum
+     * snapshot membawa float berpresisi penuh ([\App\Support\PresisiPenuh])
+     * hampir semua angkanya berasal dari kolom `decimal(20,8)` — 8 desimal
+     * selamat di perjalanan itu — jadi `==` cukup. Sekarang `==` melihat
+     * pergeseran 1e-16 sebagai "berubah", dan lebih buruk: menulis ulang
+     * tidak pernah konvergen, karena tiap tulis pulang bergeser lagi, jadi
+     * sapuan menulis ulang sertifikat terbit (dan PDF-nya) setiap dijalankan.
+     *
+     * 1e-14 = 45–90 ULP: menutup derau pergeseran dan pencetakan 15 angka
+     * penting, dan di bawah apa pun yang tercetak (sel master paling banyak 15
+     * angka penting). Perubahan yang betul-betul beda tetap terdeteksi.
+     *
+     * Kenapa tidak lebih ketat (mis. 2e-15): JSON MySQL mengembalikan 15 angka
+     * penting, galat relatifnya sampai 5e-15, jadi toleransi di bawah itu
+     * membuat sapuan menulis ulang tiap kali lagi. Batas yang DIKETAHUI: selisih
+     * sekecil efek PK-1 sendiri (0.755 vs 0.7549999999999955, 6e-15 relatif)
+     * tidak terlihat oleh pembanding ini, padahal cetaknya 0,76 vs 0,75. Dalam
+     * praktik satu snapshot utuh memuat sel lain yang derau/perubahannya lebih
+     * besar (peninjau PK-1, 16 Nov: 0 dari 71 sertifikat TIDS tertelan), tapi
+     * sertifikat lama yang hanya perlu bergeser SATU titik seri bisa terlewat:
+     * cetak ulangnya lewat hitung ulang sesi, bukan sapuan ini.
+     */
+    private const TOLERANSI_DERAU_FLOAT = 1e-14;
+
     public function handle(
         CertificateSnapshotBuilder $snapshotBuilder,
         CalibrationValidator $validator,
@@ -201,7 +231,7 @@ class BangunUlangSnapshotSertifikat extends Command
             }
 
             $envBaru = $baru['header']['env_condition'] ?? '—';
-            $sama = $baru == $sertifikat->snapshot;
+            $sama = self::nilaiSama($baru, $sertifikat->snapshot);
 
             $this->line(sprintf(
                 '%-18s %-14s %s',
@@ -406,7 +436,7 @@ class BangunUlangSnapshotSertifikat extends Command
                 .($lainnya === [] ? '' : '  (+ '.self::daftarKunci($lainnya).')');
         }
 
-        // Mustahil kosong selama perbandingannya sama-sama `==`, tapi kalau
+        // Mustahil kosong selama perbandingannya sama-sama [nilaiSama], tapi kalau
         // suatu saat beda, yang keluar tetap kalimat yang jujur — bukan panah
         // yang dua sisinya sama, persis yang perbaikan ini hapus.
         return $kunci === []
@@ -436,7 +466,7 @@ class BangunUlangSnapshotSertifikat extends Command
      * Kekhawatiran soal panjang tetap ditangani, tapi di tempat yang benar:
      * [daftarKunci] memotong di [KUNCI_DITAMPILKAN] nama pertama.
      *
-     * Pembandingnya `==`, sama persis dengan yang dipakai memutuskan
+     * Pembandingnya [nilaiSama], sama persis dengan yang dipakai memutuskan
      * berubah-atau-nggak di `handle()`. Kalau dua-duanya tidak sama, ringkasan
      * ini bisa bilang "berubah" tanpa bisa menyebut apa.
      *
@@ -453,7 +483,7 @@ class BangunUlangSnapshotSertifikat extends Command
             $a = $lama[$kunci] ?? null;
             $b = $baru[$kunci] ?? null;
 
-            if ($a == $b) {
+            if (self::nilaiSama($a, $b)) {
                 continue;
             }
 
@@ -467,6 +497,40 @@ class BangunUlangSnapshotSertifikat extends Command
         }
 
         return $keluar;
+    }
+
+    /**
+     * `==` PHP, kecuali dua bilangan desimal yang selisih relatifnya di bawah
+     * [TOLERANSI_DERAU_FLOAT] dianggap sama (lihat konstanta itu).
+     *
+     * Semantik lain tidak berubah: array sama bila pasangan kunci-nilainya sama
+     * (urutan tidak dihitung), selain itu `==` biasa.
+     */
+    private static function nilaiSama(mixed $a, mixed $b): bool
+    {
+        if (is_array($a) && is_array($b)) {
+            if (count($a) !== count($b)) {
+                return false;
+            }
+
+            foreach ($a as $kunci => $nilai) {
+                if (! array_key_exists($kunci, $b) || ! self::nilaiSama($nilai, $b[$kunci])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ((is_float($a) || is_float($b)) && (is_int($a) || is_float($a)) && (is_int($b) || is_float($b))) {
+            if (! is_finite((float) $a) || ! is_finite((float) $b)) {
+                return $a == $b;
+            }
+
+            return abs($a - $b) <= self::TOLERANSI_DERAU_FLOAT * max(abs($a), abs($b));
+        }
+
+        return $a == $b;
     }
 
     /**

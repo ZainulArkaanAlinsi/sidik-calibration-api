@@ -491,6 +491,79 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         );
     }
 
+    /**
+     * Geser tiap float di `$nilai` sebanyak `$ulp` satuan terkecil double
+     * (bit ke-bit; nol dan bilangan bulat dibiarkan). Meniru pergeseran 1 ULP
+     * yang diderita double 16-17 digit di kolom JSON MySQL.
+     */
+    private static function geserUlp(mixed $nilai, int $ulp): mixed
+    {
+        if (is_array($nilai)) {
+            return array_map(static fn (mixed $v): mixed => self::geserUlp($v, $ulp), $nilai);
+        }
+
+        if (! is_float($nilai) || $nilai === 0.0 || ! is_finite($nilai)) {
+            return $nilai;
+        }
+
+        $bit = unpack('q', pack('d', $nilai))[1];
+
+        return unpack('d', pack('q', $bit + ($nilai > 0 ? $ulp : -$ulp)))[1];
+    }
+
+    /**
+     * Pergeseran 1 ULP pada float snapshot (derau kolom JSON MySQL) bukan
+     * perubahan: perintah melapor "nggak berubah" dan tidak menulis apa pun.
+     *
+     * Kejadian CI 16 Nov 2026 (MySQL): snapshot yang sama dilaporkan
+     * `berubah: hasil.2.standard_value` — float berpresisi penuh yang dibawa
+     * `PresisiPenuh` pulang bergeser dari kolom JSON, dan `==` melihatnya
+     * sebagai perubahan. Lebih buruk, menulis ulang tidak pernah konvergen:
+     * tiap tulis pulang bergeser lagi, jadi sertifikat terbit (dan PDF-nya)
+     * ditulis ulang tiap sapuan. Dijaga di SQLite dengan menggeser sendiri
+     * floatnya, karena derau itu cuma lahir di MySQL.
+     */
+    public function test_pergeseran_satu_ulp_pada_float_snapshot_bukan_perubahan(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $lama = $sertifikat->snapshot;
+        $berderau = self::geserUlp($lama, 1);
+        $this->assertFalse($lama == $berderau, 'Prasyarat: derau itu betul-betul mengubah float yang dibandingkan `==`.');
+
+        $sertifikat->update(['snapshot' => $berderau]);
+        // Bentuk yang benar-benar tersimpan (MySQL menormalkan float JSON ke 15
+        // angka penting, SQLite tidak): pembanding "tidak disentuh" memakai ini.
+        $tersimpan = $sertifikat->fresh()->snapshot;
+        $auditSebelum = AuditLog::query()->count();
+
+        $keluaran = $this->keluaranBangunUlang();
+
+        $this->assertStringContainsString('nggak berubah', $keluaran);
+        $this->assertStringNotContainsString('berubah:', $keluaran);
+        $this->assertStringContainsString('0 sertifikat dibangun ulang', $keluaran);
+        $this->assertSame($auditSebelum, AuditLog::query()->count(), 'Tidak ada yang ditulis, jadi tidak ada audit.');
+        $this->assertTrue($tersimpan == $sertifikat->fresh()->snapshot, 'Snapshot tersimpan tidak disentuh.');
+    }
+
+    /**
+     * Toleransi derau tidak boleh menelan perubahan sungguhan: selisih relatif
+     * 1e-9 (jutaan kali derau ULP) pada satu sel tabel hasil tetap terdeteksi
+     * dan disebut sampai selnya.
+     */
+    public function test_perubahan_float_sungguhan_tetap_terdeteksi_di_luar_derau(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $basi = $sertifikat->snapshot;
+        $u95 = $basi['hasil'][0]['u95'];
+        $this->assertGreaterThan(0.0, $u95, 'Prasyarat: u95 baris pertama bukan nol.');
+        $basi['hasil'][0]['u95'] = $u95 * (1 + 1e-9);
+        $sertifikat->update(['snapshot' => $basi]);
+
+        $this->assertStringContainsString('berubah: hasil.0.u95', $this->keluaranBangunUlang());
+    }
+
     /** Tanpa flag-nya, berkas yang snapshot-nya sama TIDAK disentuh. */
     public function test_tanpa_flag_pdf_nggak_disentuh_kalau_snapshot_sama(): void
     {

@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
+use App\Support\PresisiPenuh;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,7 +54,14 @@ class ProvingRingDayaBacaDialTest extends TestCase
         );
         $standar = array_column($snapshot['hasil'], 'standard_value');
 
-        // `162!E23:E25` 30.00 / 90.00 / 120.00 (nilai 29,99919 dst.).
+        // `162!E22:E31` — nilai sel master (`Gaya_Proving_Ring/SERTIFIKAT.csv`,
+        // hasil hitung Excel, presisi penuh); E23:E25 tercetak 30.00 / 90.00 / 120.00.
+        $master = [
+            0.0, 29.999190000000002, 89.99757, 119.99676000000001, 149.99595,
+            209.99433, 239.99352000000002, 349.99055, 449.98785000000004, 499.9864999999999,
+        ];
+        $this->assertCount(count($master), $titik, 'Sesi contoh punya satu titik per baris master.');
+
         $this->assertEqualsWithDelta(0.0, $standar[0], 1e-9, 'Titik nol.');
         $this->assertEqualsWithDelta(29.99919, $standar[1], 5e-5);
         $this->assertSame(['30.00', '90.00', '120.00'], array_map(
@@ -62,8 +70,16 @@ class ProvingRingDayaBacaDialTest extends TestCase
         ));
 
         foreach ($titik as $i => $t) {
-            $this->assertEqualsWithDelta((float) $t->titik_ukur / 0.00981, $standar[$i], 1e-9,
+            // Z (kN) dibaca dari float aslinya (`PresisiPenuh`), bukan dari kolom
+            // `titik_ukur` `decimal(20,8)`. Di MySQL kolom itu sudah dibulatkan
+            // (0,29429205 dari 0,2942920539…) sehingga Z / 0,00981 meleset
+            // 4e-7 dari master; float aslinya jatuh tepat di nilai sel master.
+            // Dulu harapan tes ini dihitung dari kolom dan delta 1e-9 hanya
+            // lolos di SQLite (kolomnya tidak dibulatkan 8 desimal).
+            $this->assertEqualsWithDelta(PresisiPenuh::baca($t, 'titik_ukur') / 0.00981, $standar[$i], 1e-12,
                 "titik {$t->titik_ke}: Standard Value = Z (kN) / DATABASE!S23.");
+            $this->assertEqualsWithDelta($master[$i], $standar[$i], 1e-12,
+                "titik {$t->titik_ke}: Standard Value = nilai sel master SERTIFIKAT!E".(22 + $i).'.');
             $this->assertLessThan(600.0, $standar[$i], 'Tidak ada lagi angka divisi yang dibagi 0,00981.');
         }
     }

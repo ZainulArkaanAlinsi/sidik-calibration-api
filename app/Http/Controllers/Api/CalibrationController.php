@@ -61,6 +61,7 @@ use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PistonVolumeMentah;
+use App\Support\PresisiPenuh;
 use App\Support\RiwayatPersetujuanSesi;
 use App\Support\SieveMentah;
 use App\Support\StandarDicentang;
@@ -5294,6 +5295,17 @@ class CalibrationController extends Controller
      */
     private function bulatkanHitungan(array $hitungan): array
     {
+        // Float asli kolom yang DICETAK dibekukan di jejak SEBELUM dibulatkan:
+        // sesudah `round(…, 8)` sisa biner yang menentukan arah titik seri
+        // (`0,7549999999999955` → master `0,75`, bukan `0,76`) sudah tidak ada.
+        // Kolom tetap dibulatkan seperti biasa, jadi pratinjau = tersimpan.
+        // Lihat [PresisiPenuh].
+        $jejak = PresisiPenuh::sisipkan($hitungan['type_b_components'] ?? null, $hitungan);
+
+        if ($jejak !== null) {
+            $hitungan['type_b_components'] = $jejak;
+        }
+
         // decimal(20, 8) — semua besaran hasil hitung.
         $delapanDesimal = [
             'titik_ukur', 'rata_rata', 'error', 'koreksi', 'standar_deviasi',
