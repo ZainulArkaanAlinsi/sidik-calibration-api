@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PresisiPenuh;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,33 @@ class UncertaintyCalculation extends Model
             'ketidakpastian_diperluas' => 'float',
             'toleransi' => 'float',
         ];
+    }
+
+    /**
+     * Baris BARU membekukan float aslinya sebelum masuk kolom `decimal(20,8)`
+     * ([PresisiPenuh]) — titik seri sertifikat dicetak seperti master hanya
+     * kalau sisa biner double-nya selamat sampai render.
+     *
+     * Dipasang di `save()`, bukan di event `creating`: seeder dijalankan
+     * `WithoutModelEvents`, dan penulis baru yang lupa memanggil pembekuan tidak
+     * menghasilkan error apa pun — cuma angka cetak yang diam-diam lain dari
+     * master. Jalur simpan sesi (`CalibrationController`) membekukan SEBELUM
+     * pembulatan 8 desimal; kunci yang sudah ada tidak ditimpa di sini.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function save(array $options = []): bool
+    {
+        if (! $this->exists) {
+            $jejak = $this->type_b_components;
+            $dibekukan = PresisiPenuh::sisipkan($jejak, $this->getAttributes());
+
+            if ($dibekukan !== $jejak) {
+                $this->type_b_components = $dibekukan;
+            }
+        }
+
+        return parent::save($options);
     }
 
     /** @return BelongsTo<CalibrationSession, $this> */

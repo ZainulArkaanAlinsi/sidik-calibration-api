@@ -17,6 +17,7 @@ use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\TekananProfile;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Support\Angka;
+use App\Support\PresisiPenuh;
 use App\Support\TataLetakSertifikat;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -492,9 +493,15 @@ class CertificateSnapshotBuilder
                 // — penunjukan alat pelanggan, bukan nilai acuan — sehingga
                 // nilai acuannya harus disusun balik dari koreksinya. Lihat
                 // [CalibrationProfile::nilaiStandarDariKoreksi].
+                //
+                // Kolom yang tercetak dibaca lewat [PresisiPenuh::baca]: float
+                // asli (sebelum dibulatkan ke `decimal(20,8)`) kalau barisnya
+                // membekukannya, kalau tidak nilai kolom seperti dulu. Itu yang
+                // menjaga titik seri `x,xx5` jatuh seperti master, bukan seperti
+                // nilai yang sudah dibulatkan.
                 $nilaiStandar = $profil?->nilaiStandarDariKoreksi()
-                    ? (float) $titik->rata_rata + (float) $titik->koreksi
-                    : (float) $titik->titik_ukur;
+                    ? PresisiPenuh::baca($titik, 'rata_rata') + PresisiPenuh::baca($titik, 'koreksi')
+                    : PresisiPenuh::baca($titik, 'titik_ukur');
 
                 // Identitas buat alat yang nggak minta konversi — jalur lama
                 // persis, nol pembungkus.
@@ -545,8 +552,8 @@ class CertificateSnapshotBuilder
                     // dibagi faktor kgf, angkanya melar seratus kali lipat dan
                     // berlabel satuan yang bukan miliknya.
                     'unit_under_test' => ($profil?->uutIkutSatuanAlat() ?? true)
-                        ? $konversi((float) $titik->rata_rata)
-                        : (float) $titik->rata_rata,
+                        ? $konversi(PresisiPenuh::baca($titik, 'rata_rata'))
+                        : PresisiPenuh::baca($titik, 'rata_rata'),
                     // Kolom sebaran (RRPE / Repeatability). Angkanya PERSEN,
                     // jadi TIDAK ikut konversi satuan — persen tetap persen.
                     // Dibaca dari jejak audit karena `uncertainty_calculations`
@@ -569,13 +576,13 @@ class CertificateSnapshotBuilder
                     // urutannya nggak ngubah hasil — ditulis begini biar yang
                     // dibaca "koreksi dalam satuan alat, lalu tandanya", bukan
                     // "angka bertanda yang dikonversi".
-                    'correction' => ($profil?->tandaKoreksiSertifikat() ?? 1) * $konversi((float) $titik->koreksi),
+                    'correction' => ($profil?->tandaKoreksiSertifikat() ?? 1) * $konversi(PresisiPenuh::baca($titik, 'koreksi')),
                     // U95 ikut dikonversi. Ketinggalan, dia jadi satu-satunya
                     // kolom yang masih bersatuan budget di tabel yang seluruh
                     // kolom lainnya udah pindah — dan di lembar m3/h angkanya
                     // 16,7x terlalu besar, yang kebaca sebagai alat jelek,
                     // bukan sebagai bug.
-                    'u95' => $konversi((float) $titik->ketidakpastian_diperluas),
+                    'u95' => $konversi(PresisiPenuh::baca($titik, 'ketidakpastian_diperluas')),
                     // Faktor cakupan yang dipakai buat U95 titik ini.
                     //
                     // Dibekukan karena sertifikat master nyetaknya di bawah
@@ -809,7 +816,7 @@ class CertificateSnapshotBuilder
                 // Rata-rata pembacaan Indikator enclosure — `rata_rata` baris
                 // ini (`EnclosureProfileBase::barisHitungan`). Kolom `Koreksi`
                 // tiap sensor diukur relatif ke angka ini.
-                'indikator' => (float) $t->rata_rata,
+                'indikator' => PresisiPenuh::baca($t, 'rata_rata'),
                 'sensor_acuan' => $acuan,
                 'posisi_acuan' => $acuan !== null && isset($posisiDari[$acuan]) ? $posisiDari[$acuan] + 1 : null,
                 'sensor' => $sensor,
@@ -817,7 +824,7 @@ class CertificateSnapshotBuilder
                 'kestabilan' => (float) $jejak['kestabilan'],
                 'variasi_keseluruhan' => (float) $jejak['variasi_keseluruhan'],
                 // U95 YANG DILAPORKAN (sudah MAX dengan lantai CMC).
-                'u95' => $t->ketidakpastian_diperluas === null ? null : (float) $t->ketidakpastian_diperluas,
+                'u95' => $t->ketidakpastian_diperluas === null ? null : PresisiPenuh::baca($t, 'ketidakpastian_diperluas'),
                 'faktor_cakupan_k' => $t->faktor_cakupan_k === null ? null : (float) $t->faktor_cakupan_k,
             ];
         }

@@ -14,6 +14,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\VolumetricGlasswareProfile;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Support\Angka;
+use App\Support\PresisiPenuh;
 use App\Support\VolumetricGlasswareMentah;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -614,7 +615,7 @@ class CalibrationResource extends JsonResource
                 'keterangan' => $k['keterangan'] ?? null,
                 'distribusi' => $k['distribusi'] ?? null,
                 'nilai' => $k['nilai'] ?? null,
-            ], $titik->type_b_components ?? []),
+            ], PresisiPenuh::tanpaKunci($titik->type_b_components ?? [])),
             'ketidakpastian_gabungan' => $titik->ketidakpastian_gabungan,
             'faktor_cakupan_k' => $titik->faktor_cakupan_k,
             // Derajat kebebasan efektif (Welch–Satterthwaite) — angka yang
