@@ -584,7 +584,8 @@ class PembulatanTitikSeriMasterTest extends TestCase
             ]))->fresh();
 
             $this->assertSame(['koreksi' => '0.7549999999999955'], PresisiPenuh::petaBekuBaris($baris), 'Jejak '.json_encode($jejak));
-            $this->assertSame($jejak ?? [], (array) $baris->type_b_components, 'Isi jejak yang terbaca tidak berubah.');
+            // assertEquals: JSON MySQL menyusun ulang urutan kunci objek; isinya yang dijaga.
+            $this->assertEquals($jejak ?? [], (array) $baris->type_b_components, 'Isi jejak yang terbaca tidak berubah.');
             $this->assertSame(0.7549999999999955, PresisiPenuh::baca($baris, 'koreksi'));
         }
     }
@@ -638,8 +639,11 @@ class PembulatanTitikSeriMasterTest extends TestCase
         $this->assertTrue($profil->nilaiStandarDariKoreksi(), 'Prasyarat: profil ini menyusun Standard Value dari koreksi.');
 
         $sesi = $this->sesiKosong($profil);
-        $rata = 100.12345678901235;      // 17 angka penting: sisa di luar 8 desimal
-        $koreksi = -0.12345678901234568;
+        // Sisa di luar 8 desimal yang TIDAK saling meniadakan: jumlah dari kolom
+        // (100.24691357) harus beda dari jumlah float asli di SQLite maupun MySQL.
+        // Pasangan yang jumlahnya bulat (100.0) lolos pembulatan kolom tanpa jejak.
+        $rata = 100.123456789012;
+        $koreksi = 0.123456781234;
         $this->assertNotSame($rata, round($rata, 8));
         $this->assertNotSame($koreksi, round($koreksi, 8));
 

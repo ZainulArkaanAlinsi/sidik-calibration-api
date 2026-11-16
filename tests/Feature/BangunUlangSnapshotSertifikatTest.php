@@ -532,6 +532,9 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $this->assertFalse($lama == $berderau, 'Prasyarat: derau itu betul-betul mengubah float yang dibandingkan `==`.');
 
         $sertifikat->update(['snapshot' => $berderau]);
+        // Bentuk yang benar-benar tersimpan (MySQL menormalkan float JSON ke 15
+        // angka penting, SQLite tidak): pembanding "tidak disentuh" memakai ini.
+        $tersimpan = $sertifikat->fresh()->snapshot;
         $auditSebelum = AuditLog::query()->count();
 
         $keluaran = $this->keluaranBangunUlang();
@@ -540,7 +543,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $this->assertStringNotContainsString('berubah:', $keluaran);
         $this->assertStringContainsString('0 sertifikat dibangun ulang', $keluaran);
         $this->assertSame($auditSebelum, AuditLog::query()->count(), 'Tidak ada yang ditulis, jadi tidak ada audit.');
-        $this->assertTrue($berderau == $sertifikat->fresh()->snapshot, 'Snapshot tersimpan tidak disentuh.');
+        $this->assertTrue($tersimpan == $sertifikat->fresh()->snapshot, 'Snapshot tersimpan tidak disentuh.');
     }
 
     /**

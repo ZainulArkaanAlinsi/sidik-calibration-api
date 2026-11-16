@@ -201,7 +201,10 @@ class PaketAcuanVersiDiResponsTest extends TestCase
         unset($snapshot['paket_acuan_versi']);
         $sertifikat->update(['snapshot' => $snapshot]);
 
-        return $sertifikat;
+        // Dibaca ulang dari database: kolom JSON MySQL mengembalikan float 15 angka
+        // penting, jadi pembanding "tidak ditulis ulang" harus memakai bentuk yang
+        // benar-benar tersimpan, bukan array di memori.
+        return $sertifikat->fresh();
     }
 
     /** @return array<string, mixed> */
