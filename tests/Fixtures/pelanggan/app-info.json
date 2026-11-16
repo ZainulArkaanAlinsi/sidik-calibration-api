@@ -9,7 +9,10 @@
             "whatsapp": null,
             "whatsapp_url": null,
             "email": null,
-            "jam_layanan": null
+            "jam_layanan": null,
+            "email_pemasaran": null,
+            "instagram_url": null,
+            "linkedin_url": null
         },
         "dokumen": {
             "kebijakan_privasi": {
@@ -20,7 +23,8 @@
                 "url": null,
                 "versi": null
             },
-            "hapus_akun_url": null
+            "hapus_akun_url": null,
+            "ruang_lingkup_url": null
         },
         "petunjuk_pengemasan": null
     }

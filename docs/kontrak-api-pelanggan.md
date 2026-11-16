@@ -102,21 +102,36 @@ Dipakai layar Bantuan. **Publik** (tanpa token) dan **di luar gerbang `FITUR_PEL
 `/app/status`, supaya layar "belum tersedia"/pemeliharaan tetap bisa menampilkan tombol hubungi lab.
 Nol query database; isinya dari env `PELANGGAN_INFO_*` (lewat `config/pelanggan.php`).
 
-Field yang belum diisi **selalu `null`** (bukan `""`, bukan 404, bukan error) dan aplikasi
-menyembunyikan tombolnya. Server tidak pernah mengarang nomor atau tautan; `whatsapp_url` tidak
-diturunkan dari `whatsapp`. `versi` dokumen ikut `PELANGGAN_VERSI_KEBIJAKAN_PRIVASI` /
+**Bawaan kontak resmi (17 Nov 2026, perintah pemilik).** Nama, alamat, telepon, WhatsApp
+(`whatsapp`, `whatsapp_url`) dan `email` punya bawaan yang disalin PERSIS dari situs resmi
+https://pt-sidik.com/calibration/ (PT Sistem Dirgantara Inovasi Teknologi (SIDIK), Komplek Nuansa Mas Estate
+Blk. E No.2 Cipamokolan Rancasari Bandung 40292, telepon 082260060037, wa.me/6282260060037,
+sidikkalibrasi@pt-sidik.com), sehingga layar Bantuan terisi tanpa menunggu env; env di dashboard
+**menimpa**, dan env kosong (`""`/spasi) = `null` = tombol disembunyikan. Tambahan **aditif** (aplikasi
+lama mengabaikannya): `kontak.email_pemasaran`, `kontak.instagram_url`, `kontak.linkedin_url`,
+`dokumen.ruang_lingkup_url` (PDF ruang lingkup akreditasi KAN LK-285-IDN) — tanpa env, nilainya dari
+situs yang sama, berubah = ikut deploy.
+
+Selain itu field yang belum diisi **selalu `null`** (bukan `""`, bukan 404, bukan error) dan aplikasi
+menyembunyikan tombolnya: `jam_layanan`, dokumen hukum, `hapus_akun_url`, `petunjuk_pengemasan` TIDAK
+punya bawaan (tidak tertulis di situs). Server tidak pernah mengarang nomor atau tautan;
+`whatsapp_url` tidak diturunkan dari `whatsapp`. `versi` dokumen ikut `PELANGGAN_VERSI_KEBIJAKAN_PRIVASI` /
 `PELANGGAN_VERSI_SYARAT_KETENTUAN` dan hanya dikirim bila `url`-nya terisi (kalau tidak, `null`).
-Kondisi default (semua env kosong):
+Bentuk respons (nilai `null` di bawah = tidak diisi; produksi memakai bawaan resmi di atas):
 
 ```json
 {
   "data": {
     "organisasi": { "nama": null, "alamat": null, "telepon": null },
-    "kontak": { "whatsapp": null, "whatsapp_url": null, "email": null, "jam_layanan": null },
+    "kontak": {
+      "whatsapp": null, "whatsapp_url": null, "email": null, "jam_layanan": null,
+      "email_pemasaran": null, "instagram_url": null, "linkedin_url": null
+    },
     "dokumen": {
       "kebijakan_privasi": { "url": null, "versi": null },
       "syarat_ketentuan": { "url": null, "versi": null },
-      "hapus_akun_url": null
+      "hapus_akun_url": null,
+      "ruang_lingkup_url": null
     },
     "petunjuk_pengemasan": null
   }
