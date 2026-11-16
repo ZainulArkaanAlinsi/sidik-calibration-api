@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\JejakTypeB;
 use App\Support\PresisiPenuh;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,8 @@ class UncertaintyCalculation extends Model
     protected function casts(): array
     {
         return [
-            'type_b_components' => 'array',
+            // Seperti `array`, tetapi kunci beku `presisi_penuh` tidak terbaca.
+            'type_b_components' => JejakTypeB::class,
             'calculated_at' => 'datetime',
             'titik_ukur' => 'float',
             'rata_rata' => 'float',
@@ -52,12 +54,17 @@ class UncertaintyCalculation extends Model
      * master. Jalur simpan sesi (`CalibrationController`) membekukan SEBELUM
      * pembulatan 8 desimal; kunci yang sudah ada tidak ditimpa di sini.
      *
+     * Isi jejak dibaca MENTAH ([PresisiPenuh::jejakMentah]), bukan lewat
+     * atribut: atribut menyembunyikan kunci beku (cast [JejakTypeB]) dan, untuk
+     * penulis yang mengisi string JSON mentah, mengembalikan string. Hook ini
+     * tidak boleh melempar apa pun bentuk jejaknya.
+     *
      * @param  array<string, mixed>  $options
      */
     public function save(array $options = []): bool
     {
         if (! $this->exists) {
-            $jejak = $this->type_b_components;
+            $jejak = PresisiPenuh::jejakMentah($this);
             $dibekukan = PresisiPenuh::sisipkan($jejak, $this->getAttributes());
 
             if ($dibekukan !== $jejak) {

@@ -6,6 +6,7 @@ use App\Models\UncertaintyCalculation;
 use App\Support\Angka;
 use App\Support\AngkaFloatEksak;
 use App\Support\PresisiPenuh;
+use Illuminate\Database\Eloquent\JsonEncodingException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -251,5 +252,115 @@ class PresisiPenuhTest extends TestCase
             'Sapuan tanpa gigi: tanpa pembekuan harusnya sekitar separuh kasus seri tercetak lain dari master.',
         );
         $this->assertSame(0, $bedaDenganPembekuan, "Cetak beda dari master di titik seri:\n".implode("\n", array_slice($contoh, 0, 5)));
+    }
+
+    /**
+     * BATAS toleransi pra-bayangan, diukur di sekitar nol supaya selisihnya
+     * persis nilai beku itu sendiri (tanpa derau pengurangan): tepat 5,5e-9
+     * DITERIMA, sedikit di atasnya DITOLAK. Tanpa tes ini toleransi yang
+     * dilonggarkan sampai 9,5e-9 (atau 5e-8) lolos semua tes lain — dan
+     * kunci yang usang/rusak mulai dipercaya.
+     */
+    public function test_batas_toleransi_tepat_5_5e_9_diterima_dan_di_atasnya_ditolak(): void
+    {
+        foreach ([0.0, 1e-12, 5.4999999e-9, 5.5e-9, -5.5e-9] as $asli) {
+            $baris = $this->baris(['koreksi' => 0.0], [PresisiPenuh::KUNCI => ['koreksi' => AngkaFloatEksak::kodekan($asli)]]);
+            $this->assertSame($asli, PresisiPenuh::baca($baris, 'koreksi'), "Selisih {$asli} harusnya diterima.");
+        }
+
+        foreach ([5.5000001e-9, 5.6e-9, 6e-9, 9.5e-9, 5e-8, -5.5000001e-9, -9.5e-9] as $asli) {
+            $baris = $this->baris(['koreksi' => 0.0], [PresisiPenuh::KUNCI => ['koreksi' => AngkaFloatEksak::kodekan($asli)]]);
+            $this->assertSame(0.0, PresisiPenuh::baca($baris, 'koreksi'), "Selisih {$asli} harusnya ditolak (kolom menang).");
+        }
+    }
+
+    /**
+     * Batas yang DIKETAHUI: untuk |x| ≳ 1e6 kunci beku ditolak DIAM-DIAM.
+     *
+     * Penyimpan memberi kolom teks 14 angka penting (PDO), jadi di 1e6 ke atas
+     * kolom bergeser lebih dari 5,5e-9 dari float aslinya: bukan lagi
+     * pra-bayangan, kunci tidak dipercaya, angka dibaca dari kolom — persis
+     * perilaku sebelum PR ini (tidak lebih buruk). Titik seri x,xx5 di
+     * magnitudo itu tidak diselamatkan; besaran sebesar itu juga tidak
+     * ditemukan di alat yang ada (gaya UTM puluhan ribu kgf paling besar).
+     * Tes ini mengunci perilakunya supaya perubahan toleransi/pembekuan tidak
+     * menggesernya diam-diam.
+     */
+    public function test_nilai_sebesar_sejuta_menolak_kunci_diam_diam_dan_jatuh_ke_perilaku_lama(): void
+    {
+        foreach ([1234567.8912345678, 98765432.123456789, -1234567.8912345678] as $asli) {
+            $kolom = round((float) sprintf('%.14G', $asli), 8);   // teks PDO 14 angka penting → decimal(20,8)
+
+            $this->assertGreaterThan(5.5e-9, abs($asli - $kolom), 'Prasyarat: kolom bergeser di luar toleransi.');
+
+            $baris = $this->baris(['koreksi' => $kolom], [PresisiPenuh::KUNCI => ['koreksi' => AngkaFloatEksak::kodekan($asli)]]);
+            $this->assertSame($kolom, PresisiPenuh::baca($baris, 'koreksi'), "{$asli}: kunci harusnya ditolak, kolom menang.");
+        }
+
+        // Di bawah ~1e5 teks 14 angka penting masih menyisakan ≥ 9 desimal: kunci sah.
+        foreach ([12345.678912345678, 0.7549999999999955, 94.23499999999999] as $asli) {
+            $kolom = round((float) sprintf('%.14G', $asli), 8);
+            $baris = $this->baris(['koreksi' => $kolom], [PresisiPenuh::KUNCI => ['koreksi' => AngkaFloatEksak::kodekan($asli)]]);
+            $this->assertSame($asli, PresisiPenuh::baca($baris, 'koreksi'), "{$asli}: kunci harusnya diterima.");
+        }
+    }
+
+    /**
+     * Hook `save()` memanggil `sisipkan` dengan jejak apa adanya dari penulis:
+     * apa pun yang bukan daftar/peta dipulangkan tanpa dilempar.
+     */
+    public function test_sisipkan_tidak_melempar_untuk_jejak_bukan_array(): void
+    {
+        $nilai = ['koreksi' => self::KOREKSI_MASTER];
+
+        foreach (['[{"sumber":"a"}]', '', 'bukan json', 42, 4.5, true] as $bukanArray) {
+            $this->assertSame($bukanArray, PresisiPenuh::sisipkan($bukanArray, $nilai));
+        }
+
+        $this->assertNull(PresisiPenuh::sisipkan(null, ['koreksi' => 0.5]));
+    }
+
+    /** Cast kolom: kunci beku tidak terbaca, tetapi ikut tersimpan ulang. */
+    public function test_cast_menyembunyikan_kunci_beku_dan_simpan_ulang_mempertahankannya(): void
+    {
+        $mentah = '{"0":{"sumber":"a"},"1":{"sumber":"b"},"presisi_penuh":{"koreksi":"0.7549999999999955"}}';
+        $baris = new UncertaintyCalculation;
+        $baris->setRawAttributes(['type_b_components' => $mentah], true);
+
+        $this->assertSame([['sumber' => 'a'], ['sumber' => 'b']], $baris->type_b_components);
+        $this->assertTrue(array_is_list($baris->type_b_components));
+        $this->assertSame(['koreksi' => '0.7549999999999955'], PresisiPenuh::petaBekuBaris($baris));
+        $this->assertSame($mentah, $baris->getAttributes()['type_b_components'], 'Nilai mentah atribut tidak disentuh membaca.');
+
+        // Penulis yang hanya melihat daftar bersih menambah satu entri.
+        $baris->type_b_components = [...$baris->type_b_components, ['sumber' => 'c']];
+
+        $this->assertCount(3, $baris->type_b_components);
+        $this->assertSame(['koreksi' => '0.7549999999999955'], PresisiPenuh::petaBekuBaris($baris), 'Simpan ulang menghapus kunci beku.');
+
+        // Penulis yang membawa kuncinya sendiri (jalur simpan sesi) menang.
+        $baris->type_b_components = [['sumber' => 'x'], PresisiPenuh::KUNCI => ['koreksi' => '0.5']];
+        $this->assertSame(['koreksi' => '0.5'], PresisiPenuh::petaBekuBaris($baris));
+        $this->assertSame([['sumber' => 'x']], $baris->type_b_components);
+
+        // `null` = jejak dihapus, kunci ikut.
+        $baris->type_b_components = null;
+        $this->assertNull($baris->type_b_components);
+        $this->assertNull(PresisiPenuh::petaBekuBaris($baris));
+    }
+
+    /** Tanpa kunci beku cast ini sama dengan `array`: nilai bukan array dienkode & dibaca apa adanya. */
+    public function test_cast_tanpa_kunci_beku_berperilaku_seperti_array_bawaan(): void
+    {
+        $baris = new UncertaintyCalculation;
+
+        foreach ([[['sumber' => 'a']], [], 'teks', 42, [0.25, 'x' => ['y' => 1]]] as $nilai) {
+            $baris->type_b_components = $nilai;
+            $this->assertSame($nilai, $baris->type_b_components);
+            $this->assertSame(json_encode($nilai), $baris->getAttributes()['type_b_components']);
+        }
+
+        $this->expectException(JsonEncodingException::class);
+        $baris->type_b_components = [['nilai' => INF]];
     }
 }

@@ -16,12 +16,16 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
+use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\ThermocoupleProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
+use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\CertificateSnapshotBuilder;
+use App\Support\AngkaFloatEksak;
 use App\Support\PresisiPenuh;
 use App\Support\TataLetakSertifikat;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -173,9 +177,16 @@ class PembulatanTitikSeriMasterTest extends TestCase
         $this->assertSame(0.755, (float) $baris[2]->koreksi, 'Kolom `koreksi` tetap 8 desimal: 0,755.');
 
         // Float asli dibawa di jejak baris itu, sebagai teks round-trip.
-        $beku = $baris[2]->type_b_components[PresisiPenuh::KUNCI] ?? null;
+        $beku = PresisiPenuh::petaBekuBaris($baris[2]);
         $this->assertIsArray($beku, 'Baris titik seri wajib membawa float aslinya.');
         $this->assertIsString($beku['koreksi']);
+        $this->assertSame('0.7549999999999955', $beku['koreksi'], 'Teks round-trip float master `SERTIFIKAT!L22`, apa adanya.');
+
+        // Di kolom JSON (MySQL: tipe JSON, bukan teks) kunci beku tetap STRING —
+        // bukan double yang boleh bergeser satu ULP — dan tidak bergeser sedikit pun.
+        $mentah = json_decode((string) DB::table('uncertainty_calculations')->where('id', $baris[2]->id)->value('type_b_components'), true);
+        $this->assertIsString($mentah[PresisiPenuh::KUNCI]['koreksi'], 'Di kolom JSON, float beku tetap teks.');
+        $this->assertSame('0.7549999999999955', $mentah[PresisiPenuh::KUNCI]['koreksi']);
         $asli = (float) $beku['koreksi'];
         $this->assertEqualsWithDelta(0.755, $asli, 1e-12);
         $this->assertLessThan(0.755, $asli, 'Sisa biner di BAWAH tengah — itu yang bikin master mencetak 0,75.');
@@ -221,9 +232,40 @@ class PembulatanTitikSeriMasterTest extends TestCase
             $this->assertArrayNotHasKey(PresisiPenuh::KUNCI, $titik['type_b_components'], "Kunci beku bocor ke API (tersimpan, titik {$i}).");
             $this->assertArrayNotHasKey(PresisiPenuh::KUNCI, $pratinjau[$i]['type_b_components'], "Kunci beku bocor ke API (pratinjau, titik {$i}).");
             $this->assertTrue(array_is_list($titik['type_b_components']), 'Klien membaca daftar komponen.');
-            $this->assertSame($pratinjau[$i]['type_b_components'], $titik['type_b_components'], "Pratinjau ≠ tersimpan, titik {$i}.");
+            // Struktur, kunci, dan teks dibandingkan KETAT; angka desimal dengan
+            // selisih relatif 1e-12. Kolom JSON MySQL menggeser double 16–17
+            // digit satu ULP (0.37202150475476453 → 0.3720215047547646 di CI) —
+            // perilaku lama DB yang tidak ada hubungannya dengan float beku
+            // (kunci beku sendiri teks, lihat tes di atas).
+            $this->assertKomponenSama($pratinjau[$i]['type_b_components'], $titik['type_b_components'], "type_b_components titik {$i}");
             $this->assertEqualsWithDelta((float) $pratinjau[$i]['koreksi'], (float) $titik['koreksi'], 1e-12);
         }
+    }
+
+    /**
+     * Dua daftar komponen budget sama: kunci & teks persis, bilangan desimal
+     * dalam selisih relatif 1e-12 (derau ULP kolom JSON MySQL).
+     */
+    private function assertKomponenSama(mixed $diharapkan, mixed $aktual, string $jalur): void
+    {
+        if (is_array($diharapkan)) {
+            $this->assertIsArray($aktual, $jalur);
+            $this->assertSame(array_keys($diharapkan), array_keys($aktual), "Kunci beda di {$jalur}.");
+
+            foreach ($diharapkan as $kunci => $nilai) {
+                $this->assertKomponenSama($nilai, $aktual[$kunci], "{$jalur}.{$kunci}");
+            }
+
+            return;
+        }
+
+        if (is_float($diharapkan) || is_float($aktual)) {
+            $this->assertEqualsWithDelta((float) $diharapkan, (float) $aktual, 1e-12 * max(1.0, abs((float) $diharapkan)), $jalur);
+
+            return;
+        }
+
+        $this->assertSame($diharapkan, $aktual, $jalur);
     }
 
     // ---------------------------------------------------------------------
@@ -243,12 +285,12 @@ class PembulatanTitikSeriMasterTest extends TestCase
         // Bentuk baris lama: kunci beku dibuang, kolom tak disentuh — lewat
         // query builder, bukan model, supaya tak ada yang membekukan ulang.
         foreach ($sesi->uncertaintyCalculations as $baris) {
-            $jejak = PresisiPenuh::tanpaKunci((array) $baris->type_b_components);
+            $jejak = (array) $baris->type_b_components;     // cast: sudah tanpa kunci beku
             DB::table('uncertainty_calculations')->where('id', $baris->id)->update(['type_b_components' => json_encode($jejak)]);
         }
 
         $sesi = $sesi->fresh();
-        $this->assertArrayNotHasKey(PresisiPenuh::KUNCI, (array) $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get()[2]->type_b_components);
+        $this->assertNull(PresisiPenuh::petaBekuBaris($sesi->uncertaintyCalculations()->orderBy('titik_ke')->get()[2]), 'Prasyarat: kunci beku sudah tidak ada.');
 
         $sertifikat = Certificate::factory()->create(['calibration_session_id' => $sesi->id]);
         $snapshot = app(CertificateSnapshotBuilder::class)->bangun($sesi, $sertifikat);
@@ -439,11 +481,256 @@ class PembulatanTitikSeriMasterTest extends TestCase
 
         $baris = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
         $this->assertCount(4, $baris);
-        $this->assertLessThan(0.755, (float) ($baris[2]->type_b_components[PresisiPenuh::KUNCI]['koreksi'] ?? 9.0));
+        $this->assertLessThan(0.755, (float) (PresisiPenuh::petaBekuBaris($baris[2])['koreksi'] ?? 9.0));
 
         $sertifikat = Certificate::factory()->create(['calibration_session_id' => $sesi->id]);
         $snapshot = app(CertificateSnapshotBuilder::class)->bangun($sesi->fresh(), $sertifikat);
 
         $this->assertSame('0.75', $this->cetak($snapshot, 2, 'koreksi'));
+    }
+
+    // ---------------------------------------------------------------------
+    // 5. Penyimpan model: hook tidak melempar, simpan-ulang tidak menghapus kunci
+    // ---------------------------------------------------------------------
+
+    /** Sesi kosong untuk alat bernama kemampuan `$profil` (tanpa titik hitung). */
+    private function sesiKosong(CalibrationProfile $profil): CalibrationSession
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create()->id,
+            'nama_alat_kemampuan' => $profil->namaAlatKemampuan(),
+        ]);
+
+        return CalibrationSession::factory()->create(['equipment_id' => $alat->id]);
+    }
+
+    /**
+     * Atribut satu baris hitung minimal.
+     *
+     * @param  array<string, mixed>  $nilai
+     * @return array<string, mixed>
+     */
+    private function atributBaris(int $sesiId, array $nilai): array
+    {
+        return [
+            'calibration_session_id' => $sesiId,
+            'titik_ke' => 1,
+            'titik_ukur' => 50.0,
+            'rata_rata' => 51.0,
+            'koreksi' => 0.1,
+            'error' => -0.1,
+            'standar_deviasi' => 0.01,
+            'jumlah_pengulangan' => 3,
+            'type_a' => 0.006,
+            'type_b' => 0.1,
+            'ketidakpastian_gabungan' => 0.1,
+            'ketidakpastian_diperluas' => 0.2,
+            'faktor_cakupan_k' => 2.0,
+            'keputusan' => 'PASS',
+            'metode' => 'uji',
+            'calculated_at' => now(),
+            ...$nilai,
+        ];
+    }
+
+    /**
+     * Hook `save()` tidak boleh melempar apa pun bentuk `type_b_components`.
+     *
+     * CI 16 Nov 2026: `SnapshotSertifikatTahanUrutanTest` menyalin
+     * `getAttributes()` mentah (jejak berupa TEKS JSON) ke `create()`, dan hook
+     * versi pertama melempar `TypeError` (`?array`, string diberikan). Bentuk
+     * yang bukan daftar/peta dilewati dan disimpan apa adanya, seperti cast
+     * `array` bawaan dulu; kolom tetap dibaca seperti sebelum PR ini.
+     */
+    public function test_simpan_baris_dengan_jejak_bukan_daftar_tidak_melempar(): void
+    {
+        $sesi = $this->sesiKosong(new TimbanganProfile);
+
+        $bentuk = [
+            '[{"sumber":"a"}]',
+            '{"0":{"sumber":"a"},"presisi_penuh":{"koreksi":"0.7549999999999955"}}',
+            '42',
+            'bukan json',
+            '"teks"',
+            '',
+        ];
+
+        foreach ($bentuk as $ke => $mentah) {
+            $baris = UncertaintyCalculation::create($this->atributBaris($sesi->id, [
+                'titik_ke' => $ke + 1,
+                'koreksi' => 0.7549999999999955,          // akan dibekukan bila jejaknya daftar
+                'type_b_components' => $mentah,
+            ]));
+
+            $this->assertTrue($baris->exists, "Jejak `{$mentah}` menggagalkan simpan.");
+            $this->assertSame($mentah, $baris->fresh()->type_b_components, 'Nilai bukan array disimpan apa adanya (perilaku cast `array` lama).');
+            $this->assertNull(PresisiPenuh::petaBekuBaris($baris->fresh()), 'Teks JSON mentah tidak dibaca sebagai peta beku.');
+            $this->assertSame(0.755, PresisiPenuh::baca($baris->fresh(), 'koreksi'), 'Dibaca dari kolom, seperti dulu.');
+        }
+    }
+
+    /** Jejak kosong, null, atau daftar: baris baru membekukan float aslinya lewat penyimpan model. */
+    public function test_simpan_baris_baru_membekukan_float_asli_untuk_semua_bentuk_jejak(): void
+    {
+        $sesi = $this->sesiKosong(new TimbanganProfile);
+        $komponen = [['sumber' => 'resolusi', 'keterangan' => 'x', 'distribusi' => 'persegi', 'nilai' => 0.003]];
+
+        foreach ([null, [], $komponen] as $ke => $jejak) {
+            $baris = UncertaintyCalculation::create($this->atributBaris($sesi->id, [
+                'titik_ke' => $ke + 1,
+                'koreksi' => 0.7549999999999955,
+                'type_b_components' => $jejak,
+            ]))->fresh();
+
+            $this->assertSame(['koreksi' => '0.7549999999999955'], PresisiPenuh::petaBekuBaris($baris), 'Jejak '.json_encode($jejak));
+            $this->assertSame($jejak ?? [], (array) $baris->type_b_components, 'Isi jejak yang terbaca tidak berubah.');
+            $this->assertSame(0.7549999999999955, PresisiPenuh::baca($baris, 'koreksi'));
+        }
+    }
+
+    /**
+     * Penulis yang membaca daftar (bersih), mengubahnya, lalu menyimpan balik
+     * tidak tahu kunci beku itu ada — dan tidak boleh menghapusnya.
+     */
+    public function test_simpan_ulang_lewat_atribut_tidak_menghapus_kunci_beku(): void
+    {
+        [$sesi] = $this->simpanRecorder();
+        $baris = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get()[2];
+
+        $beku = PresisiPenuh::petaBekuBaris($baris);
+        $this->assertNotNull($beku, 'Prasyarat: baris titik seri membawa kunci beku.');
+
+        $daftar = $baris->type_b_components;
+        $this->assertTrue(array_is_list($daftar));
+        $this->assertArrayNotHasKey(PresisiPenuh::KUNCI, $daftar, 'Pembaca Eloquent tidak melihat kunci beku.');
+        $this->assertArrayNotHasKey(PresisiPenuh::KUNCI, $baris->toArray()['type_b_components']);
+        $this->assertStringNotContainsString(PresisiPenuh::KUNCI, $baris->toJson());
+
+        $baris->type_b_components = [...$daftar, ['sumber' => 'catatan_uji', 'keterangan' => 'ditambah penulis lain', 'distribusi' => 'jejak', 'nilai' => 1]];
+        $baris->save();
+
+        $segar = UncertaintyCalculation::findOrFail($baris->id);
+        $this->assertSame($beku, PresisiPenuh::petaBekuBaris($segar), 'Kunci beku hilang waktu disimpan ulang lewat atribut.');
+        $this->assertCount(count($daftar) + 1, $segar->type_b_components);
+        $this->assertSame('catatan_uji', $segar->type_b_components[count($daftar)]['sumber']);
+        $this->assertSame(0.7549999999999955, PresisiPenuh::baca($segar, 'koreksi'));
+
+        // Menulis null itu keputusan sadar: jejaknya (dan kunci beku itu) hilang.
+        $segar->type_b_components = null;
+        $segar->save();
+        $this->assertNull(PresisiPenuh::petaBekuBaris(UncertaintyCalculation::findOrFail($baris->id)));
+    }
+
+    // ---------------------------------------------------------------------
+    // 6. Pembaca lain di pembuat snapshot: tiap cabang membaca float beku
+    // ---------------------------------------------------------------------
+
+    /**
+     * `nilaiStandarDariKoreksi()` (Waktu, Frekuensi, Gaya, Tekanan, Aliran):
+     * Standard Value disusun balik = rata-rata UUT + koreksi, KEDUANYA dari
+     * float beku. Cabang ini dulu tidak punya tes yang menggigit: dibaca dari
+     * kolom, semua tes tetap hijau (tinjau PK-1, mutan MG).
+     */
+    public function test_standard_value_dari_koreksi_membaca_float_beku(): void
+    {
+        $profil = new TimerStopwatchProfile;
+        $this->assertTrue($profil->nilaiStandarDariKoreksi(), 'Prasyarat: profil ini menyusun Standard Value dari koreksi.');
+
+        $sesi = $this->sesiKosong($profil);
+        $rata = 100.12345678901235;      // 17 angka penting: sisa di luar 8 desimal
+        $koreksi = -0.12345678901234568;
+        $this->assertNotSame($rata, round($rata, 8));
+        $this->assertNotSame($koreksi, round($koreksi, 8));
+
+        $baris = UncertaintyCalculation::create($this->atributBaris($sesi->id, ['rata_rata' => $rata, 'koreksi' => $koreksi]))->fresh();
+
+        $this->assertNotSame(
+            $rata + $koreksi,
+            (float) $baris->rata_rata + (float) $baris->koreksi,
+            'Sapuan tanpa gigi: jumlah dari kolom harusnya beda dari jumlah float asli.',
+        );
+
+        $hasil = app(CertificateSnapshotBuilder::class)->potonganCetak($sesi->fresh())['hasil'][0];
+
+        $this->assertSame($rata + $koreksi, $hasil['standard_value'], 'Standard Value harus dari float beku rata_rata + koreksi.');
+        $this->assertSame($rata, $hasil['unit_under_test']);
+    }
+
+    /**
+     * `uutIkutSatuanAlat() === false` (Proving Ring: UUT = jumlah DIVISI dial):
+     * cabang non-konversi membaca float beku juga (mutan MH).
+     */
+    public function test_uut_tanpa_konversi_membaca_float_beku(): void
+    {
+        $profil = new ProvingRingProfile;
+        $this->assertFalse($profil->uutIkutSatuanAlat(), 'Prasyarat: UUT profil ini tidak ikut konversi satuan.');
+
+        $sesi = $this->sesiKosong($profil);
+        $rata = 237.49358750000012;
+        $this->assertNotSame($rata, round($rata, 8));
+
+        $baris = UncertaintyCalculation::create($this->atributBaris($sesi->id, ['rata_rata' => $rata]))->fresh();
+        $this->assertNotSame($rata, (float) $baris->rata_rata, 'Prasyarat: kolom tidak membawa float aslinya.');
+
+        $hasil = app(CertificateSnapshotBuilder::class)->potonganCetak($sesi->fresh())['hasil'][0];
+
+        $this->assertSame($rata, $hasil['unit_under_test'], 'UUT tanpa konversi harus dari float beku.');
+    }
+
+    /**
+     * Enclosure `2405.03.AV` dengan float beku ditulis di set point pertama
+     * lewat penyimpan model (kolom dibulatkan 8 desimal, seperti jalur simpan
+     * sesi). Pulangannya: bagian `enclosure` snapshot + float asli yang ditulis.
+     *
+     * @return array{array<string, mixed>, float, float}
+     */
+    private function enclosureDenganFloatBeku(): array
+    {
+        $this->seed(DatabaseSeeder::class);
+        $sesi = CalibrationSession::where('nomor_sesi', '2405.03.AV')->firstOrFail();
+        $titik = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
+
+        $this->assertNotEmpty($titik);
+
+        $indikator = (float) $titik[0]->rata_rata + 1.2345678901e-9;
+        $u95 = (float) $titik[0]->ketidakpastian_diperluas + 2.3456789012e-9;
+        $this->assertNotSame($indikator, round($indikator, 8));
+        $this->assertNotSame($u95, round($u95, 8));
+
+        $titik[0]->type_b_components = [
+            ...$titik[0]->type_b_components,
+            PresisiPenuh::KUNCI => [
+                'rata_rata' => AngkaFloatEksak::kodekan($indikator),
+                'ketidakpastian_diperluas' => AngkaFloatEksak::kodekan($u95),
+            ],
+        ];
+        $titik[0]->rata_rata = round($indikator, 8);
+        $titik[0]->ketidakpastian_diperluas = round($u95, 8);
+        $titik[0]->save();
+
+        $sertifikat = Certificate::factory()->create(['calibration_session_id' => $sesi->id]);
+        $enc = app(CertificateSnapshotBuilder::class)->bangun($sesi->fresh(), $sertifikat)['enclosure'];
+
+        // Set point lain tidak disentuh: dibaca dari kolom/kunci masing-masing.
+        $this->assertEqualsWithDelta((float) $titik[1]->rata_rata, $enc['set_point'][1]['indikator'], 1e-8);
+
+        return [$enc, $indikator, $u95];
+    }
+
+    /** Enclosure: `indikator` (rata_rata) set point dibaca dari float beku (mutan ME). */
+    public function test_enclosure_indikator_membaca_float_beku(): void
+    {
+        [$enc, $indikator] = $this->enclosureDenganFloatBeku();
+
+        $this->assertSame($indikator, $enc['set_point'][0]['indikator'], 'Indikator enclosure harus dari float beku.');
+    }
+
+    /** Enclosure: `u95` set point dibaca dari float beku (mutan MF). */
+    public function test_enclosure_u95_membaca_float_beku(): void
+    {
+        [$enc, , $u95] = $this->enclosureDenganFloatBeku();
+
+        $this->assertSame($u95, $enc['set_point'][0]['u95'], 'U95 enclosure harus dari float beku.');
     }
 }

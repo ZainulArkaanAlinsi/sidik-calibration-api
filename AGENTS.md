@@ -204,6 +204,21 @@ kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
 `json_float_shortest` di `/api/health` hanya melaporkan konfigurasi PHP worker yang
 menjawab, bukan jaminan.
 
+**Float beku titik seri (PK-1, 16 Nov 2026).** `decimal(20,8)` menggeser titik seri
+`x,xx5` (master `0,75`, kolom `0,755` tercetak `0,76`). Karena itu float asli kolom
+cetak (`titik_ukur`, `rata_rata`, `koreksi`, `ketidakpastian_diperluas`) ikut
+tersimpan di `uncertainty_calculations.type_b_components` sebagai kunci
+`presisi_penuh` (teks round-trip), dibaca HANYA `CertificateSnapshotBuilder` lewat
+`App\Support\PresisiPenuh::baca()`. Akibatnya kolom itu kini bisa tersimpan sebagai
+OBJEK `{"0":…,"presisi_penuh":…}`, bukan daftar `[…]`. Cast `App\Casts\JejakTypeB`
+menyembunyikan kuncinya: `$baris->type_b_components` selalu daftar bersih (API,
+profil, validator, tampilan) dan simpan-ulang lewat atribut tidak menghapusnya.
+Jangan menulis pembaca SQL-JSON-path (`type_b_components->…`) atau membaca/menulis
+kolom itu lewat `DB::table()`; keduanya melihat bentuk objek. Kunci yang tidak
+sepadan dengan kolom (selisih > 5,5e-9, mis. |x| ≳ 1e6) ditolak diam-diam dan angka
+dibaca dari kolom seperti dulu. Baris lama tanpa kunci tidak bergeser — mencetak
+ulang dengan angka master = hitung ulang sesinya.
+
 ### Lapisan lain
 
 | Lapisan | Tempat | Catatan |

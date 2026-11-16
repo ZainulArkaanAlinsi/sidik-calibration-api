@@ -39,10 +39,23 @@ use App\Models\UncertaintyCalculation;
  * dari nilai di kolom (selisih ≤ setengah satuan desimal ke-8). Baris yang lahir
  * sebelum perubahan ini tidak punya kuncinya dan dibaca dari kolom seperti
  * biasa — angka cetak sertifikat lama tidak bergeser sedikit pun.
+ *
+ * ## Kunci ini tidak terlihat oleh pembaca Eloquent
+ *
+ * `type_b_components` dibaca puluhan tempat yang menganggap isinya daftar
+ * komponen. Cast kolomnya ([\App\Casts\JejakTypeB]) menyembunyikan kunci beku:
+ * `$baris->type_b_components` selalu daftar bersih, dan simpan-ulang lewat
+ * atribut tidak menghapus kuncinya. Yang melihatnya hanya kelas ini, lewat nilai
+ * mentah atribut ([petaBeku], [jejakMentah]). Tanpa pembaca SQL-JSON-path —
+ * bentuk tersimpan berubah dari daftar `[…]` menjadi objek `{"0":…,"presisi_penuh":…}`.
+ *
+ * Batas: untuk |x| ≳ 1e6 teks 14 angka penting PDO menggeser kolom lebih dari
+ * toleransi pra-bayangan dari float aslinya, sehingga kuncinya DITOLAK diam-diam
+ * dan angka itu dibaca dari kolom seperti sebelum perubahan ini (bukan regresi).
  */
 final class PresisiPenuh
 {
-    /** Kunci di `type_b_components` (bukan komponen budget — bukan juga bagian API). */
+    /** Kunci di `type_b_components` (bukan komponen budget — bukan juga bagian API; disembunyikan cast). */
     public const KUNCI = 'presisi_penuh';
 
     /**
@@ -91,12 +104,19 @@ final class PresisiPenuh
      * dibulatkan) tidak boleh menggantinya. Tanpa apa pun yang perlu dibekukan,
      * jejaknya dipulangkan apa adanya (null tetap null).
      *
-     * @param  array<array-key, mixed>|null  $jejak
+     * Dipanggil dari `UncertaintyCalculation::save()`, jadi TIDAK PERNAH
+     * melempar: jejak yang bukan daftar/peta (string JSON mentah dari penulis
+     * yang mengisi atribut mentah, angka, dsb.) tidak bisa disisipi kunci dan
+     * dipulangkan apa adanya — baris itu dibaca dari kolom, seperti dulu.
+     *
      * @param  array<string, mixed>  $nilai
-     * @return array<array-key, mixed>|null
      */
-    public static function sisipkan(?array $jejak, array $nilai): ?array
+    public static function sisipkan(mixed $jejak, array $nilai): mixed
     {
+        if ($jejak !== null && ! is_array($jejak)) {
+            return $jejak;
+        }
+
         if (isset($jejak[self::KUNCI])) {
             return $jejak;
         }
@@ -111,16 +131,46 @@ final class PresisiPenuh
     }
 
     /**
+     * Peta float beku dari nilai MENTAH kolom `type_b_components` (teks JSON
+     * atau array), atau null bila tidak ada / bentuknya rusak.
+     *
+     * Satu-satunya cara membaca kunci beku: cast model ([JejakTypeB])
+     * menyembunyikannya dari semua pembaca lain.
+     */
+    public static function petaBeku(mixed $mentah): ?array
+    {
+        $isi = is_string($mentah) ? json_decode($mentah, true) : $mentah;
+        $beku = is_array($isi) ? ($isi[self::KUNCI] ?? null) : null;
+
+        return is_array($beku) ? $beku : null;
+    }
+
+    /** [petaBeku] untuk satu baris hitung (nilai mentah atributnya). */
+    public static function petaBekuBaris(UncertaintyCalculation $titik): ?array
+    {
+        return self::petaBeku($titik->getAttributes()['type_b_components'] ?? null);
+    }
+
+    /**
+     * Isi mentah `type_b_components` suatu baris — SEMUA kunci, termasuk yang
+     * beku — didekode satu kali. Bukan array bila atributnya null atau bukan
+     * JSON daftar/peta (mis. string yang terenkode dua kali).
+     */
+    public static function jejakMentah(UncertaintyCalculation $titik): mixed
+    {
+        $mentah = $titik->getAttributes()['type_b_components'] ?? null;
+
+        return is_string($mentah) ? json_decode($mentah, true) : $mentah;
+    }
+
+    /**
      * Nilai kolom cetak untuk satu baris hitung: float asli bila beku dan
      * sepadan dengan kolom, kalau tidak nilai kolom itu sendiri.
      */
     public static function baca(UncertaintyCalculation $titik, string $kolom): float
     {
         $nilai = (float) $titik->{$kolom};
-        $jejak = $titik->type_b_components;
-        $beku = is_array($jejak) && is_array($jejak[self::KUNCI] ?? null)
-            ? ($jejak[self::KUNCI][$kolom] ?? null)
-            : null;
+        $beku = self::petaBekuBaris($titik)[$kolom] ?? null;
 
         if (! is_string($beku) || ! is_numeric($beku)) {
             return $nilai;
