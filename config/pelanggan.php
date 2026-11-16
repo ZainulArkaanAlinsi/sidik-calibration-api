@@ -67,22 +67,34 @@ return [
      * Isi `GET /app/info` — kontak lab, dokumen hukum, alamat, petunjuk
      * pengemasan (layar Bantuan aplikasi pelanggan).
      *
-     * SEMUA default `null`, dan itu disengaja: nilai yang belum diisi dijawab
-     * `null` lalu aplikasi MENYEMBUNYIKAN tombolnya. Server tidak pernah
-     * mengarang nomor WhatsApp atau tautan — nomor palsu di layar Bantuan lebih
-     * buruk daripada tombol yang tidak ada. String kosong/spasi di env dibaca
-     * `null` juga (lihat InfoAplikasiController).
+     * Nilai yang belum diisi dijawab `null` lalu aplikasi MENYEMBUNYIKAN
+     * tombolnya. Server tidak pernah mengarang nomor WhatsApp atau tautan —
+     * nomor palsu di layar Bantuan lebih buruk daripada tombol yang tidak ada.
+     * String kosong/spasi di env dibaca `null` juga (lihat
+     * InfoAplikasiController), jadi mengosongkan env di dashboard = menyembunyikan.
+     *
+     * Bawaan kontak resmi (17 Nov 2026, atas perintah pemilik): disalin PERSIS
+     * dari situs resmi https://pt-sidik.com/calibration/ (bagian "Find Us" dan
+     * "Address"), bukan dikarang, supaya layar Bantuan terisi tanpa menunggu
+     * env. Env di dashboard tetap MENIMPA. Yang TIDAK tertulis di situs
+     * (jam layanan, harga, waktu respons) tetap `null` — jangan diisi tanpa
+     * sumber. Tautan sekunder di bawah (email pemasaran, Instagram, LinkedIn,
+     * PDF ruang lingkup akreditasi) sengaja tanpa env: berubah = ikut deploy.
      *
      * `versi` kebijakan privasi & syarat TIDAK di sini: ikut `versi_dokumen`
      * di bawah, supaya satu sumber (angka yang dicatat di persetujuan_dokumen).
      */
     'info' => [
-        'nama_organisasi' => env('PELANGGAN_INFO_NAMA_ORGANISASI'),
-        'alamat_organisasi' => env('PELANGGAN_INFO_ALAMAT_ORGANISASI'),
-        'telepon_organisasi' => env('PELANGGAN_INFO_TELEPON_ORGANISASI'),
-        'whatsapp' => env('PELANGGAN_INFO_WHATSAPP'),
-        'whatsapp_url' => env('PELANGGAN_INFO_WHATSAPP_URL'),
-        'email' => env('PELANGGAN_INFO_EMAIL'),
+        'nama_organisasi' => env('PELANGGAN_INFO_NAMA_ORGANISASI', 'PT Sistem Dirgantara Inovasi Teknologi (SIDIK)'),
+        'alamat_organisasi' => env('PELANGGAN_INFO_ALAMAT_ORGANISASI', 'Komplek Nuansa Mas Estate, Blk. E No.2, Cipamokolan, Rancasari, Bandung 40292'),
+        'telepon_organisasi' => env('PELANGGAN_INFO_TELEPON_ORGANISASI', '082260060037'),
+        'whatsapp' => env('PELANGGAN_INFO_WHATSAPP', '+62 822-6006-0037'),
+        'whatsapp_url' => env('PELANGGAN_INFO_WHATSAPP_URL', 'https://wa.me/6282260060037'),
+        'email' => env('PELANGGAN_INFO_EMAIL', 'sidikkalibrasi@pt-sidik.com'),
+        'email_pemasaran' => 'marketingkalibrasi@pt-sidik.com',
+        'instagram_url' => 'https://www.instagram.com/ptsidikbdg/',
+        'linkedin_url' => 'https://www.linkedin.com/company/pt-sistem-dirgantara-inovasi-teknologi-sidik',
+        'ruang_lingkup_url' => 'https://pt-sidik.com/wp-content/uploads/2026/11/Ruang-Lingkup-SIDIK-ILK-285-IDN-L-Amd-1-30Sep2026.pdf',
         'jam_layanan' => env('PELANGGAN_INFO_JAM_LAYANAN'),
         'kebijakan_privasi_url' => env('PELANGGAN_INFO_KEBIJAKAN_PRIVASI_URL'),
         'syarat_url' => env('PELANGGAN_INFO_SYARAT_URL'),

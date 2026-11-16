@@ -15,7 +15,8 @@ use Illuminate\Http\JsonResponse;
  * `config('pelanggan.info')`.
  *
  * Field yang belum diisi dijawab `null` (bukan string kosong, bukan 404) dan
- * aplikasi menyembunyikan tombolnya. Server tidak mengarang nomor atau tautan.
+ * aplikasi menyembunyikan tombolnya. Server tidak mengarang nomor atau tautan:
+ * bawaan kontak di `config/pelanggan.php` disalin dari situs resmi PT SIDIK.
  */
 class InfoAplikasiController extends Controller
 {
@@ -36,6 +37,11 @@ class InfoAplikasiController extends Controller
                     'whatsapp_url' => $this->teks('whatsapp_url'),
                     'email' => $this->teks('email'),
                     'jam_layanan' => $this->teks('jam_layanan'),
+                    // Aditif (17 Nov 2026): aplikasi lama mengabaikan kunci yang
+                    // tidak dikenalnya; aplikasi baru menyembunyikan tombol bila null.
+                    'email_pemasaran' => $this->teks('email_pemasaran'),
+                    'instagram_url' => $this->teks('instagram_url'),
+                    'linkedin_url' => $this->teks('linkedin_url'),
                 ],
                 'dokumen' => [
                     // Versi hanya menyertai dokumen yang tautannya ada — "Versi
@@ -49,6 +55,8 @@ class InfoAplikasiController extends Controller
                         'versi' => $syaratUrl === null ? null : $this->versiDokumen('syarat_ketentuan'),
                     ],
                     'hapus_akun_url' => $this->teks('hapus_akun_url'),
+                    // Ruang lingkup akreditasi KAN (PDF di situs resmi): aditif.
+                    'ruang_lingkup_url' => $this->teks('ruang_lingkup_url'),
                 ],
                 'petunjuk_pengemasan' => $this->teks('petunjuk_pengemasan'),
             ],

@@ -457,9 +457,12 @@ services:
         value: "1.0"
 
       # Layar Bantuan aplikasi pelanggan (`GET /api/pelanggan/v1/app/info`,
-      # publik). Kontak & tautan diisi pemilik di dashboard (`sync: false`,
-      # bukan nilai blueprint). Kosong = null → aplikasi menyembunyikan
-      # tombolnya; server tidak mengarang nomor atau tautan.
+      # publik). Kontak & tautan bisa diisi pemilik di dashboard (`sync: false`,
+      # bukan nilai blueprint) dan MENIMPA bawaan. Sejak 17 Nov 2026 nama, alamat,
+      # telepon, WhatsApp, dan email punya bawaan dari situs resmi
+      # pt-sidik.com (config/pelanggan.php); selain itu kosong = null → aplikasi
+      # menyembunyikan tombolnya, dan env yang disetel kosong ("") juga
+      # menyembunyikan. Server tidak mengarang nomor atau tautan.
       - key: PELANGGAN_INFO_NAMA_ORGANISASI
         sync: false
       - key: PELANGGAN_INFO_ALAMAT_ORGANISASI
