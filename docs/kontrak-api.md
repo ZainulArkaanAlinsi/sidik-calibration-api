@@ -453,6 +453,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### Aturan lain yang bikin `422` (siapin pesannya di UI)
 > - **Tiap titik ukur minimal 2 pembacaan.** Type A itu standar deviasi antar-pengulangan — dari satu angka nggak ada sebaran yang bisa dihitung. (Aturan "minimal 3" yang kamu tulis di contoh reject itu **nggak** dipaksain backend — biar tetap jadi penilaian admin.)
+>   **⚠️ Update 17 Nov 2026 — dua alat punya batas IK yang DITEGAKKAN:** **Micrometer 5** pembacaan per titik dan **Timer/Stopwatch 3** ulangan per set point (`CalibrationProfile::minPengulanganIK()`; alat lain tetap 2). Menyimpan lembar (draf maupun kirim) **tetap boleh** setengah jadi dan tidak ada pembacaan yang dibuang, tapi `POST /calibrations/{id}/approve` dijawab `422` dengan `validasi.temuan[]` berkode `pengulangan_kurang_dari_ik` (tingkat `error`; `konteks.minimum` + `konteks.titik[] {titik_ke, titik_ukur, terisi, minimum}`) selama masih ada titik aktif di bawah batas. Sesi yang **sudah disetujui** tidak berubah — validator hanya melaporkannya sebagai `info`. `GET /calibrations/{id}/validasi` menampilkan temuan yang sama. Lihat `docs/pertanyaan-lab-pengulangan-ik.md`.
 > - **Alat yang `toleransi`-nya masih kosong ditolak — TAPI cuma buat alat yang emang divonis PASS/FAIL.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
 >   **⚠️ Update 27 Agt — batasannya:** 43 dari 48 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
 > - **Standar yang sertifikatnya kadaluarsa ditolak.** Ketertelusurannya putus.
@@ -520,6 +521,14 @@ profil: `docs/SPEC-turbidimeter-profile.md`.
 > Lembar yang sudah menyusun halamannya sendiri (Gaya) tidak diubah. HP menggambar halamannya
 > dari nilai ini; grid sensor Enclosure digambar di bagian pertama halaman TERAKHIR. Kertas
 > cetak, geometri OCR, dan sertifikat tidak membaca kunci ini. Dijaga `LembarKerjaDuaHalamanTest`.
+
+> **`?pengulangan=` dan batas IK (17 Nov 2026).** `?pengulangan=` tetap menerima 2–10 untuk
+> hampir semua lembar. **Micrometer** minimal **5** dan **Timer/Stopwatch** minimal **3**
+> (Instruksi Kerja): di bawah itu `422` bentuk galat validasi biasa
+> (`errors.pengulangan[0]`), seperti angka di luar 2–10. Tanpa `?pengulangan=` bentuk bawaan
+> tidak berubah (5 / 3). Nilai yang sama muncul sebagai `meta.titik_sesi.batas.tabel[].pengulangan.min`
+> (dulu 2) dan menjadi batas `titik_sesi.pengulangan` yang diterima server — tidak ada kunci baru.
+> Lihat `docs/pertanyaan-lab-pengulangan-ik.md`.
 
 > **`versi_acuan` + `ETag` (8 Okt 2026).** Tiap lembar sekarang membawa
 > `data.versi_acuan` (`null` untuk profil yang data acuannya belum berversi) dan

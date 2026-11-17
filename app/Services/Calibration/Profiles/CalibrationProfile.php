@@ -5,8 +5,10 @@ namespace App\Services\Calibration\Profiles;
 use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
+use App\Services\Calibration\TitikUkurSesi;
 use App\Services\GumCalculator;
 use App\Support\AkhirSertifikatMaster;
 use App\Support\FormatMasterSertifikat;
@@ -875,6 +877,98 @@ abstract class CalibrationProfile
     public const MAKS_KOLOM_PENGULANGAN = 10;
 
     /**
+     * Batas bawah pengulangan PER TITIK yang ditegakkan server menurut
+     * Instruksi Kerja alat ini — bukan sekadar yang sanggup dihitung kalkulator.
+     *
+     * Bawaannya sama dengan `MIN_KOLOM_PENGULANGAN` (2: di bawahnya simpangan
+     * baku tidak ada), artinya TIDAK ada penegakan tambahan. Profil yang IK-nya
+     * menyebut angka lebih besar menimpa method ini (Micrometer 5, Timer/
+     * Stopwatch 3) — dan satu angka itu dipakai di empat tempat sekaligus:
+     *
+     *  - skema titik sesi (`batasTitik()['tabel'][*]['pengulangan']['min']`),
+     *  - `?pengulangan=` di `GET /calibrations/lembar-kerja`,
+     *  - jepitan `setelKolomPengulangan()`,
+     *  - ERROR validator saat approve (`titikDiBawahPengulanganIK()`).
+     *
+     * Draf tetap boleh disimpan dengan pembacaan yang belum lengkap (teknisi
+     * mengisi bertahap); yang ditahan penerbitannya. Jangan menurunkan angka
+     * ini tanpa jawaban tertulis lab — n yang lebih kecil mengubah rata-rata
+     * (dan koreksi tercetak) per titik, dan di alat yang Type A-nya lahir dari
+     * pengulangan titik, juga u(A) dan veff.
+     */
+    public function minPengulanganIK(): int
+    {
+        return self::MIN_KOLOM_PENGULANGAN;
+    }
+
+    /**
+     * Berapa pembacaan TERISI di satu titik, dari baris mentahnya — ukuran
+     * yang dibandingkan dengan [minPengulanganIK].
+     *
+     * Bawaannya menghitung baris ber-nilai. Alat yang satu titiknya memuat
+     * beberapa peran (balok ukur + pembacaan; standar + UUT) menimpa ini supaya
+     * yang dihitung cuma pembacaan yang memang pengulangan.
+     *
+     * @param  Collection<int, RawMeasurement>  $barisTitik  baris satu `titik_ke`
+     */
+    public function pengulanganTerisi(Collection $barisTitik): int
+    {
+        return $barisTitik->filter(static fn ($b): bool => $b->pembacaan !== null)->count();
+    }
+
+    /**
+     * Titik AKTIF sesi ini yang pembacaannya terisi kurang dari
+     * [minPengulanganIK]. Kosong untuk profil tanpa penegakan tambahan.
+     *
+     * Satu sumber untuk `CalibrationValidator` (ERROR saat approve) dan
+     * `kalibrasi:hitung-ulang` (laporan) — dua tempat yang menghitung sendiri-
+     * sendiri adalah dua jawaban yang bisa berbeda diam-diam. Titik yang
+     * sengaja dinonaktifkan (titik sesi) dan titik tanpa satu pun pembacaan
+     * (itu urusan `titik_tidak_terhitung`) tidak ikut.
+     *
+     * @return list<array{titik_ke: int, titik_ukur: float|null, terisi: int, minimum: int}>
+     */
+    public function titikDiBawahPengulanganIK(CalibrationSession $sesi): array
+    {
+        $min = $this->minPengulanganIK();
+
+        if ($min <= self::MIN_KOLOM_PENGULANGAN) {
+            return [];
+        }
+
+        $set = TitikUkurSesi::dariSesi($sesi);
+        $hasil = [];
+
+        $perTitik = $sesi->rawMeasurements
+            ->where('tahap', 'sesudah_adjustment')
+            ->groupBy('titik_ke')
+            ->sortKeys();
+
+        foreach ($perTitik as $ke => $baris) {
+            $titikUkur = $baris->first()?->titik_ukur;
+
+            if (TitikUkurSesi::nonaktif($set, $titikUkur)) {
+                continue;
+            }
+
+            $terisi = $this->pengulanganTerisi($baris);
+
+            if ($terisi === 0 || $terisi >= $min) {
+                continue;
+            }
+
+            $hasil[] = [
+                'titik_ke' => (int) $ke,
+                'titik_ukur' => is_numeric($titikUkur) ? (float) $titikUkur : null,
+                'terisi' => $terisi,
+                'minimum' => $min,
+            ];
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Jumlah kolom pengulangan bawaan lembar kerja HP (`GET
      * /calibrations/lembar-kerja`) bila `?pengulangan=` tidak dikirim, atau
      * null = bentuk bawaan `bentukLembarKerja()` apa adanya.
@@ -995,7 +1089,7 @@ abstract class CalibrationProfile
                 'fase' => $tahap->contains('sebelum_adjustment') ? ['sebelum', 'sesudah'] : ['sesudah'],
                 'satuan' => $tabel[0]['satuan'] ?? ($tabel[0]['baris'][0]['satuan'] ?? null),
                 'pengulangan' => $kolomUlang === 0 ? null : [
-                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'min' => $this->minPengulanganIK(),
                     'maks' => self::MAKS_KOLOM_PENGULANGAN,
                     'bawaan' => $this->pengulanganLembarBawaan() ?? $kolomUlang,
                 ],
@@ -1126,12 +1220,18 @@ abstract class CalibrationProfile
      * nyusunnya beda; kalau tiap profil harus ngoper sendiri, cepat atau lambat
      * ada satu yang lupa dan kolomnya balik ke 5 diam-diam.
      *
+     * `$min` = batas bawah profil pemanggil (`minPengulanganIK()`); bawaannya
+     * 2, jadi pemanggil lama (jalur OCR) tidak berubah. Jepitan ini jaring
+     * terakhir — `GET /calibrations/lembar-kerja` sudah menolak angka di bawah
+     * batas profil dengan 422 sebelum sampai sini.
+     *
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    public static function setelKolomPengulangan(array $bentuk, int $jumlah): array
+    public static function setelKolomPengulangan(array $bentuk, int $jumlah, int $min = self::MIN_KOLOM_PENGULANGAN): array
     {
-        $jumlah = max(self::MIN_KOLOM_PENGULANGAN, min(self::MAKS_KOLOM_PENGULANGAN, $jumlah));
+        $min = max(self::MIN_KOLOM_PENGULANGAN, min(self::MAKS_KOLOM_PENGULANGAN, $min));
+        $jumlah = max($min, min(self::MAKS_KOLOM_PENGULANGAN, $jumlah));
 
         $tulisUlang = static function (array $simpul) use (&$tulisUlang, $jumlah): array {
             foreach ($simpul as $kunci => $nilai) {

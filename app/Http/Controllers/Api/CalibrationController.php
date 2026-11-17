@@ -303,6 +303,21 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Batas bawah pengulangan menurut Instruksi Kerja alat ini (Micrometer 5,
+        // Timer/Stopwatch 3). `between:2,10` di atas cuma batas UMUM — belum
+        // tahu profilnya — jadi pemeriksaan per profil baru bisa di sini, sesudah
+        // profil dipilih. Bentuk galatnya sama dengan galat validasi di atas
+        // (422 + `errors.pengulangan`); tanpa `?pengulangan=` tidak ada yang
+        // berubah — bawaan lembarnya sudah sama dengan batas IK.
+        $minIK = $profil->minPengulanganIK();
+
+        if ($request->filled('pengulangan') && $request->integer('pengulangan') < $minIK) {
+            throw ValidationException::withMessages([
+                'pengulangan' => "Lembar {$profil->namaAlatKemampuan()} minimal {$minIK} kolom pengulangan "
+                    .'(Instruksi Kerja) — di bawah itu sertifikatnya tidak bisa diterbitkan.',
+            ]);
+        }
+
         // Alat pelanggan belum dipilih, tapi ORGANISASINYA sudah pasti: lembar
         // ini dilayani buat lab si pemanggil. Alat semu di bawah cuma pembawa
         // `organization_id`.
@@ -366,7 +381,7 @@ class CalibrationController extends Controller
                 : $profil->pengulanganLembarBawaan();
 
             if ($pengulangan !== null) {
-                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $pengulangan);
+                $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $pengulangan, $profil->minPengulanganIK());
             }
 
             // Dua halaman — persiapan | pengukuran — buat SEMUA lembar (permintaan

@@ -2065,6 +2065,73 @@ class CalibrationValidator
     }
 
     /**
+     * Pengulangan per titik di bawah batas Instruksi Kerja alatnya
+     * (`CalibrationProfile::minPengulanganIK()` — Micrometer 5, Timer/Stopwatch
+     * 3; profil lain tidak punya penegakan tambahan dan balik `[]`).
+     *
+     * Tingkatnya bergantung pada nasib sesinya, dan itu bukan kerapian:
+     *
+     *  - **Belum terbit** (draf, menunggu approval, perlu revisi) → ERROR.
+     *    Draf tetap boleh disimpan setengah jadi — teknisi mengisi bertahap —
+     *    tapi sertifikat TIDAK terbit sebelum pembacaannya lengkap. Pesan
+     *    menyebut titik, jumlah terisi, dan batasnya.
+     *  - **Sudah disetujui** → INFO. Sertifikatnya sudah di tangan pelanggan
+     *    dan hitungan tersimpannya tidak boleh berubah; yang dilaporkan cuma
+     *    bahwa sesi ini terbit sebelum batas ditegakkan. Tidak ada yang
+     *    dihapus, tidak ada status yang mundur, `boleh_terbit` tidak ikut
+     *    berubah (sapuan `kalibrasi:sapu-sesi` tidak menyebutnya rusak).
+     *
+     * Titik yang sengaja dinonaktifkan tidak ikut; titik tanpa satu pun
+     * pembacaan juga tidak (itu `titik_tidak_terhitung`).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaPengulanganMinimumIK(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return [];
+        }
+
+        $profil = $this->profil->untukAlat($alat);
+        $kurang = $profil->titikDiBawahPengulanganIK($sesi);
+
+        if ($kurang === []) {
+            return [];
+        }
+
+        $minimum = $profil->minPengulanganIK();
+        $sudahTerbit = $sesi->status === CalibrationSession::STATUS_DISETUJUI;
+
+        $rincian = implode(', ', array_map(
+            static fn (array $t): string => 'titik ke-'.$t['titik_ke']
+                .($t['titik_ukur'] !== null ? ' ('.Angka::idRingkas($t['titik_ukur'], 6).')' : '')
+                .' = '.$t['terisi'].' pembacaan',
+            $kurang,
+        ));
+
+        $pesan = sprintf(
+            'Pengulangan di bawah batas Instruksi Kerja: minimal %d pembacaan per titik, tapi %s. ',
+            $minimum,
+            $rincian,
+        );
+
+        $pesan .= $sudahTerbit
+            ? 'Sesi ini sudah disetujui sebelum batas ditegakkan — hitungannya tidak diubah, dicatat saja '
+                .'sebagai temuan mutu.'
+            : 'Lengkapi pembacaan di lembar kerja sebelum disetujui; sertifikat tidak diterbitkan dari '
+                .'pengulangan yang kurang dari Instruksi Kerja.';
+
+        return [$this->temuan(
+            $sudahTerbit ? self::INFO : self::ERROR,
+            'pengulangan_kurang_dari_ik',
+            $pesan,
+            ['minimum' => $minimum, 'titik' => $kurang],
+        )];
+    }
+
+    /**
      * Keputusan metode yang belum diambil Technical Manager, diserahkan ke
      * profilnya lewat `CalibrationProfile::penahanTerbit()` — validator ini
      * tetap tidak tahu nama alat mana pun.
@@ -2115,6 +2182,7 @@ class CalibrationValidator
         $temuan = $acuan->jalankanDengan($pilihan['versi'], fn (): array => [
             ...$this->periksaAlatTanpaCmc($sesi),
             ...$this->periksaKelengkapanHitung($sesi),
+            ...$this->periksaPengulanganMinimumIK($sesi),
             ...$this->periksaPembacaanMustahil($sesi),
             ...$this->periksaKondisiLingkunganMustahil($sesi),
             ...$this->periksaTiapTitik($sesi),

@@ -5475,6 +5475,12 @@ dst.) atau `titik_bisa_diubah` (Timer, Timbangan, …). Titik kustom hanya hidup
    tabel (yang dipakai hitungan) — mohon dikonfirmasi.
 4. **Pengulangan Timer/Micrometer 2–10**: mengikuti batas `?pengulangan=` lembar yang sudah ada.
    IK menyebut 3 (Timer) / 5 (Micrometer); apakah teknisi boleh di bawah itu?
+   **17 Nov 2026 — default aman dipakai (audit 16 Nov D1), menunggu konfirmasi lab:** server menegakkan
+   IK. Micrometer 5 / Timer 3 di skema titik sesi (`pengulangan.min`), `?pengulangan=` lembar kerja
+   (`422`), dan ERROR validator `pengulangan_kurang_dari_ik` saat approve; draf tetap tersimpan,
+   sesi lama tidak berubah (INFO), `kalibrasi:hitung-ulang` melaporkan hal yang sama. Dijaga
+   `PengulanganMinimumIKTest`. Pertanyaan lanjutan (jumlah pembacaan Evaluasi Micrometer, tabel
+   Evaluasi yang ikut menyusut): `docs/pertanyaan-lab-pengulangan-ik.md`.
 5. **Sesi tanpa set** tidak diperiksa `titik_di_luar_cmc` (supaya sesi lama tidak berubah
    perilakunya) — nominal Tekanan yang diketik tanpa set tetap lolos seperti sebelumnya.
 
