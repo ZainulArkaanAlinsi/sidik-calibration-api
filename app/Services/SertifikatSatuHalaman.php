@@ -125,6 +125,45 @@ class SertifikatSatuHalaman
     }
 
     /**
+     * Apakah sertifikat ini TERBUKTI tidak akan terbit — yaitu `isi()` pasti
+     * melempar `SertifikatLebihSatuHalamanException`? Dipakai gerbang pra-approve
+     * (`PraPeriksaSatuHalaman`): sesi yang sudah disetujui memegang nomor
+     * sertifikat, jadi "tidak muat" harus ketahuan SEBELUM nomornya dipakai,
+     * bukan sesudah job penerbitan gagal-final.
+     *
+     * Vonisnya TIDAK pernah menebak dan tidak punya aturan tinggi sendiri: yang
+     * menolak adalah `isi()` — fungsi yang sama dengan jalur terbit. Dua jalan:
+     *
+     *   1. Jalan cepat (satu render): lembar dirender sepadat jalur terbit
+     *      sebagai pilihan TERAKHIR (`paling()` langkah kedua: `paksaPadat`,
+     *      tanpa tingkat, tanpa kotak uji). Muat => `paling()` tidak mungkin
+     *      melempar, apa pun yang terjadi di tangga sebelumnya, jadi tidak ada
+     *      alasan merender seluruh tangga. Ini yang dialami hampir semua sesi,
+     *      dan request approve berjalan di CPU 0,1 — jangan boros render.
+     *   2. Tidak muat di jalan cepat => jalankan `isi()` utuh. Ada profil yang
+     *      masih punya tingkat lain (ukuran tabel mengikuti master) yang bisa
+     *      menyelamatkan lembar itu; hanya bila SEMUA habis, hasilnya pengecualian.
+     *
+     * Hasilnya `null` = jalur terbit tidak akan menolak lembar ini.
+     */
+    public function terbuktiTidakMuat(Certificate $sertifikat): ?SertifikatLebihSatuHalamanException
+    {
+        $bahan = $this->tampilan->untuk($sertifikat);
+
+        if ($this->cetak($bahan, true)['halaman'] <= 1) {
+            return null;
+        }
+
+        try {
+            $this->isi($sertifikat);
+        } catch (SertifikatLebihSatuHalamanException $e) {
+            return $e;
+        }
+
+        return null;
+    }
+
+    /**
      * Ukuran tabel 1,00 -> 0,95 x ukuran median master (`SkalaUkuranSertifikat`),
      * per keluarga jarak (`rapat` dulu, lalu `padat`). Gerbangnya sama dengan
      * tangga lama: harus satu halaman DAN tetap satu halaman dengan kotak uji 6 px.

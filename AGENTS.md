@@ -222,6 +222,30 @@ dan aplikasi mobile masih menampilkan kolom 8 desimal (0,755) sementara sertifik
 mencetak 0,75 (butuh keputusan kontrak angka siap-cetak), dan pembaca Rev7,
 Thermohygro, Proving Ring, dan Sieve masih membaca kolom.
 
+**Sertifikat satu halaman punya DUA pintu (PK-6, 17 Nov 2026) — pintu pertama BAWAAN MATI.**
+`SertifikatSatuHalaman` menolak (melempar) lembar yang tak muat satu halaman walau mode
+terpadat; "Page : 1 of 1" tidak pernah dikarang. Pintu pertama di depan persetujuan:
+`approve()` API dan tombol Setujui panel memanggil `PraPeriksaSatuHalaman` (sertifikat sementara, tidak disimpan,
+dirakit `CertificateSnapshotBuilder` yang sama; vonisnya
+`SertifikatSatuHalaman::terbuktiTidakMuat()` = "`isi()` pasti melempar?", bukan hitungan
+tinggi baru). Ditolak → `422 sertifikat_lebih_satu_halaman`, status sesi tidak berubah,
+nomor yang diketik belum terpakai, tidak ada job. Pintu kedua tetap job penerbitan
+(`gagal`, nomor & snapshot tetap) untuk yang lolos gerbang tapi gagal juga — dan SATU-SATUNYA
+pintu selama gerbang mati. Gerbangnya gagal terbuka (galat render, kunci render dipegang
+gerbang lain) dan ongkosnya SATU render dompdf di request approve (lokal median 2 s, maks
+2,5 s; sesi tak-muat sampai 17 s). Itu belum terukur di produksi (0,1 CPU, 512 MB bersama
+worker, klien mobile menunggu approve 60 s), jadi sakelar `sertifikat.pra_approve_satu_halaman`
+bawaannya MATI (opt-in): mati = `approve()` persis seperti sebelum PK-6, tanpa render
+tambahan (`test_bawaan_mati_approve_persis_seperti_sebelumnya_tanpa_render_ekstra`).
+**Menyalakan = pemilik menyetel env Render `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`** (hanya
+`true`/`1`/`on`/`yes`); kuncinya sengaja belum ada di `render.yaml`/`.env.example` — kalau sinkron
+blueprint menghapus env dashboard, daftarkan di keduanya. **Ukur DUA approve di produksi lebih
+dulu: satu sesi yang muat dan satu sesi yang TIDAK muat** (tangga render penuh, lokal sampai 17 s;
+timeout PHP itu fatal dan tidak ditolong fail-open). Jangan menduplikasi logika tinggi di gerbang;
+ubah `SertifikatSatuHalaman`.
+Skenario terburuk semua profil (baris terbesar skema + header panjang):
+`SertifikatSkenarioTerburukTest`. Kontrak: `docs/kontrak-api.md` §5 approve.
+
 ### Lapisan lain
 
 | Lapisan | Tempat | Catatan |

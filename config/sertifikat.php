@@ -40,4 +40,37 @@ return [
 
     'kop_pracetak' => filter_var(env('SERTIFIKAT_KOP_PRACETAK', false), FILTER_VALIDATE_BOOLEAN),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Gerbang pra-approve "muat satu halaman" (PK-6)
+    |--------------------------------------------------------------------------
+    |
+    | `false` (BAWAAN, opt-in): `approve()` berperilaku persis seperti sebelum PK-6 —
+    | tidak ada render tambahan. Sesi yang tak muat satu halaman disetujui lalu
+    | sertifikatnya `gagal` di job (nomor terpakai); itu pintu kedua yang tetap ada.
+    |
+    | `true`: `approve()` API dan tombol Setujui panel merender sertifikat sementara
+    | (`App\Services\PraPeriksaSatuHalaman`) dan MENOLAK sesi yang terbukti tidak akan
+    | terbit satu halaman — sebelum status berubah dan sebelum nomor sertifikat
+    | terpakai. Ongkosnya SATU render dompdf di dalam request approve (jalur terbit
+    | merender lagi di job): lokal median 2 s, maks 2,5 s, sesi tak-muat sampai 17 s;
+    | di server produksi (0,1 CPU, 512 MB bersama worker, klien mobile menunggu
+    | approve 60 s) BELUM TERUKUR. Karena itu mati dulu: ukur DUA approve di
+    | produksi (satu sesi yang muat DAN satu yang tidak muat: kasus terburuk, seluruh
+    | tangga render; timeout PHP itu fatal dan tidak ditolong fail-open), baru nyalakan.
+    |
+    | Menyalakan = pemilik menyetel env `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`
+    | di Render. HANYA `true`/`1`/`on`/`yes` yang menyalakannya (tanpa spasi di sekitar
+    | nilai); kosong, salah ketik, atau `maybe` tetap mati (bawaan aman = perilaku
+    | lama). Kunci ini sengaja belum
+    | didaftarkan di `render.yaml`/`.env.example`.
+    |
+    */
+
+    'pra_approve_satu_halaman' => in_array(
+        strtolower(trim((string) env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', false))),
+        ['1', 'on', 'yes'],
+        true,
+    ),
+
 ];

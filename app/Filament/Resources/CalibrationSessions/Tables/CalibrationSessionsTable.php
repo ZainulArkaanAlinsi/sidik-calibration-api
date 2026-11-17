@@ -10,6 +10,7 @@ use App\Services\CalibrationValidator;
 use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
 use App\Services\PerhitunganBuilder;
+use App\Services\PraPeriksaSatuHalaman;
 use App\Services\TarikSertifikat;
 use App\Support\RiwayatPersetujuanSesi;
 use Filament\Actions\Action;
@@ -271,6 +272,25 @@ class CalibrationSessionsTable
                                 ->body(self::ringkasTemuan($hasil)
                                     ."\n\nKalau memang mau lanjut, centang \"Saya sudah periksa\" lalu setujui lagi.")
                                 ->warning()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
+                        // Gerbang satu halaman — gerbang yang SAMA dengan API
+                        // (`PraPeriksaSatuHalaman`), paling akhir karena render
+                        // dompdf yang paling mahal, dan sebelum status berubah:
+                        // sertifikat yang terbukti tidak muat satu halaman tidak
+                        // boleh menghabiskan persetujuan & nomor yang diketik.
+                        $tidakMuat = app(PraPeriksaSatuHalaman::class)
+                            ->periksa($record, $penyetuju, $nomorSertifikat, $dasarTarikan);
+
+                        if ($tidakMuat !== null) {
+                            Notification::make()
+                                ->title('Sertifikat tidak muat satu halaman — sesi tidak disetujui.')
+                                ->body($tidakMuat['message'])
+                                ->danger()
                                 ->persistent()
                                 ->send();
 
