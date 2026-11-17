@@ -8,14 +8,16 @@ Pipette, Dispensett, Buret Digital). Picnometer dan Bath ditahan (PK-3).
 Yang diadu: teks yang TERCETAK di `sertifikat.pdf` (renderer asli, sesi diterbitkan lewat
 `POST /approve`) lawan teks yang dicetak lembar `SERTIFIKAT` workbook master — angka sel
 master + number_format, dicocokkan ke `Range.Text` Excel sendiri (476 sel; 473 identik, 3 hanya
-berbeda tanda bintang `200*`/`20*` yang sengaja dibuang; hitung ulang Excel atas keenam
+berbeda tanda bintang nominal kembar `200*`/`20*` yang dibuang dari pencocokan angka — selisih
+terbuka PK4-8, bukan diabaikan; hitung ulang Excel atas keenam
 `.xlsm` juga tidak menggeser satu pun sel `SERTIFIKAT`). Pengujinya
 `tests/Feature/*SesiContohCocokMasterTest.php`; angka masternya
 `tests/Fixtures/cetak-master/massa-volume.json` (generator
 `docs/skrip/gen-cetak-master-massa-volume.py`).
 
 Pola baku `docs/pertanyaan-lab-*.md`: kejanggalan master ditiru dan ditanyakan; yang berikut
-**tidak dibetulkan diam-diam** — tiap butir dikunci di test sebagai selisih yang dicatat.
+**tidak dibetulkan diam-diam** — tiap butir dikunci di test sebagai selisih yang dicatat. PK4-1..8 dan
+PK4-10 untuk lab/pemilik; **PK4-9 pertanyaan KODE** (pembulatan jalur cetak Timbangan).
 
 ---
 
@@ -64,6 +66,16 @@ Hanya baris `varian_master` yang menunjuk "lihat T1 & T2" tanpa angka. Usul perb
 tanpa mengubah angka): baris `penyimpangan_master` per titik terdampak dengan sumber sel dan
 selisihnya, pola `pengulangan_standar_dibagi_n`. Tidak dikerjakan di PK-4 (menyentuh profil
 Timbangan dan jumlah baris jejak yang dibaca test lain) — butuh keputusan pemilik.
+
+**Dampak (diperkuat 18 Nov 2026, tinjauan independen PR #272).** Penyimpangan T2 bukan sekadar
+`ui` di dalam budget: ia mengubah angka CETAK. U95 bagian 7 Timbangan kg tercetak **0,033 kg**
+padahal master **0,043–0,053 kg** (selisih sampai **−37 %**, arah **tidak konservatif**). Orang
+yang menyetujui sesi hanya melihat 0,033 di sertifikat dan satu baris `varian_master` tanpa angka —
+tidak ada yang menyebut master mencetak lebih besar, atau atas dasar apa. Paraf TM untuk T2 (butir 3,
+16 Sep 2026) **masih menyusul**. Perlu PR lanjutan (kode): baris `penyimpangan_master` per titik
+terdampak (T2/T6/T7: sumber sel, nilai master, nilai kita, alasan) **sebelum sertifikat kg diterbitkan**;
+angkanya tidak berubah, hanya jejaknya. Sampai itu mendarat, sertifikat Timbangan kg dari sistem
+ini menyimpang dari master tanpa catatan yang terbaca penyetuju (AGENTS.md §Olah data butir 4).
 
 ## PK4-4 — Master kg & substitusi mencetak baris ketiga "Penuh" (0 · 0 · 0)
 
@@ -121,6 +133,68 @@ disahkan lab) untuk mengadu U95 dan k.
 
 ---
 
+## PK4-8 — Anak Timbangan: master mencetak nominal kembar berbintang, sertifikat aplikasi tidak
+
+Master mencetak nominal keping KEMBAR sebagai teks berbintang: F1 `SERTIFIKAT!F19` `200*`; F2 hal 1
+`F23` `20*`; F2 hal 2 `F19` `200*` (terbaca `Range.Text` Excel; sel lain yang kembar mencetak angka
+tanpa bintang). Sertifikat aplikasi **tidak mencetak bintang sama sekali**: `snapshot['hasil']` tidak
+membawa penandanya (`bintang` hanya hidup di blok sesi dan di hasil kalkulator, tidak dibaca view
+`sertifikat.pdf`), dan sesi F2 yang kehilangan `ID Number` mencetak dua baris `- | 2 | …` tanpa pembeda.
+
+Selisih ini sudah terbuka sebagai `docs/pertanyaan-lab-anak-timbangan.md` **§26** ("No. Seri keping &
+bintang belum tercetak"); ditulis ulang di sini karena adu angka PK-4 sempat menyembunyikannya:
+generator (`gen-cetak-master-massa-volume.py`, `ANGKA_TEKS` dan `cetak`) dan regex token
+`PembandingCetakMaster::token` membuang `*` supaya baris cocok per angka. Sekarang `*` tetap dibuang
+dari pencocokan TETAPI tercatat (`bintang: true` di fixture) dan keadaan aplikasi dikunci di
+`AnakTimbanganSesiContohCocokMasterTest::assertBintangKembarTidakDicetak` — begitu §26 dijawab dan
+bintang dicetak, assert itu membalik.
+
+Keputusan pemilik 6 Okt 2026 menjadikan bintang di nominal pembeda keping kembar yang SAH (menggantikan
+"kembar wajib No. Identitas"); tanpa bintang tercetak, pembeda itu tidak sampai ke pelanggan.
+
+**Ditanyakan:** (a) bintang di nominal wajib tercetak seperti master? (b) kalau tidak, apakah
+`ID Number` wajib untuk keping kembar? (jawaban §26 butir 1).
+
+## PK4-9 — (pertanyaan KODE) jalur cetak Timbangan membulatkan lain dari profil lain
+
+`TimbanganProfile::teksAngkaCetak` memakai `Angka::id` (`number_format`, nilai biner eksak);
+profil lain memakai `Angka::tampilanExcel` (15 angka penting lalu setengah-menjauhi-nol — cara Excel
+menampilkan). Nilai yang desimal-tepat di tengah tetapi tersimpan sedikit di bawahnya dicetak
+berbeda. Dibaca dari Excel sendiri (`Range.Text`, sel baru berformat `0.0` / `0.00`, 18 Nov 2026):
+
+| Nilai | Format | Excel | Timbangan sekarang |
+|---|---|---|---|
+| 0,1499999999999996 | `0.0` | `0.2` | `0,1` |
+| 0,2549999999999999 | `0.00` | `0.26` | `0,25` |
+
+Kontrol (di luar titik seri keduanya sama): 0,07953615325627225 → `0,08`; 0,7549999999999955 → `0,75`.
+
+Mengapa lolos: tidak satu pun nilai sampel tiga master Timbangan jatuh di titik seri, jadi
+`TimbanganSesiContohCocokMasterTest` hijau tanpa menyentuh jalur ini; mutan pembulatan `HALF_EVEN`
+pada `teksAngkaCetak` **selamat** (tinjauan independen PR #272). Ini mirip seri S4-Q11 (`tids`,
+0.755) yang ditangani PK-1 untuk profil lain.
+
+**Tidak diperbaiki di PK-4** (aplikasi tidak diubah). Penandanya:
+`tests/Unit/TimbanganTitikSeriCetakTest.php` — mengunci selisih sebagai "diketahui" dan gagal begitu
+jalur Timbangan disamakan dengan Excel. **Ditanyakan ke pemilik/TM:** apakah sertifikat Timbangan wajib
+mencetak persis tampilan Excel master di titik seri? Kalau ya, alihkan jalur cetak ke
+`Angka::tampilanExcel` (PR kode terpisah; snapshot lama tidak boleh bergeser — cetak dari nilai yang
+sama dibekukan di snapshot).
+
+## PK4-10 — Lingkup klaim Timbangan GRAM: hanya master lama
+
+"Gram cocok 23/23" hanya terhadap master gram LAMA (`New Master Olda Timbangan gram.xlsm`, sha256
+`ce1a3936…`, yang dipakai seeder dan `TimbanganMasterTest`). Master gram revisi 29 Mei 2026
+(`…gram.xlsm2.xlsm`, sha256 `7b288cdb…`) **tidak disentuh** dan tetap **ditahan** menunggu keputusan
+lab (T9/T11/T14; audit 16 Nov §3 G4(c)). Terhadap xlsm2, **12 dari 68 sel gram tercetak berbeda**: `U29`
+0,00058 → 0,00057, `M46` (LOP) 0,00077 → 0,00030, serta `H49:H53` dan `W49:W53` 0,00060 → 0,00057.
+
+Jadi tes gram yang hijau TIDAK membuktikan sertifikat gram sesuai master yang sekarang dipegang lab.
+**Ditanyakan:** master gram mana yang berlaku untuk sertifikat baru? Selama belum dijawab, jangan
+menerbitkan sertifikat gram yang diklaim "persis master" tanpa menyebut revisinya.
+
+---
+
 ## Yang bersih (tidak ada pertanyaan)
 
 - **Piston Volume** (Piston Pipette, Dispensett, Buret Digital): semua baris cocok — volume aktual,
@@ -130,6 +204,6 @@ disahkan lab) untuk mengadu U95 dan k.
   Baris master di bawahnya (hal 1 baris 25–36 dst.) salinan sesi lain (§30), tidak diadu.
 - **Gelas Ukur 100 mL**: tiga titik, U95 0,34, `k` 2 sama persis; U hitung 0,33703 vs master
   0,33731 (lima nol, pertanyaan volumetric no. 2) tidak menggeser angka cetak.
-- **Timbangan gram**: seluruh baris cocok (setelah tare dan beban dilengkapi, PK4-1).
+- **Timbangan gram — terhadap master LAMA saja** (PK4-10): seluruh baris cocok (setelah tare dan beban dilengkapi, PK4-1). Master gram xlsm2 (29 Mei 2026) tidak disentuh, ditahan; 12 dari 68 sel tercetak berbeda di sana.
 - **Timbangan** budget koreksi tersimpan: 261 komponen (`ui × ci`, `vi`) sama dengan master,
   plus `uc`, `veff`, `k`, U95 tiap titik — kecuali dua titik master rusak (gram 9, substitusi 9).
