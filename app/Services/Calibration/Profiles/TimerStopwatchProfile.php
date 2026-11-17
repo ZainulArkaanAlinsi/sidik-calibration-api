@@ -10,6 +10,7 @@ use App\Services\Calibration\WaktuCalculator;
 use App\Support\TataLetakSertifikat;
 use App\Support\WaktuMentah;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Profil **Timer/Stopwatch** — lampiran akreditasi LK-285-IDN kelompok "Waktu
@@ -184,6 +185,20 @@ class TimerStopwatchProfile extends CalibrationProfile
 
     /** Tiga ulangan per set point — `PERHITUNGAN` baris 1..3 tiap blok. */
     public const PENGULANGAN = 3;
+
+    /**
+     * Ulangan per set point MINIMUM untuk terbit: tiga, sama dengan kertas
+     * (`SIDIK-FM-CAL-0512_Rev.4`), baris 1..3 tiap blok `Set Point` master, dan
+     * Instruksi Kerja (`docs/permintaan-user-7.md` §55 pertanyaan terbuka
+     * no. 4; keputusan default aman audit 16 Nov 2026 D1).
+     *
+     * Di alat ini n MASUK budget: u(A) = s/√n dan v = n−1 per titik
+     * (`WaktuCalculator::budget`), jadi n yang lebih kecil menggeser U95 dan
+     * veff dari master. Kalkulatornya sendiri tetap menerima n ≥ 2 supaya draf
+     * setengah jadi masih bisa dipratinjau — yang menahan cuma validator saat
+     * approve.
+     */
+    public const MIN_PENGULANGAN_IK = 3;
 
     /** Sepuluh baris set point, sebanyak yang tercetak di lembar master. */
     public const BARIS_KERTAS = 10;
@@ -435,9 +450,34 @@ class TimerStopwatchProfile extends CalibrationProfile
         return false;
     }
 
+    /** Tiga ulangan per set point — lihat [MIN_PENGULANGAN_IK]. */
+    public function minPengulanganIK(): int
+    {
+        return self::MIN_PENGULANGAN_IK;
+    }
+
+    /**
+     * Ambang yang disebut pesan "titik tidak terhitung" ikut batas IK (sebelum
+     * 17 Nov 2026: 2, ambang kalkulator), supaya pesannya tidak menyebut angka
+     * lain dari yang ditegakkan validator.
+     */
     public function minPengulanganPerTitik(): int
     {
-        return 2;
+        return $this->minPengulanganIK();
+    }
+
+    /**
+     * Satu ulangan = SEPASANG (standar ke-i, UUT ke-i) — sisi yang lebih
+     * sedikit yang menentukan. Sisi yang timpang juga ditolak kalkulator
+     * (`WaktuCalculator::hitungTitik`), tapi di sini yang diukur n efektifnya.
+     */
+    public function pengulanganTerisi(Collection $barisTitik): int
+    {
+        $hitung = static fn (string $peran): int => $barisTitik
+            ->filter(static fn ($b): bool => $b->pembacaan !== null && (string) $b->peran_sensor === $peran)
+            ->count();
+
+        return min($hitung(WaktuMentah::PERAN_STANDAR), $hitung(WaktuMentah::PERAN_UUT));
     }
 
     /** Stopwatch standar dibaca nominal apa adanya — tidak berkurva suhu. */
@@ -687,8 +727,9 @@ class TimerStopwatchProfile extends CalibrationProfile
      * Titik sesi Timer/Stopwatch: nominal SARAN (`TITIK_SARAN`), paling banyak
      * `BARIS_KERTAS` set point aktif — sepuluh blok set point master
      * (`WaktuFrekuensiSeeder`). Tiap titik dihitung sendiri oleh
-     * `WaktuCalculator` (n = jumlah ulangan terisi, min. 2), jadi menonaktifkan
-     * satu titik tidak menggeser titik lain.
+     * `WaktuCalculator` (n = jumlah ulangan terisi; kalkulator menerima 2, tapi
+     * TERBIT menuntut `MIN_PENGULANGAN_IK` = 3), jadi menonaktifkan satu titik
+     * tidak menggeser titik lain.
      *
      * @param  array<string, mixed>  $spesifikasi
      * @return array<string, mixed>
@@ -710,7 +751,7 @@ class TimerStopwatchProfile extends CalibrationProfile
                 'fase' => ['sesudah'],
                 'satuan' => self::SATUAN,
                 'pengulangan' => [
-                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'min' => $this->minPengulanganIK(),
                     'maks' => self::MAKS_KOLOM_PENGULANGAN,
                     'bawaan' => self::PENGULANGAN,
                 ],

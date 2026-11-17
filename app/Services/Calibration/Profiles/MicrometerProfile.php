@@ -11,6 +11,7 @@ use App\Services\Calibration\TabelStandarMicrometer;
 use App\Support\MicrometerMentah;
 use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Lembar & hitungan **Micrometer** — lampiran akreditasi LK-285-IDN no. 34,
@@ -81,6 +82,20 @@ class MicrometerProfile extends CalibrationProfile
     /** Lima pembacaan per titik (`PERHITUNGAN` kolom I..M). */
     public const PENGULANGAN = 5;
 
+    /**
+     * Pembacaan per titik MINIMUM untuk terbit: lima, sama dengan kertas
+     * (`SIDIK-FM-CAL-0522`), kolom `PERHITUNGAN!I:M` master, dan Instruksi Kerja
+     * (`docs/permintaan-user-7.md` §55 pertanyaan terbuka no. 4; keputusan
+     * default aman audit 16 Nov 2026 D1: tegakkan IK, longgarkan hanya dengan
+     * jawaban tertulis lab).
+     *
+     * Yang dijaga angka ini: rata-rata dan KOREKSI tiap titik. Type A & veff
+     * sesi TIDAK lahir dari lima pembacaan ini melainkan dari baris Evaluasi
+     * (`PRA_EVALUASI`) — itu pertanyaan lab terpisah, lihat
+     * `docs/pertanyaan-lab-pengulangan-ik.md`.
+     */
+    public const MIN_PENGULANGAN_IK = 5;
+
     /** Sepuluh pembacaan berulang pra-evaluasi (`PERHITUNGAN` baris 25). */
     public const PRA_EVALUASI = 10;
 
@@ -125,6 +140,33 @@ class MicrometerProfile extends CalibrationProfile
     public function namaAlatKemampuan(): string
     {
         return 'Micrometer';
+    }
+
+    /** Lima pembacaan per titik — lihat [MIN_PENGULANGAN_IK]. */
+    public function minPengulanganIK(): int
+    {
+        return self::MIN_PENGULANGAN_IK;
+    }
+
+    /**
+     * Ambang yang disebut pesan "titik tidak terhitung" ikut batas IK, supaya
+     * pesannya tidak menyebut angka lain dari yang ditegakkan validator.
+     */
+    public function minPengulanganPerTitik(): int
+    {
+        return $this->minPengulanganIK();
+    }
+
+    /**
+     * Cuma baris `mikro_pembacaan` yang pengulangan. Baris `mikro_balok` (tiap
+     * keping tumpukan balok ukur, sampai tiga per titik) ikut berada di
+     * `titik_ke` yang sama dan tidak boleh ikut dihitung — tiga keping bukan
+     * tiga kali pengukuran.
+     */
+    public function pengulanganTerisi(Collection $barisTitik): int
+    {
+        return $barisTitik->filter(static fn ($b): bool => $b->pembacaan !== null
+            && (string) $b->peran_sensor === MicrometerMentah::PERAN_PEMBACAAN)->count();
     }
 
     public function aliasNama(): array
@@ -836,7 +878,7 @@ class MicrometerProfile extends CalibrationProfile
                 'fase' => ['sesudah'],
                 'satuan' => self::SATUAN,
                 'pengulangan' => [
-                    'min' => self::MIN_KOLOM_PENGULANGAN,
+                    'min' => $this->minPengulanganIK(),
                     'maks' => self::MAKS_KOLOM_PENGULANGAN,
                     'bawaan' => self::PENGULANGAN,
                 ],
