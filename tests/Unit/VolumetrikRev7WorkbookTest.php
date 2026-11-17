@@ -301,17 +301,19 @@ class VolumetrikRev7WorkbookTest extends TestCase
     }
 
     /**
-     * Hanya Labu Ukur & Pipet Volume yang ikut Rev.7. Profil lain yang berbagi
+     * Labu Ukur, Pipet Volume, dan (sejak PK-3, 17 Nov 2026) Picnometer ikut
+     * Rev.7 — ketiganya tipe di master Fixed. Profil lain yang berbagi
      * kalkulator tidak menerima parameter apa pun — angkanya tidak bergeser.
      */
-    public function test_hanya_labu_ukur_dan_pipet_volume_memakai_rev7(): void
+    public function test_labu_ukur_pipet_volume_dan_picnometer_memakai_rev7(): void
     {
         $parameter = static fn (VolumetricGlasswareProfile $p): array => (new ReflectionMethod($p, 'parameterHitung'))->invoke($p);
 
         $this->assertSame(V::parameterRev7(), $parameter(new LabuUkurProfile));
         $this->assertSame(V::parameterRev7(), $parameter(new PipetVolumeProfile));
+        $this->assertSame(V::parameterRev7(), $parameter(new PicnometerProfile));
 
-        foreach ([new PicnometerProfile, new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
+        foreach ([new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
             $this->assertSame([], $parameter($p), $p::class);
         }
     }

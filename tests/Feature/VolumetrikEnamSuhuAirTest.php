@@ -252,11 +252,10 @@ class VolumetrikEnamSuhuAirTest extends TestCase
         $this->assertSame(0, CalibrationSession::count());
     }
 
-    /** Profil Rev.6 (keluarga Fixed & Graduated) tetap tepat tiga — enam ditolak. */
+    /** Profil non-Rev.7 (keluarga Graduated) tetap tepat tiga — enam ditolak. */
     public function test_profil_lain_menolak_enam_suhu(): void
     {
         foreach ([
-            ['Picnometer 25 mL', 'Picnometer', [[25, 0.002]], [0, 25, null]],
             ['Gelas Ukur 100 mL', 'Gelas Ukur', [[100, 0.34]], [0, 100, 1]],
         ] as [$nama, $kemampuan, $pita, $rentang]) {
             [$alat, $teknisi] = $this->siapkan($nama, $kemampuan, $pita, $rentang);
@@ -474,7 +473,7 @@ class VolumetrikEnamSuhuAirTest extends TestCase
             return collect($bagian['tabel'])->keyBy('grup')->all();
         };
 
-        foreach ([new LabuUkurProfile, new PipetVolumeProfile] as $p) {
+        foreach ([new LabuUkurProfile, new PipetVolumeProfile, new PicnometerProfile] as $p) {
             $tabel = $tabelHasil($p);
             $this->assertSame([1, 2, 3, 4, 5, 6], $tabel[M::PERAN_SUHU]['pengulangan'], $p::class);
             $this->assertSame([
@@ -490,7 +489,7 @@ class VolumetrikEnamSuhuAirTest extends TestCase
             $this->assertStringContainsString('enam kali suhu air', $p->bentukLembarKerja()['catatan_pengisian']);
         }
 
-        foreach ([new PicnometerProfile, new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
+        foreach ([new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
             $tabel = $tabelHasil($p);
             $this->assertSame([1, 2, 3], $tabel[M::PERAN_SUHU]['pengulangan'], $p::class);
             $this->assertArrayNotHasKey('pengulangan_arah', $tabel[M::PERAN_SUHU], $p::class);
