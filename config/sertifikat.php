@@ -40,4 +40,31 @@ return [
 
     'kop_pracetak' => filter_var(env('SERTIFIKAT_KOP_PRACETAK', false), FILTER_VALIDATE_BOOLEAN),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Gerbang pra-approve "muat satu halaman" (PK-6)
+    |--------------------------------------------------------------------------
+    |
+    | `true` (bawaan): `approve()` API dan tombol Setujui panel merender sertifikat
+    | sementara (`App\Services\PraPeriksaSatuHalaman`) dan MENOLAK sesi yang
+    | terbukti tidak akan terbit satu halaman — sebelum status berubah dan sebelum
+    | nomor sertifikat terpakai. Ongkosnya SATU render dompdf di dalam request
+    | approve (jalur terbit merender lagi di job). Di server kecil itu bisa terasa;
+    | sakelar ini ada supaya gerbangnya bisa dimatikan tanpa mengubah kode bila
+    | latensi approve ternyata terlalu mahal. Mati = perilaku sebelum PK-6:
+    | sesi yang meluap disetujui lalu sertifikatnya `gagal` di job.
+    |
+    | HANYA `false`/`0`/`off`/`no` yang mematikannya. Nilai lain — kosong, salah
+    | ketik, `maybe` — membiarkan gerbang nyala: kebalikan dari `kop_pracetak`
+    | di atas, karena yang dijaga di sini penjagaan, bukan fitur opsional, dan
+    | salah ketik tidak boleh diam-diam melepasnya. (`env()` sudah mengubah teks
+    | `false` menjadi boolean `false`, makanya dicek `=== false` lebih dulu.)
+    |
+    */
+
+    'pra_approve_satu_halaman' => ! (
+        env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', true) === false
+        || in_array(strtolower(trim((string) env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', true))), ['0', 'off', 'no'], true)
+    ),
+
 ];
