@@ -93,15 +93,6 @@
             "y": 0.6005
         },
         {
-            "kode": "standar_dicek.*.dipakai",
-            "cara": "centang",
-            "baris_ke": 3,
-            "label": "RTD Sensor",
-            "label_kertas": "RTD Sensor",
-            "x": 0.3104,
-            "y": 0.6248
-        },
-        {
             "kode": "thermohygro_standard_id",
             "cara": "centang",
             "pilihan": "TH-3",
@@ -130,7 +121,7 @@
         },
         {
             "jenis": "sel",
-            "alasan": "Suhu air: kertas Rev.4 memuat dua kotak (Awal, Akhir) sedangkan profil picnometer meminta tiga suhu (satu per ulangan). Awal/Akhir tidak bisa dipasangkan ke ulangan tanpa menebak.",
+            "alasan": "Suhu air: kertas Rev.4 memuat dua kotak (Awal, Akhir) sedangkan profil Rev.7 meminta enam suhu (X1/X2/X3 x Awal/Akhir). Dua kotak itu tidak bisa dipasangkan ke ulangan tanpa menebak.",
             "titik": [
                 {
                     "x": 0.6794,
@@ -247,6 +238,16 @@
                 {
                     "x": 0.3359,
                     "y": 0.3809
+                }
+            ]
+        },
+        {
+            "jenis": "centang",
+            "alasan": "Baris \"RTD Sensor\" di kertas tidak sama dengan baris profil (profil memuat Fujitsu dan Yokogawa, bukan RTD SH1/20) jadi tidak dipetakan ke `baris_ke` mana pun.",
+            "titik": [
+                {
+                    "x": 0.3104,
+                    "y": 0.6248
                 }
             ]
         }
