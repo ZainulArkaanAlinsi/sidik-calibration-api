@@ -294,45 +294,65 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         $projectId = config('services.fcm.project_id');
         $proyekTerisi = is_string($projectId) && trim($projectId) !== '';
 
-        $kredensialTerbaca = (function () use ($projectId): bool {
+        // Satu kata dari daftar TERTUTUP (`ok` atau salah satu alasan gagal) —
+        // bukan pesan bebas, supaya tidak ada jalur/isi berkas yang ikut keluar
+        // lewat endpoint publik ini. Boolean di bawah diturunkan darinya, jadi
+        // keduanya tidak bisa berbeda cerita.
+        $alasanKredensial = (function () use ($projectId): string {
             $jalur = config('services.fcm.credentials');
 
             if (! is_string($jalur) || trim($jalur) === '') {
-                return false;
+                return 'env_kosong';
             }
 
             try {
                 if (! is_file($jalur)) {
-                    return false;
+                    return 'berkas_tidak_ada';
                 }
 
                 // Service account Google ~2,4 KB; 64 KB cukup longgar dan menjaga
                 // endpoint publik ini nggak membaca berkas besar yang salah tunjuk.
                 $isi = @file_get_contents($jalur, false, null, 0, 65536);
-                $berkas = is_string($isi) ? json_decode($isi, true) : null;
             } catch (Throwable) {
-                return false;
+                return 'berkas_tidak_terbaca';
             }
 
-            if (! is_array($berkas) || ($berkas['type'] ?? null) !== 'service_account') {
-                return false;
+            if (! is_string($isi)) {
+                return 'berkas_tidak_terbaca';
+            }
+
+            $berkas = json_decode($isi, true);
+
+            if (! is_array($berkas)) {
+                return 'bukan_json';
+            }
+
+            if (($berkas['type'] ?? null) !== 'service_account') {
+                return 'bukan_service_account';
             }
 
             foreach (['client_email', 'private_key'] as $kunci) {
                 if (! is_string($berkas[$kunci] ?? null) || trim($berkas[$kunci]) === '') {
-                    return false;
+                    return 'kunci_tidak_lengkap';
                 }
             }
 
             // Berkas milik proyek Firebase lain mengirim ke URL proyek ini dan
             // ditolak 403 — "kredensial terbaca" tapi push tetap nggak jalan.
-            return ! isset($berkas['project_id']) || $berkas['project_id'] === $projectId;
+            return ! isset($berkas['project_id']) || $berkas['project_id'] === $projectId
+                ? 'ok'
+                : 'proyek_beda';
         })();
+        $kredensialTerbaca = $alasanKredensial === 'ok';
 
         return [
             'siap' => $proyekTerisi && $kredensialTerbaca,
             'proyek_terisi' => $proyekTerisi,
             'kredensial_terbaca' => $kredensialTerbaca,
+            // Aditif: kenapa `kredensial_terbaca` false. Hanya kata dari daftar
+            // tertutup di atas (env_kosong, berkas_tidak_ada, berkas_tidak_terbaca,
+            // bukan_json, bukan_service_account, kunci_tidak_lengkap, proyek_beda).
+            'kredensial_alasan' => $alasanKredensial,
         ];
     })(),
 

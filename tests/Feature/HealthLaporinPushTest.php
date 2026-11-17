@@ -115,6 +115,12 @@ class HealthLaporinPushTest extends TestCase
      */
     private function assertPush(bool $siap, bool $proyek, bool $kredensial, array $push, string $pesan = ''): void
     {
+        // `kredensial_alasan` (kata dari daftar tertutup) dijaga tes tersendiri di
+        // bawah; di sini hanya tiga boolean aslinya, dan alasannya harus
+        // sepadan dengan `kredensial_terbaca`.
+        $this->assertSame($kredensial, ($push['kredensial_alasan'] ?? null) === 'ok', $pesan.' (alasan vs terbaca)');
+        unset($push['kredensial_alasan']);
+
         $this->assertSame(
             ['siap' => $siap, 'proyek_terisi' => $proyek, 'kredensial_terbaca' => $kredensial],
             $push,
@@ -269,15 +275,44 @@ class HealthLaporinPushTest extends TestCase
         }
     }
 
-    /** Blok `push` cuma tiga boolean — bukan isi setelan, bukan panjangnya. */
-    public function test_blok_push_cuma_tiga_boolean(): void
+    /** Blok `push`: tiga boolean + satu kata alasan dari daftar tertutup — bukan isi setelan, bukan panjangnya. */
+    public function test_blok_push_tiga_boolean_dan_satu_kata_alasan(): void
     {
         $push = $this->push($this->tulisJson(self::berkasSah()));
 
-        $this->assertSame(['siap', 'proyek_terisi', 'kredensial_terbaca'], array_keys($push));
+        $this->assertSame(['siap', 'proyek_terisi', 'kredensial_terbaca', 'kredensial_alasan'], array_keys($push));
 
-        foreach ($push as $kunci => $nilai) {
-            $this->assertIsBool($nilai, "push.{$kunci} bukan boolean.");
+        foreach (['siap', 'proyek_terisi', 'kredensial_terbaca'] as $kunci) {
+            $this->assertIsBool($push[$kunci], "push.{$kunci} bukan boolean.");
+        }
+
+        $this->assertSame('ok', $push['kredensial_alasan']);
+    }
+
+    /**
+     * Tiap cara `kredensial_terbaca` bisa false punya SATU kata sendiri, supaya
+     * "push belum jalan, kenapa?" terjawab dari /api/health tanpa membuka
+     * dashboard. Daftar tertutup: tidak ada jalur, email, atau isi berkas.
+     * (`berkas_tidak_terbaca` = berkas ada tapi izin baca ditolak; tidak bisa
+     * dibuat andal lintas OS di test, jadi cabangnya tidak dijaga di sini.)
+     */
+    public function test_alasan_kredensial_satu_kata_dari_daftar_tertutup(): void
+    {
+        $kasus = [
+            'env_kosong' => fn () => $this->push(null),
+            'berkas_tidak_ada' => fn () => $this->push($this->direktori.DIRECTORY_SEPARATOR.'tidak-ada.json'),
+            'bukan_json' => fn () => $this->push($this->tulis('ini bukan json')),
+            'bukan_service_account' => fn () => $this->push($this->tulisJson(self::berkasSah(['type' => 'authorized_user']))),
+            'kunci_tidak_lengkap' => fn () => $this->push($this->tulisJson(self::berkasSah([], ['private_key']))),
+            'proyek_beda' => fn () => $this->push($this->tulisJson(self::berkasSah(['project_id' => 'proyek-lain']))),
+            'ok' => fn () => $this->push($this->tulisJson(self::berkasSah())),
+        ];
+
+        foreach ($kasus as $alasan => $jalankan) {
+            $push = $jalankan();
+
+            $this->assertSame($alasan, $push['kredensial_alasan'], "Alasan untuk kasus `{$alasan}`.");
+            $this->assertSame($alasan === 'ok', $push['kredensial_terbaca'], "kredensial_terbaca untuk `{$alasan}`.");
         }
     }
 
@@ -300,7 +335,7 @@ class HealthLaporinPushTest extends TestCase
                 'append_only_db',
                 'php_versi',
                 'json_float_shortest',
-                'push' => ['siap', 'proyek_terisi', 'kredensial_terbaca'],
+                'push' => ['siap', 'proyek_terisi', 'kredensial_terbaca', 'kredensial_alasan'],
             ]);
     }
 }
