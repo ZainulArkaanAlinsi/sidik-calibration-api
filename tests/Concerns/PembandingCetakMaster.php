@@ -53,6 +53,27 @@ final class PembandingCetakMaster
             ?? throw new \InvalidArgumentException("Master '{$kunci}' tidak ada di fixture cetak-master.");
     }
 
+    /**
+     * Sel master yang mencetak nominal BERBINTANG (`200*`): bintangnya dibuang dari token
+     * pencocokan, jadi keberadaannya wajib dijaga terpisah (PK4-8).
+     *
+     * @return list<string>
+     */
+    public static function selBerbintang(string $kunci): array
+    {
+        $hasil = [];
+
+        foreach (self::master($kunci)['baris'] as $b) {
+            foreach ($b['sel'] as $s) {
+                if (($s['bintang'] ?? false) === true) {
+                    $hasil[] = $s['sel'];
+                }
+            }
+        }
+
+        return $hasil;
+    }
+
     /** Nilai mentah (cache master, G17) sebuah sel lembar `SERTIFIKAT`, mis. `Q22`. */
     public static function nilaiSel(string $kunci, string $sel): float
     {
@@ -149,6 +170,10 @@ final class PembandingCetakMaster
         // Pemisah desimal Indonesia -> titik; pemisah ribuan tidak dipakai di sertifikat.
         $baris = (string) preg_replace('/(?<=\d),(?=\d)/', '.', $baris);
 
+        // Tanda bintang nominal kembar (`2*`) tidak ikut token: `*` bukan angka. Itu BUKAN
+        // berarti selisihnya tidak ada — master mencetak bintang itu dan aplikasi tidak
+        // (PK4-8, `docs/pertanyaan-lab-anak-timbangan.md` §26); keberadaannya dijaga lewat
+        // `selBerbintang()` dan AnakTimbanganSesiContohCocokMasterTest.
         preg_match_all('/(?<![\p{L}\d_.])-?\d+(?:\.\d+)?(?![\p{L}\d_])/u', $baris, $m);
 
         return $m[0];

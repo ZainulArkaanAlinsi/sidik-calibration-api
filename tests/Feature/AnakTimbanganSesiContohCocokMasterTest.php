@@ -41,6 +41,13 @@ use Tests\TestCase;
  * Dua belas keping itu mencetak massa konvensional dan U persis master.
  * Baris master di bawahnya (hal 1 baris 25-36, hal 2 baris 20-36, hal 3
  * baris 18-36) adalah salinan sesi lain (§30) dan tidak diadu.
+ *
+ * ## PK4-8: bintang nominal kembar
+ *
+ * Pencocokan angka membuang `*` (master `200*`, `20*`); aplikasi tidak mencetaknya sama
+ * sekali. Selisih itu bukan "diabaikan" — `assertBintangKembarTidakDicetak()` mengunci
+ * keadaannya sekarang (lihat docblock-nya) dan `docs/pertanyaan-lab-adu-cetak-massa-volume.md`
+ * PK4-8 mencatatnya, merujuk `pertanyaan-lab-anak-timbangan.md` §26.
  */
 class AnakTimbanganSesiContohCocokMasterTest extends TestCase
 {
@@ -89,6 +96,45 @@ class AnakTimbanganSesiContohCocokMasterTest extends TestCase
         $this->assertCetakSamaMaster('anak_timbangan/f2_hal2', $html, 3, barisDibuang: [...range(20, 36), 38], akhiran: true);
         // hal 3: baris 17; sisanya salinan.
         $this->assertCetakSamaMaster('anak_timbangan/f2_hal3', $html, 1, barisDibuang: [...range(18, 36), 38], akhiran: true);
+
+        $this->assertBintangKembarTidakDicetak($sesi, $html);
+    }
+
+    /**
+     * PK4-8 — selisih TERBUKA (`pertanyaan-lab-anak-timbangan.md` §26): master mencetak
+     * nominal kembar BERBINTANG (F1 `F19` `200*`; F2 hal 1 `F23` `20*`, hal 2 `F19` `200*`),
+     * sertifikat aplikasi TIDAK mencetak bintang — dua baris bernominal sama tampil tanpa
+     * pembeda bila `ID Number` kosong. Pencocokan angka membuang `*` dengan sengaja
+     * (generator dan `PembandingCetakMaster::token`), jadi selisih ini dikunci DI SINI.
+     *
+     * Ini penanda keadaan sekarang, BUKAN perilaku yang diinginkan: begitu §26 dijawab dan
+     * bintang dicetak, assert di bawah harus DIBALIK (cetak bintang, dan jumlah baris
+     * kembar tanpa pembeda menjadi nol), bukan dihapus.
+     */
+    private function assertBintangKembarTidakDicetak(CalibrationSession $sesi, string $html): void
+    {
+        // Master memang mencetak bintang (tercatat di fixture, tidak ikut token angka).
+        $this->assertSame(['F19'], PembandingCetakMaster::selBerbintang('anak_timbangan/f1'));
+        $this->assertSame(['F23'], PembandingCetakMaster::selBerbintang('anak_timbangan/f2_hal1'));
+        $this->assertSame(['F19'], PembandingCetakMaster::selBerbintang('anak_timbangan/f2_hal2'));
+
+        // Sesinya MENANDAI tiga keping kembar berbintang (kotak 3, 7, 11)...
+        $bintang = $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['bintang'] ?? [];
+        $this->assertCount(3, array_filter((array) $bintang), 'Sesi F2 harus menandai tiga keping kembar berbintang.');
+
+        // ...tetapi tidak satu pun sel tabel sertifikat memuat `*` (PK4-8).
+        $this->assertDoesNotMatchRegularExpression(
+            '#<td>[^<]*\*[^<]*</td>#u',
+            $html,
+            'Sertifikat sekarang mencetak bintang nominal kembar — PK4-8/§26 tertutup: balik assert ini dan perbarui dokumen.',
+        );
+
+        // Dua keping 2 g tampil sebagai dua baris `- | 2 | ...` tanpa pembeda.
+        $this->assertSame(
+            2,
+            preg_match_all('#<tr>\s*<td>-</td>\s*<td>2</td>#u', $html),
+            'Dua baris nominal 2 g tanpa pembeda (ID `-`, tanpa bintang) berubah.',
+        );
     }
 
     /** Jalur HP: simpan sesi 12 keping F2 dari masukan master (ketiga halaman). */
