@@ -33,8 +33,9 @@ tampilan, bukan emulasi ini. Hasil 17 Nov 2026 ada di rincian PK-4.
 
 Excel membulatkan dari representasi 15 angka penting nilai tersimpan, bukan
 dari 17 digit float: 0,7549999999999955 dengan format `0.00` tercetak `0.75`
-(15 angka penting -> 0,755000000000000 -> setengah dibulatkan ke atas ->
-`0.76`). Itu yang dipakai di sini, setengah-menjauhi-nol. Selisih seri ini
+(15 angka penting -> 0,754999999999996 -> dua desimal -> `0.75`), sedangkan
+nilai yang lebih dulu dibulatkan ke 8 desimal (0,75500000, kolom decimal(20,8))
+tercetak `0.76`. Itu yang dipakai di sini, setengah-menjauhi-nol. Selisih seri ini
 bukan urusan generator: `PembulatanTitikSeriMasterTest` yang menjaganya.
 
 ## Cache master
@@ -84,6 +85,12 @@ SUMBER = {
 }
 
 GALAT = {"#VALUE!", "#N/A", "#REF!", "#DIV/0!", "#NAME?", "#NUM!"}
+# Nominal kembar Anak Timbangan dicetak master sebagai teks berbintang (`2*`, `20*`,
+# `200*`). Untuk pencocokan ANGKA bintangnya dibuang (`cetak`) tetapi tidak
+# disembunyikan: `bintang: true` ikut tertulis di fixture, dan aplikasi TIDAK
+# mencetak bintang itu — selisih terbuka PK4-8
+# (docs/pertanyaan-lab-adu-cetak-massa-volume.md, docs/pertanyaan-lab-anak-timbangan.md
+# §26), dikunci di AnakTimbanganSesiContohCocokMasterTest.
 ANGKA_TEKS = re.compile(r"^-?\d+(\.\d+)?\*?$")
 
 
@@ -153,6 +160,8 @@ def baris_sertifikat(ws, awal: int, akhir: int, kol_maks: str):
                     sel_baris.append({
                         "sel": c.coordinate,
                         "teks": v,
+                        # Bintang dibuang dari `cetak` supaya baris dapat dicocokkan per angka;
+                        # keberadaannya tetap tercatat di `bintang` (PK4-8, bukan "sengaja diabaikan").
                         "cetak": v.rstrip("*"),
                         "bintang": v.endswith("*"),
                     })
