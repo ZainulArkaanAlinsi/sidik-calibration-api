@@ -167,6 +167,29 @@ class HitungUlangSesi extends Command
 
             $this->line("{$sesi->nomor_sesi}:");
 
+            // Pengulangan di bawah batas Instruksi Kerja (Micrometer 5, Timer 3).
+            // Dilaporkan di SINI, sebelum cabang dry-run, karena validator di
+            // ujung perintah cuma jalan sesudah hasil ditulis. Sumbernya sama
+            // dengan validator (`titikDiBawahPengulanganIK`) — dua hitungan
+            // sendiri-sendiri bisa berbeda diam-diam. Hitungannya SENDIRI tidak
+            // dipengaruhi: sesi lama harus tetap bisa dihitung ulang persis.
+            $kurangIK = $profil->untukAlat($alat)->titikDiBawahPengulanganIK($sesi);
+
+            if ($kurangIK !== []) {
+                $this->warn(sprintf(
+                    '  PERINGATAN: pengulangan di bawah batas Instruksi Kerja (minimal %d pembacaan per titik):',
+                    $kurangIK[0]['minimum'],
+                ));
+
+                foreach ($kurangIK as $t) {
+                    $this->line(sprintf('    • titik %d: %d pembacaan', $t['titik_ke'], $t['terisi']));
+                }
+
+                $this->line($sesi->status === CalibrationSession::STATUS_DISETUJUI
+                    ? '    hitungannya tidak diubah; sesi ini sudah disetujui sebelum batas ditegakkan, dicatat sebagai temuan mutu.'
+                    : '    hitungannya tidak diubah; sesi ini belum bisa disetujui sebelum pembacaannya dilengkapi.');
+            }
+
             // Dicetak hanya untuk sesi yang menyentuh data acuan berversi
             // (profil ber-skema, atau hasilnya pernah distempel) — puluhan alat
             // lain tidak punya apa pun untuk dilaporkan di sini.
