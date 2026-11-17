@@ -59,6 +59,32 @@ class PembandingCetakMasterTest extends TestCase
         $this->assertSame(['cocok', 'beda'], self::statusBaris(self::master(['10.00', '0.00', '0.033'], ['20.00', '-0.01', '0.033'])));
     }
 
+    /**
+     * Mutan P1 (PK-4, tinjauan 18 Nov): pembanding yang mengabaikan token TERAKHIR (atau
+     * PERTAMA) tetap hijau di delapan tes awal, karena semua kasusnya membedakan kolom
+     * tengah. Kolom U95 adalah yang terakhir di hampir semua tabel sertifikat — paling
+     * mahal bila lolos.
+     */
+    public function test_beda_hanya_di_kolom_terakhir_atau_pertama_ketahuan(): void
+    {
+        $this->assertSame(['beda'], self::statusBaris(self::master(['10.00', '0.00', '0.034'])), 'kolom terakhir');
+        $this->assertSame(['beda'], self::statusBaris(self::master(['11.00', '0.00', '0.033'])), 'kolom pertama');
+        $this->assertSame(['beda'], self::statusBaris(self::master(['10.00', '0.00'])), 'master kurang satu kolom');
+        $this->assertSame(['beda'], self::statusBaris(self::master(['10.00', '0.00', '0.033', '0.5'])), 'master lebih satu kolom');
+    }
+
+    public function test_mode_akhiran_tetap_peka_di_kolom_terakhir_dan_di_batas_kiri(): void
+    {
+        $cetak = PembandingCetakMaster::barisCetak(self::HTML);
+        $status = static fn (array $token): string => PembandingCetakMaster::cocokkan(self::master($token), $cetak, true)[0]['status'];
+
+        // Kolom kiri (ID/nominal) boleh membawa angkanya sendiri: deret hasil di UJUNG baris.
+        $this->assertSame('cocok', $status(['0.00', '0.033']));
+        $this->assertSame('beda', $status(['0.00', '0.034']), 'kolom terakhir');
+        $this->assertSame('beda', $status(['0.01', '0.033']), 'kolom tengah');
+        $this->assertSame('beda', $status(['10.00', '0.00', '0.033', '1']), 'lebih panjang dari baris cetak');
+    }
+
     public function test_kolom_tertukar_ketahuan(): void
     {
         $this->assertSame(['beda'], self::statusBaris(self::master(['10.00', '0.033', '0.00'])));
