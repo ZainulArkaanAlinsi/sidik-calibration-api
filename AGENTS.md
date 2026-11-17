@@ -222,6 +222,21 @@ dan aplikasi mobile masih menampilkan kolom 8 desimal (0,755) sementara sertifik
 mencetak 0,75 (butuh keputusan kontrak angka siap-cetak), dan pembaca Rev7,
 Thermohygro, Proving Ring, dan Sieve masih membaca kolom.
 
+**Sertifikat satu halaman punya DUA pintu (PK-6, 17 Nov 2026).** `SertifikatSatuHalaman`
+menolak (melempar) lembar yang tak muat satu halaman walau mode terpadat; "Page : 1 of 1"
+tidak pernah dikarang. Pintu pertama di depan persetujuan: `approve()` API dan tombol
+Setujui panel memanggil `PraPeriksaSatuHalaman` (sertifikat sementara, tidak disimpan,
+dirakit `CertificateSnapshotBuilder` yang sama; vonisnya
+`SertifikatSatuHalaman::terbuktiTidakMuat()` = "`isi()` pasti melempar?", bukan hitungan
+tinggi baru). Ditolak → `422 sertifikat_lebih_satu_halaman`, status sesi tidak berubah,
+nomor yang diketik belum terpakai, tidak ada job. Pintu kedua tetap job penerbitan
+(`gagal`, nomor & snapshot tetap) untuk yang lolos gerbang tapi gagal juga. Gerbangnya
+gagal terbuka (galat render, kunci render dipegang gerbang lain, atau sakelar
+`sertifikat.pra_approve_satu_halaman` mati = lewat) dan ongkosnya SATU render dompdf di
+request approve. Jangan menduplikasi logika tinggi di gerbang; ubah `SertifikatSatuHalaman`.
+Skenario terburuk semua profil (baris terbesar skema + header panjang):
+`SertifikatSkenarioTerburukTest`. Kontrak: `docs/kontrak-api.md` §5 approve.
+
 ### Lapisan lain
 
 | Lapisan | Tempat | Catatan |

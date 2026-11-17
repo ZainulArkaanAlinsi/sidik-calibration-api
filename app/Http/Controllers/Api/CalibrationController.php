@@ -49,6 +49,7 @@ use App\Services\PemisahanWewenang;
 use App\Services\PenautanSesiKeOrder;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
+use App\Services\PraPeriksaSatuHalaman;
 use App\Services\RumusKalibrasi;
 use App\Services\TarikSertifikat;
 use App\Support\AnakTimbanganMentah;
@@ -1518,6 +1519,19 @@ class CalibrationController extends Controller
                 'butuh_konfirmasi' => true,
                 'validasi' => $periksa,
             ], 422);
+        }
+
+        // Gerbang satu halaman, PALING AKHIR di antara semua pemeriksaan (render
+        // dompdf itu yang paling mahal) dan SEBELUM status berubah: sertifikat
+        // yang terbukti tidak muat satu halaman tidak boleh menghabiskan
+        // persetujuan dan nomor yang diketik admin, lalu gagal-final di job.
+        // Aturannya `SertifikatSatuHalaman` — fungsi jalur terbit — bukan hitungan
+        // baru; lihat `PraPeriksaSatuHalaman`. Panel memakai gerbang yang sama.
+        $tidakMuat = app(PraPeriksaSatuHalaman::class)
+            ->periksa($calibration, $request->user(), $nomorSertifikat, $dasarTarikan);
+
+        if ($tidakMuat !== null) {
+            return response()->json($tidakMuat, 422);
         }
 
         // Sesi FAIL tetap boleh disetujui — hasil FAIL itu temuan yang sah dan

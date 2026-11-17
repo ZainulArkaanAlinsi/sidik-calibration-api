@@ -1442,6 +1442,37 @@ dokumen yang tidak pernah terbit tidak menghabiskan nomor. Mobile cukup
 menampilkan `message` dan tombol retry biasa di sertifikatnya. Dulu keadaan ini
 dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 
+**`422 sertifikat_lebih_satu_halaman` — sertifikat terbukti tidak muat satu halaman (17 Nov 2026,
+PK-6).** Sertifikat selalu satu halaman (`Page : 1 of 1` ditulis mati); lembar yang meluap tidak
+pernah diterbitkan. Dulu hal itu baru ketahuan SESUDAH sesi disetujui: nomor sertifikat yang diketik
+sudah terpakai dan PDF-nya `gagal` sampai isinya dipangkas. Sekarang `approve` merender sertifikat
+sementara (tidak disimpan) dengan renderer yang sama dengan penerbitan dan menolak lebih awal:
+
+```json
+{
+  "message": "Sertifikat sesi ini tidak muat satu halaman (jadi 2 halaman walau sudah dipadatkan sepenuhnya), sehingga sesi TIDAK disetujui dan nomor sertifikat belum terpakai. Kurangi isi yang memanjang tanpa menambah baris — nama atau alamat pelanggan, nama lokasi, merk/model/nomor seri, jumlah titik ukur — lalu setujui lagi.",
+  "kode": "sertifikat_lebih_satu_halaman",
+  "halaman": 2
+}
+```
+
+- Status sesi **tidak berubah**, tidak ada baris sertifikat, nomor yang diketik **belum terpakai**
+  (boleh dipakai lagi sesudah isinya dipangkas), tidak ada job penerbitan.
+- Diperiksa PALING AKHIR (render itu yang termahal): sesudah `pemisahan_wewenang` →
+  `nomor_order_wajib` → `nomor_sertifikat_*` → galat validasi body → temuan validator → baru ini.
+  Tombol Setujui panel `/admin` memakai gerbang yang sama (notifikasi, bukan `422`).
+- `halaman` = jumlah halaman hasil render mode terpadat. Cabangkan pada `kode`, bukan teks `message`.
+  Tidak ada `abaikan_peringatan` yang menembusnya: PDF dua halaman bertulis "1 of 1" itu dokumen yang
+  menyatakan hal yang tidak benar.
+- Yang dipangkas ada di data sesi (alamat/nama yang panjang, lokasi onsite, jumlah titik). Teks
+  pesannya tidak menyebut kolom tertentu karena penyebabnya bisa lebih dari satu.
+- Gagal terbuka: bila render gerbangnya sendiri gagal (bukan "tidak muat"), `approve` jalan seperti
+  dulu dan jalur penerbitan yang memutuskan. Sakelar `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=false`
+  (config `sertifikat.pra_approve_satu_halaman`, bawaan nyala) mematikan gerbangnya.
+- Ongkos: SATU render dompdf tambahan di dalam request `approve` (sesi yang muat membayar satu render
+  mode terpadat; yang tidak muat membayar seluruh tangga). Mobile tidak perlu perubahan: `422` dengan
+  `message` sudah ditampilkan seperti galat `approve` lain.
+
 ### `POST /api/calibrations/{id}/reject` — **DICABUT (15 Okt 2026, K-50-01)**
 
 Rute, izin `kalibrasi.tolak`, tombol Tolak panel, dan notifikasi `sesi_perlu_revisi` sudah tidak
