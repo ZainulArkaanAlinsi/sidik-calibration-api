@@ -30,8 +30,8 @@ use Illuminate\Support\Collection;
  * | [FixedVolumetricGlasswareProfile] | Labu Ukur (18), Pipet Volume (20), Picnometer (21) |
  * | [GraduatedVolumetricGlasswareProfile] | Buret (13), Gelas Ukur (17), Pipet Ukur (19) |
  *
- * Picnometer di Fixed itu dugaan pengembang (bertanda satu, seperti labu ukur)
- * — pertanyaan lab no. 6.
+ * Picnometer di Fixed dijawab master Fixed 12 Nov 2026: picnometer tipe alat
+ * di dalamnya (`DATABASE!V39`) — pertanyaan lab no. 6.
  *
  * ## Yang diisi teknisi BUKAN volume
  *
@@ -425,8 +425,7 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
     /**
      * Baris `Tekanan Udara <P> hPa ± <U> hPa` di Environmental Condition
      * (`143!T13:Y13`, `144!T13:Y13`) untuk SEMUA turunan keluarga ini (Fixed
-     * non-Rev.7 seperti picnometer, dan Graduated: buret, gelas ukur, pipet
-     * ukur). Nilainya `U13 = PERHITUNGAN!G19 = AVERAGE(E19:F19)` — rata-rata
+     * non-Rev.7 dan Graduated: buret, gelas ukur, pipet ukur). Nilainya `U13 = PERHITUNGAN!G19 = AVERAGE(E19:F19)` — rata-rata
      * tekanan BACAAN tanpa koreksi thermobarometer, persis [FixedVolumetric
      * GlasswareRev7Profile::tekananEnvSertifikat] dan tekanan yang masuk
      * hitungan densitas udara.

@@ -12,7 +12,7 @@ use App\Support\VolumetricGlasswareMentah as M;
 use Illuminate\Support\Collection;
 
 /**
- * Labu Ukur & Pipet Volume — keluarga Fixed yang mengikuti **workbook lab
+ * Labu Ukur, Pipet Volume & Picnometer — keluarga Fixed yang mengikuti **workbook lab
  * Rev.7** (`SIDIK-IK-CAL-0510_Rev.7`; LU-200/250/500-1, PV 0,5/2/3/4).
  * Keputusan pemilik 8 Okt 2026: workbook lab adalah ACUAN.
  *
@@ -31,7 +31,8 @@ use Illuminate\Support\Collection;
  * | Class/Permitted Error & Suhu Dasar Volume 20 °C | `SERTIFIKAT!O14:U14`, `E18:N18` — sejak K-50-15 kotak kepala & blok di atas tabel untuk keenam alat volumetrik ([VolumetricGlasswareProfile]), bukan lagi baris `catatanAtasTabelHasil` di sini |
  * | suhu env 1 desimal, RH bulat, nominal dengan nol di belakang | format sel `SERTIFIKAT!U11/U12/E21` |
  *
- * Picnometer TIDAK ikut: workbook-nya masih `Fixed_Volumetric_Glassware_2026`.
+ * Picnometer ikut sejak PK-3 (17 Nov 2026): tipe alat di master Fixed 12 Nov 2026
+ * (`DATABASE!V39`), tanpa sampel sesi sendiri — CMC-nya dari `CMC_picno` (`AB5:AC7`).
  */
 abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlasswareProfile
 {
