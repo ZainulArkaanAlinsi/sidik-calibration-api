@@ -56,7 +56,7 @@ Dua kunci baru di `data`:
     "bawaan": [60, 300, 600, ...],
     "fase": ["sesudah"],           // fase yang BOLEH dipilih; ["sebelum","sesudah"] di lembar datar ber-as-found
     "satuan": "s",
-    "pengulangan": {"min": 2, "maks": 10, "bawaan": 3}   // null = dipatok lembar
+    "pengulangan": {"min": 3, "maks": 10, "bawaan": 3}   // null = dipatok lembar; min = batas IK per profil (Micrometer 5, Timer 3, lainnya 2)
   }]
 },
 "titik_sesi_bawaan": [
@@ -138,7 +138,8 @@ Aturan yang wajib dipatuhi HP (server menolak 422 `errors.titik_sesi` / `errors.
 6. Jumlah titik **aktif** per tabel di `[min, maks]`; total titik ≤ 60.
 7. Nominal titik aktif wajib di dalam rentang ukur alat (aturan yang sama dengan pemeriksa
    pembacaan: `range_min − toleransi … range_max + toleransi`).
-8. `pengulangan` di `[min, maks]`; tidak boleh lebih kecil dari pembacaan tersimpan
+8. `pengulangan` di `[min, maks]` (`min` = batas Instruksi Kerja alatnya, sejak 17 Nov 2026: Micrometer 5, Timer/Stopwatch 3,
+   alat lain 2 — nilai `min` di skema, bukan angka mati); tidak boleh lebih kecil dari pembacaan tersimpan
    (pembacaan tidak pernah dibuang), dan baris yang dikirim tidak boleh melebihi jumlahnya.
 9. Tabel dengan `pertama_wajib_aktif: true` (Tekanan): titik pertama set tidak bisa dinonaktifkan
    (`alasan_pertama` menjelaskan kenapa), dan baris pertama `measurements` wajib titik itu.

@@ -501,11 +501,24 @@ class PengulanganMinimumIKTest extends TestCase
             ->expectsOutputToContain('belum bisa disetujui')
             ->assertSuccessful();
 
-        // Hitung ulang sungguhan: hitungan & pembacaan mentah sama persis.
+        // Hitung ulang sungguhan: hitungan sama, pembacaan mentah utuh.
+        //
+        // Dibandingkan dengan toleransi 1e-7, bukan `assertSame`: yang tersimpan
+        // lewat API melewati kolom `decimal(20,8)` (dibulatkan di MySQL), sedangkan
+        // SQLite uji menyimpan float penuh hasil hitung ulang. Beda ~1e-13 itu
+        // artefak mesin uji, bukan perubahan hitungan.
         $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$id]])->assertSuccessful();
 
-        $this->assertSame($sebelum, CalibrationSession::findOrFail($id)->uncertaintyCalculations
-            ->map->only(['titik_ke', 'koreksi', 'ketidakpastian_diperluas'])->all());
+        $sesudah = CalibrationSession::findOrFail($id)->uncertaintyCalculations
+            ->map->only(['titik_ke', 'koreksi', 'ketidakpastian_diperluas'])->all();
+
+        $this->assertSame(array_column($sebelum, 'titik_ke'), array_column($sesudah, 'titik_ke'));
+        $this->assertEqualsWithDelta(array_column($sebelum, 'koreksi'), array_column($sesudah, 'koreksi'), 1e-7);
+        $this->assertEqualsWithDelta(
+            array_column($sebelum, 'ketidakpastian_diperluas'),
+            array_column($sesudah, 'ketidakpastian_diperluas'),
+            1e-7,
+        );
         $this->assertSame(9, RawMeasurement::where('calibration_session_id', $id)
             ->where('peran_sensor', MicrometerMentah::PERAN_PEMBACAAN)->count());
     }
