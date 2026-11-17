@@ -370,6 +370,35 @@ class PraApproveSatuHalamanTest extends TestCase
         $this->assertSame(Certificate::STATUS_GAGAL, Certificate::where('calibration_session_id', $sesiLuap->id)->value('status'));
     }
 
+    /**
+     * Bentuk baku untuk membandingkan snapshot yang disimpan dengan yang dirakit di
+     * memori. MySQL menyimpan kolom JSON dengan kunci diurutkan ulang (panjang kunci
+     * dulu, baru abjad) dan menyimpan angka desimal pada ketelitian ±15 digit, jadi
+     * `assertSame` mentah hijau di SQLite tetapi merah di MySQL padahal isinya sama.
+     * Urutan kunci objek JSON tidak bermakna; angka dibulatkan ke 12 digit signifikan.
+     * Urutan DAFTAR (indeks 0..n) dipertahankan: itu bermakna.
+     *
+     * @param  array<mixed>  $nilai
+     * @return array<mixed>
+     */
+    private static function kanonik(array $nilai): array
+    {
+        foreach ($nilai as $kunci => $isi) {
+            if (is_array($isi)) {
+                $nilai[$kunci] = self::kanonik($isi);
+            } elseif (is_int($isi) || is_float($isi)) {
+                // 1 dan 1.0 sama maknanya di JSON; MySQL bisa mengembalikan salah satunya.
+                $nilai[$kunci] = $isi == 0 ? 0.0 : (float) sprintf('%.11e', $isi);
+            }
+        }
+
+        if (! array_is_list($nilai)) {
+            ksort($nilai, SORT_STRING);
+        }
+
+        return $nilai;
+    }
+
     /** Isi sertifikat sementara gerbang == isi sertifikat yang diterbitkan job (kecuali token QR acak). */
     public function test_sertifikat_sementara_sama_dengan_yang_diterbitkan_job(): void
     {
@@ -387,7 +416,7 @@ class PraApproveSatuHalamanTest extends TestCase
         $banding = static function (array $snapshot): array {
             unset($snapshot['meta']['qr_token'], $snapshot['meta']['qr_payload']);
 
-            return $snapshot;
+            return self::kanonik($snapshot);
         };
 
         $this->assertSame($banding($nyata->snapshot), $banding($sementara->snapshot));
@@ -427,7 +456,7 @@ class PraApproveSatuHalamanTest extends TestCase
         $banding = static function (array $snapshot): array {
             unset($snapshot['meta']['qr_token'], $snapshot['meta']['qr_payload']);
 
-            return $snapshot;
+            return self::kanonik($snapshot);
         };
 
         $this->assertSame($banding($baru->snapshot), $banding($sementara->snapshot));
