@@ -41,7 +41,7 @@ Jadi batas "Micrometer 5" di atas menjaga koreksi tercetak, tetapi **tidak** men
 menjaga U95 adalah jumlah pembacaan Evaluasi, dan itu sekarang hanya dituntut `>= 2` dan tidak
 seragam (`MicrometerCalculator::hitungSesi`, `boleh_terbit`).
 
-**Angkanya** (master 25–50 mm: `u(A)` = 0,3162 µm, `v` = 9, U95 = 0,8762 µm): dengan `n` lebih
+**Angkanya** (master 25–50 mm: `s` (STDEV Evaluasi) = 0,3162 µm, `u(A)` = `s`/√10 = 0,1000 µm, `v` = 9, U95 = 0,8762 µm): dengan `n` lebih
 kecil `u(A)` naik (`s/√n`) dan `v` turun, jadi `veff` dan `k` ikut bergeser dan U95 berbeda dari
 master.
 
