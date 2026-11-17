@@ -39,6 +39,23 @@ use Tests\TestCase;
  *    T2). Gram dan substitusi tidak terkena karena lantai CMC menang di dua sisi.
  * 3. **kg & substitusi baris ketiga `Penuh`** (0 · 0 · 0) tidak dicetak:
  *    kerusakan salin-tempel master, aplikasi sengaja dua baris.
+ *
+ * ## Lingkup klaim GRAM (PK4-10)
+ *
+ * "Gram cocok 23/23" hanya terhadap master gram LAMA (`New Master Olda Timbangan gram.xlsm`,
+ * sha256 `ce1a3936...`, yang dipakai seeder). Master gram revisi 29 Mei 2026 (`xlsm2`, sha256
+ * `7b288cdb...`) TIDAK disentuh PK-4 — ditahan menunggu jawaban lab
+ * (`docs/pertanyaan-lab-timbangan.md` T9/T11/T14) — dan terhadapnya 12 dari 68 sel gram
+ * tercetak berbeda (mis. `U29` 0,00058 -> 0,00057; `M46` LOP 0,00077 -> 0,00030; `H49:H53` dan
+ * `W49:W53` 0,00060 -> 0,00057). Jadi hijau di sini TIDAK membuktikan sertifikat gram sesuai
+ * master yang sekarang dipegang lab.
+ *
+ * ## Pembulatan titik seri (PK4-9)
+ *
+ * Tidak ada nilai sampel yang jatuh tepat di titik seri pada jalur cetak Timbangan, jadi tes ini
+ * TIDAK membuktikan pembulatan di sana. Jalur Timbangan memakai `Angka::id` (pembulatan nilai
+ * biner eksak) sedangkan profil lain `Angka::tampilanExcel`; penandanya di
+ * `TimbanganTitikSeriCetakTest`.
  */
 class TimbanganSesiContohCocokMasterTest extends TestCase
 {
@@ -75,6 +92,7 @@ class TimbanganSesiContohCocokMasterTest extends TestCase
                     53 => ['T2 (sama).', ['50.00', '0.033', '100.00', '0.033']],
                 ],
             ],
+            // Hanya terhadap master gram LAMA (sha256 ce1a3936...); xlsm2 (29 Mei 2026) tidak disentuh — PK4-10.
             'timbangan/gram' => [
                 'nomor' => '019-CAL-425', 'varian' => 'gram', 'cocok' => 23,
                 'selisih' => [],
