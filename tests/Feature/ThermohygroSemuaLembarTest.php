@@ -68,6 +68,8 @@ class ThermohygroSemuaLembarTest extends TestCase
             .'memakai Thermobarometer Lutron — satu-satunya yang mengukur tekanan untuk densitas udara.'],
         'pipet_volume' => ['unit' => ['Thermobarometer Lutron'], 'alasan' => 'workbook Rev.7 `INPUT DATA!E24` '
             .'memakai Thermobarometer Lutron — satu-satunya yang mengukur tekanan untuk densitas udara.'],
+        'picnometer' => ['unit' => ['Thermobarometer Lutron'], 'alasan' => 'master Fixed 12 Nov 2026 (Rev.7; picnometer = tipe '
+            .'`DATABASE!V39`) `INPUT DATA!E24` memakai Thermobarometer Lutron — satu-satunya yang mengukur tekanan untuk densitas udara.'],
     ];
 
     /**

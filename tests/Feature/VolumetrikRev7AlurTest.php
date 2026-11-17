@@ -322,21 +322,32 @@ class VolumetrikRev7AlurTest extends TestCase
         }
     }
 
-    public function test_lembar_picnometer_tidak_berubah(): void
+    /**
+     * PK-3 (17 Nov 2026): Picnometer = tipe di master Fixed 12 Nov 2026 (Rev.7),
+     * jadi lembarnya sama dengan Labu Ukur — neraca Fujitsu, termometer
+     * Yokogawa, Lutron, dan tujuh komponen.
+     */
+    public function test_lembar_picnometer_ikut_rev7_seperti_labu_ukur(): void
     {
         $alat = $this->alat('Picnometer', 25);
         $profil = app(CalibrationProfileRegistry::class)->untukAlat($alat);
         $bentuk = $profil->bentukLembarKerja(false, $alat);
         $bagian = collect($bentuk['bagian'])->keyBy('kode');
 
+        $baris = collect($bagian['usage_check']['baris'])->keyBy('label');
         $this->assertSame(
-            ['Balance Excellent', 'Balance Mettler Toledo', 'RTD Sensor'],
+            ['Balance Excellent', 'Balance Mettler Toledo', 'Balance Fujitsu', 'Termometer & Sensor Std. (Yokogawa CA 150)'],
             array_column($bagian['usage_check']['baris'], 'label'),
         );
+        $this->assertSame($this->standar['fujitsu']->id, $baris['Balance Fujitsu']['standard_id']);
         $thermohygro = collect($bagian['identitas_alat']['field'])->firstWhere('kode', 'thermohygro_standard_id');
-        $this->assertNotContains((string) $this->standar['lutron']->id, array_column($thermohygro['pilihan'], 'nilai'));
-        $this->assertStringContainsString('Delapan komponen', $bentuk['budget_ketidakpastian']['catatan']);
-        $this->assertNull($profil->standarSesiDariSpesifikasi([M::KUNCI_SESI => ['neraca' => 'Analytical Balance']], $alat));
+        $this->assertContains((string) $this->standar['lutron']->id, array_column($thermohygro['pilihan'], 'nilai'));
+        $this->assertStringContainsString('Rev.7', $bentuk['budget_ketidakpastian']['sumber']);
+        $this->assertStringContainsString('Tujuh komponen', $bentuk['budget_ketidakpastian']['catatan']);
+        $this->assertSame(
+            $this->standar['mettler']->id,
+            $profil->standarSesiDariSpesifikasi([M::KUNCI_SESI => ['neraca' => 'Analytical Balance']], $alat)?->id,
+        );
     }
 
     /** Centang satu neraca = neraca blok (pola Piston/Gaya); dua neraca ditolak saat dikirim. */
@@ -622,11 +633,13 @@ class VolumetrikRev7AlurTest extends TestCase
     }
 
     /**
-     * Picnometer (Fixed lama) tidak ikut aturan Rev.7 (standar
-     * termometer; baris Tekanan Udara menyusul di Tahap B2). Bentuk lembarnya K-50-15 ikut master Fixed 143 seperti
+     * PK-3 (17 Nov 2026): picnometer ikut jalur Rev.7 (master Fixed 12 Nov
+     * 2026) — standar sertifikat = neraca + Termometer & Sensor Std. lewat
+     * `standarTambahanSesi`, TIDAK lagi lewat `StandarCetakMaster` (dua jalur
+     * akan mencetak termometer dua kali). Bentuk lembar K-50-15 sama dengan
      * labu ukur: kotak Class/Permitted Error & blok Suhu Dasar Volume.
      */
-    public function test_sertifikat_picnometer_tidak_ikut_berubah(): void
+    public function test_sertifikat_picnometer_ikut_rev7(): void
     {
         $alat = $this->alat('Picnometer', 25);
         $sesi = $this->simpan([
@@ -649,18 +662,19 @@ class VolumetrikRev7AlurTest extends TestCase
             ]],
         ]);
 
+        // Jalur hitung ulang Rev.7 hidup: angka tersimpan yang digeser ketahuan.
+        $this->assertNotContains('hitung_ulang_beda', $this->kodeTemuan($sesi));
+        $asli = $sesi->uncertaintyCalculations()->sole()->rata_rata;
+        $sesi->uncertaintyCalculations()->update(['rata_rata' => 24.5]);
+        $this->assertContains('hitung_ulang_beda', $this->kodeTemuan($sesi));
+        $sesi->uncertaintyCalculations()->update(['rata_rata' => $asli]);
+
         $snapshot = $this->terbitkan($sesi)->snapshot;
 
         $this->assertNull($snapshot['catatan_atas_hasil']);
         $this->assertSamaPetaJson(['kelas_toleransi' => 'A/±0.04 ml'], $snapshot['header_tambahan']);
         $this->assertSame('Suhu Dasar Volume', $snapshot['catatan_blok'][0]['tabel'][0][0]);
-        // Tahap B2: master Fixed `143!T13:Y13` mencetak Tekanan Udara, dan picnometer ikut
-        // bentuk Fixed (dulu tidak, sebelum baris itu dipasang untuk keluarga Fixed non-Rev.7).
         $this->assertStringContainsString('Tekanan Udara 1001 hPa', (string) $snapshot['header']['env_condition']);
-        // G1/R2 (K-50-15): master Fixed mencetak baris termometer SELALU
-        // (`DATABASE!V22`), picnometer ikut lewat `StandarCetakMaster`. Aturan
-        // Rev.7 lain (`standarTambahanSesi`, validator) tidak berlaku.
         $this->assertSame(['Analytical Balance', 'Termometer & Sensor Std.'], array_column($snapshot['standar_digunakan'], 'name'));
-        $this->assertTrue($snapshot['hasil'][0]['standar_ringkas']);
     }
 }

@@ -53,7 +53,7 @@ class SertifikatStandarSelaluTercetakTest extends TestCase
         $sesi = new CalibrationSession;
         $sesi->organization_id = $this->org->id;
 
-        $this->assertCount(15, StandarCetakMaster::PER_PROFIL);
+        $this->assertCount(14, StandarCetakMaster::PER_PROFIL);
 
         foreach (array_keys(StandarCetakMaster::PER_PROFIL) as $kode) {
             // Hydrometer (B1) mencetak dua baris tetap: termometer + caliper;
@@ -74,7 +74,7 @@ class SertifikatStandarSelaluTercetakTest extends TestCase
         $sesi->organization_id = $this->org->id;
 
         // Rev.7 punya jalurnya sendiri (`standarTambahanSesi`) — tidak boleh tercetak dua kali.
-        foreach (['labu_ukur', 'pipet_volume', 'micrometer', 'timbangan', 'tids', 'thermohygro'] as $kode) {
+        foreach (['labu_ukur', 'pipet_volume', 'picnometer', 'micrometer', 'timbangan', 'tids', 'thermohygro'] as $kode) {
             $this->assertSame(
                 [],
                 app(CalibrationProfileRegistry::class)->untukKode($kode)->standarSelaluTercetakSesi($sesi),

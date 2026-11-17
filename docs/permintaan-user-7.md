@@ -6091,6 +6091,24 @@ satu kunci tambahan per entri daftar, tanpa migrasi dan tanpa mengubah kunci lam
 untuk "template ber-banyak formulir ada formulirnya atau tidak" di daftar (butuh kunci tambahan seperti `jumlah_formulir`; keputusan pemilik/mobile).
 Nomor §60 dipilih berdasarkan `origin/main` 7dc0134d; bila PR lain sudah memakainya, ganti nomor saat rebase.
 
+## §61 — PK-3: master 12 Nov 2026 yang tidak butuh jawaban lab (Bath, Picnometer) — 17 Nov 2026
+
+Sumber: audit sertifikat 16 Nov 2026 (G4a, G4b, D8) + `_agents_workspace/audit-sertifikat-20261109/09-excel-baru-12nov.md`.
+Branch `feat/master-12nov-bath-picnometer`. Status: kode + tes lokal (SQLite); gerbang MySQL = CI. Tidak ada
+perubahan kontrak API; satu-satunya efek ke aplikasi ialah ISI data lembar Picnometer (lihat di bawah).
+
+| Butir | Keadaan |
+|---|---|
+| **Bath: efek radiasi & pembebanan = 0** (`PERHITUNGAN U95%!N31,N32` Yokogawa; `DATABASE!V7:W7` Recorder) | **SELESAI.** `BathProfile::radiasiPembebananNol()` → `spek['radiasi_pembebanan_nol']` → `EnclosureCalculator`. Barisnya tetap ada di budget bernilai 0; jejak sesi mendapat `bath_radiasi_pembebanan_nol` (sel sumber + U hitung bila aturan jenis lain). Konduksi panas tidak berubah. Jalur simpan, validator, dan `kalibrasi:hitung-ulang` satu pintu (`hitungPerGrup`). Tes: `EnclosureBathNolTest`, `EnclosureBathJalurHitungTest`, `EnclosureSesiTest`. Pertanyaan: `docs/pertanyaan-lab-enclosure.md` §15 |
+| **Picnometer → Rev.7** | **SELESAI.** `PicnometerProfile extends FixedVolumetricGlasswareRev7Profile` (picnometer = tipe di master Fixed 12 Nov, `DATABASE!V39`). Keluar dari `StandarCetakMaster` (jalur Rev.7 sendiri, jangan dobel). Rantai hitung diadu ke sampel master 12 Nov sel demi sel (`VolumetrikPicnometerRev7Test`), CMC ke `CMC_picno` (`DATABASE!AB5:AC7`). Pertanyaan: `docs/pertanyaan-lab-volumetric.md` no. 23–26 (no. 26 = U95 termometer Yokogawa master 0,058 vs tabel repo 0,72, berlaku semua tipe Fixed) |
+| **Data standar enclosure 2026** (Yokogawa 2026-09-17, TC K/N 2026, `SDK-TCK-01,02`/`SDK-TCN-01,02`) | **TIDAK DIKERJAKAN.** Ini perubahan lapis 1 (tabel koreksi standar): harus lewat alur versi + simulasi (AGENTS.md §Olah data butir 3, §54), bukan menimpa `tabel-kalibrator-enclosure.json`; ± 1.800 nilai berubah (selisih sensor sampai 1,5 °C); sampel master baru memakai Type K sehingga vektor Type N tidak punya pembanding master; tanggal berlaku per sesi belum diputuskan. Hasil regenerasi percobaan ada di catatan serah terima PK-3 |
+| Timbangan gram `xlsm2`, CMC flowmeter ruang lingkup baru | **DITAHAN** (butuh jawaban lab) — tidak disentuh |
+
+Dampak ke aplikasi (bukan kontrak, isi data): `GET /api/calibrations/lembar-kerja` untuk Picnometer kini mengirim
+baris Usage Check Balance Fujitsu + Termometer & Sensor Std., pilihan thermohygro memuat Thermobarometer Lutron,
+dan suhu air diterima 3 ATAU 6 (sama dengan Labu Ukur/Pipet Volume). Contoh `contoh_lembar_kerja_volumetric_glassware.dart`
+di repo mobile masih bentuk lama sampai digenerate ulang oleh pemilik (`docs/skrip/gen-contoh-lembar-kerja.php`).
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook

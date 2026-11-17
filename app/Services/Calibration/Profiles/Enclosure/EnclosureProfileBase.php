@@ -317,6 +317,17 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         return Formula::KODE_GUM_ENCLOSURE;
     }
 
+    /**
+     * Master 12 Nov 2026 mengosongkan efek radiasi & pembebanan KHUSUS jenis
+     * Bath (Yokogawa `PERHITUNGAN U95%!N31`/`N32`, Recorder `DATABASE!V7:W7`).
+     * Hanya [BathProfile] yang menyalakannya; empat jenis lain tetap memakai
+     * aturan lama. Satu-satunya pintu — kalkulator tidak menebak jenis dari nama.
+     */
+    protected function radiasiPembebananNol(): bool
+    {
+        return false;
+    }
+
     public function besaran(): string
     {
         return 'suhu';
@@ -605,6 +616,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             'tipe_sensor' => $tipe,
             'cmc' => (float) $kemampuan->ketidakpastian_terbaik,
             'resolusi_alat' => (float) ($equipment->resolusi ?: 0.1),
+            'radiasi_pembebanan_nol' => $this->radiasiPembebananNol(),
         ];
 
         $hitungan = [];

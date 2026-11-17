@@ -175,7 +175,7 @@ class GeometriFormulirAsliSemuaTest extends TestCase
         'micrometer-0522D.peta.json' => [65, 65, 2, 0],
         'oven-0504.peta.json' => [55, 55, 2, 8],
         'ph_meter-0509.peta.json' => [60, 60, 4, 9],
-        'picnometer-0513.peta.json' => [9, 6, 4, 4],
+        'picnometer-0513.peta.json' => [12, 6, 4, 3],
         'pipet_ukur-0514.peta.json' => [45, 30, 4, 3],
         'pipet_volume-0513.peta.json' => [12, 6, 4, 3],
         'piston_pipette-0528.peta.json' => [39, 13, 4, 5],

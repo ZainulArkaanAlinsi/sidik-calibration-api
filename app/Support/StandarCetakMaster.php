@@ -11,9 +11,9 @@ namespace App\Support;
  * `'INPUT DATA'!X22/Z23/AA21/AA26`), bukan dari pilihan per sesi. App dulu
  * mencetak hanya standar yang tertaut ke titik / dicentang, jadi baris
  * "Termometer & Sensor Std." (Yokogawa/CA 150 Handy Cal, 23P1005,
- * LK-285-IDN) hilang di 14+ profil. Cuma labu ukur & pipet volume Rev.7
- * punya jalurnya sendiri (`FixedVolumetricGlasswareRev7Profile::
- * standarTambahanSesi`) — mereka TIDAK ada di tabel ini.
+ * LK-285-IDN) hilang di 14+ profil. Cuma labu ukur, pipet volume, dan
+ * picnometer (Rev.7) punya jalurnya sendiri (`FixedVolumetricGlasswareRev7
+ * Profile::standarTambahanSesi`) — mereka TIDAK ada di tabel ini.
  *
  * Tiap entri = daftar pencocok baris master `standards` (NAMA dulu, serial
  * belakangan — `CalibrationProfile::cocokkanStandar`). Baris yang tidak ada di
@@ -31,7 +31,8 @@ namespace App\Support;
  * - buret, gelas_ukur, pipet_ukur, buret_digital*: Graduated `B34` =
  *   `DATABASE!V21` (*Graduated Piston Volume `B32` = `DATABASE!V16`)
  * - dispensett, piston_pipette: Fixed Piston Volume `B30` = `DATABASE!V16`
- * - picnometer: tanpa workbook sendiri; mengikuti Fixed (`DATABASE!V22`)
+ * - picnometer: tipe di master Fixed 12 Nov 2026 (`DATABASE!V22`); sejak PK-3 (17 Nov 2026)
+ *   lewat jalur Rev.7 `standarTambahanSesi` seperti labu ukur & pipet volume, bukan tabel ini
  *
  * - hydrometer (B1 / R2): `SERTIFIKAT!B29:B31` = `DATABASE!V13` (neraca, menaut
  *   lewat titik), `V14` Termometer & Sensor Std. dan `V16` Caliper — dua
@@ -79,7 +80,6 @@ final class StandarCetakMaster
         'buret' => [self::TERMOMETER_SENSOR],
         'gelas_ukur' => [self::TERMOMETER_SENSOR],
         'pipet_ukur' => [self::TERMOMETER_SENSOR],
-        'picnometer' => [self::TERMOMETER_SENSOR],
         'buret_digital' => [self::TERMOMETER_SENSOR],
         'dispensett' => [self::TERMOMETER_SENSOR],
         'piston_pipette' => [self::TERMOMETER_SENSOR],

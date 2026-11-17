@@ -211,12 +211,14 @@ class VolumetrikEnamSuhuAirTest extends TestCase
         }
     }
 
-    public function test_hanya_labu_ukur_dan_pipet_volume_menerima_enam_bacaan(): void
+    public function test_hanya_profil_rev7_menerima_enam_bacaan(): void
     {
         $this->assertSame([3, 6], (new LabuUkurProfile)->jumlahBacaanSuhuDiterima());
         $this->assertSame([3, 6], (new PipetVolumeProfile)->jumlahBacaanSuhuDiterima());
+        // PK-3 (17 Nov 2026): Picnometer ikut Rev.7 — tipe di master Fixed.
+        $this->assertSame([3, 6], (new PicnometerProfile)->jumlahBacaanSuhuDiterima());
 
-        foreach ([new PicnometerProfile, new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
+        foreach ([new BuretProfile, new GelasUkurProfile, new PipetUkurProfile] as $p) {
             $this->assertSame([3], $p->jumlahBacaanSuhuDiterima(), $p::class);
         }
 
@@ -224,7 +226,7 @@ class VolumetrikEnamSuhuAirTest extends TestCase
         $this->assertSame([3, 6], V::jumlahBacaanSuhuDiterima(V::parameterRev7()));
     }
 
-    /** Parameter bawaan (Picnometer & Graduated): enam suhu DITOLAK, pesan lama utuh. */
+    /** Parameter bawaan (tanpa Rev.7, mis. Graduated): enam suhu DITOLAK, pesan lama utuh. */
     public function test_tanpa_parameter_rev7_enam_bacaan_ditolak(): void
     {
         $c = self::kasus()['LU-200'];
