@@ -36,8 +36,9 @@ use Tests\TestCase;
  * yang membuat lembar penuh sebuah alat tidak lagi muat. Nama yang HILANG = alat itu
  * sekarang muat: keluarkan dari daftar (jangan dibiarkan jadi izin diam-diam).
  * Daftar itu bukan keputusan bahwa meluapnya BOLEH — itu keputusan pemilik (lihat
- * docblock `TIDAK_MUAT`); di produksi gerbang pra-approve (`PraPeriksaSatuHalaman`) yang
- * menolak sesinya sebelum nomor sertifikat terpakai.
+ * docblock `TIDAK_MUAT`); gerbang pra-approve (`PraPeriksaSatuHalaman`, BAWAAN MATI sampai
+ * latensinya diukur di produksi) menolak sesinya sebelum nomor sertifikat terpakai bila
+ * dinyalakan; selama mati, sesi seperti itu disetujui lalu `gagal` di job.
  *
  * ## Batas skema ikut dijaga
  *
@@ -89,7 +90,7 @@ class SertifikatSkenarioTerburukTest extends TestCase
         'anak_timbangan' => 40, // AnakTimbanganProfile::BATAS_KEPING_SATU_HALAMAN
         'autoclave' => 0, // lembar tetap (3 bagian master); tidak ada daftar yang bertambah
         // Template INPUT DATA master Enclosure menyediakan 6 set point (pertanyaan-lab-enclosure.md §11e);
-        // server tidak membatasi (set point = data) — gerbang pra-approve menolak yang lebih.
+        // server tidak membatasi (set point = data) — gerbang pra-approve (bila menyala) menolak yang lebih.
         'bath' => 6, 'furnace' => 6, 'inkubator' => 6, 'oven' => 6, 'refrigerator' => 6,
         'buret' => 5, // 3 tabel x 5 baris (bentukLembarKerja)
         'buret_digital' => 3, // 3 baris
@@ -148,8 +149,8 @@ class SertifikatSkenarioTerburukTest extends TestCase
 
     /**
      * PROFIL YANG TERBUKTI MELUAP di skenario terburuk (17 Nov 2026, kode `8a41909c`+PK-6) —
-     * ini TEMUAN untuk keputusan pemilik, BUKAN izin. Di produksi gerbang pra-approve
-     * menolak sesinya (`422 sertifikat_lebih_satu_halaman`) sebelum nomor terpakai; yang
+     * ini TEMUAN untuk keputusan pemilik, BUKAN izin. Bila gerbang pra-approve dinyalakan
+     * (bawaan mati) ia menolak sesinya (`422 sertifikat_lebih_satu_halaman`) sebelum nomor terpakai; yang
      * dibutuhkan keputusan: batas jumlah titik/keping per profil di server, atau tingkat
      * pemadatan baru (mengubah tata letak — tidak boleh tanpa keputusan). Jarak ke batas
      * (jumlah baris terbanyak yang masih muat dengan header panjang; angka skema):

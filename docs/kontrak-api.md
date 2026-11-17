@@ -1443,10 +1443,13 @@ menampilkan `message` dan tombol retry biasa di sertifikatnya. Dulu keadaan ini
 dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 
 **`422 sertifikat_lebih_satu_halaman` — sertifikat terbukti tidak muat satu halaman (17 Nov 2026,
-PK-6).** Sertifikat selalu satu halaman (`Page : 1 of 1` ditulis mati); lembar yang meluap tidak
-pernah diterbitkan. Dulu hal itu baru ketahuan SESUDAH sesi disetujui: nomor sertifikat yang diketik
-sudah terpakai dan PDF-nya `gagal` sampai isinya dipangkas. Sekarang `approve` merender sertifikat
-sementara (tidak disimpan) dengan renderer yang sama dengan penerbitan dan menolak lebih awal:
+PK-6).** **⚠️ BAWAAN MATI (opt-in) — gerbangnya ada dan teruji, tetapi belum menyala di produksi
+sampai satu `approve` diukur di sana (lihat butir "Menyalakan" di bawah). Selama mati, `approve`
+berperilaku persis seperti sebelum PK-6 dan `422` ini TIDAK muncul.** Sertifikat selalu satu halaman
+(`Page : 1 of 1` ditulis mati); lembar yang meluap tidak pernah diterbitkan. Dulu hal itu baru ketahuan
+SESUDAH sesi disetujui: nomor sertifikat yang diketik sudah terpakai dan PDF-nya `gagal` sampai isinya
+dipangkas (itu tetap yang terjadi selama gerbang mati). Bila gerbang NYALA, `approve` merender
+sertifikat sementara (tidak disimpan) dengan renderer yang sama dengan penerbitan dan menolak lebih awal:
 
 ```json
 {
@@ -1467,11 +1470,18 @@ sementara (tidak disimpan) dengan renderer yang sama dengan penerbitan dan menol
 - Yang dipangkas ada di data sesi (alamat/nama yang panjang, lokasi onsite, jumlah titik). Teks
   pesannya tidak menyebut kolom tertentu karena penyebabnya bisa lebih dari satu.
 - Gagal terbuka: bila render gerbangnya sendiri gagal (bukan "tidak muat"), `approve` jalan seperti
-  dulu dan jalur penerbitan yang memutuskan. Sakelar `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=false`
-  (config `sertifikat.pra_approve_satu_halaman`, bawaan nyala) mematikan gerbangnya.
+  dulu dan jalur penerbitan yang memutuskan.
 - Ongkos: SATU render dompdf tambahan di dalam request `approve` (sesi yang muat membayar satu render
-  mode terpadat; yang tidak muat membayar seluruh tangga). Mobile tidak perlu perubahan: `422` dengan
-  `message` sudah ditampilkan seperti galat `approve` lain.
+  mode terpadat; yang tidak muat membayar seluruh tangga). Lokal: median 2 s, maks 2,5 s; sesi tak-muat
+  sampai 17 s. Di produksi (0,1 CPU, 512 MB dibagi dengan worker) **belum terukur**, dan klien mobile
+  menunggu `approve` 60 detik — itu alasan gerbangnya bawaan MATI.
+- **Menyalakan (pemilik, lewat env Render):** setel `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`
+  (config `sertifikat.pra_approve_satu_halaman`; hanya `true`/`1`/`on`/`yes` yang menyalakan, nilai
+  lain tetap mati). Kunci ini SENGAJA belum ada di `render.yaml`/`.env.example`; bila sinkron blueprint
+  ternyata menghapus env dashboard, daftarkan di kedua berkas itu. **SARAN: ukur satu `approve` di
+  produksi lebih dulu** (waktu respons sesi yang muat, mis. Autoklaf/Viscometer) dan nyalakan hanya bila
+  jauh di bawah 60 detik dengan margin; matikan lagi dengan menghapus/mengosongkan env itu.
+- Mobile tidak perlu perubahan: `422` dengan `message` sudah ditampilkan seperti galat `approve` lain.
 
 ### `POST /api/calibrations/{id}/reject` — **DICABUT (15 Okt 2026, K-50-01)**
 

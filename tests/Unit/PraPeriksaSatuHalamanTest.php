@@ -167,18 +167,20 @@ class PraPeriksaSatuHalamanTest extends TestCase
     }
 
     /**
-     * HANYA nilai mati yang jelas yang mematikan gerbang; salah ketik, kosong, atau
-     * nilai asing membiarkannya nyala (penjagaan, bukan fitur opsional).
+     * OPT-IN: bawaannya MATI, dan HANYA nilai hidup yang jelas (`true`/`1`/`on`/`yes`)
+     * yang menyalakannya. Kosong, salah ketik, atau nilai asing tetap mati — bawaan aman
+     * = perilaku lama, tanpa render tambahan di request approve.
      */
-    public function test_sakelar_env_hanya_mati_oleh_nilai_mati_yang_jelas(): void
+    public function test_sakelar_env_bawaan_mati_dan_hanya_nilai_hidup_yang_jelas_menyalakan(): void
     {
         $kunci = 'SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN';
         $awal = [$_SERVER[$kunci] ?? null, $_ENV[$kunci] ?? null];
 
         try {
             $kasus = [
-                ['false', false], ['FALSE', false], ['0', false], ['off', false], ['no', false],
-                ['true', true], ['1', true], ['', true], ['maybe', true], ['fals', true], ['disabled', true],
+                ['true', true], ['TRUE', true], ['1', true], ['on', true], ['yes', true], [' ON ', true],
+                ['false', false], ['0', false], ['off', false], ['no', false], ['', false],
+                ['maybe', false], ['tru', false], ['enabled', false], ['2', false],
             ];
 
             foreach ($kasus as [$nilai, $diharapkan]) {
@@ -192,7 +194,7 @@ class PraPeriksaSatuHalamanTest extends TestCase
             }
 
             unset($_SERVER[$kunci], $_ENV[$kunci]);
-            $this->assertTrue((require base_path('config/sertifikat.php'))['pra_approve_satu_halaman'], 'Tanpa env: bawaannya NYALA.');
+            $this->assertFalse((require base_path('config/sertifikat.php'))['pra_approve_satu_halaman'], 'Tanpa env: bawaannya MATI.');
         } finally {
             if ($awal[0] === null) {
                 unset($_SERVER[$kunci]);

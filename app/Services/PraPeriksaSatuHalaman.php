@@ -33,6 +33,15 @@ use Illuminate\Support\Str;
  * ke `SertifikatSatuHalaman::terbuktiTidakMuat()` — yang menolak hanya bila
  * `isi()`, fungsi jalur terbit, memang akan melempar.
  *
+ * ## BAWAAN MATI (opt-in)
+ *
+ * Gerbang ada, diuji, tapi `sertifikat.pra_approve_satu_halaman` bawaannya
+ * `false`: ongkosnya satu render dompdf di dalam request approve, dan di server
+ * produksi (0,1 CPU, klien mobile menunggu approve 60 s) belum terukur. Mati =
+ * `periksa()` langsung `null`, tanpa render dan tanpa akses database — approve
+ * persis seperti sebelum PK-6. Pemilik menyalakannya lewat env Render sesudah
+ * satu approve diukur di produksi.
+ *
  * ## Gagal terbuka, kecuali untuk satu hal
  *
  * Satu-satunya vonis yang menahan approve adalah "terbukti tidak muat". Segala
@@ -40,10 +49,9 @@ use Illuminate\Support\Str;
  * salah ketik yang memang dilempar `bangun()`) dicatat lalu DILEWATKAN: jalur
  * terbit akan menemui galat yang sama dan menanganinya seperti dulu (sertifikat
  * `gagal`, admin dikabari). Gerbang yang sendirinya rusak tidak boleh menjadi
- * alasan lab berhenti menyetujui sesi. Sama untuk dua hal lain: sakelar
- * `sertifikat.pra_approve_satu_halaman` mati, dan gerbang lain sedang merender
- * (kunci `KUNCI_RENDER`, tanpa menunggu) — jatah memori produksi 512 MB dibagi
- * dengan queue worker.
+ * alasan lab berhenti menyetujui sesi. Sama untuk hal lain: gerbang lain sedang
+ * merender (kunci `KUNCI_RENDER`, tanpa menunggu) — jatah memori produksi 512 MB
+ * dibagi dengan queue worker.
  */
 class PraPeriksaSatuHalaman
 {
@@ -70,7 +78,7 @@ class PraPeriksaSatuHalaman
      */
     public function periksa(CalibrationSession $sesi, User $penyetuju, ?string $nomorSertifikat, ?Certificate $dasarTarikan = null): ?array
     {
-        if (! config('sertifikat.pra_approve_satu_halaman', true)) {
+        if (! config('sertifikat.pra_approve_satu_halaman', false)) {
             return null;
         }
 

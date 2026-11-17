@@ -45,26 +45,30 @@ return [
     | Gerbang pra-approve "muat satu halaman" (PK-6)
     |--------------------------------------------------------------------------
     |
-    | `true` (bawaan): `approve()` API dan tombol Setujui panel merender sertifikat
-    | sementara (`App\Services\PraPeriksaSatuHalaman`) dan MENOLAK sesi yang
-    | terbukti tidak akan terbit satu halaman — sebelum status berubah dan sebelum
-    | nomor sertifikat terpakai. Ongkosnya SATU render dompdf di dalam request
-    | approve (jalur terbit merender lagi di job). Di server kecil itu bisa terasa;
-    | sakelar ini ada supaya gerbangnya bisa dimatikan tanpa mengubah kode bila
-    | latensi approve ternyata terlalu mahal. Mati = perilaku sebelum PK-6:
-    | sesi yang meluap disetujui lalu sertifikatnya `gagal` di job.
+    | `false` (BAWAAN, opt-in): `approve()` berperilaku persis seperti sebelum PK-6 —
+    | tidak ada render tambahan. Sesi yang tak muat satu halaman disetujui lalu
+    | sertifikatnya `gagal` di job (nomor terpakai); itu pintu kedua yang tetap ada.
     |
-    | HANYA `false`/`0`/`off`/`no` yang mematikannya. Nilai lain — kosong, salah
-    | ketik, `maybe` — membiarkan gerbang nyala: kebalikan dari `kop_pracetak`
-    | di atas, karena yang dijaga di sini penjagaan, bukan fitur opsional, dan
-    | salah ketik tidak boleh diam-diam melepasnya. (`env()` sudah mengubah teks
-    | `false` menjadi boolean `false`, makanya dicek `=== false` lebih dulu.)
+    | `true`: `approve()` API dan tombol Setujui panel merender sertifikat sementara
+    | (`App\Services\PraPeriksaSatuHalaman`) dan MENOLAK sesi yang terbukti tidak akan
+    | terbit satu halaman — sebelum status berubah dan sebelum nomor sertifikat
+    | terpakai. Ongkosnya SATU render dompdf di dalam request approve (jalur terbit
+    | merender lagi di job): lokal median 2 s, maks 2,5 s, sesi tak-muat sampai 17 s;
+    | di server produksi (0,1 CPU, 512 MB bersama worker, klien mobile menunggu
+    | approve 60 s) BELUM TERUKUR. Karena itu mati dulu: ukur satu approve di
+    | produksi, baru nyalakan.
+    |
+    | Menyalakan = pemilik menyetel env `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`
+    | di Render. HANYA `true`/`1`/`on`/`yes` yang menyalakannya; kosong, salah ketik,
+    | atau `maybe` tetap mati (bawaan aman = perilaku lama). Kunci ini sengaja belum
+    | didaftarkan di `render.yaml`/`.env.example`.
     |
     */
 
-    'pra_approve_satu_halaman' => ! (
-        env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', true) === false
-        || in_array(strtolower(trim((string) env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', true))), ['0', 'off', 'no'], true)
+    'pra_approve_satu_halaman' => in_array(
+        strtolower(trim((string) env('SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN', false))),
+        ['1', 'on', 'yes'],
+        true,
     ),
 
 ];

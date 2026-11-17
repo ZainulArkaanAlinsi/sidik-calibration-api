@@ -12,6 +12,7 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\NomorSertifikat;
 use App\Services\PraPeriksaSatuHalaman;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -69,6 +71,10 @@ class PraApproveSatuHalamanTest extends TestCase
 
         Storage::fake('arsip');
         $this->freezeTime();
+
+        // Gerbang bawaannya MATI (opt-in, keputusan 17 Nov 2026). Kelas ini menguji gerbangnya,
+        // jadi menyalakannya eksplisit; `test_bawaan_mati_...` mematikannya lagi.
+        config(['sertifikat.pra_approve_satu_halaman' => true]);
 
         $this->org = Organization::factory()->create(['nama' => 'PT Contoh Satu']);
         $this->teknisi = User::factory()->create(['organization_id' => $this->org->id, 'role' => User::ROLE_TEKNISI]);
@@ -297,6 +303,71 @@ class PraApproveSatuHalamanTest extends TestCase
         $gagal = Certificate::where('calibration_session_id', $sesi2->id)->sole();
         $this->assertSame(Certificate::STATUS_GAGAL, $gagal->status, 'Alamat di atas batas harus gagal di job bila gerbang dimatikan.');
         $this->assertSame($nomorLuap, $gagal->nomor, 'Itulah nomor yang terbuang bila gerbang tidak ada.');
+    }
+
+    /**
+     * BAWAAN MATI: dengan sakelar mati approve berperilaku PERSIS seperti sebelum PK-6 —
+     * gerbang tidak dipanggil, sertifikat sementara tidak dirakit, dan tidak ada render
+     * dompdf tambahan (satu render lebih banyak hanya bila sakelar menyala). Sesi yang
+     * meluap disetujui lalu `gagal` di job, seperti dulu.
+     */
+    public function test_bawaan_mati_approve_persis_seperti_sebelumnya_tanpa_render_ekstra(): void
+    {
+        $render = 0;
+        View::composer('sertifikat.pdf', function () use (&$render): void {
+            $render++;
+        });
+
+        $vonis = new \ArrayObject;
+        $this->bindRendererPencatat($vonis);
+        $sementara = new \ArrayObject;
+        $this->app->bind(PraPeriksaSatuHalaman::class, fn () => new class(app(CertificateSnapshotBuilder::class), $sementara) extends PraPeriksaSatuHalaman
+        {
+            public function __construct(CertificateSnapshotBuilder $snapshot, private \ArrayObject $sementara)
+            {
+                parent::__construct($snapshot);
+            }
+
+            public function sertifikatSementara(CalibrationSession $sesi, User $penyetuju, ?string $nomorSertifikat, ?Certificate $dasarTarikan = null): Certificate
+            {
+                $this->sementara[] = $sesi->getKey();
+
+                return parent::sertifikatSementara($sesi, $penyetuju, $nomorSertifikat, $dasarTarikan);
+            }
+        });
+
+        // Sakelar MATI (nilai yang dikirim config bawaan).
+        config(['sertifikat.pra_approve_satu_halaman' => false]);
+        $sesiMati = $this->sesiAutoklaf();
+        $nomorMati = $this->nomorUji();
+        $render = 0;
+        $this->setujui($sesiMati, $nomorMati)->assertOk();
+        $renderMati = $render;
+
+        $this->assertCount(0, $vonis, 'Sakelar mati: renderer tidak boleh ditanya vonis.');
+        $this->assertCount(0, $sementara, 'Sakelar mati: sertifikat sementara tidak boleh dirakit.');
+        $terbit = Certificate::where('calibration_session_id', $sesiMati->id)->sole();
+        $this->assertSame(Certificate::STATUS_TERBIT, $terbit->status);
+        $this->assertSame($nomorMati, $terbit->nomor);
+        $this->assertSame(1, $this->jumlahHalaman(Storage::disk('arsip')->get($terbit->pdf_path)));
+
+        // Sakelar NYALA, sesi identik: tepat SATU render lebih banyak (jalan cepat gerbang).
+        config(['sertifikat.pra_approve_satu_halaman' => true]);
+        $sesiNyala = $this->sesiAutoklaf();
+        $render = 0;
+        $this->setujui($sesiNyala, $this->nomorUji())->assertOk();
+
+        $this->assertCount(1, $vonis);
+        $this->assertCount(1, $sementara);
+        $this->assertSame($renderMati + 1, $render, 'Gerbang menambah tepat satu render; selebihnya (job) identik.');
+
+        // Dan yang meluap, sakelar mati: disetujui, nomor terpakai, job `gagal` (perilaku lama).
+        config(['sertifikat.pra_approve_satu_halaman' => false]);
+        $sesiLuap = $this->sesiAutoklaf();
+        $this->setAlamat($sesiLuap, self::ALAMAT_MAKS);
+        $this->setujui($sesiLuap, $this->nomorUji())->assertStatus(503);
+        $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $sesiLuap->fresh()->status);
+        $this->assertSame(Certificate::STATUS_GAGAL, Certificate::where('calibration_session_id', $sesiLuap->id)->value('status'));
     }
 
     /** Isi sertifikat sementara gerbang == isi sertifikat yang diterbitkan job (kecuali token QR acak). */
