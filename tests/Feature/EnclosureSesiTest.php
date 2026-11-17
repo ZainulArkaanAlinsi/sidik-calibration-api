@@ -86,10 +86,12 @@ class EnclosureSesiTest extends TestCase
      * koreksi meter/sensor, cuma baris CMC-nya (lantai ILAC-P14).
      *
      * Angka ini < CMC Oven/Furnace/Inkubator/Refrigerator, jadi keempatnya
-     * lantai CMC yang menang. Tapi CMC Bath (1,2 °C, rentang 0–100 °C) justru
-     * LEBIH KETAT dari angka ini — jadi buat Bath yang dilaporkan U95 HITUNG
-     * ini, bukan CMC-nya. Bukan bug: ILAC-P14 melaporkan MAX(hitung, CMC),
-     * dan grid ini kebetulan sedikit lebih berisik dari CMC Bath yang ketat.
+     * lantai CMC yang menang. CMC Bath (1,2 °C, rentang 0–100 °C) lebih ketat dari
+     * angka ini — SEBELUM PK-3 (17 Nov 2026) yang dilaporkan buat Bath justru U
+     * hitung ini. Sejak master 12 Nov 2026 Bath tanpa efek radiasi & pembebanan
+     * (`BathProfile::radiasiPembebananNol()`), U hitung Bath turun ke ~1,02 dan
+     * lantai CMC 1,2 menang seperti jenis lain — lihat `U_HITUNG_SP1` dan blok
+     * `kodeHarap === 'bath'` di test di bawah.
      */
     // Sejak 15 Okt 2026 (peta kolom FC master tidak ditiru) = 1,224734443604:
     // u_c baru (lihat UC_SISTEM) × t(0,975; v_eff 1442,83). Master 1,22368831.
@@ -120,9 +122,11 @@ class EnclosureSesiTest extends TestCase
      * Grid & standar yang dipakai SAMA PERSIS dengan Yokogawa SP1 (15 °C) yang
      * sudah diadu ke master di `test_sesi_yokogawa_cocok_master` — jenis
      * enclosure nggak mengubah tabel koreksi meter/sensor, cuma baris CMC-nya.
-     * Jadi Uc yang keluar wajib identik (0,62435180) di kelima jenis. U95
-     * dilaporkan = MAX(U hitung, CMC) per ILAC-P14 — lantai CMC menang buat
-     * empat jenis, tapi BUKAN buat Bath (lihat [U_HITUNG_SP1]).
+     * Jadi Uc yang keluar wajib identik (0,62435180) di EMPAT jenis (Oven,
+     * Furnace, Inkubator, Refrigerator). Bath beda SENGAJA: efek radiasi &
+     * pembebanannya nol (master 12 Nov 2026, `EnclosureBathNolTest`), jadi Uc =
+     * akar(Uc² − (0,6² + (0,2·KS)²)/3). U95 dilaporkan = MAX(U hitung, CMC) per
+     * ILAC-P14 — lantai CMC menang di kelima jenis.
      */
     #[DataProvider('profilEnclosure')]
     public function test_kelima_jenis_enclosure_ketemu_registry_dan_cmc(
@@ -180,23 +184,33 @@ class EnclosureSesiTest extends TestCase
             "{$namaAlatKemampuan} semestinya kehitung, bukan jatuh ke belum_dihitung",
         );
         $this->assertCount(1, $hasil['hitungan']);
+        $ucHarap = self::UC_SISTEM['yokogawa'][0];
+        $uHitungHarap = self::U_HITUNG_SP1;
+
+        if ($kodeHarap === 'bath') {
+            // Bath: radiasi & pembebanan = 0 (master 12 Nov 2026) — satu-satunya
+            // jenis yang Uc-nya beda; KS dari jejak sebaran sesi itu sendiri.
+            $ks = (float) collect($hasil['hitungan'][0]['type_b_components'])->firstWhere('sumber', 'sebaran_sensor')['keseragaman'];
+            $ucHarap = sqrt($ucHarap ** 2 - (0.6 ** 2 + (0.2 * $ks) ** 2) / 3.0);
+            $uHitungHarap = $ucHarap * (float) $hasil['hitungan'][0]['faktor_cakupan_k'];
+            $this->assertLessThan(self::U_HITUNG_SP1, $uHitungHarap);
+        }
+
         $this->assertEqualsWithDelta(
-            self::UC_SISTEM['yokogawa'][0],
+            $ucHarap,
             (float) $hasil['hitungan'][0]['ketidakpastian_gabungan'],
             self::TOLERANSI,
-            "{$namaAlatKemampuan}: Uc mestinya identik lintas jenis enclosure — cuma CMC yang beda",
+            "{$namaAlatKemampuan}: Uc mestinya identik lintas jenis enclosure (kecuali Bath) — cuma CMC yang beda",
         );
-        // U95 dilaporkan = MAX(U hitung, CMC) — lantai CMC menang buat empat
-        // jenis, tapi Bath CMC-nya (1,2) lebih ketat dari U hitung grid ini
-        // (~1,2237), jadi yang dilaporkan buat Bath ya U hitungnya sendiri.
+        // U95 dilaporkan = MAX(U hitung, CMC) — lantai CMC menang di kelima jenis.
         $this->assertEqualsWithDelta(
-            max(self::U_HITUNG_SP1, $cmcHarap),
+            max($uHitungHarap, $cmcHarap),
             (float) $hasil['hitungan'][0]['ketidakpastian_diperluas'],
             self::TOLERANSI,
             "U95 dilaporkan {$namaAlatKemampuan} nggak sesuai MAX(U hitung, CMC)",
         );
         $this->assertSame(
-            $cmcHarap > self::U_HITUNG_SP1 ? 'cmc' : 'hitung',
+            $cmcHarap > $uHitungHarap ? 'cmc' : 'hitung',
             collect($hasil['hitungan'][0]['type_b_components'])->firstWhere('sumber', 'konteks_sesi')['sumber_u95'],
             "sumber_u95 {$namaAlatKemampuan} nggak sesuai mana yang menang",
         );

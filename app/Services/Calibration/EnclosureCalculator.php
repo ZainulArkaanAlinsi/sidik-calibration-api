@@ -41,6 +41,17 @@ use App\Services\StudentTDistribution;
  *   pembagi Pengulangan Standar  √3                     √(√3)  ← kuirk
  *   vi drift / radiasi / dst.    1.000.000              50 / 8 (kecil)
  *
+ * ## Enclosure Bath: radiasi & pembebanan = 0 (master 12 Nov 2026)
+ *
+ * Master baru mengosongkan dua komponen itu KHUSUS jenis Bath — Yokogawa
+ * `PERHITUNGAN U95%!N31 = IF($U$21="bath",0,0.6)` dan `N32 = IF($U$21="bath",
+ * 0,20/100*'PERHITUNGAN FC'!R42)` (diulang N57/N58 … N161/N162 tiap set
+ * point); Recorder `DATABASE!V7:W7` (Bath 0/0, jenis lain 0,1/0,1) yang dibaca
+ * `PERHITUNGAN U95%!N31`/`N32`. Konduksi panas (`N33` = 0,1 °C) tidak berubah.
+ * Bendera `spek['radiasi_pembebanan_nol']` diisi profil Bath saja; barisnya
+ * tetap ada di budget (nilai 0, seperti sel master) dan catatan audit
+ * `bath_radiasi_pembebanan_nol` menulis U hitung bila aturan jenis lain dipakai.
+ *
  * ## Penyimpangan master yang SENGAJA ditiru (dengan catatan audit)
  *
  *  1. **`v_eff` tidak dipotong ke bawah** sebelum dicari `k` — sama seperti TITS
@@ -168,7 +179,7 @@ class EnclosureCalculator
      * Hitung seluruh sesi: satu hasil per set point.
      *
      * @param  list<array{setpoint: float, titik_ke?: int, sensors: list<array{no: int, channel?: int, pembacaan: list<float>}>, indikator: list<float>}>  $setpoints
-     * @param  array{merk: string, tipe_sensor: string, cmc: float, resolusi_alat: float, resolusi_standar?: float}  $spek
+     * @param  array{merk: string, tipe_sensor: string, cmc: float, resolusi_alat: float, resolusi_standar?: float, radiasi_pembebanan_nol?: bool}  $spek
      * @return list<array<string, mixed>>
      */
     public function hitungSesi(array $setpoints, array $spek): array
@@ -190,7 +201,7 @@ class EnclosureCalculator
      *
      * @param  list<array{no: int, channel?: int, pembacaan: list<float>}>  $sensors
      * @param  list<float>  $indikator
-     * @param  array{merk: string, tipe_sensor: string, cmc: float, resolusi_alat: float, resolusi_standar?: float}  $spek
+     * @param  array{merk: string, tipe_sensor: string, cmc: float, resolusi_alat: float, resolusi_standar?: float, radiasi_pembebanan_nol?: bool}  $spek
      * @return array<string, mixed>
      *
      * @throws \InvalidArgumentException
@@ -300,8 +311,12 @@ class EnclosureCalculator
         $resolusiAlat = (float) $spek['resolusi_alat'];
         $resolusiStandar = (float) ($spek['resolusi_standar'] ?? self::RESOLUSI_STANDAR);
 
+        // Jenis Bath: efek radiasi & pembebanan nol (master 12 Nov 2026) —
+        // lihat docblock kelas. Jenis lain tidak menyetel bendera ini.
+        $bathNol = (bool) ($spek['radiasi_pembebanan_nol'] ?? false);
+
         $budget = $this->budget(
-            $merk, $tipe, $calU95, $sensorU95Maks, $r41, $d41, $r42, $resolusiAlat, $resolusiStandar,
+            $merk, $tipe, $calU95, $sensorU95Maks, $r41, $d41, $r42, $resolusiAlat, $resolusiStandar, $bathNol,
         );
 
         $dipakai = array_values(array_filter($budget, static fn (array $k): bool => $k['disertakan']));
@@ -313,6 +328,12 @@ class EnclosureCalculator
         $catatan = $this->catatanAudit(
             $budget, $dipakai, $uHitung, $cmc, $merk, $koreksiHilang, count($hasilSensor), $noAcuan,
         );
+
+        if ($bathNol) {
+            array_unshift($catatan, $this->catatanBathNol(
+                $merk, $tipe, $calU95, $sensorU95Maks, $r41, $d41, $r42, $resolusiAlat, $resolusiStandar, $uHitung,
+            ));
+        }
 
         $petaMaster = $this->catatanPetaKolomMaster($sensors, $merk, $tipe, $berkanal, $hasilSensor);
 
@@ -363,6 +384,71 @@ class EnclosureCalculator
             // `koreksi_hilang` di atas.
             'pembacaan_kurang' => $pembacaanKurang,
             'catatan_audit' => $catatan,
+        ];
+    }
+
+    /**
+     * Catatan audit jenis Bath: efek radiasi & pembebanan DIKOSONGKAN mengikuti
+     * master 12 Nov 2026. Sebelumnya kode memakai aturan jenis lain (radiasi
+     * 0,6 °C dan pembebanan 20% × Keseragaman di Constant/Yokogawa; 0,1 + 0,1
+     * di Recorder), jadi U Bath lebih besar dari angka master. Catatan ini
+     * menulis kedua angka supaya penyetuju tahu selisihnya tanpa membuka kode
+     * (AGENTS.md §Olah data butir 4).
+     *
+     * @return array<string, mixed>
+     */
+    private function catatanBathNol(
+        string $merk,
+        string $tipe,
+        ?float $calU95,
+        float $sensorU95Maks,
+        float $r41,
+        float $d41,
+        float $r42,
+        float $resolusiAlat,
+        float $resolusiStandar,
+        float $uHitung,
+    ): array {
+        $recorder = $merk === TabelKalibratorEnclosure::MERK_BERKANAL;
+
+        $budgetJenisLain = array_values(array_filter(
+            $this->budget($merk, $tipe, $calU95, $sensorU95Maks, $r41, $d41, $r42, $resolusiAlat, $resolusiStandar, false),
+            static fn (array $k): bool => $k['disertakan'],
+        ));
+        $aggJenisLain = $this->agregasi($budgetJenisLain);
+
+        $radiasiLain = $recorder ? self::RADIASI_RECORDER : self::RADIASI_YOKO;
+        $pembebananLain = $recorder ? self::PEMBEBANAN_RECORDER : self::FRAKSI_PEMBEBANAN * $r42;
+
+        return [
+            'kode' => 'bath_radiasi_pembebanan_nol',
+            'pesan' => sprintf(
+                'Enclosure Bath: efek radiasi dan efek pembebanan = 0 °C, mengikuti master 12 Nov 2026 — '
+                .'%s. Konduksi panas tidak berubah%s. Dengan aturan jenis lain (radiasi %s °C, pembebanan %s °C) '
+                .'U hitung %s °C; dipakai %s °C (selisih %s °C).',
+                $recorder
+                    ? 'Recorder `DATABASE!V7:W7` (Bath 0/0; jenis lain 0,1/0,1) dibaca `PERHITUNGAN U95%!N32` (pembebanan) dan `N31` (radiasi)'
+                    : 'Constant/Yokogawa `PERHITUNGAN U95%!N31 = IF($U$21="bath",0,0.6)` dan '
+                        .'`N32 = IF($U$21="bath",0,20/100*\'PERHITUNGAN FC\'!R42)` (diulang tiap set point: N57/N58, N83/N84, N109/N110, N135/N136, N161/N162)',
+                $recorder ? ' (master Recorder memang tidak punya komponen konduksi panas)' : ' (`N33` tetap 0,1 °C)',
+                $this->angka($radiasiLain),
+                $this->angka($pembebananLain),
+                $this->angka($aggJenisLain['ketidakpastian_diperluas']),
+                $this->angka($uHitung),
+                $this->angka($aggJenisLain['ketidakpastian_diperluas'] - $uHitung),
+            ),
+            'rincian' => [
+                'sel_master' => $recorder
+                    ? 'DATABASE!V7:W7 -> PERHITUNGAN U95%!N31,N32'
+                    : 'PERHITUNGAN U95%!N31,N32 (+N57/N58, N83/N84, N109/N110, N135/N136, N161/N162)',
+                'sumber_keputusan' => 'Master Enclosure 12 Nov 2026 (FORM VALIDASI: "Update U95% efek pembebanan dan radiasi enclosure type bath"); D8 audit sertifikat 16 Nov 2026; AGENTS.md §Olah data butir 4',
+                'radiasi_bath' => 0.0,
+                'pembebanan_bath' => 0.0,
+                'radiasi_jenis_lain' => $radiasiLain,
+                'pembebanan_jenis_lain' => $pembebananLain,
+                'u_hitung_aturan_jenis_lain' => $aggJenisLain['ketidakpastian_diperluas'],
+                'u_hitung_sistem' => $uHitung,
+            ],
         ];
     }
 
@@ -620,6 +706,7 @@ class EnclosureCalculator
         float $r42,
         float $resolusiAlat,
         float $resolusiStandar,
+        bool $bathNol = false,
     ): array {
         $sqrt3 = sqrt(3.0);
         $recorder = $merk === TabelKalibratorEnclosure::MERK_BERKANAL;
@@ -721,20 +808,24 @@ class EnclosureCalculator
             ],
             [
                 'sumber' => 'efek_radiasi',
-                'keterangan' => sprintf('Efek radiasi %s °C (÷√3)', $this->angka($recorder ? self::RADIASI_RECORDER : self::RADIASI_YOKO)),
+                'keterangan' => $bathNol
+                    ? 'Efek radiasi 0 °C — enclosure Bath (master 12 Nov 2026: Yokogawa N31, Recorder DATABASE!W7)'
+                    : sprintf('Efek radiasi %s °C (÷√3)', $this->angka($recorder ? self::RADIASI_RECORDER : self::RADIASI_YOKO)),
                 'distribusi' => 'persegi',
-                'u' => ($recorder ? self::RADIASI_RECORDER : self::RADIASI_YOKO) / $sqrt3,
+                'u' => ($bathNol ? 0.0 : ($recorder ? self::RADIASI_RECORDER : self::RADIASI_YOKO)) / $sqrt3,
                 'ci' => 1.0,
                 'vi' => $viRadiasi,
                 'disertakan' => true,
             ],
             [
                 'sumber' => 'efek_pembebanan',
-                'keterangan' => $recorder
-                    ? sprintf('Efek pembebanan %s °C (literal, ÷√3)', $this->angka(self::PEMBEBANAN_RECORDER))
-                    : sprintf('Efek pembebanan 20%% × %s °C (÷√3)', $this->angka($r42)),
+                'keterangan' => $bathNol
+                    ? 'Efek pembebanan 0 °C — enclosure Bath (master 12 Nov 2026: Yokogawa N32, Recorder DATABASE!V7)'
+                    : ($recorder
+                        ? sprintf('Efek pembebanan %s °C (literal, ÷√3)', $this->angka(self::PEMBEBANAN_RECORDER))
+                        : sprintf('Efek pembebanan 20%% × %s °C (÷√3)', $this->angka($r42))),
                 'distribusi' => 'persegi',
-                'u' => ($recorder ? self::PEMBEBANAN_RECORDER : self::FRAKSI_PEMBEBANAN * $r42) / $sqrt3,
+                'u' => ($bathNol ? 0.0 : ($recorder ? self::PEMBEBANAN_RECORDER : self::FRAKSI_PEMBEBANAN * $r42)) / $sqrt3,
                 'ci' => 1.0,
                 'vi' => $viPembebanan,
                 'disertakan' => true,

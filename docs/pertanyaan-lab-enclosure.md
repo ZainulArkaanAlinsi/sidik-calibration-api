@@ -383,6 +383,54 @@ sel master tidak seragam:
    memuat kalibrator yang dicentang. Termokopel standar perlu jadi baris
    standar tersendiri?
 
+## 15. Bath: efek radiasi dan pembebanan = 0 (master 12 Nov 2026, PK-3)
+
+> **DITERAPKAN 17 Nov 2026** (audit sertifikat 16 Nov 2026 butir G4a/D8: ikut
+> master tanpa menunggu lab). Bagian ini mencatat apa yang berubah dan apa yang
+> masih perlu dikonfirmasi lab; tidak ada yang menahan terbit.
+
+Master Enclosure baru (Yokogawa & Recorder, `FORM VALIDASI` 29 Sep 2026: "Update
+U95% efek pembebanan dan radiasi enclosure type bath") mengosongkan dua komponen
+budget KHUSUS jenis Bath:
+
+| Master | Sel | Isi |
+|---|---|---|
+| Constant/Yokogawa | `PERHITUNGAN U95%!N31` | `=IF($U$21="bath",0,0.6)` (efek radiasi) |
+| Constant/Yokogawa | `PERHITUNGAN U95%!N32` | `=IF($U$21="bath",0,20/100*'PERHITUNGAN FC'!R42)` (efek pembebanan) |
+| Constant/Yokogawa | `N57/N58`, `N83/N84`, `N109/N110`, `N135/N136`, `N161/N162` | pola sama tiap set point |
+| Recorder | `DATABASE!V7:W7` | Bath `0` / `0` (jenis lain `0,1` / `0,1`), dibaca `PERHITUNGAN U95%!N31,N32` |
+
+Sebelumnya kode memakai aturan jenis lain untuk Bath (Yokogawa: 0,6 °C dan 20% ×
+Keseragaman; Recorder: 0,1 + 0,1), jadi U hitung Bath lebih besar dari master.
+Sekarang `BathProfile::radiasiPembebananNol()` menyalakan bendera yang dibaca
+`EnclosureCalculator`; empat jenis lain tidak berubah. Barisnya tetap ada di
+budget dengan nilai 0 (sama dengan sel master), dan jejak sesi mendapat catatan
+`bath_radiasi_pembebanan_nol` yang menulis sel sumbernya serta U hitung bila
+aturan jenis lain dipakai. Konduksi panas (Yokogawa `N33` = 0,1 °C) **tidak**
+berubah. Diadu di `tests/Unit/EnclosureBathNolTest.php`.
+
+Pertanyaan yang tersisa:
+
+15.1. Master menulis catatan di `INPUT DATA!M87` (Yokogawa) / `N43` (Recorder):
+"Jika enclosure type bath, maka thermocouple yang dipakai type N". Sistem
+**tidak** memaksa Bath memakai Type N (tidak ada sel master yang menolak Type K
+untuk Bath, dan sampel master Recorder yang membawa Refrigerator memakai Type
+K). Apakah Bath dengan Type K harus ditolak/diperingatkan?
+
+15.2. Konduksi panas Yokogawa (`N33` = 0,1 °C) tetap ada untuk Bath padahal
+radiasi dan pembebanan dikosongkan. Sengaja (cairan menghantar panas ke
+termokopel), atau sel itu terlewat dikosongkan?
+
+15.3. Dengan dua komponen itu nol, U hitung Bath hampir selalu di bawah CMC Bath
+(1,2 °C, rentang 0–100 °C), jadi yang tercetak praktis selalu CMC (lantai
+ILAC-P14). Apakah itu memang yang dimaksud revisi master?
+
+15.4. Sesi Bath yang sudah disetujui sebelum perubahan ini (kalau ada) dihitung
+dengan aturan lama; hitung ulang sekarang akan menunjukkan U yang lebih kecil.
+Catatan AGENTS.md 23 Sep 2026: produksi belum punya sertifikat terbit, tetapi
+pemilik perlu memastikan tidak ada sertifikat Bath di tangan pelanggan sebelum
+rilis ini.
+
 ---
 
 ## Yang TIDAK ditanyakan karena sudah jelas / tidak berdampak
