@@ -521,3 +521,76 @@ cetak sama dengan cache Excel ketujuh workbook (selisih terbesar 5,5·10⁻¹³
 relatif, di k; V20 dan deviasi identik). Dijaga
 `tests/Unit/VolumetrikRev7WorkbookTest.php` dan
 `tests/Feature/VolumetricGlasswareSesiTest.php`.
+
+---
+
+## Keputusan 17 Nov 2026 (PK-3) — Picnometer ikut workbook Rev.7
+
+Master Fixed 12 Nov 2026 (tanpa akhiran `_2026`; `FORM VALIDASI` rev 21
+`2026-10-19`) menjawab pertanyaan 6: **Picnometer adalah tipe alat di dalam
+master Fixed itu**, bukan keluarga sendiri. Bukti sel:
+
+| Hal | Sel master |
+|---|---|
+| Daftar tipe alat, "4 Picnometer" | `DATABASE!U34:V41` (`V39`), nama `Type_Alat`; `INPUT DATA!E6` memilih, `Y15 = VLOOKUP(E6,Type_Alat,2,0)` |
+| Tabel CMC picnometer 25/50/100 mL = 0,018/0,019/0,022 mL | `DATABASE!AB5:AC7`, nama `CMC_picno`, `Index_picno` |
+| Satu-satunya percabangan tipe | `PERHITUNGAN U95%!B48` (nominal terdekat) dan `J48` (CMC) |
+| Tidak ada budget / lembar `SERTIFIKAT` khusus picnometer | seluruh `PERHITUNGAN U95%!I36:I42`, `PERHITUNGAN!H58:H61`, `SERTIFIKAT!` sama untuk semua tipe |
+
+Master yang sama berstruktur Rev.7 (`I36:I42` tujuh komponen, `K43 = SUM(K36:K42)`,
+`I45 = (I44^4)/K43`, `H40`/`J40` angka mati 25,5, `O35 = MAX(H39:L39)` yang
+melewatkan `M39`) — persis yang sudah ditiru untuk Labu Ukur & Pipet Volume,
+jadi `PicnometerProfile` sekarang turunan `FixedVolumetricGlasswareRev7Profile`.
+Konsekuensinya untuk Picnometer: tujuh komponen tanpa keterulangan (no. 20),
+ρ air ulangan 1 & 2 pada 25,5 °C (no. 14) dan rentang suhu `O35` (no. 15) ikut
+ditiru lengkap dengan catatan jejak & peringatan angka cetak, suhu air 3 atau 6
+bacaan (no. 16), veff dibagi SUM (no. 1 tidak berlaku), neraca Fujitsu +
+termometer Yokogawa + thermobarometer Lutron di lembar, masa berlaku standar
+diperiksa (no. 17–18), dan tekanan udara dicetak tanpa koreksi (no. 22).
+Keputusan ini dari keputusan pemilik 8 Okt 2026 ("workbook lab adalah acuan")
+dan D8 audit sertifikat 16 Nov 2026 (master 12 Nov = acuan paritas untuk
+Picnometer). Diadu di `tests/Unit/VolumetrikPicnometerRev7Test.php`
+(sampel master Fixed 12 Nov, sel demi sel) dan
+`tests/Feature/VolumetrikRev7AlurTest.php`.
+
+**Pertanyaan baru (setelah Picnometer pindah):**
+
+23. **Kode metode.** Daftar metode master (`DATABASE!C45:C78`) memuat
+    `0513_Rev.4`, tetapi sampel dan `INPUT DATA!Y14 -> SERTIFIKAT!T10` memakai
+    `0510_Rev.7` (dipilih lewat `INPUT DATA!Q23`); master tidak memetakan metode
+    per tipe alat. Apakah sertifikat Picnometer baku `0510_Rev.7` (lampiran
+    akreditasi no. 21 masih menulis `0510_Rev.6`, no. 3) atau `0513_Rev.4`?
+    Sistem tidak memaksa; metode dipilih lab per sesi.
+24. **Kapasitas di bawah 25 mL.** `Index_picno` = 25/50/100; picnometer 10 mL
+    atau 5 mL mendarat di baris 25 mL (nominal TERDEKAT, `B48`), CMC 0,018 mL.
+    Lampiran akreditasi no. 21 memang mulai dari "≤ 25 mL" (`range_max = 25`),
+    jadi ini cocok; pertanyaan no. 13 (kapasitas di luar lampiran) berlaku
+    sama untuk di atas 100 mL.
+25. **Kelas A/B untuk picnometer.** `PERHITUNGAN!H59` memetakan kelas ke γ
+    (A 10e-6, B 15e-6) dan `Tabel_Diameter` memetakan toleransi ke diameter
+    meniskus; picnometer biasanya dibedakan jenis kacanya, bukan kelas A/B.
+    Pertanyaan no. 7 (kelas akurasi atau jenis bahan?) sekarang juga menyangkut
+    picnometer — angka γ memengaruhi `ci` muai.
+
+26. **U95 termometer Yokogawa di master 12 Nov (BERLAKU UNTUK SEMUA TIPE FIXED, bukan hanya Picnometer).**
+    Master Fixed 12 Nov mengisi `DATABASE!AB22 = 'STANDAR-YOKOGAWA'!H13` = **0,058 °C**
+    (kalibrasi ulang Yokogawa 2026-09-17, `FORM VALIDASI` rev 21), sedangkan
+    `database/data/tabel-standar-volumetric.json` (dari master `_2026`) masih
+    **0,72 °C** (`koreksi_suhu.u95.termometer_c`); U95 sensor PRT sama (0,08).
+    Efeknya hanya komponen "Temperature of Distillate Water" (`I40`): sampel
+    master 12 Nov memberi `I40` −2,82·10⁻⁶ mL, tabel repo −1,36·10⁻⁵ mL, sehingga U
+    hitung repo lebih BESAR (0,00128508 mL master lawan 0,00128535 mL repo; selisih
+    kecil, dan di sampel master tertutup lantai CMC). Koreksi suhu per titik (`H37:M38`) SAMA dengan master.
+    **Tidak diubah di PK-3** (itu pemutakhiran data standar volumetric untuk
+    Labu Ukur, Pipet Volume, dan Picnometer sekaligus, lapis 1, perlu alur versi +
+    simulasi). **Pertanyaan:** apakah 0,058 °C menggantikan 0,72 °C untuk sesi
+    mulai tanggal kalibrasi ulang? Dikunci di
+    `VolumetrikPicnometerRev7Test::test_selisih_u95_termometer_repo_lawan_master_terdokumentasi`.
+
+**Dampak data tersimpan.** Sesi Picnometer yang sudah dihitung dengan aturan
+lama (8 komponen, ρ_AT 7,95, veff dibagi `K43`) memberi U lebih besar/kecil
+sedikit dibanding Rev.7 saat dihitung ulang. Per catatan AGENTS.md 23 Sep 2026
+produksi belum punya sertifikat terbit; kalau ada sesi Picnometer yang sudah
+disetujui, `kalibrasi:hitung-ulang` akan melaporkan `hitung_ulang_beda` untuknya
+(angka tersimpan tidak diubah).
+
