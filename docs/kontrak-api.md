@@ -1478,9 +1478,12 @@ sertifikat sementara (tidak disimpan) dengan renderer yang sama dengan penerbita
 - **Menyalakan (pemilik, lewat env Render):** setel `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`
   (config `sertifikat.pra_approve_satu_halaman`; hanya `true`/`1`/`on`/`yes` yang menyalakan, nilai
   lain tetap mati). Kunci ini SENGAJA belum ada di `render.yaml`/`.env.example`; bila sinkron blueprint
-  ternyata menghapus env dashboard, daftarkan di kedua berkas itu. **SARAN: ukur satu `approve` di
-  produksi lebih dulu** (waktu respons sesi yang muat, mis. Autoklaf/Viscometer) dan nyalakan hanya bila
-  jauh di bawah 60 detik dengan margin; matikan lagi dengan menghapus/mengosongkan env itu.
+  ternyata menghapus env dashboard, daftarkan di kedua berkas itu. **SARAN: ukur DUA `approve` di
+  produksi lebih dulu**: satu sesi yang muat (mis. Autoklaf/Viscometer) DAN satu sesi yang TIDAK muat
+  (kasus terburuk: seluruh tangga render, lokal sampai ±17 s). Nyalakan hanya bila keduanya jauh di
+  bawah 60 detik dengan margin. Timeout PHP (`set_time_limit` 120 s) itu fatal dan tidak ditolong
+  fail-open, jadi bila sesi tak-muat mendekati batas, jangan dinyalakan. Matikan lagi dengan
+  menghapus/mengosongkan env itu. Tulis nilai persis `true` (tanpa spasi).
 - Mobile tidak perlu perubahan: `422` dengan `message` sudah ditampilkan seperti galat `approve` lain.
 
 ### `POST /api/calibrations/{id}/reject` — **DICABUT (15 Okt 2026, K-50-01)**

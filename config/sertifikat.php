@@ -55,12 +55,14 @@ return [
     | terpakai. Ongkosnya SATU render dompdf di dalam request approve (jalur terbit
     | merender lagi di job): lokal median 2 s, maks 2,5 s, sesi tak-muat sampai 17 s;
     | di server produksi (0,1 CPU, 512 MB bersama worker, klien mobile menunggu
-    | approve 60 s) BELUM TERUKUR. Karena itu mati dulu: ukur satu approve di
-    | produksi, baru nyalakan.
+    | approve 60 s) BELUM TERUKUR. Karena itu mati dulu: ukur DUA approve di
+    | produksi (satu sesi yang muat DAN satu yang tidak muat: kasus terburuk, seluruh
+    | tangga render; timeout PHP itu fatal dan tidak ditolong fail-open), baru nyalakan.
     |
     | Menyalakan = pemilik menyetel env `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`
-    | di Render. HANYA `true`/`1`/`on`/`yes` yang menyalakannya; kosong, salah ketik,
-    | atau `maybe` tetap mati (bawaan aman = perilaku lama). Kunci ini sengaja belum
+    | di Render. HANYA `true`/`1`/`on`/`yes` yang menyalakannya (tanpa spasi di sekitar
+    | nilai); kosong, salah ketik, atau `maybe` tetap mati (bawaan aman = perilaku
+    | lama). Kunci ini sengaja belum
     | didaftarkan di `render.yaml`/`.env.example`.
     |
     */

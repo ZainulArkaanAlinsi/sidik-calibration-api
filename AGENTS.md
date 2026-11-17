@@ -239,8 +239,10 @@ bawaannya MATI (opt-in): mati = `approve()` persis seperti sebelum PK-6, tanpa r
 tambahan (`test_bawaan_mati_approve_persis_seperti_sebelumnya_tanpa_render_ekstra`).
 **Menyalakan = pemilik menyetel env Render `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`** (hanya
 `true`/`1`/`on`/`yes`); kuncinya sengaja belum ada di `render.yaml`/`.env.example` — kalau sinkron
-blueprint menghapus env dashboard, daftarkan di keduanya. **Ukur satu approve di produksi lebih
-dulu.** Jangan menduplikasi logika tinggi di gerbang; ubah `SertifikatSatuHalaman`.
+blueprint menghapus env dashboard, daftarkan di keduanya. **Ukur DUA approve di produksi lebih
+dulu: satu sesi yang muat dan satu sesi yang TIDAK muat** (tangga render penuh, lokal sampai 17 s;
+timeout PHP itu fatal dan tidak ditolong fail-open). Jangan menduplikasi logika tinggi di gerbang;
+ubah `SertifikatSatuHalaman`.
 Skenario terburuk semua profil (baris terbesar skema + header panjang):
 `SertifikatSkenarioTerburukTest`. Kontrak: `docs/kontrak-api.md` §5 approve.
 
