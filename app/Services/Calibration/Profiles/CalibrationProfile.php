@@ -10,6 +10,7 @@ use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\GumCalculator;
+use App\Services\PenahananProfil;
 use App\Support\AkhirSertifikatMaster;
 use App\Support\FormatMasterSertifikat;
 use App\Support\StandarCetakMaster;
@@ -121,14 +122,32 @@ abstract class CalibrationProfile
      * Beda dengan `peringatanSesi()` (boleh dikonfirmasi admin) dan dengan
      * `penghalangSesi` (sesi tidak dihitung sama sekali): di sini angkanya
      * DIHITUNG, dua versinya ditampilkan berdampingan, tapi yang mana yang
-     * sah belum diputuskan. Bawaan kosong — tiga puluhan profil lama tidak
-     * berubah.
+     * sah belum diputuskan.
+     *
+     * Bawaannya membaca daftar penahanan per jenis alat di
+     * `config/sertifikat.php` (`profil_ditahan`, kunci = [kode]) lewat
+     * `PenahananProfil::butirDariConfig()` — profil yang tidak ada di daftar itu
+     * tetap kosong. Profil yang punya sumber penahanan sendiri (Tekanan dan
+     * Piston, dari log metode) menimpa method ini dan memanggil `parent::` supaya
+     * daftar config tetap berlaku. Satu hook, bukan dua.
      *
      * @return list<array{penyimpangan: string, pesan: string, konteks: array<string, mixed>}>
      */
     public function penahanTerbit(CalibrationSession $sesi): array
     {
-        return [];
+        return PenahananProfil::butirDariConfig($this->kode(), $this->varianPenahan($sesi));
+    }
+
+    /**
+     * Varian sesi untuk entri `profil_ditahan` yang dibatasi `varian` (kode
+     * huruf kecil), atau `null` bila profil ini tidak membedakan varian. Entri
+     * ber-`varian` yang bertemu `null` MENAHAN (lihat
+     * `PenahananProfil::butirDariConfig()`); jadi profil yang varian-nya per sesi
+     * wajib menimpa ini sebelum entri semacam itu ditulis.
+     */
+    public function varianPenahan(CalibrationSession $sesi): ?string
+    {
+        return null;
     }
 
     /** Nama besaran buat metadata Formula (`ph`, `turbidity`, ...). */
