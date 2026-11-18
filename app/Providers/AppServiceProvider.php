@@ -369,6 +369,12 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('pelanggan-putus-pengajuan', 30);
         $perMenitPengguna('pelanggan-undang', 20);
 
+        // Mencabut anggota perusahaan pelanggan dari aplikasi lab (18 Nov 2026,
+        // menggantikan panel web). Memutus akses orang, jadi per akun dan longgar
+        // buat admin yang memproses beberapa orang sekaligus.
+        $perMenitPengguna('pelanggan-cabut-anggota', 30);
+
+
         // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
         // dari jalur admin lab — tiap undangan mengirim email ke alamat yang
         // DIKETIK pemanggil, jadi ini jalur yang bisa dipakai membanjiri orang

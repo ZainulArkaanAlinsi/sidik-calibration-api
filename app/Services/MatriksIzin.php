@@ -102,6 +102,10 @@ class MatriksIzin
         'pengajuan-akun.putuskan' => ['POST', 'api/admin/pengajuan-akun/{pengajuan}/setujui'],
         'anggota-pelanggan.undang' => ['POST', 'api/customers/{customer}/undangan'],
         'anggota-pelanggan.pic-admin' => ['PATCH', 'api/customers/{customer}/pic-admin'],
+        // Layar "Anggota & Undangan" admin lab (18 Nov 2026): lihat daftar dan
+        // cabut anggota. Admin DAN super admin; teknisi/viewer tidak.
+        'anggota-pelanggan.lihat' => ['GET', 'api/customers/{customer}/anggota'],
+        'anggota-pelanggan.cabut' => ['POST', 'api/customers/{customer}/anggota/{anggota}/nonaktifkan'],
         'standar.lihat' => ['GET', 'api/standards'],
         'standar.kelola' => ['POST', 'api/standards'],
         'ruangan.lihat' => ['GET', 'api/rooms'],

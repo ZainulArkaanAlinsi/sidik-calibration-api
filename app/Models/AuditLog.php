@@ -80,6 +80,16 @@ class AuditLog extends Model
     public const ACTION_UNDANGAN_DITOLAK = 'undangan_ditolak';
 
     /**
+     * Anggota perusahaan pelanggan DICABUT oleh admin lab / super admin (18 Nov
+     * 2026). Entitasnya `customer_members`; `changed_by` = akun lab yang
+     * menekan (tidak pernah menyamar), `new_data` memuat `peran_pelaku` dan
+     * `alasan`. Baris `diubah` otomatis dari `Diaudit` tetap ada — baris ini
+     * menambahkan yang tidak bisa diturunkan dari diff kolom: siapa dengan
+     * peran apa, dan KENAPA. 15 karakter — muat di `string(20)`.
+     */
+    public const ACTION_ANGGOTA_DICABUT = 'anggota_dicabut';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan

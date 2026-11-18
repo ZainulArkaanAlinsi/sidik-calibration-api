@@ -504,6 +504,7 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
             ->middleware('throttle:data-acuan-tulis');
     });
 
+
 /*
 |--------------------------------------------------------------------------
 | Butuh login
@@ -866,6 +867,14 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
             ->middleware('throttle:pelanggan-undang');
         Route::delete('/customers/{customer}/undangan/{undangan}', [PelangganKeanggotaanController::class, 'batalkanUndangan']);
         Route::patch('/customers/{customer}/pic-admin', [PelangganKeanggotaanController::class, 'picAdmin']);
+
+        // Layar "Anggota & Undangan" admin lab (18 Nov 2026, menggantikan panel
+        // web). Daftar + cabut anggota: admin DAN super admin (lewat
+        // `lolosTulisSuperAdmin`); cabutnya satu pintu dengan jalur PIC utama
+        // (`Keanggotaan::nonaktifkan`). Kontrak: docs/perintah-frontend-super-admin.md.
+        Route::get('/customers/{customer}/anggota', [PelangganKeanggotaanController::class, 'anggota']);
+        Route::post('/customers/{customer}/anggota/{anggota}/nonaktifkan', [PelangganKeanggotaanController::class, 'cabutAnggota'])
+            ->middleware('throttle:pelanggan-cabut-anggota');
 
         // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.

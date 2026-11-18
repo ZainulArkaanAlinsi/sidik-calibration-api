@@ -63,6 +63,21 @@ class AksiPelangganDitolak extends RuntimeException
         );
     }
 
+    /**
+     * Aturan yang sama (`pic_utama_terakhir`), kalimat untuk ADMIN LAB yang
+     * mencabut. Pesan di atas memakai "Anda" — benar buat PIC utama yang
+     * menonaktifkan dirinya, keliru dibaca admin lab yang mencabut orang lain.
+     * `kode`-nya sengaja sama supaya klien bercabang pada satu kode.
+     */
+    public static function picUtamaTerakhirOlehLab(): self
+    {
+        return new self(
+            'pic_utama_terakhir',
+            'Dia satu-satunya PIC utama aktif perusahaan ini. Undang atau angkat PIC utama lain dulu sebelum mencabutnya.',
+            422,
+        );
+    }
+
     public static function sudahDiputus(?string $olehSiapa): self
     {
         return new self(
