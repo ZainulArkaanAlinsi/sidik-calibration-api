@@ -107,7 +107,12 @@ class TechnicianController extends Controller
         // nempel di sertifikat yang udah terbit — hapus dia berarti ngerusak
         // ketertelusuran yang justru dicari asesor waktu audit. Nonaktifin aja:
         // nggak bisa login lagi, tapi riwayatnya utuh.
-        if ($technician->calibrationSessions()->exists()) {
+        //
+        // `withTrashed()`: draf yang DIARSIPKAN (soft delete, paket CRUD 18 Nov
+        // 2026) tetap memegang `teknisi_id` lewat FK, dan `User` dihapus
+        // permanen. Tanpa ini teknisi yang cuma punya draf terarsip lolos
+        // penjaga, tokennya terhapus, lalu `delete()` melanggar FK -> 500.
+        if ($technician->calibrationSessions()->withTrashed()->exists()) {
             return response()->json([
                 'message' => 'Teknisi ini masih punya riwayat kalibrasi. Nonaktifin aja biar riwayat sertifikatnya nggak putus.',
             ], 422);
