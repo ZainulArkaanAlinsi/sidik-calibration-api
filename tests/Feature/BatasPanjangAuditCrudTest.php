@@ -48,6 +48,11 @@ class BatasPanjangAuditCrudTest extends TestCase
             CatatanAlasan::PANJANG_NOTE,
             'CatatanAlasan::PANJANG_NOTE harus cermin audit_logs.note.',
         );
+        $this->assertSame(
+            $this->panjangKolom('2026_07_27_100000_create_audit_logs_table.php', 'note'),
+            AuditLog::NOTE_MAKS,
+            'AuditLog::NOTE_MAKS (pemotong AuditLog::catatan) harus cermin audit_logs.note.',
+        );
 
         // Migrasi lain yang menyentuh audit_logs.note akan mengubah kenyataannya
         // tanpa test ini tahu -- paksa orangnya membaca ulang batas di sini.
@@ -93,6 +98,7 @@ class BatasPanjangAuditCrudTest extends TestCase
 
         $this->assertSame(CatatanAlasan::PANJANG_NOTE, mb_strlen($note));
         $this->assertStringStartsWith('Arsipkan draf: ', $note);
+        $this->assertStringEndsWith('…', $note, 'dipotong oleh AuditLog::catatan() dan ditutup elipsis');
     }
 
     public function test_nama_aksi_audit_muat_di_kolom_action(): void

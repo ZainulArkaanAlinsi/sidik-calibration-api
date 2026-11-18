@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\AuditLog;
+
 /**
  * Satu tempat untuk panjang ALASAN yang ikut tertulis di `audit_logs.note`.
  *
@@ -24,8 +26,12 @@ namespace App\Support;
  */
 final class CatatanAlasan
 {
-    /** Cermin `audit_logs.note` string(500). Dijaga test terhadap migrasinya. */
-    public const PANJANG_NOTE = 500;
+    /**
+     * Cermin `audit_logs.note` string(500) -- SATU angka dengan
+     * `AuditLog::NOTE_MAKS` (PR super admin 18 Nov), bukan salinan kedua.
+     * Dijaga test terhadap berkas migrasinya.
+     */
+    public const PANJANG_NOTE = AuditLog::NOTE_MAKS;
 
     public const ALASAN_MIN = 5;
 
@@ -60,9 +66,9 @@ final class CatatanAlasan
         $alasan = trim((string) $alasan);
         $teks = $alasan === '' ? $awalan : $awalan.': '.$alasan;
 
-        return mb_strlen($teks) <= self::PANJANG_NOTE
-            ? $teks
-            : mb_substr($teks, 0, self::PANJANG_NOTE);
+        // Pemotong tunggal repo ini: `AuditLog::catatan()` (karakter, bukan byte,
+        // ditutup "…"). Di jalur normal tidak memotong apa pun.
+        return AuditLog::catatan($teks);
     }
 
     /**
