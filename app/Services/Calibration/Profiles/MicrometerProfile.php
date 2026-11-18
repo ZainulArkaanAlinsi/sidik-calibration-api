@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\MicrometerCalculator;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Support\MicrometerMentah;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -1000,7 +1001,115 @@ class MicrometerProfile extends CalibrationProfile
             'vi' => 0.0,
         ];
 
+        // Paling akhir dan aditif (PK-9): baris yang sudah ada tidak bergeser.
+        foreach ($this->catatanPenyimpanganMaster($hasil) as $catatan) {
+            $budget[] = $catatan;
+        }
+
         return $budget;
+    }
+
+    /**
+     * Jumlah pembacaan baris Evaluasi yang dipatok master (`PERHITUNGAN U95%` baris `repeatability`:
+     * pembagi `SQRT(10)` dan `v = 9` adalah angka mati, bukan `SQRT(n)` / `n - 1`).
+     */
+    private const N_EVALUASI_MASTER = 10;
+
+    /**
+     * Catatan PK-9: Type A dan v_eff dari baris Evaluasi memakai n SEBENARNYA, master memakai
+     * n = 10 mati (`SQRT(10)`, `v = 9`).
+     *
+     * Ada hanya bila n Evaluasi sesi ini BUKAN 10 — pada n = 10 keduanya identik dengan master.
+     * `n` dipulihkan dari komponen budget sendiri (`vi = n - 1`); angka "versi master" dihitung dari
+     * salinan komponen dan hanya dicetak di teks.
+     *
+     * @param  array<string, mixed>  $hasil
+     * @return list<array<string, mixed>>
+     */
+    public function catatanPenyimpanganMaster(array $hasil): array
+    {
+        $komponen = $hasil['budget'];
+        $indeks = null;
+
+        foreach ($komponen as $i => $k) {
+            if (($k['sumber'] ?? null) === 'pengulangan') {
+                $indeks = $i;
+
+                break;
+            }
+        }
+
+        if ($indeks === null || (float) $komponen[$indeks]['vi'] <= 0.0) {
+            return [];
+        }
+
+        $n = (int) round((float) $komponen[$indeks]['vi'] + 1);
+
+        if ($n === self::N_EVALUASI_MASTER) {
+            return [];
+        }
+
+        $uSistem = (float) $komponen[$indeks]['u'];
+        $s = $uSistem * sqrt($n);
+        $uMaster = $s / sqrt((float) self::N_EVALUASI_MASTER);
+        $versiMaster = $komponen;
+        $versiMaster[$indeks]['u'] = $uMaster;
+        $versiMaster[$indeks]['vi'] = (float) (self::N_EVALUASI_MASTER - 1);
+
+        $kalk = $this->kalk ??= new MicrometerCalculator;
+        $aggMaster = $kalk->agregasiPembanding($versiMaster);
+        $uHitungSistem = (float) $hasil['ketidakpastian_diperluas'];
+        $uHitungMaster = (float) $aggMaster['ketidakpastian_diperluas'];
+        $cmc = isset($hasil['pita_cmc']['u95_um']) ? (float) $hasil['pita_cmc']['u95_um'] : null;
+        $lantai = static fn (float $u): float => $cmc === null ? $u : max($u, $cmc);
+        // Pembacaan Evaluasi yang identik (s = 0): angka mati master tidak mengubah apa pun,
+        // jadi tidak ada selisih yang perlu dibaca penyetuju.
+        if (abs($uHitungSistem - $uHitungMaster) <= 1e-12 * max(1.0, abs($uHitungMaster))) {
+            return [];
+        }
+
+        $cetakMaster = $lantai($uHitungMaster);
+        $cetakSistem = (float) $hasil['u95_sertifikat'];
+        $pb = PenyimpanganMaster::class;
+        $tertutup = abs($cetakMaster - $cetakSistem) <= 1e-12 * max(1.0, abs($cetakMaster));
+
+        return [$pb::baris(
+            'micrometer',
+            'evaluasi_n_dan_v_angka_mati',
+            sprintf(
+                'Komponen keterulangan (Type A) dan derajat bebasnya dihitung dari baris Evaluasi dengan n SEBENARNYA '
+                .'(%d pembacaan: u(A) = s/akar %d, v = %d), sedangkan master memakai angka mati akar 10 dan v = 9 '
+                .'seolah Evaluasi selalu sepuluh pembacaan. Jumlah Evaluasi yang wajib menunggu jawaban IK '
+                .'(docs/pertanyaan-lab-pengulangan-ik.md §2).%s',
+                $n, $n, $n - 1,
+                $tertutup ? ' Angka cetak U95 SAMA dengan master pada sesi ini karena lantai CMC menang di kedua sisi.' : '',
+            ),
+            '`PERHITUNGAN U95%` master, baris `repeatability` (`SQRT(10)` dan `v = 9` sebagai angka mati); '
+            .'docs/pertanyaan-lab-pengulangan-ik.md §2/§3',
+            sprintf(
+                'u(A) %s µm (s %s / akar 10), v 9, k %s, U95 hitung %s µm, tercetak %s µm',
+                $pb::angka($uMaster), $pb::angka($s), $pb::angka((float) $aggMaster['faktor_cakupan_k']),
+                $pb::angka($uHitungMaster), $pb::angka($cetakMaster),
+            ),
+            sprintf(
+                'u(A) %s µm (s %s / akar %d), v %d, k %s, U95 hitung %s µm, tercetak %s µm',
+                $pb::angka($uSistem), $pb::angka($s), $n, $n - 1, $pb::angka((float) $hasil['faktor_cakupan_k']),
+                $pb::angka($uHitungSistem), $pb::angka($cetakSistem),
+            ),
+            $tertutup
+                ? $pb::ARAH_NETRAL
+                : ($uHitungSistem >= $uHitungMaster ? $pb::ARAH_KONSERVATIF : $pb::ARAH_TIDAK_KONSERVATIF),
+            $cetakSistem,
+            [
+                'n_evaluasi' => $n,
+                'u_a_master' => $uMaster,
+                'u_a_sistem' => $uSistem,
+                'u95_hitung_master' => $uHitungMaster,
+                'u95_hitung_sistem' => $uHitungSistem,
+                'u95_cetak_master' => $cetakMaster,
+                'u95_cetak_sistem' => $cetakSistem,
+            ],
+        )];
     }
 
     /** @return array<string, mixed> */

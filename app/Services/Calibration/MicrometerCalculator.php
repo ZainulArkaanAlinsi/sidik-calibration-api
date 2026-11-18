@@ -643,4 +643,17 @@ class MicrometerCalculator
     {
         return $this->gum ??= new GumCalculator;
     }
+
+    /**
+     * Agregasi GUM atas komponen buatan pemanggil — HANYA pembanding untuk catatan
+     * `penyimpangan_master.*` di jejak sesi (PK-9). Hasilnya dicetak di teks catatan,
+     * tidak pernah masuk kolom hasil, budget, atau sertifikat.
+     *
+     * @param  list<array{u: float, ci: float, vi: float}>  $komponen
+     * @return array{ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float}
+     */
+    public function agregasiPembanding(array $komponen): array
+    {
+        return $this->gum()->agregasiBudget($komponen);
+    }
 }
