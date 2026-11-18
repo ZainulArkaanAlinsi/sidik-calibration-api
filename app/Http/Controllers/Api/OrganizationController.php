@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -27,8 +29,50 @@ class OrganizationController extends Controller
         ]);
     }
 
+    /**
+     * Kunci `settings` yang boleh dikirim lewat API → [tipe simpan, aturan validasi].
+     *
+     * `settings` adalah PATCH PER KUNCI (BUG-2 uji E2E-QA, 18 Nov 2026): kunci
+     * yang tidak dikirim tidak pernah disentuh, `null` membuang kunci itu
+     * (kembali ke bawaan), kunci yang tidak ada di daftar ini ditolak 422.
+     * Dulu seluruh kolom JSON ditimpa, jadi satu PUT parsial dari aplikasi
+     * menghapus penanda tangan, catatan KAN, dan saklar QR tanpa galat — dan
+     * sertifikat berikutnya tercetak dengan nama admin yang menekan approve.
+     *
+     * Daftarnya = kunci yang ditulis panel (`PengaturanOrganisasi`) + kunci yang
+     * dibaca kode dan di-seed `OrganizationSeeder`. `kop_path` SENGAJA tidak ada:
+     * itu jalur berkas internal, bukan pengaturan yang boleh diketik klien.
+     *
+     * Tipe `angka` dan `ttd_*` tanpa batas rentang: yang membatasi nilainya saat
+     * dibaca (`Organization::pengaturanTandaTangan()`), dan itu sudah dijaga test.
+     *
+     * @var array<string, array{0: string, 1: list<string>}>
+     */
+    private const SETTINGS_API = [
+        'prefix_sertifikat' => ['string', ['string', 'max:20']],
+        'masa_berlaku_sertifikat_bulan' => ['int', ['integer', 'min:1', 'max:120']],
+        'faktor_cakupan_default' => ['angka', ['numeric', 'min:1', 'max:10']],
+        'tampilkan_qr_di_pdf' => ['bool', ['boolean']],
+        'tampilkan_keputusan_di_pdf' => ['bool', ['boolean']],
+        'penandatangan_nama' => ['string', ['string', 'max:255']],
+        'penandatangan_jabatan' => ['string', ['string', 'max:255']],
+        'kode_dokumen_form' => ['string', ['string', 'max:255']],
+        'catatan_ketidakpastian' => ['string', ['string', 'max:1000']],
+        'catatan_penggandaan' => ['string', ['string', 'max:1000']],
+        'reminder_hari_sebelum' => ['int', ['integer', 'min:1', 'max:3650']],
+        'desimal_sertifikat' => ['int', ['integer', 'min:0', 'max:6']],
+        'ttd_geser_x_mm' => ['angka', ['numeric']],
+        'ttd_geser_y_mm' => ['angka', ['numeric']],
+        'ttd_lebar_mm' => ['angka', ['numeric']],
+    ];
+
     public function update(Request $request): JsonResponse
     {
+        $aturanSettings = [];
+        foreach (self::SETTINGS_API as $kunci => [, $aturan]) {
+            $aturanSettings["settings.{$kunci}"] = ['nullable', ...$aturan];
+        }
+
         $validated = $request->validate([
             'nama' => ['sometimes', 'string', 'max:255'],
             'alamat' => ['nullable', 'string', 'max:255'],
@@ -38,16 +82,72 @@ class OrganizationController extends Controller
             'standar_akreditasi' => ['nullable', 'string', 'max:255'],
             'akreditasi_mulai' => ['nullable', 'date'],
             'akreditasi_berakhir' => ['nullable', 'date', 'after:akreditasi_mulai'],
-            'settings' => ['nullable', 'array'],
+            'settings' => ['nullable', 'bail', 'array', function (string $atribut, mixed $nilai, Closure $gagal): void {
+                $asing = array_diff(array_map('strval', array_keys($nilai)), array_keys(self::SETTINGS_API));
+
+                if ($asing !== []) {
+                    $gagal('Pengaturan tidak dikenal: '.implode(', ', $asing).'. '
+                        .'Kunci yang boleh: '.implode(', ', array_keys(self::SETTINGS_API)).'.');
+                }
+            }],
+            ...$aturanSettings,
         ], [
             'nama.required' => 'Nama PT wajib diisi.',
         ]);
 
-        /** @var Organization $organization */
-        $organization = $request->user()->organization;
-        $organization->update($validated);
+        // `settings` dikirim sebagai patch per kunci — tidak pernah masuk ke
+        // `update()` sebagai nilai utuh. `settings: null` / `{}` = tidak ada
+        // perubahan, bukan "kosongkan semuanya".
+        $patch = $validated['settings'] ?? [];
+        unset($validated['settings']);
+
+        $organization = DB::transaction(function () use ($request, $validated, $patch): Organization {
+            // Dikunci: baca-ubah-tulis kolom JSON ini bisa menimpa PUT admin
+            // lain yang datang bersamaan kalau tidak.
+            /** @var Organization $organization */
+            $organization = Organization::whereKey($request->user()->organization_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($patch !== []) {
+                $validated['settings'] = $this->gabungSettings($organization->settings ?? [], $patch);
+            }
+
+            $organization->update($validated);
+
+            return $organization;
+        });
 
         return response()->json(['data' => new OrganizationResource($organization->fresh())]);
+    }
+
+    /**
+     * Gabungkan patch ke settings yang ada: kunci yang tidak dikirim utuh,
+     * `null` membuang kuncinya, sisanya ditulis dengan tipe yang dibaca kode
+     * (mis. saklar QR dibaca `=== true`, jadi `1` harus jadi `true`).
+     *
+     * @param  array<string, mixed>  $ada
+     * @param  array<string, mixed>  $patch
+     * @return array<string, mixed>
+     */
+    private function gabungSettings(array $ada, array $patch): array
+    {
+        foreach ($patch as $kunci => $nilai) {
+            if ($nilai === null) {
+                unset($ada[$kunci]);
+
+                continue;
+            }
+
+            $ada[$kunci] = match (self::SETTINGS_API[$kunci][0]) {
+                'int' => (int) $nilai,
+                'angka' => $nilai + 0,
+                'bool' => filter_var($nilai, FILTER_VALIDATE_BOOLEAN),
+                default => (string) $nilai,
+            };
+        }
+
+        return $ada;
     }
 
     /**
