@@ -283,13 +283,18 @@ abstract class TekananProfile extends CalibrationProfile
      */
     public function penahanTerbit(CalibrationSession $sesi): array
     {
+        // Daftar `profil_ditahan` di config (hook yang sama, kelas dasar) tetap
+        // berlaku di samping penahanan log metode di bawah — melepas Tekanan
+        // butuh KEDUANYA.
+        $dariConfig = parent::penahanTerbit($sesi);
+
         $jejak = $sesi->uncertaintyCalculations
             ->pluck('type_b_components')
             ->filter(static fn (mixed $j): bool => is_array($j) && isset($j['tekanan_budget'], $j['versi_master']))
             ->values();
 
         if ($jejak->isEmpty()) {
-            return [];
+            return $dariConfig;
         }
 
         $terpicu = array_values(array_unique(array_merge(...$jejak->map(
@@ -315,7 +320,7 @@ abstract class TekananProfile extends CalibrationProfile
             $satuanKerja,
         );
 
-        return array_map(function (array $p) use ($jejak, $satuanKerja, $angkaU95, $uMaster, $uBenar, $u95Master, $u95Benar): array {
+        return [...$dariConfig, ...array_map(function (array $p) use ($jejak, $satuanKerja, $angkaU95, $uMaster, $uBenar, $u95Master, $u95Benar): array {
             $titik = [];
             $rinci = '';
 
@@ -346,7 +351,7 @@ abstract class TekananProfile extends CalibrationProfile
                 'u95_benar' => $u95Benar,
                 'koreksi_up_per_titik' => $titik,
             ]);
-        }, LogMetode::menahanTerbit(LogMetode::TEKANAN, $terpicu));
+        }, LogMetode::menahanTerbit(LogMetode::TEKANAN, $terpicu))];
     }
 
     public function punyaToleransi(): bool
