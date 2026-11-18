@@ -67,6 +67,11 @@ class MatriksIzin
         'penugasan.lihat' => ['GET', 'api/penugasan'],
         'penugasan.buat' => ['POST', 'api/penugasan'],
         'penugasan.lapor-progres' => ['PATCH', 'api/penugasan/item/{penugasanItem}'],
+        // Paket CRUD 18 Nov 2026 (docs/perintah-frontend-crud-lengkap.md §1).
+        'penugasan.ubah' => ['PUT', 'api/penugasan/{penugasan}'],
+        'penugasan.batalkan' => ['POST', 'api/penugasan/{penugasan}/batalkan'],
+        'kalibrasi.arsipkan' => ['POST', 'api/calibrations/{calibration}/arsipkan'],
+        'kalibrasi.pulihkan' => ['POST', 'api/calibrations/{calibration}/pulihkan'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],
         'kalibrasi.bandingkan' => ['GET', 'api/calibrations/{calibration}/bandingkan'],
 
@@ -120,6 +125,9 @@ class MatriksIzin
         'metode.lihat' => ['GET', 'api/calibration-methods'],
         'metode.kelola' => ['POST', 'api/calibration-methods'],
         'kategori.lihat' => ['GET', 'api/categories'],
+        // `*.kelola` = POST/PUT/DELETE/nonaktifkan/aktifkan sekaligus (semuanya
+        // satu gerbang `role:admin`), paket CRUD 18 Nov 2026.
+        'kategori.kelola' => ['POST', 'api/categories'],
         // Beda dari `*.kelola` master data lain yang admin-only: yang ini
         // TEKNISI juga boleh. Dipetakan biar tombol "+ nama alat baru" di layar
         // pilih-alat nggak perlu ditebak dari role yang di-hardcode di APK —
