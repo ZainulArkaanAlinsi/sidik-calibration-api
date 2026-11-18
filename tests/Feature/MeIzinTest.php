@@ -397,6 +397,21 @@ class MeIzinTest extends TestCase
             ])->id;
         }
 
+        // Paket CRUD 18 Nov 2026 (`penugasan.ubah`, `penugasan.batalkan`).
+        // Seorganisasi dengan user yang diuji, alasannya sama dengan
+        // `{penugasanItem}` di atas: binding jalan SEBELUM gerbang role.
+        if (str_contains($uri, '{penugasan}')) {
+            $penugasan = Penugasan::create([
+                'organization_id' => $user->organization_id,
+                'judul' => 'Penugasan uji',
+                'tipe' => Penugasan::TIPE_PERSONAL,
+                'status' => Penugasan::STATUS_AKTIF,
+            ]);
+            $penugasan->anggota()->create(['user_id' => $user->id, 'peran' => 'ketua']);
+            $penugasan->item()->create(['jenis_alat' => 'Autoklaf', 'jumlah' => 1]);
+            $ganti['{penugasan}'] = (string) $penugasan->id;
+        }
+
         // `{customer}` dan `{anggota}` HARUS sepasang: anggota milik perusahaan itu.
         // Kalau tidak, binding/penjaga controller membalas 404 dan sapuan ini salah
         // membaca 404 sebagai "gerbang role-nya bolong" (rute anggota sisi lab, 18 Nov 2026).

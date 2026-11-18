@@ -31,6 +31,26 @@ class AuditLog extends Model
     public const ACTION_DIPULIHKAN = 'dipulihkan';
 
     /**
+     * Aksi paket CRUD 18 Nov 2026. Kolom `action` itu `string(20)` (migrasi
+     * `2026_07_27_100000`): keempatnya sengaja pendek, dan
+     * `BatasPanjangAuditCrudTest` memeriksa panjangnya terhadap angka di
+     * migrasi, bukan terhadap ingatan.
+     *
+     * - `diarsipkan`: draf lembar kerja diarsipkan (`new_data.alasan`, `note`).
+     * - `dinonaktifkan` / `diaktifkan`: kategori alat.
+     * - `dibatalkan`: penugasan dibatalkan (`new_data.alasan`, `note`).
+     *
+     * Pemulihan draf memakai `ACTION_DIPULIHKAN` yang sudah ada.
+     */
+    public const ACTION_DIARSIPKAN = 'diarsipkan';
+
+    public const ACTION_DINONAKTIFKAN = 'dinonaktifkan';
+
+    public const ACTION_DIAKTIFKAN = 'diaktifkan';
+
+    public const ACTION_DIBATALKAN = 'dibatalkan';
+
+    /**
      * Membaca — satu-satunya aksi di sini yang TIDAK mengubah apa pun.
      *
      * Dipakai `App\Support\JejakLintasOrganisasi` buat akses super admin yang
@@ -150,6 +170,10 @@ class AuditLog extends Model
             self::ACTION_DIUBAH,
             self::ACTION_DIHAPUS,
             self::ACTION_DIPULIHKAN,
+            self::ACTION_DIARSIPKAN,
+            self::ACTION_DINONAKTIFKAN,
+            self::ACTION_DIAKTIFKAN,
+            self::ACTION_DIBATALKAN,
         ];
     }
 

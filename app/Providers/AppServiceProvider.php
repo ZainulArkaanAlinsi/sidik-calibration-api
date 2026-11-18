@@ -424,6 +424,12 @@ class AppServiceProvider extends ServiceProvider
         // depan.
         $perMenitPengguna('penugasan-tulis', 60);
         $perMenitPengguna('pelacakan-tahap', 60);
+        // Paket CRUD 18 Nov 2026. Kategori: aksi Master Data yang jarang dan
+        // bernilai master (nama dipakai alat) -- sempit. Arsip draf: teknisi
+        // membersihkan beberapa draf berturut-turut -- longgar; ember sendiri
+        // supaya tidak memakan jatah tulis lain.
+        $perMenitPengguna('kategori-tulis', 30);
+        $perMenitPengguna('sesi-arsip', 60);
         // Telusuri No. Sertifikat (baca; diketik per huruf di HP).
         $perMenitPengguna('sertifikat-telusuri', 60);
         // Garis waktu arsip, sisi lab dan sisi pelanggan (ember terpisah). Baca;

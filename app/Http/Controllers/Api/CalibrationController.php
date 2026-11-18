@@ -197,6 +197,13 @@ class CalibrationController extends Controller
     {
         $user = $request->user();
 
+        // `?diarsipkan=1`: daftar draf yang diarsipkan (Master Data saja).
+        // Dilepas ke controllernya sendiri supaya daftar biasa -- yang
+        // bentuknya dikunci kontrak -- tidak tersentuh sama sekali.
+        if ($request->boolean('diarsipkan')) {
+            return app(ArsipDrafSesiController::class)->daftar($request, $daftar);
+        }
+
         $sesi = CalibrationSession::query()
             ->with($request->ringan() ? DaftarSesiKalibrasi::relasiRingan() : self::RELASI)
             // `tersembunyi` = akun YANG LOGIN pernah menyembunyikan sesi ini dari
@@ -6054,7 +6061,11 @@ class CalibrationController extends Controller
 
         $prefix = sprintf('KAL/%s/', now()->format('Y/m'));
 
-        $urutanTerakhir = CalibrationSession::where('organization_id', $organizationId)
+        // `withTrashed()`: draf yang diarsipkan masih memegang nomornya (indeks
+        // unik DB tidak mengabaikan soft delete), dan nomor yang pernah terbit
+        // tidak dipakai ulang.
+        $urutanTerakhir = CalibrationSession::withTrashed()
+            ->where('organization_id', $organizationId)
             ->where('nomor_sesi', 'like', $prefix.'%')
             ->lockForUpdate()
             ->orderByDesc('nomor_sesi')
@@ -6123,7 +6134,12 @@ class CalibrationController extends Controller
             return null;
         }
 
-        $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
+        // `withTrashed()`: kiriman ulang untuk draf yang SUDAH diarsipkan tetap
+        // dijawab sebagai replay -- tanpa ini, indeks unik
+        // `(organization_id, client_request_id)` menolak insert-nya dan HP
+        // dapat 500 untuk kiriman yang sebenarnya sudah tersimpan.
+        $existing = CalibrationSession::withTrashed()
+            ->where('organization_id', $request->user()->organization_id)
             ->where('client_request_id', $clientRequestId)
             ->first();
 

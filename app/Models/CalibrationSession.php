@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -51,7 +52,18 @@ use Illuminate\Support\Facades\Log;
 ])]
 class CalibrationSession extends Model
 {
-    use Diaudit, HasFactory;
+    /**
+     * `SoftDeletes` HANYA dipakai arsip draf (`ArsipDrafSesiController`): draf
+     * yang diarsipkan hilang dari semua kueri biasa, dan pembacaan mentah
+     * serta hasil hitungnya tidak dihapus. Arsip ditulis lewat query builder
+     * bersyarat + `catatAudit()` (alasan di jejak), bukan `$sesi->delete()`.
+     *
+     * Konsekuensi yang HARUS diingat penulis kueri baru: pembangkit nomor
+     * (`nomorSesiBerikutnya`) dan pencarian replay `client_request_id`
+     * memakai `withTrashed()` -- nomor sesi yang pernah terbit tidak dipakai
+     * ulang, dan indeks unik tetap memegang baris yang terarsip.
+     */
+    use Diaudit, HasFactory, SoftDeletes;
 
     public const STATUS_DRAFT = 'draft';
 

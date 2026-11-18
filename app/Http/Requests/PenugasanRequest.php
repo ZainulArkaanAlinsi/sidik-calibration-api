@@ -60,7 +60,12 @@ class PenugasanRequest extends FormRequest
             'item.*.jenis_alat' => ['required', 'string', 'max:120'],
             'item.*.equipment_category_id' => [
                 'sometimes', 'nullable', 'integer',
-                Rule::exists('equipment_categories', 'id')->where('organization_id', $orgId),
+                // Kategori nonaktif/dihapus tidak ditawarkan untuk penugasan baru
+                // (paket CRUD 18 Nov 2026).
+                Rule::exists('equipment_categories', 'id')
+                    ->where('organization_id', $orgId)
+                    ->whereNull('deleted_at')
+                    ->whereNull('nonaktif_pada'),
             ],
             // Batas 999 bukan angka keramat: dia menahan salah ketik (10 → 100000)
             // yang membuat persentase progres jadi tidak berguna selamanya.
@@ -80,6 +85,7 @@ class PenugasanRequest extends FormRequest
             'teknisi.required' => 'Pilih minimal satu teknisi — penugasan tanpa orang nggak sampai ke siapa pun.',
             'teknisi.*.exists' => 'Ada teknisi yang nggak ada di lab ini, bukan teknisi, atau akunnya nggak aktif.',
             'teknisi.*.distinct' => 'Ada teknisi yang kepilih dua kali.',
+            'item.*.equipment_category_id.exists' => 'Kategori itu nggak ada atau sudah dinonaktifkan.',
             'item.required' => 'Tambahin minimal satu baris jenis alat & jumlahnya.',
             'item.*.jenis_alat.required' => 'Jenis alatnya belum diisi di salah satu baris.',
             'item.*.jumlah.max' => 'Jumlahnya kebanyakan — periksa lagi, mungkin salah ketik.',

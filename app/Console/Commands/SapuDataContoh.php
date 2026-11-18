@@ -163,10 +163,13 @@ class SapuDataContoh extends Command
         // menghapus sesi lebih dulu ditolak database.
         DB::transaction(function () use ($idSertifikat, $idSesi): void {
             Certificate::whereIn('id', $idSertifikat)->delete();
-            CalibrationSession::whereIn('id', $idSesi)->delete();
+            // `forceDelete()`: sejak arsip draf, `CalibrationSession` memakai
+            // SoftDeletes dan `delete()` polos hanya menyembunyikan barisnya --
+            // perintah ini menghapus PERMANEN (sudah dicadangkan di atas).
+            CalibrationSession::withTrashed()->whereIn('id', $idSesi)->forceDelete();
         });
 
-        $sisaSesi = CalibrationSession::whereIn('id', $idSesi)->count();
+        $sisaSesi = CalibrationSession::withTrashed()->whereIn('id', $idSesi)->count();
         $sisaSertifikat = Certificate::whereIn('id', $idSertifikat)->count();
 
         if ($sisaSesi !== 0 || $sisaSertifikat !== 0) {

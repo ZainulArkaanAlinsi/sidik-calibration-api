@@ -37,7 +37,24 @@ class EquipmentRequest extends FormRequest
             ],
             'kategori' => [
                 $wajibKalauBikinBaru, 'string',
-                Rule::exists('equipment_categories', 'kode')->where('organization_id', $organizationId),
+                // Kategori NONAKTIF atau yang sudah dihapus tidak ditawarkan
+                // untuk alat baru, dan alat lama tidak boleh PINDAH ke sana --
+                // tetapi alat yang SUDAH berkategori itu tetap boleh disunting
+                // selama kategorinya tidak diganti (form edit mengirim ulang
+                // `kategori` apa adanya). Paket CRUD 18 Nov 2026.
+                Rule::exists('equipment_categories', 'kode')->where(function ($kueri) use ($organizationId, $equipment): void {
+                    $kodeSaatIni = $equipment?->category?->kode;
+
+                    $kueri->where('organization_id', $organizationId)
+                        ->whereNull('deleted_at')
+                        ->where(function ($aktif) use ($kodeSaatIni): void {
+                            $aktif->whereNull('nonaktif_pada');
+
+                            if ($kodeSaatIni !== null) {
+                                $aktif->orWhere('kode', $kodeSaatIni);
+                            }
+                        });
+                }),
             ],
             'pelanggan_id' => [
                 $wajibKalauBikinBaru,
@@ -136,7 +153,7 @@ class EquipmentRequest extends FormRequest
             'serial_number.required' => 'Nomor seri wajib diisi.',
             'serial_number.unique' => KonflikSerialAlat::PESAN_DIPAKAI_ALAT_LAIN,
             'kategori.required' => 'Kategori wajib diisi.',
-            'kategori.exists' => 'Kategori itu nggak ada. Ambil daftarnya dari GET /api/categories.',
+            'kategori.exists' => 'Kategori itu nggak ada atau sudah dinonaktifkan. Ambil daftarnya dari GET /api/categories.',
             'pelanggan_id.required' => 'Pelanggan wajib diisi.',
             'pelanggan_id.exists' => 'Pelanggan itu nggak ada.',
             'nama_alat_kemampuan.exists' => 'Jenis alat itu nggak ada di kemampuan kalibrasi kategori ini. '

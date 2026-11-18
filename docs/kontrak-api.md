@@ -387,6 +387,8 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 
 > ✅ **Live sejak 14 Jul**, isinya 10 kategori dari lampiran akreditasi (151 rentang kemampuan).
 >
+> **Paket CRUD 18 Nov 2026 (additive; kontrak lengkapnya `docs/perintah-frontend-crud-lengkap.md` §2):** tiap item kini juga memuat `id`, `aktif`, `nonaktif_pada`, `jumlah_alat`. **Default hanya kategori `aktif`** (dropdown form baru tidak menawarkan yang dinonaktifkan); `?termasuk_nonaktif=1` untuk Master Data/super admin. `GET /api/categories/{kode}` tetap 200 untuk kategori nonaktif. Kelola: `POST /categories`, `PUT /categories/{kode}`, `POST /categories/{kode}/nonaktifkan|aktifkan`, `DELETE /categories/{kode}` (hanya yang tidak dipakai) — `role:admin`, throttle `kategori-tulis`.
+>
 > ⚠️ **`rentang_ukur` / `ketidakpastian_terbaik` / `satuan` di sini cuma RINGKASAN, jangan dipakai buat validasi.** Satu kelompok pengukuran bisa punya banyak satuan sekaligus — "Panjang" isinya µm **dan** mm, "Instrumen Analitik" isinya pH, NTU, cP, µS. Angka yang ditampilin itu diambil dari satuan yang paling sering muncul di kelompok itu, jadi cocoknya buat dipajang sekilas doang.
 >
 > Buat validasi rentang & nyiapin worksheet, pakai **`GET /api/categories/{kode}`** — balikin semua rentang kemampuan (CMC) kategori itu satu per satu:

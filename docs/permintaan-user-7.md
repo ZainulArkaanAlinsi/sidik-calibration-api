@@ -3175,7 +3175,7 @@ bentuk yang sah, kolom yang salah, nol error.
 | ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
-| K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
+| ~~K11~~ | ~~Perlu tombol hapus draf?~~ | **DIJAWAB bawaan** (18 Nov 2026, §61; pemilik bisa membatalkan): bukan `DELETE`, tapi **arsipkan** draf (soft delete + alasan + pulihkan Master Data) — `POST /api/calibrations/{id}/arsipkan` |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
 | **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | Berhenti menggerbangi jalur lembar bermarker (sudah dicabut dari aplikasi, §12) — tapi **naik lagi jadi satu-satunya hal yang menahan klaim jalur ML Kit** (§12, "Batas klaim ini"). Nggak ada satu pun foto asli maupun citra bertulisan tangan di repo mobile, jadi yang belum pernah diuji justru yang menentukan fiturnya berguna di lapangan atau tidak |
 | **K19** | **Empat penyimpangan master TIDS (D1–D4)** — sel tetap `T30`, literal `0,14`, sel `AM9` di tabel koreksi, dan `SUM` yang berhenti di baris 32 | Angka U95 tiap sertifikat TIDS. Ditiru apa adanya + catatan audit + peringatan sesi; **D4 paling mendesak** karena arahnya bikin U95 lebih kecil. Rinciannya `docs/pertanyaan-lab-tids-workbook.md` |
@@ -6097,6 +6097,44 @@ satu kunci tambahan per entri daftar, tanpa migrasi dan tanpa mengubah kunci lam
 untuk "template ber-banyak formulir ada formulirnya atau tidak" di daftar (butuh kunci tambahan seperti `jumlah_formulir`; keputusan pemilik/mobile).
 Nomor §60 dipilih berdasarkan `origin/main` 7dc0134d; bila PR lain sudah memakainya, ganti nomor saat rebase.
 
+## §61 — Paket CRUD: kategori alat, arsip draf, edit/batal penugasan — 18 Nov 2026
+
+**Permintaan (pemilik proyek, 18 Nov 2026):** "sistem CRUD penting di setiap fitur"; aplikasi Lab pekan ini tuntas tanpa celah.
+Audit CRUD menemukan tiga celah di API (API Berkas arsip, Order, dan Teknisi sudah lengkap — yang belum cuma aplikasinya):
+(1) kategori alat hanya `GET`, (2) penugasan tanpa edit/batal, (3) draf lembar kerja tanpa jalan membuang (K11).
+
+**Keputusan bawaan orkestrator (pemilik boleh membatalkan; semuanya ditulis di kontrak `docs/perintah-frontend-crud-lengkap.md`):**
+
+- **Kategori** = buat / ubah nama / nonaktifkan / aktifkan / hapus-yang-tidak-dipakai; Master Data + super admin; nama unik per organisasi
+  (tanpa beda huruf besar-kecil & spasi ganda). `kode` diturunkan server dari nama dan tidak pernah berubah. **Nonaktif ≠ dihapus:** nonaktif
+  boleh walau dipakai alat, alat lama tetap menampilkannya, tapi tidak ditawarkan di form baru (alat, penugasan, nama alat baru). Hapus
+  hanya bila tak dipakai alat (termasuk yang sudah dihapus), kemampuan CMC, baris penugasan, metode, rumus → `422 kategori_dipakai`.
+  Kolom baru **satu**: `equipment_categories.nonaktif_pada` (tidak ada sumbu lain yang cocok; `deleted_at` akan membuat alat lama kehilangan
+  kategorinya).
+- **Draf (K11 DIJAWAB bawaan):** bukan `DELETE`, tapi **arsipkan** — hanya status `draft`, alasan wajib, pembuatnya atau Master Data/super
+  admin, Master Data bisa memulihkan; `raw_measurements`, hasil hitung, dan nomor sesi tidak tersentuh (ISO/IEC 17025 7.5.2); nomor sesi
+  tidak dipakai ulang. Kolom baru **satu**: `calibration_sessions.deleted_at`; alasan/pelaku/waktu di `audit_logs` (aksi `diarsipkan`).
+  Sesi yang sudah dikirim/disetujui → `422 bukan_draf` (jalur koreksinya tetap pengembalian/revisi).
+- **Penugasan** = edit (`PUT`) + batal (`POST .../batalkan`, alasan wajib) hanya selama `aktif`; batal tidak menghapus apa pun; progres
+  teknisi (`jumlah_selesai`, catatan baris) tidak pernah tertimpa dan baris yang sudah dikerjakan tidak bisa dibuang.
+- Rumus baru dan CMC **tidak** lewat API baru (tetap Lembar Hitung Studio + gerbang paritas).
+
+**Yang SENGAJA dijaga (ditegakkan di server, bukan di tombol):** peran (`role:` + `MatriksIzin` kunci baru `kategori.kelola`,
+`kalibrasi.arsipkan`, `kalibrasi.pulihkan`, `penugasan.ubah`, `penugasan.batalkan`), isolasi lab (404, dicatat bila lintas lab),
+pemisahan wewenang & aturan peran di AGENTS.md tidak dilonggarkan, jejak audit (aksi baru `diarsipkan`/`dinonaktifkan`/`diaktifkan`/
+`dibatalkan`).
+
+**Pelajaran 18 Nov yang dipasang:** `audit_logs.note` hanya `string(500)`; alasan dibatasi **400 karakter** (hitungan karakter, bukan byte)
+lewat `App\Support\CatatanAlasan`, dan `BatasPanjangAuditCrudTest` membaca panjang kolom langsung dari berkas migrasi (SQLite tidak
+memeriksa panjang `varchar`, jadi test Feature biasa tidak bisa menangkapnya).
+
+**Efek samping yang disengaja:** `CalibrationSession` kini `SoftDeletes` (pembangkit `nomor_sesi` dan replay `client_request_id` memakai
+`withTrashed()`; `sertifikat:sapu-data-contoh` tetap hapus-permanen lewat `forceDelete()`).
+
+**Belum.** Gerbang MySQL (CI shard) dan suite SQLite penuh; hanya test terarah di SQLite. `GET /calibrations/{id}` untuk draf terarsip tetap
+404 (daftar arsip memuat ringkasan). Aplikasi (mobile) belum memakai kontrak ini.
+Nomor §61 / G38 dipilih berdasarkan `origin/main` 7e510410 (sesudah PR #276); bila PR lain sudah memakainya, ganti nomor saat rebase.
+
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 
 **Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
@@ -6833,3 +6871,4 @@ Supaya tidak dibangun ulang:
 | G33 | **Kata cari `q` tidak peduli pemisah** — aplikasi Pelanggan (`/sertifikat`, `/alat`, `/paket`) dan arsip Lab (nomor seri, `.`/`_`) — §56 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-cari-longgar-20261113`, belum commit). `PolaCari` baru + nol migrasi/kolom/indeks/rute/field respons. Kata yang hanya tanda baca kini dijawab daftar kosong (dulu `%` menampilkan semuanya). Mutasi 30/30 terbunuh. Gate SQLite+MySQL penuh belum (CI). Kontrak untuk aplikasi Pelanggan: `docs/kontrak-api-pelanggan.md` §13 |
 | G34 | **Pelacakan alat untuk pelanggan** — order tak boleh memuat alat pelanggan lain, item tercampur disembunyikan di `/paket` `/paket/{id}` `/beranda`, `equipment_id` + `sedang_dikerjakan`, notifikasi tahap (`pelanggan.tahap_alat`, saklar baru) — §57 | **DIKERJAKAN** (13 Nov 2026, branch `feat/api-pelacakan-pelanggan-20261113`, belum commit). Satu migrasi additive (kolom saklar `tahap_alat`). Merah dulu terhadap kode lama (66 tes: 35 lulus, 23 gagal, 8 error) lalu hijau 66/66; MySQL lokal 121/121; mutasi 35/35 terbunuh. **Putaran 2 (13 Nov): `calibration_sessions.order_item_id` tidak ditulis jalur mana pun -> sesi BARU kini otomatis tertaut ke item order aktif alatnya (bagian F; sesi lama tidak di-backfill, ada kueri sensus)**, tes antrean-sesudah-commit, kabar fisik tahan galat, default migrasi; 19 mutan baru terbunuh. **Putaran 3 (13 Nov, keputusan pemilik): penautan tidak pernah menggagalkan pembuatan sesi; ditautkan HANYA bila tepat satu kandidat (ambigu = tidak, semua kandidat dicatat); kabar tahap TURUNAN bawaan MATI (`KABAR_TAHAP_TURUNAN`, tahap fisik dan sertifikat terbit tetap); tidak ada pindah/lepas tautan dan tautan susulan = keterbatasan dikenal; 25 mutan terbunuh.** `diserahkan_kepada` tetap tampil, perlu konfirmasi lab. Kontrak HP: `docs/perintah-frontend-pelacakan-pelanggan.md`. Gate MySQL/SQLite penuh belum |
 | G37 | **Sertifikat satu halaman: gerbang PRA-APPROVE + skenario terburuk semua profil** (audit 16 Nov D3, paket PK-6) | **DIKERJAKAN** (17 Nov 2026, branch `feat/sertifikat-satu-halaman-pra-approve`, belum merge). Dulu sesi yang sertifikatnya tak muat satu halaman disetujui lebih dulu (nomor yang diketik terpakai), baru job penerbitan gagal-final. Sekarang `approve()` API dan tombol Setujui panel memanggil `PraPeriksaSatuHalaman`: sertifikat sementara (tidak disimpan) dirakit `CertificateSnapshotBuilder` yang sama, vonisnya `SertifikatSatuHalaman::terbuktiTidakMuat()` = "`isi()` pasti melempar?" (satu render mode terpadat bila muat; seluruh tangga hanya bila tidak) — tidak ada hitungan tinggi baru. Ditolak → `422 sertifikat_lebih_satu_halaman`, status sesi & nomor tidak berubah, tidak ada job. Gagal terbuka (galat render, gerbang lain memegang kunci). **GERBANG BAWAAN MATI (opt-in, keputusan orkestrator 17 Nov 2026)**: ongkosnya satu render dompdf di request approve (lokal median 2 s, tak-muat sampai 17 s) dan belum terukur di produksi (0,1 CPU, 512 MB, klien mobile menunggu approve 60 s). Mati = `approve()` persis seperti sebelum PK-6 (tanpa render tambahan; dijaga tes). Menyalakan = pemilik menyetel env Render `SERTIFIKAT_PRA_APPROVE_SATU_HALAMAN=true`; kunci sengaja belum didaftarkan di `render.yaml`/`.env.example`; SARAN: ukur satu approve di produksi lebih dulu. Tata letak, huruf, dan jalur terbit tidak berubah. **Skenario terburuk** (`SertifikatSkenarioTerburukTest`, baris terbesar skema + nama 2 baris + alamat 3 baris + lokasi onsite beralamat) — **TEMUAN, keputusan pemilik**: 7 profil meluap — Anak Timbangan (muat 33 keping, server menerima 40), Bath/Furnace/Inkubator/Refrigerator (muat 5 set point, template master 6), Jangka Sorong (muat 20 baris; sesi contoh 25 baris pun meluap dengan header panjang), Spektrofotometer (sesi contoh 24 baris meluap dengan header panjang); Oven dan Timbangan muat dengan jarak 0 baris. Tidak diakali dengan mengecilkan huruf. Pilihan: terima (gerbang menolak dengan pesan jelas — SESUDAH gerbang dinyalakan; selama mati sesi itu disetujui lalu `gagal` di job), batasi jumlah titik per profil di server, atau tingkat pemadatan baru (mengubah tata letak). Kontrak: `docs/kontrak-api.md` §5 approve. Gate MySQL penuh belum (CI) |
+| G38 | **Paket CRUD: kategori alat, arsip draf, edit/batal penugasan** — §61 | **DIKERJAKAN** (18 Nov 2026, branch `feat/crud-kategori-penugasan-arsip-draf`, belum push). Kontrak `docs/perintah-frontend-crud-lengkap.md`; dua migrasi additive (`equipment_categories.nonaktif_pada`, `calibration_sessions.deleted_at`); lima kunci `/me/permissions` baru; test terarah SQLite hijau, **gerbang MySQL & suite penuh belum**. Aplikasi belum memakainya. K11 dijawab bawaan (arsipkan, bukan hapus) |

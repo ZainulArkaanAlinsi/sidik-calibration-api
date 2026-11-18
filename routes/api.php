@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\PelangganAlatController;
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
 use App\Http\Controllers\Api\Admin\PemindahanAlatController;
 use App\Http\Controllers\Api\Admin\PengajuanAkunController;
+use App\Http\Controllers\Api\ArsipDrafSesiController;
 use App\Http\Controllers\Api\ArsipGarisWaktuController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\JatuhTempoAlatController;
+use App\Http\Controllers\Api\KategoriKelolaController;
 use App\Http\Controllers\Api\KemampuanKalibrasiController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
@@ -1121,4 +1123,50 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,super_admin'
     // Membagi pekerjaan ke teknisi, personal atau grup.
     Route::post('/penugasan', [PenugasanController::class, 'store'])
         ->middleware('throttle:penugasan-tulis');
+});
+
+/*
+| Paket CRUD 18 Nov 2026 (docs/perintah-frontend-crud-lengkap.md): kategori alat,
+| arsip draf lembar kerja, dan edit/batal penugasan. Satu blok di ujung berkas
+| (bukan diselipkan di grup yang sudah ada) supaya diff-nya terpisah dan mudah
+| di-rebase. Gerbang: grup luar yang sama dengan semua rute internal
+| (`aplikasi:internal` + `role:admin,teknisi,viewer`), lalu `role:` yang lebih
+| sempit per kelompok. Super admin lewat `EnsureUserHasRole::lolosTulisSuperAdmin`
+| (K-49-14) karena rute-rute ini menerima `admin`/`teknisi`.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,viewer'])->group(function () {
+    // Arsip draf: pembuatnya (teknisi) atau Master Data. Teknisi cuma drafnya
+    // sendiri -- dijaga di controller (404, bukan 403). `withTrashed()` supaya
+    // draf yang SUDAH diarsipkan tetap terbaca (retry idempoten -> 200, bukan
+    // 404 yang tak bisa dibedakan dari "tidak ada").
+    Route::middleware('role:admin,teknisi')->group(function () {
+        Route::post('/calibrations/{calibration}/arsipkan', [ArsipDrafSesiController::class, 'arsipkan'])
+            ->withTrashed()
+            ->middleware('throttle:sesi-arsip');
+    });
+
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/calibrations/{calibration}/pulihkan', [ArsipDrafSesiController::class, 'pulihkan'])
+            ->withTrashed()
+            ->middleware('throttle:sesi-arsip');
+
+        // Kelola kategori alat. Bacanya tetap `GET /categories` (semua role).
+        Route::post('/categories', [KategoriKelolaController::class, 'store'])
+            ->middleware('throttle:kategori-tulis');
+        Route::put('/categories/{kode}', [KategoriKelolaController::class, 'update'])
+            ->middleware('throttle:kategori-tulis');
+        Route::post('/categories/{kode}/nonaktifkan', [KategoriKelolaController::class, 'nonaktifkan'])
+            ->middleware('throttle:kategori-tulis');
+        Route::post('/categories/{kode}/aktifkan', [KategoriKelolaController::class, 'aktifkan'])
+            ->middleware('throttle:kategori-tulis');
+        Route::delete('/categories/{kode}', [KategoriKelolaController::class, 'destroy'])
+            ->middleware('throttle:kategori-tulis');
+
+        // Edit & batal penugasan (membuatnya: `POST /penugasan`, grup saudara
+        // di atas). Teknisi tetap hanya melaporkan progres.
+        Route::put('/penugasan/{penugasan}', [PenugasanController::class, 'update'])
+            ->middleware('throttle:penugasan-tulis');
+        Route::post('/penugasan/{penugasan}/batalkan', [PenugasanController::class, 'batalkan'])
+            ->middleware('throttle:penugasan-tulis');
+    });
 });
