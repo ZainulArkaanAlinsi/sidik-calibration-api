@@ -38,6 +38,7 @@ Biar jelas mana yang dibaca buat apa:
 | [`HANDOFF-FRONTEND-29-Jul.md`](HANDOFF-FRONTEND-29-Jul.md) | Perubahan yang kelihatan dari sisi API 29 Juli, buat mobile | ✅ ya |
 | [`skrip/e2e-ph.py`](skrip/e2e-ph.py) | Uji rantai pH → sertifikat lawan server beneran | ✅ ya — alat, bukan dokumen |
 | [`Spesifikasi-Aplikasi-Kalibrasi.md`](Spesifikasi-Aplikasi-Kalibrasi.md) | Spec produk asli. **Ini rujukan komentar "spesifikasi poin N" yang kesebar di 45 tempat di kode** | ✅ ya (dokumen kebutuhan, bukan status) |
+| [`perintah-frontend-crud-lengkap.md`](perintah-frontend-crud-lengkap.md) | Kontrak serah-terima paket CRUD 18 Nov 2026: kategori alat (buat/ubah/nonaktifkan/hapus), arsip draf lembar kerja, edit & batal penugasan | ✅ ya — §9 mencatat penyimpangan dari rancangan awal |
 | [`kontrak-api.md`](kontrak-api.md) | Bentuk JSON tiap endpoint | ✅ ya, sesudah koreksi §6 (nama field notifikasi) |
 | [`realtime-sync.md`](realtime-sync.md) | Arsitektur broadcast + contoh klien Laravel Echo | ✅ ya |
 | [`SPEC-vision-prompt.md`](SPEC-vision-prompt.md) | Prompt & implementasi AI Vision | ✅ ya, kecuali klaim caching (lihat §4) |
@@ -53,6 +54,29 @@ Biar jelas mana yang dibaca buat apa:
 | [`pelanggan/`](pelanggan/) | Paket rancangan **modul pelanggan** (00–08 + ADR-001): PRD, SRS ber-REQ, SDD, alur UI, task M0–M8, risk register, runbook rilis | ✅ ya (rancangan, BUKAN status) — mendarat 16 Sep 2026, versi 0.1 **draf**, nol barisnya sudah jadi kode kecuali M0-05 |
 | [`studio-data-acuan/`](studio-data-acuan/) | Paket rancangan **Studio Data Acuan** (CR-48, §48 `permintaan-user-7.md`): versi data acuan lapis 1 di server, simulasi, pengesahan | ✅ ya (rancangan, BUKAN status) — statusnya di bagian 9 Okt 2026 di bawah. Sebagian diganti §49, daftarnya di `sidik-studio/00-BACA-DULU.md` §5 |
 | [`sidik-studio/`](sidik-studio/) | Paket rancangan **Sidik Studio** (§49 `permintaan-user-7.md`): aplikasi terpisah Windows + tablet, Kelola Data 56 tabel, Data Acuan tulis, Lembar Hitung (rumus di Studio, PhpSpreadsheet, bayangan → paritas → aktif), PRD/SRS/SDD/UI/task/matriks paritas per alat | ✅ ya (rancangan, BUKAN status) — mulai dari `00-BACA-DULU.md`; bagian bertanda ⏳ menunggu spike S0a–S0c |
+
+---
+
+## 18 Nov 2026 — paket CRUD: kategori alat, arsip draf, edit/batal penugasan
+
+Mandat pemilik: "sistem CRUD penting di setiap fitur". Tiga celah ditutup di API; kontrak
+serah-terima lengkap (contoh JSON, kode galat, izin) di
+[`perintah-frontend-crud-lengkap.md`](perintah-frontend-crud-lengkap.md), keputusan di
+`permintaan-user-7.md` §61.
+
+- **Kategori:** `POST/PUT/DELETE /categories`, `POST /categories/{kode}/nonaktifkan|aktifkan`
+  (Master Data + super admin). `GET /categories` kini default hanya yang `aktif`; field baru
+  `aktif`, `nonaktif_pada`, `jumlah_alat`. Migrasi additive `equipment_categories.nonaktif_pada`.
+- **Arsip draf:** `POST /calibrations/{c}/arsipkan` (pembuat atau Master Data, hanya `draft`,
+  alasan wajib) dan `.../pulihkan` (Master Data); `GET /calibrations?diarsipkan=1`. Migrasi
+  additive `calibration_sessions.deleted_at`; nilai mentah & nomor sesi tidak tersentuh.
+- **Penugasan:** `PUT /penugasan/{p}` dan `POST /penugasan/{p}/batalkan` (hanya `aktif`).
+- Kunci `/me/permissions` baru: `kategori.kelola`, `kalibrasi.arsipkan`, `kalibrasi.pulihkan`,
+  `penugasan.ubah`, `penugasan.batalkan`.
+- Alasan ditulis ke `audit_logs` (aksi baru `diarsipkan`, `dinonaktifkan`, `diaktifkan`,
+  `dibatalkan`); batas alasan 400 karakter karena `audit_logs.note` hanya 500 (lihat
+  `App\Support\CatatanAlasan` dan `BatasPanjangAuditCrudTest`).
+- **Belum:** gerbang MySQL (suite shard CI) — diverifikasi lokal hanya di SQLite.
 
 ---
 

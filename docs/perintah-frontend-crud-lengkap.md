@@ -6,8 +6,8 @@ aplikasi (mobile/Lab) — tidak perlu membuka dokumen lain.
 | | |
 |---|---|
 | Repo API | `sidik-calibration-api`, branch `feat/crud-kategori-penugasan-arsip-draf` (belum di-push) |
-| Status kontrak | **KONTRAK DIKUNCI 18 Nov 2026 (sebelum implementasi).** Bentuk di bawah tidak berubah; kalau terpaksa berubah, dicatat di §9 "Perubahan sesudah dikunci". Contoh JSON ditulis dari rancangan lalu DIVERIFIKASI terhadap respons test saat backend selesai (lihat §9) |
-| Status backend | Lihat §9 (diperbarui di commit terakhir paket ini) |
+| Status kontrak | **KONTRAK DIKUNCI 18 Nov 2026 (sebelum implementasi).** Bentuk di bawah tidak berubah; kalau terpaksa berubah, dicatat di §9 "Perubahan sesudah dikunci". Contoh JSON disusun dari rancangan; kunci-kuncinya dijaga assertion test, bukan dicetak dari server nyata (lihat §9) |
+| Status backend | Selesai di SQLite, test terarah hijau; **gerbang MySQL belum** — lihat §9 |
 | Mandat | "Sistem CRUD penting di setiap fitur" — pemilik proyek, 18 Nov 2026. Keputusan bawaan orkestrator di bawah bisa dibatalkan pemilik |
 
 ---
@@ -107,7 +107,9 @@ Request:
 { "nama": "Tekanan Vakum" }
 ```
 
-- `nama`: wajib, string, 2–100 karakter (setelah trim), harus mengandung huruf/angka.
+- `nama`: wajib, string, 2–100 karakter (setelah trim; dihitung KARAKTER, bukan byte), harus memuat huruf Latin
+  (boleh beraksen) atau angka — kodenya dibentuk dari situ, jadi nama beraksara non-Latin murni (mis. CJK saja)
+  ditolak `422 errors.nama`; campuran seperti `Massa 質量` boleh.
 - `kode` TIDAK diterima dari klien: server membuat slug dari nama (`tekanan-vakum`); bila kode itu
   sudah terpakai (termasuk oleh kategori yang sudah dihapus) server menambah akhiran `-2`, `-3`, …
 - **Nama unik per organisasi**, tanpa membedakan huruf besar/kecil dan spasi ganda, terhadap
@@ -180,11 +182,13 @@ kategori tidak dipakai apa pun. `200 {"message":"Kategori dihapus."}`. Sudah dih
 {
   "message": "Kategori ini masih dipakai (3 alat). Nonaktifkan saja supaya tidak ditawarkan lagi.",
   "kode": "kategori_dipakai",
-  "pemakai": { "alat": 3, "kemampuan": 0, "penugasan": 0, "metode": 0 }
+  "pemakai": { "alat": 3, "kemampuan": 0, "penugasan": 0, "metode": 0, "rumus": 0 }
 }
 ```
 
 `pemakai.alat` menghitung juga alat yang sudah dihapus lunak (sesi lama masih menunjuknya).
+`pemakai.rumus` (baris `formulas` yang menunjuk kategori ini) ditambahkan saat implementasi —
+ADDITIVE terhadap rancangan awal yang hanya memuat empat kunci pertama.
 
 ## 3. Arsip draf lembar kerja
 
@@ -329,8 +333,12 @@ Aturan:
   (`personal` bila satu orang, `grup` bila lebih). Anggota yang tetap **mempertahankan
   `dilihat_pada`**; anggota baru menerima notifikasi `penugasan_baru`. Anggota yang dikeluarkan
   tidak diberi notifikasi (daftar tugasnya hanya menyegar).
-- `item`: 1–50 baris; `item.*.id` = baris yang sudah ada (harus milik penugasan ini); tanpa `id`
-  = baris baru. **`jumlah_selesai` tidak pernah diubah lewat sini** (milik teknisi).
+- **Field opsional yang TIDAK dikirim dibiarkan** (`tanggal_target`, `catatan`, dan per baris
+  `equipment_category_id`, `order_id`, `catatan`); dikirim `null` = dikosongkan. Alasan: kolom
+  `catatan` baris juga dipakai teknisi untuk catatan progresnya — mengosongkannya diam-diam
+  menghapus tulisan orang lain. `judul`, `teknisi`, dan `item` selalu menggantikan.
+- `item`: 1–50 baris; `item.*.id` = baris yang sudah ada (harus milik penugasan ini, dan tidak
+  boleh disebut dua kali); tanpa `id` = baris baru. **`jumlah_selesai` tidak pernah diubah lewat sini** (milik teknisi).
   Baris lama yang tidak disebut dihapus HANYA bila `jumlah_selesai == 0`; kalau sudah ada
   progres → `422 item_sudah_dikerjakan` (ubah jumlahnya saja, jangan buang barisnya).
 - Perubahan dicatat di audit (nilai lama → baru) per tabel.
@@ -391,6 +399,7 @@ judul "Penugasan dibatalkan", isi memuat judul penugasan, pembatal, dan alasan; 
 | `penugasan_tidak_aktif` | 422 | edit/batal pada penugasan selesai/dibatalkan |
 | `penugasan_sudah_selesai` | 422 | batal pada penugasan selesai |
 | `item_sudah_dikerjakan` | 422 | membuang baris yang sudah ada progresnya |
+| `kode_kategori_bentrok` | 409 | dua pembuat kategori berbarengan memperebutkan kode yang sama (ulangi) |
 
 Throttle (per akun; lewat batas → `429`): `kategori-tulis` 30/menit, `sesi-arsip` 60/menit,
 `penugasan-tulis` 60/menit (yang sudah ada).
@@ -406,4 +415,29 @@ Throttle (per akun; lewat batas → `429`): `kategori-tulis` 30/menit, `sesi-ars
 
 ## 9. Perubahan sesudah dikunci / status backend
 
-(Diisi di commit terakhir paket ini: hash commit, jumlah test, penyimpangan dari §2–§7 bila ada.)
+**Status backend (18 Nov 2026): SELESAI di SQLite, BELUM lewat gerbang MySQL.** Kode di commit
+`a564de06` (`feat(izin): ...`, branch `feat/crud-kategori-penugasan-arsip-draf`, belum di-push);
+dokumen ini di commit sesudahnya. 75 test terarah paket ini hijau (`KategoriKelolaTest`,
+`ArsipDrafSesiTest`, `PenugasanUbahBatalTest`; 802 assertion) ditambah `BatasPanjangAuditCrudTest`,
+`MeIzinTest` (izin ↔ penjagaan nyata untuk kunci baru), dan sapuan isolasi/peran yang sudah ada.
+Suite MySQL (shard CI) dan suite SQLite penuh belum dijalankan; jangan menyebut modul selesai
+sebelum keduanya hijau.
+
+**Contoh JSON di atas disusun dari rancangan, bukan dicetak dari respons nyata:** server tidak
+dijalankan terhadap database sungguhan di sesi ini. Yang menjaganya: tiap kunci di contoh ditagih
+`assertJsonPath`/`assertJsonStructure` di test di atas, dan bentuk galat (`kode`, `message`,
+`errors`) ditagih per kasus. Kalau sesi aplikasi menemukan selisih, anggap kodenya yang benar dan
+laporkan.
+
+**Penyimpangan dari rancangan awal §2–§7 (semuanya ADDITIVE atau klarifikasi, tidak ada yang
+merusak apa yang sudah dijanjikan):**
+
+1. `422 kategori_dipakai` → `pemakai` punya kunci kelima `rumus` (§2.7).
+2. `PUT /penugasan/{p}`: field opsional yang tidak dikirim dibiarkan; dikirim `null` = dikosongkan
+   (§4.1). Rancangan awal menyebutnya "pengganti penuh".
+3. Nama kategori harus memuat huruf Latin (boleh beraksen) atau angka; nama beraksara non-Latin
+   murni ditolak `422 errors.nama` karena kodenya tak bisa dibentuk (§2.3).
+4. Kode galat baru `kode_kategori_bentrok` (409, nyaris mustahil; ulangi permintaannya) (§7).
+5. `data.teknisi[]` penugasan kini selalu berurutan ketua dulu, lalu urutan masuk. Untuk penugasan
+   yang tidak pernah diedit urutannya sama persis dengan sebelumnya.
+6. `GET /categories/{kode}` juga memuat `id`; semua field lama tidak berubah.
