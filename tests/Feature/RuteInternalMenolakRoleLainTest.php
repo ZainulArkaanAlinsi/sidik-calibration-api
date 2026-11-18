@@ -282,6 +282,13 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'user' => (string) $admin->id,
             'worksheetScan' => (string) $pindai->id,
 
+            // `POST /{rooms|calibration-methods|standards|equipments|customers}/{id}/pulihkan`
+            // (BUG-5/7, 18 Nov 2026). `{id}` bukan model binding — controller
+            // mencari baris TERHAPUS sendiri — dan rutenya `whereNumber('id')`,
+            // jadi harus angka. Id ruangan yang sah dipakai supaya yang diuji
+            // gerbang `role:`-nya (403), bukan 404 dari id karangan.
+            'id' => (string) $ruang->id,
+
             // Bukan model binding — string biasa, jadi nilainya bebas.
             'kode' => $kategori->kode ?? 'CONTOH',
             'kunci' => 'A1',
