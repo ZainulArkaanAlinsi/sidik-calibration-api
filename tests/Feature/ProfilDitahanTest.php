@@ -558,6 +558,33 @@ class ProfilDitahanTest extends TestCase
         $this->assertFalse(app(PenahananProfil::class)->ringkasan($sesi->fresh())['ditahan']);
     }
 
+    /**
+     * Penjaga balapan: sertifikat bisa menjadi `terbit` di antara pemeriksaan awal `handle()`
+     * dan lock di `tahanKarenaProfil()`. `handle()` sendiri berhenti lebih dulu di
+     * `sudahTerbit()`, jadi cabang ini hanya bisa dicapai langsung.
+     */
+    public function test_penjaga_balapan_job_tidak_pernah_menurunkan_sertifikat_terbit(): void
+    {
+        Notification::fake();
+        $sesi = $this->sesiUntuk('proving_ring', [], ['status' => CalibrationSession::STATUS_DISETUJUI]);
+        $terbit = Certificate::factory()->create([
+            'organization_id' => $this->org->id,
+            'calibration_session_id' => $sesi->id,
+            'nomor' => 'UJI/TAHAN/0006',
+            'pdf_path' => 'certificates/lama.pdf',
+        ]);
+
+        $job = new GenerateCertificate($sesi->id, $this->admin->id);
+        $metode = new \ReflectionMethod($job, 'tahanKarenaProfil');
+        $metode->invoke($job, $sesi->fresh(), app(PenahananProfil::class)->periksa($sesi->fresh()));
+
+        $terbit->refresh();
+        $this->assertSame(Certificate::STATUS_TERBIT, $terbit->status);
+        $this->assertSame('certificates/lama.pdf', $terbit->pdf_path);
+        $this->assertSame(1, $sesi->certificate()->count());
+        Notification::assertNothingSent();
+    }
+
     // ---- tampilan ke klien (aditif) ----------------------------------------
 
     public function test_detail_sesi_memberi_tahu_klien_bahwa_penerbitan_ditahan(): void
