@@ -13,6 +13,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\VolumetricGlasswareProfile;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
+use App\Services\PenahananProfil;
 use App\Support\Angka;
 use App\Support\PresisiPenuh;
 use App\Support\VolumetricGlasswareMentah;
@@ -82,6 +83,16 @@ class CalibrationResource extends JsonResource
                     : null,
                 'serial_number' => $this->equipment?->serial_number,
             ],
+
+            // Penerbitan sertifikat jenis alat ini ditahan menunggu keputusan
+            // Technical Manager? Aditif (kunci baru; klien lama mengabaikannya).
+            // Yang ditahan CUMA penerbitan: lembar tetap bisa diisi, dipratinjau,
+            // dan dihitung. `approve()` dijawab 422 `profil_ditahan` selama
+            // `ditahan: true`. Aturannya satu: `PenahananProfil`.
+            'penerbitan_ditahan' => app(PenahananProfil::class)->ringkasan(
+                $this->resource,
+                $this->resource->equipment !== null ? self::profil($this->resource->equipment) : null,
+            ),
 
             // Identitas alat & pemilik VERSI TEKNISI (lembar kerja poin 3-5 &
             // OWNER 1-2). Wajib ikut di respons, bukan cuma tersimpan: waktu
