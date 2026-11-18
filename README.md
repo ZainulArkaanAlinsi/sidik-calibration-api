@@ -1,272 +1,206 @@
 <p align="center">
-  <img src=".github/assets/readme.svg" alt="SIDIK Calibration API — backend kalibrasi alat ukur dan sertifikat digital PT Sidik. Grafik titik ukur dengan error bar terhadap pita toleransi, dan diagram jalur angka dari raw_measurements sampai sertifikat." width="100%">
+  <img src="docs/img/banner-api.svg" alt="SIDIK Calibration — backend kalibrasi alat ukur dan sertifikat digital PT SIDIK" width="100%">
 </p>
 
 <p align="center">
-  <img alt="Laravel 13" src="https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white">
-  <img alt="PHP 8.4" src="https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white">
-  <img alt="MySQL 8" src="https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white">
-  <img alt="Filament 5" src="https://img.shields.io/badge/Filament-5-FDAE4B?style=flat-square&logo=filament&logoColor=white">
-  <img alt="Repo Private" src="https://img.shields.io/badge/Repo-Private-2b2b2b?style=flat-square">
+  <a href="https://github.com/ZainulArkaanAlinsi/sidik-calibration-api/actions/workflows/tes.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ZainulArkaanAlinsi/sidik-calibration-api/tes.yml?branch=main&style=flat-square&label=CI&labelColor=0B2545"></a>
+  <img alt="Laravel 13" src="https://img.shields.io/badge/Laravel-13-1C6FC4?style=flat-square&labelColor=0B2545">
+  <img alt="PHP 8.4" src="https://img.shields.io/badge/PHP-8.4-1C6FC4?style=flat-square&labelColor=0B2545">
+  <img alt="Filament 5" src="https://img.shields.io/badge/Filament-5-1C6FC4?style=flat-square&labelColor=0B2545">
+  <img alt="MySQL 8" src="https://img.shields.io/badge/MySQL-8-1C6FC4?style=flat-square&labelColor=0B2545">
+  <img alt="Status: dalam pengembangan aktif" src="https://img.shields.io/badge/status-dalam%20pengembangan%20aktif-1C6FC4?style=flat-square&labelColor=0B2545">
 </p>
 
-Backend REST API untuk kalibrasi alat ukur dan penerbitan sertifikat digital PT Sidik.
-Klien utamanya repo terpisah [`sidik-calibration-mobile`](https://github.com/ZainulArkaanAlinsi/sidik-calibration-mobile)
-(Flutter + Riverpod); di luar itu ada panel admin Filament di `/admin`, satu aplikasi
-dengan API ini.
+> **English.** SIDIK Calibration API is the backend of the calibration laboratory system of PT SIDIK, built with Laravel 13 and Filament 5. It computes calibration results from worksheet readings using GUM-based uncertainty budgets (JCGM 100:2008), requires an independent approver, and issues digitally verifiable certificates (PDF with QR code). It serves the Lab app, Sidik Studio and a read-only customer app. It is a support system for a KAN-accredited laboratory (LK-285-IDN) and is under active development.
 
-Yang membedakan repo ini dari CRUD biasa: **angkanya terikat standar.** Ketidakpastian
-dihitung menurut JCGM 100:2008 (GUM), faktor cakupan `k` dikunci 2 sesuai lampiran
-akreditasi **LK-285-IDN**, dan kelulusan diputuskan secara _guarded acceptance_ ala
-ILAC-G8 — sebuah titik lulus kalau `|error| + U` masih masuk toleransi, bukan `|error|`
-saja. Titik oranye di grafik atas justru yang seperti itu: simpangannya kecil, tapi
-begitu ketidakpastiannya ikut dihitung, dia keluar pita.
+**Isi:** [Ringkasan](#ringkasan) · [Peran dan fitur](#peran-dan-fitur) · [Cara kerja](#cara-kerja) · [Arsitektur](#arsitektur) · [Prinsip integritas](#prinsip-integritas) · [Teknologi](#teknologi) · [Menjalankan secara lokal](#menjalankan-secara-lokal) · [Pengujian](#pengujian) · [Dokumentasi](#dokumentasi) · [Status dan peta jalan](#status-dan-peta-jalan) · [Kontribusi dan kepemilikan](#kontribusi-dan-kepemilikan)
 
-| Komponen    | Detail                                                                    |
-| ----------- | ------------------------------------------------------------------------- |
-| Framework   | Laravel 13, PHP 8.3 di lokal — **8.4 di CI**, dan itu batas bawah beneran |
-| Auth        | Laravel Sanctum, token-based, role `admin` / `teknisi` / `viewer`         |
-| Database    | MySQL 8 (produksi), SQLite in-memory (test harian)                        |
-| Panel admin | Filament 5 di `/admin`                                                    |
-| Realtime    | Laravel Reverb                                                            |
-| Profil alat | 28 terdaftar dari 48 jenis yang ditargetkan lab                           |
+## Ringkasan
 
----
+SIDIK Calibration API adalah backend kalibrasi alat ukur dan penerbitan sertifikat digital untuk laboratorium kalibrasi PT SIDIK. Alurnya dipindahkan dari lembar kerja kertas dan Excel ke satu jalur terkendali: teknisi mengisi lembar kerja di aplikasi, server menghitung ketidakpastian menurut JCGM 100:2008 (GUM), lembar disetujui orang lain, lalu sertifikat PDF dengan kode QR terbit dan dapat diverifikasi publik. Angka diadu ke workbook master lab dan ke lampiran akreditasi.
 
-## Cara kerjanya
+Repo ini melayani tiga klien: aplikasi Lab dan Sidik Studio ([`sidik-calibration-mobile`](https://github.com/ZainulArkaanAlinsi/sidik-calibration-mobile)), aplikasi Pelanggan ([`sidik-pelanggan-mobile`](https://github.com/ZainulArkaanAlinsi/sidik-pelanggan-mobile)), dan panel admin Filament di `/admin`. Sistem pendukung laboratorium terakreditasi KAN LK-285-IDN.
 
-Diagram di bagian bawah gambar atas adalah jalur yang ditempuh setiap angka, dari yang
-diketik teknisi di lokasi sampai yang tercetak di sertifikat. Tiga hal di jalur itu yang
-paling sering disalahpahami:
+## Peran dan fitur
 
-**Nilai tersimpan tidak pernah dihitung ulang saat dibaca.** `uncertainty_calculations`
-adalah arsip, bukan cache. Sertifikat yang terbit lima tahun lalu wajib menampilkan angka
-yang sama persis hari ini, termasuk kalau rumusnya sudah diperbaiki sejak itu.
+Kunci peran di kode dan basis data tetap; "Master Data" adalah nama tampilan peran `admin`.
 
-**Yang menghitung ulang justru validator, sebelum sertifikat terbit.**
-`CalibrationValidator` mengambil pembacaan mentah, menghitungnya dari nol, lalu mengadu
-hasilnya ke yang tersimpan. Selisihnya jadi error, peringatan, atau info.
+| Peran | Kunci | Wewenang utama |
+| --- | --- | --- |
+| Teknisi | `teknisi` | Mengisi lembar kerja (isian atau hasil pindai), pratinjau hitung, mengirim untuk persetujuan. Tidak mengisi Order Number dan tidak menyetujui lembar yang ia isi sendiri. |
+| Master Data | `admin` | Mengelola data master (alat, pelanggan, standar, ruangan, metode), mengisi Order Number, mengoreksi pembacaan dengan alasan, menyetujui dan menerbitkan sertifikat, menarik sertifikat, mengundang anggota pelanggan. Memakai panel Filament. |
+| Super Admin | `super_admin` | Semua aksi teknisi dan Master Data di organisasinya, lewat aplikasi; di panel admin hanya baca. Mengaktifkan versi data acuan (orang kedua, bukan pembuat versi). |
+| Viewer | `viewer` | Baca saja. Tidak ditawarkan untuk akun baru; akun lama tetap berlaku. |
+| Pelanggan | `pelanggan` | Aplikasi terpisah, baca saja, per perusahaan, lewat `/api/pelanggan/v1`. Akun lahir dari undangan; tidak ada pendaftaran mandiri. |
 
-**Ada jalur kedua.** `php artisan kalibrasi:hitung-ulang` menghitung hal yang sama lewat
-kode yang lain. Alat baru wajib menyambung `App\Support\*Mentah`-nya ke
-`CalibrationValidator` **dan** `HitungUlangSesi` — lupa salah satunya tidak menghasilkan
-error apa pun, cuma dua jalur yang diam-diam menjawab beda. Pola ini sudah menggigit
-tujuh kali.
+| Area | Yang tersedia |
+| --- | --- |
+| Hitung dan validasi | 48 profil alat terdaftar. Budget ketidakpastian GUM, keputusan lulus/gagal dengan *guarded acceptance* (ILAC-G8: `\|error\| + U` masuk toleransi), hitung ulang dari data mentah sebelum terbit. |
+| Persetujuan | Koreksi dengan jejak (nilai lama, nilai baru, alasan), perbandingan nilai asli dan koreksi, pemisahan wewenang. |
+| Sertifikat | PDF dari snapshot yang dibekukan, kode QR, halaman verifikasi publik, revisi dan penarikan dengan jejak. |
+| Pindai lembar kerja | Foto menjadi usulan angka yang wajib dikonfirmasi manusia. Mode uji. |
+| Data acuan dan rumus | Parameter acuan berversi (ajukan, simulasi, aktifkan). Tiap hasil hitung menyimpan versi rumus dan acuan yang dipakai. |
+| Arsip dan pelacakan | Arsip sertifikat per perusahaan, pelacakan paket, penugasan, jatuh tempo dan pengingat. |
+| Modul pelanggan | API baca saja untuk alat, sertifikat, paket, dan notifikasi. |
+| Realtime dan laporan | Laravel Reverb (websocket), notifikasi push, laporan kalibrasi dan ekspor Excel. |
 
-### Profil kalibrasi
-
-Satu jenis alat sama dengan satu berkas di `app/Services/Calibration/Profiles/`, turunan
-`CalibrationProfile`. Menambah alat berarti:
-
-```
-1 subclass  +  1 seeder CMC  +  1 baris di CalibrationProfileRegistry::daftarProfil()
-```
-
-Bukan `if (besaran == ...)` yang berserakan di kelas bersama. Pencocokan alat ke profil
-lewat `equipments.nama_alat_kemampuan` (plus `aliasNama()`), **bukan kategori** — pH dan
-Turbidimeter satu kategori yang sama, jadi kategori tidak cukup memisahkan.
-
-Yang tetap tinggal di kelas bersama dan tidak boleh pindah ke profil: agregasi budget
-(`u_c`, Welch–Satterthwaite, `k`), lantai CMC, dan keputusan PASS/FAIL. Profil hanya
-menyetor daftar komponen lewat `komponenBudget()`.
+## Cara kerja
 
 ```mermaid
-%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
 flowchart LR
-  A["equipments.nama_alat_kemampuan"] --> B{"CalibrationProfileRegistry"}
-  B -- cocok --> C["XxxProfile"]
-  B -- tidak cocok --> D["ProfilGenerik"]
-  C --> E["komponenBudget()"]
-  D --> E
-  E --> F["agregasi u_c · Welch-Satterthwaite · lantai CMC · PASS/FAIL"]
+  A["Lembar kerja<br/>isian atau pindai"] --> B["Hitung<br/>ketidakpastian GUM"]
+  B --> C["Validasi ulang<br/>dari data mentah"]
+  C --> D{"Disetujui<br/>orang lain?"}
+  D -->|ya| E["Sertifikat<br/>PDF + QR"]
+  D -->|koreksi dengan jejak| B
+  E --> F["Arsip dan<br/>verifikasi publik"]
 ```
 
-Kotak paling kanan sengaja di luar profil: itu yang tetap tinggal di kelas
-bersama, dan memindahkannya ke profil berarti tiap alat boleh punya definisi
-kelulusan sendiri.
+1. **Isi.** Nilai teknisi disimpan apa adanya. Hasil pindai hanya usulan dan harus dikonfirmasi manusia.
+2. **Hitung.** Server yang menghitung, termasuk pratinjau, supaya angka di layar tidak berbeda dari yang tercetak. Nilai antara tidak dibulatkan.
+3. **Validasi.** `CalibrationValidator` menghitung ulang dari data mentah dan mengadu ke hasil tersimpan (error, peringatan, info).
+4. **Setujui.** Penyetuju bukan pengisi lembar atau pengonfirmasi hasil pindai. Nomor sertifikat dan Order Number wajib.
+5. **Terbit.** Snapshot dibekukan, PDF dan QR dibuat. Hasil tersimpan tidak dihitung ulang saat dibaca.
+6. **Arsip dan verifikasi.** Sertifikat masuk arsip perusahaan; QR menuju halaman verifikasi publik.
 
-### Peta lapisan
+## Arsitektur
 
-| Lapisan      | Tempat                  | Catatan                                                |
-| ------------ | ----------------------- | ------------------------------------------------------ |
-| Rute API     | `routes/api.php`        | ~640 baris, Sanctum + `role:`, throttle per aksi tulis |
-| Panel admin  | `app/Filament/`         | `Concerns/ScopesToOrganization`                        |
-| Model        | `app/Models/`           | semua data lab tersaring `organization_id`             |
-| OCR / Vision | `app/Services/Ocr/`     | `WorksheetVisionExtractor`                             |
-| Migrasi      | `database/migrations/`  | 86 berkas — kolom baru itu pilihan terakhir            |
-| Perintah     | `app/Console/Commands/` | 20 perintah milik proyek ini                           |
+```mermaid
+flowchart TB
+  L["Aplikasi Lab"]
+  S["Sidik Studio"]
+  P["Aplikasi Pelanggan<br/>baca saja"]
+  subgraph API["Laravel 13"]
+    R["Rute dan izin<br/>/api dan /api/pelanggan/v1"]
+    F["Panel admin<br/>Filament 5"]
+    H["Profil alat 48<br/>GumCalculator, CalibrationValidator"]
+    C["Sertifikat<br/>snapshot, PDF, QR"]
+  end
+  DB[("MySQL 8")]
+  L --> R
+  S --> R
+  P --> R
+  R --> H
+  F --> H
+  H --> C
+  H --> DB
+  C --> DB
+```
 
----
+| Lapisan | Tempat | Catatan |
+| --- | --- | --- |
+| Rute | `routes/api.php`, `routes/api_pelanggan.php` | Rute pelanggan terpisah penuh; izin dari middleware `role:` |
+| Profil alat | `app/Services/Calibration/Profiles/` | Satu jenis alat satu profil, didaftarkan di `CalibrationProfileRegistry` |
+| Hitung | `GumCalculator`, `CalibrationValidator`, `App\Support\*Mentah` | Jalur kedua: `php artisan kalibrasi:hitung-ulang` |
+| Sertifikat | `CertificateSnapshotBuilder`, `BerkasPdfSertifikat`, `QrCodeGenerator` | Dari snapshot beku |
+| Panel admin | `app/Filament/` | Disaring per organisasi |
+| Data | `app/Models/`, `database/migrations/` | Semua data lab tersaring `organization_id` |
 
-## Setup
+<details>
+<summary><b>Profil alat dan tiga lapis olah data</b></summary>
+
+Pencocokan alat ke profil memakai nama alat (`nama_alat_kemampuan`), bukan kategori: pH dan Turbidimeter satu kategori tetapi beda profil. Menambah alat berarti satu subclass profil, satu seeder CMC, dan satu baris di registry. Alat baru wajib lahir bersama jalur hitung ulangnya (`App\Support\*Mentah`, tersambung ke `CalibrationValidator` dan `HitungUlangSesi`), supaya preview dan simpan tidak diam-diam menjawab beda.
+
+| Lapis | Isi | Cara mengubah |
+| --- | --- | --- |
+| 1. Parameter dan tabel acuan | Pita CMC, tabel koreksi standar, konstanta metode | Alur versi: ajukan, simulasi terhadap sesi tersimpan, aktifkan |
+| 2. Struktur hitung | Rantai hitung, budget ketidakpastian, koefisien sensitivitas | Sementara kode PHP dengan test rekonsiliasi master. Lembar Hitung di Sidik Studio: rancangan, belum tersedia |
+| 3. Bentuk lembar kerja | Jumlah titik, label, satuan | Terbatas, dan divalidasi agar hitung tidak kehilangan input |
+
+Versi baru berlaku untuk sesi baru; sertifikat lama tetap dapat dihitung ulang persis seperti saat terbit.
+
+</details>
+
+## Prinsip integritas
+
+- **Sertifikat terbit tidak ditimpa.** Revisi lahir sebagai entri baru yang terhubung ke aslinya.
+- **Nilai teknisi tidak dihapus.** Kesalahan ditandai; koreksi menyimpan nilai lama dan baru beserta alasan.
+- **Pemisahan wewenang.** Pengisi lembar dan pengonfirmasi hasil pindai tidak dapat menyetujui lembar yang sama (`422 pemisahan_wewenang`), untuk semua peran.
+- **Jejak audit.** Koreksi, penarikan, dan pengaktifan versi acuan mencatat pelaku, waktu, alasan, serta nilai sebelum dan sesudah. Log alur acuan bersifat append-only.
+- **Angka kekal.** Hasil hitung disimpan bersama versi rumus dan acuan yang dipakai; pembulatan hanya di render sertifikat.
+- **Penyimpangan dari master dicatat.** Selisih terhadap workbook master tercatat beserta sumbernya di jejak sesi, tidak dibetulkan diam-diam.
+- **Isolasi data.** Data lab tersaring per organisasi; data milik perusahaan lain dijawab 404, bukan 403.
+
+## Teknologi
+
+| Lapisan | Teknologi |
+| --- | --- |
+| Bahasa dan framework | PHP 8.4 (CI dan Docker; `composer.json` meminta `^8.3`), Laravel 13 |
+| Panel admin | Filament 5 |
+| Autentikasi | Laravel Sanctum, token per aplikasi (internal, Studio, pelanggan) |
+| Basis data | MySQL 8 (produksi dan suite MySQL), SQLite in-memory (tes harian) |
+| Dokumen | dompdf (PDF sertifikat), PhpSpreadsheet (Excel) |
+| Realtime dan push | Laravel Reverb, notifikasi push |
+| Berkas arsip | Flysystem (lokal atau S3) |
+| Tes dan gaya kode | PHPUnit 12, Laravel Pint |
+| CI | GitHub Actions: `tes.yml` (tes terpecah, lalu deploy bila hijau) |
+
+## Menjalankan secara lokal
+
+Prasyarat: PHP 8.4, Composer, Node.js, MySQL 8.
 
 ```bash
 git clone https://github.com/ZainulArkaanAlinsi/sidik-calibration-api.git
 cd sidik-calibration-api
-composer setup      # install + .env + key + migrate + npm build
+cp .env.example .env      # lalu arahkan koneksi database ke database lokal yang kosong
+composer setup            # install, key, migrate, build aset
+php artisan akun:admin    # membuat akun admin pertama
+composer dev              # server, queue, log, dan vite sekaligus
 ```
 
-Buat databasenya, lalu sesuaikan kredensial di `.env`:
+API di `http://localhost:8000/api`, health check di `/up`, panel admin di `/admin`. Modul pelanggan (`/api/pelanggan/v1`) mati bawaan; nyalakan dengan `FITUR_PELANGGAN=true` di `.env`. Untuk menguji aplikasi mobile dari HP fisik, jalankan `php artisan serve --host=0.0.0.0` dan arahkan `API_BASE_URL` aplikasi ke alamat LAN komputer ini.
 
-```sql
-CREATE DATABASE sidik_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+Perintah artisan milik proyek ada di `app/Console/Commands/`, misalnya `kalibrasi:hitung-ulang`, `kalibrasi:uji-profil`, dan `kemampuan:pastikan`. Berkas yang dibangkitkan dari workbook master (tabel standar dan fixture) dibuat oleh skrip di `docs/skrip/`; jangan disunting dengan tangan.
 
-```env
-DB_CONNECTION=mysql
-DB_DATABASE=sidik_db
-DB_USERNAME=root
-DB_PASSWORD=<password mysql lokal kamu>
-```
-
-Lalu jalankan semuanya sekaligus — serve, queue, log, dan vite dalam satu perintah:
+## Pengujian
 
 ```bash
-composer dev
+php artisan test                      # SQLite in-memory, dipakai sehari-hari
+php artisan test --filter=NamaTest    # satu kelas
+php artisan test -c phpunit.mysql.xml # suite yang sama di MySQL
 ```
 
-API ada di `http://localhost:8000/api`, health check `GET /up`, panel admin `/admin`.
+Dua suite itu sama-sama wajib hijau sebelum sebuah modul dianggap selesai: produksi berjalan di MySQL, dan perilaku tipe desimal serta mode ketat berbeda dari SQLite. Alasan lengkapnya ada di kepala `phpunit.mysql.xml`. Gunakan database khusus test; `RefreshDatabase` menghapus isi database yang ditunjuk.
 
-Kalau mobile dites di HP fisik, jalankan `php artisan serve --host=0.0.0.0` dan arahkan
-`API_BASE_URL` di app ke IP LAN laptop, bukan `localhost`.
-
-### Perintah milik proyek ini
-
-```bash
-php artisan kalibrasi:hitung-ulang     # hitung ulang sesi dari pembacaan mentah
-php artisan kalibrasi:uji-profil       # sapu profil alat lawan datanya
-php artisan kemampuan:pastikan         # tegakkan baris CMC dari lampiran akreditasi
-php artisan flowmeter:audit-cmc
-php artisan akun:admin
-```
-
-Daftar lengkapnya di `app/Console/Commands/`.
-
-### Generator
-
-Dijalankan lewat skrip, bukan diketik tangan:
-
-```bash
-php docs/skrip/gen-contoh-lembar-kerja.php   # tulis contoh_lembar_kerja_*.dart ke repo mobile
-php docs/skrip/gen-kode-profil-mobile.php    # ekspor daftar kode profil ke mobile
-```
-
-`docs/skrip/gen-tabel-standar-*.py` dan `gen-sesi-*.py` membangun tabel standar dan
-fixture dari workbook master lab. Keluarannya disalin apa adanya; menyunting hasilnya
-dengan tangan berarti berkasnya menyimpang diam-diam dari server, dan itu sudah tiga kali
-meloloskan bug — TIDS, Timbangan, Micrometer.
-
----
-
-## Testing
-
-```bash
-php artisan test                                  # SQLite in-memory, dipakai sehari-hari
-php artisan test --filter=NamaTest                # satu kelas
-php artisan test --filter='NamaTest::nama_metode' # satu metode
-php artisan test -c phpunit.mysql.xml             # suite yang sama, di MySQL
-```
-
-> [!IMPORTANT]
-> Dua suite itu bukan pilihan — **dua-duanya wajib hijau** sebelum sebuah modul disebut
-> selesai. Produksi jalan di MySQL, sementara SQLite membaca `decimal(20,8)` sebagai
-> float dan MySQL memberi string; `AUTO_INCREMENT` dan strict mode-nya juga beda. Empat
-> bug pernah bersembunyi tepat di celah itu. Alasan lengkapnya ada di kepala
-> `phpunit.mysql.xml`.
-
-Sekali seumur mesin, buat database khusus test. Jangan pakai database kerja —
-`RefreshDatabase` menghapus isinya.
-
-```sql
-CREATE DATABASE asmo_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-Jumlahnya sekarang 214 berkas `tests/Feature/` dan 49 berkas `tests/Unit/`.
-
-CI memakai PHP **8.4**, bukan 8.3 yang tertulis di `composer.json`, dan itu batas bawah
-beneran: `config/database.php` menyebut `Pdo\Mysql::ATTR_SSL_CA`, kelas yang baru ada di
-8.4. Di 8.3 config-nya fatal sebelum satu test pun sempat jalan. Alurnya
-`push → tes.yml → hijau → ketuk Deploy Hook Render`; commit merah berhenti di GitHub dan
-tidak pernah sampai ke server yang dipakai teknisi di lokasi.
-
----
-
-```mermaid
-%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
-flowchart LR
-  A["php artisan test<br/>SQLite in-memory"] --> G{"dua-duanya hijau?"}
-  B["phpunit.mysql.xml<br/>MySQL 8"] --> G
-  G -- ya --> C["CI, PHP 8.4"]
-  C --> D["Deploy Hook Render"]
-  D --> E["server yang dipakai teknisi di lokasi"]
-  G -- tidak --> S["berhenti di GitHub"]
-```
-
-## Kerja berdua: database bersama lewat LAN — SUDAH PENSIUN
-
-Dulu tim ini memakai satu MySQL bersama di laptop Zainul, disambung Raihan lewat IP
-LAN dengan user `asmo_dev`. **Cara itu tidak dipakai lagi** sejak backend berhenti
-nebeng laptop dan pindah ke Render + Aiven (`d1cdf063`); `.env` sekarang menunjuk
-Aiven, bukan IP LAN.
-
-> [!WARNING]
-> Sandi `asmo_dev` pernah tertulis polos di README ini dan **masih terbaca di riwayat
-> git** (3 commit), sementara repo ini publik. User-nya dicabut (`DROP USER`), bukan
-> diganti sandinya — jalurnya sudah tidak dipakai, jadi tidak ada sandi baru yang
-> perlu dijaga. Urutan lengkap yang mengikat ada di `AGENTS.md`, §Sebelum repo
-> dibalik jadi PUBLIK.
-
-Kalau suatu saat perlu berbagi database lagi, jangan hidupkan ulang pola ini: bikin
-user baru dengan sandi yang tidak pernah masuk berkas mana pun yang ikut git.
-
-## Konvensi API
-
-Semua endpoint di bawah `/api`. Autentikasi lewat header `Authorization: Bearer <token>`
-dari Sanctum. Response selalu JSON — error pun JSON, bukan halaman HTML, dan itu diatur
-di `bootstrap/app.php`. Hampir setiap aksi tulis punya `throttle:` sendiri, dan setiap
-query data lab tersaring `organization_id`.
-
-## Aturan bisnis yang mengikat
-
-Nomor sertifikat berformat `CAL/{tahun}/{bulan}/{urutan 4 digit}`, dan keunikannya dijaga
-lewat **database transaction locking**, bukan sekadar unique constraint. Sertifikat yang
-sudah terbit tidak bisa diedit; revisi lahir sebagai entri baru yang terhubung ke
-sertifikat asal. Hasil FAIL tetap disimpan dan tetap bisa diterbitkan sertifikatnya —
-yang berbeda hanya statusnya. Rentang ukur dan ketidakpastian mengacu ke data CMC dari
-lampiran akreditasi LK-285-IDN.
-
----
+CI memakai PHP 8.4 dan memecah suite menjadi 4 shard SQLite dan 6 shard MySQL; pembaginya `.github/ci/shard.php` dan menggagalkan build bila ada berkas test yang tidak kebagian shard. Deploy hanya berjalan bila semua shard hijau. Lebih dari 500 berkas test, termasuk test rekonsiliasi terhadap angka workbook master (`tests/**/*Master*Test.php`).
 
 ## Dokumentasi
 
-| Berkas                                                                             | Isi                                              |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [`docs/BACA-DULU-BACKEND.md`](docs/BACA-DULU-BACKEND.md)                           | satu-satunya dokumen status yang boleh dipercaya |
-| [`docs/kontrak-api.md`](docs/kontrak-api.md)                                       | kontrak endpoint untuk sisi mobile               |
-| [`docs/Rekap-Data-Kemampuan-Kalibrasi.md`](docs/Rekap-Data-Kemampuan-Kalibrasi.md) | ringkasan CMC LK-285-IDN                         |
-| [`docs/CHECKLIST-DEPLOY-VPS.md`](docs/CHECKLIST-DEPLOY-VPS.md)                     | checklist deploy                                 |
-| `docs/perintah-frontend-*.md`                                                      | serah-terima per alat ke sisi mobile             |
-| `AGENTS.md`                                                                        | panduan kerja untuk agen AI di repo ini          |
+| Dokumen | Isi |
+| --- | --- |
+| [`docs/README.md`](docs/README.md) | Indeks seluruh dokumen |
+| [`docs/BACA-DULU-BACKEND.md`](docs/BACA-DULU-BACKEND.md) | Status backend yang diperiksa langsung ke kode |
+| [`docs/kontrak-api.md`](docs/kontrak-api.md) | Kontrak endpoint aplikasi Lab dan Studio |
+| [`docs/kontrak-api-pelanggan.md`](docs/kontrak-api-pelanggan.md) | Kontrak endpoint aplikasi Pelanggan |
+| [`docs/Spesifikasi-Aplikasi-Kalibrasi.md`](docs/Spesifikasi-Aplikasi-Kalibrasi.md) | Spesifikasi produk |
+| [`docs/Rekap-Data-Kemampuan-Kalibrasi.md`](docs/Rekap-Data-Kemampuan-Kalibrasi.md) | Ringkasan CMC dari lampiran akreditasi LK-285-IDN |
+| [`docs/pelanggan/09-Adendum-Olah-Data-Peran.md`](docs/pelanggan/09-Adendum-Olah-Data-Peran.md) | Aturan olah data dan peran |
+| [`docs/pelanggan/00-BACA-DULU.md`](docs/pelanggan/00-BACA-DULU.md) | Rancangan modul pelanggan (PRD, SRS, SDD, alur UI, risiko); berstatus rancangan |
+| [`docs/sidik-studio/00-BACA-DULU.md`](docs/sidik-studio/00-BACA-DULU.md) | Rancangan Sidik Studio; berstatus rancangan |
+| [`docs/PANDUAN-OCR-LEMBAR-KERJA.md`](docs/PANDUAN-OCR-LEMBAR-KERJA.md) | Pindai lembar kerja |
+| [`docs/realtime-sync.md`](docs/realtime-sync.md) | Sinkron realtime |
+| [`docs/cara-deploy.md`](docs/cara-deploy.md) · [`docs/CHECKLIST-DEPLOY-VPS.md`](docs/CHECKLIST-DEPLOY-VPS.md) | Deploy |
 
-Berkas `docs/permintaan-*.md` itu permintaan **dari** sisi mobile, dan beberapa tanda
-centangnya salah. Untuk status sebenarnya, baca `docs/BACA-DULU-BACKEND.md`.
+Berkas `docs/permintaan-*.md` adalah permintaan dari sisi mobile dan tidak menunjukkan status; untuk status, baca `docs/BACA-DULU-BACKEND.md`.
 
-## Alur kerja
+## Status dan peta jalan
 
-Branch `main` untuk rilis, `feature/nama-fitur` untuk pekerjaan. Commit memakai
-[Conventional Commits](https://www.conventionalcommits.org/). Jalankan `vendor/bin/pint`
-**hanya pada berkas yang kamu sentuh** — dijalankan pada direktori, dia merapikan berkas
-lain dan mengotori diff. Key `.env` baru wajib ikut ke `.env.example` dan `render.yaml`.
+Dalam pengembangan aktif (per 18 Nov 2026).
 
-Repo ini privat, tapi itu bukan alasan longgar: `Project-PT-Sidik/` berisi workbook master
-lab, dan riwayat git tidak ikut bersih waktu sebuah berkas dihapus. Sapu nama dan alamat
-pelanggan sebelum `git add`, dan jangan pernah menulis kredensial asli di berkas yang ikut
-git. Syarat lengkap kalau repo mau dibalik jadi publik ada di `AGENTS.md`.
+| Status | Isi |
+| --- | --- |
+| Berjalan | 48 profil alat terdaftar; hitung, validasi, persetujuan, sertifikat PDF dengan QR dan verifikasi publik; modul pelanggan baca saja; alur versi data acuan; realtime dan push. |
+| Mode uji | Pindai lembar kerja: hanya usulan, wajib dikonfirmasi manusia, tidak ada hasil otomatis penuh. |
+| Belum | Lembar Hitung (editor rumus) dan Kelola Data penuh di Sidik Studio. Akses lintas organisasi lewat API masih ditutup; panel admin sudah membacanya dengan pencatatan. Angka di layar aplikasi belum seluruhnya diselaraskan dengan pembulatan angka cetak sertifikat. |
 
-## Tampilan README ini
+Beberapa alat masih memiliki pertanyaan terbuka ke laboratorium, dicatat sebagai pertanyaan bernomor di `docs/pertanyaan-lab-*.md`; ringkasannya di [`docs/RINGKASAN-PERTANYAAN-LAB.md`](docs/RINGKASAN-PERTANYAAN-LAB.md).
 
-Seluruh gambarnya satu berkas: [`.github/assets/readme.svg`](.github/assets/readme.svg).
-Paletnya terkumpul di satu blok komentar di kepala berkas itu — ganti warna di situ saja,
-tidak perlu menyisir isinya. Animasinya hiasan semua, dan itu aturan yang ditegakkan:
-tidak ada satu pun teks atau angka yang baru terlihat karena animasi, supaya isinya tidak
-bisa hilang kalau animasinya tidak dijalankan.
+## Kontribusi dan kepemilikan
+
+Proyek ini dikembangkan untuk PT SIDIK dan dipelihara oleh Zainul Arkaan. Informasi laboratorium: <https://pt-sidik.com/calibration/>.
+
+- Perubahan masuk lewat pull request; `tes.yml` harus hijau. Penggabungan ke `main` memicu deploy otomatis, jadi kumpulkan perubahan dan verifikasi satu per satu.
+- Commit memakai [Conventional Commits](https://www.conventionalcommits.org/). Jalankan `vendor/bin/pint` hanya pada berkas yang diubah.
+- Kunci `.env` baru ikut ditambahkan ke `.env.example` dan `render.yaml`.
+- Jangan menaruh kredensial atau data pelanggan asli di berkas, tangkapan layar, maupun contoh.
+- Repo ini belum memuat berkas `LICENSE`; ketentuan penggunaan ulang belum ditetapkan.
