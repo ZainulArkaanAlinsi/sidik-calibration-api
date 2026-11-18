@@ -58,7 +58,11 @@ trait AturanPelanggan
     {
         $bersih = [];
 
-        if ($this->has('email')) {
+        // Hanya nilai SKALAR yang dirapikan. Array (klien yang salah/jahat)
+        // dibiarkan supaya aturan `string` menjawab 422 — cast
+        // `(string)` pada array melempar "Array to string conversion" → 500
+        // di pintu publik (BUG-4 uji E2E-QA, 18 Nov 2026).
+        if (is_scalar($this->input('email'))) {
             $bersih['email'] = mb_strtolower(trim((string) $this->input('email')));
         }
 
@@ -67,7 +71,7 @@ trait AturanPelanggan
         // adanya supaya aturan `telepon` di bawah yang memunculkan pesannya —
         // kalau diganti null, pesannya jadi "wajib diisi" buat orang yang
         // jelas-jelas sudah mengisi.
-        if ($this->filled('telepon')) {
+        if ($this->filled('telepon') && is_scalar($this->input('telepon'))) {
             $bersih['telepon'] = NomorTelepon::normal((string) $this->input('telepon'))
                 ?? (string) $this->input('telepon');
         }
