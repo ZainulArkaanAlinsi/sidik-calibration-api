@@ -5,11 +5,16 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\UncertaintyCalculation;
+use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\MenegakkanCetakMaster;
+use Tests\Concerns\MenerbitkanSesiContoh;
+use Tests\Concerns\MengumpulkanGagalPerProfil;
+use Tests\Concerns\PembandingCetakMaster;
 use Tests\TestCase;
 
 /**
@@ -42,9 +47,27 @@ use Tests\TestCase;
  * Kesepuluh titik Load Cell dan keenam titik UTM, tiga kolom masing-masing,
  * PLUS bentuk bulatnya. Angka pembandingnya disalin dari `SERTIFIKAT.csv`
  * kedua workbook — bukan dari keluaran kode ini.
+ *
+ * ## Tambahan PK-5 (18 Nov 2026): TEKS cetak renderer asli
+ *
+ * Yang di atas berhenti di snapshot. `test_angka_cetak_tiga_alat_gaya_...` menerbitkan ketiga sesi
+ * contoh (Load Cell, UTM, Proving Ring) lewat `POST /approve`, merender `sertifikat.pdf` asli, dan
+ * mengadu TEKS yang tercetak ke teks lembar `SERTIFIKAT` master (`kelompok-b.json`, dicocokkan ke
+ * `Range.Text` Excel). Titik nol tidak tercetak karena master menyembunyikan barisnya (Load Cell
+ * baris 21, UTM 21, Proving Ring 22) — itulah jawaban rekonsiliasi "0/7 baris identik" di audit
+ * 16 Nov: bukan beda angka, tetapi baris tersembunyi yang ikut terbaca.
+ *
+ * Toleransi nilai TERSIMPAN di metode itu (angka cetak dibandingkan persis): 6e-9 lewat
+ * `assertTersimpanSama` untuk semua yang dibandingkan ke sel master di kolom `decimal(20,8)`
+ * (`Correction` = sel x 0,00981, U95 UTM, `k` Proving Ring; MySQL menyimpan 8 desimal, selisih
+ * sah terbesar 5e-9); 1e-8 untuk U95/k yang DIPATOK dari aplikasi (bukan dari master);
+ * 1e-12 untuk komponen drift, yang tersimpan di JSON (15 digit signifikan, nilai < 1).
  */
 class GayaSesiContohCocokMasterTest extends TestCase
 {
+    use MenegakkanCetakMaster;
+    use MenerbitkanSesiContoh;
+    use MengumpulkanGagalPerProfil;
     use RefreshDatabase;
 
     /** Beda yang masih diterima pada nilai penuh. Master menyimpan double. */
@@ -95,6 +118,121 @@ class GayaSesiContohCocokMasterTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
+    }
+
+    /**
+     * Angka CETAK (teks renderer asli) ketiga alat gaya = teks master, dan hasil tersimpan.
+     *
+     * Semua baris tabel hasil cocok di ketiganya. Dua hal yang dikunci sebagai selisih (bukan
+     * disetel supaya hijau):
+     *
+     * - **Proving Ring U95**: tercetak 2,3 kgf, master 22,4 kgf (G14: master membaca pita CMC dari
+     *   baris yang salah). Jejak sesinya (`penyimpangan_master`) belum mencatat G14 (PK5-2).
+     * - **Drift standar Load Cell & UTM (PK5-1)**: `drift_standar` master `PERHITUNGAN U95%!N13` =
+     *   `VLOOKUP(Z3; Tabel_Drift; 2; 0)`, dan `Tabel_Drift` = `STANDAR_LOADCELL!Q5:R7` — kolom
+     *   "Tekan" (R). Kolom "Tarik" (S) tidak pernah dibaca master. Aplikasi memakai kolom sesuai
+     *   arah (Tarik) untuk Load Cell & UTM. Load Cell: drift 0,034272 (S6) lawan 0,031834 (R6)
+     *   -> U 0,29761 lawan 0,29734 kN dan k 2,0796 lawan 2,0860; UTM: 0 (S5) lawan 0,069282 (R5)
+     *   -> k 1,97166 lawan 1,96986. Tidak tampak di cetak (0,30 / 2,1 / k = 2) dan tidak tercatat
+     *   di jejak sesi.
+     */
+    public function test_angka_cetak_tiga_alat_gaya_sama_dengan_master_kecuali_yang_tercatat(): void
+    {
+        $this->freezeTime();
+        $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
+
+        $this->periksaSemuaProfil([
+            'gaya/load_cell' => function (): void {
+                [, $html, $sesi] = $this->terbitkanDanRender('DEMO-LC-001');
+                $this->assertCetakSamaMaster('gaya/load_cell', $html, 11);
+
+                $hitung = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
+                $this->assertCount(10, $hitung, 'Load Cell: sepuluh titik tersimpan (titik nol tersimpan, tidak dicetak).');
+                $this->assertDriftDanHasil(
+                    $hitung,
+                    drift: 0.034272153479393656, masterDrift: 0.031834452342817454,
+                    u: 0.29761028637804, masterU: PembandingCetakMaster::nilaiSel('gaya/load_cell', 'P35'),
+                    k: 2.0796138447276, masterK: PembandingCetakMaster::nilaiSel('gaya/load_cell', 'T36'),
+                );
+                $this->assertKoreksiTersimpan($hitung, 'gaya/load_cell', barisTitik2: 22, faktorKeKn: 1.0);
+            },
+            'gaya/utm' => function (): void {
+                [, $html, $sesi] = $this->terbitkanDanRender('DEMO-UTM-001');
+                $this->assertCetakSamaMaster('gaya/utm', $html, 7);
+
+                $hitung = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
+                $this->assertCount(6, $hitung);
+                // U95 tersimpan dalam kN = lantai CMC 2,1 kgf x 0,00981 (master mencetak 2,1 kgf).
+                $this->assertDriftDanHasil(
+                    $hitung,
+                    drift: 0.0, masterDrift: 0.0692820323027551,
+                    u: 2.1 * 0.00981, masterU: null,
+                    k: 1.9716608894927, masterK: PembandingCetakMaster::nilaiSel('gaya/utm', 'T36'),
+                );
+                $this->assertKoreksiTersimpan($hitung, 'gaya/utm', barisTitik2: 22, faktorKeKn: 0.00981);
+                $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('gaya/utm', 'P35') * 0.00981, $hitung[0]->ketidakpastian_diperluas, 'UTM: U95 tersimpan = 2,1 kgf master dalam kN.');
+            },
+            'gaya/proving_ring' => function (): void {
+                [, $html, $sesi] = $this->terbitkanDanRender('DEMO-PR-001');
+                $this->assertCetakSamaMaster('gaya/proving_ring', $html, 11, [
+                    38 => ['G14: master 22,4 kgf (pita CMC 0,22 kN dari baris yang salah); aplikasi 2,3 kgf (0-500 kgf).', ['2.3']],
+                ]);
+
+                $hitung = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
+                $this->assertCount(10, $hitung);
+                $this->assertKoreksiTersimpan($hitung, 'gaya/proving_ring', barisTitik2: 23, faktorKeKn: 0.00981);
+
+                foreach ($hitung as $h) {
+                    $this->assertEqualsWithDelta(0.022563, (float) $h->ketidakpastian_diperluas, 1e-8, "Proving Ring titik {$h->titik_ke}: U95 tersimpan = CMC 2,3 kgf dalam kN (master 0,22 kN).");
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('gaya/proving_ring', 'U39'), $h->faktor_cakupan_k, "Proving Ring titik {$h->titik_ke}: k tersimpan");
+                    $this->assertNull($h->keputusan, 'Proving Ring: master tidak mencetak vonis; aplikasi pun tidak.');
+                }
+            },
+        ]);
+    }
+
+    /**
+     * `Correction` TERSIMPAN (kolom `koreksi`, kN) sama dengan sel `Q` master — termasuk yang tidak
+     * tampak di teks cetak karena cetak diturunkan dari kolom lain. Titik 1 (beban nol) baris master
+     * tersembunyi, jadi dilewati; Proving Ring menyimpan faktor kalibrasi (kgf/div) dalam kN/div.
+     *
+     * @param  Collection<int, UncertaintyCalculation>  $hitung
+     */
+    private function assertKoreksiTersimpan(Collection $hitung, string $kunci, int $barisTitik2, float $faktorKeKn): void
+    {
+        foreach ($hitung as $i => $h) {
+            if ($i === 0) {
+                continue;
+            }
+
+            $this->assertTersimpanSama(
+                PembandingCetakMaster::nilaiSel($kunci, 'Q'.($barisTitik2 + $i - 1)) * $faktorKeKn,
+                $h->koreksi,
+                "{$kunci} titik {$h->titik_ke}: Correction tersimpan",
+            );
+        }
+    }
+
+    /**
+     * @param  Collection<int, UncertaintyCalculation>  $hitung
+     */
+    private function assertDriftDanHasil(Collection $hitung, float $drift, float $masterDrift, float $u, ?float $masterU, float $k, float $masterK): void
+    {
+        foreach ($hitung as $h) {
+            $komponen = collect($h->type_b_components['komponen'] ?? [])->firstWhere('sumber', 'drift_standar');
+            $this->assertNotNull($komponen, 'Komponen drift_standar tidak ada di jejak.');
+            $this->assertEqualsWithDelta($drift, (float) $komponen['u'], 1e-12, "titik {$h->titik_ke}: drift standar yang dipakai aplikasi (kolom Tarik tabel standar)");
+            $this->assertGreaterThan(1e-3, abs($masterDrift - (float) $komponen['u']), 'Selisih drift terhadap master (kolom Tekan, `VLOOKUP(...;2;0)`) hilang — hapus catatan PK5-1 bila ditutup.');
+            $this->assertEqualsWithDelta($u, (float) $h->ketidakpastian_diperluas, 1e-8, "titik {$h->titik_ke}: U95 tersimpan");
+            $this->assertEqualsWithDelta($k, (float) $h->faktor_cakupan_k, 1e-8, "titik {$h->titik_ke}: k tersimpan");
+            $this->assertGreaterThan(1e-3, abs($masterK - (float) $h->faktor_cakupan_k), 'Selisih k terhadap master hilang — hapus catatan PK5-1 bila ditutup.');
+
+            if ($masterU !== null) {
+                $this->assertGreaterThan(1e-4, abs($masterU - (float) $h->ketidakpastian_diperluas), 'Selisih U95 terhadap master hilang — hapus catatan PK5-1 bila ditutup.');
+            }
+
+            $this->assertNull($h->keputusan, 'Master gaya tidak mencetak vonis; aplikasi pun tidak.');
+        }
     }
 
     public function test_load_cell_kolom_sertifikat_cocok_master(): void

@@ -8,8 +8,9 @@ namespace Tests\Concerns;
  *
  * ## Bahan pembanding
  *
- * `tests/Fixtures/cetak-master/massa-volume.json`, keluaran
- * `docs/skrip/gen-cetak-master-massa-volume.py`: per baris lembar master, tiap
+ * `tests/Fixtures/cetak-master/*.json` (satu per kelompok alat: `massa-volume.json` dari
+ * `docs/skrip/gen-cetak-master-massa-volume.py`, `kelompok-b.json` dari
+ * `gen-cetak-master-kelompok-b.py`): per baris lembar master, tiap
  * sel angka beserta teks cetaknya (nilai cache master + number_format, dibulatkan
  * ala Excel). Yang diadu ke teks itu adalah TEKS yang tercetak di sertifikat —
  * bukan nilai antara, bukan kolom `uncertainty_calculations` — karena pelanggan
@@ -43,11 +44,24 @@ final class PembandingCetakMaster
     /** @return array<string, mixed> */
     public static function master(string $kunci): array
     {
-        self::$fixture ??= json_decode(
-            (string) file_get_contents(__DIR__.'/../Fixtures/cetak-master/massa-volume.json'),
-            true,
-            flags: JSON_THROW_ON_ERROR,
-        );
+        if (self::$fixture === null) {
+            // Satu fixture per kelompok alat (`massa-volume.json`, `kelompok-b.json`, ...),
+            // masing-masing keluaran satu generator `docs/skrip/gen-cetak-master-*.py`.
+            // Kunci master tidak boleh kembar antar-berkas.
+            self::$fixture = ['master' => []];
+
+            foreach (glob(__DIR__.'/../Fixtures/cetak-master/*.json') ?: [] as $berkas) {
+                $isi = json_decode((string) file_get_contents($berkas), true, flags: JSON_THROW_ON_ERROR);
+
+                foreach ($isi['master'] as $k => $m) {
+                    if (isset(self::$fixture['master'][$k])) {
+                        throw new \LogicException("Master '{$k}' ada di dua fixture cetak-master.");
+                    }
+
+                    self::$fixture['master'][$k] = $m;
+                }
+            }
+        }
 
         return self::$fixture['master'][$kunci]
             ?? throw new \InvalidArgumentException("Master '{$kunci}' tidak ada di fixture cetak-master.");
