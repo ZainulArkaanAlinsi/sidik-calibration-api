@@ -59,6 +59,16 @@ class KemampuanKalibrasiController extends Controller
             ->where('kode', $kode)
             ->firstOrFail();
 
+        // Kategori nonaktif tidak ditawarkan di form baru -- termasuk "+ nama
+        // alat baru". Dibaca/dipakai alat lama tetap boleh (paket CRUD 18 Nov 2026).
+        if (! $kategori->aktif()) {
+            return response()->json([
+                'message' => 'Kategori ini sedang nonaktif, jadi nama alat baru tidak bisa ditambahkan ke sana. '
+                    .'Minta Master Data mengaktifkannya lagi.',
+                'kode' => 'kategori_nonaktif',
+            ], 422);
+        }
+
         $kemampuan = new CalibrationCapability;
         $kemampuan->fill($request->validated());
 

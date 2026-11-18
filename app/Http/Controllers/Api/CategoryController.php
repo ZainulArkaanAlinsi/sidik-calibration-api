@@ -44,14 +44,24 @@ class CategoryController extends Controller
         return fn (HasMany $relasi) => $relasi->milikOrganisasi($organizationId);
     }
 
-    /** Buat dropdown kategori di mobile. */
+    /**
+     * Buat dropdown kategori di mobile.
+     *
+     * Default HANYA kategori aktif: dropdown form baru (alat, penugasan) tidak
+     * boleh menawarkan yang sudah dinonaktifkan. `?termasuk_nonaktif=1` untuk
+     * layar kelola kategori -- hanya berlaku bagi Master Data / super admin;
+     * peran lain mengirimnya pun tetap hanya melihat yang aktif.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $organizationId = $request->user()->organization_id;
+        $sertakanNonaktif = $request->boolean('termasuk_nonaktif') && $request->user()->punyaHakAdmin();
 
         $categories = EquipmentCategory::query()
             ->with(['capabilities' => $this->hanyaMilikOrganisasi($organizationId)])
+            ->withCount('equipments')
             ->where('organization_id', $organizationId)
+            ->when(! $sertakanNonaktif, fn ($q) => $q->aktif())
             ->orderBy('nama')
             ->get();
 
@@ -74,8 +84,14 @@ class CategoryController extends Controller
 
         return response()->json([
             'data' => [
+                // `id`, `aktif`, `nonaktif_pada`: additive (paket CRUD 18 Nov
+                // 2026). Kategori NONAKTIF tetap 200 di sini -- alat lamanya
+                // masih perlu CMC-nya.
+                'id' => $category->id,
                 'kode' => $category->kode,
                 'nama' => $category->nama,
+                'aktif' => $category->aktif(),
+                'nonaktif_pada' => $category->nonaktif_pada?->toIso8601String(),
                 'kemampuan' => $category->capabilities->map(fn ($c) => [
                     'nama_alat' => $c->nama_alat,
                     'parameter' => $c->parameter,

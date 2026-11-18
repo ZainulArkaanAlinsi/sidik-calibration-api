@@ -71,6 +71,14 @@ class CategoryResource extends JsonResource
             // layar bisa bilang "12 jenis alat, 3 belum ada CMC-nya" tanpa
             // narik detail kategorinya dulu.
             'jumlah_tanpa_cmc' => $semua->count() - $caps->count(),
+            // Additive (paket CRUD 18 Nov 2026). `jumlah_alat` = alat yang
+            // masih hidup; dari `withCount('equipments')` kalau pemanggilnya
+            // sudah memuatnya, kalau tidak dihitung satu kueri.
+            'aktif' => $this->aktif(),
+            'nonaktif_pada' => $this->nonaktif_pada?->toIso8601String(),
+            'jumlah_alat' => array_key_exists('equipments_count', $this->resource->getAttributes())
+                ? (int) $this->resource->getAttribute('equipments_count')
+                : $this->equipments()->count(),
         ];
     }
 
