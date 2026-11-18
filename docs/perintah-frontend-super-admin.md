@@ -43,6 +43,8 @@ Bertindak sebagai Frontend Engineer untuk aplikasi lab PT Sidik (Flutter).
 | **BARU** Daftar anggota + undangan menunggu per perusahaan | ya | ya | 403 |
 | **BARU** Cabut (nonaktifkan) anggota pelanggan | ya | ya | 403 |
 | **BARU** Daftar alat ringkas satu pelanggan (kursor) | ya | ya | 403 |
+| **BARU** Hitungan & penanda `tanpa_akun` di daftar/detail pelanggan | ya | ya | 403 |
+| **BARU** Pindahkan alat (+ sertifikatnya) ke PT lain, dengan pratinjau | ya | ya | 403 |
 | **BARU** Riwayat sertifikat satu alat (kursor) | ya | ya | teknisi & viewer **boleh** (teknisi: hanya sesinya sendiri); pelanggan 403 |
 | Daftar pengguna lab (`GET /users`) | ya | ya | 403 |
 | Ubah data akun, setujui/tolak pendaftar, setel ulang sandi orang lain | ya (sudah ada, tidak berubah) | ya | 403 |
@@ -344,6 +346,145 @@ Buka satu sertifikat lewat `GET /api/certificates/{id}`; PDF lewat tautan unduh 
 Galat: `404` (alat bukan milik lab ini / tidak ada / sudah dihapus — dijawab sebelum validasi query), `422`
 (`limit`/`cursor`), `403` (hanya akun non-internal, mis. token aplikasi pelanggan), `401`, `429`.
 
+### 3.6 BARU (aditif) — hitungan & penanda di daftar dan detail pelanggan
+
+`GET /api/customers` (tiap elemen `data[]`) dan `GET /api/customers/{customer}` (`data`) mendapat enam kunci
+BARU. **Semua kunci lama tidak berubah** (termasuk `jumlah_alat`; `alat_count` bernilai sama, nama baru untuk
+keseragaman). Dihitung di SERVER dengan agregat/subquery berindeks — satu query per halaman, bukan satu per
+baris. Klien tidak menghitung ulang.
+
+```json
+{
+  "id": 17, "nama": "PT Contoh Makmur", "alamat": "Jl. Contoh 1", "contact_person": null,
+  "telepon": null, "email": null, "jumlah_alat": 3,
+  "alat_count": 3,
+  "sertifikat_count": 5,
+  "anggota_aktif_count": 0,
+  "undangan_menunggu_count": 1,
+  "tanpa_akun": true,
+  "nama_normal_kosong": false
+}
+```
+
+| Kunci | Arti |
+|---|---|
+| `alat_count` | alat PT ini yang belum dihapus |
+| `sertifikat_count` | sertifikat berstatus `terbit` + `dibatalkan` yang menempel lewat alat PT (alat yang sudah dihapus tetap dihitung) — **sama dengan yang dilihat pelanggan** di daftar sertifikatnya; `ditarik`/`gagal`/`menunggu_generate` tidak dihitung |
+| `anggota_aktif_count` | anggota berstatus `aktif` |
+| `undangan_menunggu_count` | undangan belum dipakai, belum dibatalkan, belum kedaluwarsa |
+| `tanpa_akun` | `true` bila PT **punya alat atau sertifikat** tetapi `anggota_aktif_count` = 0 — artinya tidak ada satu orang pun di PT itu yang bisa melihat datanya. Tombol "Undang anggota" layak ditonjolkan |
+| `nama_normal_kosong` | `true` bila kolom normalisasi nama PT kosong: deteksi PT kembar (`POST /customers/cepat`, pencarian longgar) **tidak bekerja untuk baris ini**. Menyimpan ulang PT itu lewat `PUT /customers/{id}` memperbaikinya otomatis; untuk massal lihat §3.8 |
+
+`POST`/`PUT /customers` ikut membawa `nama_normal_kosong` (selalu `false` setelah disimpan) tetapi **tidak**
+membawa hitungan (tidak dihitung di sana). Filter daftar (`search`) dan urutan tidak berubah.
+
+### 3.7 BARU — pindahkan alat (beserta sertifikatnya) ke PT lain, dengan pratinjau
+
+Temuan data nyata: sertifikat bisa menempel di PT yang tidak punya akun, sementara akun ada di PT lain
+(PT kembar/salah ketik). Memperbaikinya = memindahkan ALAT ke PT yang benar; sertifikat ikut karena
+sertifikat menempel lewat alat (sama dengan cara aplikasi pelanggan membacanya).
+
+`POST /api/customers/{customer}/pindahkan-alat` — `admin`, `super_admin`. `{customer}` = **PT asal**.
+Throttle `pindah-alat-pelanggan` 10/menit per akun. Satu panggilan, dua mode:
+
+**Pratinjau (tidak menulis apa pun)**
+
+```json
+{ "alat_ids": [118, 119], "ke_customer_id": 23, "dry_run": true }
+```
+
+**Eksekusi** (wajib `konfirmasi` dan `alasan`; sebaiknya didahului pratinjau)
+
+```json
+{ "alat_ids": [118, 119], "ke_customer_id": 23, "alasan": "PT salah ketik, pemilik sebenarnya PT B", "konfirmasi": true }
+```
+
+| Field | Aturan |
+|---|---|
+| `alat_ids` | wajib, larik 1–100 bilangan bulat unik; semua harus alat **PT asal** |
+| `ke_customer_id` | wajib, bilangan bulat; PT di laboratorium yang sama, bukan PT asal |
+| `dry_run` | opsional boolean, bawaan `false`. `true` = pratinjau; `konfirmasi`/`alasan` diabaikan |
+| `konfirmasi` | wajib `true` bila bukan `dry_run`; selain itu `422 konfirmasi_wajib` |
+| `alasan` | wajib 3–500 karakter bila bukan `dry_run` |
+
+Respons `200` pratinjau (`dry_run: true`):
+
+```json
+{
+  "data": {
+    "dry_run": true,
+    "dari": { "id": 17, "nama": "PT Contoh Makmur", "anggota_aktif_count": 0 },
+    "ke":   { "id": 23, "nama": "PT Contoh Makmur Tbk", "anggota_aktif_count": 2 },
+    "jumlah_alat": 2,
+    "alat": [
+      { "id": 118, "nama_alat": "Termometer Digital", "serial_number": "SN-2231", "jumlah_sertifikat": 3 },
+      { "id": 119, "nama_alat": "Timbangan", "serial_number": "SN-9001", "jumlah_sertifikat": 2 }
+    ],
+    "sertifikat_terdampak": 5,
+    "sertifikat_terlihat_pelanggan": 4,
+    "anggota_mulai_melihat": [ { "id": 41, "nama": "Budi Santoso", "email": "budi@contoh.test" } ],
+    "anggota_berhenti_melihat": [],
+    "paket_terkait_count": 1,
+    "peringatan": [
+      { "kode": "paket_tidak_dipindah", "pesan": "Baris paket/order yang menunjuk alat ini TIDAK ikut pindah." },
+      { "kode": "arsip_tidak_dipindah", "pesan": "Berkas arsip lama tetap di folder PT asal sampai pemilik menjalankan perapian arsip." },
+      { "kode": "isi_sertifikat_tetap", "pesan": "Nomor dan isi sertifikat (termasuk nama pemilik yang tercetak) tidak diubah." }
+    ]
+  }
+}
+```
+
+- `sertifikat_terdampak` = semua baris sertifikat dari alat-alat itu, status apa pun;
+  `sertifikat_terlihat_pelanggan` = yang `terbit` + `dibatalkan` (yang tampil di aplikasi pelanggan).
+- `anggota_mulai_melihat` = anggota aktif PT tujuan yang **bukan** anggota aktif PT asal (mulai melihat alat &
+  sertifikat itu); `anggota_berhenti_melihat` = kebalikannya. Konsultan yang aktif di kedua PT tidak muncul di
+  keduanya. Tiap daftar paling banyak 50 orang.
+- `paket_terkait_count` = baris paket/order (`order_items`) yang menunjuk alat itu. Tidak dipindahkan;
+  `peringatan` selalu memuat tiga kode di atas dengan `kode` yang stabil (`pesan` boleh berubah).
+- Pratinjau tidak menulis `audit_logs` dan tidak mengubah data apa pun.
+
+Respons `200` eksekusi:
+
+```json
+{
+  "message": "2 alat dipindahkan ke PT Contoh Makmur Tbk.",
+  "data": {
+    "dry_run": false,
+    "dari": { "id": 17, "nama": "PT Contoh Makmur", "anggota_aktif_count": 0 },
+    "ke":   { "id": 23, "nama": "PT Contoh Makmur Tbk", "anggota_aktif_count": 2 },
+    "jumlah_alat": 2,
+    "alat_ids": [118, 119],
+    "sertifikat_terdampak": 5,
+    "sertifikat_terlihat_pelanggan": 4
+  }
+}
+```
+
+Efek di server (satu transaksi, baris alat dikunci): hanya `equipments.customer_id` berubah. **Nomor, isi,
+snapshot, PDF, dan QR sertifikat tidak disentuh** (sertifikat lama tidak pernah tertimpa; nama pemilik yang
+tercetak tetap yang dulu). Jejak: satu baris `audit_logs` `alat_dipindah_pt` (pelaku, peran, PT asal → PT
+tujuan, id alat, jumlah sertifikat, `alasan`) di samping baris `diubah` otomatis per alat (`customer_id` lama →
+baru). Tidak ada notifikasi push ke anggota mana pun.
+
+Galat:
+
+| HTTP | `kode` | Arti |
+|---|---|---|
+| 404 | — | PT asal / PT tujuan bukan milik lab ini atau tidak ada, atau ada id di `alat_ids` yang bukan alat lab ini (sengaja tidak dibedakan; dijawab sebelum validasi isi) |
+| 422 | — (`errors.alat_ids`, `errors.ke_customer_id`, `errors.alasan`) | isian rusak / alasan kosong |
+| 422 | `pt_tujuan_sama` | `ke_customer_id` = PT asal |
+| 422 | `alat_bukan_milik_pt_asal` | sebagian id adalah alat lab ini tetapi milik PT lain; `data.alat_ids` = id yang salah. Muat ulang daftar alat PT asal |
+| 422 | `konfirmasi_wajib` | eksekusi tanpa `konfirmasi: true` |
+| 409 | `alat_sudah_pindah` | alat berpindah PT di antara pratinjau dan eksekusi (admin lain); ulangi pratinjau |
+| 403 / 429 | — | peran / throttle |
+
+### 3.8 Pengisian `nama_normal` massal — perintah artisan (BUKAN endpoint)
+
+Tidak ada `POST /customers/{id}/normalisasi-nama`. Pengisian massal untuk baris `nama_normal` kosong dijalankan
+**pemilik** lewat server: `php artisan pelanggan:isi-nama-normal` (dry-run bawaan, hanya mencetak hitungan;
+`--jalankan` terpisah menulis). Aplikasi cukup membaca `nama_normal_kosong` (§3.6): setelah perintah jalan,
+penanda itu hilang pada muat ulang. Menyimpan satu PT lewat `PUT /customers/{id}` juga memperbaiki baris itu.
+
 ## 4. Pengguna (akun internal lab)
 
 ### 4.1 Sudah ada — tidak berubah
@@ -470,6 +611,7 @@ Galat:
 | Pelanggan → Anggota & Undangan | `GET /customers/{id}/anggota` + undang/batalkan/cabut | admin, super admin |
 | Pelanggan → PIC admin | `PATCH /customers/{id}/pic-admin` | admin, super admin |
 | Pelanggan → Alat (daftar ringkas) | `GET /customers/{id}/alat` | admin, super admin |
+| Pelanggan → Pindahkan alat | `POST /customers/{id}/pindahkan-alat` (pratinjau lalu eksekusi) | admin, super admin |
 | Alat → Riwayat sertifikat | `GET /equipments/{id}/sertifikat` | semua peran internal |
 
 Bentuk visual setiap layar **bukan urusan berkas ini** — tanyakan ke pemilik per layar (aturan UI proyek).
@@ -483,6 +625,7 @@ Bentuk visual setiap layar **bukan urusan berkas ini** — tanyakan ke pemilik p
 | `anggota-pelanggan.lihat` | `GET /customers/{customer}/anggota` | ya | ya |
 | `anggota-pelanggan.cabut` | `POST /customers/{customer}/anggota/{anggota}/nonaktifkan` | ya | ya |
 | `pelanggan.alat-lihat` | `GET /customers/{customer}/alat` | ya | ya |
+| `pelanggan.pindah-alat` | `POST /customers/{customer}/pindahkan-alat` | ya | ya |
 | `alat.riwayat-sertifikat` | `GET /equipments/{equipment}/sertifikat` | ya | ya (teknisi & viewer juga ya) |
 | `pengguna.buat-admin` | `POST /users` | tidak | ya |
 | `pengguna.ubah-status` | `POST /users/{user}/nonaktifkan` (+ `aktifkan`, izin sama) | tidak | ya |
