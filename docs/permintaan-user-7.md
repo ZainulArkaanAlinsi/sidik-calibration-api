@@ -6133,7 +6133,7 @@ memeriksa panjang `varchar`, jadi test Feature biasa tidak bisa menangkapnya).
 
 **Belum.** Gerbang MySQL (CI shard) dan suite SQLite penuh; hanya test terarah di SQLite. `GET /calibrations/{id}` untuk draf terarsip tetap
 404 (daftar arsip memuat ringkasan). Aplikasi (mobile) belum memakai kontrak ini.
-Nomor §61 / G38 dipilih berdasarkan `origin/main` ecfdc98a; bila PR lain sudah memakainya, ganti nomor saat rebase.
+Nomor §61 / G38 dipilih berdasarkan `origin/main` 7e510410 (sesudah PR #276); bila PR lain sudah memakainya, ganti nomor saat rebase.
 
 ## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
 

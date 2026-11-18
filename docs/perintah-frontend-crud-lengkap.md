@@ -415,9 +415,9 @@ Throttle (per akun; lewat batas → `429`): `kategori-tulis` 30/menit, `sesi-ars
 
 ## 9. Perubahan sesudah dikunci / status backend
 
-**Status backend (18 Nov 2026): SELESAI di SQLite, BELUM lewat gerbang MySQL.** Kode di commit
-`a564de06` (`feat(izin): ...`, branch `feat/crud-kategori-penugasan-arsip-draf`, belum di-push);
-dokumen ini di commit sesudahnya. 75 test terarah paket ini hijau (`KategoriKelolaTest`,
+**Status backend (18 Nov 2026): SELESAI di SQLite, BELUM lewat gerbang MySQL.** Kode di branch
+`feat/crud-kategori-penugasan-arsip-draf` (belum di-push; sudah di-rebase ke main sesudah PR #276 Super Admin
+live — hash commit berubah, pakai `git log` bukan hash lama). 75 test terarah paket ini hijau (`KategoriKelolaTest`,
 `ArsipDrafSesiTest`, `PenugasanUbahBatalTest`; 802 assertion) ditambah `BatasPanjangAuditCrudTest`,
 `MeIzinTest` (izin ↔ penjagaan nyata untuk kunci baru), dan sapuan isolasi/peran yang sudah ada.
 Suite MySQL (shard CI) dan suite SQLite penuh belum dijalankan; jangan menyebut modul selesai
