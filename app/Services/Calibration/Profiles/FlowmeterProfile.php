@@ -12,6 +12,7 @@ use App\Services\Calibration\TabelStandarFlowmeter;
 use App\Services\Calibration\TabelStandarFlowmeterGravimetri;
 use App\Services\Calibration\VarianMetodeFlowmeter;
 use App\Support\FlowmeterMentah;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use Carbon\Carbon;
 
@@ -824,6 +825,8 @@ abstract class FlowmeterProfile extends CalibrationProfile
         $standarPerTitik = collect($masukan)->keyBy('titik_ke');
         $sekarang = Carbon::now();
         $hitungan = [];
+        // PK-9: hanya untuk catatan penyimpangan di jejak; tidak masuk hitungan apa pun.
+        $utWater = $gravimetri ? 0.0 : $this->kalk()->utWaterSesi($masukan);
 
         foreach ($hasil['titik'] as $h) {
             $hitungan[] = [
@@ -852,7 +855,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 'type_a' => $h['type_a'],
                 'type_b_components' => $gravimetri
                     ? $this->jejakAuditGravimetri($hasil, $h)
-                    : $this->jejakAudit($hasil, $h),
+                    : $this->jejakAudit($hasil, $h, $utWater),
                 'type_b' => $h['type_b'],
                 'ketidakpastian_gabungan' => $h['ketidakpastian_gabungan'],
                 'faktor_cakupan_k' => $h['faktor_cakupan_k'],
@@ -960,7 +963,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return $budget;
     }
 
-    private function jejakAudit(array $hasil, array $h): array
+    private function jejakAudit(array $hasil, array $h, float $utWater = 0.0): array
     {
         $budget = array_map(fn (array $k): array => $this->barisAudit($k), $h['budget']);
 
@@ -1061,7 +1064,153 @@ abstract class FlowmeterProfile extends CalibrationProfile
             ];
         }
 
+        // Paling akhir dan aditif (PK-9): baris yang sudah ada tidak bergeser.
+        foreach ($this->catatanPenyimpanganMaster($hasil, $h, $utWater) as $baris) {
+            $budget[] = $baris;
+        }
+
         return $budget;
+    }
+
+    /**
+     * Tiga perbaikan Flowmeter terhadap master yang SENGAJA dan sudah diputuskan, tetapi belum
+     * terbaca penyetuju (PK5-7, `docs/pertanyaan-lab-adu-cetak-b.md`; docblock `FlowmeterCalculator`):
+     *
+     *  1. **Lantai CMC dipasang** — master menutup sel U95 sertifikat dengan `MAX(J60:K61)` dan `K61`
+     *     KOSONG, jadi tak ada lantai (sertifikat terbit di bawah pita). Ada bila lantai menang.
+     *  2. **`Ut-water` dihitung** — master menunjuk sel kosong (`I24`), selalu nol. Ada bila sebaran
+     *     suhu air sesi > 0.
+     *  3. **Rentang densitas Totalizer** (titik 2 dan 3) — master membaca satu kolom ke kanan
+     *     (`H64 = H44:K46`, `K64 = K44:N46`); sistem membaca kolom suhunya sendiri.
+     *
+     * Angka "versi master" dihitung dari salinan budget lewat
+     * [FlowmeterCalculator::agregasiPembanding] dan hanya dicetak. Butir 3 tidak bisa dihitung ulang
+     * dari data sesi (bergantung isi kolom tetangga di master), jadi yang tertulis angka sesi contoh.
+     *
+     * @param  array<string, mixed>  $hasil  keluaran `hitungSesi()`
+     * @param  array<string, mixed>  $h  satu titik dari `$hasil['titik']`
+     * @return list<array<string, mixed>>
+     */
+    public function catatanPenyimpanganMaster(array $hasil, array $h, float $utWater = 0.0): array
+    {
+        $pb = PenyimpanganMaster::class;
+        $satuan = $this->satuanHasil();
+        $uutRata = (float) $h['uut_rata'];
+        $persen = static fn (float $x): string => $uutRata == 0.0 ? '-' : $pb::angka($x / $uutRata * 100).' %OR';
+        $ke = (int) $h['titik_ke'];
+        $catatan = [];
+
+        // --- 1. lantai CMC -------------------------------------------------
+        if ($h['lantai_cmc_dipakai'] ?? false) {
+            $master = (float) $h['ketidakpastian_diperluas'];
+            $sistem = (float) $h['u95_sertifikat'];
+            $catatan[] = $pb::baris(
+                'flowmeter',
+                'lantai_cmc_dipasang',
+                sprintf(
+                    'Titik ke-%d: U95 hitung ada DI BAWAH pita CMC terakreditasi, jadi sistem memasang lantai CMC '
+                    .'(U95 = MAX(U; CMC%% x bacaan)). Master menutup sel U95 sertifikat dengan `MAX(J60:K61)` dan '
+                    .'`K61` KOSONG, sehingga tidak ada lantai dan sertifikatnya terbit di bawah pita. '
+                    .'Sertifikat lama yang terbit dari master di titik seperti ini menunggu keputusan arsip (RINGKASAN 1.2).',
+                    $ke,
+                ),
+                '`PERHITUNGAN U95%` master, sel U95 sertifikat `=MAX(J60:K61)` dengan `K61` kosong (blok titik 3-4 menunjuk '
+                .'`DATABASE!S42/S43`, juga kosong); docs/pertanyaan-lab-flowmeter.md §2; docs/pertanyaan-lab-adu-cetak-b.md PK5-7',
+                sprintf('U95 tercetak %s %s (%s), tanpa lantai CMC', $pb::angka($master), $satuan, $persen($master)),
+                sprintf(
+                    'U95 tercetak %s %s (%s), lantai CMC %s %s',
+                    $pb::angka($sistem), $satuan, $persen($sistem), $pb::angka((float) $h['lantai_cmc']), $satuan,
+                ),
+                $pb::ARAH_KONSERVATIF,
+                $sistem,
+                ['u95_master' => $master, 'u95_sistem' => $sistem, 'lantai_cmc' => (float) $h['lantai_cmc']],
+            );
+        }
+
+        // --- 2. Ut-water ---------------------------------------------------
+        if ($utWater > 0.0) {
+            $uTempSistem = (float) $hasil['u_temperature'];
+            $uTempMaster = sqrt(max(0.0, $uTempSistem ** 2 - $utWater ** 2));
+            $komponen = array_map(static function (array $k) use ($uTempMaster): array {
+                if ($k['sumber'] === 'suhu_fluida') {
+                    $k['u_mentah'] = $uTempMaster;
+                    $k['u'] = $uTempMaster / $k['pembagi'];
+                }
+
+                return ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']];
+            }, $h['budget']);
+            $agg = $this->kalk()->agregasiPembanding($komponen);
+            $hitungMaster = (float) $agg['ketidakpastian_diperluas'];
+            $cetakMaster = max($hitungMaster, (float) $h['lantai_cmc']);
+            $cetakSistem = (float) $h['u95_sertifikat'];
+            $tertutup = abs($cetakMaster - $cetakSistem) <= 1e-12 * max(1.0, abs($cetakMaster));
+
+            $catatan[] = $pb::baris(
+                'flowmeter',
+                'ut_water_sel_kosong',
+                sprintf(
+                    'Komponen suhu fluida memuat Ut-water = (Tmax - Tmin) suhu air sesi / (2 akar 3) = %s C (dihitung dari suhu '
+                    .'air sesi yang sebenarnya), sedangkan master menunjuk sel KOSONG (`I24` = Q52-Q54 / P53-P55, di luar blok '
+                    .'suhu) sehingga suku itu selalu nol. Kerusakan salin-tempel, dihitung benar (pertanyaan lab §12).%s',
+                    $pb::angka($utWater),
+                    $tertutup ? ' Angka cetak U95 SAMA dengan master pada titik ini karena lantai CMC menang di kedua sisi.' : '',
+                ),
+                '`PERHITUNGAN U95%!I24` master Totalizer `=\'PERHITUNGAN FC\'!Q52-\'PERHITUNGAN FC\'!Q54`, Flowrate `P53-P55` '
+                .'(sel di luar blok suhu); docs/pertanyaan-lab-flowmeter.md §12; docs/pertanyaan-lab-adu-cetak-b.md PK5-7',
+                sprintf(
+                    'Ut-water 0, U_temperature %s C, U hitung %s %s, U95 tercetak %s %s',
+                    $pb::angka($uTempMaster), $pb::angka($hitungMaster), $satuan, $pb::angka($cetakMaster), $satuan,
+                ),
+                sprintf(
+                    'Ut-water %s C, U_temperature %s C, U hitung %s %s, U95 tercetak %s %s',
+                    $pb::angka($utWater), $pb::angka($uTempSistem), $pb::angka((float) $h['ketidakpastian_diperluas']), $satuan,
+                    $pb::angka($cetakSistem), $satuan,
+                ),
+                $tertutup ? $pb::ARAH_NETRAL : $pb::ARAH_KONSERVATIF,
+                $cetakSistem,
+                [
+                    'ut_water' => $utWater,
+                    'u_temperature_master' => $uTempMaster,
+                    'u_temperature_sistem' => $uTempSistem,
+                    'u95_hitung_master' => $hitungMaster,
+                    'u95_hitung_sistem' => (float) $h['ketidakpastian_diperluas'],
+                    'u95_cetak_master' => $cetakMaster,
+                    'u95_cetak_sistem' => $cetakSistem,
+                ],
+            );
+        }
+
+        // --- 3. rentang densitas Totalizer ----------------------------------
+        if ($this->mode() === TabelStandarFlowmeter::MODE_TOTALIZER && in_array($ke, [2, 3], true) && ($h['suhu_tercatat'] ?? false)) {
+            $catatan[] = $pb::baris(
+                'flowmeter',
+                'totalizer_rentang_densitas_melenceng',
+                sprintf(
+                    'Titik ke-%d Totalizer: master membaca rentang suhu densitas UUT satu kolom ke kanan (`H64` = `H44:K46`, '
+                    .'kolom K = titik 3; `K64` = `K44:N46` mencaplok titik 4), sehingga rasio densitas titik ini bukan 1 di '
+                    .'master; sistem membaca kolom suhu titik ini sendiri. Besarnya bergantung isi kolom tetangga di master dan '
+                    .'TIDAK bisa dihitung ulang dari data sesi ini; yang tertulis angka sesi contoh. Workbook Flowrate tidak '
+                    .'punya cacat ini.',
+                    $ke,
+                ),
+                '`PERHITUNGAN FC!H64`, `K64`, `M65` master Totalizer; docs/pertanyaan-lab-adu-cetak-b.md PK5-7; '
+                .'docblock FlowmeterCalculator butir 2',
+                'sesi contoh master, titik 2: Standard Indication 1883,86 L, deviasi -18,907204 L (Correction -18,91)',
+                sprintf(
+                    'titik ini: Standard Indication %s %s, deviasi %s %s; sesi contoh titik 2: 1883,88 L, deviasi -18,890667 L (Correction -18,89)',
+                    $pb::angka((float) $h['std_terkoreksi']), $satuan, $pb::angka((float) $h['deviasi']), $satuan,
+                ),
+                $pb::ARAH_TIDAK_TENTU,
+                (float) $h['deviasi'],
+                [
+                    'titik_ke' => $ke,
+                    'deviasi_master_sesi_contoh' => -18.907204078062023,
+                    'deviasi_sistem_sesi_contoh' => -18.890666666666675,
+                ],
+            );
+        }
+
+        return $catatan;
     }
 
     /**

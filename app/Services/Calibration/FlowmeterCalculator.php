@@ -229,6 +229,41 @@ class FlowmeterCalculator
     }
 
     /**
+     * `Ut_water` SESI — (Tmax − Tmin) seluruh suhu air sesi / (2√3), nol bila kurang dari dua angka.
+     *
+     * Dipakai `FlowmeterProfile` HANYA untuk catatan `penyimpangan_master.flowmeter.*` (PK-9): master
+     * menetapkan suku ini nol (sel menunjuk kolom kosong). Rumus dan masukannya sama persis dengan
+     * [hitungSesi]/[ketidakpastianSuhu]; hasilnya tidak masuk perhitungan mana pun.
+     *
+     * @param  list<array<string, mixed>>  $titik  bentuk yang sama dengan [hitungSesi]
+     */
+    public function utWaterSesi(array $titik): float
+    {
+        $suhuSesi = [];
+
+        foreach ($titik as $t) {
+            $suhuSesi = array_merge(
+                $suhuSesi,
+                $this->deretAngka($t['suhu_awal'] ?? []),
+                $this->deretAngka($t['suhu_akhir'] ?? []),
+            );
+        }
+
+        return count($suhuSesi) >= 2 ? (max($suhuSesi) - min($suhuSesi)) / (2 * sqrt(3.0)) : 0.0;
+    }
+
+    /**
+     * Agregasi GUM atas komponen buatan pemanggil — HANYA pembanding untuk catatan PK-9.
+     *
+     * @param  list<array{u: float, ci: float, vi: float}>  $komponen
+     * @return array{ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float}
+     */
+    public function agregasiPembanding(array $komponen): array
+    {
+        return $this->gum()->agregasiBudget($komponen);
+    }
+
+    /**
      * Ubah satu penunjukan dari `$satuan` ke satuan budget (L atau LPM).
      *
      * Balik `null` kalau tidak bisa — pemanggil WAJIB mengangkatnya jadi titik
