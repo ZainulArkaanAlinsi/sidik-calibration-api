@@ -102,6 +102,17 @@ class MatriksIzin
         'pengajuan-akun.putuskan' => ['POST', 'api/admin/pengajuan-akun/{pengajuan}/setujui'],
         'anggota-pelanggan.undang' => ['POST', 'api/customers/{customer}/undangan'],
         'anggota-pelanggan.pic-admin' => ['PATCH', 'api/customers/{customer}/pic-admin'],
+        // Layar "Anggota & Undangan" admin lab (18 Nov 2026): lihat daftar dan
+        // cabut anggota. Admin DAN super admin; teknisi/viewer tidak.
+        'anggota-pelanggan.lihat' => ['GET', 'api/customers/{customer}/anggota'],
+        'anggota-pelanggan.cabut' => ['POST', 'api/customers/{customer}/anggota/{anggota}/nonaktifkan'],
+        // Melacak alat satu pelanggan dari detail Pelanggan (admin & super admin),
+        // dan riwayat sertifikat satu alat (SEMUA peran internal; teknisi dibatasi
+        // ke sesinya sendiri di query, bukan di sini — lihat `LINGKUP_SENDIRI`).
+        'pelanggan.alat-lihat' => ['GET', 'api/customers/{customer}/alat'],
+        // Memindahkan alat (+ sertifikatnya) ke PT lain — admin & super admin.
+        'pelanggan.pindah-alat' => ['POST', 'api/customers/{customer}/pindahkan-alat'],
+        'alat.riwayat-sertifikat' => ['GET', 'api/equipments/{equipment}/sertifikat'],
         'standar.lihat' => ['GET', 'api/standards'],
         'standar.kelola' => ['POST', 'api/standards'],
         'ruangan.lihat' => ['GET', 'api/rooms'],
@@ -136,6 +147,11 @@ class MatriksIzin
         'tanda-tangan.kelola' => ['POST', 'api/organization/tanda-tangan'],
         'pengguna.kelola' => ['GET', 'api/users'],
         'pengguna.setujui' => ['POST', 'api/users/{user}/approve'],
+        // SUPER ADMIN saja (18 Nov 2026) — grup `role:super_admin` sendiri di
+        // rutenya. `ubah-status` mewakili nonaktifkan DAN aktifkan: izinnya sama,
+        // jadi satu kunci cukup (aturan "*.kelola" di atas).
+        'pengguna.buat-admin' => ['POST', 'api/users'],
+        'pengguna.ubah-status' => ['POST', 'api/users/{user}/nonaktifkan'],
         // Riwayat perubahan data (12 Nov 2026). Izin TERSENDIRI untuk
         // `GET /audit-logs*` (daftar + `/export`): sebelumnya aplikasi harus
         // menebaknya dari `pengguna.kelola` (sama-sama admin-only), dan tebakan

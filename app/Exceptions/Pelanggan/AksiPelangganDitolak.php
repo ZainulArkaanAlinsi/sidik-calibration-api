@@ -63,6 +63,62 @@ class AksiPelangganDitolak extends RuntimeException
         );
     }
 
+    /**
+     * Aturan yang sama (`pic_utama_terakhir`), kalimat untuk ADMIN LAB yang
+     * mencabut. Pesan di atas memakai "Anda" — benar buat PIC utama yang
+     * menonaktifkan dirinya, keliru dibaca admin lab yang mencabut orang lain.
+     * `kode`-nya sengaja sama supaya klien bercabang pada satu kode.
+     */
+    public static function picUtamaTerakhirOlehLab(): self
+    {
+        return new self(
+            'pic_utama_terakhir',
+            'Dia satu-satunya PIC utama aktif perusahaan ini. Undang atau angkat PIC utama lain dulu sebelum mencabutnya.',
+            422,
+        );
+    }
+
+    /** `POST /customers/{c}/pindahkan-alat` — tujuan sama dengan asal. */
+    public static function ptTujuanSama(): self
+    {
+        return new self('pt_tujuan_sama', 'PT tujuan harus berbeda dari PT asal.', 422);
+    }
+
+    /**
+     * Sebagian `alat_ids` alat lab ini tetapi milik PT lain. `data.alat_ids`
+     * memuat id yang salah (id milik lab SENDIRI, jadi tidak membocorkan apa pun).
+     *
+     * @param  list<int>  $idSalah
+     */
+    public static function alatBukanMilikPtAsal(array $idSalah): self
+    {
+        return new self(
+            'alat_bukan_milik_pt_asal',
+            'Sebagian alat bukan milik PT asal. Muat ulang daftar alat PT asal.',
+            422,
+            ['alat_ids' => $idSalah],
+        );
+    }
+
+    public static function konfirmasiWajib(): self
+    {
+        return new self(
+            'konfirmasi_wajib',
+            'Pemindahan alat harus dikonfirmasi (konfirmasi: true). Lihat pratinjau dulu dengan dry_run.',
+            422,
+        );
+    }
+
+    /** Alat berpindah PT di antara pratinjau dan eksekusi (admin lain). */
+    public static function alatSudahPindah(): self
+    {
+        return new self(
+            'alat_sudah_pindah',
+            'Alat sudah berpindah PT sejak pratinjau. Ulangi pratinjau.',
+            409,
+        );
+    }
+
     public static function sudahDiputus(?string $olehSiapa): self
     {
         return new self(

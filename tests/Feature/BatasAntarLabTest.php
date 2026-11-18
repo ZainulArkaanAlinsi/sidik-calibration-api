@@ -156,6 +156,10 @@ class BatasAntarLabTest extends TestCase
     {
         return [
             'customer' => ['api/customers/{customer}', 'pelanggan'],
+            // Aplikasi lab, 18 Nov 2026: tab Anggota & Alat di detail Pelanggan, riwayat sertifikat per alat.
+            'customer anggota' => ['api/customers/{customer}/anggota', 'pelanggan'],
+            'customer alat' => ['api/customers/{customer}/alat', 'pelanggan'],
+            'equipment sertifikat' => ['api/equipments/{equipment}/sertifikat', 'alat'],
             'equipment' => ['api/equipments/{equipment}', 'alat'],
             'standard' => ['api/standards/{standard}', 'standar'],
             'room' => ['api/rooms/{room}', 'ruang'],

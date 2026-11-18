@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\PelangganAlatController;
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
+use App\Http\Controllers\Api\Admin\PemindahanAlatController;
 use App\Http\Controllers\Api\Admin\PengajuanAkunController;
 use App\Http\Controllers\Api\ArsipGarisWaktuController;
 use App\Http\Controllers\Api\AuditLogController;
@@ -31,6 +33,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
 use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\RiwayatSertifikatAlatController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\Studio\HitungWorkbookController;
@@ -505,6 +508,30 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
     });
 
 /*
+| Pengelolaan akun internal oleh SUPER ADMIN saja (18 Nov 2026) — menggantikan
+| layar Pengguna di panel web. Menambah akun admin dan memutus/memulihkan akses
+| akun internal itu hak pengendali, bukan meja depan: admin tetap memegang
+| `PUT /users/{user}` yang lama, tidak diperluas. Kontrak:
+| docs/perintah-frontend-super-admin.md §4.
+|
+| Grup SENDIRI di luar grup `role:admin,teknisi,viewer` di bawah, sama seperti
+| `data-acuan/…/aktifkan` di atas: `MatriksIzin` menyilang SEMUA `role:` yang
+| menempel di sebuah rute, jadi rute super-admin-saja yang bersarang di grup
+| luar itu akan dilaporkan tidak boleh untuk siapa pun. Role yang dibolehkan
+| satu-satunya `super_admin` — `EnsureUserHasRole::lolosSuperAdmin()` tidak
+| meloloskan admin ke sini, dan `super_admin` tidak pernah lahir dari rute ini.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
+    ->prefix('users')->group(function () {
+        Route::post('/', [UserController::class, 'store'])
+            ->middleware('throttle:akun-lab-buat');
+        Route::post('/{user}/nonaktifkan', [UserController::class, 'nonaktifkan'])
+            ->middleware('throttle:akun-lab-status');
+        Route::post('/{user}/aktifkan', [UserController::class, 'aktifkan'])
+            ->middleware('throttle:akun-lab-status');
+    });
+
+/*
 |--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
@@ -621,6 +648,11 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/categories/{kode}', [CategoryController::class, 'show']);
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
+    // Riwayat sertifikat satu alat, tahun ke tahun (paginasi kursor, limit ≤ 50).
+    // Semua peran internal; teknisi hanya sertifikat dari sesinya sendiri — ditegakkan
+    // di query (`RiwayatSertifikatAlat`), sama dengan `GET /certificates`.
+    Route::get('/equipments/{equipment}/sertifikat', RiwayatSertifikatAlatController::class)
+        ->middleware('throttle:riwayat-sertifikat-alat');
 
     // Dropdown pelanggan — SEMUA role, read-only, cuma id/nama/alamat.
     //
@@ -866,6 +898,22 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
             ->middleware('throttle:pelanggan-undang');
         Route::delete('/customers/{customer}/undangan/{undangan}', [PelangganKeanggotaanController::class, 'batalkanUndangan']);
         Route::patch('/customers/{customer}/pic-admin', [PelangganKeanggotaanController::class, 'picAdmin']);
+
+        // Layar "Anggota & Undangan" admin lab (18 Nov 2026, menggantikan panel
+        // web). Daftar + cabut anggota: admin DAN super admin (lewat
+        // `lolosTulisSuperAdmin`); cabutnya satu pintu dengan jalur PIC utama
+        // (`Keanggotaan::nonaktifkan`). Kontrak: docs/perintah-frontend-super-admin.md.
+        Route::get('/customers/{customer}/anggota', [PelangganKeanggotaanController::class, 'anggota']);
+        // Tab "Alat" di detail Pelanggan: daftar ringkas, paginasi KURSOR (limit ≤ 50).
+        // `GET /equipments?customer_id=` tetap ada; ini menambah jumlah & sertifikat terbaru.
+        Route::get('/customers/{customer}/alat', [PelangganAlatController::class, 'index'])
+            ->middleware('throttle:alat-pelanggan-lab');
+        // Pindahkan alat (+ sertifikat yang menempel lewat alat) ke PT lain di lab yang
+        // sama. `dry_run` = pratinjau tanpa menulis; eksekusi butuh `konfirmasi` + `alasan`.
+        Route::post('/customers/{customer}/pindahkan-alat', PemindahanAlatController::class)
+            ->middleware('throttle:pindah-alat-pelanggan');
+        Route::post('/customers/{customer}/anggota/{anggota}/nonaktifkan', [PelangganKeanggotaanController::class, 'cabutAnggota'])
+            ->middleware('throttle:pelanggan-cabut-anggota');
 
         // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.

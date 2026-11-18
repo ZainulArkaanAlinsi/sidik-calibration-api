@@ -6,6 +6,7 @@ use App\Models\CalibrationMethod;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
+use App\Models\CustomerMember;
 use App\Models\DokumenBacaan;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
@@ -192,6 +193,12 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'customer_id' => $pelangganPt->id,
         ]);
 
+        // Anggota perusahaan yang sama (rute cabut anggota sisi lab, 18 Nov 2026).
+        $anggotaPelanggan = CustomerMember::factory()->create([
+            'organization_id' => $org->id,
+            'customer_id' => $pelangganPt->id,
+        ]);
+
         // Fitur 26 Sep (pelacakan & penugasan). Dibuat lewat Eloquent biasa
         // supaya route model binding ketemu barisnya — kalau tidak, rutenya
         // menjawab 404 dan gerbang role-nya tidak pernah keuji.
@@ -258,6 +265,7 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'calibration' => (string) $sesi->id,
             'pengajuan' => (string) $pengajuan->id,
             'undangan' => (string) $undangan->id,
+            'anggota' => (string) $anggotaPelanggan->id,
             'calibrationMethod' => (string) CalibrationMethod::factory()->create(['organization_id' => $org->id])->id,
             'certificate' => (string) $sertifikat->id,
             'customer' => (string) $pelangganPt->id,

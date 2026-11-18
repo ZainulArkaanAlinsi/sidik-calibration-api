@@ -80,6 +80,34 @@ class AuditLog extends Model
     public const ACTION_UNDANGAN_DITOLAK = 'undangan_ditolak';
 
     /**
+     * Anggota perusahaan pelanggan DICABUT oleh admin lab / super admin (18 Nov
+     * 2026). Entitasnya `customer_members`; `changed_by` = akun lab yang
+     * menekan (tidak pernah menyamar), `new_data` memuat `peran_pelaku` dan
+     * `alasan`. Baris `diubah` otomatis dari `Diaudit` tetap ada — baris ini
+     * menambahkan yang tidak bisa diturunkan dari diff kolom: siapa dengan
+     * peran apa, dan KENAPA. 15 karakter — muat di `string(20)`.
+     */
+    public const ACTION_ANGGOTA_DICABUT = 'anggota_dicabut';
+
+    /**
+     * Alat (beserta sertifikat yang menempel lewat alat itu) dipindahkan antar PT
+     * pelanggan oleh admin lab / super admin (18 Nov 2026). Entitasnya `customers`
+     * = PT ASAL; `new_data` memuat PT asal & tujuan, id alat, jumlah sertifikat,
+     * `peran_pelaku`, `alasan`. Baris `diubah` otomatis per alat (`customer_id`
+     * lama → baru) tetap ditulis `Diaudit`. 16 karakter — muat di `string(20)`.
+     */
+    public const ACTION_ALAT_DIPINDAH_PT = 'alat_dipindah_pt';
+
+    /**
+     * Akun internal lab dinonaktifkan / diaktifkan kembali oleh super admin
+     * (18 Nov 2026). Entitasnya `users`; isi seperti [ACTION_ANGGOTA_DICABUT].
+     * 18 dan 15 karakter — muat di `string(20)`.
+     */
+    public const ACTION_AKUN_DINONAKTIFKAN = 'akun_dinonaktifkan';
+
+    public const ACTION_AKUN_DIAKTIFKAN = 'akun_diaktifkan';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan
@@ -88,6 +116,31 @@ class AuditLog extends Model
      * pencocokannya berhenti diam-diam dan penyunting lolos menyetujui.
      */
     public const CATATAN_KOREKSI_PEMBACAAN = 'Koreksi pembacaan oleh Master Data: ';
+
+    /**
+     * Panjang kolom `note` (`string(500)`) dalam KARAKTER. MySQL menegakkannya
+     * (SQLite tidak — di situlah galat 22001 "Data too long" lolos dari tes
+     * lokal), dan `utf8mb4` menghitung karakter, bukan byte.
+     */
+    public const NOTE_MAKS = 500;
+
+    /**
+     * Rapikan teks catatan supaya SELALU muat di kolom `note`.
+     *
+     * Dipakai tempat yang menyusun `note` dari isian pengguna (alasan sampai 500
+     * karakter + awalan, nama PT sampai 255): yang terlalu panjang dipotong dan
+     * ditutup "…". Pemotongnya `mb_substr` (karakter, bukan byte) supaya huruf
+     * bertanda atau emoji tidak terbelah di tengah. Teks LENGKAP tetap ada di
+     * `new_data` (kolom JSON) — jadi ringkasan di sini tidak menghilangkan bukti.
+     */
+    public static function catatan(string $teks): string
+    {
+        if (mb_strlen($teks) <= self::NOTE_MAKS) {
+            return $teks;
+        }
+
+        return mb_substr($teks, 0, self::NOTE_MAKS - 1).'…';
+    }
 
     /** @return list<string> */
     public static function actions(): array

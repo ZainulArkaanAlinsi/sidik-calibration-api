@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -139,6 +141,59 @@ class Customer extends Model
     public function members(): HasMany
     {
         return $this->hasMany(CustomerMember::class);
+    }
+
+    /**
+     * Undangan berkode untuk perusahaan ini (semua status).
+     *
+     * @return HasMany<UndanganPelanggan, $this>
+     */
+    public function undangan(): HasMany
+    {
+        return $this->hasMany(UndanganPelanggan::class);
+    }
+
+    /**
+     * Hitungan untuk layar lab (daftar & detail Pelanggan), semuanya di SATU
+     * query — subquery berkorelasi per baris halaman, bukan satu query per baris:
+     *
+     * - `equipments_count` / `alat_count` — alat yang belum dihapus;
+     * - `sertifikat_count` — sertifikat `terbit` + `dibatalkan` yang menempel lewat
+     *   alat (alat terhapus tetap dihitung). Himpunan yang SAMA dengan
+     *   `Pelanggan\LingkupData::sertifikat()`, jadi angka lab = angka yang dilihat
+     *   pelanggan;
+     * - `anggota_aktif_count`;
+     * - `undangan_menunggu_count` — belum dipakai, belum dibatalkan, belum kedaluwarsa.
+     *
+     * Dipakai `CustomerController` (kunci JSON-nya dibentuk `CustomerResource`).
+     * `select('customers.*')` WAJIB lebih dulu: `selectSub()` pada query tanpa
+     * kolom eksplisit membuang `customers.*` dan yang pulang cuma satu angka.
+     *
+     * @param  Builder<Customer>  $query
+     */
+    public function scopeDenganHitungan(Builder $query): void
+    {
+        $sertifikat = DB::table('certificates')
+            ->join('calibration_sessions', 'calibration_sessions.id', '=', 'certificates.calibration_session_id')
+            ->join('equipments', 'equipments.id', '=', 'calibration_sessions.equipment_id')
+            ->whereColumn('equipments.customer_id', 'customers.id')
+            ->whereColumn('certificates.organization_id', 'customers.organization_id')
+            ->whereIn('certificates.status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
+            ->selectRaw('count(*)');
+
+        $query
+            ->select('customers.*')
+            ->selectSub($sertifikat, 'sertifikat_count')
+            ->withCount([
+                'equipments',
+                'equipments as alat_count',
+                'members as anggota_aktif_count' => fn (Builder $anggota) => $anggota
+                    ->where('status', CustomerMember::STATUS_AKTIF),
+                'undangan as undangan_menunggu_count' => fn (Builder $undangan) => $undangan
+                    ->whereNull('dipakai_pada')
+                    ->whereNull('dibatalkan_pada')
+                    ->where('kedaluwarsa_pada', '>', now()),
+            ]);
     }
 
     /**

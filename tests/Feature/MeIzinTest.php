@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
+use App\Models\CustomerMember;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Folder;
@@ -396,9 +397,22 @@ class MeIzinTest extends TestCase
             ])->id;
         }
 
-        if (str_contains($uri, '{customer}')) {
-            $ganti['{customer}'] = (string) Customer::factory()->create([
+        // `{customer}` dan `{anggota}` HARUS sepasang: anggota milik perusahaan itu.
+        // Kalau tidak, binding/penjaga controller membalas 404 dan sapuan ini salah
+        // membaca 404 sebagai "gerbang role-nya bolong" (rute anggota sisi lab, 18 Nov 2026).
+        $perusahaanUji = null;
+
+        if (str_contains($uri, '{customer}') || str_contains($uri, '{anggota}')) {
+            $perusahaanUji = Customer::factory()->create([
                 'organization_id' => $user->organization_id,
+            ]);
+            $ganti['{customer}'] = (string) $perusahaanUji->id;
+        }
+
+        if (str_contains($uri, '{anggota}')) {
+            $ganti['{anggota}'] = (string) CustomerMember::factory()->create([
+                'organization_id' => $user->organization_id,
+                'customer_id' => $perusahaanUji->id,
             ])->id;
         }
 
