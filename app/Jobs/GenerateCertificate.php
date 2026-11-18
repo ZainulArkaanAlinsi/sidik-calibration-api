@@ -15,6 +15,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
 use App\Services\Pelanggan\KabarSertifikatTerbit;
+use App\Services\PenahananProfil;
 use App\Services\PenerimaNotifikasi;
 use App\Services\SertifikatSatuHalaman;
 use App\Services\SinkronJadwalAlat;
@@ -106,6 +107,19 @@ class GenerateCertificate implements ShouldQueue
         // sudah selesai tanpa membuka transaksi sama sekali. BUKAN penjagaan
         // yang sebenarnya: lihat lock di dalam transaksi di bawah.
         if ($this->sudahTerbit($sesi)) {
+            return;
+        }
+
+        // Pintu kedua penahanan per jenis alat (`PenahananProfil`; pintu pertama
+        // `approve()` API & tombol Setujui panel). Yang sampai sini: sesi yang
+        // disetujui SEBELUM penahanan dipasang, tombol "Terbitkan ulang", atau
+        // penyapu. Dicek SEBELUM nomor & snapshot dibuat, dan sesudah
+        // `sudahTerbit()`: sertifikat yang sudah terbit tidak disentuh.
+        $ditahan = app(PenahananProfil::class)->periksa($sesi);
+
+        if ($ditahan !== null) {
+            $this->tahanKarenaProfil($sesi, $ditahan);
+
             return;
         }
 
@@ -385,6 +399,64 @@ class GenerateCertificate implements ShouldQueue
                 'galat' => $e::class,
             ]);
         }
+    }
+
+    /**
+     * Penerbitan ditolak karena jenis alatnya ditahan menunggu keputusan
+     * Technical Manager. DETERMINISTIK, jadi tidak dilempar (antrean tidak
+     * mengulang tiga kali) dan tidak dibiarkan `menunggu_generate` (penyapu
+     * mendorongnya lagi tiap sepuluh menit tanpa henti): sertifikatnya `gagal`,
+     * dan tombol "Terbitkan ulang" berfungsi lagi begitu entri config dilepas.
+     *
+     * Yang TIDAK diubah: status sesi (tetap `disetujui`), nomor yang sudah
+     * dipegang barisnya, snapshot, dan sertifikat yang sudah `terbit`. Sesi yang
+     * disetujui sebelum penahanan dan belum sempat terbit berhenti di `gagal`
+     * dengan alasan di notifikasi admin dan jejak audit.
+     *
+     * @param  array<string, mixed>  $ditahan  keluaran `PenahananProfil::periksa()`
+     */
+    private function tahanKarenaProfil(CalibrationSession $sesi, array $ditahan): void
+    {
+        $penahan = app(PenahananProfil::class);
+        $penahan->catat(
+            $sesi,
+            $this->issuedBy === null ? null : User::query()->find($this->issuedBy),
+            $ditahan,
+            PenahananProfil::PINTU_JOB_TERBIT,
+        );
+
+        $penyebab = new RuntimeException((string) $ditahan['message']);
+        $dasar = $this->revisiDariId === null ? null : Certificate::query()->find($this->revisiDariId);
+
+        $ditandai = DB::transaction(function () use ($sesi, $dasar): ?Certificate {
+            // Lock yang sama dengan `handle()`: job lain untuk sesi ini yang
+            // sedang menulis barisnya ditunggu, bukan ditabrak.
+            CalibrationSession::whereKey($sesi->id)->lockForUpdate()->first();
+
+            $ada = $dasar !== null
+                ? Certificate::query()->where('calibration_session_id', $sesi->id)->where('revision_of', $dasar->id)->first()
+                : $sesi->certificate()->first();
+
+            if ($ada === null || $ada->status === Certificate::STATUS_TERBIT) {
+                return null;
+            }
+
+            if ($ada->status !== Certificate::STATUS_GAGAL) {
+                $ada->update(['status' => Certificate::STATUS_GAGAL]);
+            }
+
+            return $ada;
+        });
+
+        if ($ditandai !== null) {
+            $this->kabarinKegagalan($ditandai, $penyebab);
+
+            return;
+        }
+
+        // Belum ada barisnya: beri baris `gagal` (tanpa nomor baru) supaya sesi
+        // yang disetujui tidak tanpa tombol pemulihan; sekalian mengabari admin.
+        $this->tinggalkanJalanPulih($penyebab);
     }
 
     /**
