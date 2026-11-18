@@ -146,4 +146,32 @@ class PembandingCetakMasterTest extends TestCase
             $this->assertNotSame([], PembandingCetakMaster::barisMaster($kunci), "Fixture {$kunci} kosong.");
         }
     }
+
+    /**
+     * PK-5: satu fixture per kelompok alat dibaca berdampingan, dan baris yang disembunyikan
+     * master (tidak dicetak Excel) tidak ikut diadu — kalau ikut, titik nol Gaya menjadi
+     * "selisih" palsu.
+     */
+    public function test_fixture_kelompok_b_dibaca_berdampingan_dan_baris_tersembunyi_tidak_ikut(): void
+    {
+        foreach ([
+            'gaya/load_cell', 'gaya/utm', 'gaya/proving_ring',
+            'enclosure/constant_yokogawa', 'enclosure/recorder',
+            'suhu/thermocouple', 'suhu/thermometer_glass',
+            'sieve/mesh', 'autoclave/autoclave', 'timer/stopwatch',
+            'ph/imte_wq_129', 'ph/trial',
+            'flowmeter/ultrasonic_totalizer', 'flowmeter/ultrasonic_flowrate',
+        ] as $kunci) {
+            $this->assertNotSame([], PembandingCetakMaster::barisMaster($kunci), "Fixture {$kunci} kosong.");
+        }
+
+        // Load Cell: baris 21 (beban 0 kN) disembunyikan master; baris 22 (100 kN) tercetak.
+        $this->assertContains(21, PembandingCetakMaster::master('gaya/load_cell')['baris_tersembunyi']);
+        $nomor = array_column(PembandingCetakMaster::barisMaster('gaya/load_cell'), 'baris');
+        $this->assertNotContains(21, $nomor);
+        $this->assertContains(22, $nomor);
+
+        // Fixture kelompok A tetap terbaca lewat pembanding yang sama.
+        $this->assertNotSame([], PembandingCetakMaster::barisMaster('timbangan/kg'));
+    }
 }
