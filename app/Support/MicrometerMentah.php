@@ -62,6 +62,18 @@ class MicrometerMentah
 
     public const PERAN_PEMBACAAN = 'mikro_pembacaan';
 
+    /**
+     * Peran yang BUKAN pembacaan alat: nominal keping balok ukur (6, 14, 17,
+     * 19 mm …) adalah standar yang ditumpuk, bukan angka yang dibaca dari
+     * mikrometer. Penjaga rentang & kelipatan resolusi di
+     * `CalibrationValidator` melewatinya — kalau tidak, tiap sesi wajar
+     * memuntahkan "pembacaan 14 mm jauh di luar rentang ukur alat (25–50 mm)"
+     * (BUG-3 uji E2E-QA, 18 Nov 2026). Hanya `mikro_pembacaan` yang diadu.
+     *
+     * @var list<string>
+     */
+    public const PERAN_BUKAN_BESARAN_ALAT = [self::PERAN_BALOK];
+
     /** Satuan nominal balok ukur — SELALU mm, apa pun skala mikrometernya. */
     public const SATUAN_BALOK = 'mm';
 
