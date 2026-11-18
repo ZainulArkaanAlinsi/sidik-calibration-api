@@ -26,7 +26,8 @@ Pola baku `docs/pertanyaan-lab-*.md`: kejanggalan master ditiru dan ditanyakan; 
 
 `Range.Text` dan openpyxl tetap membaca baris yang disembunyikan; Excel tidak mencetaknya.
 Master menyembunyikan baris titik nol (Gaya), baris set point kosong (Enclosure, Thermocouple,
-Termometer Gelas, Autoclave, Timer), dan baris `#N/A` (Flowmeter). Pembanding yang membacanya
+Termometer Gelas, Autoclave, Timer), dan baris `#N/A` Totalizer (24-25; baris `#N/A` Flowrate TIDAK
+tersembunyi, lihat PK5-8). Pembanding yang membacanya
 mengira aplikasi "kehilangan baris". Generator PK-5 membuang baris dan kolom tersembunyi
 (daftarnya dicatat di fixture sebagai `baris_tersembunyi`). Inilah jawaban untuk catatan audit
 16 Nov ("load_cell 0/7, utm 0/4 baris identik"): tidak ada beda angka, yang beda adalah baris
@@ -40,6 +41,10 @@ baris tersembunyi. Terdampak (baris tersembunyi di master, hasil `openpyxl` 18 N
 | PK4-4 "baris ketiga `Penuh`" Timbangan kg & substitusi | 21 | tersembunyi: master TIDAK mencetaknya, jadi bukan selisih |
 | 5 baris `#VALUE!` Anak Timbangan F1; keping 0,1 g (PK4-5) dan 10 g (§3) | 20-36 | tersembunyi: tidak tercetak di master |
 | 2 baris galat Graduated Volumetric | 24-25 | tersembunyi |
+
+Hitung independen lewat Excel COM (penjaga angka, `paritas-pk5.txt`): 69 dari 177 baris fixture
+PK-4 tersembunyi; F1 17 dari 21 baris fixture, sehingga sedikitnya 10 dari 14 baris "cocok" F1
+bukan baris yang dicetak Excel (F2 hal 1-3 sudah dibuang lewat `barisDibuang`, aman).
 
 Angka di baris tersembunyi itu tetap benar-salahnya sebagai uji HITUNGAN, hanya bukan "angka yang
 tercetak di sertifikat". Usul: regenerasi `massa-volume.json` dengan penyaring yang sama
@@ -106,9 +111,10 @@ kode (§Olah data butir 4: komentar tidak sampai ke orang yang menyetujui sesi).
 **Ditanyakan:** tidak ada pertanyaan baru ke lab (keputusan pemilik sudah final). Usul teknis:
 tambahkan blok catatan di `hasil_autoclave` (kode, belum dikerjakan).
 
-## PK5-5 — Termometer Gelas: master memformat `J21:J23` General, `J24:J25` `0.0`
+## PK5-5 — Termometer Gelas: master memformat `J21:J23` `0`, `J24:J25` `0.0`
 
-Pembacaan UUT master tercetak `30`, `51`, `61`, lalu `82.0`, `99.0`; aplikasi seragam satu desimal
+Pembacaan UUT master tercetak `30`, `51`, `61` (format `0`), lalu `82.0`, `99.0` (format `0.0`);
+aplikasi seragam satu desimal
 (`30.0`, `51.0`, `61.0`, `82.0`, `99.0`; resolusi alat 1 °C). Kosmetik, bukan angka. U95 tersimpan
 1,1262 lawan master 1,1174 = keputusan ÷√5 yang sudah di `pertanyaan-lab-suhu-3alat.md` (catatan
 `pengulangan_standar_dibagi_n` ada di jejak); cetak 1,1 sama.
@@ -119,12 +125,21 @@ aplikasi), atau harus meniru format campuran master?
 ## PK5-6 — Timer: `k` tercetak 1.964, master 1.9652
 
 Sel `SERTIFIKAT!V29` master berformat General: Excel mencetak `1.9652` (nilai 1,965168). Aplikasi
-mencetak `1.964` (tiga desimal, B3a) dari `k` tersimpan 1,96400 (titik 1). Bedanya dua lapis: format
-(tiga lawan empat desimal) DAN nilai (1,96400 lawan 1,96517). Penyebab nilai belum dibuktikan —
-dugaan: uHRTB `MAX(N21:N22)` yang dibuat sadar berbeda (`WaktuFrekuensiMasterTest`) menggeser
-derajat bebas. U95 tercetak 0,8 sama.
+mencetak `1.964` (tiga desimal, B3a) dari `k` tersimpan 1,96400 (titik 1). Bedanya dua lapis:
+format (tiga lawan empat desimal) DAN nilai (1,96400 lawan 1,96517).
 
-**Ditanyakan:** `k` Timer dicetak berapa desimal, dan apakah selisih nilai 0,0012 diterima?
+**Penyebab nilai = DRIFT stopwatch, bukan uHRTB.** Master `Drift Stopwatch!K26` = `MAX(K12:K25)` =
+298 ms (K23); aplikasi memakai 322 ms (`pertanyaan-lab-waktu-frekuensi.md` §3: kolom `K` master
+berrumus sebagian, dilengkapi, SUDAH DIHITUNG BENAR). Komponen `ui` (master | aplikasi): drift
+0,17205 | 0,18591; uHRTB 0,00551 | 0,01013; yang lain sama. Master uc 0,19320, veff 457,7,
+k = t(457) = 1,965168; aplikasi uc 0,20581, veff 589,3. Dihitung ulang penjaga angka dari sel
+master: menukar HANYA drift -> veff 587, k 1,964014; menukar HANYA uHRTB -> veff 459, k 1,965146
+(uHRTB hanya ~2 derajat bebas). Jadi selisih NILAI adalah keputusan lama §3, bukan temuan baru;
+uc aplikasi 6,5 % lebih besar dari master (konservatif), dan U95 tercetak 0,8 tetap sama karena
+lantai CMC.
+
+**Ditanyakan:** hanya jumlah desimal — `k` Timer dicetak tiga desimal (`1.964`) atau mengikuti
+master (empat, `1.9652`)? Selisih nilai 0,0012 tidak perlu dijawab ulang (§3).
 
 ## PK5-7 — Flowmeter: tiga perbaikan tidak punya catatan di jejak sesi
 
@@ -138,13 +153,49 @@ titik 1 sama sebagai %OR terhadap bacaan UUT.
 **Ditanyakan:** tidak ada pertanyaan baru; usul teknis: tambahkan catatan `penyimpangan_master`
 (kode, belum dikerjakan).
 
+## PK5-8 — Flowrate: master MENCETAK baris `#N/A`
+
+`SERTIFIKAT` Flowrate baris 28 (`E28`=0, `H28`/`K28`/`N28` = `#N/A`) tidak tersembunyi — master
+mencetaknya di sertifikat sebagai baris ketiga yang berisi galat (Totalizer baris 24-25
+tersembunyi, tidak mencetak). Aplikasi tidak mencetak baris itu. Tes memakai `barisGalat: [28]`
+(dihitung dan disebut, bukan dilewatkan).
+
+**Ditanyakan:** apakah master Flowrate memang boleh mencetak baris `#N/A` di sertifikat, atau
+barisnya seharusnya disembunyikan seperti Totalizer? Aplikasi tetap tidak mencetaknya.
+
 ---
 
-## Yang cocok penuh
+## Yang cocok penuh (angka cetak DAN nilai tersimpan)
 
-Thermocouple (5 baris + U95 + `k`), pH Meter "for trial" (4 baris, U95 dan `k` sampai 1e-9), Load Cell
-dan UTM (semua baris tabel hasil), Sieve selain dua baris §4 (`pertanyaan-lab-sieve.md`: koreksi
-caliper +0,01 mm), Flowmeter titik 1.
+Thermocouple (5 baris + U95 + `k`), pH Meter "for trial" saja, bukan IMTE-WQ-129 (4 baris; U95 dan
+`k` tersimpan sama sampai kuantum `decimal(20,8)`), Sieve selain dua baris §4
+(`pertanyaan-lab-sieve.md`: koreksi caliper +0,01 mm), Flowmeter titik 1.
+
+## Cetak cocok, nilai tersimpan BEDA
+
+Load Cell dan UTM: semua baris tabel hasil tercetak sama dengan master, tetapi U95/`k` TERSIMPAN
+beda karena kolom drift (PK5-1). Tidak tampak di PDF.
+
+## Catatan perkakas dan batas bukti
+
+- **Dua salinan workbook.** Sieve dan Timer ada di dua salinan berisi beda (sha256 beda):
+  `Downloads/` (Sep) dan `Downloads/EXEL CALIBRATION SIDIK/` (Nov). Fixture dibekukan dari salinan
+  EXEL (Nov); `gen-cetak-master-kelompok-b.py --cek` hanya melapor SAMA bila folder EXEL disebut
+  PERTAMA. Yang otoritatif belum dikonfirmasi lab; sha256 tiap master tercatat di fixture.
+- **Mutan pembulatan.** Mengubah `Angka::tampilanExcel` (`>= 5` jadi `> 5`) menjatuhkan keempat kelas,
+  tetapi TIDAK menjatuhkan Termometer Gelas, Autoclave, dan Timer: angka cetak mereka tidak punya
+  digit berikut tepat 5. Ketiganya dijaga mutan kalkulator, bukan mutan pembulatan.
+- **Titik seri tepat tidak terbukti.** Fixture B tidak memuat satu pun nilai yang jatuh TEPAT di titik
+  seri 15 digit (`x,xx5` + nol); yang ada hanya "tepat di atas/bawah" (Load Cell `V29`
+  0,3750000000000031; Enclosure `L43` 0,05000000000000071; Autoclave `L32` 0,0449999999999946).
+  Mutan pembulatan setengah-genap pada titik tepat tetap hijau. Itu bukan cacat PR ini, tetapi
+  "pembulatan di titik seri" tidak dibuktikan oleh kelompok B (milik PK-1).
+- **Toleransi nilai tersimpan** (angka CETAK selalu persis): 6e-9 untuk kolom `decimal(20,8)`
+  (kuantum MySQL 5e-9); 1e-9 untuk JSON `hasil_autoclave`; 5e-6 untuk `k` Suhu dan %OR/`k` Flowmeter
+  (selisih nyata aproksimasi master, bukan kuantum); 1e-6 / 1e-8 untuk nilai yang DIPATOK dari
+  aplikasi. Alasannya tertulis di docblock tiap kelas tes.
+- **Pembanding buta kolom terakhir** di kelas Gaya dan SieveAutoclaveTimerPh (tidak ada baris yang
+  beda hanya di token terakhir); dijaga unit test `PembandingCetakMasterTest`.
 
 ## Tidak dikerjakan, dan alasannya
 

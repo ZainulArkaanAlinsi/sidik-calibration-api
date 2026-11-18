@@ -30,8 +30,19 @@ use Tests\TestCase;
  *   itu belum tercatat di hasil sesi (hanya di komentar kode).
  * - **Timer**: lima titik cocok. `k` master berformat General: Excel mencetak `1.9652`
  *   (`Range.Text`, COM), aplikasi `1.964` (tiga desimal, B3a); nilainya pun beda (1,96400 lawan
- *   1,96517). Penyebabnya BELUM dibuktikan: dugaan uHRTB (`WaktuFrekuensiMasterTest`, keputusan
- *   sadar `MAX(N21:N22)`) yang menggeser derajat bebas (PK5-6).
+ *   1,96517). Penyebab nilai = DRIFT stopwatch, bukan uHRTB: master `Drift Stopwatch!K26` =
+ *   MAX(K12:K25) = 298 ms, aplikasi 322 ms (kolom K master berrumus sebagian; keputusan
+ *   `pertanyaan-lab-waktu-frekuensi.md` §3). Dihitung ulang penjaga angka dari sel master: menukar
+ *   HANYA drift -> veff 587 (dari 589), k 1,964014; menukar HANYA uHRTB -> veff 459, k 1,965146.
+ *   uc aplikasi 6,5 % lebih besar dari master (konservatif); U95 tercetak sama (lantai CMC 0,8).
+ *   Yang masih terbuka hanya jumlah desimal `k` (PK5-6).
+ *
+ * ## Toleransi nilai TERSIMPAN (angka cetak selalu dibandingkan persis, tanpa toleransi)
+ *
+ * - 6e-9 (`assertTersimpanSama`): kolom `decimal(20,8)` — MySQL menyimpan 8 desimal, SQLite float
+ *   penuh; selisih sah terbesar 5e-9. U95/k Sieve, pH, dan U95 Timer.
+ * - 1e-9: `hasil_autoclave` (kolom JSON, 15 digit signifikan, nilai < 3).
+ * - 1e-8: `k` titik 1 Timer yang DIPATOK dari aplikasi (bukan dari master).
  */
 class SieveAutoclaveTimerPhSesiContohCocokMasterTest extends TestCase
 {
@@ -127,7 +138,7 @@ class SieveAutoclaveTimerPhSesiContohCocokMasterTest extends TestCase
                     $this->assertNull($h->keputusan, 'Timer: master tidak mencetak vonis; aplikasi pun tidak.');
                 }
 
-                // Selisih `k` dikunci dua arah: titik 1 = 1,96400 (master 1,96517; sebab belum dibuktikan, PK5-6).
+                // Selisih `k` dikunci dua arah: titik 1 = 1,96400 (master 1,96517; drift 322 ms lawan 298 ms, §3 waktu-frekuensi).
                 $this->assertEqualsWithDelta(1.963999758093, (float) $hitung[0]->faktor_cakupan_k, 1e-8, 'Timer: k titik 1 tersimpan');
                 $this->assertGreaterThan(1e-3, PembandingCetakMaster::nilaiSel('timer/stopwatch', 'V29') - (float) $hitung[0]->faktor_cakupan_k, 'Selisih k terhadap master hilang — hapus catatan PK5-6 bila ditutup.');
             },

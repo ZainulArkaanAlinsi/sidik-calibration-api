@@ -35,9 +35,18 @@ use Tests\TestCase;
  *   blok SET POINT 3 master yang rusak (§5): koreksi sensor 1-4 jatuh ke 0 sehingga Terukur
  *   dan Koreksi empat sensor itu +0,08 dan Variasi 2,72. §5 menyebut "tidak mengubah
  *   sertifikat" — itu benar untuk U95, TIDAK benar untuk Sebaran Suhu (PK5-3).
- * - Termometer Gelas: master memformat `J21:J23` General (tercetak `30`, `51`, `61`) dan
+ * - Termometer Gelas: master memformat `J21:J23` `0` (tercetak `30`, `51`, `61`) dan
  *   `J24:J25` `0.0` (tercetak `82.0`, `99.0`); aplikasi seragam satu desimal (PK5-5). U95
  *   tersimpan 1,1262 lawan master 1,1174 = keputusan ÷√5 (`pertanyaan-lab-suhu-3alat.md`).
+ *
+ * ## Toleransi nilai TERSIMPAN (angka cetak selalu dibandingkan persis, tanpa toleransi)
+ *
+ * - 1e-8: U95 = lantai CMC (1,4 / 1,5 / 0,84), tersimpan persis di `decimal(20,8)`.
+ * - 5e-6: `k`. Master mencetak SATU `k` untuk semua set point; aplikasi memakai t-quantile eksak
+ *   per set point, master aproksimasi polinomial (`pertanyaan-lab-enclosure.md` §6) — selisih
+ *   nyata ~1e-6, bukan kuantum kolom.
+ * - 1e-6: nilai Termometer Gelas yang DIPATOK dari aplikasi (bukan dari master), supaya
+ *   perubahan keputusan ÷√5 ketahuan.
  */
 class SuhuSesiContohCocokMasterTest extends TestCase
 {
@@ -91,9 +100,9 @@ class SuhuSesiContohCocokMasterTest extends TestCase
             'suhu/thermometer_glass' => function (): void {
                 [, $html, $sesi] = $this->terbitkanDanRender('0135-CAL-125');
                 $this->assertCetakSamaMaster('suhu/thermometer_glass', $html, 4, [
-                    21 => ['PK5-5: master memformat J21 General (`30`), aplikasi satu desimal.', ['30.5', '30.0', '0.5']],
-                    22 => ['PK5-5: J22 General (`51`).', ['51.9', '51.0', '0.9']],
-                    23 => ['PK5-5: J23 General (`61`).', ['62.1', '61.0', '1.1']],
+                    21 => ['PK5-5: master memformat J21 `0` (`30`), aplikasi satu desimal.', ['30.5', '30.0', '0.5']],
+                    22 => ['PK5-5: J22 berformat `0` (`51`).', ['51.9', '51.0', '0.9']],
+                    23 => ['PK5-5: J23 berformat `0` (`61`).', ['62.1', '61.0', '1.1']],
                 ]);
 
                 $hitung = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();

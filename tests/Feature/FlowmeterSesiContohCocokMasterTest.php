@@ -29,6 +29,12 @@ use Tests\TestCase;
  *
  * Temuan PK5-7: ketiga perbaikan itu belum punya catatan di `type_b_components` sesi (hanya
  * baris `jejak_titik`), padahal AGENTS.md §Olah data butir 4 mewajibkannya.
+ *
+ * ## Toleransi nilai TERSIMPAN (angka cetak selalu dibandingkan persis, tanpa toleransi)
+ *
+ * 5e-6 untuk U95 %OR dan `k`: sama dengan yang dipakai `FlowmeterMasterTest` untuk tiap kolom
+ * turunan dan tiap komponen budget kedua workbook; %OR dihitung ulang dari U tersimpan dan
+ * bacaan UUT master, jadi galat pembulatan kolom ikut terhitung.
  */
 class FlowmeterSesiContohCocokMasterTest extends TestCase
 {

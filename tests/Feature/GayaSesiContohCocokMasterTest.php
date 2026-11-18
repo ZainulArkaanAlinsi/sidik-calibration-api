@@ -56,6 +56,12 @@ use Tests\TestCase;
  * `Range.Text` Excel). Titik nol tidak tercetak karena master menyembunyikan barisnya (Load Cell
  * baris 21, UTM 21, Proving Ring 22) — itulah jawaban rekonsiliasi "0/7 baris identik" di audit
  * 16 Nov: bukan beda angka, tetapi baris tersembunyi yang ikut terbaca.
+ *
+ * Toleransi nilai TERSIMPAN di metode itu (angka cetak dibandingkan persis): 6e-9 lewat
+ * `assertTersimpanSama` untuk semua yang dibandingkan ke sel master di kolom `decimal(20,8)`
+ * (`Correction` = sel x 0,00981, U95 UTM, `k` Proving Ring; MySQL menyimpan 8 desimal, selisih
+ * sah terbesar 5e-9); 1e-8 untuk U95/k yang DIPATOK dari aplikasi (bukan dari master);
+ * 1e-12 untuk komponen drift, yang tersimpan di JSON (15 digit signifikan, nilai < 1).
  */
 class GayaSesiContohCocokMasterTest extends TestCase
 {
@@ -164,7 +170,7 @@ class GayaSesiContohCocokMasterTest extends TestCase
                     k: 1.9716608894927, masterK: PembandingCetakMaster::nilaiSel('gaya/utm', 'T36'),
                 );
                 $this->assertKoreksiTersimpan($hitung, 'gaya/utm', barisTitik2: 22, faktorKeKn: 0.00981);
-                $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('gaya/utm', 'P35') * 0.00981, (float) $hitung[0]->ketidakpastian_diperluas, 1e-8, 'UTM: U95 tersimpan = 2,1 kgf master dalam kN.');
+                $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('gaya/utm', 'P35') * 0.00981, $hitung[0]->ketidakpastian_diperluas, 'UTM: U95 tersimpan = 2,1 kgf master dalam kN.');
             },
             'gaya/proving_ring' => function (): void {
                 [, $html, $sesi] = $this->terbitkanDanRender('DEMO-PR-001');
@@ -199,10 +205,9 @@ class GayaSesiContohCocokMasterTest extends TestCase
                 continue;
             }
 
-            $this->assertEqualsWithDelta(
+            $this->assertTersimpanSama(
                 PembandingCetakMaster::nilaiSel($kunci, 'Q'.($barisTitik2 + $i - 1)) * $faktorKeKn,
-                (float) $h->koreksi,
-                5e-8,
+                $h->koreksi,
                 "{$kunci} titik {$h->titik_ke}: Correction tersimpan",
             );
         }

@@ -29,6 +29,14 @@ Karena itu `baris_tersembunyi` dan sel di kolom tersembunyi dibuang di sini, dan
 daftar baris yang dibuang dicatat di fixture (`baris_tersembunyi`) supaya
 terbaca di diff.
 
+## Dua salinan workbook: urutan folder menentukan
+
+Sieve dan Timer ada di DUA salinan berisi beda (sha256 beda): `Downloads/` (Sep 2026) dan
+`Downloads/EXEL CALIBRATION SIDIK/` (Nov 2026). Fixture ini dibekukan dari salinan EXEL: sebut
+folder EXEL PERTAMA di baris perintah. `--cek` hanya melapor SAMA bila urutan itu dipenuhi (generator
+mengambil berkas dari folder pertama yang memilikinya). Salinan mana yang otoritatif belum
+dikonfirmasi lab; sha256 tiap master yang dipakai tercatat di fixture.
+
 Sandi master dari env `SIDIK_MASTER_SANDI` (tidak dicetak, tidak ditulis).
 `--cek` = jangan tulis, hanya laporkan bila fixture lama beda (exit 1).
 """
