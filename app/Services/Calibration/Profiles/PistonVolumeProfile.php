@@ -247,13 +247,17 @@ abstract class PistonVolumeProfile extends CalibrationProfile
      */
     public function penahanTerbit(CalibrationSession $sesi): array
     {
+        // Daftar `profil_ditahan` di config (hook yang sama, kelas dasar) tetap
+        // berlaku di samping penahanan log metode di bawah.
+        $dariConfig = parent::penahanTerbit($sesi);
+
         $jejak = $sesi->uncertaintyCalculations
             ->pluck('type_b_components')
             ->filter(static fn (mixed $j): bool => is_array($j) && isset($j['piston_budget'], $j['versi_master']))
             ->values();
 
         if ($jejak->isEmpty()) {
-            return [];
+            return $dariConfig;
         }
 
         $terpicu = array_values(array_unique(array_merge(...$jejak->map(
@@ -274,7 +278,7 @@ abstract class PistonVolumeProfile extends CalibrationProfile
             'benar' => (float) $j['piston_rantai']['V20_ml'],
         ])->all();
 
-        return array_map(function (array $p) use ($satuan, $uMaster, $uBenar, $u95Master, $u95Benar, $cmcMaster, $cmcBenar, $titik): array {
+        return [...$dariConfig, ...array_map(function (array $p) use ($satuan, $uMaster, $uBenar, $u95Master, $u95Benar, $cmcMaster, $cmcBenar, $titik): array {
             // U hitung (ml) DAN U95 terbit (satuan alat): lantai CMC bisa
             // menyamakan U95 kedua versi sementara U-nya berbeda.
             $angka = sprintf(
@@ -308,7 +312,7 @@ abstract class PistonVolumeProfile extends CalibrationProfile
                 'cmc_benar_ml' => $cmcBenar,
                 'v20_per_titik_ml' => $titik,
             ]);
-        }, LogMetode::menahanTerbit(LogMetode::PISTON, $terpicu));
+        }, LogMetode::menahanTerbit(LogMetode::PISTON, $terpicu))];
     }
 
     public function butuhBlokPiston(): bool

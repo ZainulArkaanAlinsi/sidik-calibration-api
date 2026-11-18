@@ -7,6 +7,7 @@ use App\Http\Resources\CategoryResource;
 use App\Models\CalibrationCapability;
 use App\Models\EquipmentCategory;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\PenahananProfil;
 use Closure;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
@@ -138,6 +139,15 @@ class CategoryController extends Controller
                     // generik". Registry-nya sengaja nggak jatuh ke pH —
                     // lihat `CalibrationProfileRegistry::kodeProfilDariNama()`.
                     'profil' => $registry->kodeProfilDariNama((string) $c->nama_alat),
+                    // Penerbitan sertifikat jenis alat ini ditahan menunggu
+                    // keputusan Technical Manager? Aditif. Dikirim di sini supaya
+                    // layar teknisi tahu SEBELUM mengirim lembar (yang ditahan
+                    // cuma penerbitan; mengisi, pratinjau, dan hitung tetap jalan).
+                    // `varian` terisi bila hanya sebagian varian yang ditahan
+                    // (Timbangan: `["kg"]`). Aturannya satu: `PenahananProfil`.
+                    'penerbitan_ditahan' => PenahananProfil::ringkasanProfil(
+                        $registry->kodeProfilDariNama((string) $c->nama_alat),
+                    ),
 
                     // Apakah jenis alat ini DIVONIS PASS/FAIL — dan ini bukan
                     // hiasan: form Tambah Alat mewajibkan `toleransi` buat

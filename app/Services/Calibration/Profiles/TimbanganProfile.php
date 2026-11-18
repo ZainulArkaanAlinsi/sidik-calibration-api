@@ -90,6 +90,36 @@ class TimbanganProfile extends CalibrationProfile
     }
 
     /**
+     * Varian master sesi (`kg` / `gram` / `substitusi`) untuk penahanan
+     * penerbitan per varian (`config/sertifikat.php` `profil_ditahan.timbangan`).
+     * Yang ditahan hanya KG; gram & substitusi tidak.
+     *
+     * Aturannya SAMA dengan yang dipakai hitungan (`susunMasukan()`,
+     * `batasTitik()`): pilihan teknisi di `spesifikasi_alat.varian_master`, dan
+     * kalau belum dipilih bawaan dari kapasitas & satuan alat (`bawaanUntuk()`).
+     * Dibaca dari sesi, bukan dari pilihan di lembar saja, karena penahanan
+     * harus menimpa varian yang TERHITUNG, bukan yang tampil.
+     */
+    public function varianPenahan(CalibrationSession $sesi): ?string
+    {
+        $spek = (array) ($sesi->spesifikasi_alat ?? []);
+        $pilihan = $spek['varian_master'] ?? null;
+
+        if (is_string($pilihan) && trim($pilihan) !== '') {
+            return strtolower(trim($pilihan));
+        }
+
+        $alat = $sesi->equipment;
+        $satuan = (string) ($spek['satuan'] ?? $alat?->satuan ?? 'kg');
+        $kapasitas = (float) ($spek['kapasitas'] ?? $alat?->range_max ?? 0.0);
+
+        return VarianMasterTimbangan::bawaanUntuk(
+            strtolower(trim($satuan)) === 'g' ? $kapasitas / 1000.0 : $kapasitas,
+            $satuan,
+        )->kode;
+    }
+
+    /**
      * Skema `tabel-standar-timbangan.json` untuk Studio Data Acuan. Alamat
      * dibuktikan peta sel `database/data/peta-sel/timbangan.json` terhadap
      * ketiga master .xlsm asli dan ekspor CSV-nya. Tiap varian (gram/kg/

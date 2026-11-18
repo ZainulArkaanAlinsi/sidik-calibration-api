@@ -31,6 +31,9 @@ class SertifikatGayaBentukMasterTest extends TestCase
 
     public function test_tiga_sertifikat_gaya_ikut_lembar_sertifikat_master(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->freezeTime();
         $this->seed(DatabaseSeeder::class);
         $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());

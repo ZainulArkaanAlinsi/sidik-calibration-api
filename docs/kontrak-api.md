@@ -433,6 +433,15 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >       "profil": null, "punya_toleransi": true }
 > ] } }
 > ```
+> **`penerbitan_ditahan` (aditif, 18 Nov 2026)** ikut di tiap baris `kemampuan[]` —
+> `{ "ditahan": bool, "alasan": string|null, "rujukan_tm": string|null, "varian": string[]|null }`.
+> `ditahan: true` = penerbitan sertifikat jenis alat ini ditahan menunggu Technical Manager (lembar tetap
+> bisa diisi, dipratinjau, dan dihitung). **`varian` terisi = hanya varian itu yang ditahan** (Timbangan:
+> `["kg"]`); jangan menyimpulkan "seluruh jenis alat". Dikirim di sini supaya layar teknisi memberi tahu
+> SEBELUM lembar dikirim. Tekanan tidak muncul `true` di sini (penahanannya bersyarat dan dibaca dari
+> hasil hitung): untuk Tekanan, pakai `data.penerbitan_ditahan` di respons sesi. Detail:
+> `docs/perintah-frontend-tahan-profil.md`.
+>
 > **`range_min` bisa `null`** — 59 dari 151 kemampuan emang nggak punya batas bawah numerik: ada yang titik tunggal (buret "25 mL"), ada yang batasnya kata-kata (oven "ambient ~ 300 °C" → teks aslinya ada di `range_note`). Jangan diparse jadi `double` mentah-mentah, nanti crash.
 >
 > ### `punya_toleransi` — Update 27 Agt
@@ -1241,6 +1250,11 @@ Response `200`:
 }
 ```
 
+> **`penerbitan_ditahan` (aditif, 18 Nov 2026)** ada di tiap sesi (daftar, detail, respons simpan):
+> `{ "ditahan": bool, "alasan": string|null, "rujukan_tm": string|null }`. `ditahan: true` = `approve`
+> akan dijawab `422 profil_ditahan` (lihat `approve`). Mengisi, pratinjau, dan hitung tidak terpengaruh.
+> Sesi yang sertifikatnya sudah `terbit` selalu `ditahan: false`. Klien lama mengabaikan kuncinya.
+
 > **`status` wajib salah satu dari: `draft` / `menunggu_approval` / `disetujui` / `perlu_revisi`.**
 > **`keputusan`: `PASS` atau `FAIL`** (huruf besar). Ingat: **FAIL tetap boleh terbit sertifikat**, statusnya aja beda — jangan diblokir di backend.
 > Perhitungan GUM (Type A + Type B → gabungan → `U = k × u_c`) dan keputusan ILAC-G8 **dihitung di backend**, mobile cuma nampilin. Mobile nggak ngitung apa pun.
@@ -1388,6 +1402,48 @@ diminta (diabaikan kalau dikirim). Penomoran otomatis `CAL/yyyy/mm/nnnn` tinggal
 
 Super admin boleh sejak 15 Okt 2026 (K-49-14), di organisasinya sendiri; sesi lab lain → `404`.
 
+**Penerbitan ditahan per jenis alat (18 Nov 2026, menunggu Technical Manager).** Sertifikat yang salah
+di lab terakreditasi lebih berbahaya daripada yang tertunda, jadi tujuh jenis alat TIDAK bisa
+disetujui sampai TM menjawab: **Timbangan varian kg (TM-1), Proving Ring (TM-4), Tekanan x3 —
+`pressure_gauge`/`vacuum_gauge`/`differential_pressure` (TM-3), Picnometer (TM-7), Bath (TM-8)**.
+`approve` dijawab `422` dan **status sesi tidak berubah**, nomor yang diketik belum terpakai, tidak ada
+job penerbitan:
+
+```json
+{
+  "message": "Penerbitan sertifikat jenis alat ini ditahan menunggu keputusan Technical Manager: Proving Ring: U95 tercetak 2,3 kgf (pita 0 sampai 500 kgf lampiran LK-285-IDN), sedangkan master 22,4 kgf (pita 10 sampai 88 kN), sekitar 10 kali lebih besar daripada sertifikat yang sudah pernah terbit. Pita CMC mana yang benar (G14) belum diputuskan. Lembar tetap bisa diisi dan dihitung.",
+  "kode": "profil_ditahan",
+  "profil": "proving_ring",
+  "varian": null,
+  "rujukan_tm": "TM-4",
+  "alasan": "Proving Ring: U95 tercetak 2,3 kgf (…) belum diputuskan",
+  "penahan": [ { "penyimpangan": "profil_ditahan", "pesan": "Ditahan menunggu keputusan Technical Manager (TM-4): …" } ]
+}
+```
+
+- **Yang ditahan CUMA penerbitan.** Mengisi lembar, `POST /calibrations/preview`, simpan (`POST`/`PUT`),
+  dan `GET …/perhitungan` tetap jalan dan angkanya tidak berubah. `GET …/validasi` memuat penahanannya
+  sebagai temuan `error` berkode `menunggu_keputusan_tm` (`konteks.penyimpangan: "profil_ditahan"`).
+- **Diperiksa PALING AWAL** (sesudah cek status `menunggu_approval`), jadi urutan `422`-nya: status →
+  `profil_ditahan` → hasil pindai belum dikonfirmasi → `pemisahan_wewenang` → … Tidak ada
+  `abaikan_peringatan`, nomor, atau peran (termasuk super admin) yang menembusnya. Tombol Setujui
+  panel `/admin` menahan hal yang sama (notifikasi, bukan `422`).
+- **Timbangan: hanya varian `kg`.** `gram` dan `substitusi` tidak ditahan. Varian dibaca dari
+  `spesifikasi_alat.varian_master`; kalau belum dipilih, dari bawaan (kapasitas di atas 200 kg →
+  `substitusi`, satuan `g` → `gram`, selain itu `kg`).
+- **Tekanan** sudah ditahan lebih dulu lewat log metode dan **bersyarat**: hanya sesi yang hasil
+  hitungnya memicu cacat master P-1/P-2/P-11 (kalibrator SPMK tidak). Jadi untuk Tekanan penahanan baru
+  terbaca SETELAH sesi tersimpan (hasil hitung ada); `penahan[].penyimpangan` berisi `T-1`/`T-2`/`T-11`
+  dan `rujukan_tm` berisi nomor pertanyaan (`P-2`, …).
+- Cabangkan pada `kode`, bukan teks `message`. `alasan` dan `rujukan_tm` aman ditampilkan apa adanya.
+- Sesi yang SUDAH `disetujui` sebelum penahanan tidak diubah statusnya. Sertifikatnya yang sudah
+  `terbit` tidak disentuh; yang belum sempat terbit (`menunggu_generate`) ditandai `gagal` oleh job
+  (nomor tetap, alasan di notifikasi admin & jejak audit) dan tombol "Terbitkan ulang" kembali
+  berfungsi begitu penahanan dilepas. Lihat `docs/tahan-penerbitan-profil.md`.
+- Tiap penolakan tercatat di `audit_logs` (`action: "penerbitan_ditahan"`, pelaku, pintu, alasan).
+- Field aditif `penerbitan_ditahan` di respons sesi dan di `GET /categories/{kode}` memberi tahu klien
+  lebih dulu; lihat `docs/perintah-frontend-tahan-profil.md`.
+
 **Order Number wajib (15 Okt 2026, K-49-14).** Sesi yang `nomor_order`-nya kosong
 (atau cuma spasi) dijawab `422` dan **statusnya tidak berubah**:
 
@@ -1403,7 +1459,7 @@ Super admin boleh sejak 15 Okt 2026 (K-49-14), di organisasinya sendiri; sesi la
   admin), atau ikut di body `POST`/`PUT` sesi kalau pengirimnya admin/super admin.
   Kiriman **teknisi** untuk `nomor_order` tetap dibuang diam-diam (tidak `422`).
 - Diperiksa **sesudah** pemisahan wewenang dan **sebelum** validasi `berlaku_sampai` &
-  hitung ulang. Jadi urutan `422`-nya: status → hasil pindai belum dikonfirmasi →
+  hitung ulang. Jadi urutan `422`-nya: status → `profil_ditahan` → hasil pindai belum dikonfirmasi →
   `pemisahan_wewenang` → `nomor_order_wajib` → `nomor_sertifikat_*` → galat validasi body →
   temuan validator.
 - Tombol Setujui panel `/admin` menahan hal yang sama (notifikasi, bukan `422`).
