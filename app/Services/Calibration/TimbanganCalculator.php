@@ -206,6 +206,23 @@ class TimbanganCalculator
     }
 
     /**
+     * Agregasi GUM atas komponen buatan pemanggil — HANYA untuk pembanding.
+     *
+     * Dipakai `TimbanganProfile` menulis catatan `penyimpangan_master.*` di jejak
+     * sesi ("U95 bila perlakuan master dipakai"). Hasilnya dicetak di teks catatan
+     * dan TIDAK PERNAH masuk kolom hasil, budget, atau sertifikat. Dipisah dari
+     * [hitung] supaya satu-satunya `GumCalculator` yang dipakai tetap milik
+     * kalkulator ini.
+     *
+     * @param  list<array{u: float, ci: float, vi: float}>  $komponen
+     * @return array{ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float}
+     */
+    public function agregasiPembanding(array $komponen): array
+    {
+        return $this->gum->agregasiBudget($komponen);
+    }
+
+    /**
      * Satu titik akurasi: rata-rata nol, rata-rata beban, deviasi, koreksi, Sr.
      *
      * Master (`PERHITUNGAN FC`, kolom N..V):

@@ -10,6 +10,7 @@ use App\Services\Calibration\TabelStandarTimbangan;
 use App\Services\Calibration\TimbanganCalculator;
 use App\Services\Calibration\VarianMasterTimbangan;
 use App\Support\Angka;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use App\Support\TimbanganMentah;
 use Carbon\Carbon;
@@ -1089,7 +1090,252 @@ class TimbanganProfile extends CalibrationProfile
             ];
         }
 
+        // Paling akhir dan aditif: baris yang sudah ada tidak bergeser indeksnya.
+        foreach ($this->catatanPenyimpanganMaster($t, $hasil) as $catatan) {
+            $baris[] = $catatan;
+        }
+
         return $baris;
+    }
+
+    /**
+     * Titik master yang rujukannya rusak (T6 gram, T7 substitusi): POINT 9.
+     * Sama dengan `TimbanganMasterTest::SEL_MASTER_RUSAK`.
+     */
+    private const TITIK_MASTER_RUSAK = 9;
+
+    /**
+     * `ui` Weight Standard POINT 9 master substitusi — nilai CACHE tautan luar
+     * `'[3]PERHITUNGAN FC'!F74:G76` (workbook master kg), bukan hitungan sesi.
+     * Konstan di berkasnya, jadi berlaku sama untuk sesi mana pun (T7).
+     */
+    private const UI_WEIGHT_STANDARD_MASTER_SUB_TITIK_9 = 2.4055e-5;
+
+    /**
+     * Catatan "angka ini berbeda dari master" per titik (AGENTS.md §Olah data
+     * butir 4; PK4-3 `docs/pertanyaan-lab-adu-cetak-massa-volume.md`).
+     *
+     * Hanya ANGKA PEMBANDING yang dihitung di sini — dari salinan komponen lewat
+     * [TimbanganCalculator::agregasiPembanding]. Tidak satu pun nilai hasil,
+     * budget, atau sertifikat ikut berubah.
+     *
+     *  - **T2** (kg & substitusi, SETIAP titik): `ui` "Uncertainty of Correction"
+     *    di budget Weighing = U/k (keputusan 16 Sep 2026), master kg memakai U
+     *    mentah dan master substitusi U/√3.
+     *  - **T6** (gram, titik 9): drift Mass 2 & 3 dihitung benar; master membaca
+     *    `FC!B80/B81` yang kosong → nol.
+     *  - **T7** (substitusi, titik 9): `Weight Standard` dari berkasnya sendiri;
+     *    master membaca cache tautan luar `[3]`.
+     *
+     * @param  array<string, mixed>  $t  satu baris keluaran TimbanganCalculator
+     * @param  array<string, mixed>  $hasil
+     * @return list<array<string, mixed>>
+     */
+    private function catatanPenyimpanganMaster(array $t, array $hasil): array
+    {
+        $varian = VarianMasterTimbangan::dari((string) $hasil['varian']);
+        $satuan = (string) $hasil['satuan'];
+        $catatan = [];
+        $pb = PenyimpanganMaster::class;
+        $cmc = isset($hasil['cmc']['cmc_satuan']) ? (float) $hasil['cmc']['cmc_satuan'] : null;
+        $lantai = static fn (float $u): float => $cmc === null ? $u : max($u, $cmc);
+        $ke = (int) $t['titik_ke'];
+
+        // --- T2 -----------------------------------------------------------
+        if ($varian->turunanUKoreksi !== VarianMasterTimbangan::U_KOREKSI_BAGI_K) {
+            $uKoreksi = (float) $t['u95_koreksi_hitung'];
+            $uiMaster = $varian->turunanUKoreksi === VarianMasterTimbangan::U_KOREKSI_BAGI_AKAR3
+                ? $uKoreksi / sqrt(3.0)
+                : $uKoreksi;
+            $uiSistem = 0.0;
+            $versiMaster = [];
+
+            foreach ($t['budget_penimbangan'] as $k) {
+                if ($k['sumber'] === 'uncertainty_of_correction') {
+                    $uiSistem = (float) $k['u'];
+                    $k['u'] = $uiMaster;
+                }
+
+                $versiMaster[] = $k;
+            }
+
+            $hitungMaster = (float) $this->kalkulator()
+                ->agregasiPembanding($versiMaster)['ketidakpastian_diperluas'];
+            $cetakMaster = $lantai($hitungMaster);
+            $cetakSistem = (float) $t['u95_penimbangan'];
+            $selisih = $cetakSistem - $cetakMaster;
+            $tertutupLantai = abs($selisih) <= 1e-12 * max(1.0, abs($cetakMaster));
+
+            $catatan[] = $pb::baris(
+                'timbangan',
+                'ui_koreksi_di_budget_weighing',
+                sprintf(
+                    'Titik ke-%d: komponen "Uncertainty of Correction" di budget U95 of Weighing (bagian 7 sertifikat) '
+                    .'dibagi k-nya sendiri (GUM 4.3.3), sedangkan master %s. Paraf Manajer Teknis atas keputusan ini '
+                    .'masih menyusul.%s',
+                    $ke,
+                    $varian->turunanUKoreksi === VarianMasterTimbangan::U_KOREKSI_BAGI_AKAR3
+                        ? 'substitusi membaginya akar 3 (pembagi distribusi persegi, bukan pembagi k)'
+                        : 'kg memakainya apa adanya (U mentah, kelebihan sekitar 2x menurut GUM)',
+                    $tertutupLantai
+                        ? ' Pada titik ini angka cetak U95 Weighing SAMA dengan master karena lantai CMC menang di kedua sisi.'
+                        : '',
+                ),
+                $varian->turunanUKoreksi === VarianMasterTimbangan::U_KOREKSI_BAGI_AKAR3
+                    ? 'keputusan pemilik 16 Sep 2026 (butir 3, T2); master substitusi `PERHITUNGAN U95%-Weighing` ui = U/akar 3; '
+                        .'docs/pertanyaan-lab-timbangan.md T2; docs/pertanyaan-lab-adu-cetak-massa-volume.md PK4-2/PK4-3'
+                    : 'keputusan pemilik 16 Sep 2026 (butir 3, T2); master kg `PERHITUNGAN U95%-Weighing` ui = U, tercetak di '
+                        .'`SERTIFIKAT!H49:H53,W49:W53`; docs/pertanyaan-lab-timbangan.md T2; '
+                        .'docs/pertanyaan-lab-adu-cetak-massa-volume.md PK4-2/PK4-3',
+                sprintf(
+                    'ui = %s %s, U95 Weighing hitung %s, tercetak %s %s',
+                    $pb::angka($uiMaster), $satuan, $pb::angka($hitungMaster), $pb::angka($cetakMaster), $satuan,
+                ),
+                sprintf(
+                    'ui = %s %s (U/k), U95 Weighing hitung %s, tercetak %s %s',
+                    $pb::angka($uiSistem), $satuan, $pb::angka((float) $t['u95_penimbangan_hitung']),
+                    $pb::angka($cetakSistem), $satuan,
+                ),
+                $tertutupLantai
+                    ? $pb::ARAH_NETRAL
+                    : ($selisih < 0 ? $pb::ARAH_TIDAK_KONSERVATIF : $pb::ARAH_KONSERVATIF),
+                $cetakSistem,
+                [
+                    'titik_ke' => $ke,
+                    'ui_master' => $uiMaster,
+                    'ui_sistem' => $uiSistem,
+                    'u95_weighing_hitung_master' => $hitungMaster,
+                    'u95_weighing_hitung_sistem' => (float) $t['u95_penimbangan_hitung'],
+                    'u95_weighing_cetak_master' => $cetakMaster,
+                    'u95_weighing_cetak_sistem' => $cetakSistem,
+                ],
+            );
+        }
+
+        if ($ke !== self::TITIK_MASTER_RUSAK) {
+            return $catatan;
+        }
+
+        // --- T6 -----------------------------------------------------------
+        if ($varian->kode === VarianMasterTimbangan::GRAM) {
+            $drift = array_values(array_filter(
+                $t['budget_koreksi'],
+                static fn (array $k): bool => $k['sumber'] === 'mass_instability',
+            ));
+            // Slot Mass 2 & 3 = indeks 1 & 2 dari enam baris drift.
+            $uDrift23 = [(float) ($drift[1]['u'] ?? 0.0), (float) ($drift[2]['u'] ?? 0.0)];
+
+            if ($uDrift23[0] > 0.0 || $uDrift23[1] > 0.0) {
+                $versiMaster = [];
+                $dihitung = 0;
+
+                foreach ($t['budget_koreksi'] as $k) {
+                    if ($k['sumber'] === 'mass_instability') {
+                        if ($dihitung === 1 || $dihitung === 2) {
+                            $k['u'] = 0.0;
+                        }
+                        $dihitung++;
+                    }
+
+                    $versiMaster[] = $k;
+                }
+
+                $hitungMaster = (float) $this->kalkulator()
+                    ->agregasiPembanding($versiMaster)['ketidakpastian_diperluas'];
+                $cetakMaster = $lantai($hitungMaster);
+                $cetakSistem = (float) $t['u95_koreksi'];
+                $tertutupLantai = abs($cetakSistem - $cetakMaster) <= 1e-12 * max(1.0, abs($cetakMaster));
+
+                $catatan[] = $pb::baris(
+                    'timbangan',
+                    'gram_titik9_drift_mass_2_3',
+                    'Titik ke-9 master gram: komponen drift Mass 2 dan Mass 3 di sheet `PERHITUNGAN U95% - Correction` '
+                    .'menunjuk `FC!B80` dan `FC!B81` (tiga baris terlalu jauh; blok titik 9 ada di baris 76-78) sehingga '
+                    .'keping 20 g dan 5 g menyumbang drift NOL. Sistem membacanya dari baris yang benar '
+                    .'(kerusakan salin-tempel master, dihitung benar).',
+                    '`PERHITUNGAN U95% - Correction` master gram, blok POINT 9, `FC!B80`/`FC!B81`; '
+                    .'docs/pertanyaan-lab-timbangan.md T6',
+                    sprintf(
+                        'drift Mass 2 dan 3 = 0, U95 Correction hitung %s, tercetak %s %s',
+                        $pb::angka($hitungMaster), $pb::angka($cetakMaster), $satuan,
+                    ),
+                    sprintf(
+                        'drift Mass 2 = %s, Mass 3 = %s, U95 Correction hitung %s, tercetak %s %s',
+                        $pb::angka($uDrift23[0]), $pb::angka($uDrift23[1]),
+                        $pb::angka((float) $t['u95_koreksi_hitung']), $pb::angka($cetakSistem), $satuan,
+                    ),
+                    $tertutupLantai ? $pb::ARAH_NETRAL : $pb::ARAH_KONSERVATIF,
+                    $cetakSistem,
+                    [
+                        'titik_ke' => $ke,
+                        'drift_mass_2_sistem' => $uDrift23[0],
+                        'drift_mass_3_sistem' => $uDrift23[1],
+                        'u95_koreksi_hitung_master' => $hitungMaster,
+                        'u95_koreksi_hitung_sistem' => (float) $t['u95_koreksi_hitung'],
+                        'u95_koreksi_cetak_master' => $cetakMaster,
+                        'u95_koreksi_cetak_sistem' => $cetakSistem,
+                    ],
+                );
+            }
+        }
+
+        // --- T7 -----------------------------------------------------------
+        if ($varian->kode === VarianMasterTimbangan::SUBSTITUSI) {
+            $uiSistem = 0.0;
+            $versiMaster = [];
+
+            foreach ($t['budget_koreksi'] as $k) {
+                if ($k['sumber'] === 'weight_standard') {
+                    $uiSistem = (float) $k['u'];
+                    $k['u'] = self::UI_WEIGHT_STANDARD_MASTER_SUB_TITIK_9;
+                }
+
+                $versiMaster[] = $k;
+            }
+
+            $hitungMaster = (float) $this->kalkulator()
+                ->agregasiPembanding($versiMaster)['ketidakpastian_diperluas'];
+            $cetakMaster = $lantai($hitungMaster);
+            $cetakSistem = (float) $t['u95_koreksi'];
+            $tertutupLantai = abs($cetakSistem - $cetakMaster) <= 1e-12 * max(1.0, abs($cetakMaster));
+
+            $catatan[] = $pb::baris(
+                'timbangan',
+                'substitusi_titik9_weight_standard',
+                'Titik ke-9 master substitusi: komponen Weight Standard dibaca dari WORKBOOK LAIN lewat tautan luar '
+                .'`[3]` (master kg) yang nilainya tinggal cache, sedangkan sistem membacanya dari tabel anak '
+                .'timbangan berkasnya sendiri (kerusakan salin-tempel master, dihitung benar).'
+                .($tertutupLantai
+                    ? ' Pada titik ini angka cetak SAMA dengan master karena lantai CMC menang di kedua sisi.'
+                    : ''),
+                '`PERHITUNGAN U95% - Correction` master substitusi, blok POINT 9, '
+                ."`'[3]PERHITUNGAN FC'!F74:G76`; docs/pertanyaan-lab-timbangan.md T7",
+                sprintf(
+                    'ui Weight Standard = %s (cache tautan luar, konstan di berkasnya), U95 Correction hitung %s, '
+                    .'tercetak %s %s',
+                    $pb::angka(self::UI_WEIGHT_STANDARD_MASTER_SUB_TITIK_9), $pb::angka($hitungMaster),
+                    $pb::angka($cetakMaster), $satuan,
+                ),
+                sprintf(
+                    'ui Weight Standard = %s, U95 Correction hitung %s, tercetak %s %s',
+                    $pb::angka($uiSistem), $pb::angka((float) $t['u95_koreksi_hitung']),
+                    $pb::angka($cetakSistem), $satuan,
+                ),
+                $tertutupLantai ? $pb::ARAH_NETRAL : $pb::ARAH_KONSERVATIF,
+                $cetakSistem,
+                [
+                    'titik_ke' => $ke,
+                    'ui_weight_standard_master' => self::UI_WEIGHT_STANDARD_MASTER_SUB_TITIK_9,
+                    'ui_weight_standard_sistem' => $uiSistem,
+                    'u95_koreksi_hitung_master' => $hitungMaster,
+                    'u95_koreksi_hitung_sistem' => (float) $t['u95_koreksi_hitung'],
+                    'u95_koreksi_cetak_master' => $cetakMaster,
+                    'u95_koreksi_cetak_sistem' => $cetakSistem,
+                ],
+            );
+        }
+
+        return $catatan;
     }
 
     /**
