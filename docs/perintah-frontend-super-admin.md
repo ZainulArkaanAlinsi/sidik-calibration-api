@@ -42,6 +42,8 @@ Bertindak sebagai Frontend Engineer untuk aplikasi lab PT Sidik (Flutter).
 | Daftar & detail pelanggan, undang, batalkan undangan, PIC admin | ya | ya | 403 |
 | **BARU** Daftar anggota + undangan menunggu per perusahaan | ya | ya | 403 |
 | **BARU** Cabut (nonaktifkan) anggota pelanggan | ya | ya | 403 |
+| **BARU** Daftar alat ringkas satu pelanggan (kursor) | ya | ya | 403 |
+| **BARU** Riwayat sertifikat satu alat (kursor) | ya | ya | teknisi & viewer **boleh** (teknisi: hanya sesinya sendiri); pelanggan 403 |
 | Daftar pengguna lab (`GET /users`) | ya | ya | 403 |
 | Ubah data akun, setujui/tolak pendaftar, setel ulang sandi orang lain | ya (sudah ada, tidak berubah) | ya | 403 |
 | **BARU** Tambah akun **admin** | **403** | ya | 403 |
@@ -208,6 +210,140 @@ Galat:
 | 403 | — | peran bukan admin/super admin | — |
 | 429 | — | throttle | — |
 
+### 3.4 BARU — melacak alat milik satu pelanggan (daftar ringkas, kursor)
+
+Untuk tab "Alat" di detail Pelanggan. Yang **sudah ada tapi tidak cukup**: `GET /api/equipments?customer_id=`
+(paginasi `page`, bentuk penuh tanpa jumlah/riwayat sertifikat) dan `GET /api/certificates?customer_id=`
+(paginasi `page`, satu daftar campur untuk semua alat). Dua-duanya tetap ada dan tidak berubah; endpoint ini
+menambah bentuk ringkas + paginasi **kursor** supaya daftar panjang tidak dimuat sekaligus.
+
+`GET /api/customers/{customer}/alat?cursor=&limit=` — `admin`, `super_admin`. Throttle `alat-pelanggan-lab`
+60/menit per akun.
+
+| Query | Aturan |
+|---|---|
+| `limit` | opsional, bilangan bulat **1–50**, bawaan 20. Di luar itu → `422 errors.limit` (tidak dipotong diam-diam) |
+| `cursor` | opsional; **nilai opak** dari `meta.next_cursor` halaman sebelumnya — jangan dibuat, dibaca, atau disimpan lintas sesi. Rusak/bukan dari server → `422 errors.cursor` |
+
+Urutan tetap: alat **terbaru didaftarkan dulu** (id menurun) — stabil walau ada alat baru masuk saat menggulir.
+Alat yang sudah dihapus tidak ikut. Respons `200`:
+
+```json
+{
+  "data": [
+    {
+      "id": 118,
+      "nama_alat": "Termometer Digital",
+      "merk": "Fluke",
+      "model": "1524",
+      "serial_number": "SN-2231",
+      "no_identifikasi": "TH-014",
+      "status": "aktif",
+      "status_alat": "mendekati_jadwal",
+      "tanggal_kalibrasi_terakhir": "2025-12-03",
+      "tanggal_jatuh_tempo": "2026-12-02",
+      "hari_ke_jatuh_tempo": 14,
+      "jumlah_sertifikat": 3,
+      "sertifikat_terbaru": {
+        "id": 31,
+        "nomor": "CAL/2025/12/0007",
+        "diterbitkan_pada": "2025-12-03",
+        "status": "terbit",
+        "status_dokumen": "berlaku"
+      }
+    }
+  ],
+  "meta": { "limit": 20, "next_cursor": "azE6MTE4", "ada_lagi": true }
+}
+```
+
+- `status` = kosakata lab yang sama dengan `GET /equipments` (`aktif` \| `overdue` \| `nonaktif`).
+- `status_alat` = **kode yang sama persis** dengan yang dilihat pelanggan di aplikasinya (`terkalibrasi` \|
+  `mendekati_jadwal` \| `lewat_jadwal` \| `belum_pernah` \| `nonaktif`; dihitung oleh fungsi yang sama dengan
+  aplikasi pelanggan, jendela "mendekati" = 30 hari). Jangan menghitung ulang di klien.
+- `tanggal_jatuh_tempo` = jadwal kalibrasi ulang alat itu; `hari_ke_jatuh_tempo` negatif = sudah lewat; `null`
+  bila belum ada jadwal.
+- `jumlah_sertifikat` = semua baris sertifikat alat itu, **status apa pun** (terbit, digantikan, ditarik,
+  dibatalkan, gagal, menunggu). Aplikasi pelanggan hanya melihat yang terbit/dibatalkan — angkanya boleh lebih
+  kecil di sana; itu bukan beda data.
+- `sertifikat_terbaru` = baris sertifikat **terbaru dibuat** (id terbesar, status apa pun) atau `null`. Arti
+  `status` / `status_dokumen`: lihat tabel §3.5.
+- `meta.next_cursor` = `null` dan `ada_lagi: false` di halaman terakhir. Kirim `next_cursor` apa adanya ke
+  panggilan berikutnya sampai `ada_lagi` false. Halaman kosong = perusahaan belum punya alat.
+
+Galat: `404` (perusahaan bukan milik lab ini / tidak ada — **dijawab sebelum** validasi `limit`/`cursor`, jadi
+query rusak ke perusahaan lab lain tetap `404`), `422` (`limit`/`cursor`), `403`, `429`.
+
+### 3.5 BARU — riwayat sertifikat SATU alat (tahun ke tahun, kursor)
+
+Untuk layar "Riwayat sertifikat" dari satu alat (nomor seri yang sama dikalibrasi ulang tiap tahun).
+Sertifikat lama **tidak pernah tertimpa**: revisi/terbit ulang melahirkan baris BARU (`…-R1`), dan baris lama
+tetap tampil dengan `status_dokumen: "digantikan"` + penunjuk ke penggantinya.
+
+`GET /api/equipments/{equipment}/sertifikat?cursor=&limit=` — **semua peran internal** (`admin`, `super_admin`,
+`teknisi`, `viewer`), sama dengan `GET /api/equipments/{id}`. Aturan peran yang sudah berlaku di daftar
+sertifikat: **teknisi hanya melihat sertifikat dari sesi kalibrasi miliknya sendiri** (alat yang sama bisa
+tampak lebih sedikit baris baginya); admin, super admin, viewer melihat semua. Throttle `riwayat-sertifikat-alat`
+60/menit per akun. `limit`/`cursor` seperti §3.4.
+
+Urutan tetap: **terbaru dibuat dulu** (id menurun). Untuk sertifikat normal ini sama dengan terbaru terbit
+dulu; revisi selalu lebih baru dari aslinya. Respons `200`:
+
+```json
+{
+  "data": [
+    {
+      "id": 40,
+      "nomor": "CAL/2025/12/0007-R1",
+      "revisi_ke": 1,
+      "status": "terbit",
+      "status_dokumen": "berlaku",
+      "diterbitkan_pada": "2026-01-15",
+      "berlaku_sampai": "2026-12-02",
+      "tahun": 2026,
+      "bulan": 1,
+      "revisi_dari": { "id": 31, "nomor": "CAL/2025/12/0007" },
+      "digantikan_oleh": null,
+      "ditarik_pada": null,
+      "dibatalkan_pada": null
+    },
+    {
+      "id": 31,
+      "nomor": "CAL/2025/12/0007",
+      "revisi_ke": 0,
+      "status": "terbit",
+      "status_dokumen": "digantikan",
+      "diterbitkan_pada": "2025-12-03",
+      "berlaku_sampai": "2026-12-02",
+      "tahun": 2025,
+      "bulan": 12,
+      "revisi_dari": null,
+      "digantikan_oleh": { "id": 40, "nomor": "CAL/2025/12/0007-R1", "diterbitkan_pada": "2026-01-15" },
+      "ditarik_pada": null,
+      "dibatalkan_pada": null
+    }
+  ],
+  "meta": { "limit": 20, "next_cursor": null, "ada_lagi": false }
+}
+```
+
+| Field | Arti |
+|---|---|
+| `status` | status baris di server, apa adanya: `terbit` \| `ditarik` \| `dibatalkan` \| `gagal` \| `menunggu_generate`. `gagal` = PDF gagal dirender (admin bisa mencoba lagi lewat `POST /certificates/{id}/retry`); `ditarik` = ditarik kembali ke lembar kerja |
+| `status_dokumen` | label yang sama dengan yang dilihat pelanggan: `berlaku` \| `digantikan` \| `dibatalkan` \| `ditarik` \| `belum_terbit` (untuk `gagal`/`menunggu_generate`). `digantikan` = ada revisi yang terbit atau dibatalkan (pembatalan revisi tidak menghidupkan pendahulunya) |
+| `revisi_ke` | 0 = asli; `n` = revisi ke-n (`…-R<n>`) |
+| `digantikan_oleh` | **hanya bila penggantinya TERBIT** (id, nomor, tanggal terbit); `null` bila tidak ada pengganti sah — termasuk bila revisinya dibatalkan |
+| `revisi_dari` | sertifikat asal bila baris ini revisi; selain itu `null` |
+| `tahun`, `bulan` | dari `diterbitkan_pada` (1–12) untuk pengelompokan di UI; `null` bila belum terbit |
+| `diterbitkan_pada`, `berlaku_sampai`, `ditarik_pada`, `dibatalkan_pada` | tanggal (`YYYY-MM-DD`) / waktu ISO-8601, `null` bila tidak berlaku |
+
+Yang **tidak** ada di baris ini (sengaja ringkas): isi `snapshot`/angka, alasan revisi/penarikan, path berkas.
+Buka satu sertifikat lewat `GET /api/certificates/{id}`; PDF lewat tautan unduh yang sudah ada
+(`GET /api/certificates/{id}/download`, berurutan sama).
+
+Galat: `404` (alat bukan milik lab ini / tidak ada / sudah dihapus — dijawab sebelum validasi query), `422`
+(`limit`/`cursor`), `403` (hanya akun non-internal, mis. token aplikasi pelanggan), `401`, `429`.
+
 ## 4. Pengguna (akun internal lab)
 
 ### 4.1 Sudah ada — tidak berubah
@@ -333,6 +469,8 @@ Galat:
 | Pelanggan (daftar / detail / tambah / ubah) | `/customers*` | admin, super admin |
 | Pelanggan → Anggota & Undangan | `GET /customers/{id}/anggota` + undang/batalkan/cabut | admin, super admin |
 | Pelanggan → PIC admin | `PATCH /customers/{id}/pic-admin` | admin, super admin |
+| Pelanggan → Alat (daftar ringkas) | `GET /customers/{id}/alat` | admin, super admin |
+| Alat → Riwayat sertifikat | `GET /equipments/{id}/sertifikat` | semua peran internal |
 
 Bentuk visual setiap layar **bukan urusan berkas ini** — tanyakan ke pemilik per layar (aturan UI proyek).
 
@@ -344,12 +482,15 @@ Bentuk visual setiap layar **bukan urusan berkas ini** — tanyakan ke pemilik p
 |---|---|---|---|
 | `anggota-pelanggan.lihat` | `GET /customers/{customer}/anggota` | ya | ya |
 | `anggota-pelanggan.cabut` | `POST /customers/{customer}/anggota/{anggota}/nonaktifkan` | ya | ya |
+| `pelanggan.alat-lihat` | `GET /customers/{customer}/alat` | ya | ya |
+| `alat.riwayat-sertifikat` | `GET /equipments/{equipment}/sertifikat` | ya | ya (teknisi & viewer juga ya) |
 | `pengguna.buat-admin` | `POST /users` | tidak | ya |
 | `pengguna.ubah-status` | `POST /users/{user}/nonaktifkan` (+ `aktifkan`, izin sama) | tidak | ya |
 
 Kunci yang sudah ada dan relevan, tidak berubah: `pengguna.kelola` (`GET /users`), `pengguna.setujui`,
 `pelanggan.kelola`, `anggota-pelanggan.undang`, `anggota-pelanggan.pic-admin`, `pengajuan-akun.lihat`,
-`pengajuan-akun.putuskan`, `teknisi.kelola`. Teknisi/viewer: tidak satu pun kunci di §6.
+`pengajuan-akun.putuskan`, `teknisi.kelola`. Teknisi/viewer hanya mendapat `alat.riwayat-sertifikat` dari tabel di atas
+(teknisi: sertifikat sesinya sendiri); kunci lain di §6 tidak.
 
 ## 7. Yang SENGAJA tidak ada (jangan diminta, jangan dibuat di klien)
 
