@@ -28,6 +28,9 @@ Bertindak sebagai Frontend Engineer untuk aplikasi lab PT Sidik (Flutter).
    server tetap menolak walau tombol sempat tampil.
 4. **Alasan wajib untuk aksi yang memutus akses.** `alasan` (min 3, maks 500 karakter) dikirim apa adanya
    ke jejak audit. Jangan mengisinya otomatis dengan teks bawaan — jejaknya harus ucapan orang yang menekan.
+   Panjang dihitung **per karakter**, bukan byte (huruf bertanda dan emoji = 1 karakter); batas 500 TIDAK
+   berubah (catatan 18 Nov sore: server sempat 500 di MySQL untuk alasan sangat panjang — sudah diperbaiki di
+   sisi server, alasan lengkap tetap tersimpan utuh; klien tidak perlu berubah dan tidak boleh memperpendek batas).
 5. **Tidak ada hapus.** Akun dan keanggotaan **dinonaktifkan**, tidak pernah dihapus (riwayat sertifikat &
    audit menempel di sana). Jangan menampilkan tombol "Hapus" untuk akun pengguna maupun anggota.
 6. **Sandi tidak pernah dikembalikan server.** Sandi awal akun baru hanya diketahui pembuatnya; tampilkan

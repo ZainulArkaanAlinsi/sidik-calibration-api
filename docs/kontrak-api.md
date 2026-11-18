@@ -3676,6 +3676,9 @@ Izin baru di `GET /me/permissions`: `anggota-pelanggan.lihat`, `anggota-pelangga
 Perintah artisan (bukan endpoint): `php artisan pelanggan:isi-nama-normal` — mengisi `customers.nama_normal` yang
 kosong; dry-run bawaan, `--jalankan` menulis, keluaran hanya hitungan. Dijalankan pemilik di server.
 
+Isian `alasan` (3–500 karakter, dihitung per karakter) disimpan utuh di `audit_logs.new_data.alasan`; kolom `note`
+(`string(500)`) hanya ringkasan yang dipotong ke 500 karakter (`AuditLog::catatan()`).
+
 Aturan yang tetap dan sengaja tidak dilonggarkan: super admin terkurung di lab sendiri (lab lain dan akun
 `super_admin`/pelanggan → `404`, tanpa membedakan "tidak ada" dari "bukan punyamu", termasuk waktu `alasan`
 kosong); `super_admin` tidak pernah lahir lewat API; `viewer` tidak ditawarkan untuk akun baru; tidak ada hapus
