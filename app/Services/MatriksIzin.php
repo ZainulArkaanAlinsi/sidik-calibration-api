@@ -145,6 +145,11 @@ class MatriksIzin
         'tanda-tangan.kelola' => ['POST', 'api/organization/tanda-tangan'],
         'pengguna.kelola' => ['GET', 'api/users'],
         'pengguna.setujui' => ['POST', 'api/users/{user}/approve'],
+        // SUPER ADMIN saja (18 Nov 2026) — grup `role:super_admin` sendiri di
+        // rutenya. `ubah-status` mewakili nonaktifkan DAN aktifkan: izinnya sama,
+        // jadi satu kunci cukup (aturan "*.kelola" di atas).
+        'pengguna.buat-admin' => ['POST', 'api/users'],
+        'pengguna.ubah-status' => ['POST', 'api/users/{user}/nonaktifkan'],
         // Riwayat perubahan data (12 Nov 2026). Izin TERSENDIRI untuk
         // `GET /audit-logs*` (daftar + `/export`): sebelumnya aplikasi harus
         // menebaknya dari `pengguna.kelola` (sama-sama admin-only), dan tebakan

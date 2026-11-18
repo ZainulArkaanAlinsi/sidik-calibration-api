@@ -506,6 +506,29 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
             ->middleware('throttle:data-acuan-tulis');
     });
 
+/*
+| Pengelolaan akun internal oleh SUPER ADMIN saja (18 Nov 2026) — menggantikan
+| layar Pengguna di panel web. Menambah akun admin dan memutus/memulihkan akses
+| akun internal itu hak pengendali, bukan meja depan: admin tetap memegang
+| `PUT /users/{user}` yang lama, tidak diperluas. Kontrak:
+| docs/perintah-frontend-super-admin.md §4.
+|
+| Grup SENDIRI di luar grup `role:admin,teknisi,viewer` di bawah, sama seperti
+| `data-acuan/…/aktifkan` di atas: `MatriksIzin` menyilang SEMUA `role:` yang
+| menempel di sebuah rute, jadi rute super-admin-saja yang bersarang di grup
+| luar itu akan dilaporkan tidak boleh untuk siapa pun. Role yang dibolehkan
+| satu-satunya `super_admin` — `EnsureUserHasRole::lolosSuperAdmin()` tidak
+| meloloskan admin ke sini, dan `super_admin` tidak pernah lahir dari rute ini.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
+    ->prefix('users')->group(function () {
+        Route::post('/', [UserController::class, 'store'])
+            ->middleware('throttle:akun-lab-buat');
+        Route::post('/{user}/nonaktifkan', [UserController::class, 'nonaktifkan'])
+            ->middleware('throttle:akun-lab-status');
+        Route::post('/{user}/aktifkan', [UserController::class, 'aktifkan'])
+            ->middleware('throttle:akun-lab-status');
+    });
 
 /*
 |--------------------------------------------------------------------------

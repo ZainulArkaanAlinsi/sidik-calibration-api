@@ -3,24 +3,58 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BuatAkunAdminRequest;
 use App\Http\Resources\UserResource;
+use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\PenjagaOrganisasi;
+use App\Support\AlasanAksi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
  * Approval akun. Semua endpoint di sini admin-only (dijaga middleware `role:admin`
  * di routes/api.php) — tanpa ini, register jadi jebakan: orang daftar, statusnya
  * pending selamanya, nggak ada yang bisa nyetujuin.
+ *
+ * Pengecualian (18 Nov 2026): `store`, `nonaktifkan`, dan `aktifkan` SUPER ADMIN
+ * saja — grup `role:super_admin` di routes, bukan `role:admin`. Menambah akun
+ * admin dan memutus/memulihkan akses akun internal itu hak pengendali, bukan
+ * meja depan; kemampuan lama `PUT /users/{user}` (status & role) untuk admin
+ * tidak diperluas maupun dicabut.
  */
 class UserController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        // Saringan tambahan (18 Nov 2026), aditif — bentuk respons tidak berubah.
+        // `role` divalidasi ke `User::roles()`: `super_admin` dan `pelanggan`
+        // memang tidak pernah muncul di daftar ini, jadi memintanya 422 (bukan
+        // daftar kosong yang kelihatan seperti "tidak ada orangnya").
+        $filter = $request->validate([
+            'role' => ['sometimes', 'nullable', 'string', Rule::in(User::roles())],
+            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
+        ]);
+
         $users = User::query()
             ->where('organization_id', $request->user()->organization_id)
+            ->when(
+                filled($filter['role'] ?? null),
+                fn ($query) => $query->where('role', $filter['role']),
+            )
+            ->when(filled($filter['search'] ?? null), function ($query) use ($filter) {
+                $cari = '%'.$filter['search'].'%';
+
+                // Kurungnya WAJIB: tanpa pembungkus, `orWhere` naik ke tingkat atas
+                // dan menyeret akun lab/role lain yang email-nya kebetulan cocok.
+                $query->where(fn ($q) => $q
+                    ->where('name', 'like', $cari)
+                    ->orWhere('email', 'like', $cari)
+                    ->orWhere('employee_id', 'like', $cari));
+            })
             // Cuma akun INTERNAL. `organization_id` nggak memisahkan apa-apa di
             // sini: pelanggan PT Sidik memang duduk di organisasi PT Sidik, jadi
             // tanpa saringan ini seluruh akun pelanggan bocor ke daftar pengguna
@@ -143,6 +177,163 @@ class UserController extends Controller
         $user->tokens()->delete();
 
         return response()->json(['message' => 'Password akun berhasil disetel ulang.']);
+    }
+
+    /**
+     * `POST /api/users` — super admin menambah akun ADMIN (Master Data).
+     *
+     * Siapa yang boleh dijaga SATU gerbang: `role:super_admin` di rutenya
+     * (`MatriksIzin` membaca gerbang yang sama, jadi `/me/permissions` tidak bisa
+     * berbeda). Controller ini sengaja tidak mengulang pemeriksaan peran.
+     *
+     * Yang dijaga di sini: role dipaksa `admin` (`BuatAkunAdminRequest`),
+     * organisasi dari akun yang login (kiriman klien tidak dibaca), status
+     * langsung `aktif` (dibuatkan orang yang berwenang, tanpa antrean approval),
+     * dan sandinya tidak pernah ikut di balasan. Jejaknya: baris `dibikin` dari
+     * `Diaudit` (pelaku = super admin, sandi disensor).
+     */
+    public function store(BuatAkunAdminRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $akun = User::create([
+            'organization_id' => $request->user()->organization_id,
+            'name' => $data['nama'],
+            'employee_id' => $data['employee_id'],
+            'email' => $data['email'],
+            'department' => $data['department'] ?? null,
+            'password' => $data['password'],
+            'role' => User::ROLE_ADMIN,
+            'status' => User::STATUS_AKTIF,
+        ]);
+
+        return response()->json([
+            'message' => 'Akun admin dibuat.',
+            'data' => new UserResource($akun),
+        ], 201);
+    }
+
+    /**
+     * `POST /api/users/{user}/nonaktifkan` — super admin menonaktifkan akun internal.
+     *
+     * Bukan hapus: namanya menempel di sertifikat & audit. Tokennya dicabut di
+     * request yang sama (token Sanctum di sini tanpa masa berlaku), dan
+     * `EnsureUserHasRole` menolak akun tidak aktif walau ada token yang lolos.
+     *
+     * Sasarannya tidak pernah akun `super_admin` (`pastikanAkunInternal()`
+     * menjawab 404), jadi pemanggil tidak bisa mengunci dirinya sendiri maupun
+     * super admin lain lewat sini.
+     */
+    public function nonaktifkan(Request $request, User $user): JsonResponse
+    {
+        $this->pastikanBolehDikelola($request, $user);
+
+        $alasan = AlasanAksi::baca($request);
+
+        if ($user->status === User::STATUS_NONAKTIF) {
+            return response()->json([
+                'kode' => 'sudah_nonaktif',
+                'message' => 'Akun ini sudah nonaktif.',
+            ], 422);
+        }
+
+        $this->ubahStatus($request, $user, User::STATUS_NONAKTIF, AuditLog::ACTION_AKUN_DINONAKTIFKAN, $alasan);
+
+        return response()->json([
+            'message' => 'Akun dinonaktifkan. Seluruh sesinya dicabut.',
+            'data' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * `POST /api/users/{user}/aktifkan` — super admin memulihkan akun nonaktif.
+     *
+     * Sandi dan role TIDAK berubah. Akun `pending` ditolak (`perlu_persetujuan`):
+     * jalan keluarnya `approve`, yang menetapkan role-nya — mengaktifkan
+     * langsung akan memberi akses dengan role bawaan pendaftar.
+     */
+    public function aktifkan(Request $request, User $user): JsonResponse
+    {
+        $this->pastikanBolehDikelola($request, $user);
+
+        $alasan = AlasanAksi::baca($request, wajib: false);
+
+        if ($user->status === User::STATUS_AKTIF) {
+            return response()->json([
+                'kode' => 'sudah_aktif',
+                'message' => 'Akun ini sudah aktif.',
+            ], 422);
+        }
+
+        if ($user->status !== User::STATUS_NONAKTIF) {
+            return response()->json([
+                'kode' => 'perlu_persetujuan',
+                'message' => 'Akun ini belum disetujui. Setujui dulu lewat persetujuan akun supaya perannya ditetapkan.',
+            ], 422);
+        }
+
+        $this->ubahStatus($request, $user, User::STATUS_AKTIF, AuditLog::ACTION_AKUN_DIAKTIFKAN, $alasan);
+
+        return response()->json([
+            'message' => 'Akun diaktifkan kembali.',
+            'data' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * Penjaga kepemilikan untuk aksi status: lab yang sama + akun internal.
+     *
+     * Lewat `PenjagaOrganisasi` (bukan `abort_if` polos seperti `pastikanSatuOrganisasi()`
+     * di bawah) supaya percobaan menembus lab tercatat di `audit_logs`; jawabannya
+     * tetap 404 yang sama.
+     */
+    private function pastikanBolehDikelola(Request $request, User $user): void
+    {
+        PenjagaOrganisasi::pastikanSatu($request, $user);
+
+        $this->pastikanAkunInternal($user);
+    }
+
+    /**
+     * Ubah status + (kalau nonaktif) cabut token + tulis jejak beralasan, SATU transaksi.
+     *
+     * Dua baris audit, dan itu disengaja: `Diaudit` menulis `diubah` (status lama →
+     * baru) dari event model; baris kedua menambahkan yang tidak bisa diturunkan dari
+     * diff kolom — peran pelaku dan alasannya. Kalau salah satunya gagal ditulis,
+     * statusnya ikut batal (aturan `Diaudit`: perubahan tak tercatat lebih berbahaya
+     * daripada perubahan yang gagal).
+     */
+    private function ubahStatus(Request $request, User $user, string $statusBaru, string $aksi, ?string $alasan): void
+    {
+        /** @var User $pelaku */
+        $pelaku = $request->user();
+        $statusLama = $user->status;
+
+        DB::transaction(function () use ($user, $pelaku, $statusLama, $statusBaru, $aksi, $alasan): void {
+            $user->forceFill(['status' => $statusBaru])->save();
+
+            if ($statusBaru === User::STATUS_NONAKTIF) {
+                $user->tokens()->delete();
+            }
+
+            AuditLog::create([
+                'organization_id' => $user->organization_id,
+                'entity_type' => $user->getTable(),
+                'entity_id' => $user->getKey(),
+                'action' => $aksi,
+                'old_data' => ['status' => $statusLama],
+                'new_data' => [
+                    'status' => $statusBaru,
+                    'role_akun' => $user->role,
+                    'peran_pelaku' => $pelaku->role,
+                    'alasan' => $alasan,
+                ],
+                'changed_by' => $pelaku->getKey(),
+                'note' => $alasan === null
+                    ? 'Oleh '.$pelaku->role.'.'
+                    : 'Oleh '.$pelaku->role.'. Alasan: '.$alasan,
+            ]);
+        });
     }
 
     /**

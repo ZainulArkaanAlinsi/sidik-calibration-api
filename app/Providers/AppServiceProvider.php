@@ -380,6 +380,12 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('alat-pelanggan-lab', 60);
         $perMenitPengguna('riwayat-sertifikat-alat', 60);
 
+        // Akun internal lab oleh SUPER ADMIN (18 Nov 2026): menonaktifkan/mengaktifkan
+        // memutus atau memulihkan akses orang (30/menit per akun, satu ember untuk
+        // dua rute); MEMBUAT akun admin jarang dan menerima sandi awal di badan
+        // permintaan, jadi jauh lebih ketat.
+        $perMenitPengguna('akun-lab-status', 30);
+        $perMenitPengguna('akun-lab-buat', 10);
 
         // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
         // dari jalur admin lab — tiap undangan mengirim email ke alamat yang

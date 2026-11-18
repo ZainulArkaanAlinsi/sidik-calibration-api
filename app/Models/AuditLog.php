@@ -90,6 +90,15 @@ class AuditLog extends Model
     public const ACTION_ANGGOTA_DICABUT = 'anggota_dicabut';
 
     /**
+     * Akun internal lab dinonaktifkan / diaktifkan kembali oleh super admin
+     * (18 Nov 2026). Entitasnya `users`; isi seperti [ACTION_ANGGOTA_DICABUT].
+     * 18 dan 15 karakter — muat di `string(20)`.
+     */
+    public const ACTION_AKUN_DINONAKTIFKAN = 'akun_dinonaktifkan';
+
+    public const ACTION_AKUN_DIAKTIFKAN = 'akun_diaktifkan';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan
