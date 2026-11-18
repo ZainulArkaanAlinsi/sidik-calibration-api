@@ -7,9 +7,9 @@ aplikasi lab (`sidik-calibration-mobile`) — tidak perlu membuka dokumen lain.
 |---|---|
 | Repo API | `sidik-calibration-api`, branch `feat/super-admin-pengelolaan` (worktree `C:\Users\USER\sidik-api-sa`) |
 | Mandat | 18 Nov 2026: panel web `/admin` (Filament) tidak dipakai lagi; kelola **Pengguna** dan **Pelanggan** pindah ke aplikasi lab |
-| Status | **KONTRAK DITULIS DULU** — endpoint bertanda **BARU** sedang diimplementasi di branch yang sama; bentuk di bawah mengikat. Bagian "Sudah ada" memakai bentuk nyata dari kode yang sudah di `main`. Berkas ini diperbarui di akhir kerja (status + hash commit + jumlah test) |
-| Kontrak panjang | `docs/kontrak-api.md` (bagian ringkas ditambahkan di akhir kerja) |
-| Gerbang | MySQL penuh **belum** dijalankan — jangan menyebut backend "selesai" ke pemilik sebelum itu |
+| Status | **Backend selesai di branch ini** (commit kode terakhir `cf4c82e5`; kontrak dikunci sejak `8874f211`): semua endpoint bertanda **BARU** hidup dan bentuknya persis seperti di bawah. 77 tes baru hijau di SQLite (`AnggotaPelangganSisiLabTest`, `KelolaAkunInternalSuperAdminTest`, `AlatDanRiwayatSertifikatLabTest`, `PelangganHitunganDanPindahAlatTest`, `IsiNamaNormalPelangganTest`) + sapuan izin/isolasi yang sudah ada tetap hijau. Contoh JSON di bawah dikunci oleh asersi tes-tes itu, bukan ditulis dari ingatan |
+| Kontrak panjang | `docs/kontrak-api.md` §20 (ringkasan tabel) |
+| Gerbang | **MySQL penuh BELUM dijalankan** dan belum ada PR/CI — jangan menyebut backend "selesai" ke pemilik sebelum itu. Branch belum di-push; belum terdeploy, jadi endpoint baru belum ada di server produksi |
 
 ---
 
@@ -470,7 +470,7 @@ Galat:
 
 | HTTP | `kode` | Arti |
 |---|---|---|
-| 404 | — | PT asal / PT tujuan bukan milik lab ini atau tidak ada, atau ada id di `alat_ids` yang bukan alat lab ini (sengaja tidak dibedakan; dijawab sebelum validasi isi) |
+| 404 | — | PT asal / PT tujuan bukan milik lab ini atau tidak ada, atau ada id di `alat_ids` yang bukan alat lab ini (sengaja tidak dibedakan). Dijawab SEBELUM validasi `alasan`/`konfirmasi`/aturan PT; hanya id yang salah tipe (mis. `"abc"`) yang `422` lebih dulu |
 | 422 | — (`errors.alat_ids`, `errors.ke_customer_id`, `errors.alasan`) | isian rusak / alasan kosong |
 | 422 | `pt_tujuan_sama` | `ke_customer_id` = PT asal |
 | 422 | `alat_bukan_milik_pt_asal` | sebagian id adalah alat lab ini tetapi milik PT lain; `data.alat_ids` = id yang salah. Muat ulang daftar alat PT asal |

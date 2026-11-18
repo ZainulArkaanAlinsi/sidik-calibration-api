@@ -3649,6 +3649,40 @@ dengan pesan sendiri (`errors.serial_number[0]`), bukan lolos validasi lalu `500
 yang memutuskan) dijawab `422` yang sama. Alat lama **tidak** dipulihkan otomatis. Unik per laboratorium
 (tidak berubah).
 
+## 20. Pengelolaan Pengguna & Anggota Pelanggan di aplikasi lab (18 Nov 2026)
+
+Menggantikan panel web `/admin` untuk dua hal: akun internal lab dan anggota perusahaan pelanggan.
+Semuanya **additive** (rute lama, field lama, dan izin lama tidak berubah). Contoh JSON, tabel galat
+(`kode` stabil), dan alur layar ada di [`perintah-frontend-super-admin.md`](perintah-frontend-super-admin.md)
+(berdiri sendiri). Ringkasnya:
+
+| Rute | Peran | Isi |
+|---|---|---|
+| `GET /customers/{customer}/anggota` | admin, super admin | Anggota (+ `pic_utama_terakhir`, `bisa_dicabut`, siapa yang menonaktifkan) dan undangan menunggu; kode undangan tidak pernah ikut |
+| `POST /customers/{customer}/anggota/{anggota}/nonaktifkan` | admin, super admin | Cabut anggota; body `{alasan}` wajib 3–500; satu pintu dengan jalur PIC utama (`Keanggotaan::nonaktifkan`); `422 pic_utama_terakhir` / `sudah_nonaktif`; throttle `pelanggan-cabut-anggota` 30/menit |
+| `POST /users` | **super admin saja** | Tambah akun **admin** (`role` hanya `admin`; `organization_id` dari token); throttle `akun-lab-buat` 10/menit |
+| `POST /users/{user}/nonaktifkan` | **super admin saja** | `{alasan}` wajib; cabut semua token; `422 sudah_nonaktif`; throttle `akun-lab-status` 30/menit |
+| `POST /users/{user}/aktifkan` | **super admin saja** | `{alasan}` opsional; sandi & role tidak berubah; `422 sudah_aktif` / `perlu_persetujuan` (akun `pending` lewat `approve`) |
+| `GET /customers/{customer}/alat` | admin, super admin | Alat PT ringkas, paginasi **kursor** (`cursor`, `limit` 1–50; kursor rusak → `422`): status kalibrasi (`status_alat` = kode yang sama dengan aplikasi pelanggan), jadwal, `jumlah_sertifikat`, `sertifikat_terbaru`; throttle `alat-pelanggan-lab` 60/menit |
+| `GET /equipments/{equipment}/sertifikat` | semua peran internal (teknisi: hanya sesinya sendiri) | Riwayat sertifikat satu alat tahun ke tahun, terbaru dibuat dulu, paginasi kursor; revisi = baris baru, yang lama tampil `digantikan` + `digantikan_oleh`; tanpa `snapshot`; throttle `riwayat-sertifikat-alat` 60/menit |
+| `GET /customers`, `GET /customers/{customer}` | admin, super admin | **Tambahan** kunci `alat_count`, `sertifikat_count` (terbit + dibatalkan, sama dengan yang dilihat pelanggan), `anggota_aktif_count`, `undangan_menunggu_count`, `tanpa_akun`, `nama_normal_kosong` — satu query per halaman; kunci lama tidak berubah |
+| `POST /customers/{customer}/pindahkan-alat` | admin, super admin | Pindahkan alat (sertifikat ikut lewat alat, **tidak disentuh**) ke PT lain di lab yang sama. `dry_run: true` = pratinjau tanpa menulis; eksekusi wajib `konfirmasi: true` + `alasan`; `422` `pt_tujuan_sama` / `alat_bukan_milik_pt_asal` / `konfirmasi_wajib`, `409` `alat_sudah_pindah`; throttle `pindah-alat-pelanggan` 10/menit; audit `alat_dipindah_pt` |
+| `GET /users` | admin, super admin | **Tambahan** query `role` (`admin`/`teknisi`/`viewer`, lain → `422`) dan `search` (nama/email/ID pegawai, ≤100); bentuk respons tidak berubah |
+
+Izin baru di `GET /me/permissions`: `anggota-pelanggan.lihat`, `anggota-pelanggan.cabut`, `pelanggan.alat-lihat`,
+`pelanggan.pindah-alat` (admin + super admin), `alat.riwayat-sertifikat` (semua peran internal),
+`pengguna.buat-admin`, `pengguna.ubah-status` (super admin saja).
+
+Perintah artisan (bukan endpoint): `php artisan pelanggan:isi-nama-normal` — mengisi `customers.nama_normal` yang
+kosong; dry-run bawaan, `--jalankan` menulis, keluaran hanya hitungan. Dijalankan pemilik di server.
+
+Aturan yang tetap dan sengaja tidak dilonggarkan: super admin terkurung di lab sendiri (lab lain dan akun
+`super_admin`/pelanggan → `404`, tanpa membedakan "tidak ada" dari "bukan punyamu", termasuk waktu `alasan`
+kosong); `super_admin` tidak pernah lahir lewat API; `viewer` tidak ditawarkan untuk akun baru; tidak ada hapus
+akun maupun hapus anggota. Jejak: tiap aksi menulis baris `audit_logs` (`anggota_dicabut`, `akun_dinonaktifkan`,
+`akun_diaktifkan`) atas nama akun yang menekan, dengan `peran_pelaku` dan `alasan`, di samping baris `diubah`
+otomatis (status lama → baru).
+
 ---
 
 ## Akun buat nyoba (seeder)
