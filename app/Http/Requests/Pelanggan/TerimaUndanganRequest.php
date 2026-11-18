@@ -23,7 +23,11 @@ class TerimaUndanganRequest extends FormRequest
         // kecil dirapikan di sini. Yang TIDAK dimaafkan `O`/`0` dan `I`/`1` —
         // abjad kodenya memang tidak memuat keduanya (lihat `KodeUndangan`),
         // dan memaafkannya berarti mengecilkan ruang tebakan diam-diam.
-        if ($this->has('kode')) {
+        //
+        // Hanya nilai SKALAR yang dirapikan: `kode` berupa array dibiarkan apa adanya
+        // supaya aturan `string` yang menjawab 422 (BUG-4), bukan cast ke
+        // string yang melempar 500.
+        if (is_scalar($this->input('kode'))) {
             $this->merge(['kode' => mb_strtoupper(preg_replace('/\s+/', '', (string) $this->input('kode')) ?? '')]);
         }
     }

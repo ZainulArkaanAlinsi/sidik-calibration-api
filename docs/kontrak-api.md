@@ -48,6 +48,32 @@ Accept: application/json
 
 **Error lain**: `401` token invalid/kadaluarsa · `403` role nggak punya akses · `404` nggak ketemu · `500` error server. Selalu ada field `message` yang layak ditampilin ke user.
 
+> **18 Nov 2026 — field bertipe salah = `422`, bukan `500`.** Pintu publik (`POST /login`,
+> `/pelanggan/v1/auth/masuk`, `/lupa-sandi`, `/atur-ulang-sandi`, `/terima-undangan`) dulu menjawab `500`
+> "Array to string conversion" bila `identifier`/`email`/`kode`/`telepon` dikirim sebagai array/objek.
+> Sekarang `422` dengan pesan pada field itu, seperti kesalahan validasi lain. Klien yang benar tidak terdampak.
+
+> **18 Nov 2026 — batas input yang dulu `500` atau tanpa batas, sekarang `422`/`404` (aditif).**
+> - `catatan` alat: maksimal **2000** karakter.
+> - Angka yang disimpan di kolom `decimal(20,8)` (`range_min`, `range_max`, `resolusi`, `toleransi` alat; `titik_ukur` &
+>   `pembacaan` kalibrasi): nilai mutlak maksimal **999.999.999.999**; lebih dari itu `422`, bukan `500`.
+> - `POST /calibrations`: maksimal **60 titik** per sesi dan paling banyak **10** pembacaan per titik (`measurements[].pembacaan`);
+>   ditolak `422` SEBELUM aturan lain diperiksa (dulu 10.000 titik menggantung > 2 menit lalu `500`).
+> - Suhu (`suhu_ruang`, `suhu_awal`, `suhu_akhir`, juga di `POST /calibrations/autoclave`): **−50 … 150 °C**;
+>   kelembaban tetap **0 … 100 %**.
+> - Id di URL (`/equipments/{id}`, `/calibrations/{id}`, `/customers/{id}`, `/standards/{id}`, `/rooms/{id}`, `/orders/{id}`, …)
+>   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`).
+> - `GET /customers?search=` membaca `%` dan `_` secara harfiah (dulu `?search=%` mengembalikan semua pelanggan).
+> - Angka **tak terhingga** (`1e400` di JSON) di semua field angka di atas → `422` pada field itu (dulu `500`
+>   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
+> - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti
+>   bila order bernomor tertinggi dihapus). Nomor yang pernah tercetak tidak dipakai ulang.
+> - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
+>   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
+> - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
+>   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
+>   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
 
 ---
@@ -308,7 +334,13 @@ Dijaga `GantiSandiLabTest`.
 ### Approval akun (admin-only) — dibutuhin biar register-nya ada gunanya
 - **`GET /api/users?status=pending`** — daftar akun yang nunggu disetujui
 - **`POST /api/users/{id}/approve`** — body `{ "role": "teknisi" }`. Admin yang nentuin role-nya di sini, bukan si pendaftar. Setelah ini `status` jadi `aktif` dan orangnya baru bisa login
-- **`POST /api/users/{id}/reject`** — tolak pendaftaran
+- **`POST /api/users/{id}/reject`** — tolak pendaftaran. **Hanya untuk akun `pending`** (18 Nov 2026): akun aktif atau nonaktif dijawab `422` `{"kode": "bukan_pending", "message": …}` dan tidak berubah. Dulu `reject` pada akun aktif menonaktifkannya sambil menjawab "Pendaftaran ditolak." — menonaktifkan akun aktif lewat `PUT /users/{id}` `{"status": "nonaktif"}`.
+
+> **✅ 18 Nov 2026 — penjaga penonaktifan (aditif, kode respons baru).** `PUT /api/users/{id}` yang memindahkan akun `aktif` ke `nonaktif`/`pending` dijawab `422` bila:
+> - `{"kode": "tidak_boleh_nonaktifkan_diri_sendiri"}` — pemanggil menonaktifkan AKUNNYA SENDIRI;
+> - `{"kode": "admin_terakhir_aktif"}` — sasarannya admin AKTIF TERAKHIR di organisasi (admin lab lain tidak dihitung; berlaku juga untuk super admin sebagai pemanggil).
+>
+> Menyetel `nonaktif` pada akun yang memang sudah nonaktif, menonaktifkan teknisi/viewer, dan menonaktifkan admin selama masih ada admin aktif lain tetap `200`. Izin tidak berubah (teknisi/viewer `403`, lab lain `404`). Dua admin yang saling menonaktifkan bersamaan: yang kedua melihat admin lain sudah nonaktif → `admin_terakhir_aktif`. Aplikasi sebaiknya menampilkan `message` apa adanya. (Belum dijaga: menurunkan role admin terakhir lewat `PUT` `role`, dan `POST /users/{id}/nonaktifkan` milik super admin — keputusan terpisah.)
 
 Kalau endpoint approve belum ada, **register jadi jebakan**: orang daftar, terus nggak pernah bisa masuk selamanya, dan nggak ada yang tahu. Jadi dua-duanya harus jalan bareng.
 
@@ -1509,6 +1541,12 @@ sebelum koreksi pertama). Sesi `disetujui` tetap terkunci (jalannya: revisi atau
 
 Asli teknisi lawan keadaan sekarang, per sel; teknisi/viewer → `403`, lab lain → `404`.
 
+> **✅ 18 Nov 2026 — angka dibandingkan sebagai angka (perbaikan, bentuk respons tidak berubah).** Dulu sel dengan nilai
+> sama tapi beda bentuk (`6` lawan `6.0`, atau `"6.00000000"` dari kolom DECIMAL) ikut ditandai `berubah: true`
+> (di TiDB 8 dari 9 sel), sehingga koreksi sungguhan tenggelam dan `jumlah_berubah` menyesatkan. Sekarang angka
+> dibandingkan sebagai angka tanpa toleransi (selisih sekecil apa pun tetap berubah); teks/boolean/null tetap
+> dibandingkan ketat.
+
 ```json
 {
   "data": {
@@ -1898,8 +1936,55 @@ HP itu garis abu-abu, bukan grafik. Kalau kena, sempitin rentangnya atau naikin
 
 Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat layar Pengaturan (admin).
 
+> **✅ 18 Nov 2026 — kode/nama yang pernah dihapus: `422` yang bisa ditindaklanjuti + endpoint Pulihkan (aditif).**
+> Indeks unik database tetap memegang kode/nama baris yang sudah dihapus (soft-delete), jadi kodenya
+> terkunci. Dulu ruangan & Instruksi Kerja menjawab `500` (validasi lebih longgar dari indeks), dan nama PT
+> menjawab `422` generik tanpa jalan keluar. Sekarang untuk `POST`/`PUT` `/rooms`, `/calibration-methods`
+> (kode + revisi), dan `/customers` (nama), bila kuncinya dipegang baris TERHAPUS:
+>
+> ```json
+> { "message": "Kode ruangan pernah dipakai dan sudah dihapus (terhapus): pulihkan yang lama atau pakai kode lain.",
+>   "errors": { "kode": ["…sama…"] },
+>   "kode": "terhapus", "id": 12, "entitas": "rooms" }
+> ```
+>
+> `entitas` ∈ `rooms` · `calibration-methods` · `customers`; `id` = baris lama (milik lab ini saja). Bila yang
+> memegang baris yang masih HIDUP, jawabannya tetap `422` lama tanpa `kode`/`id`. Dua `POST` bersamaan dengan
+> kode yang sama: yang kalah `422` (bukan `500`). Keunikan nama PT **tidak dilepas** (nama = kunci folder arsip).
+>
+> **`POST /api/{entitas}/{id}/pulihkan`** — `entitas` ∈ `rooms` · `calibration-methods` · `standards` ·
+> `equipments` · `customers`. Admin & super admin saja (sama dengan yang boleh menghapus; teknisi/viewer `403`).
+> Body opsional `{ "alasan": "…" }` (teks ≤ 300 → masuk `audit_logs.note`). Balik `200 { "data": <objek entitas> }`.
+>
+> | Kasus | Jawaban |
+> |---|---|
+> | baris lab lain / tidak ada / `id` bukan angka | `404` (sama seperti `DELETE`) |
+> | baris tidak sedang terhapus | `422` `{"kode": "tidak_terhapus"}` |
+> | alat yang PT pemiliknya masih terhapus | `422` `{"kode": "pt_terhapus", "id": <id PT>, "entitas": "customers"}` — pulihkan PT dulu |
+>
+> Satu baris `audit_logs` per pemulihan: `action = dipulihkan`, pelaku, waktu, sebelum `{deleted_at: …}` →
+> sesudah `{deleted_at: null}`, dan alasan. Baris lama tidak pernah dipulihkan otomatis.
+
 - **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`, plus **`logo_url`** (read-only, diisi lewat endpoint di bawah). Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
   > **✅ 18 Jul — response-nya lebih gemuk dari yang didokumentasiin, mobile baru nyusul makainya**: `standar_akreditasi`, `akreditasi_mulai`, `akreditasi_berakhir`, dan `akreditasi_masih_berlaku` (dihitung backend, read-only — jangan dikirim balik waktu `PUT`). Ini yang nentuin akreditasi lab (LK-285-IDN) masih sah apa nggak; sebelumnya nggak ada di layar mana pun. `settings` (array) juga ada di response tapi mobile sengaja belum kasih UI buat itu — bentuknya belum didokumentasiin.
+  >
+  > **✅ 18 Nov 2026 — `settings` di `PUT` adalah PATCH PER KUNCI (aditif, memperbaiki bug).** Dulu satu
+  > `PUT {"settings": {"prefix_sertifikat": "E2E"}}` mengganti SELURUH kolom, jadi penanda tangan, catatan
+  > KAN, saklar QR, dan kode dokumen hilang tanpa galat — dan sertifikat berikutnya tercetak dengan nama
+  > admin yang menekan approve. Sekarang:
+  > - kunci yang **tidak dikirim tidak pernah disentuh**; kunci yang dikirim menimpa nilainya saja;
+  > - **`null` pada satu kunci** membuang kunci itu (kembali ke bawaan); `settings: null` atau `{}` = tidak ada perubahan;
+  > - **kunci yang tidak dikenal → `422`** (`errors.settings`), dan tidak ada kunci lain yang ikut tertulis;
+  > - field di luar `settings` (`nama`, `alamat`, …) tidak berubah perilakunya.
+  >
+  > Kunci yang diterima (tipe → aturan): `prefix_sertifikat` (teks ≤ 20), `masa_berlaku_sertifikat_bulan`
+  > (bulat 1–120), `faktor_cakupan_default` (angka 1–10), `tampilkan_qr_di_pdf` & `tampilkan_keputusan_di_pdf`
+  > (boolean; disimpan sebagai `true`/`false` sungguhan), `penandatangan_nama`, `penandatangan_jabatan`,
+  > `kode_dokumen_form` (teks ≤ 255), `catatan_ketidakpastian`, `catatan_penggandaan` (teks ≤ 1000),
+  > `reminder_hari_sebelum` (bulat 1–3650), `desimal_sertifikat` (bulat 0–6), `ttd_geser_x_mm`,
+  > `ttd_geser_y_mm`, `ttd_lebar_mm` (angka; dibatasi saat dibaca, lihat §14). `kop_path` sengaja **tidak**
+  > bisa diubah lewat API. Klien yang mengirim balik seluruh objek `settings` hasil `GET` harus membuang
+  > `kop_path` bila ada.
 - **`POST /api/organization/logo`** · **`DELETE /api/organization/logo`** — ✅ live 25 Jul.
   Logo yang dicetak di kop sertifikat. Multipart, field **`logo`**, admin doang.
   > **PNG atau JPG doang, maks 2 MB.** WEBP ditolak `422` walau itu gambar sah:

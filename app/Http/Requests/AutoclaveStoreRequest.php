@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
 use App\Models\CalibrationSession;
+use App\Rules\AngkaTerhingga;
 use App\Rules\ItemOrderMilikAlat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -82,8 +83,8 @@ class AutoclaveStoreRequest extends FormRequest
             'room_id' => ['sometimes', 'nullable', Rule::exists('rooms', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
             'calibration_method_id' => ['sometimes', 'nullable', Rule::exists('calibration_methods', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
             'thermohygro_standard_id' => ['sometimes', 'nullable', Rule::exists('standards', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
-            'suhu_awal' => ['sometimes', 'nullable', 'numeric'],
-            'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_awal' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
+            'suhu_akhir' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'waktu_awal' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
@@ -183,7 +184,7 @@ class AutoclaveStoreRequest extends FormRequest
             $aturan[$jalur.'.*.confidence'] = ['nullable', 'numeric', 'between:0,1'];
         }
 
-        return $aturan;
+        return AngkaTerhingga::pasangDiSemua($aturan);
     }
 
     /**

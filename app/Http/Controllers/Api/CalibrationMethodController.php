@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CalibrationMethodResource;
 use App\Models\CalibrationMethod;
+use App\Services\KonflikDataTerhapus;
 use App\Services\PenjagaOrganisasi;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -51,10 +53,21 @@ class CalibrationMethodController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $metode = CalibrationMethod::create([
-            ...$this->validasi($request),
-            'organization_id' => $request->user()->organization_id,
-        ]);
+        $data = $this->validasi($request);
+
+        try {
+            $metode = CalibrationMethod::create([
+                ...$data,
+                'organization_id' => $request->user()->organization_id,
+            ]);
+        } catch (UniqueConstraintViolationException $galat) {
+            // Balapan: indeks unik yang memutuskan → 422, bukan 500.
+            KonflikDataTerhapus::untukMetodeIk()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                ['kode' => $data['kode'] ?? null, 'revisi' => $data['revisi'] ?? null],
+            );
+        }
 
         return response()->json([
             'data' => new CalibrationMethodResource($metode->load('category')),
@@ -65,7 +78,20 @@ class CalibrationMethodController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $calibrationMethod);
 
-        $calibrationMethod->update($this->validasi($request, $calibrationMethod));
+        $data = $this->validasi($request, $calibrationMethod);
+
+        try {
+            $calibrationMethod->update($data);
+        } catch (UniqueConstraintViolationException $galat) {
+            KonflikDataTerhapus::untukMetodeIk()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                [
+                    'kode' => $data['kode'] ?? $calibrationMethod->kode,
+                    'revisi' => array_key_exists('revisi', $data) ? $data['revisi'] : $calibrationMethod->revisi,
+                ],
+            );
+        }
 
         return response()->json([
             'data' => new CalibrationMethodResource($calibrationMethod->fresh()->load('category')),
@@ -89,7 +115,7 @@ class CalibrationMethodController extends Controller
     {
         $organizationId = $request->user()->organization_id;
 
-        return $request->validate([
+        $data = $request->validate([
             'kode' => [
                 $metode ? 'sometimes' : 'required',
                 'string', 'max:100',
@@ -112,6 +138,24 @@ class CalibrationMethodController extends Controller
         ], [
             'kode.unique' => 'Kode IK dengan revisi ini udah ada. Revisi baru = kode sama, nomor revisi beda.',
         ]);
+
+        // Rule::unique di atas cuma melihat baris HIDUP, sedangkan indeks unik di
+        // database juga melihat yang terhapus — tanpa ini kode+revisi yang
+        // pernah dihapus lolos validasi lalu INSERT-nya 500 (BUG-5, 18 Nov 2026).
+        // Hanya dicek kalau kode/revisi ikut dikirim: PUT yang tidak menyentuh
+        // keduanya tidak boleh ditolak gara-gara baris lain.
+        if (array_key_exists('kode', $data) || array_key_exists('revisi', $data)) {
+            KonflikDataTerhapus::untukMetodeIk()->periksa(
+                $organizationId,
+                [
+                    'kode' => $data['kode'] ?? $metode?->kode,
+                    'revisi' => array_key_exists('revisi', $data) ? $data['revisi'] : $metode?->revisi,
+                ],
+                $metode?->id,
+            );
+        }
+
+        return $data;
     }
 
     /** Jaring pengaman multi-tenant. */

@@ -608,6 +608,16 @@ class CalibrationValidator
                 continue;
             }
 
+            // Micrometer: nominal keping balok ukur (`mikro_balok`) adalah
+            // standar yang ditumpuk, bukan pembacaan UUT. Tanpa pengecualian ini
+            // tiap sesi wajar dilaporkan "pembacaan 14 mm jauh di luar rentang
+            // ukur alat (25–50 mm)" — peringatan palsu yang melatih admin
+            // menekan "setujui tetap" tanpa membaca. Yang tetap diadu hanya
+            // `mikro_pembacaan` (penunjukan mikrometer yang sebenarnya).
+            if (in_array($m->peran_sensor, MicrometerMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
+                continue;
+            }
+
             if ($this->diLuarRentang($nilaiAlat, $alat)
                 && ! $this->dekatTitikStandar($nilaiAlat, $titikAlat)) {
                 $temuan[] = $this->temuan(

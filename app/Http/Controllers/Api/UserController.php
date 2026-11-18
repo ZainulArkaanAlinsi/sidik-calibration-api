@@ -100,6 +100,17 @@ class UserController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $user);
 
+        // Menolak = membatalkan PENDAFTARAN yang menunggu. Akun aktif dinonaktifkan
+        // lewat `PUT /users/{id}` (yang dijaga admin terakhir); lewat sini dulu
+        // mematikannya diam-diam dengan pesan "Pendaftaran ditolak." (BUG-8).
+        if ($user->status !== User::STATUS_PENDING) {
+            abort(response()->json([
+                'message' => 'Akun ini bukan pendaftaran yang menunggu persetujuan. '
+                    .'Untuk menonaktifkan akun, ubah statusnya lewat pengaturan akun.',
+                'kode' => 'bukan_pending',
+            ], 422));
+        }
+
         $user->update(['status' => User::STATUS_NONAKTIF]);
 
         // Token yang mungkin udah kepegang dicabut, biar penolakannya langsung berlaku.
@@ -141,7 +152,12 @@ class UserController extends Controller
             unset($validated['nama']);
         }
 
-        $user->update($validated);
+        // Transaksi + kunci baris admin: dua admin yang saling menonaktifkan
+        // bersamaan tidak boleh sama-sama lolos dan menyisakan nol admin.
+        $user->getConnection()->transaction(function () use ($request, $user, $validated): void {
+            $this->jagaPenonaktifan($request, $user, $validated['status'] ?? null);
+            $user->update($validated);
+        });
 
         // Akun yang dinonaktifkan admin harus langsung kehilangan sesinya.
         if (($validated['status'] ?? null) === User::STATUS_NONAKTIF) {
@@ -335,6 +351,51 @@ class UserController extends Controller
                     : 'Oleh '.$pelaku->role.'. Alasan: '.$alasan),
             ]);
         });
+    }
+
+    /**
+     * Penjaga penonaktifan akun (BUG-8 uji E2E-QA, 18 Nov 2026).
+     *
+     * Dua hal yang bisa mengunci laboratorium dari aplikasinya sendiri:
+     *  - admin menonaktifkan AKUNNYA SENDIRI;
+     *  - admin AKTIF TERAKHIR di organisasi dinonaktifkan (oleh siapa pun).
+     *
+     * Hanya berlaku pada perpindahan dari `aktif` ke status lain; menyetel
+     * `nonaktif` pada akun yang memang sudah nonaktif bukan penonaktifan baru.
+     * Admin dihitung per organisasi (admin lab lain tidak menolong).
+     */
+    private function jagaPenonaktifan(Request $request, User $user, ?string $statusBaru): void
+    {
+        if ($statusBaru === null || $statusBaru === User::STATUS_AKTIF || $user->status !== User::STATUS_AKTIF) {
+            return;
+        }
+
+        if ($user->is($request->user())) {
+            abort(response()->json([
+                'message' => 'Kamu tidak bisa menonaktifkan akunmu sendiri. Minta admin lain melakukannya.',
+                'kode' => 'tidak_boleh_nonaktifkan_diri_sendiri',
+            ], 422));
+        }
+
+        if ($user->role !== User::ROLE_ADMIN) {
+            return;
+        }
+
+        $adminAktifLain = User::query()
+            ->where('organization_id', $user->organization_id)
+            ->where('role', User::ROLE_ADMIN)
+            ->where('status', User::STATUS_AKTIF)
+            ->whereKeyNot($user->getKey())
+            ->lockForUpdate()
+            ->exists();
+
+        if (! $adminAktifLain) {
+            abort(response()->json([
+                'message' => 'Ini admin aktif terakhir di laboratorium. Jadikan akun lain admin dulu, '
+                    .'baru akun ini dinonaktifkan.',
+                'kode' => 'admin_terakhir_aktif',
+            ], 422));
+        }
     }
 
     /**

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Services\KonflikDataTerhapus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class CustomerRequest extends FormRequest
 {
@@ -27,6 +29,10 @@ class CustomerRequest extends FormRequest
                 $this->user()?->organization_id
                     ?? $this->route('customer')?->organization_id,
             )
+            // Yang HIDUP ditolak di sini dengan pesan lama; nama yang dipegang
+            // PT TERHAPUS ditolak di `withValidator()` dengan `kode: terhapus`
+            // + `id`, supaya aplikasi bisa menawarkan Pulihkan (BUG-7).
+            ->whereNull('deleted_at')
             ->ignore($this->route('customer'));
 
         return [
@@ -36,6 +42,27 @@ class CustomerRequest extends FormRequest
             'telepon' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
         ];
+    }
+
+    /**
+     * Nama yang dipegang PT yang sudah DIHAPUS tetap terkunci — indeks unik
+     * `(organization_id, nama)` melihat baris terhapus dan nama itu kunci folder
+     * arsip, jadi keunikannya TIDAK dilepas. Yang ditambah: jawaban yang
+     * menyebut baris lamanya, supaya bisa dipulihkan.
+     */
+    protected function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->has('nama') || ! is_string($this->input('nama'))) {
+                return;
+            }
+
+            KonflikDataTerhapus::untukPelanggan()->periksa(
+                $this->user()?->organization_id ?? $this->route('customer')?->organization_id,
+                ['nama' => $this->input('nama')],
+                $this->route('customer')?->id,
+            );
+        });
     }
 
     /**

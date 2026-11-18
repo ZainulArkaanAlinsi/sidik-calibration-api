@@ -27,7 +27,15 @@ class PenomoranOrder
 
         $prefix = sprintf('ORD/%s/', now()->format('Y/m'));
 
-        $urutanTerakhir = Order::where('organization_id', $organizationId)
+        // `withTrashed()`: indeks unik `(organization_id, nomor)` di database
+        // MELIHAT baris yang sudah dihapus lunak, jadi pencarian nomor terakhir
+        // juga wajib melihatnya. Tanpa ini, menghapus order bernomor tertinggi
+        // bulan itu membuat nomor berikutnya jatuh tepat di nomor baris terhapus
+        // → 500 duplikat, SETIAP percobaan sampai bulan berganti (BUG-1 E2E-QA,
+        // 18 Nov 2026). Nomor yang pernah dicetak di work order juga tidak boleh
+        // dipakai ulang oleh order lain.
+        $urutanTerakhir = Order::withTrashed()
+            ->where('organization_id', $organizationId)
             ->where('nomor', 'like', $prefix.'%')
             // Dikunci biar dua petugas yang nyimpen barengan nggak dapet nomor
             // yang sama — sama kayak penomoran sesi & sertifikat.

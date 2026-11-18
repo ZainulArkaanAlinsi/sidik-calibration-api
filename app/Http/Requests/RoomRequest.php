@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\KonflikDataTerhapus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -21,8 +22,10 @@ class RoomRequest extends FormRequest
             'kode' => [
                 $wajibKalauBikinBaru, 'string', 'max:50',
                 // Unik per organisasi, bukan global — dua lab boleh sama-sama
-                // punya "R-01". `whereNull(deleted_at)` biar kode ruangan yang
-                // udah dihapus bisa dipakai lagi.
+                // punya "R-01". Yang masih HIDUP ditolak di sini; kode yang
+                // dipegang baris TERHAPUS ditolak di `withValidator()` dengan
+                // pesan sendiri, karena indeks unik di database tetap melihat
+                // baris terhapus (BUG-5 uji E2E-QA, 18 Nov 2026).
                 Rule::unique('rooms', 'kode')
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at')
@@ -55,6 +58,14 @@ class RoomRequest extends FormRequest
     {
         $validator->after(function (Validator $validator): void {
             $room = $this->route('room');
+
+            if (! $validator->errors()->has('kode') && is_string($this->input('kode'))) {
+                KonflikDataTerhapus::untukRuangan()->periksa(
+                    $this->user()->organization_id,
+                    ['kode' => $this->input('kode')],
+                    $room?->id,
+                );
+            }
 
             foreach ([['suhu_min', 'suhu_max', 'Suhu'], ['kelembaban_min', 'kelembaban_max', 'Kelembaban']] as [$kunciMin, $kunciMax, $label]) {
                 $min = $this->has($kunciMin) ? $this->input($kunciMin) : $room?->{$kunciMin};
