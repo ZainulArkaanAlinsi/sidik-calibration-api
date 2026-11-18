@@ -34,6 +34,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 
 class CalibrationRequest extends FormRequest
@@ -69,6 +70,7 @@ class CalibrationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $this->tolakPayloadTerlaluBesar();
         $this->bakukanTitikSesi();
         $this->bakukanKomaDesimal();
         $this->bakukanKeterulanganTimbangan();
@@ -88,6 +90,49 @@ class CalibrationRequest extends FormRequest
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /** Titik (baris `measurements[]`) terbanyak dalam satu sesi — batas yang sama dengan aturan `max` di `rules()`. */
+    private const MAKS_TITIK = 60;
+
+    /** Nilai mutlak terbesar yang muat di kolom `decimal(20,8)`: 12 digit sebelum koma. */
+    private const BATAS_DECIMAL = 999999999999;
+
+    /**
+     * Tolak payload yang jumlah titik/pembacaannya melewati batas SEBELUM
+     * aturan validasi diperluas (BUG-11 uji E2E-QA, 18 Nov 2026).
+     *
+     * Aturan `measurements` sudah `max:60` dan `measurements.*.pembacaan`
+     * sudah berbatas, tapi Laravel memperluas ratusan aturan `measurements.*…`
+     * ke SETIAP elemen data lebih dulu, baru menjalankan `max`. Dengan 10.000
+     * titik, perluasan itu saja menggantung request lebih dari dua menit lalu
+     * 500 (batas waktu PHP) — satu teknisi bisa memenuhi worker produksi.
+     * Jadi ukuran dicek di sini, murah, dan dijawab 422.
+     */
+    private function tolakPayloadTerlaluBesar(): void
+    {
+        $titik = $this->input('measurements');
+
+        if (! is_array($titik)) {
+            return;
+        }
+
+        if (count($titik) > self::MAKS_TITIK) {
+            throw ValidationException::withMessages([
+                'measurements' => 'Satu sesi maksimal '.self::MAKS_TITIK.' titik ukur.',
+            ]);
+        }
+
+        foreach ($titik as $i => $baris) {
+            $pembacaan = is_array($baris) ? ($baris['pembacaan'] ?? null) : null;
+
+            if (is_array($pembacaan) && count($pembacaan) > CalibrationProfile::MAKS_KOLOM_PENGULANGAN) {
+                throw ValidationException::withMessages([
+                    "measurements.{$i}.pembacaan" => 'Satu titik maksimal '
+                        .CalibrationProfile::MAKS_KOLOM_PENGULANGAN.' pembacaan.',
+                ]);
+            }
+        }
     }
 
     /**
@@ -1310,13 +1355,13 @@ class CalibrationRequest extends FormRequest
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at'),
             ],
-            'suhu_ruang' => ['nullable', 'numeric'],
+            'suhu_ruang' => ['nullable', 'numeric', 'between:-50,150'],
             'kelembaban' => ['nullable', 'numeric', 'between:0,100'],
             // "Env. Condition" di lembar kerja dicatat dua kali: awal & akhir
             // kerja. Semua opsional — thermohygro-nya nggak selalu ada di
             // lokasi pelanggan.
-            'suhu_awal' => ['sometimes', 'nullable', 'numeric'],
-            'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_awal' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
+            'suhu_akhir' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             // Tekanan udara ruangan, parameter lingkungan KETIGA (kolomnya ada
@@ -1770,8 +1815,10 @@ class CalibrationRequest extends FormRequest
             'titik_sesi.titik.*' => ['array'],
             'titik_sesi.titik.*.nominal' => ['required', 'numeric'],
             'titik_sesi.pengulangan' => ['sometimes', 'nullable', 'array'],
-            'measurements' => ['sometimes', 'array', 'max:60'],
-            'measurements.*.titik_ukur' => ['required', 'numeric'],
+            'measurements' => ['sometimes', 'array', 'max:'.self::MAKS_TITIK],
+            // Batas kolom `decimal(20,8)` — tanpa ini 1e308 lolos `numeric`, lalu
+            // INSERT gagal "Out of range value" → 500 (BUG-10 uji E2E-QA).
+            'measurements.*.titik_ukur' => ['required', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
             'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
             // Batasnya `MAKS_KOLOM_PENGULANGAN` — jumlah kolom pengulangan
             // TERBANYAK yang boleh digambar lembar mana pun (lihat
@@ -1789,7 +1836,7 @@ class CalibrationRequest extends FormRequest
             ],
             // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
             // disaring waktu ngitung.
-            'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
+            'measurements.*.pembacaan.*' => ['nullable', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
             // GRID sensor — cuma enclosure yang ngirim. Tiap set point punya 9
             // termokopel (`no` 1..N, `channel` opsional buat kalibrator
             // Recorder) masing-masing 5 pembacaan, plus baris `indikator`

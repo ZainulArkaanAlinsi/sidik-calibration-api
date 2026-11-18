@@ -53,6 +53,21 @@ Accept: application/json
 > "Array to string conversion" bila `identifier`/`email`/`kode`/`telepon` dikirim sebagai array/objek.
 > Sekarang `422` dengan pesan pada field itu, seperti kesalahan validasi lain. Klien yang benar tidak terdampak.
 
+> **18 Nov 2026 — batas input yang dulu `500` atau tanpa batas, sekarang `422`/`404` (aditif).**
+> - `catatan` alat: maksimal **2000** karakter.
+> - Angka yang disimpan di kolom `decimal(20,8)` (`range_min`, `range_max`, `resolusi`, `toleransi` alat; `titik_ukur` &
+>   `pembacaan` kalibrasi): nilai mutlak maksimal **999.999.999.999**; lebih dari itu `422`, bukan `500`.
+> - `POST /calibrations`: maksimal **60 titik** per sesi dan paling banyak **10** pembacaan per titik (`measurements[].pembacaan`);
+>   ditolak `422` SEBELUM aturan lain diperiksa (dulu 10.000 titik menggantung > 2 menit lalu `500`).
+> - Suhu (`suhu_ruang`, `suhu_awal`, `suhu_akhir`, juga di `POST /calibrations/autoclave`): **−50 … 150 °C**;
+>   kelembaban tetap **0 … 100 %**.
+> - Id di URL (`/equipments/{id}`, `/calibrations/{id}`, `/customers/{id}`, `/standards/{id}`, `/rooms/{id}`, `/orders/{id}`, …)
+>   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`).
+> - `GET /customers?search=` membaca `%` dan `_` secara harfiah (dulu `?search=%` mengembalikan semua pelanggan).
+> - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
+>   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
+>   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
 
 ---

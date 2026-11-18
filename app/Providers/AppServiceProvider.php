@@ -20,6 +20,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -169,6 +170,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->rateLimiters();
+
+        // Id di URL harus angka (BUG-13 uji E2E-QA, 18 Nov 2026). Tanpa batasan
+        // ini `GET /equipments/1abc` jatuh ke model binding, dan MySQL/TiDB
+        // membandingkan `id = '1abc'` sebagai `id = 1` → 200 untuk alat 1.
+        // Terparameter, jadi bukan injeksi — tapi seharusnya 404. Satu pola
+        // global per nama parameter model; rute di `api_pelanggan.php` memakai
+        // nama lain (`alat`, `sertifikat`, …) dan tidak ikut.
+        foreach ([
+            'calibration', 'certificate', 'customer', 'equipment', 'user', 'standard',
+            'order', 'room', 'calibrationMethod', 'folder', 'folderFile', 'worksheetScan',
+        ] as $parameter) {
+            Route::pattern($parameter, '[0-9]+');
+        }
 
         // Kabar perubahan tahap alat ke pelanggan (tahap turunan dari status sesi).
         // Sesi tanpa `order_item_id` berhenti di baris pertama observer.

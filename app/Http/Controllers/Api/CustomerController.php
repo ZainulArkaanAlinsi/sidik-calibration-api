@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Direktori\DirektoriGagal;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\KonflikDataTerhapus;
+use App\Services\Pencarian\PolaLike;
 use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -322,10 +323,13 @@ class CustomerController extends Controller
         $customers = Customer::query()
             ->withCount('equipments')
             ->where('organization_id', $request->user()->organization_id)
-            ->when($request->filled('search'), fn ($query) => $query->where(
-                'nama',
-                'like',
-                '%'.$request->string('search').'%',
+            // `%` dan `_` yang diketik dibaca HARFIAH (BUG-14 uji E2E-QA, 18 Nov
+            // 2026): `?search=%` dulu mengembalikan SEMUA pelanggan karena
+            // wildcard LIKE tidak di-escape. Sama dengan pencarian terpadu
+            // (kontrak §19).
+            ->when($request->filled('search'), fn ($query) => $query->whereRaw(
+                PolaLike::sql('nama'),
+                [PolaLike::mengandung((string) $request->string('search'))],
             ))
             ->orderBy('nama')
             ->paginate(15)
