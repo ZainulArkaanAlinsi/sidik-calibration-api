@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-labelledby="t d">
+  <title id="t">SIDIK Calibration — API</title>
+  <desc id="d">Banner solid navy dengan tanda kunci dial kalibrasi, judul SIDIK Calibration, dan subjudul Backend kalibrasi alat ukur dan sertifikat digital.</desc>
+  <rect width="1280" height="300" fill="#0B2545"/>
+  <rect y="296" width="1280" height="4" fill="#5BB4F5"/>
+  <g transform="translate(112 150)" fill="none" stroke="#5BB4F5" stroke-width="5" stroke-linecap="round">
+    <path d="M -36.77 36.77 A 52 52 0 1 1 36.77 36.77"/>
+    <path d="M -38 0 L -44 0 M -26.87 -26.87 L -31.11 -31.11 M 0 -38 L 0 -44 M 26.87 -26.87 L 31.11 -31.11 M 38 0 L 44 0" stroke-width="4"/>
+    <path d="M 0 0 L 21.2 -21.2"/>
+    <circle cx="0" cy="0" r="6" fill="#5BB4F5" stroke="none"/>
+  </g>
+  <g font-family="'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif">
+    <text x="204" y="142" font-size="66" font-weight="700" fill="#FFFFFF" letter-spacing="0.5">SIDIK Calibration</text>
+    <text x="206" y="192" font-size="30" fill="#C3D6EC">Backend kalibrasi alat ukur dan sertifikat digital</text>
+    <text x="206" y="236" font-size="21" fill="#5BB4F5" letter-spacing="1">API REST  ·  Panel admin  ·  PT SIDIK</text>
+  </g>
+</svg>
