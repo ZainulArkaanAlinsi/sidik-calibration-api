@@ -216,8 +216,13 @@ services:
       # Pindai formulir ASLI lab dalam MODE UJI (semua sel maks kuning) sebelum
       # formulirnya lulus >=20 foto nyata. Dinyalakan HANYA atas perintah
       # pemilik proyek; tidak pernah menyalakan `siap_pindai`.
+      # DINYALAKAN 18 Nov 2026 atas perintah pemilik proyek ("nyalakan OCR di
+      # produksi"): teknisi boleh memindai; tiap sel tetap kuning sampai
+      # dikonfirmasi manusia, jadi hasil OCR hanya SARAN. Mematikan lagi =
+      # ganti "false" di berkas ini (setelan dashboard ditimpa blueprint tiap
+      # deploy — lihat §ARSIP_DRIVER).
       - key: OCR_FORMULIR_ASLI_UJI
-        value: "false"
+        value: "true"
 
       # Direktori perusahaan — cari nama & alamat PT dari sumber LUAR waktu
       # teknisi mendaftarkan pelanggan yang belum ada di master lab.
