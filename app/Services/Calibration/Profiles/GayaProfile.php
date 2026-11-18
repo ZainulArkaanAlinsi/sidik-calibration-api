@@ -10,6 +10,7 @@ use App\Services\Calibration\GayaCalculator;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Services\GumCalculator;
 use App\Support\GayaMentah as M;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -527,6 +528,19 @@ abstract class GayaProfile extends CalibrationProfile
         $cmcKn = $this->cmcKn($equipment, $blok, (string) $arah);
         $u95 = max($uKn, $cmcKn ?? 0.0);
 
+        // Catatan penyimpangan PK-9 (PK5-1): hanya teks pembanding di jejak, tidak
+        // satu pun nilai di atas atau di bawah ini yang ikut berubah.
+        $catatanMaster = $this->catatanDriftTekan(
+            $blok,
+            (string) $arah,
+            $rsdMaks,
+            $rentangKn,
+            (float) ($standarGaya['u95_persen'] ?? 0.0),
+            $agregat,
+            $uKn,
+            $cmcKn,
+        );
+
         $sekarang = Carbon::now();
         $hitungan = [];
         $typeA = self::uiKomponen($komponen, 'pengulangan');
@@ -574,7 +588,7 @@ abstract class GayaProfile extends CalibrationProfile
                 'standar_deviasi' => $h['S'],
                 'jumlah_pengulangan' => $h['jumlah_bacaan'],
                 'type_a' => $typeA,
-                'type_b_components' => $this->jejakAudit($h, $komponen, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok, $temuanSesi),
+                'type_b_components' => $this->jejakAudit($h, $komponen, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok, $temuanSesi, $catatanMaster),
                 'type_b' => sqrt(max(0.0, $uc ** 2 - $typeA ** 2)),
                 'ketidakpastian_gabungan' => $uc,
                 'faktor_cakupan_k' => $agregat['faktor_cakupan_k'],
@@ -880,6 +894,7 @@ abstract class GayaProfile extends CalibrationProfile
      * @param  array<string, mixed>  $agregat
      * @param  array<string, mixed>  $blok
      * @param  list<string>  $temuanSesi
+     * @param  array<string, string>  $catatanMaster  catatan PK-9 tambahan (kunci butir => kalimat)
      * @return array<string, mixed>
      */
     protected function jejakAudit(
@@ -892,6 +907,7 @@ abstract class GayaProfile extends CalibrationProfile
         string $arah,
         array $blok,
         array $temuanSesi = [],
+        array $catatanMaster = [],
     ): array {
         return [
             'komponen' => $komponen,
@@ -923,7 +939,7 @@ abstract class GayaProfile extends CalibrationProfile
                     $arah,
                 ),
             ],
-            'penyimpangan_master' => array_filter([
+            'penyimpangan_master' => [...array_filter([
                 'drift_tidak_dibagi_divisor' => 'Master mengambil U drift langsung jadi ui tanpa dibagi akar 3, '
                     .'padahal kolom divisornya terisi — di KETIGA workbook. Direplikasi apa adanya; '
                     .'membaginya menggeser U95% yang sudah tercetak. Pertanyaan lab bernomor G3.',
@@ -946,7 +962,7 @@ abstract class GayaProfile extends CalibrationProfile
                         .'satuan lain berbeda sebesar koreksi termal. Pertanyaan lab bernomor G12.',
                 'drift_beda_antar_workbook' => 'Tiga workbook tidak sepakat soal drift standar yang sama; '
                     .'yang dipakai sesi ini dari workbook `'.$this->sumberDrift().'`. Pertanyaan lab bernomor G2.',
-            ], static fn (?string $x): bool => $x !== null),
+            ], static fn (?string $x): bool => $x !== null), ...$catatanMaster],
             'temuan' => $h['temuan'],
             // Peringatan tingkat-SESI diulang di tiap baris, dan itu disengaja.
             // Jejak audit dibaca PER TITIK di layar persetujuan; ditaruh sekali
@@ -988,6 +1004,86 @@ abstract class GayaProfile extends CalibrationProfile
         // `CalibrationProfileRegistry`, dan registry memuat profil ini lagi —
         // lingkaran yang gejalanya "Maximum call stack size" jauh dari sebabnya.
         return $this->gum ??= new GumCalculator;
+    }
+
+    /**
+     * Catatan PK-9 / PK5-1: sesi arah TARIK memakai drift kolom Tarik, master SELALU kolom Tekan.
+     *
+     * Di ketiga master gaya `PERHITUNGAN U95%!N13` = `VLOOKUP(Z3; Tabel_Drift; 2; 0)` dan
+     * `Tabel_Drift` = `STANDAR_LOADCELL!$Q$5:$R$7` (kolom Tekan); kolom Tarik (`S5:S7`) ada di
+     * lembar yang sama tetapi di luar rentang itu, jadi master tidak pernah membacanya apa pun isi
+     * `Type of Force`. Sistem memilih menurut arah sesi (menunggu keputusan TM, G2/PK5-1).
+     *
+     * Catatan HANYA ada bila arah sesi Tarik DAN drift Tarik beda dari drift Tekan untuk standar
+     * itu — kalau sama, tidak ada selisih yang perlu dibaca penyetuju. Angka "versi master"
+     * dihitung dari salinan komponen lewat `GumCalculator` dan hanya dicetak di teks.
+     *
+     * @param  array<string, mixed>  $blok
+     * @param  array<string, mixed>  $agregat
+     * @return array<string, string> kunci butir => kalimat
+     */
+    protected function catatanDriftTekan(
+        array $blok,
+        string $arah,
+        float $rsdMaks,
+        float $rentangKn,
+        float $u95Standar,
+        array $agregat,
+        float $uKn,
+        ?float $cmcKn,
+    ): array {
+        if ($arah !== M::ARAH_PULL) {
+            return [];
+        }
+
+        $standar = (string) $blok['standar'];
+        $sumber = $this->sumberDrift();
+        $driftTarik = TabelStandarGaya::drift($standar, M::ARAH_PULL, $sumber);
+        $driftTekan = TabelStandarGaya::drift($standar, M::ARAH_PUSH, $sumber);
+
+        if ($driftTekan === null || abs((float) $driftTarik - $driftTekan) < 1e-12) {
+            return [];
+        }
+
+        $aggMaster = $this->gum()->agregasiBudget(
+            GayaCalculator::komponenBudget($blok, $rsdMaks, $rentangKn, $u95Standar, $driftTekan),
+        );
+        $uKnMaster = $rentangKn > 0.0 ? (float) $aggMaster['ketidakpastian_diperluas'] / 100 * $rentangKn : 0.0;
+        $u95Master = max($uKnMaster, $cmcKn ?? 0.0);
+        $u95Sistem = max($uKn, $cmcKn ?? 0.0);
+        $pb = PenyimpanganMaster::class;
+        $tertutupLantai = abs($u95Master - $u95Sistem) <= 1e-12 * max(1.0, abs($u95Master));
+        $selisihUPersen = (float) $agregat['ketidakpastian_diperluas'] - (float) $aggMaster['ketidakpastian_diperluas'];
+
+        return ['drift_tarik_vs_tekan' => $pb::teks(
+            'Sesi arah TARIK memakai drift standar kolom Tarik, sedangkan master selalu membaca kolom Tekan '
+            .'(Tabel_Drift = kolom Tekan saja; kolom Tarik ada tetapi di luar rentangnya) apa pun isi '
+            .'`Type of Force`. Sistem memilih menurut arah sesi sampai TM memutuskan (G2/PK5-1).'
+            .($tertutupLantai
+                ? ' Angka CETAK U95 SAMA dengan master pada sesi ini karena lantai CMC menang di kedua sisi, '
+                    .'tetapi U hitung, k, dan v_eff TERSIMPAN berbeda.'
+                : ''),
+            'master `PERHITUNGAN U95%!N13` = VLOOKUP(Z3; Tabel_Drift; 2; 0) dengan `Tabel_Drift` = '
+            .'`STANDAR_LOADCELL!$Q$5:$R$7` (kolom Tekan); docs/pertanyaan-lab-adu-cetak-b.md PK5-1; '
+            .'docs/pertanyaan-lab-gaya.md G2',
+            sprintf(
+                'drift Tekan %s (%% f.s), U hitung %s %% f.s, k %s, v_eff %s, U95 %s kN',
+                $pb::angka($driftTekan),
+                $pb::angka((float) $aggMaster['ketidakpastian_diperluas']),
+                $pb::angka((float) $aggMaster['faktor_cakupan_k']),
+                $pb::angka((float) $aggMaster['derajat_kebebasan_efektif']),
+                $pb::angka($u95Master),
+            ),
+            sprintf(
+                'drift Tarik %s (%% f.s), U hitung %s %% f.s, k %s, v_eff %s, U95 %s kN',
+                $pb::angka((float) $driftTarik),
+                $pb::angka((float) $agregat['ketidakpastian_diperluas']),
+                $pb::angka((float) $agregat['faktor_cakupan_k']),
+                $pb::angka((float) $agregat['derajat_kebebasan_efektif']),
+                $pb::angka($u95Sistem),
+            ),
+            $selisihUPersen < 0 ? $pb::ARAH_TIDAK_KONSERVATIF : ($selisihUPersen > 0 ? $pb::ARAH_KONSERVATIF : $pb::ARAH_NETRAL),
+        )];
     }
 
     /** @return array<string, mixed> */

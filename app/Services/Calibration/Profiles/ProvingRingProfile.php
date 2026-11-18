@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Services\Calibration\GayaCalculator;
 use App\Services\Calibration\TabelStandarGaya;
 use App\Support\GayaMentah as M;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use Illuminate\Support\Carbon;
 
@@ -723,6 +724,9 @@ class ProvingRingProfile extends GayaProfile
         $cmcKn = $this->cmcKn($equipment, $blok, (string) $arah);
         $u95 = max($uKn, $cmcKn ?? 0.0);
 
+        // Catatan PK-9 (G14): hanya teks pembanding di jejak, tidak satu nilai pun berubah.
+        $catatanMaster = $this->catatanPitaCmcMaster($blok, $uKn, $cmcKn, $u95);
+
         $sekarang = Carbon::now();
         $hitungan = [];
         $typeA = 0.0;
@@ -768,7 +772,7 @@ class ProvingRingProfile extends GayaProfile
                 'jumlah_pengulangan' => $h['jumlah_bacaan'],
                 'type_a' => $typeA,
                 'type_b_components' => $this->jejakAuditProvingRing(
-                    $h, $budget, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok, $temuanSesi,
+                    $h, $budget, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok, $temuanSesi, $catatanMaster,
                 ),
                 'type_b' => sqrt(max(0.0, $uc ** 2 - $typeA ** 2)),
                 'ketidakpastian_gabungan' => $uc,
@@ -793,6 +797,7 @@ class ProvingRingProfile extends GayaProfile
      * @param  array<string, mixed>  $agregat
      * @param  array<string, mixed>  $blok
      * @param  list<string>  $temuanSesi
+     * @param  array<string, string>  $catatanMaster  catatan PK-9 tambahan (kunci butir => kalimat)
      * @return array<string, mixed>
      */
     private function jejakAuditProvingRing(
@@ -805,6 +810,7 @@ class ProvingRingProfile extends GayaProfile
         string $arah,
         array $blok,
         array $temuanSesi,
+        array $catatanMaster = [],
     ): array {
         return [
             'komponen' => $budget['dijumlahkan'],
@@ -840,7 +846,7 @@ class ProvingRingProfile extends GayaProfile
                     $arah,
                 ),
             ],
-            'penyimpangan_master' => [
+            'penyimpangan_master' => [...[
                 'enam_dari_delapan_komponen' => 'Master cuma menjumlahkan ENAM dari delapan komponen '
                     .'budget-nya: zero error dan misalignment dihitung tapi berada di luar '
                     .'penjumlahannya. Terbukti dari angka — jumlah master cocok NOL BEDA dengan enam '
@@ -856,9 +862,62 @@ class ProvingRingProfile extends GayaProfile
                     .'kalibrator. Ditiru apa adanya; pertanyaan lab bernomor G6.',
                 'drift_tidak_dibagi_divisor' => 'Master mengambil U drift langsung jadi ui tanpa dibagi '
                     .'akar 3, padahal kolom divisornya terisi — di KETIGA workbook. Pertanyaan lab G3.',
-            ],
+            ], ...$catatanMaster],
             'temuan' => $h['temuan'],
             'temuan_sesi' => $temuanSesi,
         ];
+    }
+
+    /**
+     * Pita CMC yang dibaca budget master Proving Ring: `CMC PT. SIDIK` = 0,22 kN, yaitu baris
+     * `10-88 kN` lampiran LK-285-IDN (`P38` master = 22,4 kgf). Sistem memilih pita dari KAPASITAS alat
+     * (alat 500 kgf: pita `0-500 kgf` = 2,3 kgf = 0,022563 kN), jadi U95 tercetak ~10x lebih kecil
+     * dari sertifikat yang sudah terbit dari master. Keputusan TM (G14) belum ada.
+     */
+    private const CMC_PITA_MASTER_KN = 0.22;
+
+    /**
+     * Catatan PK-9 / G14 (PK5-2). Hanya ada bila lantai CMC yang dipakai sistem BEDA dari 0,22 kN
+     * (alat yang kapasitasnya memang di pita 10-88 kN memakai pita yang sama dengan master).
+     *
+     * @param  array<string, mixed>  $blok
+     * @return array<string, string> kunci butir => kalimat
+     */
+    private function catatanPitaCmcMaster(array $blok, float $uKn, ?float $cmcKn, float $u95): array
+    {
+        if ($cmcKn !== null && abs($cmcKn - self::CMC_PITA_MASTER_KN) <= 1e-9) {
+            return [];
+        }
+
+        $pb = PenyimpanganMaster::class;
+        $satuan = (string) $blok['satuan'];
+        $faktor = TabelStandarGaya::faktorSatuan($satuan);
+        $keSatuan = static fn (float $kn): string => $faktor === null || $faktor <= 0.0 || $satuan === 'kN'
+            ? $pb::angka($kn).' kN'
+            : $pb::angka($kn / $faktor).' '.$satuan.' ('.$pb::angka($kn).' kN)';
+        $u95Master = max($uKn, self::CMC_PITA_MASTER_KN);
+        $tertutup = abs($u95Master - $u95) <= 1e-12 * max(1.0, abs($u95Master));
+
+        return ['pita_cmc_dari_baris_salah' => $pb::teks(
+            'Budget master memakai `CMC PT. SIDIK` = 0,22 kN, yaitu baris kedua lampiran akreditasi LK-285-IDN '
+            .'(pita 10-88 kN) yang TIDAK mencakup kapasitas alat ini; sistem memilih pita dari kapasitas alat '
+            .'(0-500 kgf = 2,3 kgf). Akibatnya U95 tercetak sistem sampai sekitar 10x lebih kecil dari sertifikat '
+            .'yang sudah terbit dari master. Pita mana yang berlaku dan nasib sertifikat terbit menunggu keputusan '
+            .'TM (G14); mengaku ketidakpastian lebih kecil dari yang pernah diterbitkan bukan keputusan yang boleh '
+            .'diambil di kode.'
+            .($tertutup ? ' Pada sesi ini U hitung di atas kedua lantai, jadi angka cetak SAMA.' : ''),
+            '`P38` master Proving Ring (budget memakai `CMC PT. SIDIK` = 0,22 kN); lampiran akreditasi LK-285-IDN '
+            .'baris Proving Ring (0-500 kgf = 2,3 kgf; 10-88 kN = 0,22 kN); docs/pertanyaan-lab-gaya.md G14; '
+            .'docs/pertanyaan-lab-adu-cetak-b.md PK5-2',
+            sprintf(
+                'lantai CMC %s, U hitung %s, U95 tercetak %s',
+                $keSatuan(self::CMC_PITA_MASTER_KN), $keSatuan($uKn), $keSatuan($u95Master),
+            ),
+            sprintf(
+                'lantai CMC %s, U hitung %s, U95 tercetak %s',
+                $cmcKn === null ? 'tidak ada (di luar semua pita)' : $keSatuan($cmcKn), $keSatuan($uKn), $keSatuan($u95),
+            ),
+            $tertutup ? $pb::ARAH_NETRAL : $pb::ARAH_TIDAK_KONSERVATIF,
+        )];
     }
 }
