@@ -1900,6 +1900,24 @@ Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat laya
 
 - **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`, plus **`logo_url`** (read-only, diisi lewat endpoint di bawah). Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
   > **✅ 18 Jul — response-nya lebih gemuk dari yang didokumentasiin, mobile baru nyusul makainya**: `standar_akreditasi`, `akreditasi_mulai`, `akreditasi_berakhir`, dan `akreditasi_masih_berlaku` (dihitung backend, read-only — jangan dikirim balik waktu `PUT`). Ini yang nentuin akreditasi lab (LK-285-IDN) masih sah apa nggak; sebelumnya nggak ada di layar mana pun. `settings` (array) juga ada di response tapi mobile sengaja belum kasih UI buat itu — bentuknya belum didokumentasiin.
+  >
+  > **✅ 18 Nov 2026 — `settings` di `PUT` adalah PATCH PER KUNCI (aditif, memperbaiki bug).** Dulu satu
+  > `PUT {"settings": {"prefix_sertifikat": "E2E"}}` mengganti SELURUH kolom, jadi penanda tangan, catatan
+  > KAN, saklar QR, dan kode dokumen hilang tanpa galat — dan sertifikat berikutnya tercetak dengan nama
+  > admin yang menekan approve. Sekarang:
+  > - kunci yang **tidak dikirim tidak pernah disentuh**; kunci yang dikirim menimpa nilainya saja;
+  > - **`null` pada satu kunci** membuang kunci itu (kembali ke bawaan); `settings: null` atau `{}` = tidak ada perubahan;
+  > - **kunci yang tidak dikenal → `422`** (`errors.settings`), dan tidak ada kunci lain yang ikut tertulis;
+  > - field di luar `settings` (`nama`, `alamat`, …) tidak berubah perilakunya.
+  >
+  > Kunci yang diterima (tipe → aturan): `prefix_sertifikat` (teks ≤ 20), `masa_berlaku_sertifikat_bulan`
+  > (bulat 1–120), `faktor_cakupan_default` (angka 1–10), `tampilkan_qr_di_pdf` & `tampilkan_keputusan_di_pdf`
+  > (boolean; disimpan sebagai `true`/`false` sungguhan), `penandatangan_nama`, `penandatangan_jabatan`,
+  > `kode_dokumen_form` (teks ≤ 255), `catatan_ketidakpastian`, `catatan_penggandaan` (teks ≤ 1000),
+  > `reminder_hari_sebelum` (bulat 1–3650), `desimal_sertifikat` (bulat 0–6), `ttd_geser_x_mm`,
+  > `ttd_geser_y_mm`, `ttd_lebar_mm` (angka; dibatasi saat dibaca, lihat §14). `kop_path` sengaja **tidak**
+  > bisa diubah lewat API. Klien yang mengirim balik seluruh objek `settings` hasil `GET` harus membuang
+  > `kop_path` bila ada.
 - **`POST /api/organization/logo`** · **`DELETE /api/organization/logo`** — ✅ live 25 Jul.
   Logo yang dicetak di kop sertifikat. Multipart, field **`logo`**, admin doang.
   > **PNG atau JPG doang, maks 2 MB.** WEBP ditolak `422` walau itu gambar sah:
