@@ -8,6 +8,7 @@ use App\Models\CalibrationMethod;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Models\Formula;
 use App\Models\Organization;
 use App\Models\Penugasan;
 use App\Models\User;
@@ -513,6 +514,49 @@ class KategoriKelolaTest extends TestCase
         $c = $this->kategori('Volume');
         CalibrationMethod::factory()->create(['organization_id' => $this->lab->id, 'equipment_category_id' => $c->id]);
         $this->deleteJson('/api/categories/volume')->assertUnprocessable()->assertJsonPath('pemakai.metode', 1);
+    }
+
+    /**
+     * Regresi CI MySQL 18 Nov 2026: `pemakai()` menghitung kolom `formulas`
+     * yang tidak ada (`equipment_category_id`) dan SQLite diam-diam meloloskannya
+     * (kondisi selalu salah -> 0), sehingga tidak ada test yang melihat 500.
+     * Di sini baris `formulas` NYATA dibuat; hubungannya `besaran` = kode kategori
+     * di organisasi yang sama.
+     */
+    public function test_rumus_dengan_besaran_sama_dengan_kode_kategori_menahan_penghapusan(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->kategori('Massa');
+        Formula::factory()->create(['organization_id' => $this->lab->id, 'besaran' => 'massa']);
+
+        $respons = $this->deleteJson('/api/categories/massa')
+            ->assertUnprocessable()
+            ->assertJsonPath('kode', 'kategori_dipakai')
+            ->assertJsonPath('pemakai.rumus', 1)
+            ->assertJsonPath('pemakai.alat', 0);
+        $this->assertStringContainsString('1 rumus', (string) $respons->json('message'));
+        $this->assertNotNull(EquipmentCategory::where('kode', 'massa')->first(), 'kategori tidak boleh terhapus');
+
+        // Rumus yang sudah dihapus lunak tetap menahan (alasan sama dengan alat:
+        // riwayat masih menunjuknya).
+        $this->kategori('Gaya');
+        Formula::factory()->create(['organization_id' => $this->lab->id, 'besaran' => 'gaya'])->delete();
+        $this->deleteJson('/api/categories/gaya')->assertUnprocessable()->assertJsonPath('pemakai.rumus', 1);
+    }
+
+    public function test_rumus_organisasi_atau_besaran_lain_tidak_menahan_penghapusan(): void
+    {
+        $k = $this->kategori('Volume');
+
+        // Besaran lain di lab ini, besaran TANPA nilai, dan besaran yang sama tetapi
+        // milik lab lain: tidak satu pun boleh menahan.
+        Formula::factory()->create(['organization_id' => $this->lab->id, 'besaran' => 'ph']);
+        Formula::factory()->create(['organization_id' => $this->lab->id, 'besaran' => null]);
+        Formula::factory()->create(['organization_id' => $this->labLain->id, 'besaran' => 'volume']);
+
+        $this->actingAs($this->admin)->deleteJson('/api/categories/volume')->assertOk();
+        $this->assertSoftDeleted('equipment_categories', ['id' => $k->id]);
     }
 
     // ───────────────────────────── isolasi lab ─────────────────────────────

@@ -300,24 +300,68 @@ class KategoriKelolaController extends Controller
     }
 
     /**
-     * Berapa baris di lab ini yang masih menunjuk kategori ini.
+     * Tabel yang menunjuk kategori lewat `equipment_category_id` (kunci hasil
+     * `pemakai` => [tabel, kolom]). DAFTAR, bukan kueri tulis tangan, supaya
+     * `KolomQueryPaketCrudTest` bisa memeriksa tiap tabel/kolom terhadap skema
+     * sungguhan.
      *
-     * Alat dan metode dihitung TERMASUK yang sudah dihapus lunak (sesi lama
-     * masih menunjuk alatnya). Kemampuan, baris penugasan, dan rumus dihitung
-     * apa adanya lewat tabelnya: menghapus kategori yang masih punya CMC atau
-     * rumus berarti menelantarkan data akreditasi.
+     * ## Kenapa itu penting (jebakan 18 Nov 2026)
+     *
+     * Versi pertama menghitung `formulas.equipment_category_id` -- kolom yang TIDAK
+     * ADA. SQLite meloloskannya: identifier ber-kutip-ganda yang tak dikenal
+     * diperlakukan sebagai string literal, jadi kondisinya selalu salah dan
+     * hasilnya 0 tanpa galat. MySQL (CI) menjawab 500 `Unknown column`. Test
+     * SQLite yang hijau tidak membuktikan nama kolom benar.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    public const PEMAKAI_LEWAT_ID = [
+        'alat' => ['equipments', 'equipment_category_id'],
+        'kemampuan' => ['calibration_capabilities', 'equipment_category_id'],
+        'penugasan' => ['penugasan_item', 'equipment_category_id'],
+        'metode' => ['calibration_methods', 'equipment_category_id'],
+    ];
+
+    /**
+     * `formulas` TIDAK punya FK ke kategori. Hubungannya cuma `besaran`, yang
+     * migrasinya (`2026_07_27_110000`) tulis sebagai "nyocokin `kode` di
+     * `equipment_categories`": rumus se-organisasi yang `besaran`-nya sama dengan
+     * KODE kategori. [tabel, kolom besaran, kolom organisasi].
+     *
+     * Catatan jujur: `besaran` yang ditulis kode program berasal dari
+     * `CalibrationProfile::besaran()` (`massa`, `suhu`, `ph`, ...), jadi cocoknya
+     * persis hanya untuk kategori yang kodenya memang sama (mis. `massa`,
+     * `volume`, `tekanan`, `gaya`). Itu arah yang aman: yang tidak cocok tidak
+     * terhalang, yang cocok pasti tertahan.
+     *
+     * @var array{0: string, 1: string, 2: string}
+     */
+    public const PEMAKAI_RUMUS = ['formulas', 'besaran', 'organization_id'];
+
+    /**
+     * Berapa baris yang masih menunjuk kategori ini.
+     *
+     * Dihitung lewat tabelnya (`DB::table`), jadi baris yang sudah dihapus lunak
+     * ikut terhitung: sesi lama masih menunjuk alatnya, dan menghapus kategori
+     * yang masih punya CMC atau rumus berarti menelantarkan data akreditasi.
      *
      * @return array{alat: int, kemampuan: int, penugasan: int, metode: int, rumus: int}
      */
     private function pemakai(EquipmentCategory $kategori): array
     {
-        return [
-            'alat' => $kategori->equipments()->withTrashed()->count(),
-            'kemampuan' => $kategori->capabilities()->withTrashed()->count(),
-            'penugasan' => DB::table('penugasan_item')->where('equipment_category_id', $kategori->id)->count(),
-            'metode' => DB::table('calibration_methods')->where('equipment_category_id', $kategori->id)->count(),
-            'rumus' => DB::table('formulas')->where('equipment_category_id', $kategori->id)->count(),
-        ];
+        $hasil = [];
+
+        foreach (self::PEMAKAI_LEWAT_ID as $kunci => [$tabel, $kolom]) {
+            $hasil[$kunci] = DB::table($tabel)->where($kolom, $kategori->id)->count();
+        }
+
+        [$tabel, $kolomBesaran, $kolomOrganisasi] = self::PEMAKAI_RUMUS;
+        $hasil['rumus'] = DB::table($tabel)
+            ->where($kolomOrganisasi, $kategori->organization_id)
+            ->where($kolomBesaran, $kategori->kode)
+            ->count();
+
+        return $hasil;
     }
 
     /** @param  array<string, int>  $pemakai */

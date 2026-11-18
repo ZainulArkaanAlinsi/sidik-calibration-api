@@ -187,7 +187,8 @@ kategori tidak dipakai apa pun. `200 {"message":"Kategori dihapus."}`. Sudah dih
 ```
 
 `pemakai.alat` menghitung juga alat yang sudah dihapus lunak (sesi lama masih menunjuknya).
-`pemakai.rumus` (baris `formulas` yang menunjuk kategori ini) ditambahkan saat implementasi —
+`pemakai.rumus` = rumus (`formulas`) se-organisasi yang `besaran`-nya sama dengan KODE kategori ini
+(tabel `formulas` tidak punya FK kategori; yang sudah dihapus lunak ikut terhitung) — ditambahkan saat implementasi —
 ADDITIVE terhadap rancangan awal yang hanya memuat empat kunci pertama.
 
 ## 3. Arsip draf lembar kerja
