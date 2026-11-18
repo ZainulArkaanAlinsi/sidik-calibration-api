@@ -374,6 +374,12 @@ class AppServiceProvider extends ServiceProvider
         // buat admin yang memproses beberapa orang sekaligus.
         $perMenitPengguna('pelanggan-cabut-anggota', 30);
 
+        // Tab "Alat" di detail Pelanggan dan riwayat sertifikat satu alat (kursor).
+        // Baca, digulir dengan jempol: 60/menit per akun, ember terpisah supaya
+        // menggulir riwayat tidak menghabiskan jatah daftar alat (dan sebaliknya).
+        $perMenitPengguna('alat-pelanggan-lab', 60);
+        $perMenitPengguna('riwayat-sertifikat-alat', 60);
+
 
         // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
         // dari jalur admin lab — tiap undangan mengirim email ke alamat yang

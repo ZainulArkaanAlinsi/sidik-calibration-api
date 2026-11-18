@@ -106,6 +106,11 @@ class MatriksIzin
         // cabut anggota. Admin DAN super admin; teknisi/viewer tidak.
         'anggota-pelanggan.lihat' => ['GET', 'api/customers/{customer}/anggota'],
         'anggota-pelanggan.cabut' => ['POST', 'api/customers/{customer}/anggota/{anggota}/nonaktifkan'],
+        // Melacak alat satu pelanggan dari detail Pelanggan (admin & super admin),
+        // dan riwayat sertifikat satu alat (SEMUA peran internal; teknisi dibatasi
+        // ke sesinya sendiri di query, bukan di sini — lihat `LINGKUP_SENDIRI`).
+        'pelanggan.alat-lihat' => ['GET', 'api/customers/{customer}/alat'],
+        'alat.riwayat-sertifikat' => ['GET', 'api/equipments/{equipment}/sertifikat'],
         'standar.lihat' => ['GET', 'api/standards'],
         'standar.kelola' => ['POST', 'api/standards'],
         'ruangan.lihat' => ['GET', 'api/rooms'],

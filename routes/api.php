@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\PelangganAlatController;
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
 use App\Http\Controllers\Api\Admin\PengajuanAkunController;
 use App\Http\Controllers\Api\ArsipGarisWaktuController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
 use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\RiwayatSertifikatAlatController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\Studio\HitungWorkbookController;
@@ -622,6 +624,11 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/categories/{kode}', [CategoryController::class, 'show']);
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
+    // Riwayat sertifikat satu alat, tahun ke tahun (paginasi kursor, limit ≤ 50).
+    // Semua peran internal; teknisi hanya sertifikat dari sesinya sendiri — ditegakkan
+    // di query (`RiwayatSertifikatAlat`), sama dengan `GET /certificates`.
+    Route::get('/equipments/{equipment}/sertifikat', RiwayatSertifikatAlatController::class)
+        ->middleware('throttle:riwayat-sertifikat-alat');
 
     // Dropdown pelanggan — SEMUA role, read-only, cuma id/nama/alamat.
     //
@@ -873,6 +880,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // `lolosTulisSuperAdmin`); cabutnya satu pintu dengan jalur PIC utama
         // (`Keanggotaan::nonaktifkan`). Kontrak: docs/perintah-frontend-super-admin.md.
         Route::get('/customers/{customer}/anggota', [PelangganKeanggotaanController::class, 'anggota']);
+        // Tab "Alat" di detail Pelanggan: daftar ringkas, paginasi KURSOR (limit ≤ 50).
+        // `GET /equipments?customer_id=` tetap ada; ini menambah jumlah & sertifikat terbaru.
+        Route::get('/customers/{customer}/alat', [PelangganAlatController::class, 'index'])
+            ->middleware('throttle:alat-pelanggan-lab');
         Route::post('/customers/{customer}/anggota/{anggota}/nonaktifkan', [PelangganKeanggotaanController::class, 'cabutAnggota'])
             ->middleware('throttle:pelanggan-cabut-anggota');
 
