@@ -59,7 +59,7 @@ final class PenyimpanganMaster
         self::ARAH_KONSERVATIF => 'KONSERVATIF (angka sistem lebih besar/aman dari master)',
         self::ARAH_TIDAK_KONSERVATIF => 'TIDAK konservatif (angka sistem lebih kecil dari master)',
         self::ARAH_NETRAL => 'tidak menggeser angka yang dicetak',
-        self::ARAH_TIDAK_TENTU => 'arah tergantung data sesi',
+        self::ARAH_TIDAK_TENTU => 'ke dua arah, tergantung data sesi',
     ];
 
     /**
@@ -78,8 +78,8 @@ final class PenyimpanganMaster
      * @param  string  $nilaiMaster  nilai (atau perlakuan) master, siap tampil
      * @param  string  $nilaiSistem  nilai (atau perlakuan) sistem, siap tampil
      * @param  float|null  $nilai  angka sistem yang relevan (kolom `nilai` baris jejak)
-     * @param  array<string, float|int|string|bool|null>  $angka  angka pembanding mentah (master/sistem) untuk
-     *                                                            pembaca mesin dan test; teks tetap di `keterangan`
+     * @param  array<string, mixed>  $angka  angka pembanding mentah (master/sistem) untuk
+     *                                       pembaca mesin dan test; teks tetap di `keterangan`
      * @return array<string, mixed>
      */
     public static function baris(

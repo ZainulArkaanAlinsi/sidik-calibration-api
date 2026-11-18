@@ -3,6 +3,7 @@
 namespace App\Services\Calibration;
 
 use App\Services\StudentTDistribution;
+use App\Support\PenyimpanganMaster;
 use InvalidArgumentException;
 
 /**
@@ -196,6 +197,10 @@ class AutoclaveCalculator
         $uBentangan = $budget['k'] * $budget['uc'];
         $u95 = max($uBentangan, $cmc);
 
+        // PK-9 (PK5-4): catatan penyimpangan master — hanya teks pembanding, tidak
+        // satu pun angka di atas ikut berubah. Kunci ada HANYA bila sesi terkena.
+        $penyimpangan = $this->catatanTitikWaktuKeLima($disk, $standar, $indikatorRata, $sensor, $keseragaman);
+
         return [
             'indikator_rata' => $indikatorRata,
             'stdev_indikator' => $stdevIndikator,
@@ -210,7 +215,98 @@ class AutoclaveCalculator
             'u_bentangan' => $uBentangan,
             'cmc' => $cmc,
             'u95' => $u95,
+            ...($penyimpangan === [] ? [] : ['penyimpangan_master' => $penyimpangan]),
         ];
+    }
+
+    /**
+     * Catatan "angka ini berbeda dari master": titik waktu ke-5 ikut dirata-rata.
+     *
+     * Master `PERHITUNGAN FC` (D23:I25) membaca kolom titik waktu `INPUT DATA` D,F,H,H,I —
+     * titik ke-5 (K) terbuang, ke-3 (H) terhitung dua kali — sedangkan sistem merata-ratakan
+     * SEMUA titik yang terisi (keputusan pemilik, lihat docblock kelas). Dampaknya di cetak:
+     * Terukur dan Koreksi tiap disk bergeser 0,01 dan Keseragaman 0,466 -> 0,464; U95, k,
+     * Kestabilan, dan Variasi sama (PK5-4).
+     *
+     * Muncul hanya bila minimal satu disk punya titik ke-5 DAN rata-rata master-nya benar-benar
+     * beda dari rata-rata sistem. "Versi master" dihitung dari salinan bacaan dan hanya dicetak
+     * di teks.
+     *
+     * @param  array<int, mixed>  $disk
+     * @param  array<int, mixed>  $standar
+     * @param  list<array<string, mixed>>  $sensor
+     * @return list<array<string, mixed>>
+     */
+    private function catatanTitikWaktuKeLima(array $disk, array $standar, float $indikatorRata, array $sensor, float $keseragaman): array
+    {
+        $pb = PenyimpanganMaster::class;
+        $beda = false;
+        $masterBaris = [];
+        $simpanganMaster = [];
+
+        foreach ($sensor as $s) {
+            $i = (int) $s['no'] - 1;
+            $posisi = array_map(
+                static fn ($v): ?float => ($v === null || $v === '' || ! is_numeric($v)) ? null : (float) $v,
+                array_values((array) ($disk[$i] ?? [])),
+            );
+            $masterRata = (float) $s['rata'];
+
+            if (count($posisi) >= 5 && $posisi[4] !== null && ! in_array(null, array_slice($posisi, 0, 4), true)) {
+                $masterRata = ($posisi[0] + $posisi[1] + 2 * $posisi[2] + $posisi[3]) / 5;
+            }
+
+            if (abs($masterRata - (float) $s['rata']) > 1e-12) {
+                $beda = true;
+            }
+
+            $terukur = $masterRata + $this->koreksiTerdekat($standar[$i]['tabel'] ?? [], $masterRata);
+            $koreksi = $terukur - $indikatorRata;
+            $simpanganMaster[] = $koreksi;
+            $masterBaris[] = ['no' => $s['no'], 'terukur' => $terukur, 'koreksi' => $koreksi];
+        }
+
+        if (! $beda) {
+            return [];
+        }
+
+        $keseragamanMaster = abs(max($simpanganMaster));
+        $tulis = static function (array $baris, string $kunciTerukur, string $kunciKoreksi) use ($pb): string {
+            return implode('; ', array_map(
+                static fn (array $b): string => sprintf(
+                    'disk %d Terukur %s / Koreksi %s',
+                    $b['no'], $pb::angka((float) $b[$kunciTerukur]), $pb::angka((float) $b[$kunciKoreksi]),
+                ),
+                $baris,
+            ));
+        };
+        $sistemBaris = array_map(static fn (array $s): array => [
+            'no' => $s['no'],
+            'terukur' => $s['standar_terkoreksi'],
+            'koreksi' => $s['koreksi'],
+        ], $sensor);
+
+        return [$pb::baris(
+            'autoclave',
+            'titik_waktu_ke5_ikut',
+            'Master membaca titik waktu D,F,H,H,I (titik ke-5 terbuang, ke-3 terhitung dua kali); sistem '
+            .'merata-ratakan SEMUA titik waktu yang terisi. Keputusan pemilik: titik ke-5 ikut, jangan '
+            .'"dibenarkan" balik ke angka master tanpa arahan baru. U95 suhu dan tekanan, k, Kestabilan, dan '
+            .'Variasi sama dengan master; yang bergeser Terukur, Koreksi, dan Keseragaman (selisih sekitar 0,01 '
+            .'pada angka cetak).',
+            '`PERHITUNGAN FC!D23:I25` master (baris disk membaca D,F,H,H,I; baris Indikator D26:I26 membaca '
+            .'D,F,H,I,K dengan benar); docs/pertanyaan-lab-adu-cetak-b.md PK5-4; docblock AutoclaveCalculator',
+            sprintf('%s; Keseragaman %s', $tulis($masterBaris, 'terukur', 'koreksi'), $pb::angka($keseragamanMaster)),
+            sprintf('%s; Keseragaman %s', $tulis($sistemBaris, 'terukur', 'koreksi'), $pb::angka($keseragaman)),
+            $pb::ARAH_TIDAK_TENTU,
+            $keseragaman,
+            [
+                'keseragaman_master' => $keseragamanMaster,
+                'keseragaman_sistem' => $keseragaman,
+                'disk_master' => $masterBaris,
+                'disk_sistem' => $sistemBaris,
+            ],
+        )];
     }
 
     /**

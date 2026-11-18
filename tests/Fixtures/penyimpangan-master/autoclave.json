@@ -1,0 +1,646 @@
+{
+    "contoh_lima_titik_waktu": {
+        "set_point": 121.0,
+        "suhu": {
+            "indikator_rata": 121.0,
+            "stdev_indikator": 0.0,
+            "sensor": [
+                {
+                    "no": 1,
+                    "rata": 121.266,
+                    "koreksi_standar": 0.13,
+                    "standar_terkoreksi": 121.396,
+                    "koreksi": 0.3960000000000008,
+                    "delta_t": 0.01999999999999602,
+                    "maks": 121.28,
+                    "min": 121.26
+                },
+                {
+                    "no": 2,
+                    "rata": 121.26399999999998,
+                    "koreksi_standar": 0.2,
+                    "standar_terkoreksi": 121.46399999999998,
+                    "koreksi": 0.4639999999999844,
+                    "delta_t": 0.04999999999999716,
+                    "maks": 121.3,
+                    "min": 121.25
+                },
+                {
+                    "no": 3,
+                    "rata": 121.28599999999999,
+                    "koreksi_standar": 0.15,
+                    "standar_terkoreksi": 121.43599999999999,
+                    "koreksi": 0.43599999999999284,
+                    "delta_t": 0.0899999999999892,
+                    "maks": 121.35,
+                    "min": 121.26
+                }
+            ],
+            "kestabilan": 0.0449999999999946,
+            "keseragaman": 0.4639999999999844,
+            "variasi": 0.09999999999999432,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Temperature Standar",
+                    "u": 0.44,
+                    "pembagi": 2.0,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.22,
+                    "uici": 0.22
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Standar",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Alat",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 201,
+                    "ci": 2.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.005773502691896258
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Drift Standar",
+                    "u": 0.044,
+                    "pembagi": 1.73,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.02543352601156069,
+                    "uici": 0.02543352601156069
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Standar",
+                    "u": 0.0449999999999946,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.03419260585431756,
+                    "uici": 0.03419260585431756
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Alat",
+                    "u": 0.0,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.0,
+                    "uici": 0.0
+                }
+            ],
+            "uc": 0.2241822142971117,
+            "v_eff": 209.38864755710156,
+            "k": 1.9713602363081708,
+            "u_bentangan": 0.4419439029528431,
+            "cmc": 0.34,
+            "u95": 0.4419439029528431
+        },
+        "tekanan": {
+            "satuan": "MPa",
+            "uut_setting": 0.112,
+            "uut_setting_bar": 1.12,
+            "standar_rata_bar": 1.231,
+            "index_bar": 1.5,
+            "ekstrapolasi_tekanan": {
+                "set_bar": 1.12,
+                "index_bar": 1.5,
+                "tabel_min_bar": 1.5,
+                "tabel_maks_bar": 4.5
+            },
+            "koreksi_standar_bar": 0.0,
+            "standar_terkoreksi_bar": 1.231,
+            "koreksi_bar": 0.11099999999999999,
+            "stdev_bar": 0.00724568837309471,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator",
+                    "u": 0.0046,
+                    "pembagi": 2.0,
+                    "vi": 60,
+                    "ci": 1.0,
+                    "ui": 0.0023,
+                    "uici": 0.0023
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Alat yang dikalibrasi",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Standar",
+                    "u": 0.0005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.0002886751345948129,
+                    "uici": 0.0002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Drift Standard",
+                    "u": 0.00046,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.00026558112382722785,
+                    "uici": 0.00026558112382722785
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan",
+                    "u": 0.00724568837309471,
+                    "pembagi": 3.0,
+                    "vi": 2,
+                    "ci": 1.0,
+                    "ui": 0.0024152294576982366,
+                    "uici": 0.0024152294576982366
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah",
+                    "u": 0.0006,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 1000000,
+                    "ci": 1.0,
+                    "ui": 0.00034641016151377546,
+                    "uici": 0.00034641016151377546
+                }
+            ],
+            "uc": 0.004441906497590119,
+            "v_eff": 20.630946263385383,
+            "k": 2.0859634472653994,
+            "u_bentangan_bar": 0.009265654590143661,
+            "cmc_bar": 0.059,
+            "u95_bar": 0.059,
+            "standar_terkoreksi": 0.12310000000000001,
+            "koreksi": 0.011099999999999999,
+            "u95": 0.0059
+        }
+    },
+    "empat_titik_waktu": {
+        "set_point": 121.0,
+        "suhu": {
+            "indikator_rata": 121.0,
+            "stdev_indikator": 0.0,
+            "sensor": [
+                {
+                    "no": 1,
+                    "rata": 121.2625,
+                    "koreksi_standar": 0.13,
+                    "standar_terkoreksi": 121.3925,
+                    "koreksi": 0.3924999999999983,
+                    "delta_t": 0.009999999999990905,
+                    "maks": 121.27,
+                    "min": 121.26
+                },
+                {
+                    "no": 2,
+                    "rata": 121.2675,
+                    "koreksi_standar": 0.2,
+                    "standar_terkoreksi": 121.4675,
+                    "koreksi": 0.46750000000000114,
+                    "delta_t": 0.04999999999999716,
+                    "maks": 121.3,
+                    "min": 121.25
+                },
+                {
+                    "no": 3,
+                    "rata": 121.2875,
+                    "koreksi_standar": 0.15,
+                    "standar_terkoreksi": 121.4375,
+                    "koreksi": 0.4375,
+                    "delta_t": 0.0899999999999892,
+                    "maks": 121.35,
+                    "min": 121.26
+                }
+            ],
+            "kestabilan": 0.0449999999999946,
+            "keseragaman": 0.46750000000000114,
+            "variasi": 0.09999999999999432,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Temperature Standar",
+                    "u": 0.44,
+                    "pembagi": 2.0,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.22,
+                    "uici": 0.22
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Standar",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Alat",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 201,
+                    "ci": 2.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.005773502691896258
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Drift Standar",
+                    "u": 0.044,
+                    "pembagi": 1.73,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.02543352601156069,
+                    "uici": 0.02543352601156069
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Standar",
+                    "u": 0.0449999999999946,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.03419260585431756,
+                    "uici": 0.03419260585431756
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Alat",
+                    "u": 0.0,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.0,
+                    "uici": 0.0
+                }
+            ],
+            "uc": 0.2241822142971117,
+            "v_eff": 209.38864755710156,
+            "k": 1.9713602363081708,
+            "u_bentangan": 0.4419439029528431,
+            "cmc": 0.34,
+            "u95": 0.4419439029528431
+        },
+        "tekanan": {
+            "satuan": "MPa",
+            "uut_setting": 0.112,
+            "uut_setting_bar": 1.12,
+            "standar_rata_bar": 1.231,
+            "index_bar": 1.5,
+            "ekstrapolasi_tekanan": {
+                "set_bar": 1.12,
+                "index_bar": 1.5,
+                "tabel_min_bar": 1.5,
+                "tabel_maks_bar": 4.5
+            },
+            "koreksi_standar_bar": 0.0,
+            "standar_terkoreksi_bar": 1.231,
+            "koreksi_bar": 0.11099999999999999,
+            "stdev_bar": 0.00724568837309471,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator",
+                    "u": 0.0046,
+                    "pembagi": 2.0,
+                    "vi": 60,
+                    "ci": 1.0,
+                    "ui": 0.0023,
+                    "uici": 0.0023
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Alat yang dikalibrasi",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Standar",
+                    "u": 0.0005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.0002886751345948129,
+                    "uici": 0.0002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Drift Standard",
+                    "u": 0.00046,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.00026558112382722785,
+                    "uici": 0.00026558112382722785
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan",
+                    "u": 0.00724568837309471,
+                    "pembagi": 3.0,
+                    "vi": 2,
+                    "ci": 1.0,
+                    "ui": 0.0024152294576982366,
+                    "uici": 0.0024152294576982366
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah",
+                    "u": 0.0006,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 1000000,
+                    "ci": 1.0,
+                    "ui": 0.00034641016151377546,
+                    "uici": 0.00034641016151377546
+                }
+            ],
+            "uc": 0.004441906497590119,
+            "v_eff": 20.630946263385383,
+            "k": 2.0859634472653994,
+            "u_bentangan_bar": 0.009265654590143661,
+            "cmc_bar": 0.059,
+            "u95_bar": 0.059,
+            "standar_terkoreksi": 0.12310000000000001,
+            "koreksi": 0.011099999999999999,
+            "u95": 0.0059
+        }
+    },
+    "tanpa_suhu": {
+        "set_point": 121.0,
+        "suhu": null,
+        "tekanan": {
+            "satuan": "MPa",
+            "uut_setting": 0.112,
+            "uut_setting_bar": 1.12,
+            "standar_rata_bar": 1.231,
+            "index_bar": 1.5,
+            "ekstrapolasi_tekanan": {
+                "set_bar": 1.12,
+                "index_bar": 1.5,
+                "tabel_min_bar": 1.5,
+                "tabel_maks_bar": 4.5
+            },
+            "koreksi_standar_bar": 0.0,
+            "standar_terkoreksi_bar": 1.231,
+            "koreksi_bar": 0.11099999999999999,
+            "stdev_bar": 0.00724568837309471,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator",
+                    "u": 0.0046,
+                    "pembagi": 2.0,
+                    "vi": 60,
+                    "ci": 1.0,
+                    "ui": 0.0023,
+                    "uici": 0.0023
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Alat yang dikalibrasi",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Standar",
+                    "u": 0.0005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.0002886751345948129,
+                    "uici": 0.0002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Drift Standard",
+                    "u": 0.00046,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.00026558112382722785,
+                    "uici": 0.00026558112382722785
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan",
+                    "u": 0.00724568837309471,
+                    "pembagi": 3.0,
+                    "vi": 2,
+                    "ci": 1.0,
+                    "ui": 0.0024152294576982366,
+                    "uici": 0.0024152294576982366
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah",
+                    "u": 0.0006,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 1000000,
+                    "ci": 1.0,
+                    "ui": 0.00034641016151377546,
+                    "uici": 0.00034641016151377546
+                }
+            ],
+            "uc": 0.004441906497590119,
+            "v_eff": 20.630946263385383,
+            "k": 2.0859634472653994,
+            "u_bentangan_bar": 0.009265654590143661,
+            "cmc_bar": 0.059,
+            "u95_bar": 0.059,
+            "standar_terkoreksi": 0.12310000000000001,
+            "koreksi": 0.011099999999999999,
+            "u95": 0.0059
+        }
+    },
+    "titik_ketiga_kosong": {
+        "set_point": 121.0,
+        "suhu": {
+            "indikator_rata": 121.0,
+            "stdev_indikator": 0.0,
+            "sensor": [
+                {
+                    "no": 1,
+                    "rata": 121.26750000000001,
+                    "koreksi_standar": 0.13,
+                    "standar_terkoreksi": 121.39750000000001,
+                    "koreksi": 0.39750000000000796,
+                    "delta_t": 0.01999999999999602,
+                    "maks": 121.28,
+                    "min": 121.26
+                },
+                {
+                    "no": 2,
+                    "rata": 121.265,
+                    "koreksi_standar": 0.2,
+                    "standar_terkoreksi": 121.465,
+                    "koreksi": 0.4650000000000034,
+                    "delta_t": 0.04999999999999716,
+                    "maks": 121.3,
+                    "min": 121.25
+                },
+                {
+                    "no": 3,
+                    "rata": 121.2875,
+                    "koreksi_standar": 0.15,
+                    "standar_terkoreksi": 121.4375,
+                    "koreksi": 0.4375,
+                    "delta_t": 0.0899999999999892,
+                    "maks": 121.35,
+                    "min": 121.26
+                }
+            ],
+            "kestabilan": 0.0449999999999946,
+            "keseragaman": 0.4650000000000034,
+            "variasi": 0.09999999999999432,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Temperature Standar",
+                    "u": 0.44,
+                    "pembagi": 2.0,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.22,
+                    "uici": 0.22
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Standar",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 200,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Resolusi Alat",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 201,
+                    "ci": 2.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.005773502691896258
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Drift Standar",
+                    "u": 0.044,
+                    "pembagi": 1.73,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.02543352601156069,
+                    "uici": 0.02543352601156069
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Standar",
+                    "u": 0.0449999999999946,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.03419260585431756,
+                    "uici": 0.03419260585431756
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan Alat",
+                    "u": 0.0,
+                    "pembagi": 1.3160740129524924,
+                    "vi": 4,
+                    "ci": 1.0,
+                    "ui": 0.0,
+                    "uici": 0.0
+                }
+            ],
+            "uc": 0.2241822142971117,
+            "v_eff": 209.38864755710156,
+            "k": 1.9713602363081708,
+            "u_bentangan": 0.4419439029528431,
+            "cmc": 0.34,
+            "u95": 0.4419439029528431
+        },
+        "tekanan": {
+            "satuan": "MPa",
+            "uut_setting": 0.112,
+            "uut_setting_bar": 1.12,
+            "standar_rata_bar": 1.231,
+            "index_bar": 1.5,
+            "ekstrapolasi_tekanan": {
+                "set_bar": 1.12,
+                "index_bar": 1.5,
+                "tabel_min_bar": 1.5,
+                "tabel_maks_bar": 4.5
+            },
+            "koreksi_standar_bar": 0.0,
+            "standar_terkoreksi_bar": 1.231,
+            "koreksi_bar": 0.11099999999999999,
+            "stdev_bar": 0.00724568837309471,
+            "budget": [
+                {
+                    "komponen": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator",
+                    "u": 0.0046,
+                    "pembagi": 2.0,
+                    "vi": 60,
+                    "ci": 1.0,
+                    "ui": 0.0023,
+                    "uici": 0.0023
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Alat yang dikalibrasi",
+                    "u": 0.005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.002886751345948129,
+                    "uici": 0.002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Daya Baca Standar",
+                    "u": 0.0005,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.0002886751345948129,
+                    "uici": 0.0002886751345948129
+                },
+                {
+                    "komponen": "Ketidakpastian Drift Standard",
+                    "u": 0.00046,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 50,
+                    "ci": 1.0,
+                    "ui": 0.00026558112382722785,
+                    "uici": 0.00026558112382722785
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Pengulangan Pembacaan",
+                    "u": 0.00724568837309471,
+                    "pembagi": 3.0,
+                    "vi": 2,
+                    "ci": 1.0,
+                    "ui": 0.0024152294576982366,
+                    "uici": 0.0024152294576982366
+                },
+                {
+                    "komponen": "Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah",
+                    "u": 0.0006,
+                    "pembagi": 1.7320508075688772,
+                    "vi": 1000000,
+                    "ci": 1.0,
+                    "ui": 0.00034641016151377546,
+                    "uici": 0.00034641016151377546
+                }
+            ],
+            "uc": 0.004441906497590119,
+            "v_eff": 20.630946263385383,
+            "k": 2.0859634472653994,
+            "u_bentangan_bar": 0.009265654590143661,
+            "cmc_bar": 0.059,
+            "u95_bar": 0.059,
+            "standar_terkoreksi": 0.12310000000000001,
+            "koreksi": 0.011099999999999999,
+            "u95": 0.0059
+        }
+    }
+}
