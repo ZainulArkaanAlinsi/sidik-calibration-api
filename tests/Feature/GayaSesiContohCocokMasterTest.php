@@ -178,7 +178,7 @@ class GayaSesiContohCocokMasterTest extends TestCase
 
                 foreach ($hitung as $h) {
                     $this->assertEqualsWithDelta(0.022563, (float) $h->ketidakpastian_diperluas, 1e-8, "Proving Ring titik {$h->titik_ke}: U95 tersimpan = CMC 2,3 kgf dalam kN (master 0,22 kN).");
-                    $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('gaya/proving_ring', 'U39'), (float) $h->faktor_cakupan_k, 1e-9, "Proving Ring titik {$h->titik_ke}: k tersimpan");
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('gaya/proving_ring', 'U39'), $h->faktor_cakupan_k, "Proving Ring titik {$h->titik_ke}: k tersimpan");
                     $this->assertNull($h->keputusan, 'Proving Ring: master tidak mencetak vonis; aplikasi pun tidak.');
                 }
             },

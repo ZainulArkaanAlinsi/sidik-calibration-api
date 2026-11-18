@@ -18,7 +18,7 @@ use Tests\TestCase;
  * ## Hasil
  *
  * - **pH**: SEMUA baris cocok (U95 per titik, `k`), dan U95/k tersimpan sama dengan sel master
- *   sampai 1e-9.
+ *   sampai 6e-9 (kuantum decimal(20,8)).
  * - **Sieve**: dua baris beda = Standard Indication Wrap 19,1487 dan Weft 19,1927 (master 19,1387
  *   dan 19,1827): `VLOOKUP(...; 3; 0)` master menunjuk kolom kosong, sistem menambah koreksi
  *   caliper +0,01 mm (`pertanyaan-lab-sieve.md` §4; jejak sesi `penyimpangan_master`).
@@ -60,11 +60,11 @@ class SieveAutoclaveTimerPhSesiContohCocokMasterTest extends TestCase
                 $this->assertCount(3, $hitung, 'pH: tiga titik buffer.');
 
                 foreach (['S21', 'S22', 'S23'] as $i => $sel) {
-                    $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('ph/trial', $sel), (float) $hitung[$i]->ketidakpastian_diperluas, 1e-9, 'pH titik '.($i + 1).': U95 tersimpan');
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('ph/trial', $sel), $hitung[$i]->ketidakpastian_diperluas, 'pH titik '.($i + 1).': U95 tersimpan');
                 }
 
                 // Master mencetak SATU k (`U24`) — milik titik kedua.
-                $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('ph/trial', 'U24'), (float) $hitung[1]->faktor_cakupan_k, 1e-9, 'pH: k tersimpan');
+                $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('ph/trial', 'U24'), $hitung[1]->faktor_cakupan_k, 'pH: k tersimpan');
             },
 
             'sieve/mesh' => function (): void {
@@ -79,8 +79,8 @@ class SieveAutoclaveTimerPhSesiContohCocokMasterTest extends TestCase
                 $this->assertTrue($this->jejakMemuat($hitung, 'penyimpangan_master'), 'Sieve: koreksi +0,01 harus terbaca di jejak sesi.');
 
                 foreach (['N20', 'N21', 'N22'] as $i => $sel) {
-                    $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('sieve/mesh', $sel), (float) $hitung[$i]->ketidakpastian_diperluas, 1e-9, 'Sieve parameter '.($i + 1).': U95 tersimpan');
-                    $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('sieve/mesh', 'O23'), (float) $hitung[$i]->faktor_cakupan_k, 1e-9, 'Sieve: k tersimpan');
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('sieve/mesh', $sel), $hitung[$i]->ketidakpastian_diperluas, 'Sieve parameter '.($i + 1).': U95 tersimpan');
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('sieve/mesh', 'O23'), $hitung[$i]->faktor_cakupan_k, 'Sieve: k tersimpan');
                     // Vonis master `AE20:AE22` = PASS (kolom di luar area cetak, dibaca langsung dari master 18 Nov 2026).
                     $this->assertSame('PASS', $hitung[$i]->keputusan, 'Sieve parameter '.($i + 1).': vonis');
                 }
@@ -123,7 +123,7 @@ class SieveAutoclaveTimerPhSesiContohCocokMasterTest extends TestCase
                 $this->assertCount(5, $hitung, 'Timer: lima titik.');
 
                 foreach ($hitung as $h) {
-                    $this->assertEqualsWithDelta(PembandingCetakMaster::nilaiSel('timer/stopwatch', 'X19'), (float) $h->ketidakpastian_diperluas, 1e-9, "Timer titik {$h->titik_ke}: U95 tersimpan (lantai CMC)");
+                    $this->assertTersimpanSama(PembandingCetakMaster::nilaiSel('timer/stopwatch', 'X19'), $h->ketidakpastian_diperluas, "Timer titik {$h->titik_ke}: U95 tersimpan (lantai CMC)");
                     $this->assertNull($h->keputusan, 'Timer: master tidak mencetak vonis; aplikasi pun tidak.');
                 }
 

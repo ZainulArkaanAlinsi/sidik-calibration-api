@@ -46,6 +46,19 @@ trait MengumpulkanGagalPerProfil
     }
 
     /**
+     * Nilai TERSIMPAN di kolom `decimal(20,8)` sama dengan sel master.
+     *
+     * MySQL menyimpan delapan desimal, SQLite float penuh (AGENTS.md §Float beku titik seri) —
+     * jadi selisih terbesar yang sah antara keduanya 5e-9. Toleransi 6e-9 menampung itu dan
+     * tetap menolak angka yang benar-benar salah. Hanya untuk kolom decimal; angka CETAK
+     * tidak pernah dilonggarkan, dan kolom JSON (15 digit signifikan) punya tolerans sendiri.
+     */
+    protected function assertTersimpanSama(float $master, mixed $tersimpan, string $pesan): void
+    {
+        $this->assertEqualsWithDelta($master, (float) $tersimpan, 6e-9, $pesan);
+    }
+
+    /**
      * Apakah jejak hasil hitung memuat catatan dengan `kode` atau `sumber` ini
      * (AGENTS.md §Olah data butir 4: penyimpangan dari master harus terbaca di
      * `type_b_components`, bukan hanya di komentar kode).
