@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\PelangganAlatController;
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
+use App\Http\Controllers\Api\Admin\PemindahanAlatController;
 use App\Http\Controllers\Api\Admin\PengajuanAkunController;
 use App\Http\Controllers\Api\ArsipGarisWaktuController;
 use App\Http\Controllers\Api\AuditLogController;
@@ -907,6 +908,10 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // `GET /equipments?customer_id=` tetap ada; ini menambah jumlah & sertifikat terbaru.
         Route::get('/customers/{customer}/alat', [PelangganAlatController::class, 'index'])
             ->middleware('throttle:alat-pelanggan-lab');
+        // Pindahkan alat (+ sertifikat yang menempel lewat alat) ke PT lain di lab yang
+        // sama. `dry_run` = pratinjau tanpa menulis; eksekusi butuh `konfirmasi` + `alasan`.
+        Route::post('/customers/{customer}/pindahkan-alat', PemindahanAlatController::class)
+            ->middleware('throttle:pindah-alat-pelanggan');
         Route::post('/customers/{customer}/anggota/{anggota}/nonaktifkan', [PelangganKeanggotaanController::class, 'cabutAnggota'])
             ->middleware('throttle:pelanggan-cabut-anggota');
 

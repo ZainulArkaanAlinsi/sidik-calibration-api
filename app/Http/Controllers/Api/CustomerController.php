@@ -319,7 +319,9 @@ class CustomerController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $customers = Customer::query()
-            ->withCount('equipments')
+            // `equipments_count` (`jumlah_alat`) ikut di dalam `denganHitungan()`,
+            // bersama hitungan sertifikat/anggota/undangan — satu query per halaman.
+            ->denganHitungan()
             ->where('organization_id', $request->user()->organization_id)
             ->when($request->filled('search'), fn ($query) => $query->where(
                 'nama',
@@ -350,7 +352,15 @@ class CustomerController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $customer);
 
-        return response()->json(['data' => new CustomerResource($customer->loadCount('equipments'))]);
+        // Dimuat ulang lewat `denganHitungan()` (bukan `loadCount`): hitungan
+        // sertifikat butuh subquery yang tidak bisa diwakili relasi.
+        $berhitung = Customer::query()
+            ->denganHitungan()
+            ->where('organization_id', $request->user()->organization_id)
+            ->whereKey($customer->getKey())
+            ->firstOrFail();
+
+        return response()->json(['data' => new CustomerResource($berhitung)]);
     }
 
     public function update(CustomerRequest $request, Customer $customer): JsonResponse

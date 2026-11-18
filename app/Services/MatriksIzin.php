@@ -110,6 +110,8 @@ class MatriksIzin
         // dan riwayat sertifikat satu alat (SEMUA peran internal; teknisi dibatasi
         // ke sesinya sendiri di query, bukan di sini — lihat `LINGKUP_SENDIRI`).
         'pelanggan.alat-lihat' => ['GET', 'api/customers/{customer}/alat'],
+        // Memindahkan alat (+ sertifikatnya) ke PT lain — admin & super admin.
+        'pelanggan.pindah-alat' => ['POST', 'api/customers/{customer}/pindahkan-alat'],
         'alat.riwayat-sertifikat' => ['GET', 'api/equipments/{equipment}/sertifikat'],
         'standar.lihat' => ['GET', 'api/standards'],
         'standar.kelola' => ['POST', 'api/standards'],

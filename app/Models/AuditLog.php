@@ -90,6 +90,15 @@ class AuditLog extends Model
     public const ACTION_ANGGOTA_DICABUT = 'anggota_dicabut';
 
     /**
+     * Alat (beserta sertifikat yang menempel lewat alat itu) dipindahkan antar PT
+     * pelanggan oleh admin lab / super admin (18 Nov 2026). Entitasnya `customers`
+     * = PT ASAL; `new_data` memuat PT asal & tujuan, id alat, jumlah sertifikat,
+     * `peran_pelaku`, `alasan`. Baris `diubah` otomatis per alat (`customer_id`
+     * lama → baru) tetap ditulis `Diaudit`. 16 karakter — muat di `string(20)`.
+     */
+    public const ACTION_ALAT_DIPINDAH_PT = 'alat_dipindah_pt';
+
+    /**
      * Akun internal lab dinonaktifkan / diaktifkan kembali oleh super admin
      * (18 Nov 2026). Entitasnya `users`; isi seperti [ACTION_ANGGOTA_DICABUT].
      * 18 dan 15 karakter — muat di `string(20)`.

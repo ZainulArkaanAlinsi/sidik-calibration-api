@@ -380,6 +380,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('alat-pelanggan-lab', 60);
         $perMenitPengguna('riwayat-sertifikat-alat', 60);
 
+        // Memindahkan alat (+ sertifikat) antar PT: aksi jarang, mengubah siapa yang
+        // melihat dokumen terbit. 10/menit per akun, pratinjau ikut dihitung.
+        $perMenitPengguna('pindah-alat-pelanggan', 10);
+
         // Akun internal lab oleh SUPER ADMIN (18 Nov 2026): menonaktifkan/mengaktifkan
         // memutus atau memulihkan akses orang (30/menit per akun, satu ember untuk
         // dua rute); MEMBUAT akun admin jarang dan menerima sandi awal di badan
