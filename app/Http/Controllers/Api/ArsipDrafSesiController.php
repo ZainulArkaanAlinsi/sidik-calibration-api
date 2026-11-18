@@ -34,6 +34,8 @@ use Illuminate\Support\Facades\DB;
  *
  * - Hanya status `draft`. `menunggu_approval`/`perlu_revisi`/`disetujui` -> 422
  *   `bukan_draf` (sesi yang pernah dikirim punya jalur koreksinya sendiri).
+ *   Draf yang berasal dari lembar yang PERNAH dikirim (`input_asli` atau
+ *   `submitted_at` terisi) -> 422 `pernah_dikirim`.
  * - Pembuat draf (teknisi pemilik) atau Master Data/super admin. Teknisi pada
  *   draf orang lain -> 404, sama dengan `GET /calibrations/{id}`.
  * - Pulihkan: hanya Master Data/super admin (gerbang rute `role:admin`).
@@ -63,11 +65,23 @@ class ArsipDrafSesiController extends Controller
                 return ['bukan_draf', $baris->status];
             }
 
+            // Draf yang LAHIR dari lembar yang pernah dikirim (dikembalikan lalu
+            // disimpan lagi sebagai draf) tetap berstatus `draft`, tetapi
+            // `input_asli` (isian pertama teknisi, tulis-sekali) dan
+            // `submitted_at` sudah terisi, dan `catatan_revisi` admin menempel di
+            // sana. Mengarsipkannya menghilangkan teguran admin dari antrean
+            // teknisi; jalur koreksinya tetap pengembalian/revisi.
+            if ($baris->input_asli !== null || $baris->submitted_at !== null) {
+                return ['pernah_dikirim', null];
+            }
+
             $sekarang = now();
 
             $berubah = CalibrationSession::query()
                 ->whereKey($baris->id)
                 ->where('status', CalibrationSession::STATUS_DRAFT)
+                ->whereNull('input_asli')
+                ->whereNull('submitted_at')
                 ->update(['deleted_at' => $sekarang, 'updated_at' => $sekarang]);
 
             if ($berubah !== 1) {
@@ -91,6 +105,14 @@ class ArsipDrafSesiController extends Controller
                 'message' => 'Hanya draf yang bisa diarsipkan; sesi ini sudah '.$hasil[1].'.',
                 'kode' => 'bukan_draf',
                 'status' => $hasil[1],
+            ], 422);
+        }
+
+        if ($hasil[0] === 'pernah_dikirim') {
+            return response()->json([
+                'message' => 'Draf ini berasal dari lembar yang pernah dikirim lalu dikembalikan, jadi tidak bisa diarsipkan. '
+                    .'Lanjutkan lembarnya dan kirim ulang.',
+                'kode' => 'pernah_dikirim',
             ], 422);
         }
 

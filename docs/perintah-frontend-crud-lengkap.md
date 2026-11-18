@@ -195,6 +195,9 @@ ADDITIVE terhadap rancangan awal yang hanya memuat empat kunci pertama.
 
 Hanya sesi berstatus **`draft`** yang bisa diarsipkan. Sesi `menunggu_approval`,
 `perlu_revisi`, `disetujui` (dan status lama lain) → `422 bukan_draf`.
+**Draf yang berasal dari lembar yang PERNAH dikirim** (dikembalikan lalu disimpan lagi sebagai draf;
+`input_asli`/`submitted_at` sudah terisi, teguran admin menempel di sesi) juga ditolak → `422 pernah_dikirim`:
+jalur koreksinya tetap lanjutkan lembar lalu kirim ulang.
 
 **Yang terjadi pada draf yang diarsipkan:** hilang dari `GET /calibrations`, dashboard, laporan,
 dan pelacakan; `GET`/`PUT /calibrations/{id}` → `404`; nomor sesi (`nomor_sesi`) tetap miliknya
@@ -234,6 +237,7 @@ Request:
 
 - **Idempoten:** mengarsipkan draf yang sudah diarsipkan → `200` dengan `message: "Draf sudah
   diarsipkan."` dan `arsip` yang LAMA (tidak ada baris audit kedua).
+- `422` **`pernah_dikirim`**: `{"message":"Draf ini berasal dari lembar yang pernah dikirim lalu dikembalikan, jadi tidak bisa diarsipkan. Lanjutkan lembarnya dan kirim ulang.","kode":"pernah_dikirim"}`
 - `422` **`bukan_draf`**: `{"message":"Hanya draf yang bisa diarsipkan; sesi ini sudah menunggu_approval.","kode":"bukan_draf","status":"menunggu_approval"}`
 - `409` **`status_berubah`**: sesi berubah status di antara pemeriksaan dan penyimpanan (mis.
   dikirim di perangkat lain bersamaan). Muat ulang lalu ulangi bila masih relevan.
@@ -394,6 +398,7 @@ judul "Penugasan dibatalkan", isi memuat judul penugasan, pembatal, dan alasan; 
 | `kategori_dipakai` | 422 | kategori masih dipakai, tidak bisa dihapus |
 | `kategori_nonaktif` | 422 | menambah nama alat ke kategori nonaktif |
 | `bukan_draf` | 422 | hanya draf yang bisa diarsipkan |
+| `pernah_dikirim` | 422 | draf berasal dari lembar yang pernah dikirim (tak bisa diarsipkan) |
 | `tidak_diarsipkan` | 422 | memulihkan sesi yang tidak diarsipkan |
 | `status_berubah` | 409 | status sesi berubah bersamaan |
 | `hanya_admin` | 403 | `diarsipkan=1` oleh non-admin |
