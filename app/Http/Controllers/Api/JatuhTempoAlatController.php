@@ -85,11 +85,14 @@ class JatuhTempoAlatController extends Controller
             // Lewat query builder + catatan eksplisit supaya satu baris audit
             // memuat ALASAN, bukan dua baris (event model + catatan).
             Equipment::whereKey($equipment->getKey())->update(['tanggal_jatuh_tempo' => $baru, 'updated_at' => now()]);
+            // `note` itu `string(500)` sedangkan alasan boleh sampai 2000 karakter:
+            // tanpa dipotong, MySQL strict menolaknya dengan 500 `Data too long`
+            // (SQLite meloloskan). Alasan LENGKAP tetap ada di `new_data.alasan`.
             $equipment->catatAudit(
                 AuditLog::ACTION_DIUBAH,
                 ['tanggal_jatuh_tempo' => $lama],
-                ['tanggal_jatuh_tempo' => $baru],
-                'Ubah jatuh tempo (jadwal alat): '.$data['alasan'],
+                ['tanggal_jatuh_tempo' => $baru, 'alasan' => $data['alasan']],
+                AuditLog::catatan('Ubah jatuh tempo (jadwal alat): '.$data['alasan']),
             );
         });
 

@@ -107,6 +107,39 @@ class UbahJatuhTempoAlatTest extends TestCase
         $this->assertSame('2027-12-31', $alat->fresh()->tanggal_jatuh_tempo->toDateString());
     }
 
+    /**
+     * Alasan boleh 2000 karakter tetapi `audit_logs.note` hanya `string(500)`:
+     * alasan panjang + awalan pernah berpotensi `Data too long` di MySQL strict
+     * (SQLite meloloskan). Diuji PERSIS di batas 2000 dengan huruf 2/3/4 byte,
+     * dan `note` ditagih terhadap 500 karakter.
+     */
+    public function test_alasan_2000_karakter_multibyte_muat_di_note_dan_utuh_di_new_data(): void
+    {
+        $alat = $this->alat();
+        $url = "/api/equipments/{$alat->id}/jatuh-tempo";
+
+        foreach (['é' => '2027-03-01', '漢' => '2027-03-02', '😀' => '2027-03-03'] as $huruf => $tanggal) {
+            $alasan = str_repeat($huruf, 2000);
+
+            $this->actingAs($this->admin)
+                ->postJson($url, ['tanggal_jatuh_tempo' => $tanggal, 'alasan' => $alasan])
+                ->assertOk()
+                ->assertJsonPath('jalur', 'jadwal_alat');
+
+            $log = AuditLog::where('entity_type', $alat->getTable())->where('entity_id', $alat->id)->latest('id')->firstOrFail();
+            $this->assertLessThanOrEqual(AuditLog::NOTE_MAKS, mb_strlen((string) $log->note), 'note melewati audit_logs.note');
+            $this->assertStringStartsWith('Ubah jatuh tempo (jadwal alat): ', (string) $log->note);
+            $this->assertSame($alasan, $log->new_data['alasan'], 'alasan LENGKAP harus utuh di new_data');
+            $this->assertSame($tanggal, $log->new_data['tanggal_jatuh_tempo']);
+        }
+
+        $this->actingAs($this->admin)
+            ->postJson($url, ['tanggal_jatuh_tempo' => '2027-03-04', 'alasan' => str_repeat('é', 2001)])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('alasan');
+        $this->assertSame('2027-03-03', $alat->fresh()->tanggal_jatuh_tempo->toDateString());
+    }
+
     public function test_hak_alasan_dan_organisasi(): void
     {
         $alat = $this->alat();
