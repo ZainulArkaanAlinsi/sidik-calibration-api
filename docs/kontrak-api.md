@@ -64,6 +64,12 @@ Accept: application/json
 > - Id di URL (`/equipments/{id}`, `/calibrations/{id}`, `/customers/{id}`, `/standards/{id}`, `/rooms/{id}`, `/orders/{id}`, …)
 >   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`).
 > - `GET /customers?search=` membaca `%` dan `_` secara harfiah (dulu `?search=%` mengembalikan semua pelanggan).
+> - Angka **tak terhingga** (`1e400` di JSON) di semua field angka di atas → `422` pada field itu (dulu `500`
+>   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
+> - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti
+>   bila order bernomor tertinggi dihapus). Nomor yang pernah tercetak tidak dipakai ulang.
+> - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
+>   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
 >   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
 >   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
@@ -328,7 +334,13 @@ Dijaga `GantiSandiLabTest`.
 ### Approval akun (admin-only) — dibutuhin biar register-nya ada gunanya
 - **`GET /api/users?status=pending`** — daftar akun yang nunggu disetujui
 - **`POST /api/users/{id}/approve`** — body `{ "role": "teknisi" }`. Admin yang nentuin role-nya di sini, bukan si pendaftar. Setelah ini `status` jadi `aktif` dan orangnya baru bisa login
-- **`POST /api/users/{id}/reject`** — tolak pendaftaran
+- **`POST /api/users/{id}/reject`** — tolak pendaftaran. **Hanya untuk akun `pending`** (18 Nov 2026): akun aktif atau nonaktif dijawab `422` `{"kode": "bukan_pending", "message": …}` dan tidak berubah. Dulu `reject` pada akun aktif menonaktifkannya sambil menjawab "Pendaftaran ditolak." — menonaktifkan akun aktif lewat `PUT /users/{id}` `{"status": "nonaktif"}`.
+
+> **✅ 18 Nov 2026 — penjaga penonaktifan (aditif, kode respons baru).** `PUT /api/users/{id}` yang memindahkan akun `aktif` ke `nonaktif`/`pending` dijawab `422` bila:
+> - `{"kode": "tidak_boleh_nonaktifkan_diri_sendiri"}` — pemanggil menonaktifkan AKUNNYA SENDIRI;
+> - `{"kode": "admin_terakhir_aktif"}` — sasarannya admin AKTIF TERAKHIR di organisasi (admin lab lain tidak dihitung; berlaku juga untuk super admin sebagai pemanggil).
+>
+> Menyetel `nonaktif` pada akun yang memang sudah nonaktif, menonaktifkan teknisi/viewer, dan menonaktifkan admin selama masih ada admin aktif lain tetap `200`. Izin tidak berubah (teknisi/viewer `403`, lab lain `404`). Dua admin yang saling menonaktifkan bersamaan: yang kedua melihat admin lain sudah nonaktif → `admin_terakhir_aktif`. Aplikasi sebaiknya menampilkan `message` apa adanya. (Belum dijaga: menurunkan role admin terakhir lewat `PUT` `role`, dan `POST /users/{id}/nonaktifkan` milik super admin — keputusan terpisah.)
 
 Kalau endpoint approve belum ada, **register jadi jebakan**: orang daftar, terus nggak pernah bisa masuk selamanya, dan nggak ada yang tahu. Jadi dua-duanya harus jalan bareng.
 
@@ -1528,6 +1540,12 @@ sebelum koreksi pertama). Sesi `disetujui` tetap terkunci (jalannya: revisi atau
 ### `GET /api/calibrations/{id}/bandingkan` — **admin & super admin** (15 Okt 2026)
 
 Asli teknisi lawan keadaan sekarang, per sel; teknisi/viewer → `403`, lab lain → `404`.
+
+> **✅ 18 Nov 2026 — angka dibandingkan sebagai angka (perbaikan, bentuk respons tidak berubah).** Dulu sel dengan nilai
+> sama tapi beda bentuk (`6` lawan `6.0`, atau `"6.00000000"` dari kolom DECIMAL) ikut ditandai `berubah: true`
+> (di TiDB 8 dari 9 sel), sehingga koreksi sungguhan tenggelam dan `jumlah_berubah` menyesatkan. Sekarang angka
+> dibandingkan sebagai angka tanpa toleransi (selisih sekecil apa pun tetap berubah); teks/boolean/null tetap
+> dibandingkan ketat.
 
 ```json
 {
