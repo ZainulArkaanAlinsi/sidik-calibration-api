@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Services\Direktori\DirektoriGagal;
 use App\Services\Direktori\DirektoriPerusahaan;
+use App\Services\KonflikDataTerhapus;
 use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -343,7 +344,18 @@ class CustomerController extends Controller
         // `sumber` sengaja nggak diisi di sini: bawaan kolomnya sudah `admin`,
         // dan rutenya memang dijaga `role:admin`.
         $customer->dibuat_oleh_user_id = $request->user()->id;
-        $customer->save();
+
+        try {
+            $customer->save();
+        } catch (UniqueConstraintViolationException $galat) {
+            // Balapan: dua POST nama sama lolos validasi bersamaan, indeks unik
+            // yang memutuskan. 422 yang sama dengan validasi, bukan 500.
+            KonflikDataTerhapus::untukPelanggan()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                ['nama' => $customer->nama],
+            );
+        }
 
         return response()->json(['data' => new CustomerResource($customer)], 201);
     }
@@ -367,7 +379,15 @@ class CustomerController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $customer);
 
-        $customer->update($request->validated());
+        try {
+            $customer->update($request->validated());
+        } catch (UniqueConstraintViolationException $galat) {
+            KonflikDataTerhapus::untukPelanggan()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                ['nama' => $request->input('nama')],
+            );
+        }
 
         return response()->json(['data' => new CustomerResource($customer->fresh())]);
     }

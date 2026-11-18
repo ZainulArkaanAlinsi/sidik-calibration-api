@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
+use App\Http\Controllers\Api\PemulihanDataController;
 use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RiwayatSertifikatAlatController;
@@ -881,6 +882,17 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Hapus alat: admin (+ super admin lewat K-49-14) saja — teknisi 403
         // sejak keputusan pemilik proyek 20 Okt 2026. Dijaga `RoleAccessTest`.
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+
+        // Pulihkan data master yang terhapus (BUG-5 & BUG-7, 18 Nov 2026):
+        // `POST /{rooms|calibration-methods|standards|equipments|customers}/{id}/pulihkan`.
+        // Admin & super admin saja — sama dengan yang boleh menghapusnya. `{id}`
+        // bukan model binding karena binding tidak melihat baris terhapus;
+        // controller yang mencari `withTrashed()` dan menjaga lab pemiliknya.
+        foreach (array_keys(PemulihanDataController::ENTITAS) as $entitas) {
+            Route::post("/{$entitas}/{id}/pulihkan", [PemulihanDataController::class, 'pulihkan'])
+                ->whereNumber('id')
+                ->defaults('entitas', $entitas);
+        }
 
         /*
          * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------

@@ -1903,6 +1903,35 @@ HP itu garis abu-abu, bukan grafik. Kalau kena, sempitin rentangnya atau naikin
 
 Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat layar Pengaturan (admin).
 
+> **✅ 18 Nov 2026 — kode/nama yang pernah dihapus: `422` yang bisa ditindaklanjuti + endpoint Pulihkan (aditif).**
+> Indeks unik database tetap memegang kode/nama baris yang sudah dihapus (soft-delete), jadi kodenya
+> terkunci. Dulu ruangan & Instruksi Kerja menjawab `500` (validasi lebih longgar dari indeks), dan nama PT
+> menjawab `422` generik tanpa jalan keluar. Sekarang untuk `POST`/`PUT` `/rooms`, `/calibration-methods`
+> (kode + revisi), dan `/customers` (nama), bila kuncinya dipegang baris TERHAPUS:
+>
+> ```json
+> { "message": "Kode ruangan pernah dipakai dan sudah dihapus (terhapus): pulihkan yang lama atau pakai kode lain.",
+>   "errors": { "kode": ["…sama…"] },
+>   "kode": "terhapus", "id": 12, "entitas": "rooms" }
+> ```
+>
+> `entitas` ∈ `rooms` · `calibration-methods` · `customers`; `id` = baris lama (milik lab ini saja). Bila yang
+> memegang baris yang masih HIDUP, jawabannya tetap `422` lama tanpa `kode`/`id`. Dua `POST` bersamaan dengan
+> kode yang sama: yang kalah `422` (bukan `500`). Keunikan nama PT **tidak dilepas** (nama = kunci folder arsip).
+>
+> **`POST /api/{entitas}/{id}/pulihkan`** — `entitas` ∈ `rooms` · `calibration-methods` · `standards` ·
+> `equipments` · `customers`. Admin & super admin saja (sama dengan yang boleh menghapus; teknisi/viewer `403`).
+> Body opsional `{ "alasan": "…" }` (teks ≤ 300 → masuk `audit_logs.note`). Balik `200 { "data": <objek entitas> }`.
+>
+> | Kasus | Jawaban |
+> |---|---|
+> | baris lab lain / tidak ada / `id` bukan angka | `404` (sama seperti `DELETE`) |
+> | baris tidak sedang terhapus | `422` `{"kode": "tidak_terhapus"}` |
+> | alat yang PT pemiliknya masih terhapus | `422` `{"kode": "pt_terhapus", "id": <id PT>, "entitas": "customers"}` — pulihkan PT dulu |
+>
+> Satu baris `audit_logs` per pemulihan: `action = dipulihkan`, pelaku, waktu, sebelum `{deleted_at: …}` →
+> sesudah `{deleted_at: null}`, dan alasan. Baris lama tidak pernah dipulihkan otomatis.
+
 - **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`, plus **`logo_url`** (read-only, diisi lewat endpoint di bawah). Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
   > **✅ 18 Jul — response-nya lebih gemuk dari yang didokumentasiin, mobile baru nyusul makainya**: `standar_akreditasi`, `akreditasi_mulai`, `akreditasi_berakhir`, dan `akreditasi_masih_berlaku` (dihitung backend, read-only — jangan dikirim balik waktu `PUT`). Ini yang nentuin akreditasi lab (LK-285-IDN) masih sah apa nggak; sebelumnya nggak ada di layar mana pun. `settings` (array) juga ada di response tapi mobile sengaja belum kasih UI buat itu — bentuknya belum didokumentasiin.
   >
