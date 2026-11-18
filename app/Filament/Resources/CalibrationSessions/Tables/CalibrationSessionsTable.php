@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\CalibrationValidator;
 use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
+use App\Services\PenahananProfil;
 use App\Services\PerhitunganBuilder;
 use App\Services\PraPeriksaSatuHalaman;
 use App\Services\TarikSertifikat;
@@ -174,6 +175,26 @@ class CalibrationSessionsTable
                     ])
                     ->modalDescription('Sesi disetujui dan sertifikat langsung diterbitkan. Sesi FAIL pun tetap terbit (hasil "tidak laik pakai").')
                     ->action(function (CalibrationSession $record, array $data, CalibrationValidator $validator): void {
+                        // Jenis alat yang penerbitannya ditahan menunggu keputusan
+                        // Technical Manager — penjaga yang SAMA dengan API
+                        // (`PenahananProfil`, `config/sertifikat.php`). Tanpa ini
+                        // panel jadi pintu yang meloloskan sesi yang di HP ditolak.
+                        $penahan = app(PenahananProfil::class);
+                        $ditahan = $penahan->periksa($record);
+
+                        if ($ditahan !== null) {
+                            $penahan->catat($record, User::yangLogin(), $ditahan, PenahananProfil::PINTU_APPROVE_PANEL);
+
+                            Notification::make()
+                                ->title('Penerbitan sertifikat jenis alat ini ditahan.')
+                                ->body($ditahan['message'])
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
                         // Angka hasil pindai AI yang belum dikonfirmasi manusia
                         // nggak boleh ikut disertifikasi — dicek duluan biar
                         // pesannya langsung nunjuk ke tindakannya.
