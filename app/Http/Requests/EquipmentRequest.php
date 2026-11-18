@@ -11,6 +11,9 @@ use Illuminate\Validation\Validator;
 
 class EquipmentRequest extends FormRequest
 {
+    /** Nilai mutlak terbesar yang muat di kolom `decimal(20,8)`: 12 digit sebelum koma. */
+    private const BATAS_DECIMAL = 999999999999;
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -98,8 +101,11 @@ class EquipmentRequest extends FormRequest
             'merk' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'no_identifikasi' => ['nullable', 'string', 'max:100'],
-            'range_min' => ['nullable', 'numeric'],
-            'range_max' => ['nullable', 'numeric', 'gte:range_min'],
+            // Batas kolom `decimal(20,8)` (12 digit sebelum koma). Tanpa ini angka
+            // seperti 1e15 lolos `numeric`, lalu INSERT gagal "Out of range
+            // value" → 500, bukan 422 (BUG-10 uji E2E-QA, 18 Nov 2026).
+            'range_min' => ['nullable', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
+            'range_max' => ['nullable', 'numeric', 'gte:range_min', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
             'satuan' => ['nullable', 'string', 'max:50'],
             // `gt:0`, bukan `min:0` — aturan yang SAMA dengan
             // `resolusi_rentang.*.resolusi` 22 baris di bawah, dan alasannya
@@ -109,7 +115,7 @@ class EquipmentRequest extends FormRequest
             // yang ini masih `min:0`, jadi nol tetap punya pintu masuk lewat
             // kolom resolusi utama. Nol bukan "belum diisi" — yang belum diisi
             // itu `null`, dan `null` tetap diterima.
-            'resolusi' => ['nullable', 'numeric', 'gt:0'],
+            'resolusi' => ['nullable', 'numeric', 'gt:0', 'max:'.self::BATAS_DECIMAL],
 
             // Band resolusi/satuan per titik — dua bentuk baris, dan keduanya
             // harus lolos lewat kolom yang sama (lihat `Equipment::bandResolusi()`):
@@ -133,13 +139,16 @@ class EquipmentRequest extends FormRequest
             // presisi yang alatnya nggak punya.
             'resolusi_rentang.*.resolusi' => ['required', 'numeric', 'gt:0'],
             'resolusi_rentang.*.satuan' => ['nullable', 'string', 'max:20'],
-            'toleransi' => ['nullable', 'numeric', 'min:0'],
+            'toleransi' => ['nullable', 'numeric', 'min:0', 'max:'.self::BATAS_DECIMAL],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_kalibrasi_terakhir' => ['nullable', 'date'],
             'tanggal_jatuh_tempo' => ['nullable', 'date', 'after_or_equal:tanggal_kalibrasi_terakhir'],
             // `overdue` sengaja nggak boleh dikirim — itu turunan tanggal jatuh tempo.
             'status' => ['sometimes', Rule::in([Equipment::STATUS_AKTIF, Equipment::STATUS_NONAKTIF])],
-            'catatan' => ['nullable', 'string'],
+            // Kolom `text` (65.535 byte): tanpa batas, 70.000 karakter menjawab 500
+            // "Data too long" (BUG-9 uji E2E-QA, 18 Nov 2026). Catatan alat itu
+            // beberapa kalimat, bukan dokumen.
+            'catatan' => ['nullable', 'string', 'max:2000'],
         ];
     }
 
