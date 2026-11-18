@@ -46,6 +46,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\NomorSertifikat;
 use App\Services\PemisahanWewenang;
+use App\Services\PenahananProfil;
 use App\Services\PenautanSesiKeOrder;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
@@ -1416,6 +1417,22 @@ class CalibrationController extends Controller
             return response()->json([
                 'message' => 'Cuma sesi yang statusnya `menunggu_approval` yang bisa disetujui.',
             ], 422);
+        }
+
+        // Jenis alat yang penerbitannya ditahan menunggu keputusan Technical
+        // Manager (`config/sertifikat.php` `profil_ditahan`). Paling awal dan
+        // tanpa syarat lain: tidak ada pemeriksa, nomor, atau "setujui tetap"
+        // yang menembusnya. Status sesi tidak berubah, nomor yang diketik belum
+        // terpakai, tidak ada job. Pengisian, pratinjau, dan hitung tidak lewat
+        // sini dan tetap jalan. Panel dan job penerbitan memakai aturan yang
+        // SAMA (`PenahananProfil`).
+        $penahan = app(PenahananProfil::class);
+        $ditahan = $penahan->periksa($calibration);
+
+        if ($ditahan !== null) {
+            $penahan->catat($calibration, $request->user(), $ditahan, PenahananProfil::PINTU_APPROVE_API);
+
+            return response()->json($ditahan, 422);
         }
 
         // Angka hasil OCR yang belum dikonfirmasi manusia nggak boleh ikut
