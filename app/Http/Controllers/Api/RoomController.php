@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomRequest;
 use App\Http\Resources\RoomResource;
 use App\Models\Room;
+use App\Services\KonflikDataTerhapus;
 use App\Services\PenjagaOrganisasi;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -37,10 +39,20 @@ class RoomController extends Controller
 
     public function store(RoomRequest $request): JsonResponse
     {
-        $room = Room::create([
-            ...$request->validated(),
-            'organization_id' => $request->user()->organization_id,
-        ]);
+        try {
+            $room = Room::create([
+                ...$request->validated(),
+                'organization_id' => $request->user()->organization_id,
+            ]);
+        } catch (UniqueConstraintViolationException $galat) {
+            // Balapan: dua POST dengan kode sama lolos validasi bersamaan, dan
+            // indeks unik yang memutuskan. 422 yang sama dengan validasi.
+            KonflikDataTerhapus::untukRuangan()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                ['kode' => $request->input('kode')],
+            );
+        }
 
         // `aktif` nilainya dari default kolom DB, bukan dari payload — tanpa
         // refresh, model yang baru dibikin balikin null dan mobile ngira
@@ -59,7 +71,15 @@ class RoomController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $room);
 
-        $room->update($request->validated());
+        try {
+            $room->update($request->validated());
+        } catch (UniqueConstraintViolationException $galat) {
+            KonflikDataTerhapus::untukRuangan()->terjemahkan(
+                $galat,
+                $request->user()->organization_id,
+                ['kode' => $request->input('kode')],
+            );
+        }
 
         return response()->json(['data' => new RoomResource($room->fresh())]);
     }
