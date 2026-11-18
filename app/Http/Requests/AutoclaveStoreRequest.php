@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
 use App\Models\CalibrationSession;
+use App\Rules\AngkaTerhingga;
 use App\Rules\ItemOrderMilikAlat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -183,7 +184,7 @@ class AutoclaveStoreRequest extends FormRequest
             $aturan[$jalur.'.*.confidence'] = ['nullable', 'numeric', 'between:0,1'];
         }
 
-        return $aturan;
+        return AngkaTerhingga::pasangDiSemua($aturan);
     }
 
     /**

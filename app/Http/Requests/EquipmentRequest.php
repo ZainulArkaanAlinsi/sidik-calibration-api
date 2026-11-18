@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Rules\AngkaTerhingga;
 use App\Services\KonflikSerialAlat;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,14 @@ class EquipmentRequest extends FormRequest
         $equipment = $this->route('equipment');
         $wajibKalauBikinBaru = $this->isMethod('POST') ? 'required' : 'sometimes';
 
-        return [
+        // `gte:range_min` membandingkan ke FIELD LAIN lewat `Brick\Math`, yang melempar
+        // `NumberFormatException` (HTTP 500) kalau `range_min` tak terhingga (`1e400`).
+        // `bail` pada range_max tidak menolong karena nilai yang bermasalah ada di
+        // atribut lain, jadi bandingannya dilewati HANYA bila `range_min` tak terhingga
+        // (sudah ditolak di atribut `range_min` sendiri); selain itu perilaku lama.
+        $minTakTerhingga = is_numeric($this->input('range_min')) && ! is_finite((float) $this->input('range_min'));
+
+        $aturan = [
             'nama_alat' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'serial_number' => [
                 $wajibKalauBikinBaru, 'string', 'max:100',
@@ -105,7 +113,7 @@ class EquipmentRequest extends FormRequest
             // seperti 1e15 lolos `numeric`, lalu INSERT gagal "Out of range
             // value" → 500, bukan 422 (BUG-10 uji E2E-QA, 18 Nov 2026).
             'range_min' => ['nullable', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
-            'range_max' => ['nullable', 'numeric', 'gte:range_min', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
+            'range_max' => ['nullable', 'numeric', ...($minTakTerhingga ? [] : ['gte:range_min']), 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
             'satuan' => ['nullable', 'string', 'max:50'],
             // `gt:0`, bukan `min:0` — aturan yang SAMA dengan
             // `resolusi_rentang.*.resolusi` 22 baris di bawah, dan alasannya
@@ -150,6 +158,10 @@ class EquipmentRequest extends FormRequest
             // beberapa kalimat, bukan dokumen.
             'catatan' => ['nullable', 'string', 'max:2000'],
         ];
+
+        // Nilai tak terhingga (`1e400`) ditolak 422 SEBELUM aturan batas — lihat
+        // `AngkaTerhingga::pasangDiSemua()`.
+        return AngkaTerhingga::pasangDiSemua($aturan);
     }
 
     /**

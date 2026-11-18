@@ -44,6 +44,54 @@ use Illuminate\Contracts\Validation\ValidationRule;
  */
 class AngkaTerhingga implements ValidationRule
 {
+    /**
+     * Pasang aturan ini di SEMUA aturan angka sebuah daftar `rules()`.
+     *
+     * Dipasang TEPAT SESUDAH `numeric` (atau `integer`) dan didahului `bail`,
+     * BUKAN ditaruh di ujung daftar. Semua aturan angka Laravel (`min`, `max`,
+     * `between`, `gt`, `gte`, ...) membandingkan lewat `Brick\Math`, dan
+     * `BigNumber::of(INF)` melempar `NumberFormatException` — HTTP 500, bukan
+     * 422. Dicoba langsung: `min:0`, `gt:0`, `between`, dan `integer`+`min`
+     * SEMUANYA melempar pada `1e400`. Kalau aturan ini baru jalan sesudahnya,
+     * nilai tak terhingga meledak di aturan batas sebelum sempat ditolak.
+     * Dengan urutan ini nilai itu berhenti di sini, dan aturan batas hanya
+     * pernah melihat angka terhingga.
+     *
+     * Dipakai SEMUA pintu yang menambah aturan batas angka (CalibrationRequest,
+     * EquipmentRequest, AutoclaveStoreRequest, pengaturan organisasi) — satu
+     * tempat, bukan salinan di tiap request. Aturan batas yang membandingkan ke
+     * FIELD LAIN (`gte:range_min`) tetap harus dijaga pemanggilnya: `bail`
+     * hanya menghentikan aturan di atribut yang sama.
+     *
+     * @param  array<string, mixed>  $aturan  hasil `rules()`
+     * @return array<string, mixed>
+     */
+    public static function pasangDiSemua(array $aturan): array
+    {
+        foreach ($aturan as $kolom => $baris) {
+            if (! is_array($baris)) {
+                continue;
+            }
+
+            $posisi = array_search('numeric', $baris, true);
+            $posisi = $posisi === false ? array_search('integer', $baris, true) : $posisi;
+
+            if ($posisi === false) {
+                continue;
+            }
+
+            array_splice($baris, $posisi + 1, 0, [new self]);
+
+            if (! in_array('bail', $baris, true)) {
+                array_unshift($baris, 'bail');
+            }
+
+            $aturan[$kolom] = $baris;
+        }
+
+        return $aturan;
+    }
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if ($value === null || $value === '' || ! is_numeric($value)) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
+use App\Rules\AngkaTerhingga;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,9 @@ class OrganizationController extends Controller
         foreach (self::SETTINGS_API as $kunci => [, $aturan]) {
             $aturanSettings["settings.{$kunci}"] = ['nullable', ...$aturan];
         }
+
+        // `1e400` (JSON) = INF: tanpa ini `min`/`max` melempar NumberFormatException → 500.
+        $aturanSettings = AngkaTerhingga::pasangDiSemua($aturanSettings);
 
         $validated = $request->validate([
             'nama' => ['sometimes', 'string', 'max:255'],

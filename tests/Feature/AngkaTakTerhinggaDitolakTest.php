@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
+use App\Models\Organization;
 use App\Models\User;
 use App\Rules\AngkaTerhingga;
 use Database\Seeders\DatabaseSeeder;
@@ -49,6 +50,80 @@ class AngkaTakTerhinggaDitolakTest extends TestCase
             'dua deret waktu (Timer)' => ['015-CAL-424', '{"titik_ukur":60,"standar":[1e400,60211,60045],"uut":[60131,60219,60061]}'],
             'nilai negatif tak terhingga' => ['2405.13.A', '{"titik_ukur":4.01,"pembacaan":[-1e400,4.02,4.03]}'],
         ];
+    }
+
+    /**
+     * Pintu masuk lain yang punya aturan batas angka (BUG-2/9-14, 18 Nov 2026).
+     *
+     * Aturan batas Laravel (`min`, `max`, `between`, `gt`, `gte`) membandingkan
+     * lewat `Brick\Math`, dan `BigNumber::of(INF)` melempar
+     * `NumberFormatException` → HTTP 500. `1e400` di JSON = INF. Tiap pintu di
+     * bawah memasang `AngkaTerhingga::pasangDiSemua()`, jadi nilai tak
+     * terhingga berhenti 422 SEBELUM aturan batas.
+     *
+     * @return array<string, array{string, string, string, string, list<string>}>
+     */
+    public static function pintuBatasInput(): array
+    {
+        $alat = '"nama_alat":"Alat Uji","serial_number":"INF-1","kategori":"panjang","pelanggan_id":1';
+
+        return [
+            'alat: range_min' => ['admin', 'POST', '/api/equipments', '{'.$alat.',"range_min":1e400}', ['range_min']],
+            'alat: range_max' => ['admin', 'POST', '/api/equipments', '{'.$alat.',"range_max":1e400}', ['range_max']],
+            'alat: range_min tak terhingga dibandingkan ke range_max (gte)' => [
+                'admin', 'POST', '/api/equipments', '{'.$alat.',"range_min":-1e400,"range_max":5}', ['range_min'],
+            ],
+            'alat: resolusi' => ['admin', 'POST', '/api/equipments', '{'.$alat.',"resolusi":1e400}', ['resolusi']],
+            'alat: toleransi' => ['admin', 'POST', '/api/equipments', '{'.$alat.',"toleransi":-1e400}', ['toleransi']],
+            'sesi: suhu & kelembaban' => [
+                'teknisi', 'POST', '/api/calibrations',
+                '{"equipment_id":1,"tanggal_kalibrasi":"2026-09-01","suhu_ruang":1e400,"suhu_awal":1e400,"suhu_akhir":-1e400,'
+                    .'"kelembaban_awal":1e400,"measurements":[{"titik_ukur":50,"pembacaan":[50]}]}',
+                ['suhu_ruang', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal'],
+            ],
+            'sesi: titik_ukur' => [
+                'teknisi', 'POST', '/api/calibrations',
+                '{"equipment_id":1,"tanggal_kalibrasi":"2026-09-01","measurements":[{"titik_ukur":1e400,"pembacaan":[50]}]}',
+                ['measurements.0.titik_ukur'],
+            ],
+            'autoclave: suhu & kelembaban' => [
+                'teknisi', 'POST', '/api/calibrations/autoclave',
+                '{"suhu_awal":1e400,"suhu_akhir":-1e400,"kelembaban_awal":1e400,"kelembaban_akhir":-1e400}',
+                ['suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir'],
+            ],
+            'pengaturan organisasi' => [
+                'admin', 'PUT', '/api/organization',
+                '{"settings":{"faktor_cakupan_default":1e400,"masa_berlaku_sertifikat_bulan":1e400,'
+                    .'"desimal_sertifikat":1e400,"ttd_lebar_mm":1e400}}',
+                [
+                    'settings.faktor_cakupan_default', 'settings.masa_berlaku_sertifikat_bulan',
+                    'settings.desimal_sertifikat', 'settings.ttd_lebar_mm',
+                ],
+            ],
+        ];
+    }
+
+    /** @param  list<string>  $atribut */
+    #[DataProvider('pintuBatasInput')]
+    public function test_angka_tak_terhingga_di_pintu_batas_input_ditolak_422(
+        string $peran, string $metode, string $uri, string $json, array $atribut,
+    ): void {
+        Organization::factory()->create();
+        $pemanggil = $peran === 'admin' ? User::factory()->admin()->create() : User::factory()->create();
+
+        $respons = $this->actingAs($pemanggil)->call(
+            $metode, $uri, [], [], [],
+            ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'],
+            $json,
+        );
+
+        $this->assertSame(
+            422, $respons->getStatusCode(),
+            "Nilai tak terhingga di {$uri} harus ditolak 422, bukan {$respons->getStatusCode()}. "
+            .'Balasan: '.mb_substr((string) $respons->getContent(), 0, 300),
+        );
+        $respons->assertJsonValidationErrors($atribut);
+        $this->assertStringNotContainsString('Brick', (string) $respons->getContent());
     }
 
     #[DataProvider('kirimanTakTerhingga')]

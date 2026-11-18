@@ -2059,13 +2059,11 @@ class CalibrationRequest extends FormRequest
         // otomatis ikut terjaga, sementara daftar yang diketik tangan adalah
         // daftar yang pasti kelupaan. Lihat docblock `AngkaTerhingga` buat
         // kegagalan yang ditutupnya (HTTP 500 + jejak tumpukan bocor).
-        foreach ($aturan as $kolom => $baris) {
-            if (is_array($baris) && in_array('numeric', $baris, true)) {
-                $aturan[$kolom][] = new AngkaTerhingga;
-            }
-        }
-
-        return $aturan;
+        //
+        // Urutan pemasangannya (tepat sesudah `numeric`, didahului `bail`) dan
+        // alasannya ada di `AngkaTerhingga::pasangDiSemua()`: aturan batas yang
+        // dibaca sebelum ini melempar `NumberFormatException` pada `1e400`.
+        return AngkaTerhingga::pasangDiSemua($aturan);
     }
 
     /**
