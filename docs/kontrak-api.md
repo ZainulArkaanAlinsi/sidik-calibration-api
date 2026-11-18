@@ -48,6 +48,11 @@ Accept: application/json
 
 **Error lain**: `401` token invalid/kadaluarsa · `403` role nggak punya akses · `404` nggak ketemu · `500` error server. Selalu ada field `message` yang layak ditampilin ke user.
 
+> **18 Nov 2026 — field bertipe salah = `422`, bukan `500`.** Pintu publik (`POST /login`,
+> `/pelanggan/v1/auth/masuk`, `/lupa-sandi`, `/atur-ulang-sandi`, `/terima-undangan`) dulu menjawab `500`
+> "Array to string conversion" bila `identifier`/`email`/`kode`/`telepon` dikirim sebagai array/objek.
+> Sekarang `422` dengan pesan pada field itu, seperti kesalahan validasi lain. Klien yang benar tidak terdampak.
+
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
 
 ---

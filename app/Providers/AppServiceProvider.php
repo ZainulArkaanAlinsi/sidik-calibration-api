@@ -256,7 +256,7 @@ class AppServiceProvider extends ServiceProvider
         // ID pegawai tanpa peduli huruf besar, jadi tanpa itu `Admin@…` dan
         // `admin@…` jadi dua ember untuk akun yang sama.
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(10)
-            ->by('login|'.Str::lower(trim((string) $request->input('identifier'))).'|'.$request->ip())
+            ->by('login|'.Str::lower(trim(self::teksMasukan($request->input('identifier')))).'|'.$request->ip())
             ->response(fn () => response()->json([
                 'message' => 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.',
             ], 429)));
@@ -314,7 +314,7 @@ class AppServiceProvider extends ServiceProvider
         $emberOtp = fn (string $nama, int $menit, int $jumlah, string $pesan) => RateLimiter::for(
             $nama,
             fn (Request $request) => Limit::perMinutes($menit, $jumlah)
-                ->by($nama.'|'.Str::lower((string) $request->input('email', $request->ip())))
+                ->by($nama.'|'.Str::lower(self::teksMasukan($request->input('email')) ?: (string) $request->ip()))
                 ->response(fn () => response()->json(['kode' => 'terlalu_sering', 'message' => $pesan], 429)),
         );
 
@@ -510,5 +510,19 @@ class AppServiceProvider extends ServiceProvider
                 'message' => 'Pencarian direktori lagi ramai. Tunggu sebentar, '
                     .'atau ketik nama & alamatnya manual.',
             ], 429)));
+    }
+
+    /**
+     * Masukan untuk KUNCI limiter: teks apa adanya, atau '' kalau bukan teks.
+     *
+     * Limiter berjalan SEBELUM validasi, jadi `(string) $request->input(...)`
+     * pada `{"identifier":["a"]}` melempar "Array to string conversion" → 500
+     * di pintu publik (BUG-4 uji E2E-QA, 18 Nov 2026). Nilai yang bukan teks
+     * tidak dicocokkan ke akun mana pun; validasi di belakangnya yang
+     * menjawab 422.
+     */
+    private static function teksMasukan(mixed $nilai): string
+    {
+        return is_string($nilai) ? $nilai : '';
     }
 }
