@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\WaktuCalculator;
+use App\Support\PenyimpanganMaster;
 use App\Support\TataLetakSertifikat;
 use App\Support\WaktuMentah;
 use Carbon\Carbon;
@@ -680,6 +681,8 @@ class TimerStopwatchProfile extends CalibrationProfile
      */
     private function jejakAudit(array $budget, array $h, ?CalibrationCapability $kemampuan): array
     {
+        $mentah = $budget;
+
         // Diterjemahkan ke bentuk `nilai`/`u_baku` — lihat [barisAudit]. Tanpa
         // ini seluruh komponen pulang `"nilai": null` di API.
         $budget = array_map(fn (array $k): array => $this->barisAudit($k), $budget);
@@ -706,7 +709,126 @@ class TimerStopwatchProfile extends CalibrationProfile
             'vi' => 0.0,
         ];
 
+        // Paling akhir dan aditif (PK-9): baris yang sudah ada tidak bergeser.
+        foreach ($this->catatanPenyimpanganMaster($mentah, $h, $kemampuan) as $catatan) {
+            $budget[] = $catatan;
+        }
+
         return $budget;
+    }
+
+    /**
+     * Catatan PK-9: dua penyimpangan Timer dari master — drift 322 ms (master 298 ms) dan uHRTB empat
+     * operator (master dua). Keduanya sudah diputuskan ("SUDAH DIHITUNG BENAR", waktu-frekuensi §3 dan
+     * §6) tetapi tidak terbaca penyetuju. Muncul HANYA bila tabel standar yang dipakai sesi memang
+     * beda dari master; angka "versi master" dihitung `WaktuCalculator::pembandingMaster()` dari
+     * salinan budget dan hanya dicetak di teks.
+     *
+     * @param  list<array<string, mixed>>  $budget  komponen mentah (`u`/`ci`/`vi`)
+     * @param  array<string, mixed>  $h
+     * @return list<array<string, mixed>>
+     */
+    public function catatanPenyimpanganMaster(array $budget, array $h, ?CalibrationCapability $kemampuan): array
+    {
+        $pembanding = ($this->kalk ??= new WaktuCalculator)->pembandingMaster($budget);
+        $pb = PenyimpanganMaster::class;
+        $cmc = $kemampuan?->ketidakpastian_terbaik === null ? null : (float) $kemampuan->ketidakpastian_terbaik;
+        $lantai = static fn (float $u): float => $cmc === null ? $u : max($u, $cmc);
+        $uSistem = (float) $h['ketidakpastian_diperluas'];
+        $cetakSistem = (float) $h['u95_sertifikat'];
+        $aggMaster = $pembanding['master'];
+        $uMaster = (float) $aggMaster['ketidakpastian_diperluas'];
+        $ringkasMaster = sprintf(
+            'seluruh nilai master (drift 298 ms dan uHRTB dua operator) memberi uc %s, v_eff %s, k %s, U hitung %s, tercetak %s',
+            $pb::angka((float) $aggMaster['ketidakpastian_gabungan']),
+            $pb::angka((float) $aggMaster['derajat_kebebasan_efektif']),
+            $pb::angka((float) $aggMaster['faktor_cakupan_k']),
+            $pb::angka($uMaster),
+            $pb::angka($lantai($uMaster)),
+        );
+        $ringkasSistem = sprintf(
+            'uc %s, v_eff %s, k %s, U hitung %s, tercetak %s',
+            $pb::angka((float) $h['ketidakpastian_gabungan']),
+            $pb::angka((float) $h['derajat_kebebasan_efektif']),
+            $pb::angka((float) $h['faktor_cakupan_k']),
+            $pb::angka($uSistem),
+            $pb::angka($cetakSistem),
+        );
+        $tertutup = abs($lantai($uMaster) - $cetakSistem) <= 1e-12 * max(1.0, abs($cetakSistem));
+        $arah = $tertutup ? $pb::ARAH_NETRAL : ($uSistem >= $uMaster ? $pb::ARAH_KONSERVATIF : $pb::ARAH_TIDAK_KONSERVATIF);
+        $catatanLantai = $tertutup ? ' Angka cetak U95 SAMA dengan master pada titik ini karena lantai CMC menang di kedua sisi.' : '';
+        $catatan = [];
+
+        if ($pembanding['drift'] !== null) {
+            $d = $pembanding['drift'];
+            $a = $d['agregat_master'];
+            $catatan[] = $pb::baris(
+                'timer',
+                'drift_stopwatch_322_vs_298',
+                sprintf(
+                    'Drift stopwatch standar dipakai %s ms (MAX seluruh titik drift yang terisi), sedangkan master `Drift Stopwatch!K26` '
+                    .'= MAX(K12:K25) hanya menghitung kolom K yang berrumus: %s ms (K23). Kolom K master berrumus '
+                    .'sebagian; sistem melengkapinya (SUDAH DIHITUNG BENAR, waktu-frekuensi §3).%s',
+                    $pb::angka($d['ms_sistem']), $pb::angka($d['ms_master']), $catatanLantai,
+                ),
+                '`Drift Stopwatch!K26` = MAX(K12:K25) master Timer (298 ms di K23); docs/pertanyaan-lab-waktu-frekuensi.md §3; '
+                .'docs/pertanyaan-lab-adu-cetak-b.md PK5-6',
+                sprintf(
+                    'drift %s ms (ui %s s); bila hanya drift yang memakai nilai master: uc %s, v_eff %s, k %s, U hitung %s; %s',
+                    $pb::angka($d['ms_master']), $pb::angka($d['ui_master']),
+                    $pb::angka((float) $a['ketidakpastian_gabungan']), $pb::angka((float) $a['derajat_kebebasan_efektif']),
+                    $pb::angka((float) $a['faktor_cakupan_k']), $pb::angka((float) $a['ketidakpastian_diperluas']),
+                    $ringkasMaster,
+                ),
+                sprintf('drift %s ms (ui %s s); %s', $pb::angka($d['ms_sistem']), $pb::angka($d['ui_sistem']), $ringkasSistem),
+                $arah,
+                $d['ms_sistem'],
+                [
+                    'drift_ms_master' => $d['ms_master'],
+                    'drift_ms_sistem' => $d['ms_sistem'],
+                    'k_hanya_drift_master' => (float) $a['faktor_cakupan_k'],
+                    'veff_hanya_drift_master' => $a['derajat_kebebasan_efektif'],
+                    'k_master_gabungan' => (float) $aggMaster['faktor_cakupan_k'],
+                    'veff_master_gabungan' => $aggMaster['derajat_kebebasan_efektif'],
+                    'uc_master_gabungan' => (float) $aggMaster['ketidakpastian_gabungan'],
+                    'k_sistem' => (float) $h['faktor_cakupan_k'],
+                    'uc_sistem' => (float) $h['ketidakpastian_gabungan'],
+                ],
+            );
+        }
+
+        if ($pembanding['uhrtb'] !== null) {
+            $u = $pembanding['uhrtb'];
+            $a = $u['agregat_master'];
+            $catatan[] = $pb::baris(
+                'timer',
+                'uhrtb_dua_dari_empat_operator',
+                'Komponen waktu reaksi operator (uHRTB, rata-rata terbesar) diambil MAX atas keempat operator, '
+                .'sedangkan master `N23` = MAX(N21:N22) hanya mencakup DT dan AW — ketimpangan dengan sel sebelahnya '
+                .'`P23` = MAX(P19:P22) yang memuat keempatnya, jadi kerusakan salin-tempel (SUDAH DIHITUNG BENAR, '
+                .'waktu-frekuensi §6).'.$catatanLantai,
+                '`PERHITUNGAN U95%!N23` = MAX(N21:N22) vs `P23` = MAX(P19:P22) master Timer; '
+                .'docs/pertanyaan-lab-waktu-frekuensi.md §6; docs/pertanyaan-lab-adu-cetak-b.md PK5-6',
+                sprintf(
+                    'ui uHRTB %s s; bila hanya uHRTB yang memakai nilai master: uc %s, v_eff %s, k %s, U hitung %s; %s',
+                    $pb::angka($u['ui_master']),
+                    $pb::angka((float) $a['ketidakpastian_gabungan']), $pb::angka((float) $a['derajat_kebebasan_efektif']),
+                    $pb::angka((float) $a['faktor_cakupan_k']), $pb::angka((float) $a['ketidakpastian_diperluas']),
+                    $ringkasMaster,
+                ),
+                sprintf('ui uHRTB %s s; %s', $pb::angka($u['ui_sistem']), $ringkasSistem),
+                $arah,
+                $u['ui_sistem'],
+                [
+                    'ui_uhrtb_master' => $u['ui_master'],
+                    'ui_uhrtb_sistem' => $u['ui_sistem'],
+                    'k_hanya_uhrtb_master' => (float) $a['faktor_cakupan_k'],
+                    'veff_hanya_uhrtb_master' => $a['derajat_kebebasan_efektif'],
+                ],
+            );
+        }
+
+        return $catatan;
     }
 
     /**

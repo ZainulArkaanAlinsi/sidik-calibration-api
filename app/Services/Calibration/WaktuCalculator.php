@@ -251,6 +251,64 @@ class WaktuCalculator
     }
 
     /**
+     * Pembanding "versi master" untuk catatan `penyimpangan_master.timer.*` di jejak sesi (PK-9).
+     *
+     * Dua penyimpangan Timer dari master yang SUDAH tercatat di docblock kelas dan di
+     * `docs/pertanyaan-lab-waktu-frekuensi.md` (§3, §6): drift stopwatch (`Drift Stopwatch!K26`
+     * hanya menghitung kolom K yang berrumus: 298 ms, sistem 322 ms) dan uHRTB (`N23` hanya dua
+     * operator, sistem empat). Tabel standar sudah punya "versi master" lewat saklar `$lengkap`;
+     * di sini komponen budget disalin, dua nilai itu ditukar, lalu diagregasi ulang.
+     *
+     * HANYA pembanding: hasilnya dicetak di teks catatan dan tidak pernah dipakai balik. `null`
+     * pada sisi yang tabelnya tidak beda dari master (mis. setelah Studio mengubah tabel).
+     *
+     * @param  list<array<string, mixed>>  $budget  keluaran [hitungTitik] (`u`/`ci`/`vi`)
+     * @return array{drift: array<string, mixed>|null, uhrtb: array<string, mixed>|null, master: array<string, mixed>}
+     */
+    public function pembandingMaster(array $budget): array
+    {
+        $sqrt3 = sqrt(3);
+        $driftSistemMs = $this->tabel->driftMs();
+        $driftMasterMs = $this->tabel->driftMs(false);
+        $uhrtbSistem = $this->tabel->uHumanReactionRata() / 2.0;
+        $uhrtbMaster = $this->tabel->uHumanReactionRata(false) / 2.0;
+        $bedaDrift = abs($driftSistemMs - $driftMasterMs) > 1e-9;
+        $bedaUhrtb = abs($uhrtbSistem - $uhrtbMaster) > 1e-12;
+
+        $agregat = function (bool $tukarDrift, bool $tukarUhrtb) use ($budget, $driftMasterMs, $uhrtbMaster, $sqrt3): array {
+            $komponen = array_map(static function (array $k) use ($tukarDrift, $tukarUhrtb, $driftMasterMs, $uhrtbMaster, $sqrt3): array {
+                if ($tukarDrift && $k['sumber'] === 'drift_standar') {
+                    $k['u'] = $driftMasterMs / 1000.0 / $sqrt3;
+                }
+
+                if ($tukarUhrtb && $k['sumber'] === 'human_reaction_rata') {
+                    $k['u'] = $uhrtbMaster;
+                }
+
+                return ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']];
+            }, $budget);
+
+            return ($this->gum ??= new GumCalculator)->agregasiBudget($komponen);
+        };
+
+        return [
+            'drift' => $bedaDrift ? [
+                'ms_master' => $driftMasterMs,
+                'ms_sistem' => $driftSistemMs,
+                'ui_master' => $driftMasterMs / 1000.0 / $sqrt3,
+                'ui_sistem' => $driftSistemMs / 1000.0 / $sqrt3,
+                'agregat_master' => $agregat(true, false),
+            ] : null,
+            'uhrtb' => $bedaUhrtb ? [
+                'ui_master' => $uhrtbMaster,
+                'ui_sistem' => $uhrtbSistem,
+                'agregat_master' => $agregat(false, true),
+            ] : null,
+            'master' => $agregat($bedaDrift, $bedaUhrtb),
+        ];
+    }
+
+    /**
      * @param  list<mixed>  $nilai
      * @return list<float>
      */
