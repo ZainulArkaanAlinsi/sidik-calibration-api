@@ -121,6 +121,9 @@ class TimbanganSertifikatTest extends TestCase
      */
     public function test_keterulangan_kosong_tidak_melahirkan_baris_karangan(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $sesi = $this->sesi('011-CAL-525');
         $spek = $sesi->spesifikasi_alat;
         unset($spek['keterulangan']);
@@ -352,6 +355,9 @@ class TimbanganSertifikatTest extends TestCase
     #[DataProvider('sesiTimbangan')]
     public function test_metode_kalibrasi_selalu_nomor_ik_master(string $nomorSesi): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->assertSame(
             'SIDIK-IK-CAL-0505_Rev.7',
             $this->terbitkan($nomorSesi)->snapshot['header']['calibration_method'],
@@ -466,6 +472,9 @@ class TimbanganSertifikatTest extends TestCase
      */
     public function test_kg_dan_gram_cetak_persis_format_sel_master(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         // kg (`New_Master_Olda_Timbangan_kg`): LOP `O46` `0.00` -> 0.08,
         // U95 `0.000` -> 0.033, kapasitas `I19` General -> 50 / 100.
         $kg = $this->htmlSertifikat('011-CAL-525');

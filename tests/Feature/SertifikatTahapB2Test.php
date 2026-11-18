@@ -275,6 +275,9 @@ class SertifikatTahapB2Test extends TestCase
 
     public function test_glassware_graduated_dan_picnometer_mencetak_baris_tekanan_udara(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->siap();
 
         // `U13 = PERHITUNGAN!G19 = AVERAGE(E19:F19)` = (933,2 + 933,1) / 2 = 933,15 -> format `0`.

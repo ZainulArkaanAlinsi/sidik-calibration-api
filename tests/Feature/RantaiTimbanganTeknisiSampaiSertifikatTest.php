@@ -148,6 +148,9 @@ class RantaiTimbanganTeknisiSampaiSertifikatTest extends TestCase
      */
     public function test_dari_hp_teknisi_sampai_sertifikat_bisa_diunduh(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         [$alat, $teknisi, $admin, $standar] = $this->siapkan();
 
         // --- 1. Teknisi buka lembar kerjanya dari server ------------------

@@ -628,6 +628,9 @@ class VolumetrikRev7AlurTest extends TestCase
      */
     public function test_sertifikat_picnometer_tidak_ikut_berubah(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $alat = $this->alat('Picnometer', 25);
         $sesi = $this->simpan([
             'equipment_id' => $alat->id,

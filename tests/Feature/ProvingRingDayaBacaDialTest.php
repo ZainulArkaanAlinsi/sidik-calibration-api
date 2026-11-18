@@ -31,6 +31,9 @@ class ProvingRingDayaBacaDialTest extends TestCase
 
     public function test_daya_baca_dial_dan_standard_value_lewat_jalur_nyata(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->seed(DatabaseSeeder::class);
         $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-PR-001')->firstOrFail();
         $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke')->values();

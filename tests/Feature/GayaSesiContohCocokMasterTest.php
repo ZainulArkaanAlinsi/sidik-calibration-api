@@ -138,6 +138,9 @@ class GayaSesiContohCocokMasterTest extends TestCase
      */
     public function test_angka_cetak_tiga_alat_gaya_sama_dengan_master_kecuali_yang_tercatat(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->freezeTime();
         $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
 

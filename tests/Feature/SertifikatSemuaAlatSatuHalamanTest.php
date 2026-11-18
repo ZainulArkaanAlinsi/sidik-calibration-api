@@ -393,6 +393,9 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      */
     public function test_semua_sertifikat_bawaan_muat_satu_halaman(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->seed(DatabaseSeeder::class);
         $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
 

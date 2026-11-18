@@ -108,6 +108,9 @@ class TimbanganSesiContohCocokMasterTest extends TestCase
 
     public function test_angka_cetak_tiga_varian_sama_dengan_master_kecuali_temuan_yang_tercatat(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         foreach (self::kasus() as $kunci => $k) {
             $masukan = PembandingCetakMaster::master($kunci)['masukan'];
 
@@ -146,6 +149,9 @@ class TimbanganSesiContohCocokMasterTest extends TestCase
      */
     public function test_hasil_tersimpan_budget_koreksi_sama_dengan_master(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $fixture = json_decode((string) file_get_contents(database_path('data/sesi-master-timbangan.json')), true);
         $diadu = 0;
 

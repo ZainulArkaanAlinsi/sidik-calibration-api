@@ -184,6 +184,9 @@ class SertifikatHookRonde3Test extends TestCase
     /** Timbangan: %RH env `0.0` di master gram (`145!AB14`), `0` di kg (`146!AB14`). */
     public function test_timbangan_gram_kelembaban_satu_desimal(): void
     {
+        // Yang diuji di sini angka/cetak sertifikat, bukan penahanan TM (itu `ProfilDitahanTest`):
+        // daftar `profil_ditahan` dikosongkan supaya sesi contoh bisa diterbitkan.
+        config(['sertifikat.profil_ditahan' => []]);
         $this->siap();
 
         // Sesi contoh tidak membawa kelembapan ruang; diisi seperti `145!AB14`
