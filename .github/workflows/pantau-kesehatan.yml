@@ -1,0 +1,44 @@
+# Pantau kesehatan produksi: ketuk /api/health tiap 10 menit.
+#
+# Dua kegunaan, tanpa akun layanan luar:
+# 1. ALERT: bila API tidak sehat, run ini gagal dan GitHub mengirim surel kegagalan
+#    workflow terjadwal ke akun yang terakhir mengubah jadwalnya.
+# 2. Bangunkan Render Free yang tidur setelah 15 menit diam, supaya request
+#    pertama teknisi tidak menunggu bangun dari tidur. Catatan: jam gratis Render
+#    (750 jam per bulan) cukup untuk SATU layanan yang menyala terus; kalau ada
+#    layanan lain di akun yang sama, periksa dulu sebelum mempertahankan ini.
+#
+# Hanya GET publik ke /api/health. Tanpa rahasia, tanpa data pelanggan. Jadwal GitHub
+# bersifat usaha terbaik (bisa tertunda beberapa menit). Sasaran layanan:
+# docs/operasional/sasaran-layanan.md.
+name: Pantau kesehatan produksi
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ketuk-health:
+    name: ketuk /api/health
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Ketuk /api/health (empat percobaan, bangun dari tidur diizinkan)
+        shell: bash
+        run: |
+          url="https://sidik-calibration-api.onrender.com/api/health"
+          for i in 1 2 3 4; do
+            kode=$(curl -s -m 60 -o /tmp/health.json -w '%{http_code}' "$url" || true)
+            if [ "$kode" = "200" ] && grep -q '"status":"ok"' /tmp/health.json; then
+              echo "OK pada percobaan $i"
+              grep -o '"versi":"[0-9a-f]*"' /tmp/health.json || true
+              exit 0
+            fi
+            echo "percobaan $i belum sehat (http=${kode:-000})"
+            sleep 20
+          done
+          echo "::error::/api/health tidak sehat setelah 4 percobaan"
+          exit 1
