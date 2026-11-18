@@ -128,6 +128,15 @@ class AuditLog extends Model
     public const ACTION_AKUN_DIAKTIFKAN = 'akun_diaktifkan';
 
     /**
+     * Percobaan menyetujui/menerbitkan sertifikat DITOLAK karena jenis alatnya
+     * ditahan menunggu keputusan Technical Manager (`PenahananProfil`). Entitasnya
+     * sesi; `new_data` memuat `pintu` (approve_api / approve_panel / job_terbit),
+     * `profil`, `rujukan_tm`, `alasan`. Status sesi tidak berubah, jadi baris
+     * `diubah` otomatis tidak ada. 18 karakter — muat di `string(20)`.
+     */
+    public const ACTION_PENERBITAN_DITAHAN = 'penerbitan_ditahan';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan
