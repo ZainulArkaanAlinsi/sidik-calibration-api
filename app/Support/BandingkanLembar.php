@@ -41,7 +41,7 @@ final class BandingkanLembar
             $sesudah = self::ratakan(['jenis' => $jenisBaris, $kunciBagian => $baru[$kunciBagian] ?? []]);
 
             foreach ($sesudah as $kunci => $nilai) {
-                if (($sebelum[$kunci] ?? null) !== $nilai) {
+                if (! self::sama($sebelum[$kunci] ?? null, $nilai)) {
                     $siapa[$kunci] = [
                         'diubah_oleh' => $b->pelaku === null ? null : ['id' => (int) $b->pelaku->id, 'nama' => (string) $b->pelaku->name],
                         'diubah_pada' => $b->created_at?->toIso8601String(),
@@ -57,7 +57,7 @@ final class BandingkanLembar
         foreach (array_unique([...array_keys($nilaiAsli), ...array_keys($nilaiSekarang)]) as $kunci) {
             $a = $nilaiAsli[$kunci] ?? null;
             $s = $nilaiSekarang[$kunci] ?? null;
-            $beda = $asli !== null && $a !== $s;
+            $beda = $asli !== null && ! self::sama($a, $s);
             $berubah += $beda ? 1 : 0;
 
             $sel[] = [
@@ -103,6 +103,35 @@ final class BandingkanLembar
         }
 
         return $hasil;
+    }
+
+    /**
+     * Dua nilai sel dianggap sama?
+     *
+     * ANGKA dibandingkan sebagai angka: `6`, `6.0`, dan `"6.00000000"` sama.
+     * Perlu karena dua sisi perbandingan lahir dari jalur berbeda — `input_asli`
+     * dari kolom JSON (TiDB menormalkan `6.0` jadi `6`, MySQL 8 menyimpan `6.0`)
+     * dan nilai sekarang dari kolom DECIMAL (float di SQLite, string di MySQL).
+     * Dengan `!==`, `6 !== 6.0` membuat delapan dari sembilan sel "berubah"
+     * dan satu koreksi sungguhan tenggelam di antaranya (BUG-6, 18 Nov 2026).
+     *
+     * Tanpa toleransi: dua double yang berbeda sekecil apa pun tetap berbeda —
+     * ini layar bukti koreksi, bukan perbandingan hasil hitung. Yang BUKAN
+     * angka (teks, bool, null) tetap dibandingkan ketat, jadi `null` lawan `0`
+     * dan `true` lawan `1` tetap berubah.
+     */
+    private static function sama(mixed $a, mixed $b): bool
+    {
+        if (self::angka($a) && self::angka($b)) {
+            return (float) $a === (float) $b;
+        }
+
+        return $a === $b;
+    }
+
+    private static function angka(mixed $nilai): bool
+    {
+        return is_int($nilai) || is_float($nilai) || (is_string($nilai) && is_numeric($nilai));
     }
 
     /** @param  array<string, mixed>  $hasil */
