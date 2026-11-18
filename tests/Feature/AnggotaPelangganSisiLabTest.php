@@ -417,10 +417,26 @@ class AnggotaPelangganSisiLabTest extends TestCase
 
         $this->assertSame(CustomerMember::STATUS_AKTIF, $anggota->fresh()->status);
 
-        // Batas atas persis 500 lolos.
+        // 501 karakter MULTIBYTE ditolak (panjang dihitung karakter, bukan byte).
+        $alasanMaks = str_repeat('é', 250).str_repeat('😀', 250);
+        $this->assertSame(500, mb_strlen($alasanMaks));
+        $this->assertGreaterThan(500, strlen($alasanMaks), 'Data uji harus multibyte supaya karakter vs byte teruji.');
+
         $this->actingAs($admin)
-            ->postJson($this->urlCabut($this->pt, $anggota), ['alasan' => str_repeat('x', 500)])
+            ->postJson($this->urlCabut($this->pt, $anggota), ['alasan' => $alasanMaks.'é'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('alasan');
+
+        // Batas atas persis 500 karakter lolos — dan MUAT di `audit_logs.note` (string(500)).
+        // MySQL menegakkan panjang kolom, SQLite tidak: yang diperiksa di sini panjang `note`
+        // dalam KARAKTER (itu yang dihitung utf8mb4), alasan lengkap tetap di `new_data`.
+        $this->actingAs($admin)
+            ->postJson($this->urlCabut($this->pt, $anggota), ['alasan' => $alasanMaks])
             ->assertOk();
+
+        $jejak = AuditLog::query()->where('action', AuditLog::ACTION_ANGGOTA_DICABUT)->sole();
+        $this->assertLessThanOrEqual(AuditLog::NOTE_MAKS, mb_strlen((string) $jejak->note));
+        $this->assertSame($alasanMaks, $jejak->new_data['alasan'], 'Alasan LENGKAP harus utuh di new_data.');
     }
 
     public function test_cabut_dibatasi_throttle_per_akun(): void

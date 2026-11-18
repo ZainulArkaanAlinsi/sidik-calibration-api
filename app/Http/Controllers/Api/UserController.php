@@ -329,9 +329,10 @@ class UserController extends Controller
                     'alasan' => $alasan,
                 ],
                 'changed_by' => $pelaku->getKey(),
-                'note' => $alasan === null
+                // Dipotong ke panjang kolom `note` (500); alasan LENGKAP ada di `new_data`.
+                'note' => AuditLog::catatan($alasan === null
                     ? 'Oleh '.$pelaku->role.'.'
-                    : 'Oleh '.$pelaku->role.'. Alasan: '.$alasan,
+                    : 'Oleh '.$pelaku->role.'. Alasan: '.$alasan),
             ]);
         });
     }

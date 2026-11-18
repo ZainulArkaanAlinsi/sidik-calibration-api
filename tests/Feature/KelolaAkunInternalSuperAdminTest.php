@@ -327,6 +327,23 @@ class KelolaAkunInternalSuperAdminTest extends TestCase
         }
 
         $this->assertSame(User::STATUS_AKTIF, $target->fresh()->status);
+
+        // Multibyte: panjang dihitung karakter. 501 ditolak; 500 lolos DAN `note` muat di string(500).
+        $alasanMaks = str_repeat('é', 250).str_repeat('😀', 250);
+        $this->assertGreaterThan(500, strlen($alasanMaks));
+
+        $this->actingAs($superAdmin)
+            ->postJson("/api/users/{$target->id}/nonaktifkan", ['alasan' => $alasanMaks.'é'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('alasan');
+
+        $this->actingAs($superAdmin)
+            ->postJson("/api/users/{$target->id}/nonaktifkan", ['alasan' => $alasanMaks])
+            ->assertOk();
+
+        $jejak = AuditLog::query()->where('action', AuditLog::ACTION_AKUN_DINONAKTIFKAN)->sole();
+        $this->assertLessThanOrEqual(AuditLog::NOTE_MAKS, mb_strlen((string) $jejak->note));
+        $this->assertSame($alasanMaks, $jejak->new_data['alasan']);
     }
 
     public function test_menonaktifkan_akun_yang_sudah_nonaktif_dijawab_sudah_nonaktif(): void
@@ -403,6 +420,16 @@ class KelolaAkunInternalSuperAdminTest extends TestCase
 
         $jejak = AuditLog::query()->where('action', AuditLog::ACTION_AKUN_DIAKTIFKAN)->where('entity_id', $b->id)->sole();
         $this->assertNull($jejak->new_data['alasan']);
+
+        // Batas persis 500 karakter multibyte lolos dan `note` tetap muat di string(500).
+        $alasanMaks = str_repeat('é', 250).str_repeat('😀', 250);
+        $c = $this->akun(User::ROLE_TEKNISI, ['status' => User::STATUS_NONAKTIF]);
+
+        $this->actingAs($superAdmin)->postJson("/api/users/{$c->id}/aktifkan", ['alasan' => $alasanMaks])->assertOk();
+
+        $panjang = AuditLog::query()->where('action', AuditLog::ACTION_AKUN_DIAKTIFKAN)->where('entity_id', $c->id)->sole();
+        $this->assertLessThanOrEqual(AuditLog::NOTE_MAKS, mb_strlen((string) $panjang->note));
+        $this->assertSame($alasanMaks, $panjang->new_data['alasan']);
     }
 
     public function test_aktifkan_akun_yang_sudah_aktif_dan_akun_pending_ditolak_dengan_kode(): void

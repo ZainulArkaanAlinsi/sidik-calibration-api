@@ -565,6 +565,41 @@ class PelangganHitunganDanPindahAlatTest extends TestCase
         $this->assertDatabaseMissing('audit_logs', ['action' => AuditLog::ACTION_ALAT_DIPINDAH_PT]);
     }
 
+    public function test_alasan_dan_nama_pt_terpanjang_muat_di_catatan_audit(): void
+    {
+        // Nama PT sampai 255 karakter (multibyte) DAN alasan 500 karakter multibyte: kalau
+        // `note` disusun mentah, panjangnya ~1000+ karakter dan MySQL menolaknya
+        // (SQLSTATE 22001) — SQLite tidak, jadi yang diperiksa panjang `note` dalam KARAKTER.
+        $namaPanjangAsal = str_repeat('é', 254).'A';
+        $namaPanjangTujuan = str_repeat('é', 254).'B';
+        $asal = $this->perusahaan($namaPanjangAsal);
+        $tujuan = $this->perusahaan($namaPanjangTujuan);
+        $alat = $this->alat($asal);
+        $this->sertifikat($alat);
+
+        $alasanMaks = str_repeat('é', 250).str_repeat('😀', 250);
+        $this->assertSame(500, mb_strlen($alasanMaks));
+        $this->assertGreaterThan(500, strlen($alasanMaks));
+
+        $badan = ['alat_ids' => [$alat->id], 'ke_customer_id' => $tujuan->id, 'konfirmasi' => true];
+
+        // 501 karakter ditolak, apa pun yang lain.
+        $this->pindah($this->adminLab(), $asal, [...$badan, 'alasan' => $alasanMaks.'é'])
+            ->assertStatus(422)->assertJsonValidationErrors('alasan');
+        $this->assertSame($asal->id, $alat->fresh()->customer_id);
+
+        $this->pindah($this->adminLab(), $asal, [...$badan, 'alasan' => $alasanMaks])->assertOk();
+
+        $this->assertSame($tujuan->id, $alat->fresh()->customer_id);
+
+        $jejak = AuditLog::query()->where('action', AuditLog::ACTION_ALAT_DIPINDAH_PT)->sole();
+        $this->assertLessThanOrEqual(AuditLog::NOTE_MAKS, mb_strlen((string) $jejak->note));
+        // Yang utuh ada di `new_data`: alasan lengkap dan id kedua PT (nama panjang tidak ikut disalin).
+        $this->assertSame($alasanMaks, $jejak->new_data['alasan']);
+        $this->assertSame($asal->id, $jejak->new_data['dari_customer_id']);
+        $this->assertSame($tujuan->id, $jejak->new_data['ke_customer_id']);
+    }
+
     public function test_pindah_dibatasi_throttle_per_akun(): void
     {
         $admin = $this->adminLab();

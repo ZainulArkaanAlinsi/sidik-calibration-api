@@ -161,7 +161,7 @@ class PelangganKeanggotaanController extends Controller
                         'alasan' => $alasan,
                     ],
                     'changed_by' => $pelaku->getKey(),
-                    'note' => 'Dicabut oleh '.$pelaku->role.' lab. Alasan: '.$alasan,
+                    'note' => AuditLog::catatan('Dicabut oleh '.$pelaku->role.' lab. Alasan: '.$alasan),
                 ]);
             });
         } catch (AksiPelangganDitolak $e) {

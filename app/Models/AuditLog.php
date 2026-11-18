@@ -117,6 +117,31 @@ class AuditLog extends Model
      */
     public const CATATAN_KOREKSI_PEMBACAAN = 'Koreksi pembacaan oleh Master Data: ';
 
+    /**
+     * Panjang kolom `note` (`string(500)`) dalam KARAKTER. MySQL menegakkannya
+     * (SQLite tidak — di situlah galat 22001 "Data too long" lolos dari tes
+     * lokal), dan `utf8mb4` menghitung karakter, bukan byte.
+     */
+    public const NOTE_MAKS = 500;
+
+    /**
+     * Rapikan teks catatan supaya SELALU muat di kolom `note`.
+     *
+     * Dipakai tempat yang menyusun `note` dari isian pengguna (alasan sampai 500
+     * karakter + awalan, nama PT sampai 255): yang terlalu panjang dipotong dan
+     * ditutup "…". Pemotongnya `mb_substr` (karakter, bukan byte) supaya huruf
+     * bertanda atau emoji tidak terbelah di tengah. Teks LENGKAP tetap ada di
+     * `new_data` (kolom JSON) — jadi ringkasan di sini tidak menghilangkan bukti.
+     */
+    public static function catatan(string $teks): string
+    {
+        if (mb_strlen($teks) <= self::NOTE_MAKS) {
+            return $teks;
+        }
+
+        return mb_substr($teks, 0, self::NOTE_MAKS - 1).'…';
+    }
+
     /** @return list<string> */
     public static function actions(): array
     {

@@ -11,6 +11,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Memindahkan ALAT antar PT pelanggan dalam satu laboratorium (kontrak:
@@ -138,7 +139,12 @@ class PemindahanAlatPelanggan
                     'alasan' => $alasan,
                 ],
                 'changed_by' => $pelaku->getKey(),
-                'note' => 'Alat dipindah dari "'.$asal->nama.'" ke "'.$tujuan->nama.'" oleh '.$pelaku->role.'. Alasan: '.$alasan,
+                // Nama PT dipendekkan (kolom `nama` sampai 255) dan seluruh catatan dipotong ke
+                // panjang kolom `note`; PT & alasan LENGKAP ada di `new_data` / baris `customers`.
+                'note' => AuditLog::catatan(
+                    'Alat dipindah dari "'.Str::limit((string) $asal->nama, 60).'" ke "'.Str::limit((string) $tujuan->nama, 60)
+                    .'" oleh '.$pelaku->role.'. Alasan: '.$alasan,
+                ),
             ]);
 
             // Anggota PT asal/tujuan setelah pindah tidak berubah — yang berubah
