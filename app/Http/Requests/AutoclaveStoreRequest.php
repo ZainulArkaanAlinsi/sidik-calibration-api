@@ -184,7 +184,9 @@ class AutoclaveStoreRequest extends FormRequest
             $aturan[$jalur.'.*.confidence'] = ['nullable', 'numeric', 'between:0,1'];
         }
 
-        return AngkaTerhingga::pasangDiSemua($aturan);
+        // `batasiRentang`: `1e300` terhingga, jadi lolos penjaga INF, tetapi di luar
+        // kolom — dulu 201/500 "Unable to encode hasil_autoclave" (R2-8, QA ronde 2).
+        return AngkaTerhingga::pasangDiSemua(AngkaTerhingga::batasiRentang($aturan));
     }
 
     /**

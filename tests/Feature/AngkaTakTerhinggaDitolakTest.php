@@ -91,6 +91,95 @@ class AngkaTakTerhinggaDitolakTest extends TestCase
                 '{"suhu_awal":1e400,"suhu_akhir":-1e400,"kelembaban_awal":1e400,"kelembaban_akhir":-1e400}',
                 ['suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir'],
             ],
+            // ---- R2-8 (QA ronde 2): pintu yang dulu belum dijaga. `1e400` = INF
+            // (dulu 500 "Value INF does not represent a valid number"); `1e300`
+            // terhingga tapi di luar kolom `decimal` (dulu 500 SQLSTATE 22003
+            // atau, untuk kolom JSON, 201 dengan angka ekstrem TERSIMPAN).
+            'standar: ketidakpastian tak terhingga' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","ketidakpastian":1e400}', ['ketidakpastian'],
+            ],
+            'standar: ketidakpastian di luar kolom' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","ketidakpastian":1e300}', ['ketidakpastian'],
+            ],
+            'standar: ketidakpastian string 1e999' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","ketidakpastian":"1e999"}', ['ketidakpastian'],
+            ],
+            'standar: faktor_cakupan & drift tak terhingga' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","faktor_cakupan":-1e400,"drift":1e400}',
+                ['faktor_cakupan', 'drift'],
+            ],
+            'standar: drift di luar kolom' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","drift":1e300}', ['drift'],
+            ],
+            'standar: koefisien_suhu a/b/c' => [
+                'admin', 'POST', '/api/standards', '{"nama":"Std INF","koefisien_suhu":{"a":1e400,"b":1e300,"c":"1e999"}}',
+                ['koefisien_suhu.a', 'koefisien_suhu.b', 'koefisien_suhu.c'],
+            ],
+            'standar: parameter_kondisi' => [
+                'admin', 'POST', '/api/standards',
+                '{"nama":"Std INF","parameter_kondisi":{"suhu":{"indexed_value":1e300,"correction":-1e300,"u95":1e400},'
+                    .'"kelembaban":{"indexed_value":1e400,"correction":"1e999","u95":1e300}}}',
+                [
+                    'parameter_kondisi.suhu.indexed_value', 'parameter_kondisi.suhu.correction', 'parameter_kondisi.suhu.u95',
+                    'parameter_kondisi.kelembaban.indexed_value', 'parameter_kondisi.kelembaban.correction', 'parameter_kondisi.kelembaban.u95',
+                ],
+            ],
+            'ruangan: suhu tak terhingga' => [
+                'admin', 'POST', '/api/rooms', '{"kode":"R-INF","nama":"Ruang INF","suhu_min":-1e400,"suhu_max":1e400}',
+                ['suhu_min', 'suhu_max'],
+            ],
+            'ruangan: suhu di luar kolom' => [
+                'admin', 'POST', '/api/rooms', '{"kode":"R-INF","nama":"Ruang INF","suhu_min":-1e300,"suhu_max":1e300}',
+                ['suhu_min', 'suhu_max'],
+            ],
+            'ruangan: suhu string 1e999' => [
+                'admin', 'POST', '/api/rooms', '{"kode":"R-INF","nama":"Ruang INF","suhu_min":"1e999"}', ['suhu_min'],
+            ],
+            'ruangan: kelembaban tak terhingga' => [
+                'admin', 'POST', '/api/rooms', '{"kode":"R-INF","nama":"Ruang INF","kelembaban_min":-1e400,"kelembaban_max":1e400}',
+                ['kelembaban_min', 'kelembaban_max'],
+            ],
+            'autoclave preview: tak terhingga' => [
+                'teknisi', 'POST', '/api/calibrations/autoclave/preview',
+                '{"set_point":1e400,"suhu_awal":1e400,"suhu_akhir":-1e400,"kelembaban_awal":1e400,"kelembaban_akhir":-1e400,'
+                    .'"suhu":{"disk":[[1e400,"1e999"]],"indikator":[-1e400],"suhu_ruang":[1e400],"resolusi_alat":1e400},'
+                    .'"tekanan":{"uut_setting":1e400,"indikator_pressure":[1e400],"pembacaan_standar":[-1e400],"resolusi_alat":1e400,"tekanan_atm_awal":[1e400]}}',
+                [
+                    'set_point', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+                    'suhu.disk.0.0', 'suhu.disk.0.1', 'suhu.indikator.0', 'suhu.suhu_ruang.0', 'suhu.resolusi_alat',
+                    'tekanan.uut_setting', 'tekanan.indikator_pressure.0', 'tekanan.pembacaan_standar.0',
+                    'tekanan.resolusi_alat', 'tekanan.tekanan_atm_awal',
+                ],
+            ],
+            'autoclave preview: di luar kolom' => [
+                'teknisi', 'POST', '/api/calibrations/autoclave/preview',
+                '{"set_point":1e300,"suhu":{"disk":[[1e300]],"indikator":[-1e300],"suhu_ruang":[1e300],"resolusi_alat":1e300},'
+                    .'"tekanan":{"uut_setting":-1e300,"indikator_pressure":[1e300],"pembacaan_standar":[1e300],"resolusi_alat":1e300,"tekanan_atm_awal":1e300}}',
+                [
+                    'set_point', 'suhu.disk.0.0', 'suhu.indikator.0', 'suhu.suhu_ruang.0', 'suhu.resolusi_alat',
+                    'tekanan.uut_setting', 'tekanan.indikator_pressure.0', 'tekanan.pembacaan_standar.0',
+                    'tekanan.resolusi_alat', 'tekanan.tekanan_atm_awal',
+                ],
+            ],
+            'autoclave simpan: di luar kolom' => [
+                'teknisi', 'POST', '/api/calibrations/autoclave',
+                '{"equipment_id":1,"set_point":1e300,"suhu":{"disk":[[1e300]],"indikator":[1e300],"resolusi_alat":1e300},'
+                    .'"tekanan":{"uut_setting":1e300,"indikator_pressure":[1e300],"pembacaan_standar":[1e300],"tekanan_atm_awal":[1e300]}}',
+                [
+                    'set_point', 'suhu.disk.0.0', 'suhu.indikator.0', 'suhu.resolusi_alat',
+                    'tekanan.uut_setting', 'tekanan.indikator_pressure.0', 'tekanan.pembacaan_standar.0', 'tekanan.tekanan_atm_awal',
+                ],
+            ],
+            'sesi: angka bersarang spesifikasi_alat' => [
+                'teknisi', 'POST', '/api/calibrations',
+                '{"equipment_id":1,"tanggal_kalibrasi":"2026-09-01","measurements":[{"titik_ukur":50,"pembacaan":[50]}],'
+                    .'"spesifikasi_alat":{"micrometer":{"resolusi_mm":1e300,"kapasitas_mm":-1e300,"pra_evaluasi":[1e300,"NaN","Infinity","1e999"]}}}',
+                [
+                    'spesifikasi_alat.micrometer.resolusi_mm', 'spesifikasi_alat.micrometer.kapasitas_mm',
+                    'spesifikasi_alat.micrometer.pra_evaluasi.0', 'spesifikasi_alat.micrometer.pra_evaluasi.1',
+                    'spesifikasi_alat.micrometer.pra_evaluasi.2', 'spesifikasi_alat.micrometer.pra_evaluasi.3',
+                ],
+            ],
             'pengaturan organisasi' => [
                 'admin', 'PUT', '/api/organization',
                 '{"settings":{"faktor_cakupan_default":1e400,"masa_berlaku_sertifikat_bulan":1e400,'
@@ -124,6 +213,41 @@ class AngkaTakTerhinggaDitolakTest extends TestCase
         );
         $respons->assertJsonValidationErrors($atribut);
         $this->assertStringNotContainsString('Brick', (string) $respons->getContent());
+    }
+
+    /**
+     * Blok `spesifikasi_alat` berstruktur bebas (keterulangan, eksentrisitas,
+     * histeresis, ...) tidak punya aturan `numeric` per kunci, jadi dijaga penelusur
+     * pohon `AngkaTerhingga::temuanPohon`: tak terhingga, di luar kolom, dan teks
+     * `NaN`/`Infinity` (yang `(float)`-nya diam-diam 0) ditolak 422 di jalur angkanya.
+     * Angka biasa dan teks bebas yang kebetulan numerik panjang tetap lolos.
+     */
+    public function test_angka_bersarang_di_blok_spesifikasi_bebas_ditolak_422_dan_yang_wajar_lolos(): void
+    {
+        Organization::factory()->create();
+        $teknisi = User::factory()->create();
+
+        $kirim = fn (string $blok) => $this->actingAs($teknisi)->call(
+            'POST', '/api/calibrations', [], [], [],
+            ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'],
+            '{"equipment_id":1,"tanggal_kalibrasi":"2026-09-01","measurements":[{"titik_ukur":50,"pembacaan":[50]}],"spesifikasi_alat":'.$blok.'}',
+        );
+
+        $buruk = $kirim('{"eksentrisitas":{"beban":20,"baca":{"center":20,"front":1e400,"back":"NaN","left":1e300,"right":"-Infinity"}}}');
+
+        $this->assertSame(422, $buruk->getStatusCode(), 'Balasan: '.mb_substr((string) $buruk->getContent(), 0, 300));
+        $buruk->assertJsonValidationErrors([
+            'spesifikasi_alat.eksentrisitas.baca.front', 'spesifikasi_alat.eksentrisitas.baca.back',
+            'spesifikasi_alat.eksentrisitas.baca.left', 'spesifikasi_alat.eksentrisitas.baca.right',
+        ]);
+        $this->assertArrayNotHasKey('spesifikasi_alat.eksentrisitas.baca.center', $buruk->json('errors'));
+        $this->assertArrayNotHasKey('spesifikasi_alat.eksentrisitas.beban', $buruk->json('errors'));
+
+        // Angka wajar & teks numerik panjang (mis. nomor seri neraca) TIDAK dianggap salah.
+        $wajar = $kirim('{"eksentrisitas":{"beban":20,"baca":{"center":20,"front":19.98}},"anak_timbangan":{"neraca":"1234567890123456"}}');
+
+        $this->assertArrayNotHasKey('spesifikasi_alat.eksentrisitas.baca.front', (array) $wajar->json('errors'));
+        $this->assertArrayNotHasKey('spesifikasi_alat.anak_timbangan.neraca', (array) $wajar->json('errors'));
     }
 
     #[DataProvider('kirimanTakTerhingga')]

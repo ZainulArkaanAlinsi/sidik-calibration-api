@@ -45,6 +45,113 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class AngkaTerhingga implements ValidationRule
 {
     /**
+     * Nilai mutlak terbesar yang muat di kolom `decimal(20,8)`: 12 digit sebelum
+     * koma. Satu angka untuk semua pintu masuk, supaya `1e300` (terhingga, tapi
+     * meledak jadi 500 SQLSTATE 22003 di kolom — atau, di kolom JSON, TERSIMPAN
+     * dan meracuni hitungan) ditolak 422 di tempat yang sama dengan `1e400`.
+     */
+    public const BATAS_DECIMAL = 999999999999;
+
+    /**
+     * Pasang batas rentang kolom di tiap aturan `numeric` yang belum punya batas
+     * sendiri (`between:` / `max:`), lalu biarkan [pasangDiSemua] memasang penjaga
+     * tak-terhingga SEBELUM batas itu.
+     *
+     * Aturan yang sudah punya `between`/`max` dihormati apa adanya — batas fisik
+     * per alat (suhu -50..150, kelembaban 0..100) lebih sempit dari kolom dan
+     * tetap menang. Yang ditutup di sini hanya angka yang lolos `numeric` TANPA
+     * batas apa pun.
+     *
+     * @param  array<string, mixed>  $aturan  hasil `rules()`
+     * @param  string|null  $awalan  hanya kunci berawalan ini (mis. `spesifikasi_alat.`); null = semua
+     * @return array<string, mixed>
+     */
+    public static function batasiRentang(array $aturan, ?string $awalan = null, int|float $batas = self::BATAS_DECIMAL): array
+    {
+        foreach ($aturan as $kolom => $baris) {
+            if (! is_array($baris) || ! in_array('numeric', $baris, true)) {
+                continue;
+            }
+
+            if ($awalan !== null && ! str_starts_with((string) $kolom, $awalan)) {
+                continue;
+            }
+
+            foreach ($baris as $satu) {
+                if (is_string($satu) && preg_match('/^(between|max|size|in):/', $satu) === 1) {
+                    continue 2;
+                }
+            }
+
+            $baris[] = 'between:-'.$batas.','.$batas;
+            $aturan[$kolom] = $baris;
+        }
+
+        return $aturan;
+    }
+
+    /**
+     * Daun mana saja di sebuah pohon masukan (mis. blok `spesifikasi_alat`) yang
+     * BUKAN angka yang bisa dipakai hitungan.
+     *
+     * Dipakai untuk blok yang isinya struktur bebas (keterulangan Timbangan,
+     * eksentrisitas, histeresis, ...) sehingga tidak punya aturan `numeric` per
+     * kunci. Yang ditolak:
+     *
+     *  - angka JSON tak terhingga (`1e400` didekode jadi INF) atau di luar kolom;
+     *  - angka JSON/teks yang tidak punya arti numerik: `"NaN"`, `"Infinity"`,
+     *    `"-INF"` — `(float) "NaN"` bernilai 0, jadi dibiarkan ia jadi NOL diam-diam;
+     *  - teks numerik yang tak terhingga (`"1e999"`).
+     *
+     * Teks numerik yang TERHINGGA tidak diperiksa rentangnya: kunci teks bebas
+     * (nama neraca, nomor seri) bisa saja berisi deret angka panjang yang sah.
+     * Rentang untuk kunci yang memang angka dijaga aturan `numeric` + [batasiRentang].
+     *
+     * @return array<string, string> atribut (titik-bersarang) => pesan
+     */
+    public static function temuanPohon(mixed $pohon, string $akar): array
+    {
+        $temuan = [];
+
+        $jalan = function (mixed $nilai, string $jalur) use (&$jalan, &$temuan): void {
+            if (is_array($nilai)) {
+                foreach ($nilai as $kunci => $isi) {
+                    $jalan($isi, $jalur.'.'.$kunci);
+                }
+
+                return;
+            }
+
+            if (is_int($nilai) || is_float($nilai)) {
+                if (! is_finite((float) $nilai)) {
+                    $temuan[$jalur] = 'Kolom '.$jalur.' berisi angka yang nggak terhingga (INF/NAN). '
+                        .'Periksa lagi angkanya — kemungkinan besar salah ketik atau kelebihan digit.';
+                } elseif (abs((float) $nilai) > self::BATAS_DECIMAL) {
+                    $temuan[$jalur] = 'Kolom '.$jalur.' di luar rentang yang bisa disimpan (maksimal ±'.self::BATAS_DECIMAL.').';
+                }
+
+                return;
+            }
+
+            if (! is_string($nilai)) {
+                return;
+            }
+
+            $teks = trim($nilai);
+
+            if (preg_match('/^[+-]?(nan|inf|infinity)$/i', $teks) === 1
+                || (is_numeric($teks) && ! is_finite((float) $teks))) {
+                $temuan[$jalur] = 'Kolom '.$jalur.' berisi angka yang nggak terhingga (INF/NAN). '
+                    .'Periksa lagi angkanya — kemungkinan besar salah ketik atau kelebihan digit.';
+            }
+        };
+
+        $jalan($pohon, $akar);
+
+        return $temuan;
+    }
+
+    /**
      * Pasang aturan ini di SEMUA aturan angka sebuah daftar `rules()`.
      *
      * Dipasang TEPAT SESUDAH `numeric` (atau `integer`) dan didahului `bail`,

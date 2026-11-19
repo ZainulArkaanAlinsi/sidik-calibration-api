@@ -73,6 +73,23 @@ Accept: application/json
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
 >   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
 >   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-8): pintu angka yang dulu belum dijaga kini `422` per field (aditif).**
+> - `POST/PUT /standards`: `ketidakpastian`, `drift`, `faktor_cakupan`, `koefisien_suhu.a|b|c`, dan
+>   `parameter_kondisi.{suhu,kelembaban}.{indexed_value,correction,u95}` — angka tak terhingga (`1e400`, `"1e999"`)
+>   dan di luar kolom (nilai mutlak > **999.999.999.999**) → `422` (dulu `500`, atau `201` dengan angka ekstrem
+>   TERSIMPAN di kolom JSON).
+> - `POST/PUT /rooms`: `suhu_min`/`suhu_max` nilai mutlak maksimal **999.999,99** (kolom `decimal(8,2)`);
+>   `kelembaban_*` tetap 0…100; tak terhingga → `422` (dulu `500`).
+> - `POST /calibrations/autoclave/preview` memakai aturan yang SAMA dengan simpan: semua angka ukur dibatasi ke
+>   kolom, dan `suhu_awal`/`suhu_akhir`/`kelembaban_*` diperiksa (−50…150 / 0…100). Dulu preview menjawab `500`
+>   untuk `1e400` dan `200` untuk `suhu_awal: INF`, sementara simpan menjawab `422`.
+> - `POST/PUT /calibrations` (`spesifikasi_alat.*`): angka bersarang — termasuk blok berstruktur bebas
+>   (keterulangan, eksentrisitas, histeresis, …) — yang tak terhingga atau di luar kolom → `422` pada jalur angkanya.
+>   Isian bukan-angka di deret tabel (`micrometer.pra_evaluasi`, `height_gauge.*`, `dial_indicator.pra_evaluasi`,
+>   `flowmeter.*_pipa_mm`; mis. `"NaN"`, `"abc"`) dulu DIBUANG diam-diam sehingga pembacaannya hilang; sekarang
+>   `422` pada indeks kotak itu. Kotak kosong (`null`/`""`) tetap sah, dan koma desimal (`"19,06"`) dibakukan.
+
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
 

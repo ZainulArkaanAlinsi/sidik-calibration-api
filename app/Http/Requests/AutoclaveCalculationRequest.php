@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
+use App\Rules\AngkaTerhingga;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -28,7 +29,18 @@ class AutoclaveCalculationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        // Sama dengan jalur simpan (`AutoclaveStoreRequest`): tiap angka dijaga
+        // dari INF/NAN dan dibatasi ke kolom. Dulu preview menjawab 500 untuk
+        // `1e400` dan 200 untuk `suhu_awal: INF` sementara SIMPAN menjawab 422
+        // (R2-8, QA ronde 2) — teknisi melihat angka di layar lalu kirimannya mental.
+        return AngkaTerhingga::pasangDiSemua(AngkaTerhingga::batasiRentang([
+            // Kondisi ruang: tidak dipakai kalkulator preview, tetapi dikirim klien
+            // dan diperiksa jalur simpan dengan batas yang sama.
+            'suhu_awal' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
+            'suhu_akhir' => ['sometimes', 'nullable', 'numeric', 'between:-50,150'],
+            'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+
             'set_point' => ['required', 'numeric', 'min:0'],
 
             // ---- Suhu ----
@@ -79,7 +91,7 @@ class AutoclaveCalculationRequest extends FormRequest
             // Kertas nyediain LIMA kolom buat baris ini; payload lama ngirim
             // satu angka. Dua-duanya diterima supaya klien lama nggak patah.
             'tekanan.tekanan_atm_awal' => ['sometimes', 'nullable', $this->angkaAtauDeretAngka()],
-        ];
+        ]));
     }
 
     /**
