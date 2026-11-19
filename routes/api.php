@@ -54,6 +54,7 @@ use App\Services\Direktori\DirektoriLokalDb;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\PilihanDriver;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use App\Support\KesehatanLayanan;
 use App\Support\TriggerAppendOnlyAcuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
@@ -68,8 +69,12 @@ use Laravel\Reverb\ReverbServiceProvider;
 */
 
 // Dipakai mobile buat mastiin sambungan ke API jalan.
-Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
-    'status' => 'ok',
+Route::get('/health', fn (DirektoriPerusahaan $direktori, KesehatanLayanan $kesehatan) => response()->json([
+    // `ok` hanya kalau blok `kesehatan` di bawah tidak menemukan masalah;
+    // selain itu `degraded` (503 untuk db/penyimpanan). Pemantau uptime membaca
+    // kode status DAN kata kunci `"status":"ok"`, jadi kata itu tidak boleh
+    // muncul di tempat lain di respons ini. Lihat App\Support\KesehatanLayanan.
+    'status' => $kesehatan->status(),
     'app' => config('app.name'),
     'time' => now()->utc()->toIso8601ZuluString(),
 
@@ -374,7 +379,18 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // migrasinya sengaja tidak gagal — tanpa ini celahnya senyap. Penjaga
     // model tetap jalan apa pun nilainya. Satu query, dicache 5 menit; galat
     // baca dijawab false. Pemasang ulang: `php artisan acuan:pasang-trigger`.
-    'append_only_db' => TriggerAppendOnlyAcuan::terpasangTercache(),
+    //
+    // Dibungkus try/catch karena pembacaan cache-nya di luar penjagaan: dengan
+    // `CACHE_STORE=database` (produksi) database mati melempar dari sini dan
+    // seluruh endpoint jadi 500 — padahal justru saat itu `kesehatan.db` harus
+    // sempat menjawab 503 yang terkendali.
+    'append_only_db' => (function (): bool {
+        try {
+            return TriggerAppendOnlyAcuan::terpasangTercache();
+        } catch (Throwable) {
+            return false;
+        }
+    })(),
 
     // Versi PHP yang benar-benar jalan — supaya status tambalan keamanan PHP
     // (mis. CVE-2026-109618/109619, butuh >= 8.4.27) bisa dicek tanpa Shell.
@@ -383,7 +399,14 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // Melaporkan konfigurasi PHP worker yang menjawab, bukan jaminan: tulis raw
     // memaksa -1 sendiri (AngkaFloatEksak); bagian lain tetap membaca setelan server.
     'json_float_shortest' => ini_get('serialize_precision') === '-1',
-]));
+
+    // Kesehatan operasional: database, disk arsip, antrean, sertifikat
+    // menggantung (paket OPS-KODE). Aditif — kunci di atas tidak berubah.
+    // Hanya kata dari daftar tertutup dan angka; tidak ada nama tabel, jalur,
+    // atau pesan galat. Lihat App\Support\KesehatanLayanan dan
+    // config/kesehatan.php (ambang).
+    'kesehatan' => $kesehatan->blok(),
+], $kesehatan->kodeHttp()));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
 // Kalau pakai yang angka, semua endpoint publik berbagi satu jatah per IP —
