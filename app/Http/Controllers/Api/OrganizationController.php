@@ -372,36 +372,48 @@ class OrganizationController extends Controller
                 .Organization::MAKS_TTD_LEBAR_MM.' mm. Di bawah itu nggak kebaca, di atasnya nutupin teks.',
         ]);
 
-        /** @var Organization $organization */
-        $organization = $request->user()->organization;
-
-        // Digabung ke `settings` yang udah ada, BUKAN ditimpa — `settings` juga
-        // nyimpen penandatangan, kode dokumen, ambang reminder, masa berlaku.
-        // Nimpa seluruh array bikin semuanya ilang sekali klik.
-        $settings = $organization->settings ?? [];
-
         $peta = [
             'geser_x_mm' => Organization::KEY_TTD_GESER_X,
             'geser_y_mm' => Organization::KEY_TTD_GESER_Y,
             'lebar_mm' => Organization::KEY_TTD_LEBAR,
         ];
 
-        foreach ($peta as $masukan => $kunci) {
-            if (! array_key_exists($masukan, $data)) {
-                continue;
+        // Dikunci dan DIBACA ULANG di dalam transaksi (pola yang sama dengan
+        // `update()` di atas dan `OrganizationFiturController`), bukan dari
+        // `$request->user()->organization`: relasi itu bisa sudah dimuat lebih
+        // awal, dan `settings` ditulis sebagai satu JSON utuh — salinan basi
+        // menimpa saklar fitur (`fitur_nonaktif`) yang dipasang Super Admin di
+        // request lain, dan fitur yang dimatikan menyala lagi tanpa suara.
+        $organization = DB::transaction(function () use ($request, $data, $peta): Organization {
+            /** @var Organization $organization */
+            $organization = Organization::whereKey($request->user()->organization_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Digabung ke `settings` yang udah ada, BUKAN ditimpa — `settings` juga
+            // nyimpen penandatangan, kode dokumen, ambang reminder, masa berlaku.
+            // Nimpa seluruh array bikin semuanya ilang sekali klik.
+            $settings = $organization->settings ?? [];
+
+            foreach ($peta as $masukan => $kunci) {
+                if (! array_key_exists($masukan, $data)) {
+                    continue;
+                }
+
+                // `null` artinya balik ke bawaan — kuncinya dibuang, bukan disimpen null.
+                if ($data[$masukan] === null) {
+                    unset($settings[$kunci]);
+
+                    continue;
+                }
+
+                $settings[$kunci] = (float) $data[$masukan];
             }
 
-            // `null` artinya balik ke bawaan — kuncinya dibuang, bukan disimpen null.
-            if ($data[$masukan] === null) {
-                unset($settings[$kunci]);
+            $organization->update(['settings' => $settings]);
 
-                continue;
-            }
-
-            $settings[$kunci] = (float) $data[$masukan];
-        }
-
-        $organization->update(['settings' => $settings]);
+            return $organization;
+        });
 
         return response()->json([
             'data' => new OrganizationResource($organization->fresh()),

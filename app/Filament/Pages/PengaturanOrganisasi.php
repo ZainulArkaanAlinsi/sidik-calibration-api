@@ -16,6 +16,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
 /**
@@ -231,14 +232,24 @@ class PengaturanOrganisasi extends Page
     {
         $data = $this->form->getState();
 
-        if (array_key_exists('settings', $data)) {
-            $data['settings'] = array_merge(
-                $this->record->settings ?? [],
-                $data['settings'] ?? [],
-            );
-        }
+        // Dikunci dan DIBACA ULANG di dalam transaksi: `$this->record` dimuat
+        // sebelum form diisi, jadi menggabung ke dia menimpa kunci yang ditulis
+        // request lain sesudahnya — termasuk saklar fitur (`fitur_nonaktif`) yang
+        // dipasang Super Admin dan tidak punya field di form ini.
+        DB::transaction(function () use ($data): void {
+            $segar = Organization::whereKey($this->record->getKey())->lockForUpdate()->firstOrFail();
 
-        $this->record->update($data);
+            if (array_key_exists('settings', $data)) {
+                $data['settings'] = array_merge(
+                    $segar->settings ?? [],
+                    $data['settings'] ?? [],
+                );
+            }
+
+            $segar->update($data);
+        });
+
+        $this->record->refresh();
 
         Notification::make()
             ->title('Pengaturan organisasi disimpan.')

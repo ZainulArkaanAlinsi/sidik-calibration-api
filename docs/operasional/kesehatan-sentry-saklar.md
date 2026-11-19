@@ -96,6 +96,10 @@ rencana awal tidak dibuat: rute unduh massal belum ada.
   alasan (5-400 karakter), di samping baris `diubah` otomatis untuk kolom `settings`.
 - Admin (Master Data) tidak punya jalan ke saklar ini; `PUT /organization` menolak kuncinya dan tidak
   menghapusnya.
+- Penulis lain kolom `settings` tidak menimpa saklar: `PUT /organization`, `PATCH /organization/tanda-tangan/posisi`
+  dan simpan dari panel Pengaturan Organisasi mengunci baris dan membaca ulang `settings` di dalam transaksi
+  sebelum menggabung; `OrganizationSeeder` (`db:seed` menulis array tetap) menyalin `fitur_nonaktif` yang
+  sudah ada. Dijaga `SaklarFiturPenulisSettingsTest`.
 - Menambah kode fitur baru = PR yang kelihatan (lihat docblock `App\Support\FiturSaklar`).
 - Aplikasi menyembunyikan tombol lewat `GET /me/permissions` -> `fitur_nonaktif` (UI saklar di aplikasi:
   paket terpisah).

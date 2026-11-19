@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Organization;
+use App\Support\FiturSaklar;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -62,8 +63,28 @@ class OrganizationSeeder extends Seeder
                     // diparafrase, ini pernyataan formal ke KAN.
                     'catatan_ketidakpastian' => 'Ketidakpastian yang diperluas dinyatakan pada tingkat kepercayaan 95% dengan faktor cakupan k = 2 yang merupakan ketidakpastian terbaik yang dapat dicapai dalam layanan kalibrasi rutin dengan sumberdaya yang dimiliki laboratorium',
                     'catatan_penggandaan' => 'Lampiran sertifikat akreditasi ini tidak boleh digandakan kecuali seluruhnya, tanpa persetujuan tertulis dari pihak KAN',
+
+                    // Saklar fitur yang dipasang Super Admin dari aplikasi
+                    // (`PUT /organization/fitur`) hidup HANYA di database. Seeder ini
+                    // menimpa seluruh JSON, jadi tanpa baris ini `db:seed` menyalakan
+                    // kembali fitur yang sengaja dimatikan, tanpa galat dan dengan
+                    // audit yang masih berkata "dimatikan".
+                    ...$this->saklarFiturYangAda(),
                 ],
             ],
         );
+    }
+
+    /**
+     * Saklar fitur yang sudah terpasang di baris organisasi (kosong bila belum
+     * ada), supaya ikut tertulis ulang apa adanya.
+     *
+     * @return array<string, list<string>>
+     */
+    private function saklarFiturYangAda(): array
+    {
+        $ada = Organization::find(1)?->settings[FiturSaklar::KUNCI_SETTINGS] ?? null;
+
+        return is_array($ada) && $ada !== [] ? [FiturSaklar::KUNCI_SETTINGS => $ada] : [];
     }
 }
