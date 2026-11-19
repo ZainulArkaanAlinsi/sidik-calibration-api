@@ -16,6 +16,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -107,6 +108,12 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Pelacak galat. Tanpa `SENTRY_LARAVEL_DSN` (keadaan bawaan) SDK tidak
+        // mengirim apa pun dan tidak membuka sambungan jaringan; dengan DSN, yang
+        // berangkat hanya yang lolos `App\Support\PenyaringSentry` (privasi
+        // keras, config/sentry.php). Galat 4xx tidak dilaporkan.
+        Integration::handles($exceptions);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
