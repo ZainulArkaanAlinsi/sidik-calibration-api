@@ -435,6 +435,17 @@ Query params yang mobile pakai: `?search=kaliper&category=panjang&status=overdue
 ### `POST /api/equipments` · `PUT /api/equipments/{id}` · `DELETE /api/equipments/{id}`
 Body sama seperti field di atas (tanpa `id`). Teknisi & admin boleh; **viewer harus ditolak `403`.**
 
+### `GET /api/equipments/{id}/sertifikat` — riwayat sertifikat satu alat (field `keputusan` ADITIF, 19 Nov 2026)
+Bentuk penuh baris, peran, dan paginasi kursor ada di `docs/perintah-frontend-super-admin.md` §3.5. Yang ditambahkan
+19 Nov 2026 (uji kontrak app lawan API, P-1): tiap baris sekarang memuat **`"keputusan": "PASS" | "FAIL" | null`** —
+kunci dan nilai yang sudah dibaca `SertifikatRingkas.fromJson` di aplikasi (lencana PASS/FAIL di Riwayat sertifikat;
+sebelumnya tidak pernah muncul karena API tidak mengirimnya).
+- Nilainya keputusan sesi yang **tersimpan** (bukan dihitung ulang), sumber yang sama dengan `keputusan` di
+  `GET /api/certificates/{id}` dan `GET /api/verify/{token}` dan dengan yang tercetak di PDF bila organisasi
+  menyalakan `tampilkan_keputusan_di_pdf`. Dijaga `AlatDanRiwayatSertifikatLabTest`.
+- `null` = jenis alat itu tidak divonis (mayoritas profil) — aplikasi tidak menampilkan lencana. Kuncinya SELALU ada.
+- Aditif murni: klien yang tidak membacanya tidak terpengaruh.
+
 ### `GET /api/categories`
 Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom tiap kategori beda-beda):
 ```json

@@ -303,6 +303,7 @@ dulu; revisi selalu lebih baru dari aslinya. Respons `200`:
       "revisi_ke": 1,
       "status": "terbit",
       "status_dokumen": "berlaku",
+      "keputusan": "PASS",
       "diterbitkan_pada": "2026-01-15",
       "berlaku_sampai": "2026-12-02",
       "tahun": 2026,
@@ -318,6 +319,7 @@ dulu; revisi selalu lebih baru dari aslinya. Respons `200`:
       "revisi_ke": 0,
       "status": "terbit",
       "status_dokumen": "digantikan",
+      "keputusan": null,
       "diterbitkan_pada": "2025-12-03",
       "berlaku_sampai": "2026-12-02",
       "tahun": 2025,
@@ -337,6 +339,7 @@ dulu; revisi selalu lebih baru dari aslinya. Respons `200`:
 | `status` | status baris di server, apa adanya: `terbit` \| `ditarik` \| `dibatalkan` \| `gagal` \| `menunggu_generate`. `gagal` = PDF gagal dirender (admin bisa mencoba lagi lewat `POST /certificates/{id}/retry`); `ditarik` = ditarik kembali ke lembar kerja |
 | `status_dokumen` | label yang sama dengan yang dilihat pelanggan: `berlaku` \| `digantikan` \| `dibatalkan` \| `ditarik` \| `belum_terbit` (untuk `gagal`/`menunggu_generate`). `digantikan` = ada revisi yang terbit atau dibatalkan (pembatalan revisi tidak menghidupkan pendahulunya) |
 | `revisi_ke` | 0 = asli; `n` = revisi ke-n (`…-R<n>`) |
+| `keputusan` | **BARU 19 Nov 2026 (aditif):** `PASS` \| `FAIL` \| `null`. Keputusan sesi yang TERSIMPAN (sama dengan detail sertifikat & halaman verifikasi), bukan dihitung ulang; `null` = jenis alat tidak divonis → **jangan tampilkan lencana**. Kuncinya selalu ada |
 | `digantikan_oleh` | **hanya bila penggantinya TERBIT** (id, nomor, tanggal terbit); `null` bila tidak ada pengganti sah — termasuk bila revisinya dibatalkan |
 | `revisi_dari` | sertifikat asal bila baris ini revisi; selain itu `null` |
 | `tahun`, `bulan` | dari `diterbitkan_pada` (1–12) untuk pengelompokan di UI; `null` bila belum terbit |
