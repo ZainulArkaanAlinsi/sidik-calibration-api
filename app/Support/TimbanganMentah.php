@@ -77,6 +77,40 @@ class TimbanganMentah
     public const PERAN_NOMINAL = 'nominal';
 
     /**
+     * Apakah satu titik akurasi cukup untuk dihitung ulang — ATURAN YANG SAMA
+     * dengan jalur simpan/preview.
+     *
+     * `TimbanganCalculator::titikAkurasi()` menerima titik selama ada SATU
+     * pembacaan nol (`z1` atau `z2`) dan SATU pembacaan berbeban (`m` atau
+     * `m_aksen`), dan merata-ratakan yang ada. Itu setara master: kg & gram
+     * punya TIGA baris per titik (z, m, m') dan baris z' hanya ada di master
+     * substitusi (`PERHITUNGAN FC`, K50:K52 kg · K52:K54 gram · K50:K53
+     * substitusi), sementara Excel `AVERAGE` melewati sel kosong.
+     *
+     * Versi lama `SiapHitungSesi` menuntut KEEMPAT peran untuk semua varian,
+     * sehingga sesi kg/gram tiga-pembacaan yang dihitung, tersimpan, dan bisa
+     * terbit tidak pernah ikut `kalibrasi:hitung-ulang` maupun simulasi versi
+     * data acuan (R2-13). Dua jalur tidak boleh menjawab beda diam-diam;
+     * `HitungUlangTimbanganTanpaZ2Test` mengadu gerbang ini ke kalkulator untuk
+     * keenam belas kombinasi pembacaan.
+     *
+     * Titik tanpa nominal tetap ditolak (massa standar nol bukan titik).
+     *
+     * @param  array{nominal?: list<float>, z1?: float|null, m?: float|null, m_aksen?: float|null, z2?: float|null}  $titik  keluaran [dari()]
+     */
+    public static function cukupUntukHitung(array $titik): bool
+    {
+        if (($titik['nominal'] ?? []) === []) {
+            return false;
+        }
+
+        $adaNol = ($titik['z1'] ?? null) !== null || ($titik['z2'] ?? null) !== null;
+        $adaBeban = ($titik['m'] ?? null) !== null || ($titik['m_aksen'] ?? null) !== null;
+
+        return $adaNol && $adaBeban;
+    }
+
+    /**
      * @param  Collection<int, RawMeasurement>  $baris  baris satu `titik_ke`
      * @return array{nominal: list<float>, z1: float|null, m: float|null, m_aksen: float|null, z2: float|null}|array{}
      */

@@ -265,18 +265,16 @@ final class SiapHitungSesi
 
                 $nilai = [];
             } elseif ($timbangan !== []) {
-                // Gerbangnya KEEMPAT pembacaan, bukan jumlah baris: satu
-                // titik berisi 4 pembacaan + sampai 6 baris nominal, jadi
-                // hitungan datar selalu lolos walau pembacaannya bolong.
-                $kurang = false;
-
-                foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
-                    if ($timbangan[$peran] === null) {
-                        $kurang = true;
-                    }
-                }
-
-                if ($kurang || $timbangan['nominal'] === []) {
+                // Gerbangnya ISI pembacaan, bukan jumlah baris: satu titik
+                // berisi sampai 4 pembacaan + 6 baris nominal, jadi hitungan
+                // datar selalu lolos walau pembacaannya bolong.
+                //
+                // Aturannya SAMA dengan jalur simpan (R2-13): satu nol dan
+                // satu berbeban sudah cukup. Dulu keempatnya dituntut untuk
+                // semua varian, padahal master kg & gram cuma punya tiga
+                // baris (z, m, m') — sesi yang dihitung dan bisa terbit itu
+                // dilewati diam-diam. Lihat [TimbanganMentah::cukupUntukHitung].
+                if (! TimbanganMentah::cukupUntukHitung($timbangan)) {
                     continue;
                 }
 

@@ -366,3 +366,36 @@ mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitu
 > LOP substitusi yang tercetak bilangan bulat satu digit (3,4 kg) dicetak satu desimal. LOP 13,66 tetap
 > `14` dan U95 0,52 tetap `0,5` (persis master). Gram `d-1` (kapasitas, beban uji, beban histeresis)
 > tidak memotong nilai uji: neraca 0,1 g dengan kapasitas 105,5 g tercetak `105.5`, bukan `106`.
+
+---
+
+## T15 — Baris z' (z2): wajib atau boleh kosong? (QA ronde 2, R2-13, 19 Nov 2026)
+
+**Temuan teknis yang SUDAH diperbaiki** (tanpa mengubah satu angka sertifikat): jalur simpan/preview
+menerima titik akurasi Timbangan selama ada SATU pembacaan nol (`z1` atau `z2`) dan SATU pembacaan
+berbeban (`m` atau `m'`), tetapi `kalibrasi:hitung-ulang` dan simulasi versi data acuan
+(`SiapHitungSesi`) menuntut keempatnya untuk semua varian, sehingga sesi kg/gram tiga-pembacaan
+yang dihitung dan bisa terbit tidak pernah ikut jalur kedua. Sekarang kedua jalur memakai aturan
+yang sama (`TimbanganMentah::cukupUntukHitung`), diuji `HitungUlangTimbanganTanpaZ2Test`.
+
+**Bukti dari master** (sheet `PERHITUNGAN FC`, workbook di `Project-PT-Sidik/alat-alat-Pt-Sidik/Massa_Timbangan/`):
+
+| Varian | Baris per titik akurasi | Sel |
+|---|---|---|
+| kg | **3** — `z_k`, `m_k`, `m_k'` | K50:K52, K53:K55, K56:K58 … (Average `N50 = z1`, nol tunggal) |
+| gram | **3** — `z_k`, `m_k`, `m_k'` | K52:K54, K55:K57, K58:K60 … (Average `N52 = z1`) |
+| substitusi | **4** — `z_k`, `m_k`, `m_k'`, `z_k'` | K50:K53, K54:K57 … (Average `P66 = 801,95` = rata-rata `M66` 801,9 dan `M69` 802) |
+
+Koreksi gram dihitung ulang tanpa baris z2 sama dengan master: `R52 = 3,2000000000032e-05`,
+`R55 = 0,00012199999999928934`, `R58 = 4,000000000559112e-06`.
+
+**Yang TIDAK diubah, dan perlu keputusan lab** (perilaku lama dipertahankan; kode meniru master):
+
+1. **Substitusi tanpa z':** master memakai `AVERAGE` yang melewati sel kosong, jadi z' kosong =
+   nol tunggal `z`; aplikasi meniru itu (titik tetap dihitung). Apakah z' WAJIB di metode
+   substitusi? Kalau ya, titik tanpa z' harus diblokir dengan alasan terbaca saat simpan/kirim
+   (itu mengubah perilaku sesi yang sekarang valid, jadi menunggu jawaban).
+2. **kg/gram dengan z2 terisi:** lembar HP menggambar empat kotak (z, m, m', z') untuk semua
+   varian, padahal master kg & gram tidak punya z'. Bila teknisi mengisi z2, kalkulator merata-ratakan
+   z1 dan z2, sedangkan master kg/gram memakai z tunggal. Apakah kotak z' disembunyikan/diabaikan
+   untuk kg & gram, atau rata-rata dua nol memang dikehendaki?
