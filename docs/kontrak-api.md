@@ -608,6 +608,11 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 
 ### `GET /api/calibrations/lembar-kerja?profil=...` — bentuk per jenis alat
 
+> **19 Nov 2026 (uji kontrak S-5):** `profil` yang DIKIRIM tetapi tidak dikenal server (tanpa `equipment_id` dan tanpa
+> `instrumen` sebagai cadangan) → `422 {"kode": "profil_tidak_dikenal", "message": "…"}`. Dulu `200` dengan lembar pH — teknisi
+> yang memegang kode usang mengisi lembar yang SALAH tanpa tanda apa pun. Tanpa `profil` (bawaan pH), `profil` yang dikenal,
+> `equipment_id`, dan klien lama yang mengirim `instrumen` tidak berubah.
+
 ✅ **Live (Turbidimeter, Agu).** Bentuk lembar kerja beda per jenis alat.
 `?profil=turbidimeter` (atau `?instrumen=Turbidimeter`) balikin lembar NTU
 (titik 1/100/1000, resolusi per-titik di `bagian[].tabel[].baris[].desimal`).
