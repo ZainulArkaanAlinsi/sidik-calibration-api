@@ -16,6 +16,7 @@ use App\Models\Room;
 use App\Models\Standard;
 use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,11 @@ use Illuminate\Support\Facades\DB;
  *  - alat yang PT pemiliknya masih terhapus → 422 `kode: pt_terhapus` + `id` PT
  *    itu: alat tanpa pemilik hidup jadi yatim. Pulihkan PT-nya dulu;
  *  - memulihkan tidak pernah bentrok dengan indeks unik, karena barisnya
- *    sendiri yang memegang kuncinya sejak dulu.
+ *    sendiri yang memegang kuncinya sejak dulu — KECUALI standar: nomor serinya
+ *    unik hanya antar baris yang belum terhapus (`StandardRequest`, tanpa indeks
+ *    database), jadi serial yang dilepas baris terhapus boleh dipakai standar baru.
+ *    Pulihkan yang lama sesudahnya melahirkan dua standar aktif berserial sama
+ *    (R2-1, QA ronde 2), maka standar dicek konflik serialnya: 422 `serial_dipakai`.
  *
  * ## Jejak audit
  *
@@ -111,6 +116,25 @@ class PemulihanDataController extends Controller
         $waktuHapus = $baris->deleted_at;
 
         DB::transaction(function () use ($kelas, $baris, $waktuHapus, $alasan): void {
+            // Dicek DI DALAM transaksi dengan kunci baris pemegang serial, supaya
+            // pemulihan yang berbalapan dengan pembuatan tidak melahirkan dua yang
+            // aktif. Melempar (bukan `return`) agar transaksi dibatalkan.
+            if ($baris instanceof Standard) {
+                $bentrok = $this->standarBerSerialSama($baris);
+
+                if ($bentrok !== null) {
+                    throw new HttpResponseException($this->tolak(
+                        'serial_dipakai',
+                        sprintf(
+                            'Nomor seri "%s" sudah dipakai standar aktif lain (%s). Ubah nomor seri standar itu atau hapus dulu, baru pulihkan yang ini.',
+                            $baris->serial_number,
+                            $bentrok->nama,
+                        ),
+                        ['id' => $bentrok->getKey(), 'entitas' => 'standards'],
+                    ));
+                }
+            }
+
             // Event `restored` otomatis (Diaudit) dimatikan: baris auditnya
             // ditulis sekali di bawah, lengkap dengan alasan dan nilai sebelum.
             $kelas::tanpaAudit(fn () => $baris->restore());
@@ -130,6 +154,25 @@ class PemulihanDataController extends Controller
         }
 
         return response()->json(['data' => new $konfig['resource']($baris)]);
+    }
+
+    /**
+     * Standar AKTIF lab yang sama dengan nomor seri yang sama. `$baris` sendiri
+     * sedang terhapus saat ini dipanggil, jadi kueri bawaan (tanpa baris terhapus)
+     * tidak pernah mengembalikannya. Seri kosong tidak pernah bentrok (banyak
+     * standar boleh tanpa seri).
+     */
+    private function standarBerSerialSama(Standard $baris): ?Standard
+    {
+        if (! filled($baris->serial_number)) {
+            return null;
+        }
+
+        return Standard::query()
+            ->where('organization_id', $baris->organization_id)
+            ->where('serial_number', $baris->serial_number)
+            ->lockForUpdate()
+            ->first();
     }
 
     /**

@@ -19,6 +19,7 @@ use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
+use App\Services\PenjagaOrganisasi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
@@ -39,6 +40,23 @@ use Illuminate\Validation\Validator;
 
 class CalibrationRequest extends FormRequest
 {
+    /**
+     * `PUT /calibrations/{sesi}`: kepemilikan sesi diperiksa SEBELUM badan
+     * divalidasi (R2-5, QA ronde 2) — sesi lab lain dijawab 404, bukan 422
+     * tentang field kosong. `POST /calibrations` dan `/preview` tidak punya
+     * sesi di rutenya, jadi tidak tersentuh.
+     */
+    public function authorize(): bool
+    {
+        $sesi = $this->route('calibration');
+
+        if ($sesi instanceof CalibrationSession) {
+            PenjagaOrganisasi::pastikanSesiBolehDilihat($this, $sesi);
+        }
+
+        return true;
+    }
+
     /**
      * Batas total sel grid enclosure (termokopel + Indikator) satu request.
      *
@@ -456,7 +474,7 @@ class CalibrationRequest extends FormRequest
             ))
             : array_values($pra);
 
-        $nilai = array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v)));
+        $nilai = self::bersihkanDeretTabel($mentah);
 
         $spek = (array) $this->input('spesifikasi_alat', []);
 
@@ -469,10 +487,7 @@ class CalibrationRequest extends FormRequest
         // yang sudah dikonversi (HP tidak punya konversi balik), jadi tiap
         // simpan mengalikannya 25,4 lagi. Terbukti sampai 1290,32 mm untuk
         // pembacaan 2 inch pada simpanan kedua. Lihat [MicrometerMentah::keMm].
-        $spek['micrometer']['pra_evaluasi'] = array_map(
-            static fn ($v): float => (float) $v,
-            $nilai,
-        );
+        $spek['micrometer']['pra_evaluasi'] = $nilai;
 
         $this->merge(['spesifikasi_alat' => $spek]);
     }
@@ -1138,10 +1153,34 @@ class CalibrationRequest extends FormRequest
             ))
             : array_values($nilai);
 
-        return array_map(
-            static fn ($v): float => (float) $v,
-            array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v))),
-        );
+        return self::bersihkanDeretTabel($mentah);
+    }
+
+    /**
+     * Buang kotak KOSONG dari deret hasil perataan tabel, dan jadikan yang angka
+     * sebagai float. Isian yang BUKAN angka (`"NaN"`, `"Infinity"`, `"abc"`) TIDAK
+     * dibuang diam-diam: dulu `is_numeric()` menyaringnya keluar sebelum validasi,
+     * jadi `pra_evaluasi: ["NaN"]` diterima 201 dengan pembacaannya hilang (R2-8,
+     * QA ronde 2). Sekarang ia tetap di deret dan ditolak aturan `numeric` (422).
+     * Koma desimal (`"19,06"`) dibakukan lebih dulu, sama seperti kotak angka lain.
+     *
+     * @param  array<int, mixed>  $mentah
+     * @return list<mixed>
+     */
+    private static function bersihkanDeretTabel(array $mentah): array
+    {
+        $hasil = [];
+
+        foreach ($mentah as $v) {
+            if ($v === null || (is_string($v) && trim($v) === '')) {
+                continue;
+            }
+
+            $v = AngkaDesimal::bakukan($v);
+            $hasil[] = is_numeric($v) ? (float) $v : $v;
+        }
+
+        return $hasil;
     }
 
     /**
@@ -2063,7 +2102,12 @@ class CalibrationRequest extends FormRequest
         // Urutan pemasangannya (tepat sesudah `numeric`, didahului `bail`) dan
         // alasannya ada di `AngkaTerhingga::pasangDiSemua()`: aturan batas yang
         // dibaca sebelum ini melempar `NumberFormatException` pada `1e400`.
-        return AngkaTerhingga::pasangDiSemua($aturan);
+        // Rentang kolom (`decimal(20,8)`) untuk aturan `numeric` yang belum punya batas
+        // sendiri — termasuk angka bersarang `spesifikasi_alat.*`. Tanpa ini `1e300`
+        // (terhingga, jadi lolos penjaga INF) meledak jadi 500 di hitungan atau
+        // tersimpan di kolom JSON (R2-8, QA ronde 2). Aturan yang sudah punya
+        // `between`/`max` (suhu -50..150, kelembaban 0..100, ...) tidak disentuh.
+        return AngkaTerhingga::pasangDiSemua(AngkaTerhingga::batasiRentang($aturan));
     }
 
     /**
@@ -2237,6 +2281,24 @@ class CalibrationRequest extends FormRequest
      */
     public function withValidator(Validator $validator): void
     {
+        // Angka bersarang di blok `spesifikasi_alat` yang strukturnya bebas
+        // (keterulangan, eksentrisitas, histeresis, ... tidak punya aturan
+        // `numeric` per kunci): tak terhingga, di luar kolom, atau `"NaN"` ditolak
+        // 422 — dulu 500 saat dihitung, atau TERSIMPAN sebagai nol (R2-8).
+        $validator->after(function (Validator $validator): void {
+            $spek = $this->input('spesifikasi_alat');
+
+            if (! is_array($spek)) {
+                return;
+            }
+
+            foreach (AngkaTerhingga::temuanPohon($spek, 'spesifikasi_alat') as $atribut => $pesan) {
+                if (! $validator->errors()->has($atribut)) {
+                    $validator->errors()->add($atribut, $pesan);
+                }
+            }
+        });
+
         $validator->after(function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) {
                 return;

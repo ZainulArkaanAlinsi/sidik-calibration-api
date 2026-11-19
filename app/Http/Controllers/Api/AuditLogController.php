@@ -237,6 +237,18 @@ class AuditLogController extends Controller
             // Jaring multi-tenant. Riwayat lab lain nggak boleh kebaca dari sini —
             // isinya nilai sebelum & sesudah dari seluruh datanya.
             ->where('organization_id', $request->user()->organization_id)
+            // R2-6 (QA ronde 2): baris `akses_lintas_lab` lahir HANYA untuk ID yang
+            // ADA di lab lain (404 yang dicatat `PenjagaOrganisasi`), jadi
+            // mengembalikannya ke pemanggil — lewat filter `entity_type`/`entity_id`,
+            // daftar polos, atau ekspor — membuka keberadaan ID itu beserta nama
+            // tabelnya: persis yang ditutup jawaban 404. Barisnya tetap TERCATAT
+            // (pertanyaan "pernah ada yang mencoba?" terjawab dari DB/panel/super
+            // admin); admin lab tidak menerimanya lewat API. Super admin berhak
+            // membaca semua data lab, jadi tidak ada yang bocor kepadanya.
+            ->when(
+                ! $request->user()->isSuperAdmin(),
+                fn (Builder $q) => $q->where('action', '!=', AuditLog::ACTION_AKSES_LINTAS_LAB),
+            )
             ->when(
                 filled($filter['entity_type'] ?? null),
                 fn (Builder $q) => $q->where('entity_type', $filter['entity_type']),

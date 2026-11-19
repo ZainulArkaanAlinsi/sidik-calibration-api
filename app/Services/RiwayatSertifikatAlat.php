@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\User;
@@ -153,9 +154,17 @@ class RiwayatSertifikatAlat
                 ->get()
                 ->keyBy('id');
 
+        // Keputusan PASS/FAIL = kolom sesi yang TERSIMPAN (bukan dihitung ulang dari
+        // titik hasil) — sumber yang sama dengan detail sertifikat, halaman
+        // verifikasi, dan PDF. Satu query per halaman, tanpa N+1.
+        $keputusan = CalibrationSession::query()
+            ->where('organization_id', $organisasi)
+            ->whereIn('id', $baris->pluck('calibration_session_id')->unique()->values()->all())
+            ->pluck('keputusan', 'id');
+
         return $baris
             ->mapWithKeys(fn (Certificate $c) => [
-                $c->id => $this->bentuk($c, $revisi->get($c->id, collect()), $asal),
+                $c->id => $this->bentuk($c, $revisi->get($c->id, collect()), $asal, $keputusan->get($c->calibration_session_id)),
             ])
             ->all();
     }
@@ -163,9 +172,10 @@ class RiwayatSertifikatAlat
     /**
      * @param  Collection<int, Certificate>  $revisi  revisi baris ini, id naik
      * @param  Collection<int, Certificate>  $asal  sertifikat asal, kunci = id
+     * @param  string|null  $keputusan  `PASS` | `FAIL` | null (jenis alat tanpa vonis)
      * @return array<string, mixed>
      */
-    private function bentuk(Certificate $c, Collection $revisi, Collection $asal): array
+    private function bentuk(Certificate $c, Collection $revisi, Collection $asal, ?string $keputusan = null): array
     {
         // Sama dengan `Certificate::revisiPenentuStatus()` / `penggantiSah()`,
         // dihitung dari revisi yang sudah dimuat (tanpa query per baris):
@@ -182,6 +192,9 @@ class RiwayatSertifikatAlat
             'revisi_ke' => (int) $c->revisi_ke,
             'status' => $c->status,
             'status_dokumen' => Certificate::labelDokumen((string) $c->status, $penentu?->status),
+            // ADITIF (P-1): dibaca aplikasi sebagai lencana PASS/FAIL
+            // (`SertifikatRingkas.keputusan`); null = alat jenis ini tidak divonis.
+            'keputusan' => $keputusan,
             'diterbitkan_pada' => $c->diterbitkan_pada?->toDateString(),
             'berlaku_sampai' => $c->berlaku_sampai?->toDateString(),
             'tahun' => $c->diterbitkan_pada === null ? null : (int) $c->diterbitkan_pada->format('Y'),

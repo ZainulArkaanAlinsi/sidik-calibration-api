@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\CalibrationSession;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -63,6 +65,28 @@ class PenjagaOrganisasi
     }
 
     /**
+     * Pintu awal untuk `FormRequest` yang MENGUBAH sesi kalibrasi (`authorize()`).
+     *
+     * Sebuah FormRequest divalidasi SEBELUM controller sempat memanggil
+     * `pastikanBolehLihat()`, jadi badan kosong ke sesi lab lain menjawab 422
+     * ("Alat yang mau dikalibrasi wajib diisi") sementara ID yang tidak ada 404 —
+     * selisih itu membuka keberadaan ID sesi lab lain (R2-5, QA ronde 2). Aturannya
+     * sama persis dengan `CalibrationController::pastikanBolehLihat()`: lab lain →
+     * 404 (tercatat), dan teknisi hanya sesinya sendiri (sesi rekan → 404, seperti GET).
+     */
+    public static function pastikanSesiBolehDilihat(Request $request, CalibrationSession $sesi): void
+    {
+        self::pastikanSatu($request, $sesi);
+
+        $pemanggil = $request->user();
+
+        abort_if(
+            $pemanggil?->role === User::ROLE_TEKNISI && $sesi->teknisi_id !== $pemanggil->getKey(),
+            404,
+        );
+    }
+
+    /**
      * Catat percobaan lintas lab.
      *
      * Dipisah dari `pastikanSatu()` supaya middleware jaring pengaman
@@ -93,6 +117,16 @@ class PenjagaOrganisasi
         // jangan dicatat lagi dari sisi respons. Riwayat yang menggandakan
         // kejadian bikin orang menghitung salah waktu menyelidiki.
         $request->attributes->set('lintas_lab_tercatat', true);
+
+        // Dipanggil dari `FormRequest::authorize()` (R2-5), `$request` adalah SALINAN
+        // request asli dengan bag atribut sendiri, sedangkan middleware jaring
+        // pengaman membaca yang ASLI. Tanpa tanda di sana satu percobaan tercatat dua
+        // kali (sekali di sini, sekali oleh middleware) dan riwayat menggandakan kejadian.
+        $asli = app('request');
+
+        if ($asli !== $request) {
+            $asli->attributes->set('lintas_lab_tercatat', true);
+        }
 
         try {
             AuditLog::create([

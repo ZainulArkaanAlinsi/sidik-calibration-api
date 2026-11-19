@@ -572,6 +572,57 @@ class AlatDanRiwayatSertifikatLabTest extends TestCase
         $this->assertSame($kecil, $ukur(), 'Jumlah query tumbuh bersama jumlah sertifikat: ada N+1.');
     }
 
+    /**
+     * P-1 (uji kontrak app lawan API, 19 Nov 2026): lencana PASS/FAIL riwayat
+     * sertifikat tidak pernah muncul karena API tidak mengirim `keputusan`, padahal
+     * aplikasi membacanya (`SertifikatRingkas.keputusan`). Nilainya diambil dari
+     * keputusan SESI yang tersimpan — sumber yang sama dengan sertifikat (detail
+     * `GET /certificates/{id}`, halaman verifikasi, dan PDF) — bukan dihitung ulang.
+     * Sertifikat tanpa vonis (43 dari 48 profil) = `null`, jadi tak ada lencana palsu.
+     */
+    public function test_riwayat_memuat_keputusan_tersimpan_sama_dengan_yang_tampil_di_sertifikat(): void
+    {
+        $alat = $this->alat();
+        $lulus = $this->sertifikat($alat, ['qr_token' => 'qr-lulus-01']);
+        $gagal = $this->sertifikat($alat, ['qr_token' => 'qr-gagal-02']);
+        $tanpaVonis = $this->sertifikat($alat, ['qr_token' => 'qr-null-003']);
+
+        $lulus->session->forceFill(['keputusan' => 'PASS'])->save();
+        $gagal->session->forceFill(['keputusan' => 'FAIL'])->save();
+        $tanpaVonis->session->forceFill(['keputusan' => null])->save();
+
+        $admin = $this->adminLab();
+
+        foreach ([User::ROLE_ADMIN, User::ROLE_SUPER_ADMIN, User::ROLE_VIEWER] as $peran) {
+            $per = collect($this->riwayat($this->adminLab($peran), $alat)->assertOk()->json('data'))->keyBy('id');
+
+            $this->assertSame('PASS', $per[$lulus->id]['keputusan'], $peran);
+            $this->assertSame('FAIL', $per[$gagal->id]['keputusan'], $peran);
+            $this->assertArrayHasKey('keputusan', $per[$tanpaVonis->id], 'Kunci keputusan harus selalu ada (aditif), nilainya null.');
+            $this->assertNull($per[$tanpaVonis->id]['keputusan'], $peran);
+        }
+
+        // Sama dengan yang tampil di sertifikat: detail internal & verifikasi publik.
+        foreach ([$lulus, $gagal, $tanpaVonis] as $sertifikat) {
+            $dariRiwayat = collect($this->riwayat($admin, $alat)->json('data'))->firstWhere('id', $sertifikat->id)['keputusan'];
+
+            $this->assertSame($dariRiwayat, $this->actingAs($admin)->getJson("/api/certificates/{$sertifikat->id}")->assertOk()->json('data.keputusan'));
+            $this->assertSame($dariRiwayat, $this->getJson("/api/verify/{$sertifikat->qr_token}")->assertOk()->json('data.keputusan'));
+        }
+    }
+
+    public function test_keputusan_riwayat_tidak_dihitung_ulang_dari_hasil_titik(): void
+    {
+        $alat = $this->alat();
+        $sertifikat = $this->sertifikat($alat);
+        // Vonis sesi yang TERSIMPAN yang menang; riwayat tidak menengok titik hasil.
+        $sertifikat->session->forceFill(['keputusan' => 'FAIL'])->save();
+
+        $baris = collect($this->riwayat($this->adminLab(), $alat)->assertOk()->json('data'))->firstWhere('id', $sertifikat->id);
+
+        $this->assertSame('FAIL', $baris['keputusan']);
+    }
+
     // ============================================================== /me/permissions
 
     public function test_izin_matriks_alat_pelanggan_dan_riwayat_sertifikat(): void

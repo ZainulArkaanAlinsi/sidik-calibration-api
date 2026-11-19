@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\AngkaTerhingga;
 use App\Services\KonflikDataTerhapus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -9,6 +10,9 @@ use Illuminate\Validation\Validator;
 
 class RoomRequest extends FormRequest
 {
+    /** Nilai mutlak terbesar kolom `rooms.suhu_min/suhu_max` (`decimal(8,2)`). */
+    private const BATAS_SUHU = 999999.99;
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -18,7 +22,10 @@ class RoomRequest extends FormRequest
         $room = $this->route('room');
         $wajibKalauBikinBaru = $this->isMethod('POST') ? 'required' : 'sometimes';
 
-        return [
+        // Suhu: kolom `decimal(8,2)` (maks ±999.999,99); kelembaban sudah 0..100.
+        // Keduanya dijaga dari INF/NAN — `1e400` dulu 500 "Value INF does not
+        // represent a valid number", `1e300` 500 SQLSTATE 22003 (R2-8, QA ronde 2).
+        return AngkaTerhingga::pasangDiSemua([
             'kode' => [
                 $wajibKalauBikinBaru, 'string', 'max:50',
                 // Unik per organisasi, bukan global — dua lab boleh sama-sama
@@ -34,18 +41,18 @@ class RoomRequest extends FormRequest
             'nama' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'lokasi' => ['nullable', 'string', 'max:255'],
 
-            'suhu_min' => ['nullable', 'numeric'],
+            'suhu_min' => ['nullable', 'numeric', 'between:-'.self::BATAS_SUHU.','.self::BATAS_SUHU],
             // Batas atas dibandingin ke batas bawah cuma kalau bawahnya ikut
             // dikirim. Di PATCH yang cuma ngubah satu sisi, `gte:suhu_min` bakal
             // ngadu ke field yang nggak ada dan lolos diam-diam — itu ditangkap
             // `withValidator()` di bawah pakai nilai yang tersimpan.
-            'suhu_max' => ['nullable', 'numeric'],
+            'suhu_max' => ['nullable', 'numeric', 'between:-'.self::BATAS_SUHU.','.self::BATAS_SUHU],
             'kelembaban_min' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'kelembaban_max' => ['nullable', 'numeric', 'min:0', 'max:100'],
 
             'keterangan' => ['nullable', 'string', 'max:1000'],
             'aktif' => ['sometimes', 'boolean'],
-        ];
+        ]);
     }
 
     /**

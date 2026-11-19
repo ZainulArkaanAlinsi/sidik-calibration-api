@@ -7,6 +7,8 @@ use App\Http\Requests\Admin\BuatAkunAdminRequest;
 use App\Http\Resources\UserResource;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Rules\SandiMuatBcrypt;
+use App\Services\Pencarian\PolaLike;
 use App\Services\PenjagaOrganisasi;
 use App\Support\AlasanAksi;
 use Illuminate\Http\JsonResponse;
@@ -46,14 +48,18 @@ class UserController extends Controller
                 fn ($query) => $query->where('role', $filter['role']),
             )
             ->when(filled($filter['search'] ?? null), function ($query) use ($filter) {
-                $cari = '%'.$filter['search'].'%';
+                // `%` dan `_` yang diketik dibaca HARFIAH (R2-3, QA ronde 2): `?search=%`
+                // dulu mengembalikan SEMUA pengguna karena wildcard LIKE tidak di-escape —
+                // kelas BUG-14 yang sudah ditutup untuk /customers dan /equipments.
+                $pola = PolaLike::mengandung((string) $filter['search']);
+                $tata = $query->getQuery()->getGrammar();
 
                 // Kurungnya WAJIB: tanpa pembungkus, `orWhere` naik ke tingkat atas
                 // dan menyeret akun lab/role lain yang email-nya kebetulan cocok.
                 $query->where(fn ($q) => $q
-                    ->where('name', 'like', $cari)
-                    ->orWhere('email', 'like', $cari)
-                    ->orWhere('employee_id', 'like', $cari));
+                    ->whereRaw(PolaLike::sql($tata->wrap('name')), [$pola])
+                    ->orWhereRaw(PolaLike::sql($tata->wrap('email')), [$pola])
+                    ->orWhereRaw(PolaLike::sql($tata->wrap('employee_id')), [$pola]));
             })
             // Cuma akun INTERNAL. `organization_id` nggak memisahkan apa-apa di
             // sini: pelanggan PT Sidik memang duduk di organisasi PT Sidik, jadi
@@ -180,7 +186,7 @@ class UserController extends Controller
         $this->pastikanSatuOrganisasi($request, $user);
 
         $validated = $request->validate([
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', new SandiMuatBcrypt],
         ], [
             'password.required' => 'Password baru wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',

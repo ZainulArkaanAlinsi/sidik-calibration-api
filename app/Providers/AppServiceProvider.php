@@ -180,6 +180,9 @@ class AppServiceProvider extends ServiceProvider
         foreach ([
             'calibration', 'certificate', 'customer', 'equipment', 'user', 'standard',
             'order', 'room', 'calibrationMethod', 'folder', 'folderFile', 'worksheetScan',
+            // R2-10 (QA ronde 2): `GET /penugasan/1abc` dulu 200 — rute penugasan
+            // satu-satunya yang belum ikut.
+            'penugasan', 'penugasanItem',
         ] as $parameter) {
             Route::pattern($parameter, '[0-9]+');
         }

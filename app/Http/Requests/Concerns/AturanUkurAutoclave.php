@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Concerns;
 
+use App\Rules\AngkaTerhingga;
 use Closure;
 use Illuminate\Validation\Validator;
 
@@ -30,6 +31,16 @@ trait AturanUkurAutoclave
             foreach (is_array($nilai) ? $nilai : [$nilai] as $satu) {
                 if ($satu !== null && ! is_numeric($satu)) {
                     $gagal('Kolom :attribute harus angka, atau deret angka per titik waktu.');
+
+                    return;
+                }
+
+                // Aturan `numeric` + `AngkaTerhingga` tidak menjangkau closure ini,
+                // jadi `1e400` (INF) dan `1e300` (di luar kolom) lolos ke kalkulator
+                // dan meledak jadi 500 (R2-8, QA ronde 2).
+                if ($satu !== null && (! is_finite((float) $satu) || abs((float) $satu) > AngkaTerhingga::BATAS_DECIMAL)) {
+                    $gagal('Kolom :attribute berisi angka yang nggak terhingga atau di luar rentang yang bisa disimpan '
+                        .'(maksimal ±'.AngkaTerhingga::BATAS_DECIMAL.'). Periksa lagi angkanya.');
 
                     return;
                 }

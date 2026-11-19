@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\AngkaTerhingga;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,12 @@ class StandardRequest extends FormRequest
         $standard = $this->route('standard');
         $wajibKalauBikinBaru = $this->isMethod('POST') ? 'required' : 'sometimes';
 
-        return [
+        // Tiap aturan angka dijaga dari INF/NAN (`pasangDiSemua`) dan dibatasi ke
+        // kolomnya (`batasiRentang`, decimal(20,8)): `1e400` dulu 500 "Value INF
+        // does not represent a valid number", `1e300` 500 SQLSTATE 22003, dan
+        // koefisien/parameter yang disimpan di kolom JSON malah TERSIMPAN
+        // sebagai angka ekstrem (R2-8, QA ronde 2).
+        return AngkaTerhingga::pasangDiSemua(AngkaTerhingga::batasiRentang([
             'nama' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'merk' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
@@ -55,7 +61,7 @@ class StandardRequest extends FormRequest
             'parameter_kondisi' => ['sometimes', 'nullable', 'array:suhu,kelembaban'],
             ...$this->aturanParameterKondisi('suhu'),
             ...$this->aturanParameterKondisi('kelembaban'),
-        ];
+        ]));
     }
 
     /**

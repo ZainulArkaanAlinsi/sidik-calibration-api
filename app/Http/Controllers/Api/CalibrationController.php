@@ -290,8 +290,21 @@ class CalibrationController extends Controller
         // daripada nama jenis alat yang diketik pemanggil.
         $kode = (string) $request->string('profil', '');
         $profil = ($alat !== null ? $registry->untukAlat($alat) : null)
-            ?? ($kode !== '' ? $registry->untukKode($kode) : null)
-            ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
+            ?? ($kode !== '' ? $registry->untukKode($kode) : null);
+
+        // Kode profil yang DIKIRIM tetapi tidak dikenal, tanpa alat dan tanpa nama
+        // instrumen sebagai cadangan, dulu jatuh diam-diam ke lembar pH (S-5, uji
+        // kontrak): teknisi yang memegang kode usang mengisi lembar yang salah tanpa
+        // tanda apa pun. Sekarang 422, sejalan dengan `GET /equipments?profil=`.
+        // Klien lama yang mengirim `instrumen` (atau `equipment_id`) tidak terpengaruh.
+        if ($profil === null && $kode !== '' && ! $request->filled('instrumen')) {
+            return response()->json([
+                'message' => 'Kode profil "'.$kode.'" nggak dikenal server. Perbarui aplikasi atau pilih jenis alat dari daftar.',
+                'kode' => 'profil_tidak_dikenal',
+            ], 422);
+        }
+
+        $profil ??= $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
 
         // Alatnya nggak punya lembar khusus — ditolak dengan alasan, BUKAN
         // dikasih lembar pH.

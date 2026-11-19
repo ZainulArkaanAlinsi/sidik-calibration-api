@@ -62,17 +62,64 @@ Accept: application/json
 > - Suhu (`suhu_ruang`, `suhu_awal`, `suhu_akhir`, juga di `POST /calibrations/autoclave`): **−50 … 150 °C**;
 >   kelembaban tetap **0 … 100 %**.
 > - Id di URL (`/equipments/{id}`, `/calibrations/{id}`, `/customers/{id}`, `/standards/{id}`, `/rooms/{id}`, `/orders/{id}`, …)
->   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`).
+>   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`). Sejak 19 Nov 2026 berlaku juga untuk rute
+>   penugasan (`/penugasan/{id}`, `/penugasan/item/{id}`; dulu `GET /penugasan/1abc` → `200`).
 > - `GET /customers?search=` membaca `%` dan `_` secara harfiah (dulu `?search=%` mengembalikan semua pelanggan).
+>   Sejak 19 Nov 2026 berlaku juga untuk `GET /users?search=` (dulu `?search=%` mengembalikan semua pengguna).
+> - Password BARU maksimal **72 byte** (batas bcrypt; lebih panjang dipotong diam-diam sehingga dua sandi berbeda dianggap
+>   sama) → `422` pada `password` untuk `POST /users` (akun admin) dan `POST /users/{id}/reset-password` (19 Nov 2026). Password
+>   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah.
 > - Angka **tak terhingga** (`1e400` di JSON) di semua field angka di atas → `422` pada field itu (dulu `500`
 >   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
 > - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti
 >   bila order bernomor tertinggi dihapus). Nomor yang pernah tercetak tidak dipakai ulang.
+> - `POST/PUT /orders`: alat yang sama dua kali di `items` → `422` pada `items.N.equipment_id` (19 Nov 2026; dulu `500`
+>   karena indeks unik `order_items(order_id, equipment_id)`).
 > - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
 >   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
 >   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
 >   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-8): pintu angka yang dulu belum dijaga kini `422` per field (aditif).**
+> - `POST/PUT /standards`: `ketidakpastian`, `drift`, `faktor_cakupan`, `koefisien_suhu.a|b|c`, dan
+>   `parameter_kondisi.{suhu,kelembaban}.{indexed_value,correction,u95}` — angka tak terhingga (`1e400`, `"1e999"`)
+>   dan di luar kolom (nilai mutlak > **999.999.999.999**) → `422` (dulu `500`, atau `201` dengan angka ekstrem
+>   TERSIMPAN di kolom JSON).
+> - `POST/PUT /rooms`: `suhu_min`/`suhu_max` nilai mutlak maksimal **999.999,99** (kolom `decimal(8,2)`);
+>   `kelembaban_*` tetap 0…100; tak terhingga → `422` (dulu `500`).
+> - `POST /calibrations/autoclave/preview` memakai aturan yang SAMA dengan simpan: semua angka ukur dibatasi ke
+>   kolom, dan `suhu_awal`/`suhu_akhir`/`kelembaban_*` diperiksa (−50…150 / 0…100). Dulu preview menjawab `500`
+>   untuk `1e400` dan `200` untuk `suhu_awal: INF`, sementara simpan menjawab `422`.
+> - `POST/PUT /calibrations` (`spesifikasi_alat.*`): angka bersarang — termasuk blok berstruktur bebas
+>   (keterulangan, eksentrisitas, histeresis, …) — yang tak terhingga atau di luar kolom → `422` pada jalur angkanya.
+>   Isian bukan-angka di deret tabel (`micrometer.pra_evaluasi`, `height_gauge.*`, `dial_indicator.pra_evaluasi`,
+>   `flowmeter.*_pipa_mm`; mis. `"NaN"`, `"abc"`) dulu DIBUANG diam-diam sehingga pembacaannya hilang; sekarang
+>   `422` pada indeks kotak itu. Kotak kosong (`null`/`""`) tetap sah, dan koma desimal (`"19,06"`) dibakukan.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-7): peran diperiksa SEBELUM route model binding.** Peran tanpa hak atas sebuah rute
+> mendapat `403` yang SERAGAM untuk ID apa pun (ada, tidak ada, atau milik lab lain). Dulu ID yang tidak ada `404`
+> sementara yang ada `403` — selisih itu membuka keberadaan ID. Peran yang berhak tidak berubah (ID lab lain / tidak
+> ada tetap `404`), tamu tetap `401`, dan token dari aplikasi yang salah (`bukan_aplikasi_ini`) juga `403` untuk ID apa
+> pun. Dijaga `PeranSebelumBindingTest`, yang menyapu seluruh rute internal ber-parameter dan ber-`role:`.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-6): `GET /audit-logs` (dan `/export`) tidak lagi mengembalikan baris
+> `akses_lintas_lab` kepada admin.** Baris itu lahir hanya untuk ID yang ADA di lab lain (404 yang dicatat), jadi
+> `?entity_type=customers&entity_id=<id>` atau naiknya jumlah baris membuka keberadaan ID itu. Barisnya tetap
+> TERCATAT; hanya super admin yang menerimanya lewat API. Bentuk respons tidak berubah.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-5): `PUT /calibrations/{id}` dan `PUT /calibrations/autoclave/{id}` memeriksa kepemilikan
+> sesi SEBELUM badan divalidasi.** Sesi lab lain (atau sesi teknisi lain bagi teknisi) → `404`, sama dengan `GET`;
+> dulu `422` "Alat yang mau dikalibrasi wajib diisi" membuka keberadaan ID. Pemilik sesi dan admin tidak berubah
+> (badan tidak valid tetap `422`). Satu percobaan lintas lab kini tercatat SEKALI di `audit_logs` (dulu dua kali bila
+> lewat FormRequest).
+>
+> **19 Nov 2026 — 404 dari route model binding memakai pesan generik.** Jawabannya kini
+> `404 {"message": "Data yang dicari nggak ketemu."}`; dulu pesan mentah Laravel
+> `No query results for model [App\Models\CalibrationSession] 25` yang membocorkan nama kelas internal dan tampil apa
+> adanya di antrean draf teknisi. **Status `404` dan bentuk `{message}` tidak berubah** (jangan mencocokkan teksnya);
+> 404 lain (rute tidak ada, penjaga lintas lab) tidak tersentuh.
+
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
 
@@ -401,6 +448,17 @@ Query params yang mobile pakai: `?search=kaliper&category=panjang&status=overdue
 ### `POST /api/equipments` · `PUT /api/equipments/{id}` · `DELETE /api/equipments/{id}`
 Body sama seperti field di atas (tanpa `id`). Teknisi & admin boleh; **viewer harus ditolak `403`.**
 
+### `GET /api/equipments/{id}/sertifikat` — riwayat sertifikat satu alat (field `keputusan` ADITIF, 19 Nov 2026)
+Bentuk penuh baris, peran, dan paginasi kursor ada di `docs/perintah-frontend-super-admin.md` §3.5. Yang ditambahkan
+19 Nov 2026 (uji kontrak app lawan API, P-1): tiap baris sekarang memuat **`"keputusan": "PASS" | "FAIL" | null`** —
+kunci dan nilai yang sudah dibaca `SertifikatRingkas.fromJson` di aplikasi (lencana PASS/FAIL di Riwayat sertifikat;
+sebelumnya tidak pernah muncul karena API tidak mengirimnya).
+- Nilainya keputusan sesi yang **tersimpan** (bukan dihitung ulang), sumber yang sama dengan `keputusan` di
+  `GET /api/certificates/{id}` dan `GET /api/verify/{token}` dan dengan yang tercetak di PDF bila organisasi
+  menyalakan `tampilkan_keputusan_di_pdf`. Dijaga `AlatDanRiwayatSertifikatLabTest`.
+- `null` = jenis alat itu tidak divonis (mayoritas profil) — aplikasi tidak menampilkan lencana. Kuncinya SELALU ada.
+- Aditif murni: klien yang tidak membacanya tidak terpengaruh.
+
 ### `GET /api/categories`
 Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom tiap kategori beda-beda):
 ```json
@@ -549,6 +607,11 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > Teknisi **selalu** cuma dapat sesi miliknya sendiri — nggak peduli query param-nya diisi apa. `mine=false` bukan pintu belakang. Param `mine=true` cuma berfungsi buat **admin & viewer** yang mau nyaring punya sendiri. Ada testnya.
 
 ### `GET /api/calibrations/lembar-kerja?profil=...` — bentuk per jenis alat
+
+> **19 Nov 2026 (uji kontrak S-5):** `profil` yang DIKIRIM tetapi tidak dikenal server (tanpa `equipment_id` dan tanpa
+> `instrumen` sebagai cadangan) → `422 {"kode": "profil_tidak_dikenal", "message": "…"}`. Dulu `200` dengan lembar pH — teknisi
+> yang memegang kode usang mengisi lembar yang SALAH tanpa tanda apa pun. Tanpa `profil` (bawaan pH), `profil` yang dikenal,
+> `equipment_id`, dan klien lama yang mengirim `instrumen` tidak berubah.
 
 ✅ **Live (Turbidimeter, Agu).** Bentuk lembar kerja beda per jenis alat.
 `?profil=turbidimeter` (atau `?instrumen=Turbidimeter`) balikin lembar NTU
@@ -1719,6 +1782,11 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 > PDF/Excel di halaman web tetap salinan sah sertifikat yang memuat identitas pelanggan (spesifikasi
 > poin 13) — keputusan produk tersendiri. Dijaga `VerifikasiPublikMinimalTest`.
 >
+> **19 Nov 2026 (QA ronde 2, R2-12) — verifikasi publik TIDAK PERNAH patah untuk sertifikat terbit.** `DELETE /equipments/{id}` adalah
+> hapus lunak dan tidak menolak alat yang sudah bersertifikat; dulu `GET /api/verify/{token}` menjawab `500` begitu alatnya dihapus.
+> Sekarang sesi, alat, dan pelanggan dibaca walau terhapus: jawabannya `200` dan isinya SAMA dengan sebelum alat dihapus (halaman web
+> `/verify/{token}` dan unduhan lewat QR juga). Menolak hapus alat bersertifikat = keputusan produk tersendiri, belum diambil.
+>
 > Dua-duanya **cuma nampilin sertifikat yang statusnya `terbit`** — yang masih `menunggu_generate` dianggap nggak ada. Isinya sengaja dibatesin (nggak ada data mentah pengukuran, nggak ada nama/email teknisi), karena ini halaman publik.
 >
 > **Sertifikat contoh buat nyoba**: token `DEMOQR123` → `http://10.0.2.2:8000/verify/DEMOQR123` (udah ada di seeder).
@@ -2017,6 +2085,7 @@ Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat laya
 > | baris lab lain / tidak ada / `id` bukan angka | `404` (sama seperti `DELETE`) |
 > | baris tidak sedang terhapus | `422` `{"kode": "tidak_terhapus"}` |
 > | alat yang PT pemiliknya masih terhapus | `422` `{"kode": "pt_terhapus", "id": <id PT>, "entitas": "customers"}` — pulihkan PT dulu |
+> | **standar** yang nomor serinya sudah dipakai standar aktif lain (19 Nov 2026) | `422` `{"kode": "serial_dipakai", "id": <id standar aktif>, "entitas": "standards", "message": "…"}` — standar tetap terhapus, tanpa baris audit; ubah/hapus standar aktif itu dulu |
 >
 > Satu baris `audit_logs` per pemulihan: `action = dipulihkan`, pelaku, waktu, sebelum `{deleted_at: …}` →
 > sesudah `{deleted_at: null}`, dan alasan. Baris lama tidak pernah dipulihkan otomatis.
@@ -2735,6 +2804,9 @@ Waktu,Entitas,ID,Aksi,Pelaku,Role,Kolom,Nilai Lama,Nilai Baru,Catatan
 - **Entitas yang diaudit:** `equipment`, `customers`, `standards`, `users`,
   `calibration_sessions`, `certificates`, `folders`, `folder_files`,
   `organizations`, `rooms`, `calibration_methods`, `equipment_categories`.
+- **Baris `akses_lintas_lab` (percobaan membuka data lab lain, 404) TIDAK dikirim ke admin** — hanya ke super admin
+  (R2-6, 19 Nov 2026). Barisnya tetap tercatat; kalau dikirim ke admin, daftar/filter/ekspor menjadi cara menebak ID
+  mana yang ada di lab lain.
 - **Riwayat lab lain nggak kebaca** — di-scope `organization_id`. Ini justru tabel
   yang paling nggak boleh kebuka lebar: isinya nilai sebelum & sesudah dari seluruh
   data lab, termasuk data pelanggan dan angka kalibrasi. Itu juga alasan
