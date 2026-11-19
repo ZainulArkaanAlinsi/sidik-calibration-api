@@ -213,6 +213,45 @@ class PenyaringSentryTest extends TestCase
             'token buram' => ['qr '.str_repeat('f', 40).' tidak valid', 'qr [token] tidak valid'],
             'ip' => ['dari 10.20.30.40 ditolak', 'dari [ip] ditolak'],
             'tanpa pola' => ['Call to undefined method', 'Call to undefined method'],
+
+            // Pesan driver DB memantulkan NILAI kolom (nama pelanggan, nomor seri,
+            // bacaan lembar). Hanya SQLSTATE + kategori + kode yang boleh tinggal.
+            'duplicate entry mysql' => [
+                "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1-PT Maju Jaya' for key 'customers_org_nama_unique'",
+                'SQLSTATE[23000]: Integrity constraint violation: 1062 [rincian disamarkan]',
+            ],
+            'incorrect decimal mysql' => [
+                "SQLSTATE[HY000]: General error: 1366 Incorrect decimal value: '12,345' for column `sidik`.`raw_measurements`.`pembacaan` at row 1",
+                'SQLSTATE[HY000]: General error: 1366 [rincian disamarkan]',
+            ],
+            'data too long mysql' => [
+                "SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'serial_number' at row 1",
+                'SQLSTATE[22001]: String data, right truncated: 1406 [rincian disamarkan]',
+            ],
+            'unique sqlite' => [
+                'SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: customers.organization_id, customers.nama',
+                'SQLSTATE[23000]: Integrity constraint violation: 19 [rincian disamarkan]',
+            ],
+            'unique postgres' => [
+                "SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"x\"\nDETAIL:  Key (nama)=(PT Maju Jaya) already exists.",
+                'SQLSTATE[23505]: Unique violation: 7 [rincian disamarkan]',
+            ],
+            'koneksi gagal' => [
+                'SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo for db.internal.example failed',
+                'SQLSTATE[HY000] [2002] [rincian disamarkan]',
+            ],
+            'sqlstate tanpa sisa' => [
+                'SQLSTATE[23000]: Integrity constraint violation: 1062',
+                'SQLSTATE[23000]: Integrity constraint violation: 1062',
+            ],
+            'query exception laravel lengkap' => [
+                "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1-PT Maju Jaya' for key 'k' (Connection: mysql, Host: db, SQL: insert into customers (nama) values (PT Maju Jaya))",
+                'SQLSTATE[23000]: Integrity constraint violation: 1062 [rincian disamarkan]',
+            ],
+            'teks sebelum sqlstate tetap disamarkan' => [
+                'Gagal simpan budi@contoh.id: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry',
+                'Gagal simpan [email]: SQLSTATE[23000]: Integrity constraint violation: 1062 [rincian disamarkan]',
+            ],
         ];
     }
 
@@ -235,7 +274,20 @@ class PenyaringSentryTest extends TestCase
         $this->assertStringContainsString('SQLSTATE[23000]', $hasil);
         $this->assertStringNotContainsString('Sumber Rahasia', $hasil);
         $this->assertStringNotContainsString('db.internal.example', $hasil);
-        $this->assertStringEndsWith('(Connection: [disamarkan])', $hasil);
+        $this->assertStringNotContainsString('Duplicate entry', $hasil);
+        $this->assertSame('SQLSTATE[23000]: Integrity constraint violation: 1062 [rincian disamarkan]', $hasil);
+    }
+
+    /**
+     * Pesan non-SQLSTATE yang membawa bagian `(Connection:` (bentuk lain
+     * pembungkus Laravel) tetap dipotong dari situ.
+     */
+    public function test_connection_tanpa_sqlstate_tetap_dipotong(): void
+    {
+        $this->assertSame(
+            'Gagal (Connection: [disamarkan])',
+            PenyaringSentry::samarkan("Gagal (Connection: mysql, Host: db.internal.example, SQL: select 'x')"),
+        );
     }
 
     public function test_pesan_peristiwa_non_exception_disamarkan(): void

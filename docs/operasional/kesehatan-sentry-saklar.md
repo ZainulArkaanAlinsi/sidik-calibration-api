@@ -67,6 +67,11 @@ Privasi keras, tiga lapis:
    `Context` Laravel dan `exception->context()` mendarat), tag di luar daftar izin, variabel dan baris kode
    frame, dan remah selain SQL. Menyamarkan di pesan: surel, token Bearer, token Sanctum, nomor sertifikat,
    string buram panjang (token QR, hash), IP, dan seluruh `(Connection: ..., SQL: ...)` pada `QueryException`.
+   **Pesan driver DB dipotong sesudah kode galatnya**: `Duplicate entry '1-PT Maju Jaya' for key ...` dan
+   `Incorrect decimal value: '12,345' ...` memantulkan NILAI kolom (nama pelanggan, nomor seri, bacaan lembar),
+   jadi dari teks apa pun yang memuat `SQLSTATE[` hanya `SQLSTATE[23000]: Integrity constraint violation: 1062`
+   (atau `SQLSTATE[HY000] [2002]`) yang tinggal, sisanya `[rincian disamarkan]`. Berlaku juga untuk `previous`
+   bersarang, pesan peristiwa, dan `logentry`.
 3. Tes (`SentryPrivasiTest`, `PenyaringSentryTest`, `SentryKonfigurasiTest`) membaca muatan yang BENAR-BENAR
    sampai ke transport palsu, dengan data sensitif di semua tempat yang diketahui.
 

@@ -163,12 +163,14 @@ final class PenyaringSentry
     }
 
     /**
-     * Samarkan pola data sensitif di teks bebas. Urutannya penting: bagian
-     * `(Connection: ...)` dan Bearer dihapus lebih dulu karena memuat pola lain
-     * (surel, token) di dalamnya.
+     * Samarkan pola data sensitif di teks bebas. Urutannya penting: pesan driver
+     * DB dipotong lebih dulu, lalu bagian `(Connection: ...)` dan Bearer dihapus
+     * karena memuat pola lain (surel, token) di dalamnya.
      */
     public static function samarkan(string $teks): string
     {
+        $teks = self::potongPesanDriver($teks);
+
         $pola = [
             // QueryException: nama host, basis data, dan SQL dengan nilai terisi.
             '/\(Connection:.*$/s' => '(Connection: [disamarkan])',
@@ -184,6 +186,40 @@ final class PenyaringSentry
         ];
 
         return (string) preg_replace(array_keys($pola), array_values($pola), $teks);
+    }
+
+    /**
+     * Pesan galat driver DB memantulkan NILAI: `Duplicate entry '1-PT Maju Jaya'
+     * for key ...`, `Incorrect decimal value: '12,345' for column ...`,
+     * `Key (nama)=(PT X) already exists`, nama host pada galat koneksi. Kolom
+     * yang unik di sini adalah nama pelanggan dan nomor seri alat, dan bacaan
+     * lembar masuk lewat kolom desimal — persis yang dilarang pemilik. Pola per
+     * frasa tidak akan pernah lengkap (tiap driver dan versi punya kalimatnya
+     * sendiri), jadi yang dipertahankan cuma bagian yang tidak berisi data:
+     * `SQLSTATE[xxxxx]` beserta kategori dan kode galat driver
+     * (`SQLSTATE[23000]: Integrity constraint violation: 1062`, atau
+     * `SQLSTATE[HY000] [2002]` untuk galat koneksi). Sisanya diganti penanda.
+     * Itu cukup untuk mendiagnosis (jenis galat, kode, berkas, baris); nilainya
+     * ada di database, bukan di Sentry.
+     *
+     * Berlaku untuk teks apa pun yang memuat `SQLSTATE[`: pengecualian utama,
+     * `previous` bersarang (tiap nilai di rantai lewat `samarkan`), pesan
+     * peristiwa, dan `logentry`.
+     */
+    private static function potongPesanDriver(string $teks): string
+    {
+        if (! preg_match(
+            '/SQLSTATE\[[A-Za-z0-9]+\](?:\s*\[\d+\]|:\s*[A-Za-z][^:\n]{0,80}?:\s*\d+)?/',
+            $teks,
+            $cocok,
+            PREG_OFFSET_CAPTURE,
+        )) {
+            return $teks;
+        }
+
+        $akhir = $cocok[0][1] + strlen($cocok[0][0]);
+
+        return substr($teks, 0, $akhir).(trim(substr($teks, $akhir)) === '' ? '' : ' [rincian disamarkan]');
     }
 
     /**

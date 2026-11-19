@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
@@ -196,6 +197,48 @@ class SentryPrivasiTest extends TestCase
         $this->assertStringContainsString('SQLSTATE[23000]', $muatan);
         $this->assertStringNotContainsString('Sumber Rahasia', $muatan);
         $this->assertStringNotContainsString('db.internal.example', $muatan);
+    }
+
+    /**
+     * Rantai pengecualian NYATA seperti yang dibuat Laravel: `QueryException`
+     * membungkus `PDOException` driver, dan pesan driver MySQL memantulkan NILAI
+     * kolom (nama pelanggan di `customers (organization_id, nama)` unik, nomor
+     * seri alat, bacaan lembar). Syarat pemilik: tanpa nama pelanggan dan isi
+     * lembar. Dibaca dari muatan akhir (amplop yang diserialisasi, byte yang
+     * sama dengan yang dikirim transport HTTP): nilai utama, nilai bersarang
+     * (`previous`), dan pesan peristiwa.
+     */
+    public function test_nilai_kolom_dari_pesan_driver_db_tidak_ikut_terkirim(): void
+    {
+        $hub = $this->nyalakanSentryPalsu();
+
+        $kasus = [
+            ["Duplicate entry '1-PT Maju Jaya' for key 'customers.customers_org_nama_unique'", 'PT Maju Jaya', 23000, 'Integrity constraint violation: 1062'],
+            ["Incorrect decimal value: '12,345' for column 'pembacaan' at row 1", '12,345', 'HY000', 'General error: 1366'],
+            ["Duplicate entry 'SN-ZZ-98765' for key 'equipments_org_serial_unique'", 'SN-ZZ-98765', 23000, 'Integrity constraint violation: 1062'],
+        ];
+
+        foreach ($kasus as [$sisa, $nilai, $sqlstate, $kategori]) {
+            $driver = new \PDOException("SQLSTATE[{$sqlstate}]: {$kategori} {$sisa}");
+            $query = new QueryException('mysql', 'insert into customers (organization_id, nama) values (?, ?)', [1, $nilai], $driver);
+
+            $hub->captureException(new \RuntimeException('Gagal menyimpan', 0, $query));
+            $hub->captureMessage($query->getMessage());
+        }
+
+        $this->assertNotEmpty($this->transport->peristiwa);
+
+        $muatan = $this->semuaMuatan($hub);
+
+        foreach (['PT Maju Jaya', '12,345', 'SN-ZZ-98765', 'Duplicate entry', 'Incorrect decimal', 'customers_org_nama_unique', "'pembacaan'"] as $terlarang) {
+            $this->assertStringNotContainsString($terlarang, $muatan, "Bocor ke Sentry: {$terlarang}");
+        }
+
+        // Yang dibutuhkan untuk mendiagnosis tetap ada: jenis galat dan kodenya.
+        $this->assertStringContainsString('SQLSTATE[23000]: Integrity constraint violation: 1062', $muatan);
+        $this->assertStringContainsString('SQLSTATE[HY000]: General error: 1366', $muatan);
+        $this->assertStringContainsString('PDOException', $muatan);
+        $this->assertStringContainsString('QueryException', $muatan);
     }
 
     // --------------------------------------------------- galat non-gangguan
