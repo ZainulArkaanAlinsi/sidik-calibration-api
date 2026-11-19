@@ -684,7 +684,9 @@ class WorksheetScanController extends Controller
     {
         $user = $request->user();
 
-        abort_if($scan->organization_id !== $user->organization_id, 404, 'Hasil pindai nggak ketemu.');
+        // TANPA pesan khusus: hasil pindai lab lain harus menjawab persis seperti ID yang
+        // tidak ada (kalimat generik dari render 404 di bootstrap/app.php).
+        abort_if($scan->organization_id !== $user->organization_id, 404);
 
         abort_if(
             $user->role === User::ROLE_TEKNISI && $scan->user_id !== $user->id,

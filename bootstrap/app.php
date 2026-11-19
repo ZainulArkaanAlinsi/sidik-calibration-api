@@ -164,10 +164,23 @@ return Application::configure(basePath: dirname(__DIR__))
         // `No query results for model [App\Models\CalibrationSession] 25` — nama
         // kelas internal yang keluar ke klien dan tampil apa adanya di antrean draf
         // teknisi (uji kontrak S-7). Diganti kalimat generik; STATUS 404 dan bentuk
-        // `{message}` tidak berubah, dan 404 lain (abort(404), rute tak ada) tidak
-        // tersentuh.
+        // `{message}` tidak berubah.
+        //
+        // `abort(404)` TANPA pesan (QA ronde 2-B) memakai kalimat yang SAMA. Itu jalur
+        // semua pemeriksaan kepemilikan (`PenjagaOrganisasi`, `abort_if($x->organization_id
+        // !== ..., 404)`, `KonteksPerusahaan`, ...). Dulu mereka menjawab `{"message": ""}`
+        // sementara ID yang tidak ada menjawab "Data yang dicari nggak ketemu.": statusnya
+        // sama tetapi badannya beda, jadi ID milik lab/perusahaan lain tetap bisa dibedakan
+        // dari ID yang tidak ada. `abort(404, 'pesan')` yang sengaja berpesan dan rute yang
+        // tak ada (pesan bawaan Laravel) tidak tersentuh; pemeriksaan kepemilikan wajib
+        // TANPA pesan khusus supaya jatuh ke sini (jangan menulis `abort(404, 'X nggak ketemu')`
+        // untuk data lab lain). Dijaga `BadanJawaban404SeragamTest`.
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-            if ($request->is('api/*') && $e->getPrevious() instanceof ModelNotFoundException) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            if ($e->getPrevious() instanceof ModelNotFoundException || $e->getMessage() === '') {
                 return response()->json(['message' => 'Data yang dicari nggak ketemu.'], 404);
             }
 

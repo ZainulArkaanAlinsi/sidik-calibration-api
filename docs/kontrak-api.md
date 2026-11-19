@@ -83,6 +83,11 @@ Accept: application/json
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
 >   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`). Salah ketik nama filter = daftar tidak tersaring,
 >   bukan galat.
+> - **Badan jawaban `404` untuk data lab/perusahaan lain sama persis dengan ID yang tidak ada (19 Nov 2026).** Dulu keduanya `404`
+>   tetapi `message`-nya beda (ID tak ada: "Data yang dicari nggak ketemu."; milik lab/perusahaan lain: kosong), cukup untuk
+>   membedakan "ada tapi bukan punyamu" dari "tidak ada". Sekarang semua `abort(404)` tanpa pesan memakai kalimat generik yang sama
+>   (sesi, alat, pelanggan, penugasan, sertifikat, order, hasil pindai, dunia pelanggan). Rute yang tidak ada dan `404` yang
+>   sengaja berpesan tidak berubah.
 > - **`per_page` dihormati di `GET /equipments`, `/customers`, `/certificates`, `/orders`, `/users` (19 Nov 2026, BUG-16).**
 >   Bilangan bulat **1–100**, bawaan tetap **15** (klien yang tidak mengirimnya tidak berubah); di luar batas atau bukan
 >   bilangan bulat → `422` pada `per_page` (tidak dijepit diam-diam). `meta.per_page` melaporkan angka yang dipakai dan tautan
