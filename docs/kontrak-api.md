@@ -1782,6 +1782,11 @@ Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
 > PDF/Excel di halaman web tetap salinan sah sertifikat yang memuat identitas pelanggan (spesifikasi
 > poin 13) — keputusan produk tersendiri. Dijaga `VerifikasiPublikMinimalTest`.
 >
+> **19 Nov 2026 (QA ronde 2, R2-12) — verifikasi publik TIDAK PERNAH patah untuk sertifikat terbit.** `DELETE /equipments/{id}` adalah
+> hapus lunak dan tidak menolak alat yang sudah bersertifikat; dulu `GET /api/verify/{token}` menjawab `500` begitu alatnya dihapus.
+> Sekarang sesi, alat, dan pelanggan dibaca walau terhapus: jawabannya `200` dan isinya SAMA dengan sebelum alat dihapus (halaman web
+> `/verify/{token}` dan unduhan lewat QR juga). Menolak hapus alat bersertifikat = keputusan produk tersendiri, belum diambil.
+>
 > Dua-duanya **cuma nampilin sertifikat yang statusnya `terbit`** — yang masih `menunggu_generate` dianggap nggak ada. Isinya sengaja dibatesin (nggak ada data mentah pengukuran, nggak ada nama/email teknisi), karena ini halaman publik.
 >
 > **Sertifikat contoh buat nyoba**: token `DEMOQR123` → `http://10.0.2.2:8000/verify/DEMOQR123` (udah ada di seeder).
