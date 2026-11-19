@@ -1,5 +1,11 @@
 # Merawat sistem setelah live: panduan umum dipetakan ke Sidik (19 Nov 2026)
 
+## Keputusan pemilik (19 Nov 2026)
+1. Peringatan lewat **Telegram dan email** (layanan uptime gratis; akun dibuat pemilik).
+2. **Sentry** disetujui dengan syarat privasi: tidak ada nama pelanggan, isi lembar, token, atau citra yang dikirim (pengiriman badan permintaan dimatikan, data pengguna dimatikan, tangkapan layar dimatikan).
+3. **Dependabot** dipasang (mingguan, ditinjau dan digabung manual).
+4. **Aturan jam kerja:** perubahan API dan rilis Lab digabung di luar jam kerja lab. Jam kerja bawaan: **08.00-17.00 WIB** (ubah di sini bila berbeda); sebelum 07.00 atau setelah 17.00 WIB, kecuali mendesak.
+
 Sumber ide: panduan "Merawat sistem setelah live" yang ditempel pemilik. Di bawah, tiap butir dibandingkan dengan keadaan Sidik yang sebenarnya (dibaca dari repo dan produksi, bukan dari panduan). Status: ADA, SEBAGIAN, BELUM. Kolom "perlu pemilik" = akun, izin, atau keputusan yang tidak bisa diambil sendiri.
 
 ## Gambaran arsitektur yang menentukan
