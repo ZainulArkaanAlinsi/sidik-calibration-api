@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Penugasan;
 use App\Models\PenugasanItem;
 use App\Models\User;
+use App\Notifications\PenugasanDibukaLagi;
 use App\Notifications\PenugasanSelesai;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -209,6 +210,39 @@ class PenugasanSelesaiTest extends TestCase
         $this->actingAs($this->teknisi)->patchJson("/api/penugasan/item/{$item->id}", ['jumlah_selesai' => 10])->assertOk();
         $this->actingAs($this->admin)->postJson("/api/penugasan/{$p->id}/selesaikan")->assertOk();
         $this->assertSame(Penugasan::STATUS_SELESAI, $p->fresh()->status);
+    }
+
+    public function test_buka_lagi_mengabari_semua_anggota_dengan_alasan_dan_tidak_untuk_penolakan(): void
+    {
+        Notification::fake();
+        [$p] = $this->penugasan(status: Penugasan::STATUS_SELESAI);
+        $anggotaLain = User::factory()->create(['organization_id' => $this->lab->id, 'role' => User::ROLE_TEKNISI]);
+        $p->anggota()->create(['user_id' => $anggotaLain->id, 'peran' => 'anggota']);
+        $bukanAnggota = User::factory()->create(['organization_id' => $this->lab->id, 'role' => User::ROLE_TEKNISI]);
+
+        // Penolakan (422 alasan kosong, 403 admin) tidak mengabari siapa pun.
+        $this->actingAs($this->superAdmin)->postJson("/api/penugasan/{$p->id}/buka-lagi", [])->assertStatus(422);
+        $this->actingAs($this->admin)->postJson("/api/penugasan/{$p->id}/buka-lagi", ['alasan' => 'admin mencoba'])->assertForbidden();
+        Notification::assertNothingSent();
+
+        $this->actingAs($this->superAdmin)->postJson("/api/penugasan/{$p->id}/buka-lagi", ['alasan' => 'Ada alat yang belum diperiksa.'])->assertOk();
+
+        foreach ([$this->teknisi, $anggotaLain] as $anggota) {
+            Notification::assertSentTo($anggota, PenugasanDibukaLagi::class, function (PenugasanDibukaLagi $n) use ($anggota, $p): bool {
+                $isi = $n->toDatabase($anggota);
+
+                return ($isi['kategori'] ?? null) === 'penugasan_dibuka_lagi'
+                    && ($isi['tautan'] ?? null) === ['tipe' => 'penugasan', 'id' => $p->id]
+                    && str_contains((string) ($isi['body'] ?? ''), 'Ada alat yang belum diperiksa.')
+                    && str_contains((string) ($isi['body'] ?? ''), $this->superAdmin->name);
+            });
+        }
+        Notification::assertNotSentTo($bukanAnggota, PenugasanDibukaLagi::class);
+        Notification::assertNotSentTo($this->admin, PenugasanDibukaLagi::class);
+
+        // Panggilan kedua (sudah aktif) ditolak dan tidak mengabari lagi.
+        $this->actingAs($this->superAdmin)->postJson("/api/penugasan/{$p->id}/buka-lagi", ['alasan' => 'sudah aktif kok'])->assertStatus(422);
+        Notification::assertSentToTimes($this->teknisi, PenugasanDibukaLagi::class, 1);
     }
 
     public function test_admin_tidak_boleh_membuka_lagi_hanya_super_admin(): void

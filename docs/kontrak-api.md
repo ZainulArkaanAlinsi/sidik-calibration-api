@@ -3926,7 +3926,7 @@ rincian untuk aplikasi di `docs/perintah-frontend-penugasan-selesai.md`):
 | Rute | Siapa | Syarat | Hasil |
 |---|---|---|---|
 | `POST /api/penugasan/{p}/selesaikan` | admin & super admin | `aktif` dan `persen_tuntas` = 100 | `selesai`, `diselesaikan_pada` terisi, audit `diselesaikan`, notifikasi `penugasan_selesai` ke anggota |
-| `POST /api/penugasan/{p}/buka-lagi` | **super admin saja** | `selesai`; `alasan` 5–400 | `aktif`, `diselesaikan_pada` null, audit `dibuka_lagi` (lama → baru + alasan) |
+| `POST /api/penugasan/{p}/buka-lagi` | **super admin saja** | `selesai`; `alasan` 5–400 | `aktif`, `diselesaikan_pada` null, audit `dibuka_lagi` (lama → baru + alasan), notifikasi `penugasan_dibuka_lagi` (dengan alasan) ke anggota |
 
 Kode galat `422`: `penugasan_belum_tuntas` (+ `persen_tuntas`), `penugasan_sudah_selesai`, `penugasan_tidak_aktif`
 (dibatalkan), `penugasan_tidak_selesai` (buka lagi pada yang bukan `selesai`). Peran diperiksa sebelum ID dicari

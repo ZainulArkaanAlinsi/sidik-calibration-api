@@ -13,6 +13,7 @@ use App\Models\PenugasanTeknisi;
 use App\Models\User;
 use App\Notifications\PenugasanBaru;
 use App\Notifications\PenugasanDibatalkan;
+use App\Notifications\PenugasanDibukaLagi;
 use App\Notifications\PenugasanSelesai;
 use App\Services\JejakAlasan;
 use App\Services\PenjagaOrganisasi;
@@ -665,6 +666,22 @@ class PenugasanController extends Controller
         }
 
         $penugasan->refresh()->load(self::RELASI);
+
+        // Anggota dikabari (dengan alasan) bahwa ada pekerjaan yang perlu dilaporkan lagi.
+        // Pola `selesaikan()`/`batalkan()`: di LUAR transaksi dan dibungkus `try` --
+        // saluran siaran yang mati tidak boleh membuat aksinya tampak gagal setelah
+        // statusnya sudah berubah.
+        try {
+            Notification::send(
+                User::query()->whereIn('id', $penugasan->anggota->pluck('user_id'))->get(),
+                PenugasanDibukaLagi::dariPenugasan($penugasan, $request->user()->name, $data['alasan']),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi buka-lagi penugasan gagal dikirim.', [
+                'penugasan_id' => $penugasan->id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
 
         PerubahanDataOrganisasi::siarkanAman($penugasan->organization_id, 'penugasan', 'diubah', $penugasan->id);
 

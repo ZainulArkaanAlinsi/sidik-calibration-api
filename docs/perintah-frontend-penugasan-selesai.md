@@ -67,6 +67,11 @@ catatan baris) tidak tersentuh. Alasan, pelaku, dan waktunya masuk jejak audit (
 `dibuka_lagi`, nilai lama & baru, terbaca lewat `GET /audit-logs?action=dibuka_lagi`).
 Sesudah dibuka, teknisi bisa melapor lagi dan admin bisa menutup lagi.
 
+Semua anggota penugasan menerima notifikasi kategori `penugasan_dibuka_lagi` (lonceng, push, halaman
+notifikasi; judul "Penugasan dibuka lagi", isi memuat judul penugasan, super admin yang membuka, dan
+alasannya; `tautan: {"tipe":"penugasan","id":14}`) — pola `penugasan_dibatalkan`. Siaran realtime
+`data.berubah` `jenis: "penugasan"`, `aksi: "diubah"`. Penolakan (422/403/404) tidak mengabari siapa pun.
+
 `200`: `{ "message": "Penugasan dibuka lagi.", "data": { "status": "aktif", "diselesaikan_pada": null, "...": "..." } }`
 
 | HTTP | `kode` | Kapan |
@@ -94,5 +99,3 @@ sudah selesai. Minta super admin membukanya lagi ..." — kini ada aksinya. `POS
 
 - Tidak ada penutupan otomatis saat semua baris penuh.
 - Tidak ada pembukaan kembali penugasan `dibatalkan`.
-- Tidak ada notifikasi untuk "dibuka lagi" (tercatat di audit; anggota melihat statusnya
-  kembali `aktif` di daftar).
