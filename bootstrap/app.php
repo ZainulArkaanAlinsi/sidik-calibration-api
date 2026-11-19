@@ -105,6 +105,40 @@ return Application::configure(basePath: dirname(__DIR__))
             before: EnsureUserHasRole::class,
             prepend: PastikanAplikasi::class,
         );
+
+        // Penjaga dunia PELANGGAN dan Studio juga sebelum binding (QA ronde 2-B).
+        //
+        // Kelas masalahnya sama dengan R2-7, hanya di rute lain: `fitur.pelanggan`,
+        // `pelanggan.aktif`, `perusahaan`, `peran:` (pelanggan) dan `studio`
+        // dulu jalan SESUDAH `SubstituteBindings`. Anggota non-PIC yang menembak
+        // `/anggota/{anggota}/nonaktifkan` atau `/anggota/undangan/{undangan}`
+        // mendapat 403 untuk ID yang ADA (milik perusahaan mana pun) dan 404 untuk
+        // yang tidak ada — oracle keberadaan ID lintas perusahaan, lawan aturan
+        // keras 4 Modul Pelanggan. Akun menunggu verifikasi (`pelanggan.aktif`),
+        // pemegang beberapa keanggotaan tanpa `X-Perusahaan-Id` (400 dari
+        // `perusahaan`), modul yang dimatikan (503), dan akun lab yang menembak
+        // `/studio/workbook/{workbook}` (403 `studio`) membuka selisih yang sama.
+        //
+        // Urutan akhirnya (sisip tepat di depan `role:`, sesudah `aplikasi:`):
+        //   aplikasi → fitur → pelanggan.aktif → perusahaan → peran → [binding]
+        // dan untuk Studio: studio → [binding]. Tidak satu rute pun memakai
+        // `role:` bersama penjaga-penjaga ini, jadi posisi relatifnya terhadap
+        // `role:` tidak punya arti; yang dijaga cuma "semuanya di depan binding".
+        // Tamu tetap 401 (`auth:sanctum` tetap paling depan) dan pembatas laju
+        // tetap sebelum semuanya. `PeranSebelumBindingPelangganTest` menyapu
+        // seluruh rute ber-parameter di kedua dunia.
+        foreach ([
+            FiturPelanggan::class,
+            PelangganAktif::class,
+            KonteksPerusahaan::class,
+            PeranAnggota::class,
+            PastikanAkunStudio::class,
+        ] as $penjaga) {
+            $middleware->prependToPriorityList(
+                before: EnsureUserHasRole::class,
+                prepend: $penjaga,
+            );
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

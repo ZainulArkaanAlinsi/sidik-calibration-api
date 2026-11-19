@@ -72,7 +72,7 @@ tidak (NFR-12).
 | `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
 | `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |
 | `perusahaan_belum_dipilih` | 400 | Anggota > 1 perusahaan, `X-Perusahaan-Id` kosong | Tampilkan pemilih dari `data.pilihan` |
-| `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
+| `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf. Dijawab SERAGAM untuk ID mana pun (milik sendiri, milik perusahaan lain, atau tidak ada): peran diperiksa sebelum ID dicari, supaya 403-vs-404 tidak membuka keberadaan ID | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
 | `sudah_nonaktif` | 422 | Anggota sudah nonaktif | Muat ulang daftar |
 | `sandi_salah` | 422 | Sandi salah waktu menghapus akun | Tandai field sandi, akun tidak jadi dihapus |
 
