@@ -1,0 +1,29 @@
+# Pembaruan dependensi terjadwal (perawatan rutin, keputusan pemilik 19 Nov 2026).
+# Mingguan, maksimal tiga PR terbuka, pembaruan minor/patch dikelompokkan. Setiap PR lewat CI penuh
+# (4 SQLite + 6 MySQL shard) dan TIDAK digabung otomatis: ditinjau lalu digabung manual.
+# Menggabungkan ke main = deploy ke produksi: lakukan di luar jam kerja lab (docs/operasional/perawatan-setelah-live.md).
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      minor-dan-patch:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(ci)"
