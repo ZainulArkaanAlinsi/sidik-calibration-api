@@ -24,7 +24,7 @@ Berlaku untuk API di Render dan database MySQL. Aturan tetap: **tulis ke data pr
 ## 3. Tindakan
 
 - **Regresi versi baru dan perubahan data kompatibel:** kembalikan ke deploy sebelumnya di Render (Rollback/redeploy deploy terdahulu), atau buka PR revert; hanya satu deploy dalam satu waktu. Pastikan `deploy.versi` kembali dan alur utama jalan.
-- **Instance tidur:** satu ketukan `/api/health` membangunkan; pemantau terjadwal sudah melakukannya tiap 10 menit.
+- **Instance tidur:** satu ketukan `/api/health` membangunkan (butuh sampai sekitar satu menit). Workflow terjadwal GitHub mencoba menahannya tetap bangun tetapi tidak andal (sering tertunda atau terlewat); pengecekan layanan uptime luar lebih dapat diandalkan.
 - **Render PDF menahan:** tahan menyetujui lembar yang besar sampai pulih; jangan menyalakan gerbang pra-approve di tengah insiden (perlu pengukuran, lihat AGENTS.md).
 - **Database mati atau penuh:** tunggu pemulihan penyedia; jangan menjalankan migrasi atau penghapusan; bila perlu pindah, ikuti rencana pengganti database dan pulihkan dari cadangan terbaru.
 - **Penerbitan salah dicurigai:** jangan menerbitkan lagi; gunakan daftar `profil_ditahan` (`config/sertifikat.php`) untuk menahan jenis alat yang dicurigai lewat PR kecil; sertifikat terbit ditangani lewat revisi dan penarikan dengan jejak, bukan penghapusan.
