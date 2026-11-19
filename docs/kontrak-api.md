@@ -65,6 +65,7 @@ Accept: application/json
 >   harus **angka**; `1abc` → `404` (dulu MySQL/TiDB membacanya sebagai `1`). Sejak 19 Nov 2026 berlaku juga untuk rute
 >   penugasan (`/penugasan/{id}`, `/penugasan/item/{id}`; dulu `GET /penugasan/1abc` → `200`).
 > - `GET /customers?search=` membaca `%` dan `_` secara harfiah (dulu `?search=%` mengembalikan semua pelanggan).
+>   Sejak 19 Nov 2026 berlaku juga untuk `GET /users?search=` (dulu `?search=%` mengembalikan semua pengguna).
 > - Password BARU maksimal **72 byte** (batas bcrypt; lebih panjang dipotong diam-diam sehingga dua sandi berbeda dianggap
 >   sama) → `422` pada `password` untuk `POST /users` (akun admin) dan `POST /users/{id}/reset-password` (19 Nov 2026). Password
 >   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah.
