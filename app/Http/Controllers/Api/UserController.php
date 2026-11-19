@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\BuatAkunAdminRequest;
 use App\Http\Resources\UserResource;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Rules\SandiMuatBcrypt;
 use App\Services\PenjagaOrganisasi;
 use App\Support\AlasanAksi;
 use Illuminate\Http\JsonResponse;
@@ -180,7 +181,7 @@ class UserController extends Controller
         $this->pastikanSatuOrganisasi($request, $user);
 
         $validated = $request->validate([
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', new SandiMuatBcrypt],
         ], [
             'password.required' => 'Password baru wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',

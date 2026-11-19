@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\User;
+use App\Rules\SandiMuatBcrypt;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,7 +39,7 @@ class BuatAkunAdminRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'employee_id' => ['required', 'string', 'max:50', Rule::unique('users', 'employee_id')],
             'department' => ['nullable', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', new SandiMuatBcrypt],
         ];
     }
 
