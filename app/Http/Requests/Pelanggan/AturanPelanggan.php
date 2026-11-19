@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Pelanggan;
 
+use App\Rules\SandiMuatBcrypt;
 use App\Support\NomorTelepon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -30,7 +31,9 @@ trait AturanPelanggan
      */
     protected function aturanSandi(): array
     {
-        return ['required', 'string', Password::min(10)->uncompromised()];
+        // Maks 72 BYTE (batas bcrypt), R2-11: lihat `SandiMuatBcrypt`. Berlaku untuk
+        // sandi BARU di terima-undangan, atur-ulang, dan ganti; `masuk` tidak memakainya.
+        return ['required', 'string', new SandiMuatBcrypt, Password::min(10)->uncompromised()];
     }
 
     /** @return array<int, mixed> */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\PeriksaSesiSebelumPersiapan;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
@@ -19,7 +20,6 @@ use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
-use App\Services\PenjagaOrganisasi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
@@ -40,20 +40,20 @@ use Illuminate\Validation\Validator;
 
 class CalibrationRequest extends FormRequest
 {
+    use PeriksaSesiSebelumPersiapan;
+
     /**
      * `PUT /calibrations/{sesi}`: kepemilikan sesi diperiksa SEBELUM badan
-     * divalidasi (R2-5, QA ronde 2) — sesi lab lain dijawab 404, bukan 422
-     * tentang field kosong. `POST /calibrations` dan `/preview` tidak punya
-     * sesi di rutenya, jadi tidak tersentuh.
+     * disentuh (R2-5, QA ronde 2) — sesi lab lain dijawab 404, bukan 422
+     * tentang field kosong. Pemeriksaannya sendiri ada di
+     * `PeriksaSesiSebelumPersiapan::validateResolved()`, bukan di sini:
+     * `prepareForValidation()` berjalan SEBELUM `authorize()` dan bisa menjawab
+     * 422/galat lebih dulu untuk badan yang aneh (QA ronde 2-B). `POST
+     * /calibrations` dan `/preview` tidak punya sesi di rutenya, jadi tidak
+     * tersentuh.
      */
     public function authorize(): bool
     {
-        $sesi = $this->route('calibration');
-
-        if ($sesi instanceof CalibrationSession) {
-            PenjagaOrganisasi::pastikanSesiBolehDilihat($this, $sesi);
-        }
-
         return true;
     }
 

@@ -102,7 +102,8 @@ class RiwayatSertifikatAlat
                 ->whereIn('id', $agregat->pluck('terbaru_id')->all())
                 ->get();
 
-        $bentuk = $this->bentukBanyak($baris, $organisasi);
+        // Ringkasan hanya memakai id/nomor/tanggal/status: `keputusan` tidak dibaca.
+        $bentuk = $this->bentukBanyak($baris, $organisasi, denganKeputusan: false);
 
         foreach ($agregat as $satu) {
             $terbaru = $bentuk[(int) $satu->terbaru_id] ?? null;
@@ -126,7 +127,7 @@ class RiwayatSertifikatAlat
      * @param  iterable<Certificate>  $baris
      * @return array<int, array<string, mixed>> kunci = id sertifikat
      */
-    private function bentukBanyak(iterable $baris, int $organisasi): array
+    private function bentukBanyak(iterable $baris, int $organisasi, bool $denganKeputusan = true): array
     {
         $baris = collect($baris);
 
@@ -157,10 +158,21 @@ class RiwayatSertifikatAlat
         // Keputusan PASS/FAIL = kolom sesi yang TERSIMPAN (bukan dihitung ulang dari
         // titik hasil) — sumber yang sama dengan detail sertifikat, halaman
         // verifikasi, dan PDF. Satu query per halaman, tanpa N+1.
-        $keputusan = CalibrationSession::query()
-            ->where('organization_id', $organisasi)
-            ->whereIn('id', $baris->pluck('calibration_session_id')->unique()->values()->all())
-            ->pluck('keputusan', 'id');
+        //
+        // `withTrashed()`: sertifikat yang pernah terbit tetap milik sesinya walau
+        // sesi itu kemudian dihapus lunak (jangkar yang sama dengan `halaman()` dan
+        // `ringkasanPerAlat()`, yang menggabung `calibration_sessions` tanpa memfilter
+        // `deleted_at`). Tanpa ini barisnya muncul dengan `keputusan` null -- lencana
+        // PASS/FAIL hilang untuk sertifikat yang sah.
+        //
+        // Ringkasan per alat TIDAK memuat `keputusan`, jadi tidak membayar query ini.
+        $keputusan = ! $denganKeputusan
+            ? collect()
+            : CalibrationSession::query()
+                ->withTrashed()
+                ->where('organization_id', $organisasi)
+                ->whereIn('id', $baris->pluck('calibration_session_id')->unique()->values()->all())
+                ->pluck('keputusan', 'id');
 
         return $baris
             ->mapWithKeys(fn (Certificate $c) => [

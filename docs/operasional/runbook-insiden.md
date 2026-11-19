@@ -42,3 +42,17 @@ Kumpulkan: waktu, akun, nomor sesi/sertifikat, versi saat itu, log. Jangan mempe
 ## Kontak dan akses
 
 Pemilik proyek memegang akses Render, database, dan cadangan. Akses produksi untuk penanganan hanya baca kecuali diinstruksikan.
+
+## Skenario Sidik: kejadian dan langkah pertama
+
+| Kejadian | Langkah pertama |
+| --- | --- |
+| Server tidak merespons | Ketuk `/api/health`; cek status Render dan log; bila tidur, tunggu sampai satu menit; bila mati, restart layanan di Render |
+| Habis deploy lalu banyak error | Catat `deploy.versi`; rollback ke deploy sebelumnya di Render (atau PR revert), baru selidiki |
+| Database bermasalah | Cek koneksi dari log dan status penyedia; JANGAN menjalankan migrasi atau menghapus; bila data rusak, pulihkan dari cadangan terbaru ke database uji dulu, lalu putuskan |
+| Sertifikat tidak terbit atau menggantung | Periksa antrean (`jobs` dan `failed_jobs`) dan penyapu `sertifikat:sapu-tertunda`; ingat penjadwal dan pekerja mati bila container tidur; coba ketuk `/api/health` agar bangun; teknisi tetap bisa mengisi dan menghitung |
+| Approve ditolak `profil_ditahan` | Bukan kerusakan: penerbitan jenis alat itu ditahan menunggu Technical Manager; lembar tetap bisa diisi; pelepasan = hapus satu entri `config/sertifikat.php` lewat PR |
+| OCR/foto gagal | OCR berjalan di HP; teknisi pakai jalur manual (Mulai kalibrasi); kirim laporan dengan jenis lembar dan jenis HP, tanpa foto pelanggan |
+| Realtime (Reverb) mati | Di produksi realtime memang nonaktif; aplikasi menarik ulang data; tidak perlu tindakan |
+| Rilis aplikasi bermasalah | Hentikan penawaran pembaruan (turunkan `PELANGGAN_VERSI_TERBARU` atau tandai rilis sebelumnya) dengan izin pemilik; rilis ulang versi sebelumnya lewat jalur biasa |
+| Data tampak salah | Jangan menulis ulang data; kumpulkan bukti (§4) dan eskalasi ke pemilik dan Technical Manager |

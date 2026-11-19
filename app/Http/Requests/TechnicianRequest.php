@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\SandiMuatBcrypt;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,8 @@ class TechnicianRequest extends FormRequest
             // Password cuma wajib waktu bikin akun baru. Ganti password teknisi
             // yang udah ada lewat /users/{user}/reset-password — biar aksi
             // sensitif itu nggak nempel diam-diam di form edit biasa.
-            'password' => [$bikinBaru ? 'required' : 'prohibited', 'string', 'min:8'],
+            // Maks 72 BYTE (batas bcrypt), R2-11: lihat `SandiMuatBcrypt`.
+            'password' => [$bikinBaru ? 'required' : 'prohibited', 'string', 'min:8', new SandiMuatBcrypt],
             'status' => ['sometimes', Rule::in([User::STATUS_AKTIF, User::STATUS_NONAKTIF])],
         ];
     }

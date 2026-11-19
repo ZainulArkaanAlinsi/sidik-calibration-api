@@ -1232,5 +1232,24 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
             ->middleware('throttle:penugasan-tulis');
         Route::post('/penugasan/{penugasan}/batalkan', [PenugasanController::class, 'batalkan'])
             ->middleware('throttle:penugasan-tulis');
+        // Menutup penugasan yang sudah tuntas (`persen_tuntas` 100). Sebelum
+        // QA ronde 2-B tidak ada jalan ke `selesai` sama sekali (R2-2).
+        Route::post('/penugasan/{penugasan}/selesaikan', [PenugasanController::class, 'selesaikan'])
+            ->middleware('throttle:penugasan-tulis');
     });
 });
+
+/*
+| Membuka lagi penugasan `selesai`: SUPER ADMIN saja (QA ronde 2-B, R2-2) --
+| pesan di `PATCH /penugasan/item/{i}` menjanjikannya ("Minta super admin
+| membukanya lagi"). Grup SENDIRI di luar grup `role:admin,teknisi,viewer`,
+| alasan yang sama dengan `users/…/nonaktifkan` di atas: `MatriksIzin` menyilang
+| SEMUA `role:` yang menempel di sebuah rute, jadi rute super-admin-saja yang
+| bersarang di grup luar itu dilaporkan tidak boleh untuk siapa pun. Admin dan
+| teknisi mendapat 403 seragam untuk ID mana pun (peran diperiksa sebelum binding).
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
+    ->prefix('penugasan')->group(function () {
+        Route::post('/{penugasan}/buka-lagi', [PenugasanController::class, 'bukaLagi'])
+            ->middleware('throttle:penugasan-tulis');
+    });
