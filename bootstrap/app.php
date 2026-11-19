@@ -139,6 +139,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 prepend: $penjaga,
             );
         }
+
+        // `IdentitasKlien` tepat sesudah autentikasi (QA ronde 2-B, saran peninjau #283):
+        // jalan sebelum `aplikasi:`/`role:`/penjaga Studio, jadi `X-Klien` dan
+        // `X-Versi-Klien` masuk konteks log walau jawabannya 403, dan Studio yang
+        // kedaluwarsa menerima 426 `klien_kedaluwarsa` -- bukan 403 -- di rute yang
+        // menolaknya (mis. data-acuan). Dulu (sebelum R2-7) urutannya memang begitu;
+        // R2-7 memajukan `role:`/`aplikasi:` dan meninggalkan middleware grup ini di
+        // belakang. Aman dari oracle: dia hanya membaca header, tidak pernah ID atau
+        // data, jadi jawaban 426 seragam untuk ID apa pun. Tamu tetap 401
+        // (autentikasi tetap paling depan), jadi konteks log klien untuk 401 memang
+        // belum ada. Urutan deklarasi penting: `aplikasi:` harus sudah ada di daftar.
+        $middleware->prependToPriorityList(
+            before: PastikanAplikasi::class,
+            prepend: IdentitasKlien::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
