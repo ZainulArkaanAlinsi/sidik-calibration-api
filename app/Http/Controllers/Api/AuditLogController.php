@@ -242,8 +242,9 @@ class AuditLogController extends Controller
             // mengembalikannya ke pemanggil — lewat filter `entity_type`/`entity_id`,
             // daftar polos, atau ekspor — membuka keberadaan ID itu beserta nama
             // tabelnya: persis yang ditutup jawaban 404. Barisnya tetap TERCATAT
-            // (pertanyaan "pernah ada yang mencoba?" terjawab dari DB/panel/super
-            // admin); admin lab tidak menerimanya lewat API. Super admin berhak
+            // (pertanyaan "pernah ada yang mencoba?" terjawab dari database atau
+            // lewat API super admin -- tidak ada layar panel yang menampilkan
+            // `audit_logs`); admin lab tidak menerimanya lewat API. Super admin berhak
             // membaca semua data lab, jadi tidak ada yang bocor kepadanya.
             ->when(
                 ! $request->user()->isSuperAdmin(),

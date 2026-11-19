@@ -116,9 +116,16 @@ class PemulihanDataController extends Controller
         $waktuHapus = $baris->deleted_at;
 
         DB::transaction(function () use ($kelas, $baris, $waktuHapus, $alasan): void {
-            // Dicek DI DALAM transaksi dengan kunci baris pemegang serial, supaya
-            // pemulihan yang berbalapan dengan pembuatan tidak melahirkan dua yang
-            // aktif. Melempar (bukan `return`) agar transaksi dibatalkan.
+            // Dicek DI DALAM transaksi dengan kunci baris pemegang serial. Kuncinya
+            // HANYA menserialkan antar-PEMULIHAN (dua pemulihan serial yang sama
+            // berbarengan tidak melahirkan dua yang aktif). Pembuatan standar baru
+            // (`POST /standards`) tidak ikut dikunci: validasi `unique`-nya dibaca
+            // tanpa kunci dan tabelnya tidak punya indeks unik, jadi pemulihan yang
+            // berbalapan dengan pembuatan TETAP bisa menghasilkan dua standar aktif
+            // berserial sama. Penutup sesungguhnya = indeks unik (migrasi), yang
+            // sengaja belum dibuat: butuh keputusan pemilik (data lama yang sudah
+            // kembar harus dibereskan lebih dulu). Melempar (bukan `return`) agar
+            // transaksi dibatalkan.
             if ($baris instanceof Standard) {
                 $bentrok = $this->standarBerSerialSama($baris);
 
@@ -157,10 +164,12 @@ class PemulihanDataController extends Controller
     }
 
     /**
-     * Standar AKTIF lab yang sama dengan nomor seri yang sama. `$baris` sendiri
-     * sedang terhapus saat ini dipanggil, jadi kueri bawaan (tanpa baris terhapus)
-     * tidak pernah mengembalikannya. Seri kosong tidak pernah bentrok (banyak
-     * standar boleh tanpa seri).
+     * Standar AKTIF lab yang sama dengan nomor seri yang sama. Dipanggil di dalam
+     * transaksi pemulihan; `lockForUpdate()` hanya menserialkan antar-pemulihan
+     * (lihat komentar di `pulihkan()` soal balapan dengan `POST /standards`).
+     * `$baris` sendiri sedang terhapus saat ini dipanggil, jadi kueri bawaan
+     * (tanpa baris terhapus) tidak pernah mengembalikannya. Seri kosong tidak
+     * pernah bentrok (banyak standar boleh tanpa seri).
      */
     private function standarBerSerialSama(Standard $baris): ?Standard
     {
