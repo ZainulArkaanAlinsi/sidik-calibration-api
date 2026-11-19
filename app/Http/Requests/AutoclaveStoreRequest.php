@@ -6,6 +6,7 @@ use App\Http\Requests\Concerns\AturanUkurAutoclave;
 use App\Models\CalibrationSession;
 use App\Rules\AngkaTerhingga;
 use App\Rules\ItemOrderMilikAlat;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
@@ -24,8 +25,19 @@ class AutoclaveStoreRequest extends FormRequest
 {
     use AturanUkurAutoclave;
 
+    /**
+     * `PUT /calibrations/autoclave/{sesi}`: kepemilikan sesi diperiksa SEBELUM
+     * badan divalidasi (R2-5, QA ronde 2), sama dengan `CalibrationRequest`.
+     * `POST /calibrations/autoclave` tidak punya sesi di rutenya.
+     */
     public function authorize(): bool
     {
+        $sesi = $this->route('calibration');
+
+        if ($sesi instanceof CalibrationSession) {
+            PenjagaOrganisasi::pastikanSesiBolehDilihat($this, $sesi);
+        }
+
         return true;
     }
 

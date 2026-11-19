@@ -19,6 +19,7 @@ use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\Calibration\VolumetricGlasswareCalculator;
+use App\Services\PenjagaOrganisasi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
@@ -39,6 +40,23 @@ use Illuminate\Validation\Validator;
 
 class CalibrationRequest extends FormRequest
 {
+    /**
+     * `PUT /calibrations/{sesi}`: kepemilikan sesi diperiksa SEBELUM badan
+     * divalidasi (R2-5, QA ronde 2) — sesi lab lain dijawab 404, bukan 422
+     * tentang field kosong. `POST /calibrations` dan `/preview` tidak punya
+     * sesi di rutenya, jadi tidak tersentuh.
+     */
+    public function authorize(): bool
+    {
+        $sesi = $this->route('calibration');
+
+        if ($sesi instanceof CalibrationSession) {
+            PenjagaOrganisasi::pastikanSesiBolehDilihat($this, $sesi);
+        }
+
+        return true;
+    }
+
     /**
      * Batas total sel grid enclosure (termokopel + Indikator) satu request.
      *

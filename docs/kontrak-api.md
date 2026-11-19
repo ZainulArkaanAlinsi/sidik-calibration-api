@@ -100,6 +100,12 @@ Accept: application/json
 > `akses_lintas_lab` kepada admin.** Baris itu lahir hanya untuk ID yang ADA di lab lain (404 yang dicatat), jadi
 > `?entity_type=customers&entity_id=<id>` atau naiknya jumlah baris membuka keberadaan ID itu. Barisnya tetap
 > TERCATAT; hanya super admin yang menerimanya lewat API. Bentuk respons tidak berubah.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-5): `PUT /calibrations/{id}` dan `PUT /calibrations/autoclave/{id}` memeriksa kepemilikan
+> sesi SEBELUM badan divalidasi.** Sesi lab lain (atau sesi teknisi lain bagi teknisi) → `404`, sama dengan `GET`;
+> dulu `422` "Alat yang mau dikalibrasi wajib diisi" membuka keberadaan ID. Pemilik sesi dan admin tidak berubah
+> (badan tidak valid tetap `422`). Satu percobaan lintas lab kini tercatat SEKALI di `audit_logs` (dulu dua kali bila
+> lewat FormRequest).
 
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
