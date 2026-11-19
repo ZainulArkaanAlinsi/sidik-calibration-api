@@ -22,7 +22,16 @@ class VerificationController extends Controller
     public function show(string $qrToken): JsonResponse
     {
         $certificate = Certificate::query()
-            ->with(['session.equipment', 'organization'])
+            // `withTrashed()` pada sesi & alat: QR di kertas dipindai orang luar
+            // bertahun-tahun sesudah terbit, dan `DELETE /equipments/{alat}` (soft
+            // delete) tidak menolak alat yang sudah bersertifikat. Tanpa ini
+            // `$alat` null dan jawabannya 500 (R2-12). Verifikasi publik tidak
+            // boleh patah untuk sertifikat terbit, apa pun nasib alatnya.
+            ->with([
+                'session' => fn ($sesi) => $sesi->withTrashed(),
+                'session.equipment' => fn ($alat) => $alat->withTrashed(),
+                'organization',
+            ])
             ->where('qr_token', $qrToken)
             // Kembaran JSON halaman web: yang dibatalkan ikut menjawab (§38.2).
             ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN, Certificate::STATUS_DITARIK])

@@ -29,7 +29,14 @@ class VerificationController extends Controller
     public function show(string $qrToken): Response
     {
         $certificate = Certificate::query()
-            ->with(['session.equipment.customer', 'organization'])
+            // `withTrashed()`: kembaran halaman JSON (R2-12) — alat/pelanggan yang
+            // dihapus lunak tidak boleh mematahkan halaman yang dipindai dari QR.
+            ->with([
+                'session' => fn ($sesi) => $sesi->withTrashed(),
+                'session.equipment' => fn ($alat) => $alat->withTrashed(),
+                'session.equipment.customer' => fn ($pt) => $pt->withTrashed(),
+                'organization',
+            ])
             ->where('qr_token', $qrToken)
             // Sertifikat yang belum kelar digenerate belum boleh diverifikasi.
             // Yang DIBATALKAN justru harus menjawab — kertasnya masih beredar,
