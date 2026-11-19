@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Services\Calibration\TabelStandarTimbangan;
 use App\Services\Calibration\TimbanganCalculator;
 use App\Services\Calibration\VarianMasterTimbangan;
+use App\Services\PenahananProfil;
 use App\Support\Angka;
 use App\Support\TataLetakSertifikat;
 use App\Support\TimbanganMentah;
@@ -92,7 +93,8 @@ class TimbanganProfile extends CalibrationProfile
     /**
      * Varian master sesi (`kg` / `gram` / `substitusi`) untuk penahanan
      * penerbitan per varian (`config/sertifikat.php` `profil_ditahan.timbangan`).
-     * Yang ditahan hanya KG; gram & substitusi tidak.
+     * Yang ditahan hanya KG; gram & substitusi tidak -- KECUALI varian yang dipilih
+     * tidak cocok dengan skala fisik alat ([penahanTerbit], R2-9).
      *
      * Aturannya SAMA dengan yang dipakai hitungan (`susunMasukan()`,
      * `batasTitik()`): pilihan teknisi di `spesifikasi_alat.varian_master`, dan
@@ -117,6 +119,115 @@ class TimbanganProfile extends CalibrationProfile
             strtolower(trim($satuan)) === 'g' ? $kapasitas / 1000.0 : $kapasitas,
             $satuan,
         )->kode;
+    }
+
+    /**
+     * Penahanan per varian dari config, DITAMBAH varian yang tidak cocok dengan
+     * skala fisik alat (QA ronde 2, R2-9; keputusan pemilik 19 Nov 2026).
+     *
+     * Dulu penahanan hanya membaca varian yang dipilih teknisi, jadi timbangan
+     * 100 kg yang dihitung dengan `varian_master = substitusi` (atau `gram`)
+     * lolos tanpa satu peringatan dan sertifikatnya terbit: tujuan "sertifikat
+     * salah lebih berbahaya daripada tertunda" kosong, dan hasilnya bergantung
+     * pada pilihan di lembar, bukan pada alat yang ditimbang.
+     *
+     * Aturannya, hanya dari ambang yang SUDAH dipakai profil ini
+     * (`VarianMasterTimbangan::bawaanUntuk()`: satuan `g` = skala gram, kapasitas
+     * di atas 200 kg = substitusi, selain itu kg; lampiran akreditasi no. 12):
+     *
+     *  - skala fisik alat BUKAN gram (bukan satuan `g`) dan varian yang dipilih
+     *    berbeda dari varian skala itu -> ditahan seperti Timbangan kg;
+     *  - alat bersatuan `g` (skala gram sungguhan) tidak terpengaruh;
+     *  - varian yang cocok dengan skalanya tetap mengikuti entri config
+     *    (`varian` = kg ditahan; substitusi untuk alat di atas 200 kg tidak).
+     *
+     * Skala fisik dibaca dari baris ALAT (satuan, `range_max`) dan baru jatuh ke
+     * `spesifikasi_alat` bila alatnya tidak mengisi; pilihan di lembar tidak
+     * boleh sekaligus menjadi bukti skalanya. Melepas entri `timbangan` di
+     * config melepas juga penahanan ini (butirnya meminjam alasan dan rujukan TM
+     * entri itu).
+     *
+     * @return list<array{penyimpangan: string, pesan: string, konteks: array<string, mixed>}>
+     */
+    public function penahanTerbit(CalibrationSession $sesi): array
+    {
+        $dariConfig = parent::penahanTerbit($sesi);
+
+        if ($dariConfig !== []) {
+            return $dariConfig;
+        }
+
+        $dipilih = $this->varianPenahan($sesi);
+        [$skala, $satuan, $kapasitas] = $this->skalaFisikAlat($sesi);
+
+        if ($skala->kode === VarianMasterTimbangan::GRAM || $dipilih === $skala->kode) {
+            return [];
+        }
+
+        $dasar = PenahananProfil::butirDariConfig($this->kode(), VarianMasterTimbangan::KG);
+
+        if ($dasar === []) {
+            return [];
+        }
+
+        $penjelasan = sprintf(
+            'varian master yang dipilih (%s) tidak cocok dengan skala fisik alat (%s %s; skala itu memakai varian %s '
+            .'menurut lampiran LK-285-IDN no. 12), jadi sesi ini ditahan seperti Timbangan kg. Pilihan varian di lembar '
+            .'tidak melepas penahanan; yang menentukan skala alatnya.',
+            $dipilih ?? 'kosong',
+            rtrim(rtrim(number_format($kapasitas, 6, '.', ''), '0'), '.') ?: '0',
+            $satuan,
+            $skala->kode,
+        );
+
+        $konteks = $dasar[0]['konteks'];
+        $alasanConfig = (string) ($konteks['alasan'] ?? '');
+
+        return [[
+            'penyimpangan' => PenahananProfil::KODE,
+            'pesan' => sprintf(
+                'Ditahan menunggu keputusan Technical Manager%s: %s %s Sertifikat tidak terbit sampai butir itu dijawab; '
+                .'lembar tetap bisa diisi dan dihitung.',
+                ($konteks['rujukan_tm'] ?? null) !== null ? " ({$konteks['rujukan_tm']})" : '',
+                $penjelasan,
+                $alasanConfig,
+            ),
+            'konteks' => [
+                ...$konteks,
+                'varian' => $dipilih,
+                'skala_fisik' => $skala->kode,
+                'varian_tidak_cocok_skala' => true,
+                'alasan' => $penjelasan.' '.$alasanConfig,
+            ],
+        ]];
+    }
+
+    /**
+     * Skala fisik alat: varian yang PANTAS menurut `bawaanUntuk()` dari satuan
+     * dan kapasitas ALAT (lihat [penahanTerbit]). Tidak mengarang ambang baru.
+     *
+     * @return array{0: VarianMasterTimbangan, 1: string, 2: float} [varian skala, satuan, kapasitas dalam satuan alat]
+     */
+    private function skalaFisikAlat(CalibrationSession $sesi): array
+    {
+        $spek = (array) ($sesi->spesifikasi_alat ?? []);
+        $alat = $sesi->equipment;
+
+        $satuan = trim((string) ($alat?->satuan ?? ''));
+        $satuan = $satuan !== '' ? $satuan : trim((string) ($spek['satuan'] ?? ''));
+        $satuan = $satuan !== '' ? $satuan : 'kg';
+
+        $kapasitas = (float) ($alat?->range_max ?? 0.0);
+        $kapasitas = $kapasitas > 0.0 ? $kapasitas : (float) ($spek['kapasitas'] ?? 0.0);
+
+        return [
+            VarianMasterTimbangan::bawaanUntuk(
+                strtolower($satuan) === 'g' ? $kapasitas / 1000.0 : $kapasitas,
+                $satuan,
+            ),
+            $satuan,
+            $kapasitas,
+        ];
     }
 
     /**

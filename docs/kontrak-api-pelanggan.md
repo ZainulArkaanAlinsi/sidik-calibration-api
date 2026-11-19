@@ -72,7 +72,7 @@ tidak (NFR-12).
 | `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
 | `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |
 | `perusahaan_belum_dipilih` | 400 | Anggota > 1 perusahaan, `X-Perusahaan-Id` kosong | Tampilkan pemilih dari `data.pilihan` |
-| `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
+| `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf. Dijawab SERAGAM untuk ID mana pun (milik sendiri, milik perusahaan lain, atau tidak ada): peran diperiksa sebelum ID dicari, supaya 403-vs-404 tidak membuka keberadaan ID | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
 | `sudah_nonaktif` | 422 | Anggota sudah nonaktif | Muat ulang daftar |
 | `sandi_salah` | 422 | Sandi salah waktu menghapus akun | Tandai field sandi, akun tidak jadi dihapus |
 
@@ -271,11 +271,12 @@ dan kegagalan kode tidak menghitung ke ember sandi. Validasi field
 untuk semua orang. Bentuk galat: `{"kode": "...", "message": "..."}`.
 
 **Validasi kekuatan sandi ikut berlaku untuk sandi LAMA di pintu ini.** `sandi`
-selalu divalidasi lebih dulu (min 10 karakter DAN bukan sandi yang tercatat bocor),
-sebelum server tahu apakah email itu punya akun — kalau tidak, jawabannya bisa
-membedakan akun ada dari tidak ada. Akibatnya akun lama yang sandinya kurang dari
-10 karakter atau kini tercatat bocor mendapat galat validasi `errors.sandi` walau
-sandinya benar; jalan keluarnya `POST /auth/lupa-sandi`, lalu ulangi undangan.
+selalu divalidasi lebih dulu (min 10 karakter, maks 72 byte — batas bcrypt, sejak QA ronde 2-B — DAN bukan sandi yang
+tercatat bocor), sebelum server tahu apakah email itu punya akun — kalau tidak,
+jawabannya bisa membedakan akun ada dari tidak ada. Akibatnya akun lama yang sandinya
+kurang dari 10 karakter, lebih dari 72 byte, atau kini tercatat bocor mendapat galat
+validasi `errors.sandi` walau sandinya benar; jalan keluarnya `POST /auth/lupa-sandi`,
+lalu ulangi undangan. (Masuk biasa lewat `POST /auth/masuk` tidak memeriksa batas ini.)
 
 **Kode hanya bisa ditukar sekali, juga bila dua request datang bersamaan.** Server
 mengklaim undangan secara atomik (`UPDATE … WHERE dipakai_pada IS NULL AND

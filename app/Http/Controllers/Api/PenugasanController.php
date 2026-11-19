@@ -13,6 +13,8 @@ use App\Models\PenugasanTeknisi;
 use App\Models\User;
 use App\Notifications\PenugasanBaru;
 use App\Notifications\PenugasanDibatalkan;
+use App\Notifications\PenugasanDibukaLagi;
+use App\Notifications\PenugasanSelesai;
 use App\Services\JejakAlasan;
 use App\Services\PenjagaOrganisasi;
 use App\Support\CatatanAlasan;
@@ -25,11 +27,14 @@ use Illuminate\Support\Facades\Notification;
 /**
  * Penugasan teknisi — personal & grup (poin 8).
  *
- * Empat pintu:
+ * Pintu-pintunya:
  *   index()        GET   /api/penugasan            — papan; teknisi cuma lihat punyanya
  *   store()        POST  /api/penugasan            — super admin membagi
  *   laporProgres() PATCH /api/penugasan/item/{i}   — teknisi melaporkan jumlah tuntas
  *   tandaiDilihat()POST  /api/penugasan/{p}/dilihat — teknisi membuka tugasnya
+ *   selesaikan()   POST  /api/penugasan/{p}/selesaikan — admin & super admin menutup yang tuntas
+ *   bukaLagi()     POST  /api/penugasan/{p}/buka-lagi  — super admin membuka yang selesai
+ * (edit & batal: `update()` / `batalkan()`.)
  */
 class PenugasanController extends Controller
 {
@@ -492,6 +497,200 @@ class PenugasanController extends Controller
         ]);
     }
 
+    /**
+     * Tutup penugasan `aktif` yang sudah tuntas -> `selesai` (admin & super admin).
+     *
+     * Dulu TIDAK ADA jalan ke `selesai` (QA ronde 2, R2-2): teknisi melapor 1/1,
+     * `siap_ditutup` menyala, tetapi status tetap `aktif` dan satu-satunya jalan
+     * keluar adalah membatalkan pekerjaan yang justru tuntas. Menutup sengaja
+     * tetap keputusan ORANG (laporProgres tidak menutup otomatis): "10 dari 10"
+     * berarti angkanya tercapai, bukan bahwa lembar kerjanya sudah final.
+     *
+     * Syarat: `persen_tuntas` = 100 -- dibaca DI DALAM transaksi, di atas baris
+     * yang dikunci, supaya laporan yang masuk di antara pemeriksaan dan tulis
+     * tidak lolos. Kode galat: `penugasan_belum_tuntas`, `penugasan_sudah_selesai`
+     * (sudah selesai: 422, bukan 200 diam-diam), `penugasan_tidak_aktif` (dibatalkan).
+     */
+    public function selesaikan(Request $request, Penugasan $penugasan): JsonResponse
+    {
+        PenjagaOrganisasi::pastikanSatu($request, $penugasan);
+
+        $pemanggil = $request->user();
+
+        $hasil = DB::transaction(function () use ($penugasan): array {
+            $terkunci = Penugasan::query()->whereKey($penugasan->id)->lockForUpdate()->firstOrFail();
+
+            if ($terkunci->status === Penugasan::STATUS_SELESAI) {
+                return ['sudah_selesai', null];
+            }
+
+            if ($terkunci->status !== Penugasan::STATUS_AKTIF) {
+                return ['tidak_aktif', $terkunci->status];
+            }
+
+            $persen = $terkunci->persenTuntas();
+
+            if ($persen < 100) {
+                return ['belum_tuntas', $persen];
+            }
+
+            $sekarang = now();
+
+            // Query builder bersyarat + satu baris audit (pola `batalkan()`), bukan
+            // `save()` yang menulis baris `diubah` tanpa catatan.
+            $berubah = Penugasan::query()
+                ->whereKey($terkunci->id)
+                ->where('status', Penugasan::STATUS_AKTIF)
+                ->update([
+                    'status' => Penugasan::STATUS_SELESAI,
+                    'diselesaikan_pada' => $sekarang,
+                    'updated_at' => $sekarang,
+                ]);
+
+            if ($berubah === 1) {
+                $terkunci->catatAudit(
+                    AuditLog::ACTION_DISELESAIKAN,
+                    ['status' => Penugasan::STATUS_AKTIF, 'diselesaikan_pada' => null],
+                    [
+                        'status' => Penugasan::STATUS_SELESAI,
+                        'diselesaikan_pada' => $sekarang->toIso8601String(),
+                        'persen_tuntas' => $persen,
+                    ],
+                    CatatanAlasan::note(CatatanAlasan::AWALAN_SELESAIKAN_PENUGASAN, null),
+                );
+            }
+
+            return ['ok', null];
+        });
+
+        if ($hasil[0] === 'sudah_selesai') {
+            return response()->json([
+                'message' => 'Penugasan ini sudah selesai.',
+                'kode' => 'penugasan_sudah_selesai',
+                'status' => Penugasan::STATUS_SELESAI,
+            ], 422);
+        }
+
+        if ($hasil[0] === 'tidak_aktif') {
+            return response()->json([
+                'message' => 'Penugasan ini sudah '.$hasil[1].', jadi tidak bisa diselesaikan.',
+                'kode' => 'penugasan_tidak_aktif',
+                'status' => $hasil[1],
+            ], 422);
+        }
+
+        if ($hasil[0] === 'belum_tuntas') {
+            return response()->json([
+                'message' => 'Penugasan ini baru '.$hasil[1].'% tuntas. Selesaikan dulu semua barisnya '
+                    .'(laporkan progresnya) sebelum menutup penugasan.',
+                'kode' => 'penugasan_belum_tuntas',
+                'persen_tuntas' => $hasil[1],
+            ], 422);
+        }
+
+        $penugasan->refresh()->load(self::RELASI);
+
+        try {
+            Notification::send(
+                User::query()->whereIn('id', $penugasan->anggota->pluck('user_id'))->get(),
+                PenugasanSelesai::dariPenugasan($penugasan, $pemanggil->name),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi penugasan selesai gagal dikirim.', [
+                'penugasan_id' => $penugasan->id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
+
+        PerubahanDataOrganisasi::siarkanAman($penugasan->organization_id, 'penugasan', 'diubah', $penugasan->id);
+
+        return response()->json([
+            'message' => 'Penugasan diselesaikan.',
+            'data' => $this->bentuk($penugasan),
+        ]);
+    }
+
+    /**
+     * Buka lagi penugasan `selesai` -> `aktif` dengan ALASAN (super admin saja).
+     *
+     * Pesan di `laporProgres()` ("Minta super admin membukanya lagi") menunjuk
+     * ke aksi ini. Alasan, pelaku, dan waktunya di `audit_logs` (aksi
+     * `dibuka_lagi`); `diselesaikan_pada` dikosongkan karena penugasannya tidak
+     * lagi selesai, dan nilai lamanya tetap terbaca di `old_data` baris audit.
+     * Yang `dibatalkan` TIDAK bisa dibuka lagi (buat penugasan baru).
+     */
+    public function bukaLagi(Request $request, Penugasan $penugasan): JsonResponse
+    {
+        PenjagaOrganisasi::pastikanSatu($request, $penugasan);
+
+        $data = $request->validate(['alasan' => CatatanAlasan::aturan()]);
+
+        $hasil = DB::transaction(function () use ($penugasan, $data): array {
+            $terkunci = Penugasan::query()->whereKey($penugasan->id)->lockForUpdate()->firstOrFail();
+
+            if ($terkunci->status !== Penugasan::STATUS_SELESAI) {
+                return ['bukan_selesai', $terkunci->status];
+            }
+
+            $sekarang = now();
+            $selesaiPada = $terkunci->diselesaikan_pada?->toIso8601String();
+
+            $berubah = Penugasan::query()
+                ->whereKey($terkunci->id)
+                ->where('status', Penugasan::STATUS_SELESAI)
+                ->update([
+                    'status' => Penugasan::STATUS_AKTIF,
+                    'diselesaikan_pada' => null,
+                    'updated_at' => $sekarang,
+                ]);
+
+            if ($berubah === 1) {
+                $terkunci->catatAudit(
+                    AuditLog::ACTION_DIBUKA_LAGI,
+                    ['status' => Penugasan::STATUS_SELESAI, 'diselesaikan_pada' => $selesaiPada],
+                    ['status' => Penugasan::STATUS_AKTIF, 'diselesaikan_pada' => null, 'alasan' => $data['alasan']],
+                    CatatanAlasan::note(CatatanAlasan::AWALAN_BUKA_LAGI_PENUGASAN, $data['alasan']),
+                );
+            }
+
+            return ['ok', null];
+        });
+
+        if ($hasil[0] === 'bukan_selesai') {
+            return response()->json([
+                'message' => 'Penugasan ini '.($hasil[1] === Penugasan::STATUS_AKTIF ? 'masih aktif' : 'sudah '.$hasil[1])
+                    .', jadi tidak perlu atau tidak bisa dibuka lagi.',
+                'kode' => 'penugasan_tidak_selesai',
+                'status' => $hasil[1],
+            ], 422);
+        }
+
+        $penugasan->refresh()->load(self::RELASI);
+
+        // Anggota dikabari (dengan alasan) bahwa ada pekerjaan yang perlu dilaporkan lagi.
+        // Pola `selesaikan()`/`batalkan()`: di LUAR transaksi dan dibungkus `try` --
+        // saluran siaran yang mati tidak boleh membuat aksinya tampak gagal setelah
+        // statusnya sudah berubah.
+        try {
+            Notification::send(
+                User::query()->whereIn('id', $penugasan->anggota->pluck('user_id'))->get(),
+                PenugasanDibukaLagi::dariPenugasan($penugasan, $request->user()->name, $data['alasan']),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi buka-lagi penugasan gagal dikirim.', [
+                'penugasan_id' => $penugasan->id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
+
+        PerubahanDataOrganisasi::siarkanAman($penugasan->organization_id, 'penugasan', 'diubah', $penugasan->id);
+
+        return response()->json([
+            'message' => 'Penugasan dibuka lagi.',
+            'data' => $this->bentuk($penugasan),
+        ]);
+    }
+
     private function galatTidakAktif(string $status): JsonResponse
     {
         return response()->json([
@@ -571,6 +770,10 @@ class PenugasanController extends Controller
             'persen_tuntas' => $p->persenTuntas(),
             'catatan' => $p->catatan,
             'dibuat_oleh' => $p->pembuat?->name,
+
+            // Additive (QA ronde 2-B): null selama belum `selesai` (dan lagi null
+            // sesudah dibuka lagi). Waktu yang disimpan, bukan dihitung ulang.
+            'diselesaikan_pada' => $p->diselesaikan_pada?->toIso8601String(),
 
             // Additive (paket CRUD 18 Nov 2026): null selama belum dibatalkan.
             // `oleh` = NAMA pembatal (string), sama bentuknya dengan

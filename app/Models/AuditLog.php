@@ -51,6 +51,17 @@ class AuditLog extends Model
     public const ACTION_DIBATALKAN = 'dibatalkan';
 
     /**
+     * Penugasan ditutup / dibuka lagi (QA ronde 2-B). Panjangnya (12 dan 11
+     * karakter) dijaga `BatasPanjangAuditCrudTest` terhadap `audit_logs.action`.
+     *
+     * - `diselesaikan`: penugasan `aktif` → `selesai` (`new_data.persen_tuntas`, `note`).
+     * - `dibuka_lagi`: penugasan `selesai` → `aktif` (`new_data.alasan`, `note`).
+     */
+    public const ACTION_DISELESAIKAN = 'diselesaikan';
+
+    public const ACTION_DIBUKA_LAGI = 'dibuka_lagi';
+
+    /**
      * Membaca — satu-satunya aksi di sini yang TIDAK mengubah apa pun.
      *
      * Dipakai `App\Support\JejakLintasOrganisasi` buat akses super admin yang
@@ -183,6 +194,8 @@ class AuditLog extends Model
             self::ACTION_DINONAKTIFKAN,
             self::ACTION_DIAKTIFKAN,
             self::ACTION_DIBATALKAN,
+            self::ACTION_DISELESAIKAN,
+            self::ACTION_DIBUKA_LAGI,
         ];
     }
 

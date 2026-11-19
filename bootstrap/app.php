@@ -105,6 +105,55 @@ return Application::configure(basePath: dirname(__DIR__))
             before: EnsureUserHasRole::class,
             prepend: PastikanAplikasi::class,
         );
+
+        // Penjaga dunia PELANGGAN dan Studio juga sebelum binding (QA ronde 2-B).
+        //
+        // Kelas masalahnya sama dengan R2-7, hanya di rute lain: `fitur.pelanggan`,
+        // `pelanggan.aktif`, `perusahaan`, `peran:` (pelanggan) dan `studio`
+        // dulu jalan SESUDAH `SubstituteBindings`. Anggota non-PIC yang menembak
+        // `/anggota/{anggota}/nonaktifkan` atau `/anggota/undangan/{undangan}`
+        // mendapat 403 untuk ID yang ADA (milik perusahaan mana pun) dan 404 untuk
+        // yang tidak ada — oracle keberadaan ID lintas perusahaan, lawan aturan
+        // keras 4 Modul Pelanggan. Akun menunggu verifikasi (`pelanggan.aktif`),
+        // pemegang beberapa keanggotaan tanpa `X-Perusahaan-Id` (400 dari
+        // `perusahaan`), modul yang dimatikan (503), dan akun lab yang menembak
+        // `/studio/workbook/{workbook}` (403 `studio`) membuka selisih yang sama.
+        //
+        // Urutan akhirnya (sisip tepat di depan `role:`, sesudah `aplikasi:`):
+        //   aplikasi → fitur → pelanggan.aktif → perusahaan → peran → [binding]
+        // dan untuk Studio: studio → [binding]. Tidak satu rute pun memakai
+        // `role:` bersama penjaga-penjaga ini, jadi posisi relatifnya terhadap
+        // `role:` tidak punya arti; yang dijaga cuma "semuanya di depan binding".
+        // Tamu tetap 401 (`auth:sanctum` tetap paling depan) dan pembatas laju
+        // tetap sebelum semuanya. `PeranSebelumBindingPelangganTest` menyapu
+        // seluruh rute ber-parameter di kedua dunia.
+        foreach ([
+            FiturPelanggan::class,
+            PelangganAktif::class,
+            KonteksPerusahaan::class,
+            PeranAnggota::class,
+            PastikanAkunStudio::class,
+        ] as $penjaga) {
+            $middleware->prependToPriorityList(
+                before: EnsureUserHasRole::class,
+                prepend: $penjaga,
+            );
+        }
+
+        // `IdentitasKlien` tepat sesudah autentikasi (QA ronde 2-B, saran peninjau #283):
+        // jalan sebelum `aplikasi:`/`role:`/penjaga Studio, jadi `X-Klien` dan
+        // `X-Versi-Klien` masuk konteks log walau jawabannya 403, dan Studio yang
+        // kedaluwarsa menerima 426 `klien_kedaluwarsa` -- bukan 403 -- di rute yang
+        // menolaknya (mis. data-acuan). Dulu (sebelum R2-7) urutannya memang begitu;
+        // R2-7 memajukan `role:`/`aplikasi:` dan meninggalkan middleware grup ini di
+        // belakang. Aman dari oracle: dia hanya membaca header, tidak pernah ID atau
+        // data, jadi jawaban 426 seragam untuk ID apa pun. Tamu tetap 401
+        // (autentikasi tetap paling depan), jadi konteks log klien untuk 401 memang
+        // belum ada. Urutan deklarasi penting: `aplikasi:` harus sudah ada di daftar.
+        $middleware->prependToPriorityList(
+            before: PastikanAplikasi::class,
+            prepend: IdentitasKlien::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
@@ -115,10 +164,23 @@ return Application::configure(basePath: dirname(__DIR__))
         // `No query results for model [App\Models\CalibrationSession] 25` — nama
         // kelas internal yang keluar ke klien dan tampil apa adanya di antrean draf
         // teknisi (uji kontrak S-7). Diganti kalimat generik; STATUS 404 dan bentuk
-        // `{message}` tidak berubah, dan 404 lain (abort(404), rute tak ada) tidak
-        // tersentuh.
+        // `{message}` tidak berubah.
+        //
+        // `abort(404)` TANPA pesan (QA ronde 2-B) memakai kalimat yang SAMA. Itu jalur
+        // semua pemeriksaan kepemilikan (`PenjagaOrganisasi`, `abort_if($x->organization_id
+        // !== ..., 404)`, `KonteksPerusahaan`, ...). Dulu mereka menjawab `{"message": ""}`
+        // sementara ID yang tidak ada menjawab "Data yang dicari nggak ketemu.": statusnya
+        // sama tetapi badannya beda, jadi ID milik lab/perusahaan lain tetap bisa dibedakan
+        // dari ID yang tidak ada. `abort(404, 'pesan')` yang sengaja berpesan dan rute yang
+        // tak ada (pesan bawaan Laravel) tidak tersentuh; pemeriksaan kepemilikan wajib
+        // TANPA pesan khusus supaya jatuh ke sini (jangan menulis `abort(404, 'X nggak ketemu')`
+        // untuk data lab lain). Dijaga `BadanJawaban404SeragamTest`.
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-            if ($request->is('api/*') && $e->getPrevious() instanceof ModelNotFoundException) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            if ($e->getPrevious() instanceof ModelNotFoundException || $e->getMessage() === '') {
                 return response()->json(['message' => 'Data yang dicari nggak ketemu.'], 404);
             }
 

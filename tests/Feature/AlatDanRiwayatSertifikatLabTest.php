@@ -623,6 +623,55 @@ class AlatDanRiwayatSertifikatLabTest extends TestCase
         $this->assertSame('FAIL', $baris['keputusan']);
     }
 
+    /**
+     * QA ronde 2-B (saran peninjau #283): sertifikat yang pernah terbit tetap milik
+     * sesinya walau sesi itu kemudian dihapus lunak. Riwayat menggabung
+     * `calibration_sessions` tanpa memfilter `deleted_at`, jadi barisnya MUNCUL --
+     * dan `keputusan`-nya tidak boleh hilang menjadi null hanya karena query
+     * keputusan memakai lingkup bawaan (tanpa baris terhapus lunak).
+     */
+    public function test_keputusan_riwayat_tetap_terbaca_walau_sesinya_terhapus_lunak(): void
+    {
+        $alat = $this->alat();
+        $sertifikat = $this->sertifikat($alat);
+        $sertifikat->session->forceFill(['keputusan' => 'FAIL'])->save();
+        $sertifikat->session->delete();
+        $this->assertSoftDeleted('calibration_sessions', ['id' => $sertifikat->calibration_session_id]);
+
+        $baris = collect($this->riwayat($this->adminLab(), $alat)->assertOk()->json('data'))->firstWhere('id', $sertifikat->id);
+
+        $this->assertNotNull($baris, 'sertifikat dari sesi yang terhapus lunak tetap tercantum');
+        $this->assertSame('FAIL', $baris['keputusan']);
+    }
+
+    /**
+     * QA ronde 2-B (saran peninjau #283): daftar alat satu pelanggan memakai
+     * `ringkasanPerAlat()`, yang TIDAK memuat `keputusan`, jadi tidak boleh
+     * menjalankan query `keputusan` ke `calibration_sessions` (dulu satu query
+     * terbuang per halaman). Riwayat per alat tetap membacanya.
+     */
+    public function test_ringkasan_per_alat_tidak_menjalankan_query_keputusan_yang_terbuang(): void
+    {
+        $alat = $this->alat();
+        $this->sertifikat($alat);
+        $admin = $this->adminLab();
+
+        $queryKeputusan = function (callable $panggil): int {
+            $jumlah = 0;
+            DB::listen(function ($q) use (&$jumlah): void {
+                if (str_contains($q->sql, 'keputusan') && str_contains($q->sql, 'calibration_sessions')) {
+                    $jumlah++;
+                }
+            });
+            $panggil();
+
+            return $jumlah;
+        };
+
+        $this->assertSame(0, $queryKeputusan(fn () => $this->daftarAlat($admin, $this->pt)->assertOk()), 'daftar alat menjalankan query keputusan yang tidak dipakai');
+        $this->assertGreaterThan(0, $queryKeputusan(fn () => $this->riwayat($admin, $alat)->assertOk()), 'riwayat per alat tetap membaca keputusan');
+    }
+
     // ============================================================== /me/permissions
 
     public function test_izin_matriks_alat_pelanggan_dan_riwayat_sertifikat(): void

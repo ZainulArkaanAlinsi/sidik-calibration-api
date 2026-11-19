@@ -68,7 +68,10 @@ Accept: application/json
 >   Sejak 19 Nov 2026 berlaku juga untuk `GET /users?search=` (dulu `?search=%` mengembalikan semua pengguna).
 > - Password BARU maksimal **72 byte** (batas bcrypt; lebih panjang dipotong diam-diam sehingga dua sandi berbeda dianggap
 >   sama) → `422` pada `password` untuk `POST /users` (akun admin) dan `POST /users/{id}/reset-password` (19 Nov 2026). Password
->   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah.
+>   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah. Sejak QA ronde 2-B batas yang sama berlaku
+>   di jalur penetapan sandi lain: `POST /reset-password` (`password`), `POST /technicians` (`password`), `POST /me/ganti-sandi`
+>   (`sandi`), dan di dunia pelanggan `ganti-sandi`, `atur-ulang-sandi`, `terima-undangan` (`sandi`) — `422` pada field sandinya
+>   dengan pesan yang menyebut 72.
 > - Angka **tak terhingga** (`1e400` di JSON) di semua field angka di atas → `422` pada field itu (dulu `500`
 >   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
 > - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti
@@ -78,8 +81,19 @@ Accept: application/json
 > - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
 >   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
->   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
->   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+>   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`). Salah ketik nama filter = daftar tidak tersaring,
+>   bukan galat.
+> - **Badan jawaban `404` untuk data lab/perusahaan lain sama persis dengan ID yang tidak ada (19 Nov 2026).** Dulu keduanya `404`
+>   tetapi `message`-nya beda (ID tak ada: "Data yang dicari nggak ketemu."; milik lab/perusahaan lain: kosong), cukup untuk
+>   membedakan "ada tapi bukan punyamu" dari "tidak ada". Sekarang semua `abort(404)` tanpa pesan memakai kalimat generik yang sama
+>   (sesi, alat, pelanggan, penugasan, sertifikat, order, hasil pindai, dunia pelanggan). Rute yang tidak ada dan `404` yang
+>   sengaja berpesan tidak berubah.
+> - **`per_page` dihormati di `GET /equipments`, `/customers`, `/certificates`, `/orders`, `/users`, `/rooms` (19 Nov 2026, BUG-16).**
+>   Bilangan bulat **1–100**, bawaan tetap **15** (klien yang tidak mengirimnya tidak berubah); di luar batas atau bukan
+>   bilangan bulat → `422` pada `per_page` (tidak dijepit diam-diam). `meta.per_page` melaporkan angka yang dipakai dan tautan
+>   `links` membawa `per_page` (di `/users` sekarang juga membawa `role`/`search`/`status`; dulu tautannya menjatuhkan semuanya).
+>   Bentuk respons tidak berubah. `GET /standards` tetap tanpa paginasi; `GET /calibrations` (≤ 50) tidak disentuh. `/rooms` dulu tetap 15
+>   dan mengabaikan `per_page` walau dokumen lama menyebutnya menghormati.
 >
 > **19 Nov 2026 — QA ronde 2 (R2-8): pintu angka yang dulu belum dijaga kini `422` per field (aditif).**
 > - `POST/PUT /standards`: `ketidakpastian`, `drift`, `faktor_cakupan`, `koefisien_suhu.a|b|c`, dan
@@ -3900,6 +3914,25 @@ kosong); `super_admin` tidak pernah lahir lewat API; `viewer` tidak ditawarkan u
 akun maupun hapus anggota. Jejak: tiap aksi menulis baris `audit_logs` (`anggota_dicabut`, `akun_dinonaktifkan`,
 `akun_diaktifkan`) atas nama akun yang menekan, dengan `peran_pelaku` dan `alasan`, di samping baris `diubah`
 otomatis (status lama → baru).
+
+---
+
+## 21. Penugasan: selesaikan & buka lagi (QA ronde 2-B, R2-2, 19 Nov 2026)
+
+Dulu penugasan tidak pernah bisa `selesai`: teknisi melapor 1/1 (`persen_tuntas` 100, `siap_ditutup` true) tetapi
+status tetap `aktif`, dan satu-satunya jalan keluar adalah `batalkan`. Dua rute baru (aplikasi belum memakainya;
+rincian untuk aplikasi di `docs/perintah-frontend-penugasan-selesai.md`):
+
+| Rute | Siapa | Syarat | Hasil |
+|---|---|---|---|
+| `POST /api/penugasan/{p}/selesaikan` | admin & super admin | `aktif` dan `persen_tuntas` = 100 | `selesai`, `diselesaikan_pada` terisi, audit `diselesaikan`, notifikasi `penugasan_selesai` ke anggota |
+| `POST /api/penugasan/{p}/buka-lagi` | **super admin saja** | `selesai`; `alasan` 5–400 | `aktif`, `diselesaikan_pada` null, audit `dibuka_lagi` (lama → baru + alasan), notifikasi `penugasan_dibuka_lagi` (dengan alasan) ke anggota |
+
+Kode galat `422`: `penugasan_belum_tuntas` (+ `persen_tuntas`), `penugasan_sudah_selesai`, `penugasan_tidak_aktif`
+(dibatalkan), `penugasan_tidak_selesai` (buka lagi pada yang bukan `selesai`). Peran diperiksa sebelum ID dicari
+(teknisi/viewer, dan admin untuk `buka-lagi`: `403` seragam untuk ID mana pun); lab lain → `404`. Izin:
+`penugasan.selesaikan`, `penugasan.buka-lagi` di `GET /api/me/permissions`. Field additive `diselesaikan_pada`
+(ISO-8601 atau `null`) di semua bentuk penugasan. Tanpa migrasi (kolom `status` dan `diselesaikan_pada` sudah ada).
 
 ---
 

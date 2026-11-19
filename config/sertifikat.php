@@ -95,7 +95,9 @@ return [
     |   tm      rujukan butir di dokumen pertanyaan TM (TM-1 ...).
     |   varian  (opsional) hanya sesi bervarian ini yang ditahan; tanpa kunci ini
     |           seluruh jenis alat ditahan. Sekarang cuma Timbangan: varian KG saja
-    |           (`VarianMasterTimbangan`), gram dan substitusi tidak.
+    |           (`VarianMasterTimbangan`), gram dan substitusi tidak -- selama variannya
+    |           cocok dengan skala fisik alat; varian yang tidak cocok dengan skala alat
+    |           bukan-gram ikut ditahan (`TimbanganProfile::penahanTerbit()`, R2-9).
     |
     | Satu hook untuk semuanya: `CalibrationProfile::penahanTerbit()`. Kelas dasarnya
     | membaca daftar ini; Tekanan (`pressure_gauge`, `vacuum_gauge`,

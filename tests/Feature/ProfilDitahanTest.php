@@ -42,7 +42,9 @@ use Tests\TestCase;
  *    Setujui panel, dan job penerbitan; status sesi tidak berubah, nomor yang
  *    diketik belum terpakai, tidak ada job, dan ada jejak audit;
  *  - yang ditahan CUMA penerbitan: pengisian, pratinjau, dan hitung jalan terus;
- *  - jenis alat lain (dan varian gram/substitusi Timbangan) tidak terpengaruh;
+ *  - jenis alat lain (dan varian gram/substitusi Timbangan yang COCOK dengan skala
+ *    fisik alatnya) tidak terpengaruh; varian yang tidak cocok dengan skala fisik
+ *    alat kg ikut ditahan (R2-9, 19 Nov 2026 — dulu "pilihan teknisi menang");
  *  - melepas satu entri config melepas satu jenis alat saja;
  *  - tiap kode di config adalah kode profil yang TERDAFTAR. Salah ketik kode
  *    tidak menghasilkan galat apa pun — penahanannya saja yang tidak pernah
@@ -214,22 +216,45 @@ class ProfilDitahanTest extends TestCase
         $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
-    // ---- Timbangan: HANYA varian kg ----------------------------------------
+    // ---- Timbangan: varian kg, dan varian yang tidak cocok dengan skala fisik ----
 
-    /** @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>, 2: bool}> */
+    /**
+     * Kolom ke-3 = ditahan; ke-4 = `varian` di badan 422 (varian yang menahan).
+     *
+     * Dua aturan, dua kelompok baris:
+     *  - varian KG ditahan (config, TM-1) apa pun skalanya;
+     *  - varian yang TIDAK cocok dengan skala fisik alat ditahan juga (R2-9,
+     *    keputusan pemilik 19 Nov 2026), kecuali alat bersatuan g (skala gram).
+     * Skala fisik = `VarianMasterTimbangan::bawaanUntuk()` dari satuan & kapasitas ALAT:
+     * satuan g = gram, di atas 200 kg = substitusi, selain itu kg.
+     *
+     * @return array<string, array{0: array<string, mixed>, 1: array<string, mixed>, 2: bool, 3: string|null}>
+     */
     public static function varianTimbangan(): array
     {
         return [
-            'dipilih kg' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'kg']], true],
-            'dipilih KG (huruf besar & spasi)' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => ' KG ']], true],
-            'dipilih gram' => [['satuan' => 'g', 'range_max' => 54], ['spesifikasi_alat' => ['varian_master' => 'gram']], false],
-            'dipilih substitusi' => [['satuan' => 'kg', 'range_max' => 2000], ['spesifikasi_alat' => ['varian_master' => 'substitusi']], false],
-            'bawaan: satuan g' => [['satuan' => 'g', 'range_max' => 54], [], false],
-            'bawaan: kapasitas di atas 200 kg' => [['satuan' => 'kg', 'range_max' => 2000], [], false],
-            'bawaan: 200 kg tepat masih kg' => [['satuan' => 'kg', 'range_max' => 200], [], true],
-            'bawaan: kapasitas tak diisi (tidak bisa ditentukan)' => [['satuan' => 'kg', 'range_max' => null], [], true],
-            'dipilih gram tapi alat kapasitas besar: pilihan teknisi menang' => [['satuan' => 'kg', 'range_max' => 2000], ['spesifikasi_alat' => ['varian_master' => 'gram']], false],
-            'dipilih kg walau satuan alat g: pilihan teknisi menang' => [['satuan' => 'g', 'range_max' => 54], ['spesifikasi_alat' => ['varian_master' => 'kg']], true],
+            // -- varian kg
+            'dipilih kg' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'kg']], true, 'kg'],
+            'dipilih KG (huruf besar & spasi)' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => ' KG ']], true, 'kg'],
+            'bawaan: 200 kg tepat masih kg' => [['satuan' => 'kg', 'range_max' => 200], [], true, 'kg'],
+            'bawaan: kapasitas tak diisi (tidak bisa ditentukan)' => [['satuan' => 'kg', 'range_max' => null], [], true, 'kg'],
+            'dipilih kg walau satuan alat g' => [['satuan' => 'g', 'range_max' => 54], ['spesifikasi_alat' => ['varian_master' => 'kg']], true, 'kg'],
+
+            // -- varian yang cocok dengan skalanya dan bukan kg: tidak ditahan
+            'dipilih gram pada alat g' => [['satuan' => 'g', 'range_max' => 54], ['spesifikasi_alat' => ['varian_master' => 'gram']], false, null],
+            'dipilih substitusi pada alat kg di atas 200 kg' => [['satuan' => 'kg', 'range_max' => 2000], ['spesifikasi_alat' => ['varian_master' => 'substitusi']], false, null],
+            'bawaan: satuan g' => [['satuan' => 'g', 'range_max' => 54], [], false, null],
+            'bawaan: kapasitas di atas 200 kg' => [['satuan' => 'kg', 'range_max' => 2000], [], false, null],
+
+            // -- R2-9: tidak cocok dengan skala fisik alat kg: ditahan (dulu "pilihan teknisi menang")
+            'R2-9 dipilih substitusi pada timbangan 100 kg' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'substitusi']], true, 'substitusi'],
+            'dipilih gram pada timbangan 100 kg' => [['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'gram']], true, 'gram'],
+            'dipilih substitusi pada 200 kg tepat (skala kg, bukan substitusi)' => [['satuan' => 'kg', 'range_max' => 200], ['spesifikasi_alat' => ['varian_master' => 'substitusi']], true, 'substitusi'],
+            'dipilih gram pada alat kg kapasitas besar (dulu: pilihan teknisi menang)' => [['satuan' => 'kg', 'range_max' => 2000], ['spesifikasi_alat' => ['varian_master' => 'gram']], true, 'gram'],
+            'alat g berkapasitas 300000 g (= 300 kg, di atas ambang 200 kg) dipilih gram' => [['satuan' => 'g', 'range_max' => 300000], ['spesifikasi_alat' => ['varian_master' => 'gram']], true, 'gram'],
+
+            // -- alat gram sungguhan (satuan g) tidak terpengaruh
+            'alat g dipilih substitusi: bukan skala kg, tidak terpengaruh' => [['satuan' => 'g', 'range_max' => 54], ['spesifikasi_alat' => ['varian_master' => 'substitusi']], false, null],
         ];
     }
 
@@ -238,7 +263,7 @@ class ProfilDitahanTest extends TestCase
      * @param  array<string, mixed>  $sesiAtribut
      */
     #[DataProvider('varianTimbangan')]
-    public function test_timbangan_hanya_varian_kg_yang_ditahan(array $alat, array $sesiAtribut, bool $ditahan): void
+    public function test_timbangan_ditahan_untuk_varian_kg_dan_varian_yang_tidak_cocok_skala_fisik(array $alat, array $sesiAtribut, bool $ditahan, ?string $varianMenahan): void
     {
         Queue::fake();
         $sesi = $this->sesiUntuk('timbangan', $alat, $sesiAtribut);
@@ -246,7 +271,7 @@ class ProfilDitahanTest extends TestCase
         $respons = $this->setujui($sesi)->assertStatus(422);
 
         if ($ditahan) {
-            $respons->assertJsonPath('kode', 'profil_ditahan')->assertJsonPath('varian', 'kg');
+            $respons->assertJsonPath('kode', 'profil_ditahan')->assertJsonPath('varian', $varianMenahan);
             $this->assertNotNull(app(PenahananProfil::class)->periksa($sesi));
         } else {
             // Lolos gerbang ini; yang menolak berikutnya pemeriksaan lain (sesi tanpa hasil hitung).
@@ -256,6 +281,65 @@ class ProfilDitahanTest extends TestCase
         }
 
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
+    }
+
+    /**
+     * R2-9: pesannya menyebut varian yang dipilih, skala fisik alat, dan bahwa
+     * pilihan varian tidak melepas penahanan; rujukan TM dan alasan config ikut.
+     * Status, nomor, job, dan jejak audit sama dengan penahanan biasa.
+     */
+    public function test_varian_tidak_cocok_skala_dijelaskan_jelas_dan_dicatat_seperti_penahanan_biasa(): void
+    {
+        Queue::fake();
+        $sesi = $this->sesiUntuk('timbangan', ['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'substitusi']]);
+
+        $respons = $this->setujui($sesi)->assertStatus(422)
+            ->assertJsonPath('kode', 'profil_ditahan')
+            ->assertJsonPath('profil', 'timbangan')
+            ->assertJsonPath('varian', 'substitusi')
+            ->assertJsonPath('rujukan_tm', 'TM-1');
+
+        $pesan = (string) $respons->json('message');
+        $this->assertStringContainsString('varian master yang dipilih (substitusi) tidak cocok dengan skala fisik alat (100 kg', $pesan);
+        $this->assertStringContainsString('Pilihan varian di lembar tidak melepas penahanan', $pesan);
+        $this->assertStringContainsString('Timbangan kg: U95 bagian 7', $pesan, 'alasan config TM-1 ikut terbaca');
+        $this->assertStringNotContainsString('..', $pesan);
+
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
+        $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
+        $this->assertSame(1, AuditLog::query()->where('action', AuditLog::ACTION_PENERBITAN_DITAHAN)->where('entity_id', $sesi->id)->count());
+
+        // Tidak ada "setujui tetap" dan super admin pun tidak melewatinya.
+        $this->setujui($sesi)->assertStatus(422)->assertJsonPath('kode', 'profil_ditahan');
+        $super = User::factory()->create(['organization_id' => $this->org->id, 'role' => User::ROLE_SUPER_ADMIN]);
+        $this->setujui($sesi, $super)->assertStatus(422)->assertJsonPath('kode', 'profil_ditahan');
+    }
+
+    /**
+     * Skala fisik dibaca dari baris ALAT, bukan dari spesifikasi di lembar:
+     * teknisi yang menulis `satuan: g` di lembar untuk alat bersatuan kg tidak
+     * mengubah skala alatnya.
+     */
+    public function test_skala_fisik_dari_alat_bukan_dari_spesifikasi_lembar(): void
+    {
+        $sesi = $this->sesiUntuk(
+            'timbangan',
+            ['satuan' => 'kg', 'range_max' => 100],
+            ['spesifikasi_alat' => ['varian_master' => 'gram', 'satuan' => 'g', 'kapasitas' => 54]],
+        );
+
+        $this->assertNotNull(app(PenahananProfil::class)->periksa($sesi), 'alat 100 kg yang dihitung sebagai gram tetap ditahan');
+    }
+
+    /** Melepas entri `timbangan` di config melepas SELURUH penahanannya, termasuk yang ini. */
+    public function test_melepas_entri_config_melepas_juga_penahanan_varian_tidak_cocok(): void
+    {
+        $sesi = $this->sesiUntuk('timbangan', ['satuan' => 'kg', 'range_max' => 100], ['spesifikasi_alat' => ['varian_master' => 'substitusi']]);
+        $this->assertNotNull(app(PenahananProfil::class)->periksa($sesi));
+
+        config(['sertifikat.profil_ditahan' => array_diff_key($this->daftarAsli, ['timbangan' => true])]);
+
+        $this->assertNull(app(PenahananProfil::class)->periksa($sesi));
     }
 
     // ---- profil lain tidak terpengaruh -------------------------------------

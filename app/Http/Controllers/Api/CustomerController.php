@@ -14,6 +14,7 @@ use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\KonflikDataTerhapus;
 use App\Services\Pencarian\PolaLike;
 use App\Services\PenjagaOrganisasi;
+use App\Support\PerHalaman;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -334,7 +335,7 @@ class CustomerController extends Controller
                 [PolaLike::mengandung((string) $request->string('search'))],
             ))
             ->orderBy('nama')
-            ->paginate(15)
+            ->paginate(PerHalaman::dari($request))
             ->withQueryString();
 
         return CustomerResource::collection($customers);

@@ -10,7 +10,7 @@ hitung tetap jalan, dan tidak satu angka pun diubah (aturan olah data butir 5).
 
 | Jenis alat | Kode profil | Butir TM | Cakupan | Sumber penahanan |
 |---|---|---|---|---|
-| Timbangan **kg** | `timbangan` | TM-1 | hanya varian `kg` (gram & substitusi tidak) | `config/sertifikat.php` `profil_ditahan` |
+| Timbangan **kg** | `timbangan` | TM-1 | varian `kg`, DAN varian apa pun yang tidak cocok dengan skala fisik alat bukan-gram (lihat bawah). Gram & substitusi yang cocok dengan skalanya tidak | `config/sertifikat.php` `profil_ditahan` |
 | Proving Ring | `proving_ring` | TM-4 | semua sesi | config |
 | Bath | `bath` | TM-8 | semua sesi | config |
 | Picnometer | `picnometer` | TM-7 | semua sesi | config |
@@ -43,6 +43,19 @@ log metode Tekanan/Piston ───────────────┤  Cali
 - **Varian.** Entri ber-`varian` hanya menahan sesi bervarian itu; profil yang varian-nya per sesi
   menimpa `CalibrationProfile::varianPenahan()` (Timbangan sudah, aturannya sama dengan hitungannya).
   Varian yang tidak bisa ditentukan pada entri ber-`varian` ikut ditahan.
+- **Timbangan: skala fisik, bukan pilihan teknisi (R2-9, 19 Nov 2026).** Dulu penahanan hanya membaca
+  `spesifikasi_alat.varian_master`, jadi timbangan 100 kg yang dihitung sebagai `substitusi` atau `gram`
+  lolos tanpa peringatan dan terbit ("pilihan teknisi menang"). Sekarang `TimbanganProfile::penahanTerbit()`
+  menahan JUGA bila varian yang dipilih berbeda dari varian skala fisik alat dan skala itu bukan gram.
+  Skala fisik = `VarianMasterTimbangan::bawaanUntuk()` dari satuan dan `range_max` baris ALAT (jatuh ke
+  `spesifikasi_alat` hanya bila alatnya tidak mengisi): satuan `g` = gram, kapasitas di atas 200 kg =
+  substitusi, selain itu kg (lampiran LK-285-IDN no. 12; tidak ada ambang baru). Alat bersatuan `g` tidak
+  terpengaruh; varian yang cocok dengan skalanya tetap mengikuti entri config (kg ditahan, substitusi
+  di atas 200 kg tidak). Pesannya menyebut varian yang dipilih dan skala alatnya; butirnya meminjam alasan dan
+  rujukan TM dari entri `timbangan`, jadi menghapus entri itu melepas keduanya.
+  Akibat praktis: alat yang `satuan`/`range_max`-nya salah di master data sekarang tertahan sampai Master
+  Data membetulkan alatnya (arah yang aman). `GET /categories/{kode}` tetap melaporkan `varian: ["kg"]`;
+  klien tidak boleh menyimpulkan bahwa varian lain pasti lolos.
 - **Entri yang rusak tetap menahan** (bukan array, alasan kosong, `varian` kosong): salah ketik tidak
   boleh diam-diam melepas. Kode yang tidak terdaftar sebagai profil ditolak `ProfilDitahanTest`.
 

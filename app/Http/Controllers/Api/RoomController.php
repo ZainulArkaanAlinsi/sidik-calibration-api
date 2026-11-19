@@ -8,6 +8,7 @@ use App\Http\Resources\RoomResource;
 use App\Models\Room;
 use App\Services\KonflikDataTerhapus;
 use App\Services\PenjagaOrganisasi;
+use App\Support\PerHalaman;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,9 @@ class RoomController extends Controller
             // layar master data tetap butuh lihat yang nonaktif juga.
             ->when($request->boolean('hanya_aktif'), fn ($query) => $query->aktif())
             ->orderBy('kode')
-            ->paginate(15)
+            // `per_page` 1..100 (bawaan 15), 422 di luar batas -- sama dengan lima daftar
+            // lain (`PerHalaman`). Dulu diabaikan (dan klien lama menulis begitu di komentarnya).
+            ->paginate(PerHalaman::dari($request))
             ->withQueryString();
 
         return RoomResource::collection($rooms);
