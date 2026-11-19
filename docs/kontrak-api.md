@@ -73,6 +73,8 @@ Accept: application/json
 >   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
 > - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti
 >   bila order bernomor tertinggi dihapus). Nomor yang pernah tercetak tidak dipakai ulang.
+> - `POST/PUT /orders`: alat yang sama dua kali di `items` → `422` pada `items.N.equipment_id` (19 Nov 2026; dulu `500`
+>   karena indeks unik `order_items(order_id, equipment_id)`).
 > - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
 >   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang

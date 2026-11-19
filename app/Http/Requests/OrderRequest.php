@@ -44,7 +44,9 @@ class OrderRequest extends FormRequest
             // alat nggak ada gunanya, work order-nya kosong.
             'items' => [$wajibKalauBikinBaru, 'array', 'min:1'],
             'items.*.equipment_id' => [
-                'required', 'integer',
+                // `distinct`: alat yang sama dua kali di satu order melanggar indeks
+                // unik `order_items(order_id, equipment_id)` dan dulu menjawab 500.
+                'required', 'integer', 'distinct',
                 Rule::exists('equipments', 'id')->where('organization_id', $organizationId),
             ],
             // Penugasan boleh kosong dulu — alat sering diterima duluan, baru
@@ -217,6 +219,7 @@ class OrderRequest extends FormRequest
             'items.required' => 'Minimal satu alat harus didaftarin di order ini.',
             'items.min' => 'Minimal satu alat harus didaftarin di order ini.',
             'items.*.equipment_id.exists' => 'Ada alat yang nggak ketemu di daftar alat lab.',
+            'items.*.equipment_id.distinct' => 'Alat yang sama nggak boleh didaftarin dua kali di satu order.',
             'status.in' => 'Status order harus salah satu dari: baru, diproses, selesai, dibatalkan.',
         ];
     }
