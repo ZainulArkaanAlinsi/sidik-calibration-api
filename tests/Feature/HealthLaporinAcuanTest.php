@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -33,6 +34,12 @@ class HealthLaporinAcuanTest extends TestCase
 
     public function test_blok_acuan_hanya_memuat_sumber_tanpa_isi_konfigurasi_lain(): void
     {
+        // Koneksi dibuka SEBELUM sandi palsu ditanam di `database.connections.mysql`
+        // (koneksi bawaan di profil MySQL); kalau tidak, `kesehatan.db` yang pertama
+        // menyambung dengan sandi itu dan health menjawab 503 `db_gagal`. Asersi
+        // rahasia tidak berubah. Lihat HealthKoneksiKonfigurasiTest.
+        DB::connection()->getPdo();
+
         config([
             'acuan.sumber' => 'json',
             'acuan.password' => 'PENANDA-RAHASIA-UJI-ACUAN',
