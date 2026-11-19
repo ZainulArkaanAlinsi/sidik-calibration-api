@@ -26,8 +26,16 @@ Hal yang sengaja begitu:
 - **Tidak ada rincian.** Nama tabel, jalur berkas, dan pesan galat tidak ikut; galat hanya ke log internal
   (`Health: pemeriksaan gagal.`, nama kelas dan pesan dipotong).
 - **Murah.** Satu `select 1`, satu agregat `jobs`, satu hitung `failed_jobs`, satu hitung `certificates`, satu
-  tulis-hapus berkas kecil di disk lokal. Tidak ada baris yang ditarik ke PHP; jumlah query tidak tumbuh dengan
-  isi tabel (dites). Di MySQL tiap agregat membawa petunjuk `MAX_EXECUTION_TIME(2000)`.
+  tulis-hapus berkas kecil di disk lokal. Tidak ada baris yang ditarik ke PHP dan jumlah query tidak tumbuh
+  dengan isi tabel (dites), tetapi database tetap memindai tabelnya (`failed_jobs` tanpa indeks `failed_at`,
+  `certificates` tanpa indeks `status`): aman di skala sekarang. Endpoint ini publik dan tidak ber-throttle;
+  bila disalahgunakan, tambahkan limiter bernama atau cache hasil 15-30 detik (belum dikerjakan: cache
+  mengubah semantik "keadaan sekarang" dan tes yang menyetel config di tengah jalan).
+- **Host database tak terjangkau membuat `/api/health` menunggu lama** (diukur peninjau ~21 detik di Windows;
+  tidak ada timeout koneksi PDO di `config/database.php`). Pemantau uptime perlu timeout sendiri.
+- **Render memeriksa `/up`, bukan `/api/health`** (`healthCheckPath` di `render.yaml`), jadi `503` di sini tidak
+  memicu restart. Jangan memindahkan `healthCheckPath` ke `/api/health`: kedipan database atau disk arsip akan
+  menandai instance tidak sehat.
 - **`failed_jobs` dihitung dalam jendela 24 jam.** Tabel itu tidak dibersihkan apa pun dan Render Free tidak
   punya shell untuk `queue:flush`; tanpa jendela, sepuluh kegagalan lama membuat `degraded` menetap.
 - **Disk arsip di `s3`/R2 dilaporkan `dilewati`**, tidak ditulisi: endpoint ini publik, dan satu tulis per

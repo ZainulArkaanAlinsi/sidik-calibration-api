@@ -39,9 +39,13 @@ use Throwable;
  * Dipukul tiap 5 menit (dan oleh siapa pun yang mengetuk URL ini): satu
  * `select 1`, satu agregat `jobs`, satu hitung `failed_jobs`, satu hitung
  * `certificates`, dan satu tulis-hapus berkas kecil di disk lokal. Semuanya
- * agregat — tidak ada baris yang ditarik ke PHP, jadi ongkosnya tidak tumbuh
- * bersama isi tabel. Di MySQL tiap agregat membawa petunjuk
- * `MAX_EXECUTION_TIME` supaya satu query lambat tidak menggantung endpoint.
+ * agregat: tidak ada baris yang ditarik ke PHP dan JUMLAH query tidak tumbuh
+ * bersama isi tabel (dites). Ongkos di sisi database masih memindai tabelnya
+ * (`jobs`, `failed_jobs` tanpa indeks `failed_at`, `certificates` tanpa indeks
+ * `status`) — aman di skala lab ini (ratusan baris), dan bila tabel membesar
+ * jawabannya indeks atau cache hasil beberapa detik, bukan query yang lebih
+ * pintar. Di MySQL tiap agregat membawa petunjuk `MAX_EXECUTION_TIME` supaya
+ * satu query lambat tidak menggantung endpoint.
  *
  * ## Yang SENGAJA tidak dilakukan
  *
