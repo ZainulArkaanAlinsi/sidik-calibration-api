@@ -151,6 +151,9 @@ class MatriksIzin
         // --- organisasi & pengguna
         'organisasi.lihat' => ['GET', 'api/organization'],
         'organisasi.ubah' => ['PUT', 'api/organization'],
+        // SUPER ADMIN saja (paket OPS-KODE): menetapkan fitur opsional yang
+        // dimatikan tanpa deploy. Grup `role:super_admin` sendiri di rutenya.
+        'fitur.atur' => ['PUT', 'api/organization/fitur'],
         'organisasi.logo' => ['POST', 'api/organization/logo'],
         'tanda-tangan.kelola' => ['POST', 'api/organization/tanda-tangan'],
         'pengguna.kelola' => ['GET', 'api/users'],

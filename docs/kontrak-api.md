@@ -3903,6 +3903,65 @@ otomatis (status lama → baru).
 
 ---
 
+## Operasional: kesehatan dan saklar fitur (19 Nov 2026)
+
+Semuanya **aditif**: kunci, rute, dan izin lama tidak berubah. Latar dan keputusan:
+`docs/operasional/kesehatan-sentry-saklar.md`.
+
+### `GET /api/health` — blok `kesehatan` (tanpa auth)
+
+Kunci baru `kesehatan`; kunci lama (`status`, `app`, `time`, `direktori_perusahaan`, `deploy`, `pelanggan`,
+`realtime`, `push`, `data_acuan`, `append_only_db`, `php_versi`, `json_float_shortest`) tidak berubah.
+
+```json
+{
+  "status": "ok",
+  "kesehatan": {
+    "db": "ok",
+    "penyimpanan": "ok",
+    "antrean": { "menunggu": 0, "gagal": 0, "tertua_detik": 0 },
+    "sertifikat_tertunda": 0,
+    "alasan": []
+  }
+}
+```
+
+- `status` tetap `ok` bila semuanya sehat; selain itu `degraded` dan `kesehatan.alasan` berisi kode dari
+  daftar tertutup: `db_gagal`, `penyimpanan_gagal`, `antrean_macet` (job tertua yang belum jalan > 30 menit,
+  atau job gagal >= 10 dalam 24 jam, atau tabel antrean tidak terbaca), `sertifikat_menggantung`
+  (`menunggu_generate` tanpa PDF, sesi disetujui, > 60 menit). Ambang di `config/kesehatan.php`.
+- **HTTP `503` hanya untuk `db_gagal` dan `penyimpanan_gagal`**; yang lain `200` dengan `status: degraded`.
+  Kata `"status":"ok"` tidak muncul di tempat lain di respons, jadi pemantau kata kunci tidak tertipu.
+- `db`: `ok`/`gagal`. `penyimpanan`: `ok`/`gagal`/`dilewati` (disk arsip di object storage `s3` TIDAK ditulisi
+  dari endpoint publik; hanya disk lokal diuji tulis-hapus). Angka `null` = tidak diketahui (database mati,
+  atau antrean bukan `database`). Tidak ada nama tabel, jalur berkas, atau pesan galat di respons.
+- Klien yang hanya membaca `status`/`deploy.versi` tidak patah; klien yang menganggap `status` selalu `ok`
+  harus menerima `degraded`.
+
+### `GET /api/me/permissions` — field `fitur_nonaktif`
+
+`data.fitur_nonaktif`: daftar kode fitur opsional yang sedang dimatikan Super Admin untuk lab ini
+(`[]` = semua nyala). Izin baru `fitur.atur` (super admin saja). Kontrak lengkap:
+[`perintah-frontend-saklar-fitur.md`](perintah-frontend-saklar-fitur.md).
+
+### Saklar fitur — `GET` / `PUT /api/organization/fitur` (super admin saja)
+
+| Rute | Peran | Isi |
+|---|---|---|
+| `GET /organization/fitur` | **super admin saja** (lain `403`) | `data.fitur[]` (`kode`, `label`, `deskripsi`, `aktif`) dan `data.fitur_nonaktif[]` |
+| `PUT /organization/fitur` | **super admin saja** | Body `{fitur_nonaktif: [kode...], alasan}` menggantikan seluruh daftar; `alasan` wajib 5-400; kode tak dikenal atau fitur inti -> `422`; audit `fitur_dimatikan` / `fitur_dinyalakan` per fitur (daftar lama/baru, pelaku, alasan); throttle `fitur-saklar` 20/menit |
+
+- Kode awal: `pindai_lembar` (`/worksheet-templates*`, `/worksheet-scans*`), `kirim_email_sertifikat`
+  (`POST /certificates/{id}/kirim-email`). Rute fitur yang mati menjawab `503` dengan
+  `{"kode": "fitur_dimatikan", "fitur": "<kode>", "message": "..."}` — sesudah pemeriksaan peran (peran tanpa hak
+  tetap `403`) dan sebelum route model binding.
+- **Pengisian, hitung, persetujuan, dan penerbitan tidak bisa dimatikan.**
+- Disimpan di `organizations.settings.fitur_nonaktif` (tanpa migrasi). Kunci itu tidak ada di daftar pengaturan
+  `PUT /organization`, jadi Master Data tidak bisa menyentuhnya (`422`) dan PUT biasa tidak menghapusnya.
+- Satu lab: tidak ada parameter organisasi; `organization_id` di badan diabaikan.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

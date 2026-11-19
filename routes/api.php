@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\OrganizationFiturController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
 use App\Http\Controllers\Api\PemulihanDataController;
@@ -558,6 +559,23 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
     });
 
 /*
+| Saklar fitur lab oleh SUPER ADMIN (paket OPS-KODE butir 3): mematikan fitur
+| opsional tanpa deploy dan tanpa menyentuh env Render. Daftar fiturnya tertutup
+| (`App\Support\FiturSaklar::DAFTAR`) dan TIDAK pernah memuat pengisian, hitung,
+| persetujuan, atau penerbitan. Tanpa parameter organisasi: yang diubah selalu
+| lab pemanggil. Grup sendiri dengan alasan yang sama dengan `users` di atas
+| (`MatriksIzin` menyilang semua `role:` yang menempel di sebuah rute). Admin
+| tidak punya jalan ke sini, dan `PUT /organization` tidak bisa menyentuh
+| kuncinya. Kontrak: docs/perintah-frontend-saklar-fitur.md.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])
+    ->prefix('organization/fitur')->group(function () {
+        Route::get('/', [OrganizationFiturController::class, 'show']);
+        Route::put('/', [OrganizationFiturController::class, 'update'])
+            ->middleware('throttle:fitur-saklar');
+    });
+
+/*
 |--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
@@ -856,19 +874,26 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // layar koreksi buat nampilin tulisan aslinya). Jadi citranya memang
         // keluar HP — retensinya `config/ocr.php`. Sama kayak jalur AI Vision, hasilnya usulan: submit
         // final tetap lewat POST/PUT /calibrations.
-        Route::get('/worksheet-templates', [WorksheetScanController::class, 'templates']);
-        Route::get('/worksheet-templates/{kode}', [WorksheetScanController::class, 'template']);
-        // Throttle lebih longgar dari AI Vision: nggak ada biaya per panggilan,
-        // dan teknisi wajar ngulang motret beberapa kali sampai lembarnya kebaca.
-        Route::post('/worksheet-scans', [WorksheetScanController::class, 'store'])
-            ->middleware('throttle:pindai-lembar');
-        Route::get('/worksheet-scans/{worksheetScan}', [WorksheetScanController::class, 'show']);
-        // Potongan citra per sel — dipanggil sekali per sel yang dicek teknisi,
-        // jadi batasnya jauh lebih tinggi dari endpoint lain.
-        Route::get('/worksheet-scans/{worksheetScan}/sel/{kunci}/crop', [WorksheetScanController::class, 'crop'])
-            ->middleware('throttle:pindai-crop')
-            ->where('kunci', '[A-Za-z0-9_|\-\.]+');
-        Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
+        //
+        // Saklar fitur `pindai_lembar` (Super Admin, tanpa deploy; paket OPS-KODE
+        // butir 3): keenam rute di bawah menjawab 503 `fitur_dimatikan` selama
+        // dimatikan. Pengisian manual (`POST/PUT /calibrations`) TIDAK ikut —
+        // pindai hanya usulan, dan lembar tetap bisa diisi tangan.
+        Route::middleware('fitur:pindai_lembar')->group(function () {
+            Route::get('/worksheet-templates', [WorksheetScanController::class, 'templates']);
+            Route::get('/worksheet-templates/{kode}', [WorksheetScanController::class, 'template']);
+            // Throttle lebih longgar dari AI Vision: nggak ada biaya per panggilan,
+            // dan teknisi wajar ngulang motret beberapa kali sampai lembarnya kebaca.
+            Route::post('/worksheet-scans', [WorksheetScanController::class, 'store'])
+                ->middleware('throttle:pindai-lembar');
+            Route::get('/worksheet-scans/{worksheetScan}', [WorksheetScanController::class, 'show']);
+            // Potongan citra per sel — dipanggil sekali per sel yang dicek teknisi,
+            // jadi batasnya jauh lebih tinggi dari endpoint lain.
+            Route::get('/worksheet-scans/{worksheetScan}/sel/{kunci}/crop', [WorksheetScanController::class, 'crop'])
+                ->middleware('throttle:pindai-crop')
+                ->where('kunci', '[A-Za-z0-9_|\-\.]+');
+            Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
+        });
 
         // BACA DOKUMEN GENERIK — lembar APA PUN, termasuk yang belum punya
         // profil dan geometri. Jawaban buat lembar baru, biar jawabannya bukan
@@ -1001,8 +1026,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // mobile, karena dua hal: alamat pengirim harus domain lab, dan
         // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
         // dokumen resmi ke luar, bukan baca data.
+        //
+        // Saklar fitur `kirim_email_sertifikat` (Super Admin, tanpa deploy): mati =
+        // 503 `fitur_dimatikan`. Unduh, penerbitan, dan pencatatan WhatsApp tidak
+        // ikut; riwayat surel (GET) tetap terbaca.
         Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
-            ->middleware('throttle:sertifikat-kirim-email');
+            ->middleware(['throttle:sertifikat-kirim-email', 'fitur:kirim_email_sertifikat']);
         // Catat pengiriman lewat WhatsApp. Pesannya sendiri dikirim dari HP
         // admin (buka WhatsApp lewat `wa.me`), BUKAN dari server — makanya
         // endpoint-nya cuma nyatet, nggak ngirim.

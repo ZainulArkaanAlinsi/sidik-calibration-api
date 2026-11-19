@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CatatAksesLintasOrganisasi;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\FiturInternal;
 use App\Http\Middleware\FiturPelanggan;
 use App\Http\Middleware\IdentitasKlien;
 use App\Http\Middleware\KonteksPerusahaan;
@@ -59,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'fitur.pelanggan' => FiturPelanggan::class,
+            'fitur' => FiturInternal::class,
             'aplikasi' => PastikanAplikasi::class,
             'studio' => PastikanAkunStudio::class,
             'pelanggan.aktif' => PelangganAktif::class,
@@ -105,6 +107,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: EnsureUserHasRole::class,
             prepend: PastikanAplikasi::class,
+        );
+
+        // Saklar fitur (`fitur:<kode>`, paket OPS-KODE butir 3) jalan SESUDAH
+        // `role:` dan SEBELUM route model binding. Sesudah `role:`: peran tanpa
+        // hak mendapat 403, bukan 503 yang membocorkan status fitur. Sebelum
+        // binding: id yang tidak ada tidak dijawab 404 sementara id yang ada
+        // 503 — oracle keberadaan id yang sama dengan yang ditutup untuk `role:`
+        // di atas. Dideklarasikan SESUDAH `EnsureUserHasRole` supaya mendarat
+        // di belakangnya (`prependToPriorityList` menyisipkan tepat di depan
+        // `SubstituteBindings`). `SaklarFiturTest` mengunci keduanya.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: FiturInternal::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

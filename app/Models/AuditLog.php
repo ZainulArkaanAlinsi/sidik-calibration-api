@@ -137,6 +137,17 @@ class AuditLog extends Model
     public const ACTION_PENERBITAN_DITAHAN = 'penerbitan_ditahan';
 
     /**
+     * Super admin mematikan / menyalakan satu fitur opsional lewat
+     * `PUT /organization/fitur` (paket OPS-KODE butir 3). Entitasnya
+     * `organizations`; `old_data`/`new_data` memuat daftar `fitur_nonaktif`
+     * lama dan baru, dan `new_data` juga `fitur`, `peran_pelaku`, `alasan`.
+     * 15 dan 16 karakter — muat di `string(20)`.
+     */
+    public const ACTION_FITUR_DIMATIKAN = 'fitur_dimatikan';
+
+    public const ACTION_FITUR_DINYALAKAN = 'fitur_dinyalakan';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan

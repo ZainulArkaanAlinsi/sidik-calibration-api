@@ -408,6 +408,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('akun-lab-status', 30);
         $perMenitPengguna('akun-lab-buat', 10);
 
+        // Saklar fitur lab oleh Super Admin (paket OPS-KODE): aksi jarang yang
+        // mengubah perilaku seluruh lab, jadi sempit. Hanya rute tulisnya.
+        $perMenitPengguna('fitur-saklar', 20);
+
         // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
         // dari jalur admin lab — tiap undangan mengirim email ke alamat yang
         // DIKETIK pemanggil, jadi ini jalur yang bisa dipakai membanjiri orang
