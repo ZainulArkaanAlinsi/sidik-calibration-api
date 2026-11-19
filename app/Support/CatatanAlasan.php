@@ -81,6 +81,10 @@ final class CatatanAlasan
 
     public const AWALAN_BATALKAN_PENUGASAN = 'Batalkan penugasan';
 
+    public const AWALAN_SELESAIKAN_PENUGASAN = 'Selesaikan penugasan';
+
+    public const AWALAN_BUKA_LAGI_PENUGASAN = 'Buka lagi penugasan';
+
     public const AWALAN_NONAKTIFKAN_KATEGORI = 'Nonaktifkan kategori';
 
     public const AWALAN_AKTIFKAN_KATEGORI = 'Aktifkan kategori';

@@ -70,6 +70,10 @@ class MatriksIzin
         // Paket CRUD 18 Nov 2026 (docs/perintah-frontend-crud-lengkap.md §1).
         'penugasan.ubah' => ['PUT', 'api/penugasan/{penugasan}'],
         'penugasan.batalkan' => ['POST', 'api/penugasan/{penugasan}/batalkan'],
+        // QA ronde 2-B (R2-2): tutup penugasan yang tuntas (admin & super admin)
+        // dan buka lagi yang selesai (SUPER ADMIN saja, grup `role:super_admin`).
+        'penugasan.selesaikan' => ['POST', 'api/penugasan/{penugasan}/selesaikan'],
+        'penugasan.buka-lagi' => ['POST', 'api/penugasan/{penugasan}/buka-lagi'],
         'kalibrasi.arsipkan' => ['POST', 'api/calibrations/{calibration}/arsipkan'],
         'kalibrasi.pulihkan' => ['POST', 'api/calibrations/{calibration}/pulihkan'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],

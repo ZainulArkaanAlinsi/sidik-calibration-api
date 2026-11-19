@@ -3903,6 +3903,25 @@ otomatis (status lama → baru).
 
 ---
 
+## 21. Penugasan: selesaikan & buka lagi (QA ronde 2-B, R2-2, 19 Nov 2026)
+
+Dulu penugasan tidak pernah bisa `selesai`: teknisi melapor 1/1 (`persen_tuntas` 100, `siap_ditutup` true) tetapi
+status tetap `aktif`, dan satu-satunya jalan keluar adalah `batalkan`. Dua rute baru (aplikasi belum memakainya;
+rincian untuk aplikasi di `docs/perintah-frontend-penugasan-selesai.md`):
+
+| Rute | Siapa | Syarat | Hasil |
+|---|---|---|---|
+| `POST /api/penugasan/{p}/selesaikan` | admin & super admin | `aktif` dan `persen_tuntas` = 100 | `selesai`, `diselesaikan_pada` terisi, audit `diselesaikan`, notifikasi `penugasan_selesai` ke anggota |
+| `POST /api/penugasan/{p}/buka-lagi` | **super admin saja** | `selesai`; `alasan` 5–400 | `aktif`, `diselesaikan_pada` null, audit `dibuka_lagi` (lama → baru + alasan) |
+
+Kode galat `422`: `penugasan_belum_tuntas` (+ `persen_tuntas`), `penugasan_sudah_selesai`, `penugasan_tidak_aktif`
+(dibatalkan), `penugasan_tidak_selesai` (buka lagi pada yang bukan `selesai`). Peran diperiksa sebelum ID dicari
+(teknisi/viewer, dan admin untuk `buka-lagi`: `403` seragam untuk ID mana pun); lab lain → `404`. Izin:
+`penugasan.selesaikan`, `penugasan.buka-lagi` di `GET /api/me/permissions`. Field additive `diselesaikan_pada`
+(ISO-8601 atau `null`) di semua bentuk penugasan. Tanpa migrasi (kolom `status` dan `diselesaikan_pada` sudah ada).
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |
