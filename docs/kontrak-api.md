@@ -95,6 +95,11 @@ Accept: application/json
 > sementara yang ada `403` — selisih itu membuka keberadaan ID. Peran yang berhak tidak berubah (ID lab lain / tidak
 > ada tetap `404`), tamu tetap `401`, dan token dari aplikasi yang salah (`bukan_aplikasi_ini`) juga `403` untuk ID apa
 > pun. Dijaga `PeranSebelumBindingTest`, yang menyapu seluruh rute internal ber-parameter dan ber-`role:`.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-6): `GET /audit-logs` (dan `/export`) tidak lagi mengembalikan baris
+> `akses_lintas_lab` kepada admin.** Baris itu lahir hanya untuk ID yang ADA di lab lain (404 yang dicatat), jadi
+> `?entity_type=customers&entity_id=<id>` atau naiknya jumlah baris membuka keberadaan ID itu. Barisnya tetap
+> TERCATAT; hanya super admin yang menerimanya lewat API. Bentuk respons tidak berubah.
 
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
@@ -2758,6 +2763,9 @@ Waktu,Entitas,ID,Aksi,Pelaku,Role,Kolom,Nilai Lama,Nilai Baru,Catatan
 - **Entitas yang diaudit:** `equipment`, `customers`, `standards`, `users`,
   `calibration_sessions`, `certificates`, `folders`, `folder_files`,
   `organizations`, `rooms`, `calibration_methods`, `equipment_categories`.
+- **Baris `akses_lintas_lab` (percobaan membuka data lab lain, 404) TIDAK dikirim ke admin** — hanya ke super admin
+  (R2-6, 19 Nov 2026). Barisnya tetap tercatat; kalau dikirim ke admin, daftar/filter/ekspor menjadi cara menebak ID
+  mana yang ada di lab lain.
 - **Riwayat lab lain nggak kebaca** — di-scope `organization_id`. Ini justru tabel
   yang paling nggak boleh kebuka lebar: isinya nilai sebelum & sesudah dari seluruh
   data lab, termasuk data pelanggan dan angka kalibrasi. Itu juga alasan
