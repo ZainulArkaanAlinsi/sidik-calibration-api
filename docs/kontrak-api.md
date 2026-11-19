@@ -68,7 +68,10 @@ Accept: application/json
 >   Sejak 19 Nov 2026 berlaku juga untuk `GET /users?search=` (dulu `?search=%` mengembalikan semua pengguna).
 > - Password BARU maksimal **72 byte** (batas bcrypt; lebih panjang dipotong diam-diam sehingga dua sandi berbeda dianggap
 >   sama) → `422` pada `password` untuk `POST /users` (akun admin) dan `POST /users/{id}/reset-password` (19 Nov 2026). Password
->   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah.
+>   yang sudah ada tidak diperiksa saat masuk, jadi tidak ada akun yang patah. Sejak QA ronde 2-B batas yang sama berlaku
+>   di jalur penetapan sandi lain: `POST /reset-password` (`password`), `POST /technicians` (`password`), `POST /me/ganti-sandi`
+>   (`sandi`), dan di dunia pelanggan `ganti-sandi`, `atur-ulang-sandi`, `terima-undangan` (`sandi`) — `422` pada field sandinya
+>   dengan pesan yang menyebut 72.
 > - Angka **tak terhingga** (`1e400` di JSON) di semua field angka di atas → `422` pada field itu (dulu `500`
 >   `NumberFormatException` dari aturan batas); berlaku juga untuk `PUT /organization` `settings.*` dan suhu/kelembaban autoclave.
 > - `POST /orders`: nomor order berikutnya melompati nomor order yang sudah dihapus (dulu `500` permanen sampai bulan berganti

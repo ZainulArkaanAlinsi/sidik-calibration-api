@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\SandiMuatBcrypt;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
@@ -39,6 +40,9 @@ class GantiSandiSendiriRequest extends FormRequest
             'sandi_lama' => ['required', 'string'],
             'sandi' => [
                 'required', 'string', 'confirmed', 'different:sandi_lama',
+                // Maks 72 BYTE (batas bcrypt), R2-11. Sebelum `uncompromised()` supaya
+                // sandi raksasa ditolak tanpa menembak layanan luar.
+                new SandiMuatBcrypt,
                 Password::min(10)->uncompromised(),
             ],
         ];

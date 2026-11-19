@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\SandiMuatBcrypt;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ResetPasswordRequest extends FormRequest
@@ -17,7 +18,9 @@ class ResetPasswordRequest extends FormRequest
             // nyocokin. Mobile udah punya nilainya — link reset di email bentuknya
             // `sidik://reset-password?token=...&email=...`, tinggal dibaca dari situ.
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:8'],
+            // Maks 72 BYTE (batas bcrypt): sandi lebih panjang dipotong diam-diam dan dua
+            // sandi berbeda dianggap sama (R2-11). Hanya sandi BARU yang diperiksa.
+            'password' => ['required', 'string', 'min:8', new SandiMuatBcrypt],
             // Opsional: kontrak mobile cuma ngirim `password`. Kalau field konfirmasi
             // ikut dikirim, tetap dicek — kalau nggak, ya udah.
             'password_confirmation' => ['sometimes', 'same:password'],

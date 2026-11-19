@@ -271,11 +271,12 @@ dan kegagalan kode tidak menghitung ke ember sandi. Validasi field
 untuk semua orang. Bentuk galat: `{"kode": "...", "message": "..."}`.
 
 **Validasi kekuatan sandi ikut berlaku untuk sandi LAMA di pintu ini.** `sandi`
-selalu divalidasi lebih dulu (min 10 karakter DAN bukan sandi yang tercatat bocor),
-sebelum server tahu apakah email itu punya akun — kalau tidak, jawabannya bisa
-membedakan akun ada dari tidak ada. Akibatnya akun lama yang sandinya kurang dari
-10 karakter atau kini tercatat bocor mendapat galat validasi `errors.sandi` walau
-sandinya benar; jalan keluarnya `POST /auth/lupa-sandi`, lalu ulangi undangan.
+selalu divalidasi lebih dulu (min 10 karakter, maks 72 byte — batas bcrypt, sejak QA ronde 2-B — DAN bukan sandi yang
+tercatat bocor), sebelum server tahu apakah email itu punya akun — kalau tidak,
+jawabannya bisa membedakan akun ada dari tidak ada. Akibatnya akun lama yang sandinya
+kurang dari 10 karakter, lebih dari 72 byte, atau kini tercatat bocor mendapat galat
+validasi `errors.sandi` walau sandinya benar; jalan keluarnya `POST /auth/lupa-sandi`,
+lalu ulangi undangan. (Masuk biasa lewat `POST /auth/masuk` tidak memeriksa batas ini.)
 
 **Kode hanya bisa ditukar sekali, juga bila dua request datang bersamaan.** Server
 mengklaim undangan secara atomik (`UPDATE … WHERE dipakai_pada IS NULL AND
