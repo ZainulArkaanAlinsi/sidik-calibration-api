@@ -27,7 +27,7 @@ Dengan target 99% selama 30 hari, jatah ketidaktersediaan sekitar 7,2 jam per pe
 
 ## Cara mengukur
 
-- Ketersediaan: workflow terjadwal `Pantau kesehatan produksi` (tiap 10 menit) mengetuk `/api/health`; run yang gagal mengirim surel GitHub ke pemilik.
+- Ketersediaan: workflow `Jaga server bangun` mengetuk `/up` dan `/api/health` dan gagal (surel GitHub ke pemilik) bila tidak sehat. **Peringatan jujur:** jadwal GitHub bersifat usaha terbaik; pada 18 Nov 2026 `Jaga server melek` (jadwal tiap 5 menit) dan `Jaga server bangun` (tiap 10 menit) hanya berjalan sekitar tiga kali dalam 16 jam. Jadi workflow ini BUKAN pengukur SLO dan bukan penahan tidur yang andal. Pengukur yang layak: layanan uptime gratis dengan pengecekan tiap 5 menit dan peringatan email (dirujuk di `docs/deploy-gratis-render.md`, langkah 7); butuh akun milik pemilik.
 - Approve, simpan, latensi: log aplikasi dan hasil uji beban lokal; metrik produksi menyusul bila ada tempat penyimpanan gratis yang layak.
 - Setiap target dicatat bersama versi (`deploy.versi` di `/api/health`), ukuran instance, dan volume data saat diukur.
 

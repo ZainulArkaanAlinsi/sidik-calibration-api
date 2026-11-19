@@ -33,7 +33,18 @@ jobs:
           URL: ${{ vars.API_BASE_URL }}
         run: |
           base="${URL:-https://sidik-calibration-api.onrender.com}"
-          for path in /up /api/health; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 --retry 2 --retry-delay 10 "$base$path" || true)
-            echo "$path -> $code"
+          code_up=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 --retry 2 --retry-delay 10 "$base/up" || true)
+          echo "/up -> $code_up"
+          # /api/health diperiksa isinya dan GAGALKAN run bila tidak sehat: run merah = surel
+          # GitHub ke pemilik (alert). Bangun dari tidur diizinkan (empat percobaan).
+          for i in 1 2 3 4; do
+            code=$(curl -s -m 60 -o /tmp/health.json -w '%{http_code}' "$base/api/health" || true)
+            if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/health.json; then
+              echo "/api/health sehat (percobaan $i)"
+              exit 0
+            fi
+            echo "/api/health belum sehat (percobaan $i, http=${code:-000})"
+            sleep 20
           done
+          echo "::error::/api/health tidak sehat setelah 4 percobaan"
+          exit 1
