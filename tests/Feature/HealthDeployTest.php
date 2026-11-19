@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Env;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -138,6 +139,14 @@ class HealthDeployTest extends TestCase
      */
     public function test_nggak_ada_rahasia_yang_ikut_keluar(): void
     {
+        // Buka koneksi database SEBELUM menanam kenari di konfigurasinya. Di profil
+        // MySQL koneksi bawaan adalah `mysql`: tanpa ini `kesehatan.db` (`select 1`)
+        // yang pertama menyambung, memakai host palsu di bawah, dan health
+        // menjawab 503 `db_gagal` — perilaku yang BENAR untuk database yang tidak
+        // bisa disambungi, tapi bukan yang diuji di sini. Asersi rahasia di
+        // bawah tidak berubah. Lihat HealthKoneksiKonfigurasiTest.
+        DB::connection()->getPdo();
+
         config()->set('filesystems.disks.arsip.driver', 's3');
         config()->set('filesystems.disks.s3.bucket', 'nama-bucket-rahasia');
         config()->set('filesystems.disks.s3.key', 'AKIAKUNCIRAHASIA');

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CatatAksesLintasOrganisasi;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\FiturInternal;
 use App\Http\Middleware\FiturPelanggan;
 use App\Http\Middleware\IdentitasKlien;
 use App\Http\Middleware\KonteksPerusahaan;
@@ -16,6 +17,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
+use Sentry\Laravel\Integration;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -58,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'fitur.pelanggan' => FiturPelanggan::class,
+            'fitur' => FiturInternal::class,
             'aplikasi' => PastikanAplikasi::class,
             'studio' => PastikanAkunStudio::class,
             'pelanggan.aktif' => PelangganAktif::class,
@@ -154,8 +157,27 @@ return Application::configure(basePath: dirname(__DIR__))
             before: PastikanAplikasi::class,
             prepend: IdentitasKlien::class,
         );
+
+        // Saklar fitur (`fitur:<kode>`, paket OPS-KODE butir 3) jalan SESUDAH
+        // `role:` dan SEBELUM route model binding. Sesudah `role:`: peran tanpa
+        // hak mendapat 403, bukan 503 yang membocorkan status fitur. Sebelum
+        // binding: id yang tidak ada tidak dijawab 404 sementara id yang ada
+        // 503 — oracle keberadaan id yang sama dengan yang ditutup untuk `role:`
+        // di atas. Dideklarasikan SESUDAH `EnsureUserHasRole` supaya mendarat
+        // di belakangnya (`prependToPriorityList` menyisipkan tepat di depan
+        // `SubstituteBindings`). `SaklarFiturTest` mengunci keduanya.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: FiturInternal::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Pelacak galat. Tanpa `SENTRY_LARAVEL_DSN` (keadaan bawaan) SDK tidak
+        // mengirim apa pun dan tidak membuka sambungan jaringan; dengan DSN, yang
+        // berangkat hanya yang lolos `App\Support\PenyaringSentry` (privasi
+        // keras, config/sentry.php). Galat 4xx tidak dilaporkan.
+        Integration::handles($exceptions);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

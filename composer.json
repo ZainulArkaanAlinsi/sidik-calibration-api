@@ -15,7 +15,8 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.35",
-        "phpoffice/phpspreadsheet": "^5.10"
+        "phpoffice/phpspreadsheet": "^5.10",
+        "sentry/sentry-laravel": "^4.30"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",

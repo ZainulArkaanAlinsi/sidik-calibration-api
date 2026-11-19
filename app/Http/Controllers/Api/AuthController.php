@@ -10,6 +10,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\MatriksIzin;
 use App\Services\Studio\AkunStudio;
+use App\Support\FiturSaklar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -142,7 +143,15 @@ class AuthController extends Controller
      */
     public function permissions(Request $request, MatriksIzin $matriks): JsonResponse
     {
-        return response()->json(['data' => $matriks->untuk($request->user())]);
+        $user = $request->user();
+
+        return response()->json(['data' => $matriks->untuk($user) + [
+            // Fitur opsional yang sedang dimatikan Super Admin untuk lab ini
+            // (`PUT /organization/fitur`), supaya tombolnya bisa disembunyikan.
+            // Aditif; urut sesuai daftar resmi. Penjagaannya tetap di server:
+            // rute fitur itu menjawab 503 `fitur_dimatikan`.
+            'fitur_nonaktif' => FiturSaklar::nonaktif($user->organization),
+        ]]);
     }
 
     public function logout(Request $request): JsonResponse
