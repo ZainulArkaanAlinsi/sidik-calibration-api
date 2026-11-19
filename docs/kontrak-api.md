@@ -89,6 +89,12 @@ Accept: application/json
 >   Isian bukan-angka di deret tabel (`micrometer.pra_evaluasi`, `height_gauge.*`, `dial_indicator.pra_evaluasi`,
 >   `flowmeter.*_pipa_mm`; mis. `"NaN"`, `"abc"`) dulu DIBUANG diam-diam sehingga pembacaannya hilang; sekarang
 >   `422` pada indeks kotak itu. Kotak kosong (`null`/`""`) tetap sah, dan koma desimal (`"19,06"`) dibakukan.
+>
+> **19 Nov 2026 — QA ronde 2 (R2-7): peran diperiksa SEBELUM route model binding.** Peran tanpa hak atas sebuah rute
+> mendapat `403` yang SERAGAM untuk ID apa pun (ada, tidak ada, atau milik lab lain). Dulu ID yang tidak ada `404`
+> sementara yang ada `403` — selisih itu membuka keberadaan ID. Peran yang berhak tidak berubah (ID lab lain / tidak
+> ada tetap `404`), tamu tetap `401`, dan token dari aplikasi yang salah (`bukan_aplikasi_ini`) juga `403` untuk ID apa
+> pun. Dijaga `PeranSebelumBindingTest`, yang menyapu seluruh rute internal ber-parameter dan ber-`role:`.
 
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.

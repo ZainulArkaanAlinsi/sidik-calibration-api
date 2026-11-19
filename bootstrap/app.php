@@ -13,6 +13,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -73,6 +74,35 @@ return Application::configure(basePath: dirname(__DIR__))
         // `klien_kedaluwarsa` untuk Sidik Studio di bawah versi minimum.
         // Request tanpa header tidak tersentuh. Lihat docblock kelasnya.
         $middleware->appendToGroup('api', IdentitasKlien::class);
+
+        // Peran diperiksa SEBELUM route model binding (R2-7, QA ronde 2).
+        //
+        // `SubstituteBindings` ada di grup `api` dan jalan lebih awal dari
+        // `role:` yang menempel di rute. Akibatnya peran tanpa hak mendapat 404
+        // untuk ID yang tidak ada (binding gagal duluan) tetapi 403 untuk ID
+        // yang ada — termasuk ID milik lab lain — dan selisih itu oracle
+        // keberadaan ID. Dengan `role:` di depan binding, peran tanpa hak
+        // mendapat 403 yang seragam untuk ID apa pun; peran yang berhak tidak
+        // tersentuh (binding & penjaga organisasi jalan sesudahnya, 404 lintas
+        // lab tetap 404). Tetap di belakang `auth:sanctum` (AuthenticatesRequests
+        // sudah lebih dulu di daftar prioritas), jadi tamu tetap 401.
+        //
+        // Jangan dipindah ke belakang `SubstituteBindings`: `PeranSebelumBindingTest`
+        // menyapu seluruh rute ber-parameter dan ber-`role:` dan akan merah.
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: EnsureUserHasRole::class,
+        );
+
+        // `aplikasi:` tetap di depan `role:` (komentar rute M1-03: token dari
+        // aplikasi yang salah ditolak sebelum rolenya diperiksa). Tanpa baris ini
+        // memindahkan `role:` ke depan binding membuat `aplikasi:` ikut tertinggal
+        // di belakang binding — oracle yang sama, kali ini untuk token aplikasi lain.
+        // Urutan deklarasi penting: `role:` harus sudah ada di daftar.
+        $middleware->prependToPriorityList(
+            before: EnsureUserHasRole::class,
+            prepend: PastikanAplikasi::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
