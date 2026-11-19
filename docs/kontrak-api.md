@@ -2051,6 +2051,7 @@ Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat laya
 > | baris lab lain / tidak ada / `id` bukan angka | `404` (sama seperti `DELETE`) |
 > | baris tidak sedang terhapus | `422` `{"kode": "tidak_terhapus"}` |
 > | alat yang PT pemiliknya masih terhapus | `422` `{"kode": "pt_terhapus", "id": <id PT>, "entitas": "customers"}` — pulihkan PT dulu |
+> | **standar** yang nomor serinya sudah dipakai standar aktif lain (19 Nov 2026) | `422` `{"kode": "serial_dipakai", "id": <id standar aktif>, "entitas": "standards", "message": "…"}` — standar tetap terhapus, tanpa baris audit; ubah/hapus standar aktif itu dulu |
 >
 > Satu baris `audit_logs` per pemulihan: `action = dipulihkan`, pelaku, waktu, sebelum `{deleted_at: …}` →
 > sesudah `{deleted_at: null}`, dan alasan. Baris lama tidak pernah dipulihkan otomatis.
