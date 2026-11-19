@@ -9,12 +9,14 @@ use App\Http\Middleware\PastikanAkunStudio;
 use App\Http\Middleware\PastikanAplikasi;
 use App\Http\Middleware\PelangganAktif;
 use App\Http\Middleware\PeranAnggota;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -108,4 +110,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        // 404 dari route model binding membawa pesan mentah Laravel
+        // `No query results for model [App\Models\CalibrationSession] 25` — nama
+        // kelas internal yang keluar ke klien dan tampil apa adanya di antrean draf
+        // teknisi (uji kontrak S-7). Diganti kalimat generik; STATUS 404 dan bentuk
+        // `{message}` tidak berubah, dan 404 lain (abort(404), rute tak ada) tidak
+        // tersentuh.
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            if ($request->is('api/*') && $e->getPrevious() instanceof ModelNotFoundException) {
+                return response()->json(['message' => 'Data yang dicari nggak ketemu.'], 404);
+            }
+
+            return null;
+        });
     })->create();

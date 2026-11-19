@@ -113,6 +113,12 @@ Accept: application/json
 > dulu `422` "Alat yang mau dikalibrasi wajib diisi" membuka keberadaan ID. Pemilik sesi dan admin tidak berubah
 > (badan tidak valid tetap `422`). Satu percobaan lintas lab kini tercatat SEKALI di `audit_logs` (dulu dua kali bila
 > lewat FormRequest).
+>
+> **19 Nov 2026 — 404 dari route model binding memakai pesan generik.** Jawabannya kini
+> `404 {"message": "Data yang dicari nggak ketemu."}`; dulu pesan mentah Laravel
+> `No query results for model [App\Models\CalibrationSession] 25` yang membocorkan nama kelas internal dan tampil apa
+> adanya di antrean draf teknisi. **Status `404` dan bentuk `{message}` tidak berubah** (jangan mencocokkan teksnya);
+> 404 lain (rute tidak ada, penjaga lintas lab) tidak tersentuh.
 
 
 `401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
