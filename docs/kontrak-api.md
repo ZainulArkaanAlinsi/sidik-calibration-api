@@ -88,12 +88,12 @@ Accept: application/json
 >   membedakan "ada tapi bukan punyamu" dari "tidak ada". Sekarang semua `abort(404)` tanpa pesan memakai kalimat generik yang sama
 >   (sesi, alat, pelanggan, penugasan, sertifikat, order, hasil pindai, dunia pelanggan). Rute yang tidak ada dan `404` yang
 >   sengaja berpesan tidak berubah.
-> - **`per_page` dihormati di `GET /equipments`, `/customers`, `/certificates`, `/orders`, `/users` (19 Nov 2026, BUG-16).**
+> - **`per_page` dihormati di `GET /equipments`, `/customers`, `/certificates`, `/orders`, `/users`, `/rooms` (19 Nov 2026, BUG-16).**
 >   Bilangan bulat **1–100**, bawaan tetap **15** (klien yang tidak mengirimnya tidak berubah); di luar batas atau bukan
 >   bilangan bulat → `422` pada `per_page` (tidak dijepit diam-diam). `meta.per_page` melaporkan angka yang dipakai dan tautan
 >   `links` membawa `per_page` (di `/users` sekarang juga membawa `role`/`search`/`status`; dulu tautannya menjatuhkan semuanya).
->   Bentuk respons tidak berubah. `GET /standards` tetap tanpa paginasi; `GET /calibrations` (≤ 50) dan `/rooms` (tetap 15, **tidak**
->   menghormati `per_page` meski dokumen lama menyebutnya) tidak disentuh.
+>   Bentuk respons tidak berubah. `GET /standards` tetap tanpa paginasi; `GET /calibrations` (≤ 50) tidak disentuh. `/rooms` dulu tetap 15
+>   dan mengabaikan `per_page` walau dokumen lama menyebutnya menghormati.
 >
 > **19 Nov 2026 — QA ronde 2 (R2-8): pintu angka yang dulu belum dijaga kini `422` per field (aditif).**
 > - `POST/PUT /standards`: `ketidakpastian`, `drift`, `faktor_cakupan`, `koefisien_suhu.a|b|c`, dan

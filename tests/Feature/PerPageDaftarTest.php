@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\Room;
 use App\Models\User;
 use App\Support\PerHalaman;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,6 +43,7 @@ class PerPageDaftarTest extends TestCase
         Customer::factory()->count(18)->create(['organization_id' => $this->lab->id])
             ->each(fn (Customer $pt) => $this->isiTurunan($pt));
         User::factory()->count(18)->create(['organization_id' => $this->lab->id, 'role' => User::ROLE_TEKNISI]);
+        Room::factory()->count(18)->create(['organization_id' => $this->lab->id]);
     }
 
     /** Satu alat, satu sertifikat, dan satu order untuk PT ini. */
@@ -63,6 +65,9 @@ class PerPageDaftarTest extends TestCase
             '/certificates' => ['/api/certificates'],
             '/orders' => ['/api/orders'],
             '/users' => ['/api/users'],
+            // Ditambah belakangan: dokumen BUG-16 menyebut /rooms menghormati per_page, padahal
+            // controllernya `paginate(15)` mentah.
+            '/rooms' => ['/api/rooms'],
         ];
     }
 

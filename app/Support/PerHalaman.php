@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 /**
  * `per_page` untuk daftar ber-paginasi (BUG-16, QA ronde 2-B).
  *
- * Lima daftar (`/equipments`, `/customers`, `/certificates`, `/orders`,
- * `/users`) dulu memanggil `paginate(15)` mentah dan MENGABAIKAN `per_page`
+ * Enam daftar (`/equipments`, `/customers`, `/certificates`, `/orders`,
+ * `/users`, `/rooms`) dulu memanggil `paginate(15)` mentah dan MENGABAIKAN `per_page`
  * tanpa kabar -- klien yang minta 50 baris menerima 15 dan menyangka daftarnya
  * habis. Sekarang `per_page` dihormati dengan batas yang sama di semua daftar:
  * bilangan bulat 1..100, bawaan tetap 15 (klien yang tidak mengirimnya tidak
