@@ -78,8 +78,14 @@ Accept: application/json
 > - `GET /calibrations/{id}/validasi`: sesi Micrometer tidak lagi memuntahkan `pembacaan_di_luar_rentang` untuk nominal keping
 >   balok ukur (`mikro_balok`); pembacaan UUT yang sungguhan di luar rentang tetap diperingatkan.
 > - **Parameter query yang tidak dikenal DIABAIKAN diam-diam (tidak berubah, hanya didokumentasikan).** Pakai nama yang
->   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`); `per_page` tidak didukung di `/customers` dan
->   `/equipments` (halaman tetap 15 baris). Salah ketik nama filter = daftar tidak tersaring, bukan galat.
+>   tertulis: `GET /equipments?category=…&customer_id=…` (bukan `kategori`). Salah ketik nama filter = daftar tidak tersaring,
+>   bukan galat.
+> - **`per_page` dihormati di `GET /equipments`, `/customers`, `/certificates`, `/orders`, `/users` (19 Nov 2026, BUG-16).**
+>   Bilangan bulat **1–100**, bawaan tetap **15** (klien yang tidak mengirimnya tidak berubah); di luar batas atau bukan
+>   bilangan bulat → `422` pada `per_page` (tidak dijepit diam-diam). `meta.per_page` melaporkan angka yang dipakai dan tautan
+>   `links` membawa `per_page` (di `/users` sekarang juga membawa `role`/`search`/`status`; dulu tautannya menjatuhkan semuanya).
+>   Bentuk respons tidak berubah. `GET /standards` tetap tanpa paginasi; `GET /calibrations` (≤ 50) dan `/rooms` (tetap 15, **tidak**
+>   menghormati `per_page` meski dokumen lama menyebutnya) tidak disentuh.
 >
 > **19 Nov 2026 — QA ronde 2 (R2-8): pintu angka yang dulu belum dijaga kini `422` per field (aditif).**
 > - `POST/PUT /standards`: `ketidakpastian`, `drift`, `faktor_cakupan`, `koefisien_suhu.a|b|c`, dan

@@ -18,6 +18,7 @@ use App\Services\QrCodeGenerator;
 use App\Services\RevisiSertifikat;
 use App\Services\TarikSertifikat;
 use App\Support\Mailer;
+use App\Support\PerHalaman;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -87,7 +88,7 @@ class CertificateController extends Controller
                 ),
             )
             ->latest('id')
-            ->paginate(15)
+            ->paginate(PerHalaman::dari($request))
             ->withQueryString();
 
         return CertificateResource::collection($sertifikat);

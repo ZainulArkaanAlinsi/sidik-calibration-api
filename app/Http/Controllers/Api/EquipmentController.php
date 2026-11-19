@@ -11,6 +11,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\KonflikSerialAlat;
 use App\Services\Pencarian\CariDokumenLab;
 use App\Services\PenjagaOrganisasi;
+use App\Support\PerHalaman;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -123,7 +124,7 @@ class EquipmentController extends Controller
                 fn (Builder $query) => $query->orderBy('id'),
                 fn (Builder $query) => $query->latest('id'),
             )
-            ->paginate(15)
+            ->paginate(PerHalaman::dari($request))
             ->withQueryString();
 
         return EquipmentResource::collection($equipments);

@@ -11,6 +11,7 @@ use App\Rules\SandiMuatBcrypt;
 use App\Services\Pencarian\PolaLike;
 use App\Services\PenjagaOrganisasi;
 use App\Support\AlasanAksi;
+use App\Support\PerHalaman;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -72,7 +73,11 @@ class UserController extends Controller
                 fn ($query) => $query->where('status', $request->string('status')),
             )
             ->latest('id')
-            ->paginate(15);
+            // `withQueryString()` (dulu tidak ada): tanpa itu tautan halaman berikutnya
+            // menjatuhkan `per_page` dan semua saringan, jadi klien yang mengikuti
+            // `links.next` diam-diam kembali ke 15 baris tanpa saringan.
+            ->paginate(PerHalaman::dari($request))
+            ->withQueryString();
 
         return UserResource::collection($users);
     }

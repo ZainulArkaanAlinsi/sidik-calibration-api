@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PenomoranOrder;
+use App\Support\PerHalaman;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -62,7 +63,7 @@ class OrderController extends Controller
             })
             ->latest('tanggal_masuk')
             ->latest('id')
-            ->paginate(15)
+            ->paginate(PerHalaman::dari($request))
             ->withQueryString();
 
         return OrderResource::collection($orders);
