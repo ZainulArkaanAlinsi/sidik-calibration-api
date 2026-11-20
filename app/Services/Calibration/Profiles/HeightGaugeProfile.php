@@ -207,6 +207,12 @@ class HeightGaugeProfile extends CalibrationProfile
         return true;
     }
 
+    /** Slot nominal standar (`hg_nominal`, satu per titik) bukan penunjukan Height Gauge. */
+    public function peranBukanPembacaan(): array
+    {
+        return [HeightGaugeMentah::PERAN_NOMINAL];
+    }
+
     /**
      * Height Gauge tidak ada di lampiran LK-285-IDN — kelompok Panjang cuma
      * memuat Sieve, Micrometer, Vernier Caliper, dan Dial Indicator. Masternya

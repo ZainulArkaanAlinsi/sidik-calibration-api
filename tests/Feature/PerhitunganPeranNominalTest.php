@@ -6,7 +6,10 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\User;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
+use App\Support\DialIndicatorMentah;
+use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -139,5 +142,97 @@ class PerhitunganPeranNominalTest extends TestCase
         ])->assertCreated()->json('data.id');
 
         $this->periksaLayar($id, '_pembacaan');
+    }
+
+    /**
+     * Saudara Micrometer: Height Gauge menyimpan nominal standar sebagai SATU
+     * baris `hg_nominal` per titik di sumbu yang sama dengan `hg_pembacaan`.
+     */
+    public function test_layar_perhitungan_height_gauge_tidak_mencampur_nominal_ke_pembacaan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $alat = Equipment::where('serial_number', '1610232804')->firstOrFail();
+
+        $id = $this->actingAs($this->teknisi())->postJson('/api/calibrations', [
+            'equipment_id' => $alat->id,
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2026-05-05',
+            'suhu_awal' => 20.2, 'suhu_akhir' => 20.3,
+            'kelembaban_awal' => 44, 'kelembaban_akhir' => 55,
+            'measurements' => [
+                ['titik_ukur' => 25.0, 'pembacaan' => [24.99, 24.99, 24.98]],
+                ['titik_ukur' => 50.0, 'pembacaan' => [49.99, 49.99, 49.98]],
+                ['titik_ukur' => 100.0, 'pembacaan' => [99.98, 99.98, 99.98]],
+            ],
+            'spesifikasi_alat' => [
+                'rentang_ukur' => '0-600', 'kapasitas' => '600', 'resolusi' => '0.01',
+                HeightGaugeMentah::KUNCI_SESI => [
+                    'satuan' => 'mm', 'kapasitas_mm' => 600.0, 'resolusi_mm' => 0.01,
+                    'paralelisme' => [0.0, 0.001, 0.002],
+                    'pra_evaluasi' => [599.97, 599.92, 599.98, 599.95, 599.95, 599.97, 599.94, 599.98, 599.97, 599.95],
+                    'kerataan_muka_ukur' => 'baik',
+                ],
+            ],
+        ])->assertCreated()->json('data.id');
+
+        $this->periksaLayar($id, 'pembacaan');
+    }
+
+    /**
+     * Saudara Micrometer: Dial Indicator menyimpan tumpukan keping balok ukur
+     * sebagai baris `di_balok` di sumbu yang sama dengan `di_pembacaan`.
+     */
+    public function test_layar_perhitungan_dial_indicator_tidak_mencampur_keping_balok_ke_pembacaan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $alat = Equipment::where('serial_number', 'DC-36')->firstOrFail();
+
+        $id = $this->actingAs($this->teknisi())->postJson('/api/calibrations', [
+            'equipment_id' => $alat->id,
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2024-05-06',
+            'suhu_awal' => '20,8', 'suhu_akhir' => 20.7,
+            'kelembaban_awal' => 56, 'kelembaban_akhir' => 59,
+            'measurements' => [
+                ['titik_ukur' => null, 'nominal' => '1,1', 'pembacaan' => ['1,10', '1,10', 1.1, 1.1, 1.1, null]],
+                ['titik_ukur' => 0, 'nominal' => [2.5], 'pembacaan' => [2.5, 2.5, 2.5, 2.5, 2.5]],
+                ['titik_ukur' => null, 'nominal' => '2,5+1,3+1,2', 'pembacaan' => [5, 5, 5, 5, 5]],
+            ],
+            'spesifikasi_alat' => [
+                'rentang_ukur' => '0-25',
+                DialIndicatorMentah::KUNCI_SESI => [
+                    'satuan' => 'mm', 'kapasitas_mm' => 25, 'resolusi_mm' => '0,01',
+                    'pra_evaluasi' => ['baris' => [['titik_ukur' => null, 'pembacaan' => array_fill(0, 10, 25.01)]]],
+                    'balok_pra_evaluasi' => '14+11',
+                ],
+            ],
+        ])->assertCreated()->json('data.id');
+
+        $this->periksaLayar($id, 'pembacaan');
+    }
+
+    /**
+     * Penjaga perilaku: profil yang TIDAK menyebut `peranBukanPembacaan()` tetap
+     * lewat jalur lama (semua baris satu titik dirata-rata, standar dari nominal).
+     * Timbangan (nominal + z1/m/m'/z2) dan Thermohygro (standar + uut) sengaja
+     * belum diubah — benarnya tidak satu jawaban (lihat laporan batch-2) — dan
+     * perubahan diam-diam pada keduanya harus ketahuan di sini.
+     */
+    public function test_profil_lain_tidak_berubah_di_layar_perhitungan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('role', User::ROLE_ADMIN)->where('status', User::STATUS_AKTIF)->firstOrFail();
+
+        foreach (['011-CAL-525' => 'Timbangan', '0312-CAL-624' => 'Thermohygrometer'] as $nomor => $nama) {
+            $sesi = CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail();
+
+            $this->assertSame([], app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment)->peranBukanPembacaan(), $nama);
+
+            $titik = collect($this->actingAs($admin)->getJson("/api/calibrations/{$sesi->id}/perhitungan")->assertOk()->json('data.hasil.1.titik'))->first();
+            $mentah = RawMeasurement::where('calibration_session_id', $sesi->id)->where('titik_ke', $titik['titik_ke'])->get();
+
+            $this->assertCount($mentah->count(), $titik['pembacaan'], "{$nama}: semua baris mentah tetap ikut (perilaku lama)");
+            $this->assertEqualsWithDelta($mentah->avg(fn (RawMeasurement $m): float => (float) $m->pembacaan), $titik['average'], 1e-9, $nama);
+        }
     }
 }
