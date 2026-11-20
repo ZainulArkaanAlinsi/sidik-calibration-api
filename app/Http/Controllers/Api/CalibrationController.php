@@ -3325,6 +3325,18 @@ class CalibrationController extends Controller
             }
             $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
 
+            // Titik NOL (nominal 0,0 mm — rahang tertutup, baris pertama varian A)
+            // tersimpan di tabel varian dengan tumpukan KOSONG, dan tumpukan
+            // kosong terbaca "tidak ada keping sama sekali": titiknya ditolak
+            // dengan alasan "nominal tidak ada di tabel standar" dan lenyap dari
+            // sertifikat. `MicrometerCalculator::totalNominal()` sudah menyatakan
+            // nominal 0 sah (total nol), jadi titik nol dikirim sebagai SATU slot
+            // bernilai 0 — dan tersimpan sebagai baris balok ber-pembacaan 0, supaya
+            // jalur hitung ulang menyusun titik yang sama.
+            if ($tumpukan === [] && $nominalCetak === 0.0) {
+                $tumpukan = [0.0];
+            }
+
             $pembacaan = [];
 
             // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh empat
