@@ -124,6 +124,12 @@ class JangkaSorongProfile extends CalibrationProfile
         return true;
     }
 
+    /** Slot nominal Caliper Checker / tumpukan balok ukur (`js_*_nominal`), bukan penunjukan jangka sorong. */
+    public function peranBukanPembacaan(): array
+    {
+        return array_map(JangkaSorongMentah::peranNominal(...), JangkaSorongMentah::GRUP);
+    }
+
     /**
      * Tidak divonis PASS/FAIL — master berhenti di `Correction` + U95 per tabel,
      * dan kesejajaran pun dicetak tanpa batas kelulusan.

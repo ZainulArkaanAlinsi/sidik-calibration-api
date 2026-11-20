@@ -165,6 +165,25 @@ abstract class CalibrationProfile
     }
 
     /**
+     * `peran_sensor` baris mentah yang BUKAN pembacaan UUT: nominal keping balok
+     * ukur / slot standar yang disimpan di sumbu yang sama dengan pembacaan.
+     *
+     * Lembar PERHITUNGAN (`PerhitunganBuilder`) merata-rata SEMUA baris satu
+     * titik. Untuk alat yang menyimpan nominal standarnya sebagai baris mentah
+     * (Micrometer `mikro_balok`, Jangka Sorong `js_*_nominal`), baris itu ikut
+     * terbaca sebagai pembacaan dan layar approval menampilkan rata-rata,
+     * koreksi, dan stdev yang salah — sementara sertifikat (dari hasil tersimpan)
+     * benar. Profil yang menyimpan baris seperti itu menyebutnya di sini; default
+     * kosong = semua baris adalah pembacaan, perilaku lama.
+     *
+     * @return list<string>
+     */
+    public function peranBukanPembacaan(): array
+    {
+        return [];
+    }
+
+    /**
      * Jumlah desimal buat nampilin nilai di titik ini (turunan resolusi). Dikirim
      * ke lembar perhitungan & sertifikat biar angkanya dipad ke resolusi tanpa
      * buang nol belakang (4,60 tetap 4,60). Default null.

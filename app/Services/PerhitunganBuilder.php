@@ -115,16 +115,24 @@ class PerhitunganBuilder
      */
     private function tabel(CalibrationSession $sesi, string $tahap, string $judul, CalibrationProfile $profil): array
     {
+        // Baris nominal standar (keping balok ukur, slot Caliper Checker) hidup di
+        // sumbu yang sama dengan pembacaan UUT; kalau ikut dirata-rata, layar ini
+        // menampilkan Average/Correction/STDEV yang salah walau sertifikatnya
+        // benar. Profil yang menyimpan baris seperti itu menyebutnya sendiri.
+        $bukanPembacaan = $profil->peranBukanPembacaan();
+
         /** @var Collection<int, Collection<int, RawMeasurement>> $perTitik */
         $perTitik = $sesi->rawMeasurements
             ->where('tahap', $tahap)
+            ->reject(static fn (RawMeasurement $m): bool => $bukanPembacaan !== []
+                && in_array((string) $m->peran_sensor, $bukanPembacaan, true))
             ->sortBy([['titik_ke', 'asc'], ['pembacaan_ke', 'asc']])
             ->groupBy('titik_ke');
 
         $standarPerTitik = $sesi->uncertaintyCalculations->keyBy('titik_ke');
 
         $titik = $perTitik
-            ->map(function (Collection $pembacaan, int|string $titikKe) use ($sesi, $standarPerTitik, $profil): array {
+            ->map(function (Collection $pembacaan, int|string $titikKe) use ($sesi, $standarPerTitik, $profil, $bukanPembacaan): array {
                 $nilai = $pembacaan->map(fn (RawMeasurement $m): float => (float) $m->pembacaan)->values();
                 $suhu = $pembacaan
                     ->map(fn (RawMeasurement $m): ?float => $m->suhu !== null ? (float) $m->suhu : null)
@@ -140,6 +148,14 @@ class PerhitunganBuilder
                 $standar = $standarPerTitik->get((int) $titikKe)?->standard ?? $sesi->standard;
 
                 $nilaiStandar = $this->nilaiStandar($standar, $rataSuhu, $pembacaan->first());
+
+                // Alat ber-standar tumpukan keping: nilai standar titik ini adalah
+                // JUMLAH nilai terkoreksi keping yang sudah dihitung dan disimpan
+                // (`uncertainty_calculations.titik_ukur`), bukan nominal cetaknya.
+                if ($bukanPembacaan !== []) {
+                    $tersimpan = $standarPerTitik->get((int) $titikKe)?->titik_ukur;
+                    $nilaiStandar = $tersimpan !== null ? (float) $tersimpan : $nilaiStandar;
+                }
 
                 $titikUkur = (float) $pembacaan->first()->titik_ukur;
 

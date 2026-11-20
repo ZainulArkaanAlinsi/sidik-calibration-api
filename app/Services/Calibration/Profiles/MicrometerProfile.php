@@ -201,6 +201,12 @@ class MicrometerProfile extends CalibrationProfile
         return true;
     }
 
+    /** Keping balok ukur (`mikro_balok`) adalah standar yang ditumpuk, bukan penunjukan mikrometer. */
+    public function peranBukanPembacaan(): array
+    {
+        return MicrometerMentah::PERAN_BUKAN_BESARAN_ALAT;
+    }
+
     /**
      * Sesi Micrometer TIDAK divonis PASS/FAIL.
      *
