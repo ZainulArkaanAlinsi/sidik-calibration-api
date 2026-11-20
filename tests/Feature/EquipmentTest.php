@@ -202,6 +202,28 @@ class EquipmentTest extends TestCase
         $this->actingAs($this->admin)->putJson("/api/equipments/{$alat->id}", ['range_min' => null, 'range_max' => 100])->assertOk();
     }
 
+    /**
+     * Request validasi jalan SEBELUM penjaga kepemilikan di controller. Perbandingan ke
+     * `range_min` tersimpan tidak boleh membaca alat lab lain: 422 di sini akan membocorkan
+     * keberadaan alatnya dan batas bawahnya. Harus 404 seperti alat yang tidak ada.
+     */
+    public function test_put_parsial_range_max_ke_alat_lab_lain_menjawab_404_bukan_422(): void
+    {
+        $labLain = Organization::factory()->create();
+        $alatLain = Equipment::factory()->create([
+            'organization_id' => $labLain->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 500,
+            'range_max' => 1000,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alatLain->id}", ['range_max' => 100])
+            ->assertNotFound();
+
+        $this->assertEquals(1000, $alatLain->fresh()->range_max);
+    }
+
     public function test_serial_number_dobel_ditolak_422(): void
     {
         Equipment::factory()->create(['serial_number' => 'DOBEL-01']);

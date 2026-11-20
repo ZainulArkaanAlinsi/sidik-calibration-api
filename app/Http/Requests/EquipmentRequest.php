@@ -41,7 +41,11 @@ class EquipmentRequest extends FormRequest
         // harus dibandingkan ke batas bawah yang SUDAH TERSIMPAN; tanpa ini bandingannya
         // dilewati di atas dan batas atas di bawah batas bawah tersimpan lolos. Mengirim
         // `range_min: null` eksplisit = mengosongkan batas bawah, tidak ada yang dibandingkan.
+        // Dibandingkan HANYA bila alatnya milik organisasi pemanggil: request ini jalan sebelum
+        // penjaga kepemilikan di controller, jadi tanpa syarat ini PUT ke alat lab lain
+        // menjawab 422 (batas bawah mereka bocor lewat perbandingan) alih-alih 404.
         $minTersimpan = $minKosong && ! $this->has('range_min') && $equipment !== null
+            && (int) $equipment->organization_id === (int) $organizationId
             ? $equipment->range_min
             : null;
 
