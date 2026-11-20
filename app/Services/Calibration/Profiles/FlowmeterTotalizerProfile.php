@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration\Profiles;
 
+use App\Models\CalibrationSession;
 use App\Services\Calibration\TabelStandarFlowmeter;
 
 /**
@@ -79,5 +80,27 @@ class FlowmeterTotalizerProfile extends FlowmeterProfile
     public function desimalU95(): ?int
     {
         return 3;
+    }
+
+    /**
+     * Tiga desimal liter, ditambah digit yang dimakan konversi satuan alat
+     * (F-12, lihat [digitTambahanCetak]): sesi `m3` mencetak 6 desimal, bukan 3
+     * — tiga desimal m3 hanya sebesar 1 L. `null` = ikut [desimalSertifikat],
+     * persis perilaku lama untuk sesi `L` dan untuk pemanggil yang menulis angka
+     * hitungan dalam liter (layar HP).
+     */
+    public function desimalSertifikatTitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        $tambah = $this->digitTambahanCetak($sesi, $satuan);
+
+        return $tambah > 0 ? (int) $this->desimalSertifikat() + $tambah : null;
+    }
+
+    /** Pasangan [desimalSertifikatTitikSesi] untuk kolom U95. */
+    public function desimalU95TitikSesi(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): ?int
+    {
+        $tambah = $this->digitTambahanCetak($sesi, $satuan);
+
+        return $tambah > 0 ? (int) $this->desimalU95() + $tambah : null;
     }
 }

@@ -8,8 +8,10 @@ use App\Models\RawMeasurement;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\CertificateSnapshotBuilder;
 use App\Support\FlowmeterMentah;
+use App\Support\TataLetakSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
@@ -442,6 +444,99 @@ class FlowmeterSatuanSertifikatTest extends TestCase
         $this->assertIsArray($cetak);
         $this->assertSame('m3/h', $cetak['satuan']);
         $this->assertEqualsWithDelta(3.0, ($cetak['ubah'])(50.0, 1), 1e-9);
+    }
+
+    /**
+     * F-12: sertifikat Totalizer ber-m3 mencetak `Correction -0.00` dan `U95 0.0`.
+     *
+     * Format sel master (`148!D22` `0.00`, `148!J22` `0.0`; `149!D22` `0.00`)
+     * ditulis dalam LITER, sementara angka yang dicetak sudah dibagi 1000 oleh
+     * `cetakDalamSatuanAlat()`. Dua desimal liter = lima desimal m3: koreksi
+     * -0,000154 m3 dan U95 0,000088 m3 (angka nyata lembar uji, timbangan 2)
+     * runtuh ke nol, dan pelanggan membaca "koreksi nol".
+     *
+     * Presisi MUTLAK master dijaga: setiap digit yang dibuang konversi satuan
+     * dikembalikan. Satuan yang nilainya LEBIH BESAR dari liter (`ml`) tidak
+     * kehilangan apa pun dan tidak disentuh; `L` persis seperti sebelumnya.
+     */
+    public function test_format_cetak_totalizer_gravimetri_mengikuti_presisi_master_dalam_satuan_alat(): void
+    {
+        $this->siap();
+        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-FM-GRAV-TOT-001')->firstOrFail();
+        $profil = new FlowmeterTotalizerProfile;
+
+        $format = function (string $satuan) use ($sesi, $profil): array {
+            $spek = $sesi->spesifikasi_alat;
+            $spek[FlowmeterMentah::KUNCI_SESI]['satuan'] = $satuan;
+            $sesi->spesifikasi_alat = $spek;
+
+            return $profil->formatKolomSertifikat($sesi, 0.01, $satuan);
+        };
+
+        // Bentuk lama untuk satuan budget dan satuan yang lebih kecil dari liter.
+        $lama = ['standar' => '0.00', 'uut' => '0.00', 'koreksi' => '0.00', 'u95' => '0.0', 'k' => '0'];
+        $this->assertSame($lama, $format('L'));
+        $this->assertSame($lama, $format('ml'));
+
+        // m3 = 1000 L: tiga digit lebih banyak, k tidak ikut (`k` bukan besaran liter).
+        $this->assertSame(
+            ['standar' => '0.00000', 'uut' => '0.00000', 'koreksi' => '0.00000', 'u95' => '0.0000', 'k' => '0'],
+            $format('m3'),
+        );
+
+        // usg = 3,78541 L: satu digit (10^-1 usg > 10^-2 L tidak cukup halus).
+        $this->assertSame(
+            ['standar' => '0.000', 'uut' => '0.000', 'koreksi' => '0.000', 'u95' => '0.00', 'k' => '0'],
+            $format('usg'),
+        );
+
+        // Angka lembar uji yang hilang: koreksi -0,1535615 L, U95 0,0880071 L,
+        // standar 9,8464385 L, UUT 10 L -> m3.
+        $baris = [
+            'standard_value' => 9.84643845102817 / 1000,
+            'unit_under_test' => 10.0 / 1000,
+            'correction' => -0.1535615489718 / 1000,
+            'u95' => 0.08800707566717 / 1000,
+            'format' => TataLetakSertifikat::normalisasiFormat($format('m3')),
+        ];
+        $cetak = static fn (string $kolom): string => str_replace(',', '.', TataLetakSertifikat::teksSel($baris, $kolom, [], 3));
+
+        $this->assertSame('0.00985', $cetak('standar'));
+        $this->assertSame('0.01000', $cetak('uut'));
+        $this->assertSame('-0.00015', $cetak('koreksi'), 'Koreksi -0,000154 m3 tercetak nol.');
+        $this->assertSame('0.0001', $cetak('u95'), 'U95 0,000088 m3 tercetak nol.');
+    }
+
+    /**
+     * F-12, jalur penuh UFM: sesi Totalizer `m3` diterbitkan, lalu setiap sel
+     * hasil dibaca balik dari snapshot. Galat pembulatan cetak tidak boleh
+     * melebihi setengah langkah format master dalam liter (0,005 L = 5e-6 m3).
+     *
+     * Dua desimal liter di master adalah bentuk cetak yang disetujui; yang
+     * ditegakkan di sini hanya bahwa pindah satuan tidak menurunkannya.
+     */
+    public function test_sesi_totalizer_m3_dicetak_dengan_presisi_master_bukan_dengan_nol(): void
+    {
+        $this->siap();
+        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-FM-TOT-001')->firstOrFail();
+
+        $this->pindahSatuan($sesi, 'm3', 1000.0);
+        $snapshot = $this->terbitkan($sesi);
+
+        $this->assertCount(2, $snapshot['hasil']);
+
+        foreach ($snapshot['hasil'] as $baris) {
+            foreach (['standar' => 'standard_value', 'uut' => 'unit_under_test', 'koreksi' => 'correction'] as $kolom => $kunci) {
+                $teks = str_replace(',', '.', TataLetakSertifikat::teksSel($baris, $kolom, $snapshot, (int) $baris['desimal']));
+
+                $this->assertEqualsWithDelta(
+                    $baris[$kunci],
+                    (float) $teks,
+                    5.0e-6 + 1.0e-12,
+                    "Titik {$baris['titik_ke']} kolom {$kolom} tercetak `{$teks}`: presisi master 0,01 L hilang di m3.",
+                );
+            }
+        }
     }
 
     /**
