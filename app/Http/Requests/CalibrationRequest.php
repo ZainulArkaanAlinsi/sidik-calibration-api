@@ -2262,7 +2262,10 @@ class CalibrationRequest extends FormRequest
             'tanggal_kalibrasi.required' => 'Tanggal kalibrasi wajib diisi sebelum lembar kerja dikirim.',
             'tanggal_kalibrasi.before_or_equal' => 'Tanggal kalibrasi nggak boleh di masa depan.',
             'kelembaban.between' => 'Kelembaban itu persen, jadi cuma boleh 0–100.',
-            'measurements.*.titik_ukur.required' => 'Tiap baris hasil wajib punya nilai larutan standar (Solution Standard).',
+            // Bukan "larutan standar": itu istilah lembar pH/Conductivity. Flowmeter,
+            // Enclosure, dan alat lain juga lewat sini dan tidak punya larutan.
+            'measurements.*.titik_ukur.required' => 'Tiap baris hasil wajib punya titik ukur — nilai yang dikalibrasi di baris itu '
+                .'(larutan standar pada pH/Conductivity, set point pada suhu, angka titik pada alat lain).',
         ];
     }
 
