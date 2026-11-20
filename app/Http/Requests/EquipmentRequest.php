@@ -37,6 +37,14 @@ class EquipmentRequest extends FormRequest
         // saja ("1000 oC"), jadi bandingannya hanya dipasang bila `range_min` terisi.
         $minKosong = ! $this->filled('range_min');
 
+        // PUT parsial yang hanya mengirim `range_max` (kunci `range_min` TIDAK ada di request)
+        // harus dibandingkan ke batas bawah yang SUDAH TERSIMPAN; tanpa ini bandingannya
+        // dilewati di atas dan batas atas di bawah batas bawah tersimpan lolos. Mengirim
+        // `range_min: null` eksplisit = mengosongkan batas bawah, tidak ada yang dibandingkan.
+        $minTersimpan = $minKosong && ! $this->has('range_min') && $equipment !== null
+            ? $equipment->range_min
+            : null;
+
         $aturan = [
             'nama_alat' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'serial_number' => [
@@ -119,7 +127,15 @@ class EquipmentRequest extends FormRequest
             // seperti 1e15 lolos `numeric`, lalu INSERT gagal "Out of range
             // value" → 500, bukan 422 (BUG-10 uji E2E-QA, 18 Nov 2026).
             'range_min' => ['nullable', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
-            'range_max' => ['nullable', 'numeric', ...($minTakTerhingga || $minKosong ? [] : ['gte:range_min']), 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
+            'range_max' => [
+                'nullable', 'numeric', ...($minTakTerhingga || $minKosong ? [] : ['gte:range_min']),
+                ...($minTersimpan === null ? [] : [function (string $atribut, mixed $nilai, \Closure $gagal) use ($minTersimpan): void {
+                    if (is_numeric($nilai) && is_finite((float) $nilai) && (float) $nilai < (float) $minTersimpan) {
+                        $gagal('Batas atas rentang ukur nggak boleh lebih kecil dari batas bawah.');
+                    }
+                }]),
+                'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL,
+            ],
             'satuan' => ['nullable', 'string', 'max:50'],
             // `gt:0`, bukan `min:0` — aturan yang SAMA dengan
             // `resolusi_rentang.*.resolusi` 22 baris di bawah, dan alasannya

@@ -173,6 +173,35 @@ class EquipmentTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors(['range_max']);
     }
 
+    /**
+     * PUT parsial yang hanya mengirim `range_max` dulu dibandingkan ke `range_min`
+     * yang TIDAK terkirim (gagal selalu); sejak perbaikan "batas atas tanpa batas
+     * bawah" bandingannya dilewati bila `range_min` kosong di request, sehingga
+     * batas atas di bawah batas bawah TERSIMPAN lolos. Pembanding harus nilai
+     * tersimpan.
+     */
+    public function test_put_parsial_range_max_dibandingkan_ke_range_min_tersimpan(): void
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 500,
+            'range_max' => 1000,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alat->id}", ['range_max' => 100])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['range_max']);
+
+        $this->assertEquals(1000, $alat->fresh()->range_max);
+
+        // Di atas batas bawah tersimpan: lolos. Mengosongkan batas bawah
+        // secara eksplisit juga lolos (tidak ada yang dibandingkan).
+        $this->actingAs($this->admin)->putJson("/api/equipments/{$alat->id}", ['range_max' => 800])->assertOk();
+        $this->actingAs($this->admin)->putJson("/api/equipments/{$alat->id}", ['range_min' => null, 'range_max' => 100])->assertOk();
+    }
+
     public function test_serial_number_dobel_ditolak_422(): void
     {
         Equipment::factory()->create(['serial_number' => 'DOBEL-01']);
