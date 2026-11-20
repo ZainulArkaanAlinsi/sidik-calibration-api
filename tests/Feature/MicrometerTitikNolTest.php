@@ -104,4 +104,35 @@ class MicrometerTitikNolTest extends TestCase
 
         $this->assertSame([], $belum ?? [], 'tidak ada titik yang ditolak untuk data yang utuh');
     }
+
+    /**
+     * Titik nol dengan penunjukan TIDAK nol (mikrometer yang nolnya bergeser):
+     * standar terkoreksi tetap 0 mm, rata-rata = penunjukan, dan koreksi
+     * = standar - rata-rata = NEGATIF. Test lama hanya mengisi 0,000 sehingga
+     * tanda koreksi dan rata-rata titik nol tidak pernah diadu.
+     */
+    public function test_titik_nol_dengan_penunjukan_bukan_nol_bertanda_koreksi_negatif(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payloadVarianA($alat);
+        $payload['measurements'][0]['pembacaan'] = [0.002, 0.002, 0.002, 0.001, 0.003];
+
+        $id = $this->actingAs($teknisi)->postJson('/api/calibrations', $payload)->assertSuccessful()->json('data.id');
+
+        $nol = UncertaintyCalculation::where('calibration_session_id', $id)->where('titik_ke', 1)->firstOrFail();
+
+        $this->assertEqualsWithDelta(0.0, (float) $nol->titik_ukur, 1e-9, 'standar terkoreksi titik nol tetap 0 mm');
+        $this->assertEqualsWithDelta(0.002, (float) $nol->rata_rata, 1e-9, 'rata-rata = penunjukan alat');
+        $this->assertEqualsWithDelta(-0.002, (float) $nol->koreksi, 1e-9, 'koreksi = standar - rata-rata, bertanda negatif');
+
+        // Titik lain tidak ikut bergeser, dan hitung ulang menyusun titik nol yang sama.
+        $this->assertCount(11, UncertaintyCalculation::where('calibration_session_id', $id)->get());
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$id]])->assertSuccessful();
+        $this->assertEqualsWithDelta(
+            -0.002,
+            (float) UncertaintyCalculation::where('calibration_session_id', $id)->where('titik_ke', 1)->firstOrFail()->koreksi,
+            1e-9,
+        );
+    }
 }

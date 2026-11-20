@@ -408,6 +408,16 @@ class MicrometerProfile extends CalibrationProfile
                 ];
             }
 
+            // Titik yang sudah ditolak SENDIRI (nominal tidak ada di tabel, tanpa
+            // pembacaan) tidak ikut `$hasil['titik']`, jadi alasannya hilang di
+            // sini — dan kalau SEMUA titik ditolak, `belum_dihitung` pulang kosong
+            // dan titiknya lenyap dari sertifikat tanpa satu kalimat sebab.
+            foreach ($hasil['ditolak'] as $d) {
+                if ((int) $d['titik_ke'] !== 0) {
+                    $belumDihitung[] = $d;
+                }
+            }
+
             usort($belumDihitung, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
             return ['hitungan' => [], 'belum_dihitung' => $belumDihitung];
