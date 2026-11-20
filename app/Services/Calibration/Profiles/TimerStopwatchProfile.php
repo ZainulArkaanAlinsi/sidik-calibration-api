@@ -674,6 +674,27 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
+     * Set point lembar ini SUDAH detik (`titik_ukur` dalam DETIK, lihat
+     * [WaktuMentah]) — bukan milidetik seperti pembacaannya. Jadi cuma
+     * dipindah ke satuan alat, TIDAK dibagi 1000 lagi.
+     *
+     * Dibagi 1000 (perilaku [nilaiDalamSatuanAlat]) membuat pengecualian
+     * "pembacaan dekat titik yang lagi dikalibrasi" di `CalibrationValidator`
+     * membandingkan 600,087 s dengan 0,6 s, jadi stopwatch standar yang
+     * membaca 600,087 s di titik penuh skala 600 s (alat 0–600 s) dilaporkan
+     * "jauh di luar rentang" — peringatan palsu (lembar nyata dengan rentang
+     * 10 menit, 20 Nov 2026).
+     */
+    public function titikDalamSatuanAlat(float $titik, ?string $satuanBaris, Equipment $equipment): float
+    {
+        return match (strtolower(trim((string) $equipment->satuan))) {
+            'min', 'menit' => $titik / 60.0,
+            'jam', 'hour', 'h' => $titik / 3600.0,
+            default => $titik,
+        };
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $budget
      * @param  array<string, mixed>  $h
      * @return list<array<string, mixed>>

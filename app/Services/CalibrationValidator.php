@@ -470,7 +470,7 @@ class CalibrationValidator
             // yang nyampur µS/cm & mS/cm dalam satu lembar — ini yang bikin
             // 1413 µS/cm nggak lagi ke-flag "di luar rentang 0–100 mS/cm".
             $nilaiAlat = $profil->nilaiDalamSatuanAlat($nilai, $m->satuan, $alat);
-            $titikAlat = $profil->nilaiDalamSatuanAlat((float) $m->titik_ukur, $m->satuan, $alat);
+            $titikAlat = $profil->titikDalamSatuanAlat((float) $m->titik_ukur, $m->satuan, $alat);
 
             // Pembacaan yang DEKAT ke titik yang lagi dikalibrasi dilewat,
             // walau titiknya sendiri di luar rentang terdaftar alat.

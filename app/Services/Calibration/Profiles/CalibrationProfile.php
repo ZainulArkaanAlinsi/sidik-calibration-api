@@ -3115,6 +3115,21 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Titik ukur (set point) dalam satuan alat — padanan [nilaiDalamSatuanAlat]
+     * untuk angka yang BUKAN pembacaan.
+     *
+     * Default: sama persis dengan [nilaiDalamSatuanAlat], karena hampir semua
+     * lembar menulis titik dan pembacaan dalam satuan baris yang sama. Beda di
+     * Timer/Stopwatch: pembacaannya milidetik, titiknya sudah detik.
+     *
+     * @param  string|null  $satuanBaris  satuan yang kecatat di baris pembacaan
+     */
+    public function titikDalamSatuanAlat(float $titik, ?string $satuanBaris, Equipment $equipment): float
+    {
+        return $this->nilaiDalamSatuanAlat($titik, $satuanBaris, $equipment);
+    }
+
+    /**
      * Satu komponen budget → satu baris `type_b_components`.
      *
      * ## Kenapa perlu diterjemahkan sama sekali
