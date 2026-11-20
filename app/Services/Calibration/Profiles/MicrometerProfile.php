@@ -201,6 +201,12 @@ class MicrometerProfile extends CalibrationProfile
         return true;
     }
 
+    /** Keping balok ukur (`mikro_balok`) adalah standar yang ditumpuk, bukan penunjukan mikrometer. */
+    public function peranBukanPembacaan(): array
+    {
+        return MicrometerMentah::PERAN_BUKAN_BESARAN_ALAT;
+    }
+
     /**
      * Sesi Micrometer TIDAK divonis PASS/FAIL.
      *
@@ -400,6 +406,16 @@ class MicrometerProfile extends CalibrationProfile
                     'titik_ke' => (int) $h['titik_ke'],
                     'alasan' => trim('Budget sesi tidak utuh, jadi titik ini tidak diterbitkan. '.$alasanSesi),
                 ];
+            }
+
+            // Titik yang sudah ditolak SENDIRI (nominal tidak ada di tabel, tanpa
+            // pembacaan) tidak ikut `$hasil['titik']`, jadi alasannya hilang di
+            // sini — dan kalau SEMUA titik ditolak, `belum_dihitung` pulang kosong
+            // dan titiknya lenyap dari sertifikat tanpa satu kalimat sebab.
+            foreach ($hasil['ditolak'] as $d) {
+                if ((int) $d['titik_ke'] !== 0) {
+                    $belumDihitung[] = $d;
+                }
             }
 
             usort($belumDihitung, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);

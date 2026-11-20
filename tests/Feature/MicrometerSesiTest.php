@@ -726,4 +726,57 @@ class MicrometerSesiTest extends TestCase
 
         $this->assertStringContainsString('Pra-evaluasi', $alasan);
     }
+
+    /**
+     * FA-04: sesi yang diblokir penjaga (budget tidak utuh) tetap menyebut
+     * alasan titik yang DITOLAK sendiri-sendiri.
+     *
+     * Jalur blokir hanya menulis alasan umum untuk titik yang terhitung, dan
+     * membuang seluruh alasan titik yang ditolak (nominal tidak ada di tabel
+     * standar, tanpa pembacaan). Kalau semua titik ditolak, `belum_dihitung`
+     * pulang KOSONG: titik hilang dari sertifikat tanpa satu kalimat sebab.
+     */
+    public function test_alasan_titik_ditolak_tidak_hilang_saat_sesi_diblokir(): void
+    {
+        [$alat] = $this->siapkan();
+
+        $blok = [MicrometerMentah::KUNCI_SESI => [
+            'satuan' => 'mm', 'kapasitas_mm' => 50.0, 'resolusi_mm' => 0.001,
+            // Satu pembacaan: budget sesi tidak utuh -> seluruh sesi diblokir.
+            'pra_evaluasi' => [50.0],
+        ]];
+        $titik = static fn (int $ke, array $balok, array $pembacaan): array => [
+            'titik_ke' => $ke,
+            'titik_ukur' => (float) array_sum($balok),
+            'pembacaan' => [],
+            'standard' => null,
+            'suhu_larutan' => null,
+            'konteks' => [
+                MicrometerMentah::PERAN_BALOK => $balok,
+                MicrometerMentah::PERAN_PEMBACAAN => $pembacaan,
+                'spesifikasi_alat' => $blok,
+                'tanggal_kalibrasi' => '2025-05-02',
+                'suhu_ruang_rata' => 20.5,
+            ],
+        ];
+        $profil = new MicrometerProfile;
+        $baik = [25.001, 25.0, 25.001, 25.0, 25.001];
+
+        // Campuran: titik 1 terhitung, titik 2 nominalnya tidak ada di tabel.
+        $campuran = collect($profil->hitungPerGrup([
+            $titik(1, [14.0, 11.0], $baik),
+            $titik(2, [9999.0], $baik),
+        ], $alat)['belum_dihitung'])->keyBy('titik_ke');
+
+        $this->assertSame([1, 2], $campuran->keys()->sort()->values()->all());
+        $this->assertStringContainsString('Budget sesi tidak utuh', $campuran[1]['alasan']);
+        $this->assertStringContainsString('tidak ada di tabel standar', $campuran[2]['alasan'], 'Alasan titik yang ditolak hilang.');
+
+        // Semua titik ditolak: dulu `belum_dihitung` kosong tanpa sebab.
+        $semua = $profil->hitungPerGrup([$titik(1, [9999.0], $baik)], $alat);
+
+        $this->assertSame([], $semua['hitungan']);
+        $this->assertSame([1], array_column($semua['belum_dihitung'], 'titik_ke'));
+        $this->assertStringContainsString('tidak ada di tabel standar', $semua['belum_dihitung'][0]['alasan']);
+    }
 }

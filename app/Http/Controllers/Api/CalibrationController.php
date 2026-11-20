@@ -3325,6 +3325,18 @@ class CalibrationController extends Controller
             }
             $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
 
+            // Titik NOL (nominal 0,0 mm — rahang tertutup, baris pertama varian A)
+            // tersimpan di tabel varian dengan tumpukan KOSONG, dan tumpukan
+            // kosong terbaca "tidak ada keping sama sekali": titiknya ditolak
+            // dengan alasan "nominal tidak ada di tabel standar" dan lenyap dari
+            // sertifikat. `MicrometerCalculator::totalNominal()` sudah menyatakan
+            // nominal 0 sah (total nol), jadi titik nol dikirim sebagai SATU slot
+            // bernilai 0 — dan tersimpan sebagai baris balok ber-pembacaan 0, supaya
+            // jalur hitung ulang menyusun titik yang sama.
+            if ($tumpukan === [] && $nominalCetak === 0.0) {
+                $tumpukan = [0.0];
+            }
+
             $pembacaan = [];
 
             // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh empat
@@ -4744,14 +4756,23 @@ class CalibrationController extends Controller
         $blok = (array) ($spek[FlowmeterMentah::KUNCI_SESI] ?? []);
         $satuanAlat = (string) ($blok['satuan'] ?? '');
 
-        // Keempat deret datar dipetakan seragam: kunci payload = `grup` tabel di
+        // Deret datar dipetakan seragam: kunci payload = `grup` tabel di
         // bentuk lembar, jadi bentuk lembar dan jalur simpan tidak bisa
         // berselisih diam-diam.
+        //
+        // Tiga yang terakhir milik varian GRAVIMETRI. Dulu daftar ini cuma
+        // memuat empat yang pertama, jadi `flow_berat_isi`/`flow_berat_kosong`/
+        // `flow_waktu_menit` yang dikirim HP dibuang tanpa error dan titiknya
+        // berhenti di "yang ada 3 dan 0 penimbangan" — dijaga
+        // `AlurPenuhFlowmeterGravimetriTest`.
         $deretDatar = [
             FlowmeterMentah::PERAN_STD => $satuanAlat,
             FlowmeterMentah::PERAN_SUHU_AWAL => '°C',
             FlowmeterMentah::PERAN_SUHU_AKHIR => '°C',
             FlowmeterMentah::PERAN_DENSITAS => 'kg/L',
+            FlowmeterMentah::PERAN_BERAT_ISI => 'kg',
+            FlowmeterMentah::PERAN_BERAT_KOSONG => 'kg',
+            FlowmeterMentah::PERAN_WAKTU => 'menit',
         ];
 
         foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
@@ -4849,7 +4870,9 @@ class CalibrationController extends Controller
             // baris suhu & densitasnya. Titik yang cuma punya suhu tanpa satu
             // pun pembacaan lahir sebagai baris kosong di sertifikat, yang
             // terbaca seperti data hilang.
-            if ($uut === [] && $konteks[FlowmeterMentah::PERAN_STD] === []) {
+            if ($uut === []
+                && $konteks[FlowmeterMentah::PERAN_STD] === []
+                && $konteks[FlowmeterMentah::PERAN_BERAT_ISI] === []) {
                 $mentah = array_values(array_filter(
                     $mentah,
                     static fn (array $m): bool => $m['titik_ke'] !== $titikKe,

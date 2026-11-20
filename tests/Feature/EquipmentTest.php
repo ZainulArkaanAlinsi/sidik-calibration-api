@@ -141,6 +141,89 @@ class EquipmentTest extends TestCase
         $this->assertDatabaseHas('equipments', ['serial_number' => 'MT-103-137']);
     }
 
+    /**
+     * Lembar pusat bisa menulis rentang ukur satu angka saja ("1000 oC") tanpa batas
+     * bawah. `gte:range_min` membandingkan ke field yang kosong dan gagal, jadi
+     * alatnya ditolak dengan pesan "batas atas lebih kecil dari batas bawah"
+     * padahal tidak ada batas bawah (ditemukan memasukkan lembar Furnace, 20 Nov 2026).
+     */
+    public function test_batas_atas_rentang_tanpa_batas_bawah_diterima(): void
+    {
+        foreach ([['range_max' => 1000], ['range_min' => null, 'range_max' => 1000]] as $i => $rentang) {
+            $this->actingAs($this->admin)->postJson('/api/equipments', [
+                'nama_alat' => 'Furnace',
+                'serial_number' => 'RNG-ATAS-'.$i,
+                'kategori' => 'panjang',
+                'pelanggan_id' => $this->pelanggan->id,
+            ] + $rentang)
+                ->assertCreated()
+                ->assertJsonPath('data.nama_alat', 'Furnace');
+        }
+    }
+
+    public function test_batas_atas_di_bawah_batas_bawah_tetap_ditolak(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Furnace',
+            'serial_number' => 'RNG-TERBALIK',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'range_min' => 500,
+            'range_max' => 100,
+        ])->assertStatus(422)->assertJsonValidationErrors(['range_max']);
+    }
+
+    /**
+     * PUT parsial yang hanya mengirim `range_max` dulu dibandingkan ke `range_min`
+     * yang TIDAK terkirim (gagal selalu); sejak perbaikan "batas atas tanpa batas
+     * bawah" bandingannya dilewati bila `range_min` kosong di request, sehingga
+     * batas atas di bawah batas bawah TERSIMPAN lolos. Pembanding harus nilai
+     * tersimpan.
+     */
+    public function test_put_parsial_range_max_dibandingkan_ke_range_min_tersimpan(): void
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 500,
+            'range_max' => 1000,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alat->id}", ['range_max' => 100])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['range_max']);
+
+        $this->assertEquals(1000, $alat->fresh()->range_max);
+
+        // Di atas batas bawah tersimpan: lolos. Mengosongkan batas bawah
+        // secara eksplisit juga lolos (tidak ada yang dibandingkan).
+        $this->actingAs($this->admin)->putJson("/api/equipments/{$alat->id}", ['range_max' => 800])->assertOk();
+        $this->actingAs($this->admin)->putJson("/api/equipments/{$alat->id}", ['range_min' => null, 'range_max' => 100])->assertOk();
+    }
+
+    /**
+     * Request validasi jalan SEBELUM penjaga kepemilikan di controller. Perbandingan ke
+     * `range_min` tersimpan tidak boleh membaca alat lab lain: 422 di sini akan membocorkan
+     * keberadaan alatnya dan batas bawahnya. Harus 404 seperti alat yang tidak ada.
+     */
+    public function test_put_parsial_range_max_ke_alat_lab_lain_menjawab_404_bukan_422(): void
+    {
+        $labLain = Organization::factory()->create();
+        $alatLain = Equipment::factory()->create([
+            'organization_id' => $labLain->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 500,
+            'range_max' => 1000,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alatLain->id}", ['range_max' => 100])
+            ->assertNotFound();
+
+        $this->assertEquals(1000, $alatLain->fresh()->range_max);
+    }
+
     public function test_serial_number_dobel_ditolak_422(): void
     {
         Equipment::factory()->create(['serial_number' => 'DOBEL-01']);

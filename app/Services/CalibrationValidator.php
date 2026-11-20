@@ -279,8 +279,14 @@ class CalibrationValidator
             $temuan[] = $this->temuan(
                 self::PERINGATAN,
                 'titik_tidak_terhitung',
-                "Titik ke-{$ke} ada pembacaannya tapi nggak kehitung — datanya belum cukup ("
-                    .implode(', ', $sebab).'). '
+                "Titik ke-{$ke} ada pembacaannya tapi nggak kehitung — datanya belum cukup, atau ditahan penjaga profil alat. "
+                    .'Kemungkinan sebab: '.implode(', ', $sebab).'. '
+                    // Daftar di atas tebakan umum, bukan hasil memeriksa titik ini.
+                    // Micrometer dengan pra-evaluasi identik ditahan penjaga profil
+                    // padahal pengulangan 10 dan standarnya terbaca; alasan sebenarnya
+                    // hanya dicatat di `belum_dihitung`.
+                    .'Daftar ini cuma tebakan umum: alasan pastinya (mis. pra-evaluasi Micrometer yang identik) ada di '
+                    .'`belum_dihitung` pada respons simpan atau pratinjau. '
                     .'Titik ini nggak akan muncul di sertifikat.',
                 ['titik_ke' => (int) $ke],
             );
@@ -470,7 +476,7 @@ class CalibrationValidator
             // yang nyampur µS/cm & mS/cm dalam satu lembar — ini yang bikin
             // 1413 µS/cm nggak lagi ke-flag "di luar rentang 0–100 mS/cm".
             $nilaiAlat = $profil->nilaiDalamSatuanAlat($nilai, $m->satuan, $alat);
-            $titikAlat = $profil->nilaiDalamSatuanAlat((float) $m->titik_ukur, $m->satuan, $alat);
+            $titikAlat = $profil->titikDalamSatuanAlat((float) $m->titik_ukur, $m->satuan, $alat);
 
             // Pembacaan yang DEKAT ke titik yang lagi dikalibrasi dilewat,
             // walau titiknya sendiri di luar rentang terdaftar alat.

@@ -121,6 +121,12 @@ class DialIndicatorProfile extends CalibrationProfile
         return true;
     }
 
+    /** Keping balok ukur (`di_balok`) adalah standar yang ditumpuk, bukan penunjukan Dial Indicator. */
+    public function peranBukanPembacaan(): array
+    {
+        return [DialIndicatorMentah::PERAN_BALOK];
+    }
+
     /**
      * Dial Indicator tidak divonis PASS/FAIL — master berhenti di kolom
      * `Correction` + satu baris U95, tanpa satu pun batas keberterimaan.

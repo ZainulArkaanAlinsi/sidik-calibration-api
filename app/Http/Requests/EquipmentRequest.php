@@ -31,6 +31,24 @@ class EquipmentRequest extends FormRequest
         // (sudah ditolak di atribut `range_min` sendiri); selain itu perilaku lama.
         $minTakTerhingga = is_numeric($this->input('range_min')) && ! is_finite((float) $this->input('range_min'));
 
+        // `gte:range_min` juga gagal kalau `range_min` KOSONG (null/tidak dikirim): Laravel
+        // membandingkan ke field yang tidak ada dan menjawab "batas atas lebih kecil dari batas
+        // bawah" padahal tidak ada batas bawah. Lembar pusat bisa menulis rentang satu angka
+        // saja ("1000 oC"), jadi bandingannya hanya dipasang bila `range_min` terisi.
+        $minKosong = ! $this->filled('range_min');
+
+        // PUT parsial yang hanya mengirim `range_max` (kunci `range_min` TIDAK ada di request)
+        // harus dibandingkan ke batas bawah yang SUDAH TERSIMPAN; tanpa ini bandingannya
+        // dilewati di atas dan batas atas di bawah batas bawah tersimpan lolos. Mengirim
+        // `range_min: null` eksplisit = mengosongkan batas bawah, tidak ada yang dibandingkan.
+        // Dibandingkan HANYA bila alatnya milik organisasi pemanggil: request ini jalan sebelum
+        // penjaga kepemilikan di controller, jadi tanpa syarat ini PUT ke alat lab lain
+        // menjawab 422 (batas bawah mereka bocor lewat perbandingan) alih-alih 404.
+        $minTersimpan = $minKosong && ! $this->has('range_min') && $equipment !== null
+            && (int) $equipment->organization_id === (int) $organizationId
+            ? $equipment->range_min
+            : null;
+
         $aturan = [
             'nama_alat' => [$wajibKalauBikinBaru, 'string', 'max:255'],
             'serial_number' => [
@@ -113,7 +131,15 @@ class EquipmentRequest extends FormRequest
             // seperti 1e15 lolos `numeric`, lalu INSERT gagal "Out of range
             // value" → 500, bukan 422 (BUG-10 uji E2E-QA, 18 Nov 2026).
             'range_min' => ['nullable', 'numeric', 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
-            'range_max' => ['nullable', 'numeric', ...($minTakTerhingga ? [] : ['gte:range_min']), 'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL],
+            'range_max' => [
+                'nullable', 'numeric', ...($minTakTerhingga || $minKosong ? [] : ['gte:range_min']),
+                ...($minTersimpan === null ? [] : [function (string $atribut, mixed $nilai, \Closure $gagal) use ($minTersimpan): void {
+                    if (is_numeric($nilai) && is_finite((float) $nilai) && (float) $nilai < (float) $minTersimpan) {
+                        $gagal('Batas atas rentang ukur nggak boleh lebih kecil dari batas bawah.');
+                    }
+                }]),
+                'between:'.-self::BATAS_DECIMAL.','.self::BATAS_DECIMAL,
+            ],
             'satuan' => ['nullable', 'string', 'max:50'],
             // `gt:0`, bukan `min:0` — aturan yang SAMA dengan
             // `resolusi_rentang.*.resolusi` 22 baris di bawah, dan alasannya
