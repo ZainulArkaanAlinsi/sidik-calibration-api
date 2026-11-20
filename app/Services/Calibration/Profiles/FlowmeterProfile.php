@@ -1370,13 +1370,12 @@ abstract class FlowmeterProfile extends CalibrationProfile
     public function formatKolomSertifikat(CalibrationSession $sesi, float $titikUkur, ?string $satuan = null): array
     {
         $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
-        $tambah = $this->digitTambahanCetak($sesi, $satuan);
 
         // UFM (Ultrasonic Totalizer/Flowrate): `format_sertifikat` peta sel
         // `flowmeter` (K-50-15) — U95 master adalah U95 RELATIF `%OR`
         // (`149!O22`, `185!N26`), kolom `u95_relatif`.
         if ($blok !== null && $blok['mode'] === $this->mode() && ($blok['varian_metode'] ?? null) === VarianMetodeFlowmeter::UFM->value) {
-            return $this->lebarkanFormatKolom($this->formatSertifikatMaster($blok['mode'], $titikUkur), $tambah);
+            return $this->formatSertifikatMaster($blok['mode'], $titikUkur);
         }
 
         $format = $blok === null || $blok['mode'] !== $this->mode()
@@ -1389,90 +1388,13 @@ abstract class FlowmeterProfile extends CalibrationProfile
 
         [$nilai, $u95] = $format;
 
-        return $this->lebarkanFormatKolom([
+        return [
             'standar' => $nilai,
             'uut' => $nilai,
             'koreksi' => $nilai,
             ...($u95 === null ? [] : ['u95' => $u95]),
             'k' => '0',
-        ], $tambah);
-    }
-
-    /**
-     * Digit desimal TAMBAHAN yang dibutuhkan supaya format sel master tetap
-     * setajam master setelah angkanya dicetak balik ke satuan alat (F-12).
-     *
-     * Format sel master Totalizer (`148!D22` `0.00`, `148!J22` `0.0`, `149!D22`
-     * `0.00`) ditulis dalam LITER, tetapi [cetakDalamSatuanAlat] membagi angkanya
-     * dengan faktor satuan sebelum dicetak. Sesi ber-`m3` (faktor 1000) lalu
-     * mencetak koreksi -0,000154 m3 sebagai `-0.00` dan U95 0,000088 m3 sebagai
-     * `0.0`: dua desimal liter hanya dua desimal m3, jadi "koreksi nol" terbaca
-     * pelanggan padahal yang sebenarnya 0,15 L. Kekeliruannya bukan di angka
-     * (tidak ada yang dibulatkan di hitungan) melainkan di bentuk cetak.
-     *
-     * Presisi MUTLAK master yang dijaga, bukan jumlah digitnya: tiap digit yang
-     * dimakan konversi dikembalikan — `ceil(log10(faktor))`, yaitu 3 untuk m3 dan
-     * 1 untuk usg (3,78541 L). Hanya menambah: satuan yang lebih kecil dari liter
-     * (`ml`) angkanya justru lebih besar sehingga tidak ada yang hilang, dan
-     * satuan berbasis massa (`kg`, tanpa faktor tabel) tidak disentuh.
-     *
-     * Hanya mode Totalizer. Format Flowrate (185 `0.000` Lpm, 150 `0.0000`
-     * m3/h) hidup di satuan aliran yang resolusi alatnya jauh lebih kasar dari
-     * satu digit itu, dan kehilangan angka di sana belum pernah terbukti.
-     *
-     * `$satuan` null atau sama dengan satuan sesi = angka yang akan ditulis
-     * memang bersatuan alat. Pemanggil yang menulis angka hitungan apa adanya
-     * (layar HP, dalam L) menyebut satuan lain dan mendapat 0.
-     */
-    protected function digitTambahanCetak(CalibrationSession $sesi, ?string $satuan): int
-    {
-        if ($this->mode() !== TabelStandarFlowmeter::MODE_TOTALIZER) {
-            return 0;
-        }
-
-        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
-
-        if ($blok === null || $blok['mode'] !== $this->mode()) {
-            return 0;
-        }
-
-        if ($satuan !== null && strcasecmp(trim($satuan), trim($blok['satuan'])) !== 0) {
-            return 0;
-        }
-
-        // Faktor yang SAMA dengan yang dipakai [cetakDalamSatuanAlat]; satuan
-        // massa dan satuan asing tidak punya faktor dan balik 0.
-        $faktor = $this->tabel()->faktorSatuan($blok['mode'], $blok['satuan']);
-
-        if ($faktor === null || $faktor <= 1.0) {
-            return 0;
-        }
-
-        // `round` dulu: log10(1000) tidak selalu persis 3,0 di float.
-        return (int) ceil(round(log10($faktor), 9));
-    }
-
-    /**
-     * Tambah `$tambah` nol di belakang koma format `0`/`0.0…` untuk kolom angka
-     * berlabel liter. `k` dan `u95_relatif` (persen) bukan besaran liter, dan
-     * kode format selain `0.0…` dibiarkan.
-     *
-     * @param  array<string, string>  $format
-     * @return array<string, string>
-     */
-    private function lebarkanFormatKolom(array $format, int $tambah): array
-    {
-        if ($tambah <= 0) {
-            return $format;
-        }
-
-        foreach (['standar', 'uut', 'koreksi', 'u95'] as $kolom) {
-            if (isset($format[$kolom]) && preg_match('/^0(?:\.(0+))?$/', $format[$kolom], $m) === 1) {
-                $format[$kolom] = '0.'.str_repeat('0', strlen($m[1] ?? '') + $tambah);
-            }
-        }
-
-        return $format;
+        ];
     }
 
     public function bentukPindaiFoto(): array
