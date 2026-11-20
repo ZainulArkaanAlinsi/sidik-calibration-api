@@ -118,4 +118,26 @@ class KapasitasGraduasiSatuanTest extends TestCase
             $this->assertStringContainsString($harap, $hasil);
         }
     }
+
+    /**
+     * Alat yang hanya punya batas atas (`range_max` tanpa `range_min`, kini
+     * boleh dibuat) tercetak `0–1000 °C`: cast `(float) null` mengarang batas
+     * bawah 0 yang tidak pernah diisi siapa pun, dan sertifikat terakreditasi
+     * menyatakan rentang yang tidak dikalibrasi.
+     */
+    public function test_rentang_satu_sisi_tidak_mengarang_batas_yang_kosong(): void
+    {
+        $hanyaMax = $this->kapasitas(new Equipment(['satuan' => '°C', 'range_max' => 1000, 'resolusi' => 0.1]));
+        $this->assertStringContainsString('1000 °C', $hanyaMax);
+        $this->assertStringNotContainsString('0–', $hanyaMax, 'Batas bawah 0 dikarang dari null.');
+        $this->assertStringNotContainsString('—', $hanyaMax);
+
+        $hanyaMin = $this->kapasitas(new Equipment(['satuan' => '°C', 'range_min' => 5, 'resolusi' => 0.1]));
+        $this->assertStringContainsString('5 °C', $hanyaMin);
+        $this->assertStringNotContainsString('–0', $hanyaMin, 'Batas atas 0 dikarang dari null.');
+
+        // Dua sisi terisi: bentuk lama persis, termasuk batas bawah 0 yang SAH.
+        $dua = $this->kapasitas(new Equipment(['satuan' => 'pH', 'range_min' => 0, 'range_max' => 14, 'resolusi' => 0.01]));
+        $this->assertStringContainsString('0–14 pH', $dua);
+    }
 }

@@ -1427,8 +1427,17 @@ class CertificateSnapshotBuilder
                 ? '—'
                 : rtrim(rtrim(number_format($n, 6, ',', ''), '0'), ',');
 
-            $bagian[] = $angkaRentang((float) $alat->range_min)
-                .'–'.$angkaRentang((float) $alat->range_max).$satuan;
+            // JANGAN `(float) null`: itu 0, dan alat yang hanya punya batas atas
+            // (`range_max` saja, kini boleh dibuat) tercetak `0–1000 °C` — batas
+            // bawah yang tidak pernah diisi siapa pun. Sisi yang kosong tidak
+            // dicetak: cukup angka yang ada (`1000 °C`). Dua sisi terisi: bentuk
+            // lama persis, termasuk batas bawah 0 yang sah.
+            $min = $alat->range_min === null ? null : (float) $alat->range_min;
+            $maks = $alat->range_max === null ? null : (float) $alat->range_max;
+
+            $bagian[] = ($min !== null && $maks !== null
+                ? $angkaRentang($min).'–'.$angkaRentang($maks)
+                : $angkaRentang($min ?? $maks)).$satuan;
         }
 
         // Alat ber-resolusi BERTINGKAT ditulis semua resolusinya, bukan cuma
