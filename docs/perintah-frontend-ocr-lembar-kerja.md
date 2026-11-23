@@ -325,21 +325,28 @@ Urutannya wajib begini — kalau OCR dijalankan sebelum warp, atau seluruh halam
   | `teks_meluber_dari_sel` | tulisannya keluar dari kotak, bisa jadi kebaca dari kolom sebelah |
   | `di_luar_rentang` | angkanya di luar rentang wajar titik ini |
   | `magnitudo_meleset` | angkanya jauh dari nilai standar titik ini |
-  | `ada_koreksi_karakter` | ada huruf yang ditebak jadi angka |
+  | `ada_koreksi_karakter` | ada huruf yang ditebak jadi angka (**tidak pernah muncul lagi sejak 23 Nov 2026**, untuk sel angka maupun sel jam) |
   | `desimal_kebanyakan` | desimalnya lebih banyak dari resolusi alat |
   | `bukan_kelipatan_resolusi` | angkanya tidak mungkin keluar dari alat dengan resolusi ini |
   | `jauh_dari_repeat_lain` | angkanya jauh beda dari Repeat lain di baris ini |
   | `sebar_repeat_tidak_diuji` | Repeat yang kebaca terlalu sedikit untuk dibandingkan |
-  | `terlalu_banyak_substitusi` | terlalu banyak huruf yang harus ditebak |
-  | `karakter_di_luar_whitelist` | ada karakter yang bukan angka |
+  | `terlalu_banyak_substitusi` | terlalu banyak huruf yang harus ditebak (sel angka: tidak pernah muncul lagi sejak 23 Nov 2026) |
+  | `karakter_di_luar_whitelist` | ada karakter yang bukan angka (huruf, `\|`, `/`, `_` tidak lagi diganti jadi digit; sel angka **ditolak**, nilai kosong) |
+  | `spasi_di_dalam_angka` | ada spasi di tengah angka (baru 23 Nov 2026; tidak lagi dibuang diam-diam) |
+  | `pemisah_ribuan_tidak_didukung` | ada pemisah ribuan ("1.234,56", "1.234.567"); tidak dibuang (baru 23 Nov 2026) |
   | `bentuk_angka_tidak_wajar` | bentuk angkanya tidak masuk akal |
   | `digit_kebanyakan` | digitnya kebanyakan untuk kolom ini |
   | `pemisah_desimal_tidak_wajar` | letak koma/titiknya tidak wajar |
-  | `desimal_ambigu` | tidak jelas titik itu koma desimal atau pemisah ribuan |
+  | `desimal_ambigu` | tidak jelas titik itu koma desimal atau pemisah ribuan (**sejak 23 Nov 2026 tidak lagi dipilihkan lewat rentang/jumlah desimal templat**: satu pemisah + tiga digit, bagian utuh 1-3 digit tak berawalan 0, selalu ambigu) |
   | `minus_di_tengah` | ada tanda minus di tengah angka |
   | `minus_tidak_diizinkan` | kolom ini tidak boleh bernilai negatif |
 
-  `normalisasi` berisi catatan perubahan yang dilakukan server, mis. `"O→0"` atau `"pemisah ribuan dibuang ..."`. Tampilkan ini di detail sel — teknisi berhak tahu angka yang dia lihat sudah ditebak-tebak sampai mana.
+  `normalisasi` berisi catatan perubahan yang dilakukan server. **Untuk sel angka DAN sel jam daftar ini selalu kosong sejak
+  23 Nov 2026** (server tidak lagi mengganti huruf jadi digit, membuang pemisah/spasi, menyisipkan titik dua, atau
+  menambah detik/nol). Sel jam diterima apa adanya bila hanya berisi digit dan `:` (kuning), selain itu merah
+  (`karakter_di_luar_whitelist`, `bentuk_jam_tidak_wajar`, `jam_di_luar_rentang`). Tampilkan bila ada — teknisi berhak
+  tahu angka yang dia lihat sudah ditebak sampai mana.
+  `teks_mentah` selalu dikembalikan apa adanya; sel yang ditolak membawa `nilai: null`.
 - Urutan Repeat di layar harus mengikuti `tabel[].pengulangan`, bukan urutan array yang datang.
 
 ## YANG DILARANG

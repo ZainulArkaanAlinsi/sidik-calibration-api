@@ -507,10 +507,12 @@ class WorksheetScanTest extends TestCase
     }
 
     /**
-     * Sel yang nilainya lahir dari tebakan karakter nggak pernah hijau, walau
-     * skor OCR-nya tinggi.
+     * Huruf di sel angka TIDAK diganti jadi digit (keputusan pemilik, 23 Nov 2026).
+     * Dulu "4,O1" menjadi 4,01 berstatus kuning dengan alasan `ada_koreksi_karakter`;
+     * sekarang selnya merah dan KOSONG (tanpa nilai), dan teks mentah dari HP
+     * tersimpan apa adanya supaya teknisi bisa melihat dan mengetik sendiri.
      */
-    public function test_tebakan_karakter_mentok_kuning(): void
+    public function test_huruf_di_sel_angka_tidak_diganti_jadi_digit_dan_selnya_merah(): void
     {
         $payload = $this->payload();
 
@@ -526,9 +528,12 @@ class WorksheetScanTest extends TestCase
         $sel = WorksheetScan::findOrFail($scanId)->cells()
             ->where('kunci', 'sebelum_adjustment|1|1|pembacaan')->firstOrFail();
 
-        $this->assertSame(ValidasiSel::KUNING, $sel->status);
-        $this->assertContains('ada_koreksi_karakter', $sel->alasan);
-        $this->assertEqualsWithDelta(4.01, (float) $sel->nilai, 1e-9);
+        $this->assertSame(ValidasiSel::MERAH, $sel->status);
+        $this->assertContains('karakter_di_luar_whitelist', $sel->alasan);
+        $this->assertNotContains('ada_koreksi_karakter', $sel->alasan);
+        $this->assertNull($sel->nilai);
+        $this->assertNull($sel->teks_normal);
+        $this->assertSame('4,O1', $sel->teks_mentah);
     }
 
     /**

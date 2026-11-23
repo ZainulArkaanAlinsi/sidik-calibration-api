@@ -65,19 +65,55 @@ class PindaiViscometerTest extends TestCase
 
     /**
      * `63.181` ambigu SENDIRIAN: bisa 63181 (titik = pemisah ribuan), bisa
-     * 63,181. Yang menyingkirkan salah satunya BUKTI, bukan tebakan — pita
-     * baris 60000 cP (baris KEEMPAT sejak larutan 3000 cP masuk) itu
-     * 16049-114230 cP, dan 63,181 nggak masuk.
+     * 63,181.
      *
-     * Ini beda dari kasus di atas dan bedanya penting: yang punya bukti
-     * dibaca, yang nggak punya ditolak.
+     * Dulu pita baris 60000 cP (baris KEEMPAT sejak larutan 3000 cP masuk,
+     * 16049-114230 cP) menyingkirkan 63,181 dan nilainya dibaca 63181. Itu memilih
+     * tafsiran memakai rentang templat, dan dicabut 23 Nov 2026 (hasil OCR tidak
+     * boleh diubah agar cocok dengan templat atau rentang yang diharapkan).
+     * Sekarang ambigu = MERAH dan KOSONG walau pita memihak tafsiran ribuan; teks
+     * mentah tersimpan, teknisi yang mengetik.
+     *
+     * Keputusan produk (opsi A, 23 Nov 2026), dengan bukti: master lab memuat
+     * pembacaan 60000 cP sebagai `63181.3` dan `631.74.2`, tidak ada yang
+     * berpemisah ribuan, jadi dampaknya pada tulisan lab diperkirakan kecil
+     * (satu master, belum terukur di foto lapangan).
      */
-    public function test_pemisah_ribuan_dibaca_lewat_bukti_pita(): void
+    public function test_pemisah_ribuan_ambigu_ditolak_walau_pita_memihak(): void
     {
         $hasil = $this->periksa(4, '63.181');
 
-        $this->assertSame(63181.0, $hasil['nilai']);
-        $this->assertSame([], $hasil['alasan']);
+        $this->assertSame(ValidasiSel::MERAH, $hasil['status']);
+        $this->assertNull($hasil['nilai']);
+        $this->assertContains('desimal_ambigu', $hasil['alasan']);
+        $this->assertSame('63.181', $hasil['teks_mentah']);
+    }
+
+    /**
+     * Pemisah ribuan lengkap ("63.181,3") ikut ditolak, tidak dibuang agar
+     * menjadi angka.
+     */
+    public function test_pemisah_ribuan_lengkap_ditolak_bukan_dibuang(): void
+    {
+        $hasil = $this->periksa(4, '63.181,3');
+
+        $this->assertSame(ValidasiSel::MERAH, $hasil['status']);
+        $this->assertNull($hasil['nilai']);
+        $this->assertContains('pemisah_ribuan_tidak_didukung', $hasil['alasan']);
+    }
+
+    /**
+     * Cara lab menulis di master (`63181.3`, `59003`, `1018`) tetap diterima:
+     * bilangan bulat tanpa pemisah dan satu titik desimal.
+     */
+    public function test_tulisan_gaya_master_lab_tetap_diterima(): void
+    {
+        foreach (['63181' => 63181.0, '63181.3' => 63181.3, '59003' => 59003.0] as $teks => $nilai) {
+            $hasil = $this->periksa(4, (string) $teks);
+
+            $this->assertSame($nilai, $hasil['nilai'], "`{$teks}` seharusnya diterima apa adanya");
+            $this->assertSame(ValidasiSel::KUNING, $hasil['status'], 'tulisan tangan tidak pernah hijau');
+        }
     }
 
     /**

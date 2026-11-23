@@ -46,7 +46,11 @@ return [
      * "yang berubah yang mana" — dan satu nomor gabungan nggak bisa jawab itu.
      */
     'pipeline_versi' => env('OCR_PIPELINE_VERSI', 'ocr-1.0.0'),
-    'aturan_versi' => env('OCR_ATURAN_VERSI', 'val-1.0.0'),
+    // 1.1.0 (23 Nov 2026): koreksi otomatis dicabut (huruf->digit, spasi/pemisah ribuan dibuang,
+    // titik/koma dipilih lewat rentang, jam dilengkapi); vonis sel berubah untuk teks yang sama,
+    // jadi scan lama (1.0.0) dan baru harus bisa dibedakan saat ditelusuri. Jangan menyetel
+    // `OCR_ATURAN_VERSI` di env kecuali memang ingin menimpa nomor ini.
+    'aturan_versi' => env('OCR_ATURAN_VERSI', 'val-1.1.0'),
 
     /*
      * Gerbang kualitas foto. Foto yang nggak lolos DITOLAK sebelum satu sel pun
