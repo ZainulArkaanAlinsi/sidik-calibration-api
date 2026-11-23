@@ -70,6 +70,11 @@ class SaklarFiturTest extends TestCase
             ['GET', '/api/worksheet-scans/999999/sel/a1/crop'],
             ['POST', '/api/worksheet-scans/999999/koreksi'],
         ],
+        // Urutan mengikuti urutan pendaftaran rute di routes/api.php (tes
+        // pemeta membandingkan tanpa mengurutkan antar-kode).
+        'ocr_cloud' => [
+            ['POST', '/api/ocr/halaman'],
+        ],
         'kirim_email_sertifikat' => [
             ['POST', '/api/certificates/999999/kirim-email'],
         ],
@@ -124,7 +129,7 @@ class SaklarFiturTest extends TestCase
     {
         $b = $organisasi !== null && $organisasi->is($this->orgB);
 
-        return $kode === 'pindai_lembar'
+        return in_array($kode, ['pindai_lembar', 'ocr_cloud'], true)
             ? ($b ? [$this->teknisiB, $this->adminB] : [$this->teknisiA, $this->adminA])
             : ($b ? [$this->adminB] : [$this->adminA]);
     }
@@ -581,7 +586,7 @@ class SaklarFiturTest extends TestCase
     public function test_daftar_resmi_tidak_memuat_fitur_inti(): void
     {
         $this->assertSame([], array_values(array_intersect(FiturSaklar::kode(), FiturSaklar::INTI)));
-        $this->assertSame(['pindai_lembar', 'kirim_email_sertifikat'], FiturSaklar::kode());
+        $this->assertSame(['pindai_lembar', 'kirim_email_sertifikat', 'ocr_cloud'], FiturSaklar::kode());
     }
 
     private function templat(string $uri): string

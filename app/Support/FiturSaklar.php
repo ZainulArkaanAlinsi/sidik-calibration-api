@@ -46,6 +46,8 @@ final class FiturSaklar
 
     public const KIRIM_EMAIL_SERTIFIKAT = 'kirim_email_sertifikat';
 
+    public const OCR_CLOUD = 'ocr_cloud';
+
     /**
      * Kode → keterangan untuk layar pengaturan. Urutan di sini = urutan
      * tampil dan urutan `fitur_nonaktif` yang dikembalikan.
@@ -65,6 +67,16 @@ final class FiturSaklar
             'label' => 'Kirim sertifikat lewat surel',
             'deskripsi' => 'Pengiriman sertifikat ke surel pelanggan dari aplikasi. '
                 .'Unduh dan penerbitan sertifikat tidak terpengaruh.',
+        ],
+        // Kill switch OCR awan. BUKAN pengganti env `GOOGLE_VISION_AKTIF`
+        // (bawaan mati): env menyalakan fitur di server, kode ini mematikannya
+        // seketika di lapangan tanpa deploy. Pengisian manual dan pindai di HP
+        // tidak terpengaruh.
+        self::OCR_CLOUD => [
+            'label' => 'OCR awan (Google Vision)',
+            'deskripsi' => 'Pengiriman foto halaman lembar kerja ke Google Cloud Vision lewat server. '
+                .'Bawaan server MATI (env GOOGLE_VISION_AKTIF): saklar ini hanya bisa mematikan, '
+                .'tidak menyalakan. Pengisian manual dan pembacaan di HP tetap jalan.',
         ],
     ];
 

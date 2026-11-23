@@ -159,6 +159,17 @@ class AuditLog extends Model
     public const ACTION_FITUR_DINYALAKAN = 'fitur_dinyalakan';
 
     /**
+     * OCR awan (Google Vision) dihentikan untuk SATU lembar karena kegagalan Google berulang
+     * (`POST /ocr/halaman`, batas `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`). Entitasnya
+     * `ocr_cloud_sesi`; `entity_id` = id sesi kerja; `new_data` memuat `batas` dan `sebab`
+     * (kalimat tetap atau status HTTP + kode status Google beserta jumlahnya, tanpa pesan
+     * Google). Sinyal bagi admin bahwa konfigurasi (kredensial, izin API Vision, jaringan
+     * server) kemungkinan salah. 14 karakter, muat di `string(20)`. Tidak masuk `actions()`
+     * (penyaring CRUD), seperti aksi khusus lainnya.
+     */
+    public const ACTION_OCR_DIHENTIKAN = 'ocr_dihentikan';
+
+    /**
      * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
      *
      * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan

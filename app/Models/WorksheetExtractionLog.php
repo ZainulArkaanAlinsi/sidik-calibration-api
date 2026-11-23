@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'calibration_session_id', 'user_id', 'model', 'status',
     'raw_model_response', 'extracted', 'technician_corrections',
     'input_tokens', 'output_tokens', 'cache_read_input_tokens', 'error',
+    // Audit OCR awan (Google Vision): tanpa isi gambar dan tanpa teks hasil.
+    'unit_vision', 'ukuran_gambar_byte', 'durasi_ms',
 ])]
 class WorksheetExtractionLog extends Model
 {
@@ -28,6 +30,9 @@ class WorksheetExtractionLog extends Model
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
             'cache_read_input_tokens' => 'integer',
+            'unit_vision' => 'integer',
+            'ukuran_gambar_byte' => 'integer',
+            'durasi_ms' => 'integer',
         ];
     }
 

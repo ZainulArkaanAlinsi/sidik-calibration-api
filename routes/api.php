@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\OcrCloudStatusController;
 use App\Http\Controllers\Api\Admin\PelangganAlatController;
 use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
 use App\Http\Controllers\Api\Admin\PemindahanAlatController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Api\KategoriKelolaController;
 use App\Http\Controllers\Api\KemampuanKalibrasiController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OcrHalamanController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationFiturController;
@@ -909,6 +911,14 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // lebih besar.
         Route::post('/dokumen/baca', [DokumenGenerikController::class, 'baca'])
             ->middleware('throttle:dokumen-baca');
+        // OCR AWAN (Google Cloud Vision, DOCUMENT_TEXT_DETECTION) untuk SATU
+        // foto halaman: teks mentah + kotak + keyakinan, tanpa memutuskan nilai
+        // sel. Keputusan pemilik 23 Nov 2026. Bukan LLM, jadi TIDAK menumpang
+        // `VISION_AKTIF`: gerbangnya `GOOGLE_VISION_AKTIF` (bawaan MATI) dan
+        // kill switch Super Admin `ocr_cloud`. Ada biaya per panggilan, jadi
+        // limiternya sempit (lihat AppServiceProvider).
+        Route::post('/ocr/halaman', [OcrHalamanController::class, 'baca'])
+            ->middleware(['fitur:ocr_cloud', 'throttle:ocr-halaman']);
         // Buka ulang & koreksi hasil baca. Dua-duanya nggak manggil AI, jadi
         // batasnya jauh lebih longgar dari `baca` — layar review wajar dibuka
         // berkali-kali sambil teknisi mencocokkan angka sama kertasnya.
@@ -941,6 +951,11 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
                 ->whereNumber('id')
                 ->defaults('entitas', $entitas);
         }
+
+        // Status OCR awan (Google Vision) untuk admin: konfigurasi dan hitungan kegagalan 24 jam.
+        // BUKAN bagian `GET /health` (publik) dan TIDAK di belakang `fitur:ocr_cloud`: admin harus
+        // tetap bisa melihatnya saat fitur dimatikan. Lihat OcrCloudStatusController.
+        Route::get('/admin/ocr-cloud', OcrCloudStatusController::class);
 
         /*
          * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------
