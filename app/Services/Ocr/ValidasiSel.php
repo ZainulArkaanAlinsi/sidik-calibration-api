@@ -58,7 +58,6 @@ class ValidasiSel
         $confidence = max(0.0, min(
             1.0,
             $confidenceOcr
-                - ($hasil['substitusi'] * (float) config('ocr.penalti.substitusi', 0.15))
                 - $penaltiKualitas,
         ));
 
@@ -102,10 +101,11 @@ class ValidasiSel
     /**
      * Sel jam: `02:00:00`, bukan angka.
      *
-     * Penjagaan yang tetap berlaku cuma dua — kotak teksnya harus duduk di
-     * dalam selnya (itu penjaga "angka nggak nyebrang sel", dan jam pun nggak
-     * boleh nyebrang), dan substitusi karakter menurunkan statusnya. Rentang,
-     * rasio nominal, dan kelipatan resolusi nggak punya arti di sini.
+     * Penjagaan yang tetap berlaku cuma dua — bentuk teksnya (digit dan `:`,
+     * diperiksa `NormalisasiJam`, yang tidak mengubah apa pun) dan kotak teksnya
+     * harus duduk di dalam selnya (itu penjaga "angka nggak nyebrang sel", dan
+     * jam pun nggak boleh nyebrang). Rentang, rasio nominal, dan kelipatan
+     * resolusi nggak punya arti di sini.
      *
      * @param  array<string, mixed>  $template
      * @param  array<string, mixed>  $dariHp
@@ -123,7 +123,6 @@ class ValidasiSel
         $confidence = max(0.0, min(
             1.0,
             $this->angkaConfidence($dariHp['confidence_ocr'] ?? null)
-                - ($hasil['substitusi'] * (float) config('ocr.penalti.substitusi', 0.15))
                 - $penaltiKualitas,
         ));
 
@@ -147,26 +146,15 @@ class ValidasiSel
             return $this->hasil($template, $dariHp, $hasil, null, self::MERAH, ['teks_meluber_dari_sel'], $confidence);
         }
 
-        $alasan = [];
-
-        if ($hasil['substitusi'] > 0) {
-            $alasan[] = 'ada_koreksi_karakter';
-        }
-
-        if (in_array('pemisah_jam_disisipkan', $hasil['catatan'], true)) {
-            // Titik duanya nggak kebaca dan disisipkan mesin. Masuk akal, tapi
-            // tetap tebakan — `0200` bisa 02:00 dan bisa juga 20:0x yang satu
-            // digitnya hilang.
-            $alasan[] = 'pemisah_jam_disisipkan';
-        }
-
+        // Tanpa alasan lunak: teks jam tidak pernah diubah mesin, jadi status ditentukan
+        // `status()` (tulisan tangan = kuning, keyakinan rendah = merah).
         return $this->hasil(
             $template,
             $dariHp,
             $hasil,
             null,
-            $this->status($confidence, $alasan, $aturan),
-            $alasan,
+            $this->status($confidence, [], $aturan),
+            [],
             $confidence,
         );
     }
@@ -220,17 +208,13 @@ class ValidasiSel
     /**
      * Alasan yang bikin sel WAJIB DILIHAT tapi angkanya tetap dipakai.
      *
-     * @param  array{catatan: list<string>, substitusi: int}  $hasil
+     * @param  array{teks_normal: ?string}  $hasil
      * @param  array<string, mixed>  $aturan
      * @return list<string>
      */
     private function periksaLunak(float $nilai, array $hasil, array $aturan): array
     {
         $alasan = [];
-
-        if ($hasil['substitusi'] > 0) {
-            $alasan[] = 'ada_koreksi_karakter';
-        }
 
         $desimal = $aturan['desimal'] ?? null;
 

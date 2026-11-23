@@ -157,27 +157,33 @@ bisa dia lakukan cuma nunjuk.
 
 ## 5. Aturan angka (`NormalisasiAngka`)
 
-Boleh: buang spasi; ganti karakter yang mustahil ada di sel angka dengan digit
-sebentuk (`O→0`, `S→5`, `I→1`, …). Tiap penggantian **dicatat** dan nurunin skor
-0,15 — penggantian itu tebakan, bukan bacaan. Lebih dari 2 penggantian = ditolak
-(sel yang butuh tiga tebakan buat jadi angka itu bukan angka yang kebaca).
+> **DIUBAH 23 Nov 2026 (keputusan pemilik): hasil OCR tidak boleh diubah agar cocok dengan templat,
+> rentang, atau pola.** Yang tertulis di bawah sebagai "boleh" (buang spasi, ganti huruf jadi digit,
+> pilih titik/koma lewat bukti templat) SUDAH DICABUT. Sekarang: spasi di tengah angka, huruf, dan
+> pemisah ribuan ditolak (`spasi_di_dalam_angka`, `karakter_di_luar_whitelist`,
+> `pemisah_ribuan_tidak_didukung`); titik/koma ambigu ditolak (`desimal_ambigu`); spasi di awal/akhir
+> tetap dipangkas; teks mentah selalu disimpan. Rincian: `docs/ocr-tanpa-koreksi-otomatis.md`.
+
+(Rancangan awal, tidak berlaku lagi:) buang spasi; ganti karakter yang mustahil ada di sel angka dengan
+digit sebentuk (`O→0`, `S→5`, `I→1`, …), tiap penggantian dicatat dan menurunkan skor 0,15; lebih dari 2
+penggantian ditolak.
 
 **Nggak boleh: nyisipin atau mindahin koma biar angkanya "masuk akal".** `133659`
 di kolom yang nominalnya 1,33659 itu tanda salah baca, bukan izin naruh koma di
 posisi yang kelihatannya pas. Dibaca apa adanya, lalu ditolak lewat rentang.
 Dikunci tes `test_koma_tidak_pernah_disisipkan`.
 
-Titik vs koma memang ambigu (`1.413` bisa 1,413 atau 1413). Yang dilakukan: SEMUA
-tafsiran yang mungkin disusun, lalu disaring pakai bukti template (jumlah desimal
-& rentang titik ukurnya). Lolos satu → dipakai. Lolos nol atau lebih dari satu →
-`desimal_ambigu`, biar orang yang mutusin.
+Titik vs koma memang ambigu (`1.413` bisa 1,413 atau 1413). **Sekarang:** satu pemisah + tepat tiga digit
+dengan bagian utuh 1-3 digit tak berawalan 0 selalu `desimal_ambigu` (merah, kosong; orang yang mutusin).
+(Rancangan awal, dicabut 23 Nov 2026: tafsiran disaring pakai bukti template, jumlah desimal dan rentang
+titik ukur; lolos satu dipakai.)
 
 ### Vonis per sel (`ValidasiSel`)
 
 | Warna | Artinya | Yang bikin |
 |-------|---------|------------|
 | hijau | keisi otomatis, mesin nanggung | conf ≥ 0,85, nggak ada catatan, **dan bukan tulisan tangan** |
-| kuning | keisi, mata teknisi wajib lewat | tulisan tangan; ada koreksi karakter; desimal kelebihan; bukan kelipatan resolusi; jauh dari Repeat lain; conf 0,60–0,85 |
+| kuning | keisi, mata teknisi wajib lewat | tulisan tangan; desimal kelebihan; bukan kelipatan resolusi; jauh dari Repeat lain; conf 0,60–0,85 |
 | merah | kosong, teknisi ngetik | conf < 0,60; gagal jadi angka; di luar rentang; magnitudo meleset (rasio 0,5–2,0 dari nominal); teks meluber dari sel |
 | kosong | sel emang kosong di kertasnya | teks kosong (SAH, bukan kegagalan) |
 

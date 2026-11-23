@@ -957,8 +957,43 @@ Ditulis di sini karena keempatnya **tidak menghasilkan error** waktu dilanggar:
   saja yang ditolak, sisanya tetap tersimpan, dan percobaannya masuk log. Dijaga
   `SesiDisetujuiTidakBisaDimundurkanTest`. **Nasib keenam baris & tujuh nomor itu belum
   diputuskan** — itu tulis ke produksi, urutannya di `docs/aturan-akses-database.md` butir 4.
+- **Hasil OCR tidak diubah agar cocok dengan templat, rentang, atau pola angka** (keputusan pemilik,
+  23 Nov 2026). `NormalisasiAngka` hanya MENERIMA teks yang sudah berupa angka murni atau MENOLAK (sel
+  ragu, nilai kosong, `teks_mentah` tersimpan apa adanya). Tidak ada penggantian huruf/simbol ke digit
+  (`O`→0, `S`→5, `|`→1: garis tabel pernah jadi angka 1), tidak ada pemilihan titik/koma lewat rentang
+  atau jumlah desimal templat ("1,413" ambigu = ditolak), tidak ada pembuangan spasi di tengah angka atau
+  pemisah ribuan. Validasi hanya boleh menolak atau menandai; rentang/format hanya untuk menolak.
+  Dijaga `NormalisasiAngkaTest`, `ValidasiSelTanpaKoreksiTest` (masukan acak), dan
+  `WorksheetScanTest::test_huruf_di_sel_angka_tidak_diganti_jadi_digit_dan_selnya_merah`.
+  `NormalisasiJam` (sel jam Autoklaf) juga tidak mengubah apa pun: bacaan yang hanya berisi digit dan `:`
+  diterima APA ADANYA (kuning, dikonfirmasi teknisi); huruf, pemisah lain, sisipan titik dua, detik/nol
+  tambahan dicabut. Format jam di kertas (empat kelompok) tetap ditanyakan ke pemilik lab:
+  `docs/pertanyaan-lab-autoklaf-format-jam.md`; format final baru boleh diketatkan setelah jawabannya dicatat.
 
 Playbook lengkapnya: `[[sidik-alat-baru-dari-master]]`.
+
+## Cara kerja agen di repo ini
+
+- Setiap perubahan OCR wajib punya cara verifikasi yang bisa diukur: tes otomatis, perintah evaluasi, atau uji
+  pembanding. Jangan menyatakan selesai tanpa itu.
+- Kriteria selesai harus bisa diperiksa: semua tes lulus, dan batas percobaan ditulis di awal (3 percobaan
+  gagal, lalu berhenti dan lapor). Metrik "hijau palsu" ditulis **"belum terukur"** sampai ada set uji berlabel
+  manusia; jangan menulis "nol" tanpa set itu.
+- Tinjauan kedua oleh agen lain dengan konteks baru dilakukan untuk perubahan yang menyentuh perhitungan atau
+  OCR. Jalankan `sidik-code-reviewer` sekali sebelum commit.
+- Jangan menjadwalkan atau menjalankan loop yang menyentuh server produksi, database, Render (env/deploy), atau
+  billing Google tanpa persetujuan pemilik. Pemantauan CI (`gh run watch`, maks 10 menit) tetap boleh.
+- Kalau hasil tidak memenuhi standar, catat perbaikan sebagai aturan, tes, atau fixture di repo, bukan hanya
+  memperbaiki satu kasus.
+- **Format kode (`pint`) HANYA pada berkas yang disentuh**, ditulis satu per satu: `vendor/bin/pint <berkas> <berkas>`.
+  JANGAN pernah pada direktori (`app`, `tests`, dst.): `pint` merapikan berkas orang lain dan mengotori diff
+  (23 Nov 2026 satu docblock di `CategoryController.php` ikut berubah). Aturan ini sudah ada di §Perintah dan §Alur Kerja
+  butir 10; dilanggar karena terburu-buru, bukan karena tidak tertulis.
+- **Mengembalikan berkas yang berubah tanpa sengaja:** (1) periksa dulu `git diff HEAD -- <berkas>`: kalau ada selisih yang
+  BUKAN format (kode, komentar, isi), berkas itu punya pekerjaan lain, jangan ditimpa; (2) simpan salinannya (mis. ke scratchpad)
+  sebelum menimpa; (3) hook format otomatis memformat ulang berkas `*.php` yang diubah lewat tool Edit, jadi mengembalikan
+  lewat Edit sia-sia: pulihkan dengan `git show HEAD:<berkas> > <berkas>` (lewat shell, tidak memicu hook), lalu pastikan
+  `git status` berkas itu bersih. Catat berkas apa saja yang tersentuh di laporan.
 
 ## Instruksi Compaction
 Saat konteks dipadatkan, pertahankan hal berikut:

@@ -108,10 +108,15 @@ class AkurasiKameraTest extends TestCase
 
     public function test_hijau_palsu_ketangkep_waktu_mesin_yakin_tapi_salah(): void
     {
-        // `5O.O2` disubstitusi jadi 50.02 oleh NormalisasiAngka, jadi yang ini
-        // COCOK. Yang kedua beneran salah baca, dan skornya di atas ambang
-        // hijau — inilah bentuk kegagalan yang tidak ada yang lihat sampai
+        // Yang kedua (`58.01`) angka murni yang salah baca, skornya di atas
+        // ambang hijau — bentuk kegagalan yang tidak ada yang lihat sampai
         // sertifikatnya terbit.
+        //
+        // 23 Nov 2026: `5O.O2` dulu disubstitusi jadi 50.02 oleh NormalisasiAngka
+        // dan dihitung COCOK, jadi pengukuran ini lebih longgar daripada kenyataan:
+        // mesin yakin 0,97 pada teks yang BUKAN angka. Sekarang tidak ada
+        // penggantian huruf, jadi `5O.O2` dihitung apa adanya: tidak cocok
+        // (dan tercatat di kolom "tidak terbaca"), bukan lagi benar.
         $this->kirim(
             [50.02, 50.01],
             [
@@ -124,11 +129,12 @@ class AkurasiKameraTest extends TestCase
 
         $this->assertStringContainsString('HIJAU PALSU', $keluaran);
         $this->assertStringContainsString('58.01', $keluaran);
-        $this->assertStringNotContainsString(
+        $this->assertStringContainsString(
             '5O.O2',
             $keluaran,
-            'Yang kebaca benar nggak boleh nongol di daftar hijau palsu.',
+            'Teks berhuruf dengan skor tinggi tidak boleh lagi dianggap cocok lewat penggantian karakter.',
         );
+        $this->assertStringContainsString('2 (100.00%)', $keluaran);
     }
 
     public function test_koma_dan_titik_dihitung_sebagai_bacaan_yang_sama(): void

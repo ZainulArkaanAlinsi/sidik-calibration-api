@@ -725,10 +725,19 @@ class AutoclaveProfile extends CalibrationProfile
                 'label' => $label,
                 // Satuannya dikosongin (beda-beda per autoklaf), tapi jumlah
                 // desimalnya TETAP dikasih tahu — `resolusi_alat.tekanan` di
-                // `config/autoclave.php` itu 0,001. Tanpa petunjuk ini `0.112`
-                // ditolak sebagai `desimal_ambigu`: tiga digit di belakang
-                // pemisah bisa berarti pemisah ribuan, dan sel tanpa rentang
-                // nggak punya bukti buat menyingkirkan salah satunya.
+                // `config/autoclave.php` itu 0,001. `desimal` dipakai untuk
+                // MENANDAI (`desimal_kebanyakan`), BUKAN untuk memilih tafsiran.
+                //
+                // Sejak 23 Nov 2026 `NormalisasiAngka` tidak lagi memilih antara
+                // desimal dan pemisah ribuan lewat `desimal` atau rentang templat
+                // (hasil OCR tidak boleh diubah agar cocok dengan templat). Yang
+                // masih lolos tanpa bukti templat: `0,112` / `0.112` (bagian
+                // utuh diawali 0 tidak mungkin kelompok ribuan). Yang kini
+                // DITOLAK sebagai `desimal_ambigu` (sel merah, teknisi mengetik):
+                // satu pemisah + tiga digit dengan bagian utuh 1-3 digit tak
+                // berawalan 0, mis. `1,013` atau `1.013`. Menunggu keputusan
+                // pemilik lab soal desimal tetap kertas Autoklaf; jangan
+                // "diperbaiki" dengan memihak tafsiran lewat templat.
                 //
                 // Cuma `desimal`, BUKAN `resolusi`: resolusi bikin rentang
                 // 0,001 × 20 = ±0,02 di sekitar nol, dan itu nolak 0,112 —

@@ -341,7 +341,8 @@ hanya menampilkannya, tidak "membantu".
 | Yang dibaca kamera | Yang terjadi | Yang ditampilkan |
 |---|---|---|
 | `631.74.2` (dua titik desimal) | ditolak, nilai `null`, alasan `pemisah_desimal_tidak_wajar` | sel **merah**, minta teknisi ketik ulang |
-| `63.181` di baris 60000 cP | dibaca `63181` lewat bukti pita | sel kuning, nilai terisi |
+| `63.181` di baris 60000 cP | **sejak 23 Nov 2026** ditolak, nilai `null`, alasan `desimal_ambigu` (dulu dibaca `63181` lewat bukti pita) | sel **merah**, minta teknisi ketik ulang |
+| `63181.3` / `59003` di baris 60000 cP | diterima apa adanya (tulisan gaya master lab) | sel kuning, nilai terisi |
 | `63181.3` di baris 100 cP | ditolak (`di_luar_rentang`, `magnitudo_meleset`) | sel **merah** |
 | `96.7` di baris 60000 cP | ditolak, alasan sama | sel **merah** |
 | `51.1` di baris 100 cP (larutan pada 37,78 °C) | **diterima** | sel kuning, nilai terisi |

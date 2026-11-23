@@ -3,48 +3,41 @@
 namespace App\Services\Ocr;
 
 /**
- * Teks mentah satu sel → angka, plus catatan APA yang diubah buat sampai ke
- * situ.
+ * Teks mentah satu sel → angka, TANPA mengubah apa yang terbaca.
  *
- * Aturan pokoknya satu: **nggak boleh ngubah nilai tanpa bukti**. Yang boleh
- * dilakukan di sini cuma dua hal — (1) buang yang jelas bukan bagian dari angka
- * (spasi), (2) ganti karakter yang MUSTAHIL ada di sel angka dengan digit yang
- * bentuknya sama (O→0, S→5). Tiap penggantian dicatat dan nurunin skor, karena
- * penggantian itu tebakan, bukan bacaan.
+ * Aturan pokoknya (keputusan pemilik proyek, 23 Nov 2026): **hasil OCR tidak
+ * boleh diubah agar cocok dengan templat, rentang yang diharapkan, atau pola
+ * angka tertentu.** Kelas ini hanya boleh MENERIMA teks yang memang sudah berupa
+ * angka, atau MENOLAK dan menandainya ragu. Teks mentah tidak pernah ditimpa;
+ * penolakan membawa alasan, dan pemanggil menyimpan `teks_mentah` apa adanya.
  *
- * Yang SENGAJA nggak dilakukan: nyisipin/mindahin koma biar angkanya "masuk
- * akal". "133659" di titik 1,33659 itu tanda salah baca — bukan izin naruh koma
- * di tempat yang kelihatannya pas. Yang begitu jadi sel merah, dan teknisi yang
- * ngetik.
+ * Yang SENGAJA tidak dilakukan (semuanya pernah ada sampai 23 Nov 2026 dan
+ * dicabut, lihat `docs/ocr-tanpa-koreksi-otomatis.md`; audit lengkapnya
+ * `docs/ocr-audit-koreksi-otomatis.md`):
+ *  - mengganti huruf atau simbol yang mirip digit (`O`→0, `S`→5, `|`→1, ...):
+ *    itu tebakan, dan menghasilkan angka yang terlihat benar padahal mungkin
+ *    salah; garis tabel (`|`, `/`) pernah menjadi angka 1;
+ *  - memilih antara titik desimal dan pemisah ribuan memakai rentang atau jumlah
+ *    desimal dari templat: itu menjadikan nilai yang diharapkan sebagai patokan
+ *    pemilihan hasil;
+ *  - membuang pemisah ribuan, dan membuang spasi di tengah angka ("12 .5"):
+ *    menghapus karakter agar teks menjadi angka;
+ *  - menyisipkan atau menggeser koma agar angkanya "masuk akal" ("133659" di
+ *    titik 1,33659 adalah tanda salah baca, bukan izin menaruh koma).
  *
- * Titik vs koma memang ambigu ("1.413" bisa 1,413 atau 1413). Yang dilakukan di
- * sini: SEMUA tafsiran yang mungkin disusun, lalu disaring pakai bukti dari
- * template (jumlah desimal & rentang titiknya). Lolos satu → dipakai. Lolos nol
- * atau lebih dari satu → dinyatakan ambigu, biar orang yang mutusin.
+ * Yang masih dilakukan, dan alasannya: (1) spasi di AWAL/AKHIR teks dipangkas
+ * (tidak mengubah isinya); (2) teks yang sudah berupa angka murni dibaca apa
+ * adanya; satu pemisah desimal (`,` atau `.`) diterima sebagai desimal, kecuali
+ * bentuknya memang ambigu secara leksikal ("1,413": desimal atau ribuan), yang
+ * ditolak sebagai ambigu, bukan dipilihkan. Semua penolakan hanya MENOLAK.
+ *
+ * Titik vs koma: bagian utuh yang diawali 0 ("0,112") tidak mungkin kelompok
+ * ribuan, jadi jelas desimal. Itu aturan bentuk teks, bukan bukti dari templat.
  */
 class NormalisasiAngka
 {
     /**
-     * Karakter yang bentuknya mirip digit. Cuma ini yang boleh ditebak.
-     *
-     * Dipisah huruf besar/kecil karena bentuknya beda: `Q` bulat (mirip 0),
-     * `q` berekor ke bawah (mirip 9). Nyampur dua-duanya bikin tebakan yang
-     * kelihatan pintar tapi salah separuh waktu.
-     */
-    private const MIRIP_DIGIT = [
-        'O' => '0', 'o' => '0', 'Q' => '0', 'D' => '0',
-        'I' => '1', 'l' => '1', 'i' => '1', '|' => '1', '!' => '1', '/' => '1',
-        'Z' => '2', 'z' => '2',
-        'A' => '4',
-        'S' => '5', 's' => '5',
-        'G' => '6', 'b' => '6',
-        'T' => '7',
-        'B' => '8',
-        'g' => '9', 'q' => '9',
-    ];
-
-    /**
-     * @param  array{desimal?: int|null, min?: float|null, maks?: float|null, izinkan_minus?: bool, maks_digit?: int}  $aturan
+     * @param  array{izinkan_minus?: bool, maks_digit?: int}  $aturan  kunci lain (desimal, min, maks, ...) tidak dipakai di sini
      * @return array{
      *     ok: bool,
      *     kosong: bool,
@@ -57,51 +50,35 @@ class NormalisasiAngka
      */
     public function proses(?string $teks, array $aturan = []): array
     {
-        $catatan = [];
-        $alasan = [];
-
-        $bersih = $this->buangSpasi((string) $teks);
+        $bersih = $this->pangkas((string) $teks);
 
         if ($bersih === '') {
             // Sel kosong itu SAH di lembar kerja ini — teknisi sering nggak bisa
-            // ngisi satu-dua kolom di lapangan (lihat docblock
-            // `LembarKerjaTemplate`). Kosong bukan kegagalan baca.
-            return $this->hasil(true, true, null, null, 0, $catatan, $alasan);
+            // ngisi satu-dua kolom di lapangan. Kosong bukan kegagalan baca.
+            return $this->hasil(true, true, null, null, []);
         }
 
-        [$bersih, $substitusi, $catatanSubstitusi] = $this->tebakKarakterMiripDigit($bersih);
-        $catatan = [...$catatan, ...$catatanSubstitusi];
-
-        $maksSubstitusi = (int) config('ocr.penalti.maks_substitusi', 2);
-
-        if ($substitusi > $maksSubstitusi) {
-            // Sel yang butuh tiga tebakan buat jadi angka bukan angka yang
-            // kebaca — itu tebakan yang kebetulan berbentuk angka.
-            $alasan[] = 'terlalu_banyak_substitusi';
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+        if (preg_match('/[\s\x{00A0}\x{2007}\x{202F}]/u', $bersih) === 1) {
+            // Spasi di tengah = dua pembacaan nyambung, atau OCR menyisipkan
+            // spasi. Menyambungnya diam-diam menghapus karakter, jadi ragu.
+            return $this->hasil(false, false, null, null, ['spasi_di_dalam_angka']);
         }
 
         $whitelist = (string) config('ocr.angka.whitelist', '0123456789,.-');
 
         if (! $this->hanyaKarakter($bersih, $whitelist)) {
-            $alasan[] = 'karakter_di_luar_whitelist';
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+            // Huruf/simbol BUKAN angka. Tidak ada penggantian ke digit apa pun.
+            return $this->hasil(false, false, null, null, ['karakter_di_luar_whitelist']);
         }
 
         [$bersih, $negatif, $alasanTanda] = $this->pisahkanTanda($bersih, (bool) ($aturan['izinkan_minus'] ?? false));
 
         if ($alasanTanda !== null) {
-            $alasan[] = $alasanTanda;
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+            return $this->hasil(false, false, null, null, [$alasanTanda]);
         }
 
         if (! preg_match('/^[0-9.,]+$/', $bersih)) {
-            $alasan[] = 'bentuk_angka_tidak_wajar';
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+            return $this->hasil(false, false, null, null, ['bentuk_angka_tidak_wajar']);
         }
 
         $maksDigit = (int) ($aturan['maks_digit'] ?? config('ocr.angka.maks_digit', 9));
@@ -109,35 +86,15 @@ class NormalisasiAngka
         if (strlen(preg_replace('/[^0-9]/', '', $bersih) ?? '') > $maksDigit) {
             // Kepanjangan buat lembar kerja mana pun di lab ini — hampir selalu
             // dua sel yang kebaca nyambung jadi satu.
-            $alasan[] = 'digit_kebanyakan';
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+            return $this->hasil(false, false, null, null, ['digit_kebanyakan']);
         }
 
-        $kandidat = $this->kandidatTafsiran($bersih);
+        [$terpilih, $alasanTafsir] = $this->tafsirkan($bersih);
 
-        if ($kandidat === []) {
-            $alasan[] = 'pemisah_desimal_tidak_wajar';
-
-            return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
+        if ($terpilih === null) {
+            return $this->hasil(false, false, null, null, [$alasanTafsir ?? 'pemisah_desimal_tidak_wajar']);
         }
 
-        if (count($kandidat) > 1) {
-            $tersaring = $this->saringPakaiBukti($kandidat, $aturan);
-
-            if (count($tersaring) !== 1) {
-                // Nol yang cocok = dua-duanya di luar rentang; lebih dari satu =
-                // dua-duanya masuk akal. Dua-duanya nggak boleh diputus mesin.
-                $alasan[] = 'desimal_ambigu';
-
-                return $this->hasil(false, false, null, null, $substitusi, $catatan, $alasan);
-            }
-
-            $catatan[] = 'pemisah ribuan dibuang (dipilih tafsiran yang cocok jumlah desimal & rentang titik)';
-            $kandidat = $tersaring;
-        }
-
-        $terpilih = $kandidat[array_key_first($kandidat)];
         $nilai = (float) $terpilih['nilai'];
 
         return $this->hasil(
@@ -145,44 +102,14 @@ class NormalisasiAngka
             false,
             $negatif ? -$nilai : $nilai,
             ($negatif ? '-' : '').$terpilih['teks'],
-            $substitusi,
-            $catatan,
-            $alasan,
+            [],
         );
     }
 
-    /**
-     * Spasi (termasuk NBSP yang sering nyelip dari OCR) dibuang tanpa catatan —
-     * spasi nggak pernah jadi bagian dari angka di lembar kerja.
-     */
-    private function buangSpasi(string $teks): string
+    /** Hanya spasi di awal dan akhir yang dipangkas (termasuk NBSP); isi teks tidak disentuh. */
+    private function pangkas(string $teks): string
     {
-        return trim(preg_replace('/[\s\x{00A0}\x{2007}\x{202F}]+/u', '', $teks) ?? '');
-    }
-
-    /**
-     * @return array{0: string, 1: int, 2: list<string>}
-     */
-    private function tebakKarakterMiripDigit(string $teks): array
-    {
-        $hasil = '';
-        $jumlah = 0;
-        $catatan = [];
-
-        foreach (mb_str_split($teks) as $karakter) {
-            if (isset(self::MIRIP_DIGIT[$karakter])) {
-                $ganti = self::MIRIP_DIGIT[$karakter];
-                $hasil .= $ganti;
-                $jumlah++;
-                $catatan[] = "{$karakter}→{$ganti}";
-
-                continue;
-            }
-
-            $hasil .= $karakter;
-        }
-
-        return [$hasil, $jumlah, $catatan];
+        return preg_replace('/^[\s\x{00A0}\x{2007}\x{202F}]+|[\s\x{00A0}\x{2007}\x{202F}]+$/u', '', $teks) ?? '';
     }
 
     private function hanyaKarakter(string $teks, string $whitelist): bool
@@ -225,75 +152,45 @@ class NormalisasiAngka
     }
 
     /**
-     * Semua tafsiran yang mungkin dari susunan titik/koma.
+     * Tafsiran angka dari susunan titik/koma, HANYA dari bentuk teksnya.
      *
-     * - Satu pemisah, dan sesudahnya BUKAN tepat 3 digit → jelas desimal.
-     * - Satu pemisah dengan tepat 3 digit sesudahnya ("1.413") → AMBIGU: bisa
-     *   desimal, bisa pemisah ribuan. Dua-duanya dikembalikan, penyaringnya
-     *   yang mutusin pakai bukti template.
-     * - Dua jenis pemisah ("1.234,56") → yang terakhir desimal, yang lain
-     *   ribuan. Ini nggak ambigu.
+     *  - tanpa pemisah: bilangan bulat;
+     *  - satu pemisah: desimal. Kecuali tepat tiga digit sesudahnya DAN bagian
+     *    utuh bisa berupa kelompok ribuan (1-3 digit, tidak diawali 0): "1,413"
+     *    bisa 1,413 atau 1413. Itu `desimal_ambigu` dan TIDAK dipilihkan;
+     *  - lebih dari satu pemisah yang bentuknya pemisah ribuan ("1.234,56",
+     *    "1.234.567"): `pemisah_ribuan_tidak_didukung` — pemisah tidak dibuang;
+     *  - bentuk lain ("4..01", "1.2.3"): `pemisah_desimal_tidak_wajar`.
      *
-     * @return list<array{nilai: string, teks: string, desimal: int}>
+     * @return array{0: array{nilai: string, teks: string, desimal: int}|null, 1: string|null}
      */
-    private function kandidatTafsiran(string $teks): array
+    private function tafsirkan(string $teks): array
     {
-        $adaTitik = str_contains($teks, '.');
-        $adaKoma = str_contains($teks, ',');
+        $jumlahPemisah = (int) preg_match_all('/[.,]/', $teks);
 
-        if (! $adaTitik && ! $adaKoma) {
-            return [$this->kandidat($teks, '')];
+        if ($jumlahPemisah === 0) {
+            return [$this->kandidat($teks, ''), null];
         }
 
-        if ($adaTitik && $adaKoma) {
-            $pemisahDesimal = strrpos($teks, ',') > strrpos($teks, '.') ? ',' : '.';
-            $ribuan = $pemisahDesimal === ',' ? '.' : ',';
-
-            $tanpaRibuan = str_replace($ribuan, '', $teks);
-
-            if (substr_count($tanpaRibuan, $pemisahDesimal) !== 1) {
-                return [];
-            }
-
-            [$utuh, $pecahan] = explode($pemisahDesimal, $tanpaRibuan);
-
-            return [$this->kandidat($utuh, $pecahan)];
-        }
-
-        $pemisah = $adaKoma ? ',' : '.';
-        $bagian = explode($pemisah, $teks);
-
-        if (count($bagian) === 2) {
-            [$utuh, $pecahan] = $bagian;
+        if ($jumlahPemisah === 1) {
+            [$utuh, $pecahan] = preg_split('/[.,]/', $teks, 2);
 
             if ($utuh === '' || $pecahan === '') {
-                return [];
+                return [null, 'pemisah_desimal_tidak_wajar'];
             }
 
-            $kandidat = [$this->kandidat($utuh, $pecahan)];
-
-            // "1.413" / "1,413": bisa seribu empat ratus tiga belas, bisa satu
-            // koma empat satu tiga. Conductivity punya dua-duanya di satu lab.
-            if (strlen($pecahan) === 3) {
-                $kandidat[] = $this->kandidat($utuh.$pecahan, '');
+            if (strlen($pecahan) === 3 && preg_match('/^[1-9][0-9]{0,2}$/', $utuh) === 1) {
+                return [null, 'desimal_ambigu'];
             }
 
-            return $kandidat;
+            return [$this->kandidat($utuh, $pecahan), null];
         }
 
-        // Lebih dari satu pemisah sejenis ("1.234.567") — cuma masuk akal
-        // sebagai pemisah ribuan, dan itupun harus rapi 3-3.
-        $utuh = array_shift($bagian);
-
-        foreach ($bagian as $blok) {
-            if (strlen($blok) !== 3) {
-                return [];
-            }
-
-            $utuh .= $blok;
+        if (preg_match('/^[1-9][0-9]{0,2}(?:[.,][0-9]{3})+(?:[.,][0-9]+)?$/', $teks) === 1) {
+            return [null, 'pemisah_ribuan_tidak_didukung'];
         }
 
-        return [$this->kandidat($utuh, '')];
+        return [null, 'pemisah_desimal_tidak_wajar'];
     }
 
     /**
@@ -313,74 +210,25 @@ class NormalisasiAngka
     }
 
     /**
-     * Saring tafsiran ambigu pakai BUKTI dari template: jumlah desimal yang
-     * diharapkan kolom itu, dan rentang wajar di sekitar titik ukurnya.
+     * `substitusi` dan `catatan` dipertahankan di bentuk keluaran supaya
+     * pemanggil dan kontrak tidak patah, tetapi SELALU 0 / kosong: tidak ada
+     * lagi penggantian karakter.
      *
-     * Ini satu-satunya tempat nilai boleh "dipilih" — dan pilihannya cuma antara
-     * dua bacaan yang sama-sama sah dari teks yang sama, bukan ngarang digit.
-     *
-     * @param  list<array{nilai: string, teks: string, desimal: int}>  $kandidat
-     * @param  array{desimal?: int|null, min?: float|null, maks?: float|null}  $aturan
-     * @return list<array{nilai: string, teks: string, desimal: int}>
-     */
-    private function saringPakaiBukti(array $kandidat, array $aturan): array
-    {
-        $desimal = $aturan['desimal'] ?? null;
-        $min = $aturan['min'] ?? null;
-        $maks = $aturan['maks'] ?? null;
-
-        $lolos = array_values(array_filter($kandidat, static function (array $k) use ($desimal, $min, $maks): bool {
-            if ($desimal !== null && $k['desimal'] !== $desimal) {
-                return false;
-            }
-
-            $nilai = (float) $k['nilai'];
-
-            if ($min !== null && $nilai < $min) {
-                return false;
-            }
-
-            return ! ($maks !== null && $nilai > $maks);
-        }));
-
-        if (count($lolos) === 1) {
-            return $lolos;
-        }
-
-        // Jumlah desimalnya sama-sama nggak cocok (mis. kolom minta 2 desimal,
-        // dua-duanya 3) — coba lagi cuma pakai rentang. Rentang bukti yang lebih
-        // kuat daripada jumlah desimal: teknisi kadang nulis "4,0" buat 4,00.
-        if ($lolos === [] && $desimal !== null) {
-            return $this->saringPakaiBukti($kandidat, ['min' => $min, 'maks' => $maks]);
-        }
-
-        return $lolos;
-    }
-
-    /**
-     * @param  list<string>  $catatan
      * @param  list<string>  $alasan
      * @return array{
      *     ok: bool, kosong: bool, nilai: float|null, teks_normal: string|null,
      *     substitusi: int, catatan: list<string>, alasan: list<string>
      * }
      */
-    private function hasil(
-        bool $ok,
-        bool $kosong,
-        ?float $nilai,
-        ?string $teksNormal,
-        int $substitusi,
-        array $catatan,
-        array $alasan,
-    ): array {
+    private function hasil(bool $ok, bool $kosong, ?float $nilai, ?string $teksNormal, array $alasan): array
+    {
         return [
             'ok' => $ok,
             'kosong' => $kosong,
             'nilai' => $nilai,
             'teks_normal' => $teksNormal,
-            'substitusi' => $substitusi,
-            'catatan' => array_values($catatan),
+            'substitusi' => 0,
+            'catatan' => [],
             'alasan' => array_values($alasan),
         ];
     }

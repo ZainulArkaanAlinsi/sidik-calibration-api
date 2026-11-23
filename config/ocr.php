@@ -46,7 +46,11 @@ return [
      * "yang berubah yang mana" — dan satu nomor gabungan nggak bisa jawab itu.
      */
     'pipeline_versi' => env('OCR_PIPELINE_VERSI', 'ocr-1.0.0'),
-    'aturan_versi' => env('OCR_ATURAN_VERSI', 'val-1.0.0'),
+    // 1.1.0 (23 Nov 2026): koreksi otomatis dicabut (huruf->digit, spasi/pemisah ribuan dibuang,
+    // titik/koma dipilih lewat rentang, jam dilengkapi); vonis sel berubah untuk teks yang sama,
+    // jadi scan lama (1.0.0) dan baru harus bisa dibedakan saat ditelusuri. Jangan menyetel
+    // `OCR_ATURAN_VERSI` di env kecuali memang ingin menimpa nomor ini.
+    'aturan_versi' => env('OCR_ATURAN_VERSI', 'val-1.1.0'),
 
     /*
      * Gerbang kualitas foto. Foto yang nggak lolos DITOLAK sebelum satu sel pun
@@ -136,16 +140,11 @@ return [
     ],
 
     /*
-     * Potongan skor. Tiap koreksi yang dilakukan mesin itu tebakan — kecil,
-     * masuk akal, tapi tetap tebakan. Yang ditebak harus lebih gampang jatuh ke
-     * kuning daripada yang dibaca apa adanya.
+     * Potongan skor. Penalti per karakter yang disubstitusi (`substitusi`,
+     * `maks_substitusi`) DIHAPUS 23 Nov 2026 bersama koreksi otomatisnya: hasil
+     * OCR tidak pernah diubah mesin, jadi tidak ada lagi tebakan yang dihargai.
      */
     'penalti' => [
-        // Per karakter yang disubstitusi (O→0, S→5, ...).
-        'substitusi' => (float) env('OCR_PENALTI_SUBSTITUSI', 0.15),
-        // Lebih dari sekian substitusi dalam satu sel = langsung merah. Sel yang
-        // butuh tiga tebakan buat jadi angka itu bukan angka yang kebaca.
-        'maks_substitusi' => (int) env('OCR_MAKS_SUBSTITUSI', 2),
         // Foto lolos gerbang tapi pas-pasan → semua sel turun skornya.
         'kualitas_pas_pasan' => (float) env('OCR_PENALTI_KUALITAS', 0.10),
     ],

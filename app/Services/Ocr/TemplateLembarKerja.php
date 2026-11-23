@@ -634,7 +634,12 @@ class TemplateLembarKerja
         return [
             'tipe' => 'jam',
             'satuan' => null,
-            'format' => 'HH:mm:ss',
+            // Sengaja null sejak 23 Nov 2026: `NormalisasiJam` menerima teks berisi digit dan `:`
+            // APA ADANYA, jadi tidak ada format yang dipaksakan OCR. Dulu `HH:mm:ss`, padahal
+            // kertas Rev.4 mencetak empat kelompok dan format finalnya masih ditanyakan ke
+            // pemilik lab (`docs/pertanyaan-lab-autoklaf-format-jam.md`). Format ketik manual
+            // di layar lembar kerja ada di `AutoclaveProfile` (`baris_waktu`) dan tidak berubah.
+            'format' => null,
             'nominal' => null,
             'resolusi' => null,
             'desimal' => null,
@@ -642,8 +647,8 @@ class TemplateLembarKerja
             'maks' => null,
             'rasio_min' => null,
             'rasio_maks' => null,
-            // `02:00:00` = 6 digit. Lebih dari itu bukan jam.
-            'maks_digit' => 6,
+            // Tidak ada `maks_digit`: batas digit dulu diambil dari sini dan mengasumsikan
+            // `HH:mm:ss` (6 digit); `NormalisasiJam` tidak lagi membaca aturan sel.
             'izinkan_minus' => false,
             'boleh_kosong' => true,
             'tulisan_tangan' => (bool) config('ocr.tulisan_tangan.aktif', true),

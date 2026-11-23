@@ -368,9 +368,20 @@ ke dokumen terakreditasi. Dijamin test.
 
 ### 6.3 Ribuan vs desimal harus jatuh ke ambigu
 
-`63.181` bisa dibaca `63181` atau `63,181`. Kalau bukti dari resolusi dan pita
-nominal tidak bisa menyingkirkan salah satunya, hasilnya `desimal_ambigu` →
-MERAH. Tidak ada tebakan diam-diam.
+`63.181` bisa dibaca `63181` atau `63,181`. (Rancangan awal: bukti resolusi dan pita
+nominal boleh menyingkirkan salah satunya; **dicabut 23 Nov 2026**, lihat blok di bawah.)
+Sekarang tafsiran tidak pernah dipilih lewat bukti: hasilnya `desimal_ambigu` → MERAH.
+Tidak ada tebakan diam-diam.
+
+> **Diubah 23 Nov 2026 (keputusan pemilik, opsi A).** Resolusi dan pita nominal TIDAK lagi
+> dipakai untuk memilih tafsiran: "hasil OCR tidak boleh diubah agar cocok dengan templat
+> atau rentang". `63.181` kini selalu `desimal_ambigu` → MERAH dan kosong, walau pita baris
+> 60000 cP memihak tafsiran ribuan. Tulisan gaya master lab (`63181.3`, `59003`, `1018`)
+> tetap diterima. Satu pemisah + tepat tiga digit dengan bagian utuh 1-3 digit tak berawalan
+> 0 ambigu; lebih dari satu pemisah berbentuk ribuan ("63.181,3") ditolak sebagai
+> `pemisah_ribuan_tidak_didukung`. Alternatif yang belum diputuskan: format pemisah ribuan
+> dideklarasikan spesifikasi alat (B) atau hanya saran tanpa mengisi sel (C); lihat
+> `docs/ocr-tanpa-koreksi-otomatis.md`.
 
 ### 6.4 Kolom suhu
 
@@ -386,7 +397,7 @@ sel, dan standarnya berdiri sebagai judul blok.
 
 ### 6.6 Batas yang tidak digeser
 
-Ambang hijau/kuning, penalti substitusi karakter, cek kemiringan/blur/glare, dan
+Ambang hijau/kuning, penalti substitusi karakter (tidak ada lagi sejak 23 Nov 2026: karakter tidak diganti), cek kemiringan/blur/glare, dan
 uji sebaran antar-pengulangan memakai setelan bersama di `config/ocr.php`. Tidak
 ada satu pun yang dilonggarkan untuk Viscometer. Selama template belum diadu ke
 foto kertas asli, berkasnya tetap `terverifikasi: false` dan seluruh hasil
@@ -589,7 +600,7 @@ menulis `140` satuan cP. `1 P = 100 cP`, jadi angkanya sama. Yang dipakai
 | 2 | Sesi contoh mereproduksi ketiga titik dan diadu ke `SERTIFIKAT.csv` + `PERHITUNGAN U95%.csv`; tiga selisih di-assert **eksplisit sebagai selisih** | ✅ |
 | 3 | Lembar kerja terbaca lewat API, bentuknya sesuai bagian 5 | ✅ `ViscometerApiTest` |
 | 4 | `ocr:cetak-lembar viscometer --versi=1` menghasilkan PDF satu halaman yang setiap kunci selnya dikenali server | ✅ `CetakLembarKerjaOcrTest` (62 test, 7 alat) |
-| 5 | `631.74.2` ditolak, `63.181` dibaca lewat bukti, angka nyasar baris ditolak | ✅ `PindaiViscometerTest` (15 test) |
+| 5 | `631.74.2` ditolak, `63.181` ambigu (MERAH, kosong; opsi A, 23 Nov 2026), angka nyasar baris ditolak | ✅ `PindaiViscometerTest` (24 test) |
 | 6 | Suite penuh hijau — terutama jalur pH, karena `Standard::nilaiPadaSuhu()` dipakai bersama | ✅ 1058 test |
 | 7 | Tiga dokumen serah terima terisi, contoh JSON dari `tinker` di DB nyata | ✅ |
 
