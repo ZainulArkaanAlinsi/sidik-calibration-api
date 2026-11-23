@@ -140,16 +140,11 @@ return [
     ],
 
     /*
-     * Potongan skor. Tiap koreksi yang dilakukan mesin itu tebakan — kecil,
-     * masuk akal, tapi tetap tebakan. Yang ditebak harus lebih gampang jatuh ke
-     * kuning daripada yang dibaca apa adanya.
+     * Potongan skor. Penalti per karakter yang disubstitusi (`substitusi`,
+     * `maks_substitusi`) DIHAPUS 23 Nov 2026 bersama koreksi otomatisnya: hasil
+     * OCR tidak pernah diubah mesin, jadi tidak ada lagi tebakan yang dihargai.
      */
     'penalti' => [
-        // Per karakter yang disubstitusi (O→0, S→5, ...).
-        'substitusi' => (float) env('OCR_PENALTI_SUBSTITUSI', 0.15),
-        // Lebih dari sekian substitusi dalam satu sel = langsung merah. Sel yang
-        // butuh tiga tebakan buat jadi angka itu bukan angka yang kebaca.
-        'maks_substitusi' => (int) env('OCR_MAKS_SUBSTITUSI', 2),
         // Foto lolos gerbang tapi pas-pasan → semua sel turun skornya.
         'kualitas_pas_pasan' => (float) env('OCR_PENALTI_KUALITAS', 0.10),
     ],
