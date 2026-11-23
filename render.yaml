@@ -213,6 +213,18 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
+      # OCR awan Google Cloud Vision (DOCUMENT_TEXT_DETECTION), keputusan pemilik
+      # 23 Nov 2026. BAWAAN MATI dan sengaja TERPISAH dari VISION_AKTIF di atas
+      # (menyalakan yang ini tidak menyalakan jalur LLM). Dinyalakan HANYA atas
+      # perintah pemilik, SETELAH pemilik memastikan kontrak pelanggan mengizinkan
+      # foto halaman (memuat nama & nomor sertifikat) dikirim ke pihak ketiga dan
+      # ISO/IEC 17025 bagian 4.2 tidak dilanggar. Kredensial = JSON service account
+      # (mentah atau base64) di dashboard; TIDAK pernah di repo atau di aplikasi.
+      - key: GOOGLE_VISION_AKTIF
+        value: "false"
+      - key: GOOGLE_VISION_KREDENSIAL
+        sync: false
+
       # Pindai formulir ASLI lab dalam MODE UJI (semua sel maks kuning) sebelum
       # formulirnya lulus >=20 foto nyata. Dinyalakan HANYA atas perintah
       # pemilik proyek; tidak pernah menyalakan `siap_pindai`.

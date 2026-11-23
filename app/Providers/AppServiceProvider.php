@@ -431,6 +431,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('pindai-lembar', 60);
         $perMenitPengguna('pindai-crop', 300);
         $perMenitPengguna('dokumen-baca', 30);
+        // OCR awan: ada biaya per panggilan dan satu foto halaman penuh, jadi
+        // jauh lebih ketat dari `dokumen-baca`. Batas per lembar ada di
+        // controller (dihitung dari log), ini hanya pagar kecepatan per akun.
+        $perMenitPengguna('ocr-halaman', 6);
         $perMenitPengguna('dokumen-bacaan', 120);
         $perMenitPengguna('dokumen-koreksi', 120);
         $perMenitPengguna('sertifikat-kirim-email', 20);

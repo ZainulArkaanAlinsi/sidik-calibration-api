@@ -99,6 +99,45 @@ return [
         'aktif' => (bool) env('VISION_AKTIF', false),
     ],
 
+    /*
+     * Google Cloud Vision, DOCUMENT_TEXT_DETECTION — OCR awan untuk SELURUH
+     * HALAMAN foto lembar kerja (keputusan pemilik, 23 Nov 2026; menggantikan
+     * K-50-11 khusus jalur ini). Ini OCR mentah (blok, kata, kotak, keyakinan),
+     * BUKAN pengekstrak berbasis LLM seperti `vision` di atas: tidak ada prompt,
+     * tidak ada skema, jadi tidak menumpang `WorksheetVisionExtractor`.
+     *
+     * Gerbangnya sengaja TERPISAH dari `vision.aktif`. Menyalakan OCR awan tidak
+     * boleh ikut menyalakan jalur LLM yang mengirim foto ke Gemini/OpenAI.
+     * Bawaan MATI. Hasilnya hanya USULAN; yang menentukan tetap teknisi.
+     *
+     * Kredensial = service account (BUKAN API key): isi `GOOGLE_VISION_KREDENSIAL`
+     * dengan JSON service account mentah ATAU base64-nya. Nilainya hanya di env
+     * server; tidak pernah di kode, di log, atau di aplikasi mobile.
+     *
+     * Satu unit = satu fitur untuk satu gambar (asumsi dari harga Google, BELUM
+     * dibuktikan dengan satu panggilan nyata; lihat `GoogleVisionOcr::UNIT_PER_GAMBAR`).
+     */
+    'google_vision' => [
+        // `filter_var`, bukan `(bool)`: nilai env "off", "no", atau "0 " adalah string tak-kosong
+        // dan `(bool)` membacanya TRUE, jadi salah ketik di dashboard menyalakan fitur berbiaya
+        // yang bawaannya mati. Di sini hanya true/1/on/yes yang menyalakan.
+        'aktif' => filter_var(env('GOOGLE_VISION_AKTIF', false), FILTER_VALIDATE_BOOLEAN),
+        'kredensial' => env('GOOGLE_VISION_KREDENSIAL'),
+        'base_url' => env('GOOGLE_VISION_BASE_URL', 'https://vision.googleapis.com'),
+        'timeout' => (int) env('GOOGLE_VISION_TIMEOUT', 30),
+        // Batas ukuran berkas. Google menolak permintaan JSON di atas 10 MB dan
+        // base64 menambah sepertiga, jadi 6 MB aman.
+        'maks_byte' => (int) env('GOOGLE_VISION_MAKS_BYTE', 6 * 1024 * 1024),
+        // Batas panggilan per sesi kerja (per lembar). Dihitung dari baris
+        // `worksheet_extraction_logs`, bukan dari RateLimiter per menit.
+        'maks_per_sesi' => (int) env('GOOGLE_VISION_MAKS_PER_SESI', 5),
+        // Batas KEGAGALAN per sesi kerja: panggilan yang sampai ke Google tetapi gagal (waktu habis,
+        // 4xx/5xx, gambar ditolak; `unit_vision` = 0). Setelah sekian kali (total per lembar, bukan
+        // beruntun) server berhenti memanggil Google untuk lembar itu dan teknisi kembali ke jalur
+        // biasa (baca di HP / isi manual), supaya lembar yang terus gagal tidak diulang tanpa akhir.
+        'maks_gagal_per_sesi' => (int) env('GOOGLE_VISION_MAKS_GAGAL_PER_SESI', 3),
+    ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
