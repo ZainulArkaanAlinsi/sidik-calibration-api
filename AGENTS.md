@@ -253,7 +253,7 @@ Skenario terburuk semua profil (baris terbesar skema + header panjang):
 | Rute API | `routes/api.php` (satu berkas, ~640 baris) | Sanctum + `role:admin,teknisi`; hampir tiap aksi tulis punya `throttle:` sendiri |
 | Panel admin | `app/Filament/` | Filament 5; `Concerns/ScopesToOrganization` yang menyaring per organisasi |
 | Model | `app/Models/` | Semua data lab disaring `organization_id` — lihat skill `[[sidik-query-organisasi]]` |
-| OCR / Vision | `app/Services/Ocr/`, `WorksheetVisionExtractor` | `VISION_DRIVER` dipatok ke `anthropic` di kedua phpunit.xml, jangan diwarisi dari `.env` |
+| OCR / Vision | `app/Services/Ocr/`, `WorksheetVisionExtractor`, `app/Services/Vision/` (OCR awan) | `VISION_DRIVER` dipatok ke `anthropic` di kedua phpunit.xml, jangan diwarisi dari `.env`. OCR awan Google: lihat §OCR awan |
 | Realtime | Laravel Reverb, `routes/channels.php` | `docs/realtime-sync.md` |
 | Migrasi | `database/migrations/` (86) | Kolom baru itu pilihan TERAKHIR — lihat §Alur Kerja poin 4 |
 
@@ -728,6 +728,62 @@ tidak muncul di layar Pengguna, jadi tidak ada yang bisa mereset-kan untuknya.
 Sekarang panel memakai `->profile()`; mengganti sandi sendiri **bukan** "menulis
 data lab", jadi `HakTulisPanel` sengaja tidak menutupnya. Dijaga
 `GantiSandiSendiriTest`.
+
+## OCR awan (Google Cloud Vision) — aturan keras
+
+Keputusan pemilik proyek, **23 Nov 2026**. Menggantikan larangan "foto tidak keluar
+perangkat" (K-50-11) **khusus jalur ini**; jalur LLM (`WorksheetVisionExtractor`,
+`EkstraktorDokumenGenerik`) dan `VISION_AKTIF=false` di produksi tidak berubah.
+
+1. **Mesinnya Google Cloud Vision, fitur `DOCUMENT_TEXT_DETECTION`**, untuk SELURUH
+   foto halaman (bukan hanya crop sel). Kelas: `App\Services\Vision\GoogleVisionOcr`
+   (+ `GoogleVisionToken`); rute: `POST /api/ocr/halaman`. Ini OCR mentah (blok,
+   kata, kotak, keyakinan). Bukan pengekstrak LLM: tidak ada prompt dan skema, jadi
+   TIDAK ditambahkan sebagai penyedia di `WorksheetVisionExtractor`.
+2. **Hanya lewat backend.** Kredensial (JSON service account, `GOOGLE_VISION_KREDENSIAL`)
+   hanya di env server. Tidak boleh ada di repo mana pun, di log, di respons, atau di
+   aplikasi mobile/APK.
+3. **Bawaan MATI, dua gerbang, dan terpisah dari `VISION_AKTIF`.** Env
+   `GOOGLE_VISION_AKTIF` (bawaan `false`) dan saklar Super Admin `ocr_cloud`
+   (`FiturSaklar`, kill switch tanpa deploy). Menyalakan OCR awan tidak boleh ikut
+   menyalakan jalur LLM, dan sebaliknya.
+4. **Syarat menyalakannya di produksi untuk teknisi sungguhan:** pemilik lebih dulu
+   memastikan kontrak pelanggan mengizinkan foto halaman yang memuat nama dan nomor
+   sertifikat dikirim ke pihak ketiga, dan bahwa ISO/IEC 17025 bagian 4.2
+   (kerahasiaan) tidak dilanggar. Sampai itu tertulis, kode boleh dibangun dan diuji,
+   env tidak dinyalakan.
+5. **Hasilnya USULAN.** Endpoint hanya mengembalikan teks mentah + koordinat. Tidak ada
+   nilai sel yang diputuskan di server; sel kosong tetap kosong; tulisan tangan tidak
+   pernah hijau; teknisi mengonfirmasi.
+6. **Audit tanpa isi.** Tiap percobaan masuk `worksheet_extraction_logs` (waktu,
+   `unit_vision`, `ukuran_gambar_byte`, `durasi_ms`, status). Gambar dan teks hasil
+   TIDAK disimpan di log. Batas per lembar: `GOOGLE_VISION_MAKS_PER_SESI` (panggilan BERHASIL, dihitung dari
+   log per sesi) dan `GOOGLE_VISION_MAKS_GAGAL_PER_SESI` (bawaan 3 kegagalan Google per sesi: setelah itu Google tidak
+   dihubungi lagi dan klien kembali ke jalur biasa; keduanya tidak dikunci, jadi permintaan bersamaan bisa melewatinya
+   sebanyak permintaan yang masih berjalan bersamaan per akun; limiter 6/menit membatasi laju, bukan kelebihan), ukuran: `GOOGLE_VISION_MAKS_BYTE`.
+   Pemantauan (konfigurasi salah cepat terlihat): baris `audit_logs` `ocr_dihentikan` saat lembar mencapai batas kegagalan,
+   log server (warning/error), dan `GET /api/admin/ocr-cloud` (HANYA admin terautentikasi; `GET /api/health` publik sengaja tidak memuat blok itu).
+   Utang teknis: hitungan endpoint itu disaring organisasi lewat pengguna karena `worksheet_extraction_logs` belum punya
+   `organization_id` (baris tanpa pengguna tidak terhitung); lihat `docs/kontrak-api.md` bagian Pemantauan.
+7. **Tes tidak pernah memanggil Google** (`Http::fake`). Panggilan sungguhan pertama dan
+   pengukuran akurasi hanya dengan foto uji yang disiapkan sendiri, BUKAN foto
+   pelanggan. Jangan menyebut angka akurasi tanpa foto nyata berlabel manusia.
+8. **Biaya:** asumsi 1 unit = 1 fitur untuk 1 gambar (`GoogleVisionOcr::UNIT_PER_GAMBAR`)
+   BELUM dibuktikan. Cocokkan `SUM(unit_vision)` dengan laporan tagihan Google Cloud
+   sebelum ada klaim biaya.
+9. Kontrak: `docs/kontrak-api.md` (OCR awan); catatan klien: `docs/perintah-frontend-ocr-cloud.md`.
+10. **Revisi formulir cetak = versi baru, berkas baru, berkas lama TETAP** (syarat pemilik, 23 Nov 2026).
+    Tiap revisi mendapat nomor versi baru dan berkas geometri baru di `database/ocr-templates/` (formulir asli:
+    peta + draf baru dengan `kode_dokumen` berisi revisi baru; templat cetak: `{kode}-v{N+1}.json`). Berkas versi
+    lama tidak disunting dan tidak dihapus, supaya foto dari formulir lama tetap diproses dengan koordinat yang
+    benar. **Pemetaan teks Google Vision ke sel dikunci per versi; tidak ada pemetaan yang dipakai lintas versi**
+    (berlaku untuk pemeta tahap 2; endpoint `POST /ocr/halaman` sendiri tidak memetakan apa pun).
+    Dijaga `tests/Feature/VersiTataLetakTemplatTest.php` + `tests/Fixtures/ocr/ledger-tata-letak.json` (ledger
+    append-only): tata letak berubah di bawah nomor versi yang sama, versi lama hilang, versi baru belum tercatat,
+    atau dua berkas berbagi kunci versi = tes merah. Cara mendaftarkan versi baru ada di kepala tes itu.
+    **Versi baru belum terverifikasi sampai pemetaannya diuji pada foto nyata formulir versi itu.** Penolakan
+    foto dari versi yang belum terverifikasi BELUM ditegakkan di kode (lihat laporan: bertabrakan dengan mode uji
+    `OCR_FORMULIR_ASLI_UJI` yang sudah menyala di produksi); jangan mengubah perilaku itu tanpa persetujuan pemilik.
 
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.

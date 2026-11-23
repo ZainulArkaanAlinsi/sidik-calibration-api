@@ -3936,6 +3936,112 @@ Kode galat `422`: `penugasan_belum_tuntas` (+ `persen_tuntas`), `penugasan_sudah
 
 ---
 
+## 22. OCR awan — baca satu foto halaman (Google Cloud Vision, 23 Nov 2026)
+
+**Status: kode ada, BAWAAN MATI. Belum boleh dinyalakan di produksi untuk teknisi sungguhan** sampai pemilik
+memastikan kontrak pelanggan dan ISO/IEC 17025 bagian 4.2 mengizinkan foto halaman (memuat nama dan nomor
+sertifikat) dikirim ke pihak ketiga. Aturan lengkap: `AGENTS.md` §OCR awan. Aditif: tidak ada rute, kunci,
+atau izin lama yang berubah.
+
+### `POST /api/ocr/halaman` — `multipart/form-data`, peran teknisi / Master Data (super admin lewat aturan umum)
+
+| Field | Wajib | Isi |
+|---|---|---|
+| `foto` | ya | gambar `jpg/jpeg/png/webp`, **maks 6 MB** (batas server `GOOGLE_VISION_MAKS_BYTE`) |
+| `calibration_session_id` | tidak | sesi kerja; bila ada, dipakai untuk **batas per lembar** (`GOOGLE_VISION_MAKS_PER_SESI`, bawaan 5). Foto yang dibuat sebelum sesi ada hanya terkena limiter per akun `ocr-halaman` (6/menit). **Batas ini tidak dikunci**: dua permintaan yang tiba bersamaan pada sesi yang sama bisa sama-sama lolos, jadi total bisa melewati batas sebanyak permintaan yang berebut (kelebihannya sebanyak permintaan yang masih berjalan bersamaan per akun; limiter `ocr-halaman`, 6/menit, membatasi laju, bukan kelebihan); jangan dipakai sebagai jaminan tepat. Nilai env di bawah 1 (kosong atau 0) dipaksa 1 |
+
+Mengirim SELURUH foto halaman ke Google Cloud Vision (`DOCUMENT_TEXT_DETECTION`), satu panggilan. Hasilnya
+**teks mentah + koordinat**, TIDAK disimpan, dan **tidak ada nilai sel yang diputuskan di server**: pemetaan ke
+sel adalah urusan klien/tahap berikutnya, dan semuanya tetap USULAN yang dikonfirmasi teknisi.
+
+**`200`**
+
+```json
+{
+  "halaman": { "lebar": 1000, "tinggi": 2000 },
+  "blok": [
+    { "id": 0, "teks": "333.7 418", "kotak": { "x0": 0.1, "y0": 0.1, "x1": 0.5, "y1": 0.13 }, "keyakinan": 0.98 }
+  ],
+  "kata": [
+    { "teks": "333.7", "kotak": { "x0": 0.1, "y0": 0.1, "x1": 0.3, "y1": 0.13 }, "keyakinan": 0.99, "blok": 0 },
+    { "teks": "418",   "kotak": { "x0": 0.32, "y0": 0.1, "x1": 0.5, "y1": 0.13 }, "keyakinan": 0.62, "blok": 0 }
+  ],
+  "meta": { "sumber": "google_vision", "fitur": "DOCUMENT_TEXT_DETECTION", "unit": 1, "jumlah_halaman": 1, "usulan": true, "terpotong": false }
+}
+```
+
+- `kotak`: sejajar sumbu, **dinormalkan 0..1** terhadap halaman (`halaman.lebar`/`tinggi` = piksel gambar menurut
+  Google). `keyakinan`: 0..1 **dari Google**, `null` bila tidak diberikan; tidak pernah dibulatkan naik atau diisi
+  angka pengganti. Keyakinan Google adalah keyakinan OCR umum, bukan jaminan angka tulisan tangan itu benar.
+- Halaman tanpa teks: `200` dengan `blok: []`, `kata: []` dan **`halaman: null`** bila Google tidak menyebut ukuran halaman (klien wajib menangani `null`; sel kosong tetap kosong); tetap tercatat satu unit. Jawaban `200` yang bukan bentuk Vision sama sekali (tanpa `responses[0]`) BUKAN halaman kosong: dijawab `502 ocr_cloud_gagal` dan tidak tercatat tertagih.
+- **Teks dikembalikan APA ADANYA**: tanpa pembulatan ke nilai terdekat, tanpa menambah atau membuang koma, titik,
+  atau minus, tanpa penyesuaian ke format, rentang, atau templat. Kata tanpa simbol dibuang (bukan diisi). Penolakan
+  atau penandaan "ragu" adalah tugas lapisan pemetaan (tahap 2), yang wajib menyimpan nilai mentahnya apa adanya.
+  Dijaga `OcrHalamanTest::test_teks_dikembalikan_apa_adanya_tanpa_koreksi_otomatis` dan tes masukan acak.
+- `meta.jumlah_halaman`: jumlah halaman yang dibaca Google (1 untuk gambar). `meta.unit`: unit yang dicatat server.
+- `meta.terpotong: true` bila melewati pagar 800 blok / 4.000 kata (daftar dipotong, tidak ada galat).
+- **Belum diverifikasi:** apakah Google memutar koordinat mengikuti EXIF orientasi foto. Klien jangan mengandalkannya
+  sampai diuji dengan foto uji.
+
+**Galat** — semuanya membawa `message`, `kode`, `fallback_manual: true` (klien jatuh ke pembaca yang ada dan
+menandai sel untuk diperiksa; tidak ada crash). `message` adalah **kalimat tetap per `kode`**: pesan galat Google
+(yang lazim memuat nomor proyek dan alamat konsol) tidak pernah diteruskan ke klien dan tidak dicatat di log.
+Foto di atas 20 MB ditolak validasi (`422`, tanpa `kode`); di antara `GOOGLE_VISION_MAKS_BYTE` dan 20 MB dijawab `foto_terlalu_besar`:
+
+| HTTP | `kode` | Sebab |
+|---|---|---|
+| `503` | `fitur_dimatikan` | kill switch Super Admin `ocr_cloud` mati (sebelum route model binding) |
+| `503` | `ocr_cloud_belum_aktif` | env `GOOGLE_VISION_AKTIF=false` (bawaan) |
+| `503` | `ocr_cloud_belum_disetel` | kredensial kosong/rusak, atau Google menolak penukaran token (tidak sampai ke Vision, tidak memakan jatah) |
+| `422` | `foto_terlalu_besar` | melewati `GOOGLE_VISION_MAKS_BYTE` (ditolak sebelum dikirim) |
+| `422` | `gambar_tidak_terbaca` | Google menolak gambarnya (galat per gambar) |
+| `429` | `batas_per_lembar` | jatah panggilan per sesi habis (ditolak sebelum dikirim); yang dihitung hanya panggilan BERHASIL (`unit_vision` > 0), galat Google tidak memakan jatah |
+| `429` | `gagal_berulang_per_lembar` | sudah `GOOGLE_VISION_MAKS_GAGAL_PER_SESI` (bawaan 3) panggilan untuk sesi itu yang sampai ke Google tetapi gagal; total per lembar, bukan beruntun. Google TIDAK dihubungi lagi untuk lembar itu; klien kembali ke jalur biasa (baca di HP / isi manual). Penolakan lokal (foto terlalu besar, jatah habis, env mati) tidak dihitung; jaringan putus, waktu habis, atau 5xx/429 saat meminta token ikut dihitung. **Batas ini TIDAK dikunci**: dua permintaan yang tiba bersamaan pada sesi yang sama bisa sama-sama lolos, jadi total kegagalan bisa melewati batas sebanyak permintaan yang berebut (kelebihannya sebanyak permintaan yang masih berjalan bersamaan per akun; limiter 6/menit membatasi laju, bukan kelebihan); jangan dipakai sebagai jaminan tepat. Nilai env di bawah 1 dipaksa 1. Tidak ada jendela waktu: kegagalan dihitung selama sesi itu ada |
+| `429` | — | limiter `ocr-halaman` per akun |
+| `502` | `ocr_cloud_gagal` | Google menolak (kuota, izin, layanan sibuk), waktu habis, jaringan ke Google putus, penukaran token gagal sementara (jaringan, waktu habis, 5xx/429), atau jawabannya bukan bentuk Vision |
+| `403` / `404` | — | sesi milik teknisi lain / sesi tidak ada di organisasi (sama dengan jalur pindai lain) |
+
+### Pemantauan: supaya konfigurasi yang salah cepat terlihat
+
+Tiga sinyal untuk admin, semuanya tanpa pesan Google dan tanpa isi kredensial:
+
+1. **Riwayat perubahan (`audit_logs`, dibaca admin lewat `GET /api/audit-logs`).** Saat satu lembar mencapai batas kegagalan
+   ditulis SATU baris per sesi: `action` = `ocr_dihentikan`, `entity_type` = `ocr_cloud_sesi`, `entity_id` = id sesi,
+   `changed_by` = teknisi yang memicu, `new_data` = `{"batas": 3, "jenis": {"gagal": n, "ditolak": m}, "sebab": {"<kalimat tetap atau HTTP + kode status Google>": jumlah}}`.
+   `note` menyuruh admin memeriksa kredensial, izin API Vision, dan jaringan HANYA bila ada kegagalan `gagal`; bila semuanya `ditolak`
+   (Google tidak bisa membaca fotonya) `note` menyebut kemungkinan kualitas foto, supaya foto buram tidak menjadi alarm konfigurasi palsu.
+   Penulisannya idempoten dan dilengkapi lagi oleh penolakan `429 gagal_berulang_per_lembar` berikutnya bila penulisan pertama gagal.
+   Aksi ini tidak masuk daftar penyaring `action` (seperti aksi khusus lain), tetapi barisnya tampil di daftar.
+2. **Log server.** `warning` saat lembar dihentikan; `error` "OCR awan aktif tetapi belum disetel benar" bila kredensial kosong/rusak
+   atau token ditolak, dan `warning` untuk kegagalan pada foto TANPA sesi kerja (alur kamera dari beranda tidak punya batas per lembar,
+   jadi tanpa ini kegagalannya tidak meninggalkan sinyal apa pun). Dua yang terakhir dibatasi satu kali per 10 menit (yang tanpa sesi per
+   organisasi) supaya log tidak banjir.
+3. **`GET /api/admin/ocr-cloud`** (HANYA admin dan super admin terautentikasi, token `internal`; gerbang yang sama dengan endpoint admin
+   lain: tamu `401`, teknisi/viewer/token bukan-internal `403`). TIDAK di belakang saklar `ocr_cloud`, supaya tetap terlihat saat fitur
+   dimatikan. **Sengaja BUKAN bagian `GET /api/health`**: endpoint itu publik dan tidak memuat blok ini sama sekali. Isi: `aktif` (env), `kredensial_disetel` (terisi), `kredensial_terbaca` (bentuk JSON service account
+   benar DAN kunci privatnya terbaca OpenSSL; pemeriksaan lokal, bukan bukti Google menerimanya), `salah_setel` (`aktif` tetapi kredensial tidak terbaca). Bila `aktif`, ditambah
+   `jendela_jam` (24) dan `hitungan` per `status` (`sukses`, `gagal`, `ditolak`, `dibatasi`, `belum_disetel`) untuk jalur OCR awan
+   saja dan hanya milik organisasi pemanggil, atau `hitungan: null` bila database tidak terbaca. Nol permintaan ke Google;
+   saat env `GOOGLE_VISION_AKTIF` mati endpoint ini tidak menyentuh database (status saklar `ocr_cloud` tidak ditampilkan).
+   **Utang teknis:** `worksheet_extraction_logs` belum punya kolom `organization_id`, jadi hitungan disaring lewat pengguna
+   (`whereHas('user', ...)`). Akibatnya baris yang `user_id`-nya NULL (pengguna terhapus) tidak terhitung, jadi hitungan bisa KURANG
+   (tidak pernah bocor ke organisasi lain), dan kuerinya bergabung ke `users`. Pelunasan: migrasi tersendiri yang menambah
+   `organization_id` (nullable, diisi controller saat mencatat, baris lama diisi ulang dari `users`) beserta indeks
+   `(organization_id, model, created_at)`, lalu `whereHas` diganti. Belum dikerjakan.
+   Yang perlu dilihat manusia: `salah_setel: true`, `belum_disetel` > 0, atau `gagal` / `dibatasi` yang naik.
+
+### Audit
+
+Tiap percobaan yang sampai ke controller masuk `worksheet_extraction_logs` (`model` = `google-vision:DOCUMENT_TEXT_DETECTION`):
+waktu (`created_at`), `unit_vision`, `ukuran_gambar_byte`, `durasi_ms`, `status` (`sukses` / `gagal` / `ditolak` /
+`dimatikan` / `dibatasi` / `belum_disetel`). **Gambar dan teks hasil tidak disimpan**, dan kolom `error` hanya memuat kalimat tetap atau status HTTP dan kode status Google (mis. `HTTP 403 PERMISSION_DENIED`), tanpa `error.message` atau `error_description` Google. `unit_vision` = `NULL` bila tidak
+sampai ke Vision karena sisi kita (penolakan lokal, kredensial kosong atau rusak, token ditolak Google): tidak ikut batas apa pun; `0` bila Google dihubungi (Vision, atau penukaran token yang gagal sementara: jaringan, waktu habis, 5xx/429) tetapi gagal (tidak tertagih, ikut batas kegagalan); `1` bila sukses.
+
+> **Asumsi biaya, belum terbukti:** satu unit = satu fitur untuk satu gambar. Cocokkan `SUM(unit_vision)` dengan laporan
+> tagihan Google Cloud setelah satu panggilan uji (dengan foto uji sendiri, bukan foto pelanggan) sebelum ada klaim biaya.
+
+---
+
 ## Operasional: kesehatan dan saklar fitur (19 Nov 2026)
 
 Semuanya **aditif**: kunci, rute, dan izin lama tidak berubah. Latar dan keputusan:
@@ -3985,7 +4091,8 @@ Kunci baru `kesehatan`; kunci lama (`status`, `app`, `time`, `direktori_perusaha
 | `PUT /organization/fitur` | **super admin saja** | Body `{fitur_nonaktif: [kode...], alasan}` menggantikan seluruh daftar; `alasan` wajib 5-400; kode tak dikenal atau fitur inti -> `422`; audit `fitur_dimatikan` / `fitur_dinyalakan` per fitur (daftar lama/baru, pelaku, alasan); throttle `fitur-saklar` 20/menit |
 
 - Kode awal: `pindai_lembar` (`/worksheet-templates*`, `/worksheet-scans*`), `kirim_email_sertifikat`
-  (`POST /certificates/{id}/kirim-email`). Rute fitur yang mati menjawab `503` dengan
+  (`POST /certificates/{id}/kirim-email`); sejak 23 Nov 2026 juga `ocr_cloud` (`POST /ocr/halaman`, bagian 22).
+  Rute fitur yang mati menjawab `503` dengan
   `{"kode": "fitur_dimatikan", "fitur": "<kode>", "message": "..."}` — sesudah pemeriksaan peran (peran tanpa hak
   tetap `403`) dan sebelum route model binding.
 - **Pengisian, hitung, persetujuan, dan penerbitan tidak bisa dimatikan.**
