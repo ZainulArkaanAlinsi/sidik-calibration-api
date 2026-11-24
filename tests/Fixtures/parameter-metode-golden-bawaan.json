@@ -1,0 +1,681 @@
+{
+    "_catatan": "Direkam dari kode origin/main 79280fc2 SEBELUM parameter keputusan metode dibangun (skrip perekam di PR). Jangan disunting tangan.",
+    "refractometer": {
+        "deviasi": {
+            "n20D": {
+                "12": 0.00045,
+                "19": 0.00045,
+                "20": -0.0,
+                "20.95": -0.00040499999999999933,
+                "21": -0.00045,
+                "21.05": -0.00045,
+                "21.1": -0.0004950000000000006,
+                "22.37": -0.0010350000000000003,
+                "23": -0.00135,
+                "25.5": -0.0024749999999999998,
+                "26.4": -0.0028799999999999993,
+                "30.2": -0.0045899999999999995,
+                "35": -0.0045899999999999995
+            },
+            "°Brix": {
+                "12": 0.07,
+                "19": 0.07,
+                "20": -0.0,
+                "20.95": -0.0629999999999999,
+                "21": -0.07,
+                "21.05": -0.07,
+                "21.1": -0.07700000000000011,
+                "22.37": -0.16100000000000006,
+                "23": -0.21000000000000002,
+                "25.5": -0.385,
+                "26.4": -0.44799999999999995,
+                "30.2": -0.714,
+                "35": -0.714
+            }
+        },
+        "budget": {
+            "21.05": {
+                "komponen": [
+                    {
+                        "sumber": "ketidakpastian_standar",
+                        "keterangan": "Kemurnian larutan standar Refractometer Std Solution 1.33659 n20D (U=2.6E-5 n20D, divisor 1 ikut master Excel)",
+                        "distribusi": "normal",
+                        "u": 2.6e-5,
+                        "ci": 1.0,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "resolusi_alat",
+                        "keterangan": "Daya baca alat 0.0001 n20D",
+                        "distribusi": "persegi",
+                        "u": 2.8867513459481293e-5,
+                        "ci": 1.0,
+                        "vi": 1000000
+                    },
+                    {
+                        "sumber": "perbedaan_suhu",
+                        "keterangan": "Pengaruh perbedaan temperature: deviasi tabel konversi -0.00045 pada suhu ruang 21.05 °C",
+                        "distribusi": "persegi",
+                        "u": -0.0002598076211353316,
+                        "ci": 1.0,
+                        "vi": 50
+                    },
+                    {
+                        "sumber": "ketidakpastian_temperature",
+                        "keterangan": "UTemperature 0.039357337308309 °C (÷k=2), ci = resolusi 0.0001 ikut master Excel",
+                        "distribusi": "normal",
+                        "u": 0.01967866865415443,
+                        "ci": 0.0001,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "pengulangan_pembacaan",
+                        "keterangan": "Pengulangan 5 pembacaan (Type A)",
+                        "distribusi": "t-student",
+                        "u": 1.234e-5,
+                        "ci": 1.0,
+                        "vi": 4
+                    }
+                ],
+                "agregasi": {
+                    "ketidakpastian_gabungan": 0.0002629933106246875,
+                    "derajat_kebebasan_efektif": 52.4931636754391,
+                    "faktor_cakupan_k": 2.006646805061145,
+                    "ketidakpastian_diperluas": 0.0005277346865174824
+                }
+            },
+            "23": {
+                "komponen": [
+                    {
+                        "sumber": "ketidakpastian_standar",
+                        "keterangan": "Kemurnian larutan standar Refractometer Std Solution 1.33659 n20D (U=2.6E-5 n20D, divisor 1 ikut master Excel)",
+                        "distribusi": "normal",
+                        "u": 2.6e-5,
+                        "ci": 1.0,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "resolusi_alat",
+                        "keterangan": "Daya baca alat 0.0001 n20D",
+                        "distribusi": "persegi",
+                        "u": 2.8867513459481293e-5,
+                        "ci": 1.0,
+                        "vi": 1000000
+                    },
+                    {
+                        "sumber": "perbedaan_suhu",
+                        "keterangan": "Pengaruh perbedaan temperature: deviasi tabel konversi -0.00135 pada suhu ruang 23 °C",
+                        "distribusi": "persegi",
+                        "u": -0.0007794228634059949,
+                        "ci": 1.0,
+                        "vi": 50
+                    },
+                    {
+                        "sumber": "ketidakpastian_temperature",
+                        "keterangan": "UTemperature 0.039357337308309 °C (÷k=2), ci = resolusi 0.0001 ikut master Excel",
+                        "distribusi": "normal",
+                        "u": 0.01967866865415443,
+                        "ci": 0.0001,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "pengulangan_pembacaan",
+                        "keterangan": "Pengulangan 5 pembacaan (Type A)",
+                        "distribusi": "t-student",
+                        "u": 1.234e-5,
+                        "ci": 1.0,
+                        "vi": 4
+                    }
+                ],
+                "agregasi": {
+                    "ketidakpastian_gabungan": 0.0007804905389774649,
+                    "derajat_kebebasan_efektif": 50.2744740701094,
+                    "faktor_cakupan_k": 2.0085591121003468,
+                    "ketidakpastian_diperluas": 0.001567661383971298
+                }
+            },
+            "26.4": {
+                "komponen": [
+                    {
+                        "sumber": "ketidakpastian_standar",
+                        "keterangan": "Kemurnian larutan standar Refractometer Std Solution 1.33659 n20D (U=2.6E-5 n20D, divisor 1 ikut master Excel)",
+                        "distribusi": "normal",
+                        "u": 2.6e-5,
+                        "ci": 1.0,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "resolusi_alat",
+                        "keterangan": "Daya baca alat 0.0001 n20D",
+                        "distribusi": "persegi",
+                        "u": 2.8867513459481293e-5,
+                        "ci": 1.0,
+                        "vi": 1000000
+                    },
+                    {
+                        "sumber": "perbedaan_suhu",
+                        "keterangan": "Pengaruh perbedaan temperature: deviasi tabel konversi -0.00288 pada suhu ruang 26.4 °C",
+                        "distribusi": "persegi",
+                        "u": -0.001662768775266122,
+                        "ci": 1.0,
+                        "vi": 50
+                    },
+                    {
+                        "sumber": "ketidakpastian_temperature",
+                        "keterangan": "UTemperature 0.039357337308309 °C (÷k=2), ci = resolusi 0.0001 ikut master Excel",
+                        "distribusi": "normal",
+                        "u": 0.01967866865415443,
+                        "ci": 0.0001,
+                        "vi": 200
+                    },
+                    {
+                        "sumber": "pengulangan_pembacaan",
+                        "keterangan": "Pengulangan 5 pembacaan (Type A)",
+                        "distribusi": "t-student",
+                        "u": 1.234e-5,
+                        "ci": 1.0,
+                        "vi": 4
+                    }
+                ],
+                "agregasi": {
+                    "ketidakpastian_gabungan": 0.0016632695155726664,
+                    "derajat_kebebasan_efektif": 50.060254264070494,
+                    "faktor_cakupan_k": 2.0085591121003468,
+                    "ketidakpastian_diperluas": 0.0033407751413822087
+                }
+            }
+        }
+    },
+    "spectrophotometer": {
+        "titik1_nol": {
+            "standar_deviasi_maks": 0.12000000000000455,
+            "jumlah_pengulangan": 3,
+            "ketidakpastian_gabungan": 0.11295304865931792,
+            "derajat_kebebasan_efektif": 4.695880324865777,
+            "faktor_cakupan_k": 2.7764451051977854,
+            "ketidakpastian_diperluas": 0.31360793906733053,
+            "u95_sertifikat": 0.4,
+            "budget": [
+                {
+                    "sumber": "standar_deviasi_maks",
+                    "u": 0.09118028227819457,
+                    "ci": 1.0,
+                    "vi": 2.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "ketidakpastian_gelas_filter",
+                    "u": 0.05,
+                    "ci": 1.0,
+                    "vi": 200.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "resolusi_alat",
+                    "u": 0.002886751345948129,
+                    "ci": 1.0,
+                    "vi": 1000000.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "drift_standar",
+                    "u": 0.005773502691896259,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "spectral_bandwidth",
+                    "u": 0.043622020338773076,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                }
+            ],
+            "jumlah_catatan_audit": 1,
+            "kode_catatan_audit": [
+                "perbandingan_cmc"
+            ]
+        },
+        "titik1_terbesar": {
+            "standar_deviasi_maks": 0.6557438524301759,
+            "jumlah_pengulangan": 3,
+            "ketidakpastian_gabungan": 0.5026978844958707,
+            "derajat_kebebasan_efektif": 2.0722450374831585,
+            "faktor_cakupan_k": 4.302652729749461,
+            "ketidakpastian_diperluas": 2.1629344249654374,
+            "u95_sertifikat": 2.1629344249654374,
+            "budget": [
+                {
+                    "sumber": "standar_deviasi_maks",
+                    "u": 0.4982575797230994,
+                    "ci": 1.0,
+                    "vi": 2.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "ketidakpastian_gelas_filter",
+                    "u": 0.05,
+                    "ci": 1.0,
+                    "vi": 200.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "resolusi_alat",
+                    "u": 0.002886751345948129,
+                    "ci": 1.0,
+                    "vi": 1000000.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "drift_standar",
+                    "u": 0.005773502691896259,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "spectral_bandwidth",
+                    "u": 0.043622020338773076,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                }
+            ],
+            "jumlah_catatan_audit": 1,
+            "kode_catatan_audit": [
+                "perbandingan_cmc"
+            ]
+        },
+        "titik1_menengah": {
+            "standar_deviasi_maks": 0.12000000000000455,
+            "jumlah_pengulangan": 3,
+            "ketidakpastian_gabungan": 0.11295304865931792,
+            "derajat_kebebasan_efektif": 4.695880324865777,
+            "faktor_cakupan_k": 2.7764451051977854,
+            "ketidakpastian_diperluas": 0.31360793906733053,
+            "u95_sertifikat": 0.4,
+            "budget": [
+                {
+                    "sumber": "standar_deviasi_maks",
+                    "u": 0.09118028227819457,
+                    "ci": 1.0,
+                    "vi": 2.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "ketidakpastian_gelas_filter",
+                    "u": 0.05,
+                    "ci": 1.0,
+                    "vi": 200.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "resolusi_alat",
+                    "u": 0.002886751345948129,
+                    "ci": 1.0,
+                    "vi": 1000000.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "drift_standar",
+                    "u": 0.005773502691896259,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                },
+                {
+                    "sumber": "spectral_bandwidth",
+                    "u": 0.043622020338773076,
+                    "ci": 1.0,
+                    "vi": 50.0,
+                    "disertakan": true
+                }
+            ],
+            "jumlah_catatan_audit": 1,
+            "kode_catatan_audit": [
+                "perbandingan_cmc"
+            ]
+        },
+        "_masukan": {
+            "titik1_nol": [
+                {
+                    "titik_ke": 1,
+                    "titik_ukur": 279.6,
+                    "pembacaan": [
+                        279.6,
+                        279.6,
+                        279.6
+                    ]
+                },
+                {
+                    "titik_ke": 2,
+                    "titik_ukur": 287.7,
+                    "pembacaan": [
+                        287.59999999999997,
+                        287.7,
+                        287.8
+                    ]
+                },
+                {
+                    "titik_ke": 3,
+                    "titik_ukur": 334.0,
+                    "pembacaan": [
+                        333.95,
+                        334.0,
+                        334.05
+                    ]
+                },
+                {
+                    "titik_ke": 4,
+                    "titik_ukur": 360.9,
+                    "pembacaan": [
+                        360.78,
+                        360.9,
+                        361.02
+                    ]
+                },
+                {
+                    "titik_ke": 5,
+                    "titik_ukur": 418.6,
+                    "pembacaan": [
+                        418.51000000000005,
+                        418.6,
+                        418.69
+                    ]
+                },
+                {
+                    "titik_ke": 6,
+                    "titik_ukur": 445.8,
+                    "pembacaan": [
+                        445.8,
+                        445.8,
+                        445.8
+                    ]
+                },
+                {
+                    "titik_ke": 7,
+                    "titik_ukur": 453.6,
+                    "pembacaan": [
+                        453.53000000000003,
+                        453.6,
+                        453.67
+                    ]
+                },
+                {
+                    "titik_ke": 8,
+                    "titik_ukur": 460.0,
+                    "pembacaan": [
+                        459.89,
+                        460.0,
+                        460.11
+                    ]
+                },
+                {
+                    "titik_ke": 9,
+                    "titik_ukur": 536.3,
+                    "pembacaan": [
+                        536.27,
+                        536.3,
+                        536.3299999999999
+                    ]
+                },
+                {
+                    "titik_ke": 10,
+                    "titik_ukur": 637.9,
+                    "pembacaan": [
+                        637.8199999999999,
+                        637.9,
+                        637.98
+                    ]
+                }
+            ],
+            "titik1_terbesar": [
+                {
+                    "titik_ke": 1,
+                    "titik_ukur": 279.6,
+                    "pembacaan": [
+                        279.1,
+                        279.6,
+                        280.4
+                    ]
+                },
+                {
+                    "titik_ke": 2,
+                    "titik_ukur": 287.7,
+                    "pembacaan": [
+                        287.59999999999997,
+                        287.7,
+                        287.8
+                    ]
+                },
+                {
+                    "titik_ke": 3,
+                    "titik_ukur": 334.0,
+                    "pembacaan": [
+                        333.95,
+                        334.0,
+                        334.05
+                    ]
+                },
+                {
+                    "titik_ke": 4,
+                    "titik_ukur": 360.9,
+                    "pembacaan": [
+                        360.78,
+                        360.9,
+                        361.02
+                    ]
+                },
+                {
+                    "titik_ke": 5,
+                    "titik_ukur": 418.6,
+                    "pembacaan": [
+                        418.51000000000005,
+                        418.6,
+                        418.69
+                    ]
+                },
+                {
+                    "titik_ke": 6,
+                    "titik_ukur": 445.8,
+                    "pembacaan": [
+                        445.8,
+                        445.8,
+                        445.8
+                    ]
+                },
+                {
+                    "titik_ke": 7,
+                    "titik_ukur": 453.6,
+                    "pembacaan": [
+                        453.53000000000003,
+                        453.6,
+                        453.67
+                    ]
+                },
+                {
+                    "titik_ke": 8,
+                    "titik_ukur": 460.0,
+                    "pembacaan": [
+                        459.89,
+                        460.0,
+                        460.11
+                    ]
+                },
+                {
+                    "titik_ke": 9,
+                    "titik_ukur": 536.3,
+                    "pembacaan": [
+                        536.27,
+                        536.3,
+                        536.3299999999999
+                    ]
+                },
+                {
+                    "titik_ke": 10,
+                    "titik_ukur": 637.9,
+                    "pembacaan": [
+                        637.8199999999999,
+                        637.9,
+                        637.98
+                    ]
+                }
+            ],
+            "titik1_menengah": [
+                {
+                    "titik_ke": 1,
+                    "titik_ukur": 279.6,
+                    "pembacaan": [
+                        279.55,
+                        279.6,
+                        279.65
+                    ]
+                },
+                {
+                    "titik_ke": 2,
+                    "titik_ukur": 287.7,
+                    "pembacaan": [
+                        287.59999999999997,
+                        287.7,
+                        287.8
+                    ]
+                },
+                {
+                    "titik_ke": 3,
+                    "titik_ukur": 334.0,
+                    "pembacaan": [
+                        333.95,
+                        334.0,
+                        334.05
+                    ]
+                },
+                {
+                    "titik_ke": 4,
+                    "titik_ukur": 360.9,
+                    "pembacaan": [
+                        360.78,
+                        360.9,
+                        361.02
+                    ]
+                },
+                {
+                    "titik_ke": 5,
+                    "titik_ukur": 418.6,
+                    "pembacaan": [
+                        418.51000000000005,
+                        418.6,
+                        418.69
+                    ]
+                },
+                {
+                    "titik_ke": 6,
+                    "titik_ukur": 445.8,
+                    "pembacaan": [
+                        445.8,
+                        445.8,
+                        445.8
+                    ]
+                },
+                {
+                    "titik_ke": 7,
+                    "titik_ukur": 453.6,
+                    "pembacaan": [
+                        453.53000000000003,
+                        453.6,
+                        453.67
+                    ]
+                },
+                {
+                    "titik_ke": 8,
+                    "titik_ukur": 460.0,
+                    "pembacaan": [
+                        459.89,
+                        460.0,
+                        460.11
+                    ]
+                },
+                {
+                    "titik_ke": 9,
+                    "titik_ukur": 536.3,
+                    "pembacaan": [
+                        536.27,
+                        536.3,
+                        536.3299999999999
+                    ]
+                },
+                {
+                    "titik_ke": 10,
+                    "titik_ukur": 637.9,
+                    "pembacaan": [
+                        637.8199999999999,
+                        637.9,
+                        637.98
+                    ]
+                }
+            ]
+        },
+        "_spek": {
+            "grup": "holmium",
+            "satuan": "nm",
+            "nama_standar": "Filter Standard 1",
+            "u_standar": 0.1,
+            "k_standar": 2.0,
+            "resolusi": 0.01,
+            "cmc": 0.4
+        }
+    },
+    "conductivity": {
+        "standar": {
+            "25": {
+                "null": null,
+                "0": 25.0,
+                "20": 25.0,
+                "24.92": 25.0,
+                "25": 25.0,
+                "25.3": 25.0,
+                "27.5": 25.0
+            },
+            "1412": {
+                "null": null,
+                "0": 1412.0,
+                "20": 1412.0,
+                "24.92": 1412.0,
+                "25": 1412.0,
+                "25.3": 1412.0,
+                "27.5": 1412.0
+            },
+            "111": {
+                "null": null,
+                "0": 64.88,
+                "20": 101.19999999999999,
+                "24.92": 110.64966688,
+                "25": 110.80499999999999,
+                "25.3": 111.387978,
+                "27.5": 115.68625
+            }
+        }
+    },
+    "tambah_hari": {
+        "ph_meter": {
+            "kepala": "id",
+            "terbit": "id",
+            "tambah_hari": null
+        },
+        "conductivity_meter": {
+            "kepala": "id",
+            "terbit": "id",
+            "tambah_hari": null
+        },
+        "spectrophotometer": {
+            "kepala": "id",
+            "terbit": "id",
+            "tambah_hari": 1
+        },
+        "turbidimeter": {
+            "kepala": "id",
+            "terbit": "id",
+            "tambah_hari": null
+        }
+    }
+}

@@ -105,6 +105,7 @@ class HitungUlangSesi extends Command
             ['hasil' => $perGrup, 'versi' => $versiAcuan] = $acuan->jalankanDengan(
                 $pilihanAcuan['versi'],
                 fn (): ?array => $profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat),
+                $sesi,
             );
 
             if ($perGrup === null) {

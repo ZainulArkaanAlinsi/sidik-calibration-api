@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\Calibration\TabelStandarRefractometer;
 
 /**
@@ -120,6 +121,9 @@ class RefractometerProfile extends CalibrationProfile
      * pembacaan dinormalisasi ke sini sebelum dibandingin sama larutan standar.
      */
     public const SUHU_ACUAN = 20.0;
+
+    /** Kunci registri `parameter-keputusan-metode.json`. */
+    public const PARAMETER_SUMBER_SUHU = 'refractometer.sumber_deviasi_suhu';
 
     // Kemiringan "Tab Konversi Temperatur" per satuan (n20D 0,00045/°C, °Brix
     // 0,07/°C) dan batas tabel 19,0–30,2 °C — dulu konstanta `KOEF_SUHU`,
@@ -338,6 +342,17 @@ class RefractometerProfile extends CalibrationProfile
      */
     public function deviasiSuhu(float $suhuRuang, string $satuan): float
     {
+        // Parameter keputusan metode `refractometer.sumber_deviasi_suhu` (butir TM
+        // refractometer#24). Bawaan `suhu_ruang` = blok di bawah, tidak berubah.
+        // `baris_tetap_21c` = workbook: `PERHITUNGAN U95%!N11/N26` menunjuk sel tetap
+        // `'Tab Konversi Temperatur'!H24/E24` (baris B24 = 21,0 C), suhu ruang tidak
+        // dibaca.
+        $putusan = app(ParameterKeputusanMetode::class)->putusan(self::PARAMETER_SUMBER_SUHU);
+
+        if ($putusan->nilai === 'baris_tetap_21c') {
+            return -self::koefSuhu($satuan) * ((float) $putusan->data['suhu_c'] - self::SUHU_ACUAN);
+        }
+
         $t = max(
             TabelStandarRefractometer::koreksiSuhu('suhu_tabel_min_c'),
             min(TabelStandarRefractometer::koreksiSuhu('suhu_tabel_maks_c'), $suhuRuang),
@@ -390,6 +405,7 @@ class RefractometerProfile extends CalibrationProfile
         $resolusi = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
         $uTemperature = (float) $kemampuan->u_temperature;
         $deviasi = $this->deviasiSuhu($suhuRuang, $satuan);
+        $tetap = app(ParameterKeputusanMetode::class)->nilai(self::PARAMETER_SUMBER_SUHU) === 'baris_tetap_21c';
 
         return [
             [
@@ -417,11 +433,17 @@ class RefractometerProfile extends CalibrationProfile
             ],
             [
                 'sumber' => 'perbedaan_suhu',
-                'keterangan' => sprintf(
-                    'Pengaruh perbedaan temperature: deviasi tabel konversi %s pada suhu ruang %s °C',
-                    $deviasi,
-                    $suhuRuang,
-                ),
+                'keterangan' => $tetap
+                    ? sprintf(
+                        'Pengaruh perbedaan temperature: deviasi tabel konversi %s pada baris tetap 21,0 °C (ikut workbook; suhu ruang %s °C tidak dipakai)',
+                        $deviasi,
+                        $suhuRuang,
+                    )
+                    : sprintf(
+                        'Pengaruh perbedaan temperature: deviasi tabel konversi %s pada suhu ruang %s °C',
+                        $deviasi,
+                        $suhuRuang,
+                    ),
                 'distribusi' => 'persegi',
                 'u' => $deviasi / $sqrt3,
                 'ci' => 1.0,

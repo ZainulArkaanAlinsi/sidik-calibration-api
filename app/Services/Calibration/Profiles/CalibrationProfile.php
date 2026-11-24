@@ -8,6 +8,7 @@ use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Services\Acuan\FormatSertifikatAcuan;
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\Calibration\TitikUkurSesi;
 use App\Services\GumCalculator;
 use App\Services\PenahananProfil;
@@ -2087,6 +2088,38 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Baris jejak PARAMETER KEPUTUSAN METODE milik profil ini, untuk disisipkan ke
+     * `type_b_components` tiap hasil hitung (`ParameterKeputusanMetode`, aturan
+     * Olah data butir 4: pilihan metode yang menyimpang dari master wajib terbaca
+     * di jejak sesi, lengkap dengan nilai dan versinya).
+     *
+     * Bawaan: semua parameter berlingkup `hitung` yang di registri menyebut kode
+     * profil ini; `[]` untuk profil tanpa parameter, jadi profil lain tidak
+     * berubah satu byte. Dipanggil `GumCalculator::hitungTitik()` (jalur per
+     * titik) dan jejak audit profil yang menghitung per kelompok.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function jejakParameterMetode(): array
+    {
+        return app(ParameterKeputusanMetode::class)->barisJejakProfil($this->kode());
+    }
+
+    /**
+     * Nilai acuan standar pada suhu larutan, dalam satuan kerja titik (setelah
+     * `faktorKanonik`). Bawaan = persamaan di `standards.koefisien_suhu`
+     * (`Standard::nilaiPadaSuhu`), `null` bila standar tak punya kurva atau suhu
+     * larutan tak dicatat: pemanggil jatuh ke nilai nominal yang diketik.
+     *
+     * Titik masuk bagi parameter keputusan metode yang mengubah NILAI ACUAN
+     * (Conductivity 1412 uS/cm). Profil lain tidak meng-override.
+     */
+    public function nilaiAcuanStandar(Standard $standard, ?float $suhuLarutan, float $titikUkur): ?float
+    {
+        return $standard->nilaiPadaSuhu($suhuLarutan);
+    }
+
+    /**
      * Berapa desimal yang dipakai NYETAK angka hasil di sertifikat, kalau alat
      * ini emang beda dari aturan umum. `null` = ikut aturan umum
      * (`Organization::desimalSertifikat`, yaitu diturunkan dari resolusi alat).
@@ -2458,7 +2491,7 @@ abstract class CalibrationProfile
         $pracetak = config('sertifikat.kop_pracetak') === true
             ? FormatMasterSertifikat::ruangPracetakCm($this->kode())
             : null;
-        $tanggal = FormatMasterSertifikat::tanggalUntukProfil($this->kode());
+        $tanggal = $this->tanggalMasterDenganParameter(FormatMasterSertifikat::tanggalUntukProfil($this->kode()), $sesi);
         // A3: huruf mengikuti ukuran median master (hanya profil yang audit 11 Nov
         // tandai menyimpang); dibekukan di snapshot BARU, yang lama tak tersentuh.
         $fontMaster = FormatMasterSertifikat::fontMasterPt($this->kode());
@@ -2470,6 +2503,33 @@ abstract class CalibrationProfile
             ...($tanggal === null ? [] : ['tanggal_master' => $tanggal]),
             ...($fontMaster === null ? [] : ['font_master_pt' => $fontMaster]),
         ];
+    }
+
+    /**
+     * `tanggal_master` dengan parameter keputusan metode `sertifikat.tambah_hari.<kode>`
+     * (N di rumus Issuance Date master, atau tanggal terbit sistem) bila profil ini
+     * punya parameternya DAN ada penetapan yang berlaku pada `tanggal_kalibrasi`
+     * sesi. Tanpa penetapan yang berlaku tabel `FormatMasterSertifikat` dipakai
+     * persis (nilai bawaan registri dijaga sama dengan tabel itu oleh tes), jadi
+     * sertifikat yang sudah terbit dan sesi lama tidak bergeser.
+     *
+     * @param  array{kepala: string, terbit: string, tambah_hari: int|null}|null  $tanggal
+     * @return array{kepala: string, terbit: string, tambah_hari: int|null}|null
+     */
+    private function tanggalMasterDenganParameter(?array $tanggal, CalibrationSession $sesi): ?array
+    {
+        $gerbang = app(ParameterKeputusanMetode::class);
+        $kunci = 'sertifikat.tambah_hari.'.$this->kode();
+
+        if ($tanggal === null || $sesi->tanggal_kalibrasi === null || ! $gerbang->punya($kunci)) {
+            return $tanggal;
+        }
+
+        $putusan = $gerbang->putusan($kunci, $sesi->tanggal_kalibrasi);
+
+        return $putusan->bawaan
+            ? $tanggal
+            : [...$tanggal, 'tambah_hari' => $putusan->data['tambah_hari'] ?? null];
     }
 
     /**

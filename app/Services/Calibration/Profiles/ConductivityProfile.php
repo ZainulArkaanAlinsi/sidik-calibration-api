@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Acuan\ParameterKeputusanMetode;
 
 /**
  * Profil Conductivity Meter (alat ke-5). Metode `SIDIK-IK-CAL-0507_Rev.6`;
@@ -226,6 +227,9 @@ class ConductivityProfile extends CalibrationProfile
      * memutuskan rumus final buat titik ini. TIDAK dipakai menghitung apa pun.
      */
     public const KOEF_SUHU_1412_TERDOKUMENTASI = ['a' => 2.0e-13, 'b' => 27.0, 'c' => 738.0];
+
+    /** Kunci registri `parameter-keputusan-metode.json` (butir TM conductivity_meter#18). */
+    public const PARAMETER_NILAI_ACUAN_1412 = 'conductivity.nilai_acuan_larutan_1412';
 
     /**
      * Baris tabel STANDARD di lembar kerja: 3 larutan Supelco/Merck (DATABASE
@@ -598,6 +602,29 @@ class ConductivityProfile extends CalibrationProfile
      *  - Syarat botolnya masih µS/cm bikin ini mati sendiri kalau suatu saat
      *    lab nyimpen botol 1412 dalam mS/cm — nggak kebagi dua kali.
      */
+    public function nilaiAcuanStandar(Standard $standard, ?float $suhuLarutan, float $titikUkur): ?float
+    {
+        // Parameter keputusan metode `conductivity.nilai_acuan_larutan_1412` (butir TM
+        // conductivity_meter#18). Bawaan `konstanta_1412` = jalur induk (kurva di
+        // `standards.koefisien_suhu`, yaitu konstanta 1412 sesuai E-5), tidak berubah.
+        // `polinomial_suhu` = workbook `PERHITUNGAN!J26`: polinomial suhu larutan yang
+        // didokumentasikan master ([KOEF_SUHU_1412_TERDOKUMENTASI]). Hanya titik tengah
+        // (1412 uS/cm, jendela yang sama dengan [faktorKanonik]) dan hanya bila suhu
+        // larutan tercatat: tanpa suhu Excel memberi 738 dari sel kosong, dan itu tidak
+        // ditiru (titik jatuh ke nominal seperti biasa).
+        $tengah = self::TITIK[1]['nilai'];
+
+        if ($suhuLarutan !== null
+            && abs($titikUkur - $tengah) <= $tengah * self::TOLERANSI_PASANGAN_TITIK
+            && app(ParameterKeputusanMetode::class)->nilai(self::PARAMETER_NILAI_ACUAN_1412) === 'polinomial_suhu') {
+            $k = self::KOEF_SUHU_1412_TERDOKUMENTASI;
+
+            return $k['a'] * $suhuLarutan ** 2 + $k['b'] * $suhuLarutan + $k['c'];
+        }
+
+        return parent::nilaiAcuanStandar($standard, $suhuLarutan, $titikUkur);
+    }
+
     public function faktorKanonik(float $titikUkur, Equipment $equipment): float
     {
         $tengah = self::TITIK[1]['varian_mili'] ?? null;
