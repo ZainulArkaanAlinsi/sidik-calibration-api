@@ -908,8 +908,10 @@ class SpectrophotometerProfile extends CalibrationProfile
             ];
         }
 
-        // Jejak parameter keputusan metode (nilai + versi penetapan), di ujung supaya
-        // posisi baris lain tidak bergeser.
+        // Jejak parameter keputusan metode (nilai + versi penetapan): sesudah baris
+        // budget dan catatan audit, sebelum `titik_luar_rentang_cmc` di bawah (baris
+        // itu, bila ada, bergeser satu posisi; konsumen mencari lewat `sumber`,
+        // bukan lewat indeks).
         foreach ($this->jejakParameterMetode() as $baris) {
             $audit[] = $baris;
         }
