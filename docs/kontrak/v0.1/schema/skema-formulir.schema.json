@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.sidik.invalid/kontrak/v0.1/skema-formulir.schema.json",
+  "title": "Skema formulir (kontrak antar-terminal v0.1)",
+  "description": "Letak kotak isian dan artinya untuk SATU formulir + SATU revisi cetak, berversi (versi_skema). Pemilik: T4 API. Aturan yang tidak bisa ditulis di JSON Schema ada di KONTRAK.md bagian 7.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kontrak_versi", "formulir", "versi_skema", "status", "halaman_pt", "definisi_lembar_kerja", "item"],
+  "properties": {
+    "kontrak_versi": { "const": "0.1" },
+    "formulir": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kode", "revisi"],
+      "properties": {
+        "kode": { "$ref": "#/$defs/kode_formulir" },
+        "revisi": { "$ref": "#/$defs/revisi" }
+      }
+    },
+    "versi_skema": {
+      "description": "Naik satu tiap skema baru untuk (kode, revisi) yang sama. Versi dipublikasi tidak pernah diubah isinya.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": { "enum": ["draf", "ditinjau", "dipublikasi", "ditarik"] },
+    "halaman_pt": {
+      "description": "[lebar, tinggi] halaman 1 dalam poin PDF. v0.1 = formulir satu halaman.",
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "exclusiveMinimum": 0 },
+        { "type": "number", "exclusiveMinimum": 0 }
+      ],
+      "items": false,
+      "minItems": 2
+    },
+    "definisi_lembar_kerja": {
+      "description": "Definisi lembar kerja (versi berapa) yang dirujuk semua pemetaan.sel_input. null = formulir belum punya definisi; hasil OCR hanya jadi data mentah berlabel dan tidak masuk perhitungan.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profil", "versi"],
+          "properties": {
+            "profil": { "$ref": "#/$defs/profil" },
+            "versi": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "catatan": { "type": "string", "maxLength": 2000 },
+    "item": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Skema yang sudah diajukan ke atas tidak boleh membawa butir yang belum diputuskan manusia.",
+      "if": {
+        "properties": { "status": { "enum": ["ditinjau", "dipublikasi", "ditarik"] } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "item": {
+            "items": {
+              "properties": {
+                "peran": { "not": { "const": "belum_ditentukan" } },
+                "perlu_dicek": { "const": false }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Tanpa definisi lembar kerja tidak ada sel input yang bisa dirujuk.",
+      "if": {
+        "properties": { "definisi_lembar_kerja": { "type": "null" } },
+        "required": ["definisi_lembar_kerja"]
+      },
+      "then": {
+        "properties": {
+          "item": {
+            "items": {
+              "properties": {
+                "pemetaan": { "properties": { "sel_input": { "type": "null" } } }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "kode_formulir": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9.-]{2,38}[A-Z0-9]$"
+    },
+    "revisi": { "type": "integer", "minimum": 0, "maximum": 999 },
+    "id_item": {
+      "description": "Opak dan stabil antar revisi (KONTRAK.md bagian 4). Klien tidak boleh menafsirkan isinya.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{5,63}$"
+    },
+    "profil": {
+      "description": "Kode profil kalibrasi di API (CalibrationProfile::kode()), mis. micrometer.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,59}$"
+    },
+    "bbox_pt": {
+      "description": "[x0, y0, x1, y1] poin PDF, titik asal kiri-atas seperti skema_draf. Syarat x0<x1, y0<y1, dan di dalam halaman diperiksa di luar JSON Schema.",
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "minimum": 0 },
+        { "type": "number", "minimum": 0 },
+        { "type": "number", "minimum": 0 },
+        { "type": "number", "minimum": 0 }
+      ],
+      "items": false,
+      "minItems": 4
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "jenis", "bbox_pt", "peran", "label_baris", "label_kolom", "satuan", "kelompok", "desimal", "pemetaan", "sumber", "perlu_dicek"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id_item" },
+        "jenis": {
+          "description": "Asal geometri. sel = kotak dari deteksi garis tabel; teks_bebas = area teks tanpa kotak dari lapisan teks PDF; area_usulan = area isian tanpa kotak tercetak yang koordinatnya DIUSULKAN (wajib kosong di PDF). Kotak centang adalah peran, bukan jenis.",
+          "enum": ["sel", "teks_bebas", "area_usulan"]
+        },
+        "bbox_pt": { "$ref": "#/$defs/bbox_pt" },
+        "peran": {
+          "enum": ["isian_angka", "isian_teks", "centang", "tanggal", "label", "pemisah", "abaikan", "belum_ditentukan"]
+        },
+        "label_baris": { "type": "string", "maxLength": 300 },
+        "label_kolom": { "type": "string", "maxLength": 300 },
+        "satuan": { "type": "string", "maxLength": 40 },
+        "kelompok": { "type": "string", "maxLength": 120 },
+        "desimal": {
+          "description": "Jumlah desimal yang tercetak/lazim di kotak ini. null = belum diketahui.",
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 10
+        },
+        "pemetaan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sel_input", "master"],
+          "properties": {
+            "sel_input": {
+              "description": "Alamat sel input di definisi lembar kerja yang dirujuk header, format Sheet!C12 (tanpa tanda kutip, tanpa $). Alamat itu wajib ada di daftar input definisi tersebut (diperiksa server).",
+              "oneOf": [
+                { "type": "null" },
+                { "type": "string", "pattern": "^[^!'\\[\\]:*?/\\\\]{1,64}![A-Z]{1,3}[1-9][0-9]{0,5}$" }
+              ]
+            },
+            "master": {
+              "description": "Slot data master yang diisi oleh kotak ini. null = bukan isian master.",
+              "enum": ["standar_dipakai", "standar_dicek", "thermohygro", "metode_kalibrasi", null]
+            }
+          }
+        },
+        "sumber": {
+          "description": "Asal nilai peran/label/pemetaan yang sekarang tertulis.",
+          "enum": ["heuristik", "model_visi", "manusia"]
+        },
+        "perlu_dicek": {
+          "description": "true = belum ditinjau manusia. Skema berstatus ditinjau ke atas wajib false di semua butir.",
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "peran": { "enum": ["label", "pemisah", "abaikan"] } },
+            "required": ["peran"]
+          },
+          "then": {
+            "properties": {
+              "pemetaan": {
+                "properties": {
+                  "sel_input": { "type": "null" },
+                  "master": { "type": "null" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

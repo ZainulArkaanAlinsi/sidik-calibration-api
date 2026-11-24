@@ -1,0 +1,75 @@
+{
+  "kontrak_versi": "0.1",
+  "pindai_id": "pdi-01jd8k2m4q9x",
+  "urutan": 1,
+  "dikonfirmasi_oleh": {
+    "user_id": 7,
+    "peran": "teknisi"
+  },
+  "waktu": "2026-11-24T16:12:40+07:00",
+  "item": [
+    {
+      "item_id": "itm-9999-a001",
+      "nilai_usulan": "10.003",
+      "nilai_sebelum": "10.003",
+      "nilai_final": "10.003",
+      "diubah": false,
+      "alasan_jika_diubah": "tidak perlu",
+      "master_id": null
+    },
+    {
+      "item_id": "itm-9999-a002",
+      "nilai_usulan": "10.005",
+      "nilai_sebelum": "10.005",
+      "nilai_final": "10.065",
+      "diubah": true,
+      "alasan_jika_diubah": "Digit ketiga di kertas 6, bukan 0 (dicek ulang pada foto asli).",
+      "master_id": null
+    },
+    {
+      "item_id": "itm-9999-b001",
+      "nilai_usulan": "Mikrometer luar",
+      "nilai_sebelum": "Mikrometer luar",
+      "nilai_final": "Mikrometer luar",
+      "diubah": false,
+      "alasan_jika_diubah": null,
+      "master_id": null
+    },
+    {
+      "item_id": "itm-9999-c001",
+      "nilai_usulan": null,
+      "nilai_sebelum": null,
+      "nilai_final": "2026-11-24",
+      "diubah": true,
+      "alasan_jika_diubah": "Tidak terbaca mesin; diisi dari kertas.",
+      "master_id": null
+    },
+    {
+      "item_id": "itm-9999-d001",
+      "nilai_usulan": "1",
+      "nilai_sebelum": "1",
+      "nilai_final": "1",
+      "diubah": false,
+      "alasan_jika_diubah": null,
+      "master_id": 12
+    },
+    {
+      "item_id": "itm-9999-d002",
+      "nilai_usulan": "0",
+      "nilai_sebelum": "0",
+      "nilai_final": "0",
+      "diubah": false,
+      "alasan_jika_diubah": null,
+      "master_id": null
+    },
+    {
+      "item_id": "itm-9999-g001",
+      "nilai_usulan": null,
+      "nilai_sebelum": null,
+      "nilai_final": null,
+      "diubah": false,
+      "alasan_jika_diubah": null,
+      "master_id": null
+    }
+  ]
+}

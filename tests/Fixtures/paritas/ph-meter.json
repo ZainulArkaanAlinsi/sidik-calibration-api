@@ -1,0 +1,2056 @@
+{
+  "_digenerate_oleh": "docs/skrip/gen-fixture-paritas-micrometer-ph.py",
+  "_catatan": "Disalin dari nilai-cache workbook master (alamat sel di tiap nilai). Tanpa nama/alamat pelanggan, nomor sertifikat, nomor order, atau nama teknisi. Jangan disunting dengan tangan.",
+  "workbook": {
+    "trial": {
+      "label": "pH for trial (termometer Yokogawa CA 150)",
+      "berkas": "Master Olah Data_pH for trial.xlsm",
+      "sha256_12": "046c373ed053",
+      "masukan": {
+        "resolusi_alat": {
+          "sel": "INPUT DATA!E16",
+          "nilai": 0.01
+        },
+        "suhu_ruang_c": {
+          "awal": {
+            "sel": "INPUT DATA!E21",
+            "nilai": 21.3
+          },
+          "akhir": {
+            "sel": "INPUT DATA!F21",
+            "nilai": 21.5
+          }
+        },
+        "u95_termometer_c": {
+          "sel": "DATABASE!V16",
+          "nilai": 0.72
+        },
+        "u95_sensor_c": {
+          "sel": "DATABASE!V17",
+          "nilai": 0.06
+        },
+        "u_temperature": {
+          "sel": "PERHITUNGAN U95%!AE4",
+          "nilai": 0.36124783736376886
+        }
+      },
+      "titik": [
+        {
+          "nama": "pH 4",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!G42",
+                "INPUT DATA!G43",
+                "INPUT DATA!G44",
+                "INPUT DATA!G45",
+                "INPUT DATA!G46"
+              ],
+              "nilai": [
+                4.0,
+                4.0,
+                4.0,
+                4.0,
+                4.0
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!H42",
+                "INPUT DATA!H43",
+                "INPUT DATA!H44",
+                "INPUT DATA!H45",
+                "INPUT DATA!H46"
+              ],
+              "nilai": [
+                22.2,
+                22.2,
+                22.1,
+                22.2,
+                22.2
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!G31",
+              "nilai": 3.99
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!H42",
+              "nilai": 22.18
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!G35",
+              "nilai": 4.009244572
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!G42",
+              "nilai": 4.0
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!G44",
+              "nilai": 0.0
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!G43",
+              "nilai": -0.009244572000000062
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!G35",
+            "rumus": "=(0.00003*H42^2)-(0.0023*H42)+4.0455",
+            "a": 3e-05,
+            "b": -0.0023,
+            "c": 4.0455
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V13",
+            "nilai": 0.02
+          },
+          "cmc": {
+            "sel": "DATABASE!S5",
+            "nilai": 0.023
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M11",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P11",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R11",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T11",
+                "nilai": 0.01
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W11",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y11",
+                "nilai": 0.01
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB11",
+                "nilai": 0.0001
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF11",
+                "nilai": 5e-11
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M12",
+                "nilai": 0.005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P12",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R12",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T12",
+                "nilai": 0.002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W12",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y12",
+                "nilai": 0.002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB12",
+                "nilai": 8.333333333333334e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF12",
+                "nilai": 6.944444444444445e-17
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M13",
+                "nilai": 0.36124783736376886
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P13",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R13",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T13",
+                "nilai": 0.18062391868188443
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W13",
+                "nilai": 0.0007700000000001594
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y13",
+                "nilai": 0.00013908041738507982
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB13",
+                "nilai": 1.9343362500008012e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF13",
+                "nilai": 1.870828364033581e-18
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M14",
+                "nilai": 0.01
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P14",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R14",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T14",
+                "nilai": 0.005773502691896258
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W14",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y14",
+                "nilai": 0.005773502691896258
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB14",
+                "nilai": 3.3333333333333335e-05
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF14",
+                "nilai": 2.2222222222222225e-11
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M15",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P15",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R15",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T15",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W15",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y15",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB15",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF15",
+                "nilai": 0.0
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB16",
+              "nilai": 0.0001416860100291667
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF16",
+              "nilai": 7.222229353749503e-11
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB17",
+              "nilai": 0.011903193270260157
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB18",
+              "nilai": 277.96023159473606
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB19",
+              "nilai": 1.9685650464208695
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB20",
+              "nilai": 0.02343221021262627
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB21",
+              "nilai": 0.023
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB22",
+              "nilai": 0.02343221021262627
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C21",
+              "nilai": 4.009244572,
+              "format": "0.00",
+              "teks": "4.01",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J21",
+              "nilai": 4.0,
+              "format": "0.00",
+              "teks": "4.00",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P21",
+              "nilai": 0.009244572000000062,
+              "format": "0.00",
+              "teks": "0.01",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S21",
+              "nilai": 0.02343221021262627,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.011903193270260156,
+            "veff": 277.9602315947359,
+            "k": 1.9685650464204225,
+            "u_hitung": 0.023432210212620944,
+            "u_cetak": 0.023432210212620944,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        },
+        {
+          "nama": "pH 7",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!I42",
+                "INPUT DATA!I43",
+                "INPUT DATA!I44",
+                "INPUT DATA!I45",
+                "INPUT DATA!I46"
+              ],
+              "nilai": [
+                7.01,
+                7.01,
+                7.0,
+                7.0,
+                7.0
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!J42",
+                "INPUT DATA!J43",
+                "INPUT DATA!J44",
+                "INPUT DATA!J45",
+                "INPUT DATA!J46"
+              ],
+              "nilai": [
+                22.2,
+                22.2,
+                22.2,
+                22.2,
+                22.2
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!I31",
+              "nilai": 7.0
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!J42",
+              "nilai": 22.2
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!I35",
+              "nilai": 6.9889072
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!I42",
+              "nilai": 7.004
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!I44",
+              "nilai": 0.005477225575051544
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!I43",
+              "nilai": 0.015092799999999684
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!I35",
+            "rumus": "=(0.00008*J42^2)-(0.0076*J42)+7.1182",
+            "a": 8e-05,
+            "b": -0.0076,
+            "c": 7.1182
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V14",
+            "nilai": 0.02
+          },
+          "cmc": {
+            "sel": "DATABASE!S6",
+            "nilai": 0.021
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M26",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P26",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R26",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T26",
+                "nilai": 0.01
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W26",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y26",
+                "nilai": 0.01
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB26",
+                "nilai": 0.0001
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF26",
+                "nilai": 5e-11
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M27",
+                "nilai": 0.005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P27",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R27",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T27",
+                "nilai": 0.002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W27",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y27",
+                "nilai": 0.002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB27",
+                "nilai": 8.333333333333334e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF27",
+                "nilai": 6.944444444444445e-17
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M28",
+                "nilai": 0.36124783736376886
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P28",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R28",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T28",
+                "nilai": 0.18062391868188443
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W28",
+                "nilai": 0.0035199999999999676
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y28",
+                "nilai": 0.0006357961937602274
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB28",
+                "nilai": 4.042367999999926e-07
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF28",
+                "nilai": 8.170369523711701e-16
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M29",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P29",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R29",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T29",
+                "nilai": 0.011547005383792516
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W29",
+                "nilai": 0.0030400000000003757
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y29",
+                "nilai": 3.510289636673359e-05
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB29",
+                "nilai": 1.2322133333336381e-09
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF29",
+                "nilai": 3.036699397690391e-20
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M30",
+                "nilai": 0.005477225575051544
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P30",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R30",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T30",
+                "nilai": 0.002449489742783126
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W30",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y30",
+                "nilai": 0.002449489742783126
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB30",
+                "nilai": 5.9999999999997435e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF30",
+                "nilai": 8.99999999999923e-12
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB31",
+              "nilai": 0.00011473880234666641
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF31",
+              "nilai": 5.900088651176303e-11
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB32",
+              "nilai": 0.010711619968364562
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB33",
+              "nilai": 223.13211787627418
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB34",
+              "nilai": 1.9706589608358136
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB35",
+              "nilai": 0.02110894987572546
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB36",
+              "nilai": 0.021
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB37",
+              "nilai": 0.02110894987572546
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C22",
+              "nilai": 6.9889072,
+              "format": "0.00",
+              "teks": "6.99",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J22",
+              "nilai": 7.004,
+              "format": "0.00",
+              "teks": "7.00",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": -0.015092799999999684,
+              "format": "0.00",
+              "teks": "-0.02",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S22",
+              "nilai": 0.02110894987572546,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.010711619968364562,
+            "veff": 223.13211787627415,
+            "k": 1.970658960834481,
+            "u_hitung": 0.021108949875711186,
+            "u_cetak": 0.021108949875711186,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        },
+        {
+          "nama": "pH 10",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!K42",
+                "INPUT DATA!K43",
+                "INPUT DATA!K44",
+                "INPUT DATA!K45",
+                "INPUT DATA!K46"
+              ],
+              "nilai": [
+                10.11,
+                10.11,
+                10.11,
+                10.11,
+                10.11
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!L42",
+                "INPUT DATA!L43",
+                "INPUT DATA!L44",
+                "INPUT DATA!L45",
+                "INPUT DATA!L46"
+              ],
+              "nilai": [
+                22.1,
+                22.1,
+                22.1,
+                22.1,
+                22.1
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!K31",
+              "nilai": 10.01
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!L42",
+              "nilai": 22.1
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!K35",
+              "nilai": 9.978876900000001
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!K42",
+              "nilai": 10.11
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!K44",
+              "nilai": 0.0
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!K43",
+              "nilai": 0.13112309999999816
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!K35",
+            "rumus": "=(0.00009*L42^2)-(0.0148*L42)+10.262",
+            "a": 9e-05,
+            "b": -0.0148,
+            "c": 10.262
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V15",
+            "nilai": 0.03
+          },
+          "cmc": {
+            "sel": "DATABASE!S7",
+            "nilai": 0.031
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M41",
+                "nilai": 0.03
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P41",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R41",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T41",
+                "nilai": 0.015
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W41",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y41",
+                "nilai": 0.015
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB41",
+                "nilai": 0.000225
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF41",
+                "nilai": 2.53125e-10
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M42",
+                "nilai": 0.005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P42",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R42",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T42",
+                "nilai": 0.002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W42",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y42",
+                "nilai": 0.002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB42",
+                "nilai": 8.333333333333334e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF42",
+                "nilai": 6.944444444444445e-17
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M43",
+                "nilai": 0.36124783736376886
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P43",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R43",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T43",
+                "nilai": 0.18062391868188443
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W43",
+                "nilai": 0.010209999999998942
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y43",
+                "nilai": 0.001844170209741849
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB43",
+                "nilai": 3.4009637624992948e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF43",
+                "nilai": 5.78327725691668e-14
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M44",
+                "nilai": 0.05
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P44",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R44",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T44",
+                "nilai": 0.02886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W44",
+                "nilai": 0.009489999999999554
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y44",
+                "nilai": 0.0002739527027304646
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB44",
+                "nilai": 7.50500833333263e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF44",
+                "nilai": 1.126503001667844e-16
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M45",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P45",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R45",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T45",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W45",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y45",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB45",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF45",
+                "nilai": 0.0
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB46",
+              "nilai": 0.00023680934717916597
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF46",
+              "nilai": 2.5318301486731375e-10
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB47",
+              "nilai": 0.015388610956781186
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB48",
+              "nilai": 221.49458541210612
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB49",
+              "nilai": 1.9707562704894734
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB50",
+              "nilai": 0.030327201537199536
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB51",
+              "nilai": 0.031
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB52",
+              "nilai": 0.031
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C23",
+              "nilai": 9.978876900000001,
+              "format": "0.00",
+              "teks": "9.98",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J23",
+              "nilai": 10.11,
+              "format": "0.00",
+              "teks": "10.11",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": -0.13112309999999816,
+              "format": "0.00",
+              "teks": "-0.13",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S23",
+              "nilai": 0.031,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.015388610956781184,
+            "veff": 221.49458541210603,
+            "k": 1.9707562704880786,
+            "u_hitung": 0.030327201537178067,
+            "u_cetak": 0.031,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        }
+      ],
+      "cetak_k": {
+        "sel": "SERTIFIKAT!U24",
+        "nilai": 1.9706589608358136,
+        "format": "0",
+        "teks": "2",
+        "catatan": "Excel mencetak SATU k (milik blok pH 7, PERHITUNGAN U95%!AB34)"
+      },
+      "drift_waktu": {
+        "x11_cache": {
+          "sel": "DATABASE!X11",
+          "nilai": "2025-12-19 09:59:44.310000"
+        },
+        "catatan": "NOW() hanya memengaruhi status standar; tidak masuk budget pH"
+      },
+      "rekonstruksi": {
+        "selisih_relatif_maks_terhadap_cache": 7.079102802266484e-13,
+        "catatan": "komponen -> uc -> veff -> k (t 0,975; floor(veff)) -> U -> max(U, CMC) dihitung ulang dari sel komponen"
+      }
+    },
+    "imte_wq_129": {
+      "label": "pH IMTE-WQ-129 (termometer Constant/SH 10)",
+      "berkas": "pH meter_IMTE-WQ-129.xlsm",
+      "sha256_12": "e07d75caeed3",
+      "masukan": {
+        "resolusi_alat": {
+          "sel": "INPUT DATA!E16",
+          "nilai": 0.001
+        },
+        "suhu_ruang_c": {
+          "awal": {
+            "sel": "INPUT DATA!E21",
+            "nilai": 25.3
+          },
+          "akhir": {
+            "sel": "INPUT DATA!F21",
+            "nilai": 25.5
+          }
+        },
+        "u95_termometer_c": {
+          "sel": "DATABASE!V16",
+          "nilai": 0.5
+        },
+        "u95_sensor_c": {
+          "sel": "DATABASE!V17",
+          "nilai": 0.06
+        },
+        "u_temperature": {
+          "sel": "PERHITUNGAN U95%!AE4",
+          "nilai": 0.25179356624028343
+        }
+      },
+      "titik": [
+        {
+          "nama": "pH 4",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!G42",
+                "INPUT DATA!G43",
+                "INPUT DATA!G44",
+                "INPUT DATA!G45",
+                "INPUT DATA!G46"
+              ],
+              "nilai": [
+                4.01,
+                4.009,
+                4.01,
+                4.01,
+                4.009
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!H42",
+                "INPUT DATA!H43",
+                "INPUT DATA!H44",
+                "INPUT DATA!H45",
+                "INPUT DATA!H46"
+              ],
+              "nilai": [
+                26.3,
+                26.3,
+                26.3,
+                26.3,
+                26.3
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!G31",
+              "nilai": 3.99
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!H42",
+              "nilai": 26.3
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!G35",
+              "nilai": 4.0057607
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!G42",
+              "nilai": 4.009600000000001
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!G44",
+              "nilai": 0.0005477225575048626
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!G43",
+              "nilai": 0.003839300000000989
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!G35",
+            "rumus": "=(0.00003*H42^2)-(0.0023*H42)+4.0455",
+            "a": 3e-05,
+            "b": -0.0023,
+            "c": 4.0455
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V13",
+            "nilai": 0.02
+          },
+          "cmc": {
+            "sel": "DATABASE!S5",
+            "nilai": 0.023
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M11",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P11",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R11",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T11",
+                "nilai": 0.01
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W11",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y11",
+                "nilai": 0.01
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB11",
+                "nilai": 0.0001
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF11",
+                "nilai": 5e-11
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M12",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P12",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R12",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T12",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W12",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y12",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB12",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF12",
+                "nilai": 6.944444444444446e-21
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M13",
+                "nilai": 0.25179356624028343
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P13",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R13",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T13",
+                "nilai": 0.12589678312014171
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W13",
+                "nilai": 0.0007700000000001594
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y13",
+                "nilai": 9.694052300252919e-05
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB13",
+                "nilai": 9.39746500000389e-09
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF13",
+                "nilai": 4.415617421314905e-19
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M14",
+                "nilai": 0.01
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P14",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R14",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T14",
+                "nilai": 0.005773502691896258
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W14",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y14",
+                "nilai": 0.005773502691896258
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB14",
+                "nilai": 3.3333333333333335e-05
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF14",
+                "nilai": 2.2222222222222225e-11
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M15",
+                "nilai": 0.0005477225575048626
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P15",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R15",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T15",
+                "nilai": 0.0002449489742781821
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W15",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y15",
+                "nilai": 0.0002449489742781821
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB15",
+                "nilai": 5.999999999993352e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF15",
+                "nilai": 8.999999999980054e-16
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB16",
+              "nilai": 0.00013348606413166663
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF16",
+              "nilai": 7.222312267072841e-11
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB17",
+              "nilai": 0.011553616928549545
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB18",
+              "nilai": 246.71502225955618
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB19",
+              "nilai": 1.969654176178919
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB20",
+              "nilai": 0.022756629833289067
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB21",
+              "nilai": 0.023
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB22",
+              "nilai": 0.023
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C21",
+              "nilai": 4.0057607,
+              "format": "0.000",
+              "teks": "4.006",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J21",
+              "nilai": 4.009600000000001,
+              "format": "0.000",
+              "teks": "4.010",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P21",
+              "nilai": -0.003839300000000989,
+              "format": "0.000",
+              "teks": "-0.004",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S21",
+              "nilai": 0.023,
+              "format": "0.000",
+              "teks": "0.023",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.011554047344076734,
+            "veff": 246.7517836674221,
+            "k": 1.9696541761781063,
+            "u_hitung": 0.022757477603020295,
+            "u_cetak": 0.023,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        },
+        {
+          "nama": "pH 7",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!I42",
+                "INPUT DATA!I43",
+                "INPUT DATA!I44",
+                "INPUT DATA!I45",
+                "INPUT DATA!I46"
+              ],
+              "nilai": [
+                7.0,
+                6.999,
+                7.0,
+                7.0,
+                6.999
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!J42",
+                "INPUT DATA!J43",
+                "INPUT DATA!J44",
+                "INPUT DATA!J45",
+                "INPUT DATA!J46"
+              ],
+              "nilai": [
+                25.5,
+                25.5,
+                25.5,
+                25.5,
+                25.5
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!I31",
+              "nilai": 7.0
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!J42",
+              "nilai": 25.5
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!I35",
+              "nilai": 6.97642
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!I42",
+              "nilai": 6.999599999999999
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!I44",
+              "nilai": 0.000547722557505349
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!I43",
+              "nilai": 0.02317999999999909
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!I35",
+            "rumus": "=(0.00008*J42^2)-(0.0076*J42)+7.1182",
+            "a": 8e-05,
+            "b": -0.0076,
+            "c": 7.1182
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V14",
+            "nilai": 0.02
+          },
+          "cmc": {
+            "sel": "DATABASE!S6",
+            "nilai": 0.021
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M26",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P26",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R26",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T26",
+                "nilai": 0.01
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W26",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y26",
+                "nilai": 0.01
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB26",
+                "nilai": 0.0001
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF26",
+                "nilai": 5e-11
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M27",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P27",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R27",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T27",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W27",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y27",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB27",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF27",
+                "nilai": 6.944444444444446e-21
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M28",
+                "nilai": 0.25179356624028343
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P28",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R28",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T28",
+                "nilai": 0.12589678312014171
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W28",
+                "nilai": 0.0035199999999999676
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y28",
+                "nilai": 0.00044315667658289474
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB28",
+                "nilai": 1.9638783999999637e-07
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF28",
+                "nilai": 1.9284091849932086e-16
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M29",
+                "nilai": 0.02
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P29",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R29",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T29",
+                "nilai": 0.011547005383792516
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W29",
+                "nilai": 0.0030400000000003757
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y29",
+                "nilai": 3.510289636673359e-05
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB29",
+                "nilai": 1.2322133333336381e-09
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF29",
+                "nilai": 3.036699397690391e-20
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M30",
+                "nilai": 0.000547722557505349
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P30",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R30",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T30",
+                "nilai": 0.0002449489742783996
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W30",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y30",
+                "nilai": 0.0002449489742783996
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB30",
+                "nilai": 6.000000000004006e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF30",
+                "nilai": 9.000000000012017e-16
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB31",
+              "nilai": 0.00010034095338666671
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF31",
+              "nilai": 5.0001092878229947e-11
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB32",
+              "nilai": 0.010017033162901414
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB33",
+              "nilai": 201.36173725372464
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB34",
+              "nilai": 1.9718365067798587
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB35",
+              "nilai": 0.019751951680233523
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB36",
+              "nilai": 0.021
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB37",
+              "nilai": 0.021
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C22",
+              "nilai": 6.97642,
+              "format": "0.000",
+              "teks": "6.976",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J22",
+              "nilai": 6.999599999999999,
+              "format": "0.000",
+              "teks": "7.000",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": -0.02317999999999909,
+              "format": "0.000",
+              "teks": "-0.023",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S22",
+              "nilai": 0.021,
+              "format": "0.000",
+              "teks": "0.021",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.010027402572284943,
+            "veff": 202.194289414768,
+            "k": 1.9717773846678006,
+            "u_hitung": 0.01977180561899118,
+            "u_cetak": 0.021,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        },
+        {
+          "nama": "pH 10",
+          "masukan": {
+            "pembacaan_sesudah": {
+              "sel": [
+                "INPUT DATA!K42",
+                "INPUT DATA!K43",
+                "INPUT DATA!K44",
+                "INPUT DATA!K45",
+                "INPUT DATA!K46"
+              ],
+              "nilai": [
+                10.002,
+                10.001,
+                9.998,
+                10.0,
+                10.002
+              ]
+            },
+            "suhu_larutan_sesudah_c": {
+              "sel": [
+                "INPUT DATA!L42",
+                "INPUT DATA!L43",
+                "INPUT DATA!L44",
+                "INPUT DATA!L45",
+                "INPUT DATA!L46"
+              ],
+              "nilai": [
+                25.3,
+                25.3,
+                25.3,
+                25.3,
+                25.3
+              ]
+            },
+            "label_titik_lembar": {
+              "sel": "INPUT DATA!K31",
+              "nilai": 10.01
+            }
+          },
+          "standar": {
+            "suhu_larutan_rata_c": {
+              "sel": "PERHITUNGAN!L42",
+              "nilai": 25.3
+            },
+            "nilai_standar": {
+              "sel": "PERHITUNGAN!K35",
+              "nilai": 9.9451681
+            },
+            "rata_rata_uut": {
+              "sel": "PERHITUNGAN!K42",
+              "nilai": 10.0006
+            },
+            "stdev_sampel": {
+              "sel": "PERHITUNGAN!K44",
+              "nilai": 0.001673320053068657
+            },
+            "koreksi_lembar_uut_minus_standar": {
+              "sel": "PERHITUNGAN!K43",
+              "nilai": 0.05543190000000031
+            }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!K35",
+            "rumus": "=(0.00009*L42^2)-(0.0148*L42)+10.262",
+            "a": 9e-05,
+            "b": -0.0148,
+            "c": 10.262
+          },
+          "u95_sertifikat_buffer": {
+            "sel": "DATABASE!V15",
+            "nilai": 0.03
+          },
+          "cmc": {
+            "sel": "DATABASE!S7",
+            "nilai": 0.031
+          },
+          "komponen": {
+            "sertifikat_buffer": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M41",
+                "nilai": 0.03
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P41",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R41",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T41",
+                "nilai": 0.015
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W41",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y41",
+                "nilai": 0.015
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB41",
+                "nilai": 0.000225
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF41",
+                "nilai": 2.53125e-10
+              }
+            },
+            "daya_baca": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M42",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P42",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R42",
+                "nilai": 1000000.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T42",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W42",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y42",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB42",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF42",
+                "nilai": 6.944444444444446e-21
+              }
+            },
+            "temperature": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M43",
+                "nilai": 0.25179356624028343
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P43",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R43",
+                "nilai": 200.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T43",
+                "nilai": 0.12589678312014171
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W43",
+                "nilai": 0.010209999999998942
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y43",
+                "nilai": 0.0012854061556565137
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB43",
+                "nilai": 1.6522689849996577e-06
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF43",
+                "nilai": 1.3649963993958995e-14
+              }
+            },
+            "perbedaan_suhu": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M44",
+                "nilai": 0.05
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P44",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R44",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T44",
+                "nilai": 0.02886751345948129
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W44",
+                "nilai": 0.009489999999999554
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y44",
+                "nilai": 0.0002739527027304646
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB44",
+                "nilai": 7.50500833333263e-08
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF44",
+                "nilai": 1.126503001667844e-16
+              }
+            },
+            "pengulangan": {
+              "u_mentah": {
+                "sel": "PERHITUNGAN U95%!M45",
+                "nilai": 0.001673320053068657
+              },
+              "pembagi": {
+                "sel": "PERHITUNGAN U95%!P45",
+                "nilai": 5.0
+              },
+              "vi": {
+                "sel": "PERHITUNGAN U95%!R45",
+                "nilai": 4.0
+              },
+              "ui": {
+                "sel": "PERHITUNGAN U95%!T45",
+                "nilai": 0.0007483314773550144
+              },
+              "ci": {
+                "sel": "PERHITUNGAN U95%!W45",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "PERHITUNGAN U95%!Y45",
+                "nilai": 0.0007483314773550144
+              },
+              "uici_kuadrat": {
+                "sel": "PERHITUNGAN U95%!AB45",
+                "nilai": 5.600000000003384e-07
+              },
+              "uici4_per_vi": {
+                "sel": "PERHITUNGAN U95%!AF45",
+                "nilai": 7.840000000009476e-14
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AB46",
+              "nilai": 0.00022737065240166664
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AF46",
+              "nilai": 2.5321716262123863e-10
+            },
+            "uc": {
+              "sel": "PERHITUNGAN U95%!AB47",
+              "nilai": 0.015078814688219583
+            },
+            "veff": {
+              "sel": "PERHITUNGAN U95%!AB48",
+              "nilai": 204.16236023814994
+            },
+            "k": {
+              "sel": "PERHITUNGAN U95%!AB49",
+              "nilai": 1.9716608894937595
+            },
+            "u_hitung": {
+              "sel": "PERHITUNGAN U95%!AB50",
+              "nilai": 0.02973030918068659
+            },
+            "cmc": {
+              "sel": "PERHITUNGAN U95%!AB51",
+              "nilai": 0.031
+            },
+            "u_cetak": {
+              "sel": "PERHITUNGAN U95%!AB52",
+              "nilai": 0.031
+            }
+          },
+          "cetak": {
+            "standar": {
+              "sel": "SERTIFIKAT!C23",
+              "nilai": 9.9451681,
+              "format": "0.000",
+              "teks": "9.945",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!J23",
+              "nilai": 10.0006,
+              "format": "0.000",
+              "teks": "10.001",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": -0.05543190000000031,
+              "format": "0.000",
+              "teks": "-0.055",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S23",
+              "nilai": 0.031,
+              "format": "0.000",
+              "teks": "0.031",
+              "nol_bertanda_minus": false
+            }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.015136688778566014,
+            "veff": 207.27867161376756,
+            "k": 1.9714903918653968,
+            "u_hitung": 0.029841836491599664,
+            "u_cetak": 0.031,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
+          }
+        }
+      ],
+      "cetak_k": {
+        "sel": "SERTIFIKAT!U24",
+        "nilai": 1.9718365067798587,
+        "format": "0",
+        "teks": "2",
+        "catatan": "Excel mencetak SATU k (milik blok pH 7, PERHITUNGAN U95%!AB34)"
+      },
+      "drift_waktu": {
+        "x11_cache": {
+          "sel": "DATABASE!X11",
+          "nilai": "2026-07-16 14:14:34.110000"
+        },
+        "catatan": "NOW() hanya memengaruhi status standar; tidak masuk budget pH"
+      },
+      "rekonstruksi": {
+        "selisih_relatif_maks_terhadap_cache": 1.1376905063154693e-12,
+        "catatan": "komponen -> uc -> veff -> k (t 0,975; floor(veff)) -> U -> max(U, CMC) dihitung ulang dari sel komponen"
+      }
+    }
+  }
+}

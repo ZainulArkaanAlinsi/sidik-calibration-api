@@ -1,0 +1,21 @@
+{
+  "kontrak_versi": "0.1",
+  "pindai_id": "pdi-01jd8k2m4q9x",
+  "urutan": 2,
+  "dikonfirmasi_oleh": {
+    "user_id": 3,
+    "peran": "admin"
+  },
+  "waktu": "2026-11-24T17:30:05+07:00",
+  "item": [
+    {
+      "item_id": "itm-9999-a001",
+      "nilai_usulan": "10.003",
+      "nilai_sebelum": "10.003",
+      "nilai_final": "10.008",
+      "diubah": true,
+      "alasan_jika_diubah": "Koreksi pemeriksa: kertas menunjukkan 10.008.",
+      "master_id": null
+    }
+  ]
+}

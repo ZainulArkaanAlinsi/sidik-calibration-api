@@ -1,0 +1,64 @@
+{
+  "kontrak_versi": "0.1",
+  "formulir": {
+    "kode": "SIDIK-FM-CAL-9999",
+    "revisi": 1
+  },
+  "versi_skema": 1,
+  "status": "ditinjau",
+  "halaman_pt": [
+    595.2,
+    841.8
+  ],
+  "definisi_lembar_kerja": {
+    "profil": "contoh_alat",
+    "versi": 1
+  },
+  "catatan": "CONTOH BENTUK, bukan formulir nyata. Kode 9999, koordinat, dan alamat sel (Sheet1!C12 dst.) dikarang untuk memperlihatkan bentuk; jangan disalin ke data nyata.",
+  "item": [
+    {
+      "id": "itm-9999-a001",
+      "jenis": "sel",
+      "bbox_pt": [
+        120.0,
+        200.0,
+        180.0,
+        214.0
+      ],
+      "peran": "isian_angka",
+      "label_baris": "Titik 1",
+      "label_kolom": "Pembacaan 1",
+      "satuan": "mm",
+      "kelompok": "Pembacaan UUT",
+      "desimal": 3,
+      "pemetaan": {
+        "sel_input": "Sheet1!C12",
+        "master": null
+      },
+      "sumber": "manusia",
+      "perlu_dicek": false
+    },
+    {
+      "id": "itm-9999-a002",
+      "jenis": "sel",
+      "bbox_pt": [
+        180.0,
+        200.0,
+        240.0,
+        214.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Titik 1",
+      "label_kolom": "Pembacaan 2",
+      "satuan": "mm",
+      "kelompok": "Pembacaan UUT",
+      "desimal": 3,
+      "pemetaan": {
+        "sel_input": "Sheet1!D12",
+        "master": null
+      },
+      "sumber": "manusia",
+      "perlu_dicek": false
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "kontrak_versi": "0.1",
+  "daftar": "standar",
+  "dibaca_pada": "2026-11-24T16:00:00+07:00",
+  "item": [
+    {
+      "id": 5,
+      "kode_lengkap": "IK-CONTOH-01 Rev.1",
+      "nama": "Metode contoh",
+      "aktif": true
+    },
+    {
+      "id": 2,
+      "nama": "Thermohygro Contoh",
+      "merk": null,
+      "model": null,
+      "serial_number": "TH-0001",
+      "no_sertifikat": null,
+      "tertelusur_ke": null,
+      "berlaku_sampai": "2026-11-01",
+      "masih_berlaku": false,
+      "status_kalibrasi": "expired",
+      "hari_menuju_kadaluarsa": -23
+    },
+    {
+      "id": 3,
+      "nama": "Standar Tanpa Tanggal",
+      "merk": null,
+      "model": null,
+      "serial_number": null,
+      "no_sertifikat": null,
+      "tertelusur_ke": null,
+      "berlaku_sampai": null,
+      "masih_berlaku": true,
+      "status_kalibrasi": null,
+      "hari_menuju_kadaluarsa": null
+    }
+  ]
+}

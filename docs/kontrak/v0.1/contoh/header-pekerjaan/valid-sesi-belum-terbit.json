@@ -1,0 +1,31 @@
+{
+  "kontrak_versi": "0.1",
+  "dari_ocr": false,
+  "sesi_id": 1001,
+  "nomor_sertifikat": null,
+  "nomor_order": "ORD-CONTOH-01",
+  "teknisi": {
+    "employee_id": "EMP-CONTOH",
+    "kode_teknisi": "TK1",
+    "nama": "Teknisi Contoh"
+  },
+  "metode_kalibrasi": null,
+  "standar_acuan": null,
+  "standar_dicek": [],
+  "status_standar": {
+    "ringkasan": "warning",
+    "pesan": "ONE OR MORE STANDARD NEAR EXPIRY"
+  },
+  "thermohygro": null,
+  "kondisi": {
+    "suhu_awal": null,
+    "suhu_akhir": null,
+    "kelembaban_awal": null,
+    "kelembaban_akhir": null,
+    "suhu_ruang": null,
+    "kelembaban": null
+  },
+  "tanggal_terbit": null,
+  "dikalibrasi_oleh": "Teknisi Contoh",
+  "diperiksa_oleh": null
+}
