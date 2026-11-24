@@ -239,6 +239,8 @@ class ParitasConductivityTest extends TestCase
             $this->assertSamaExcel($s['stdev_sampel'], $h['standar_deviasi'], "{$ke}: STDEV sampel");
             $this->assertSamaExcel($s['koreksi_lembar_standar_minus_rata'], $h['koreksi'], "{$ke}: koreksi (Standar - UUT)");
             $this->assertSamaExcel($t['cetak_style2']['koreksi'], $h['koreksi'], "{$ke}: koreksi di sertifikat");
+            // Excel tidak punya sel PASS/FAIL sama sekali; aplikasi tanpa toleransi -> tanpa vonis.
+            $this->assertNull($h['keputusan'], "{$ke}: tanpa vonis lulus/gagal (master tidak punya)");
         }
     }
 
