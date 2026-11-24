@@ -29,7 +29,12 @@ class UserFactory extends Factory
             // Nempel ke organisasi yang udah ada kalau ada — biar test nggak
             // kebanjiran organisasi baru tiap bikin 1 user.
             'organization_id' => fn () => Organization::query()->value('id') ?? Organization::factory(),
-            'employee_id' => 'SDK-'.fake()->unique()->numberBetween(1000, 9999),
+            // Lima digit, SENGAJA di luar rentang 1000-9999 yang dipakai test untuk
+            // ID tetap (mis. 'SDK-2001'). Empat digit pernah menabrak ID tetap itu
+            // sekali dalam ~9000 jalan (`UNIQUE constraint failed: users.employee_id`
+            // di DetailSesiLengkapTest, CI 24 Nov 2026), dan test yang merah tanpa
+            // kode yang berubah melatih orang mengabaikan CI.
+            'employee_id' => 'SDK-'.fake()->unique()->numberBetween(10000, 99999),
             'name' => fake()->name(),
             'department' => fake()->randomElement(['Kalibrasi', 'Quality Control']),
             'email' => fake()->unique()->safeEmail(),
