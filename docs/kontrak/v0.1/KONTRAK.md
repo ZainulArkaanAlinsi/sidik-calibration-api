@@ -325,6 +325,11 @@ Konfirmasi harus menandai pengonfirmasi sebagai `raw_measurements.verified_by` s
 | `standar_kedaluwarsa` | 422 | `master_id` menunjuk standar `expired` | `master_id` |
 | `fitur_dimatikan` | 503 | saklar fitur mati (kode yang sudah dipakai `fitur:pindai_lembar`) | |
 
+### 6.4 Prasyarat yang bukan bagian bentuk data
+
+- **CORS.** Tidak ada `config/cors.php` dan `git grep -i cors` di `bootstrap/app.php`, `config`, `app/Http/Middleware` pada `79280fc2` kosong. Studio Web (browser, origin lain) hanya bisa memanggil rute bagian 6.2A setelah CORS dikonfigurasi untuk `api/login` dan `api/studio/*` (header `Authorization`, `X-Klien`, `Content-Type`, `Idempotency-Key`; ekspos `Retry-After`, `X-RateLimit-*`, `X-Kontrak-Versi`). Itu pekerjaan implementasi T4, belum dikerjakan, dan harus diuji dari origin Studio sungguhan.
+- **Format angka.** Di kontrak angka selalu bertitik desimal (R8) dan nilai pengukuran dibawa sebagai teks. Tampilan berkoma (`id-ID`) adalah urusan klien; klien mengonversi sebelum mengirim. Jangan mengandalkan server menafsirkan `"1,5"`: pada `/api/studio/workbook/{id}/hitung` string itu tetap TEKS (`docs/kontrak-api.md:3730`).
+
 ## 7. Aturan di luar JSON Schema
 
 JSON Schema tidak bisa menyatakan perbandingan antar-field atau antar-dokumen. Aturan berikut tetap bagian kontrak; server menegakkannya dan tes kontrak (bagian 9) memeriksa semua contoh sah terhadapnya.
