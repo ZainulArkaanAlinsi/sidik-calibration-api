@@ -41,9 +41,10 @@ use Tests\TestCase;
  *
  * ## Perilaku BAWAAN saja
  *
- * Parameter keputusan metode (PR #298) belum di main; bawaannya identik dengan kode
- * sekarang, jadi paritas ini adalah paritas perilaku bawaan. Nilai acuan polinomial
- * tidak disentuh dan tidak diubah.
+ * Parameter keputusan metode (PR #298, merge `3ab0a8f3`) bawaannya identik dengan kode
+ * sebelumnya, jadi paritas ini adalah paritas perilaku bawaan: semua assertion ANGKA hijau
+ * sebelum dan sesudah merge #298 (yang berubah hanya daftar baris jejak audit: bertambah
+ * `parameter_metode` di `type_b_components`). Nilai acuan polinomial tidak disentuh.
  *
  * ## Jebakan `decimal(20,8)` (CI memakai MySQL)
  *
@@ -251,8 +252,9 @@ class ParitasConductivityTest extends TestCase
     {
         foreach (self::titik() as $i => $t) {
             $komp = collect($this->hitung($i)['type_b_components'])->keyBy('sumber');
-            // Keempat komponen budget + SATU baris jejak audit `perbandingan_cmc` (bukan komponen).
-            $this->assertSame(['perbandingan_cmc'], array_values(array_diff($komp->keys()->all(), array_keys(self::KOMPONEN))), "{$t['nama']}: komponen aplikasi = empat + jejak CMC");
+            // Keempat komponen budget + baris JEJAK AUDIT (bukan komponen): `perbandingan_cmc` dan, sejak
+            // PR #298, `parameter_metode` (parameter keputusan metode yang berlaku, bawaan).
+            $this->assertSame(['parameter_metode', 'perbandingan_cmc'], collect(array_diff($komp->keys()->all(), array_keys(self::KOMPONEN)))->sort()->values()->all(), "{$t['nama']}: komponen aplikasi = empat + jejak audit");
 
             foreach (self::KOMPONEN as $kunci => $bergantungUTemp) {
                 $x = $t['komponen'][$kunci];

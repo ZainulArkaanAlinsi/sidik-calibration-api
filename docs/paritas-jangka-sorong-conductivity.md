@@ -90,7 +90,7 @@ Sesi contoh workbook: kapasitas 600 mm, resolusi 0,05 mm; Outside 10 titik (0, 5
 
 ## 4. Conductivity Meter: status per butir
 
-Sesi contoh workbook (job master, tanggal 13 Mei 2024): Std 25 µS/cm, Std 1412 µS/cm, Std 111 mS/cm; 5 pengulangan SESUDAH adjustment (`INPUT DATA!F49:M53`); resolusi 0,1 µS/cm, 1 µS/cm, 0,01 mS/cm. Sheet: `PERHITUNGAN` (P), `PERHITUNGAN U95%` (U), `SERTIFIKAT STYLE 2` (S2), `DATABASE` (DB). Hanya perilaku BAWAAN; parameter keputusan metode (PR #298) belum merge dan bawaannya identik, polinomial acuan tidak disentuh.
+Sesi contoh workbook (job master, tanggal 13 Mei 2024): Std 25 µS/cm, Std 1412 µS/cm, Std 111 mS/cm; 5 pengulangan SESUDAH adjustment (`INPUT DATA!F49:M53`); resolusi 0,1 µS/cm, 1 µS/cm, 0,01 mS/cm. Sheet: `PERHITUNGAN` (P), `PERHITUNGAN U95%` (U), `SERTIFIKAT STYLE 2` (S2), `DATABASE` (DB). Hanya perilaku BAWAAN; parameter keputusan metode (PR #298) sudah merge (`3ab0a8f3`) dengan bawaan identik; tes ditulis sebelum #298 masuk dan dijalankan ulang sesudah cabang ini memuat #298: semua assertion angka tetap hijau (satu-satunya penyesuaian: daftar baris jejak audit di `type_b_components` bertambah `parameter_metode`); polinomial acuan tidak disentuh.
 
 | # | Butir | Sel sumber | Excel | Aplikasi | Selisih | Status |
 |---|---|---|---|---|---|---|
@@ -152,7 +152,7 @@ Rujukan konflik lama yang tidak diulang di sini: K-6, K-10, K-14, K-15 (`konflik
 - Jangka Sorong, tidak teramati di sesi contoh: satuan inch; Lmaks gabungan Outside-Inside lawan `C67` master (Inside tidak lebih panjang dari Outside); umur drift negatif (tanggal sesi < 2026-01-09: aplikasi umur 0 + peringatan, Excel `NOW()` positif); lantai CMC mengikat (U < 0,015 mm); kerataan `Buruk` (master hanya membaca checkbox pertama `Y22`); evaluation identik; repeatability Depth dengan pembacaan lokal bersebaran (hanya lewat bacaan cache Excel); sesi job 200 mm (cetakan PDF hanya halaman input).
 - Conductivity, tidak diuji: kondisi lingkungan (suhu/RH, koreksi TH-6, U95 TH) dan status standar (termometer standar jatuh tempo 12 Agu 2026, `DATABASE!Y17`); varian mS/cm titik tengah end-to-end (belum ada sesi nyata); slot ke-4 `Conduct 80000` (TRUE tanpa data, sengaja bukan titik: E-4); kertas FM-0510 Rev.5 masih menulis nominal lama 84 / 1413 / 5000 / 80000; TH-6 berada di grup Insitu padahal sampel master Inlab.
 - Kedua alat: jalur HTTP simpan/preview dan `HitungUlangSesi` dari baris `raw_measurements` tidak dipanggil (yang dipanggil fungsi hitung yang sama); gate MySQL penuh wajib di CI. Efek `decimal(20,8)` pada `u_temperature` Conductivity disimulasikan (bagian 2), bukan dijalankan di MySQL.
-- Paritas Conductivity = perilaku BAWAAN. Parameter keputusan metode (PR #298, refractometer#24, spectro#15, conductivity#18) belum merge; saat merge, bawaannya identik dengan kode sekarang (diverifikasi peninjau independen PR #298), jadi tes ini tetap berlaku.
+- Paritas Conductivity = perilaku BAWAAN. Parameter keputusan metode (PR #298, termasuk conductivity#18) kini di main (`3ab0a8f3`); bawaannya identik (vonis peninjau independen PR #298) dan tes ini hijau di atas #298. PILIHAN non-bawaan (penetapan TM) TIDAK diadu di sini: tiap pilihan lain dicocokkan ke sel workbook oleh tes PR #298 sendiri.
 - Workbook yang tidak punya padanan: tidak ada workbook Jangka Sorong lain (Caliper 2026 satu-satunya; hash sama di folder master dan Downloads). Conductivity: dua berkas (`.xlsm`, `.xlsm1`), sel hitung identik.
 
 ## 7. Hitungan butir
