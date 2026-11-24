@@ -62,6 +62,8 @@ docs/kontrak/v0.1/
 
 JSON Schema memakai draf 2020-12, tiap berkas berdiri sendiri (tanpa `$ref` antar-berkas) supaya validator mana pun (Opis di PHP, Ajv di TypeScript, `jsonschema` di Python, paket Dart) memuatnya tanpa pendaftaran tambahan. `$defs` yang namanya sama harus identik di semua berkas; tes kontrak menjaganya. Semua objek `additionalProperties: false`: nama field salah ketik ditolak, bukan diabaikan.
 
+Catatan untuk konsumen (T4 hanya menjalankan Opis di PHP; yang berikut BELUM dijalankan di bahasa lain): validator harus mendukung draf 2020-12 (di Ajv: `ajv/dist/2020`) dan keyword `prefixItems`, `if/then`, `oneOf`. `format: date-time` butuh pustaka format (di Ajv: `ajv-formats`); `waktu` juga punya `pattern` sehingga validator tanpa pustaka format tetap menolak waktu tanpa zona. Tiap konsumen wajib menjalankan SEMUA contoh di `contoh/MANIFEST.json` dengan validatornya sendiri dan melaporkan bila ada yang berbeda hasilnya dari yang tertulis.
+
 ## 4. Bentuk data
 
 ### 4.1 Nama final
@@ -303,6 +305,8 @@ Konfirmasi harus menandai pengonfirmasi sebagai `raw_measurements.verified_by` s
 | `GET /api/calibrations/{calibration}/header-pekerjaan` | peran yang sama dengan `GET /calibrations/{id}`; teknisi hanya sesinya sendiri | `200 {data: header-pekerjaan}` |
 
 **Antarmuka internal Laravel ke layanan OCR** bukan endpoint publik dan rancangannya milik terminal OCR (`RENCANA-OCR.md`). Kontrak hanya mengikat dua hal: masukan layanan memuat skema `dipublikasi` lengkap (layanan tidak menyimpan skema), dan `item[]` yang dikembalikannya harus lulus bentuk `usulan-ocr.item`. Laravel yang menerbitkan `pindai_id`, menyimpan usulan, dan menegakkan izin.
+
+Penyimpanan skema, pindaian, usulan, dan konfirmasi belum dirancang. Sebelum menambah tabel, T4 memeriksa dulu apakah `worksheet_scans` dan `worksheet_scan_cells` (jalur HP) bisa dipakai ulang tanpa mengubah kontrak lamanya (`AGENTS.md` Alur Kerja butir 4: kolom baru pilihan terakhir). Migrasi apa pun hanya menambah dan diuji maju-mundur; bukan bagian v0.1.
 
 ### 6.3 Kode galat baru (badan `{message, kode, ...}`)
 
