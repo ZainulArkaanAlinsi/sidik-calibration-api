@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.sidik.invalid/kontrak/v0.1/usulan-ocr.schema.json",
+  "title": "Usulan OCR (kontrak antar-terminal v0.1)",
+  "description": "Nilai yang DIBACA MESIN untuk kotak-kotak satu foto formulir. Bukan data pengukuran: tidak ada angka yang masuk perhitungan sebelum ada konfirmasi manusia. Hanya ada bila formulir berhasil dikenali; kegagalan mengenali dijawab sebagai galat (KONTRAK.md bagian 6), bukan dokumen ini.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kontrak_versi", "pindai_id", "foto_ref", "formulir", "versi_skema", "item", "dibuat_oleh", "dibuat_pada", "pipeline_versi"],
+  "properties": {
+    "kontrak_versi": { "const": "0.1" },
+    "pindai_id": { "$ref": "#/$defs/pindai_id" },
+    "foto_ref": {
+      "description": "Rujukan opak ke foto asli yang tersimpan sebagai lampiran terlacak. Bukan URL publik.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "formulir": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kode", "revisi", "skor", "skor_kedua"],
+      "properties": {
+        "kode": { "$ref": "#/$defs/kode_formulir" },
+        "revisi": { "$ref": "#/$defs/revisi" },
+        "skor": {
+          "description": "Kecocokan kandidat terbaik. Skala ditentukan layanan OCR dan HANYA dibandingkan dengan skor_kedua dalam satu pindaian; bukan probabilitas.",
+          "type": "number",
+          "minimum": 0
+        },
+        "skor_kedua": {
+          "description": "Kecocokan kandidat urutan kedua; null bila hanya ada satu kandidat.",
+          "type": ["number", "null"],
+          "minimum": 0
+        }
+      }
+    },
+    "versi_skema": {
+      "description": "versi_skema dari skema dipublikasi yang dipakai membaca. Bersama formulir.kode dan formulir.revisi menunjuk SATU skema yang tidak berubah.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "item": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/item_usulan" }
+    },
+    "dibuat_oleh": { "const": "mesin" },
+    "dibuat_pada": { "$ref": "#/$defs/waktu" },
+    "pipeline_versi": {
+      "description": "Versi pipeline pembaca (dipakai mengulang pengukuran akurasi).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    }
+  },
+  "$defs": {
+    "kode_formulir": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9.-]{2,38}[A-Z0-9]$"
+    },
+    "revisi": { "type": "integer", "minimum": 0, "maximum": 999 },
+    "id_item": {
+      "description": "Opak dan stabil antar revisi (KONTRAK.md bagian 4). Klien tidak boleh menafsirkan isinya.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{5,63}$"
+    },
+    "pindai_id": {
+      "description": "Diterbitkan server (satu per unggahan foto yang diterima).",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{5,63}$"
+    },
+    "waktu": {
+      "description": "ISO 8601 lengkap dengan zona (Z atau +07:00).",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "item_usulan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "nilai_usulan", "keyakinan", "status", "potongan_ref", "pembacaan"],
+      "properties": {
+        "item_id": { "$ref": "#/$defs/id_item" },
+        "nilai_usulan": {
+          "description": "Teks persis seperti dibaca (tanpa dikoreksi, tanpa dibulatkan, tanpa ditafsirkan). Kotak centang: \"1\" dicentang, \"0\" kosong. null bila status kosong atau tidak_terbaca.",
+          "type": ["string", "null"],
+          "maxLength": 200
+        },
+        "keyakinan": {
+          "description": "0..1 menurut pembaca; bukan probabilitas terkalibrasi. null bila tidak ada.",
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "status": {
+          "description": "sepakat_dua_pembacaan = dua pembacaan independen sama persis (tetap wajib dikonfirmasi, TIDAK boleh dirender hijau untuk tulisan tangan); ragu = ada bacaan tetapi tidak sepakat/lemah; tidak_terbaca = tidak ada bacaan yang bisa dipakai; kosong = kotak kosong di kertas.",
+          "enum": ["sepakat_dua_pembacaan", "ragu", "tidak_terbaca", "kosong"]
+        },
+        "potongan_ref": {
+          "description": "Rujukan opak ke potongan citra kotak ini. null bila tidak ada potongan.",
+          "type": ["string", "null"],
+          "maxLength": 200
+        },
+        "pembacaan": {
+          "description": "Semua pembacaan mentah yang dipakai memutuskan status (agar 'sepakat tetapi salah' bisa diukur).",
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pembaca", "teks", "keyakinan"],
+            "properties": {
+              "pembaca": { "type": "string", "minLength": 1, "maxLength": 60 },
+              "teks": { "type": ["string", "null"], "maxLength": 200 },
+              "keyakinan": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["kosong", "tidak_terbaca"] } },
+            "required": ["status"]
+          },
+          "then": { "properties": { "nilai_usulan": { "type": "null" } } }
+        },
+        {
+          "if": {
+            "properties": { "status": { "enum": ["sepakat_dua_pembacaan", "ragu"] } },
+            "required": ["status"]
+          },
+          "then": { "properties": { "nilai_usulan": { "type": "string" } } }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "sepakat_dua_pembacaan" } },
+            "required": ["status"]
+          },
+          "then": { "properties": { "pembacaan": { "minItems": 2 } } }
+        }
+      ]
+    }
+  }
+}

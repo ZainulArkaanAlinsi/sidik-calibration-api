@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.sidik.invalid/kontrak/v0.1/konfirmasi-permintaan.schema.json",
+  "title": "Permintaan konfirmasi (kontrak antar-terminal v0.1)",
+  "description": "Badan permintaan klien ke server untuk mengonfirmasi satu pindaian. Sengaja TIDAK memuat pelaku, waktu, atau nilai sebelum: itu diisi server dari token dan dari catatan sebelumnya, supaya klien tidak bisa mengaku sebagai orang lain. Hasil yang disimpan server memakai konfirmasi.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kontrak_versi", "pindai_id", "item"],
+  "properties": {
+    "kontrak_versi": { "const": "0.1" },
+    "pindai_id": { "$ref": "#/$defs/pindai_id" },
+    "item": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_id", "nilai_final"],
+        "properties": {
+          "item_id": { "$ref": "#/$defs/id_item" },
+          "nilai_final": {
+            "description": "Nilai yang dipastikan manusia, sebagai teks. null = manusia memastikan kotak ini kosong. Format per peran (angka berpoin desimal, tanggal ISO, centang 1/0) diperiksa server menurut skema.",
+            "type": ["string", "null"],
+            "maxLength": 200
+          },
+          "alasan_jika_diubah": {
+            "description": "Wajib (tidak kosong) bila nilai_final berbeda dari nilai yang dilihat manusia; diperiksa server.",
+            "type": ["string", "null"],
+            "maxLength": 1000
+          },
+          "master_id": {
+            "description": "Untuk kotak ber pemetaan.master: id baris master yang dipilih manusia (standards.id atau calibration_methods.id).",
+            "type": ["integer", "null"],
+            "minimum": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id_item": {
+      "description": "Opak dan stabil antar revisi (KONTRAK.md bagian 4). Klien tidak boleh menafsirkan isinya.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{5,63}$"
+    },
+    "pindai_id": {
+      "description": "Diterbitkan server (satu per unggahan foto yang diterima).",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{5,63}$"
+    }
+  }
+}

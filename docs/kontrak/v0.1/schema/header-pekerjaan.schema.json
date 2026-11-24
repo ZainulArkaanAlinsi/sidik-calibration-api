@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.sidik.invalid/kontrak/v0.1/header-pekerjaan.schema.json",
+  "title": "Header pekerjaan (kontrak antar-terminal v0.1)",
+  "description": "Blok kepala yang SAMA untuk semua alat (nomor sertifikat, nomor order, teknisi, metode, standar, thermohygro, tanggal terbit, penandatangan). Bentuk BACA gabungan dari sesi kalibrasi; sumbernya sistem dan teknisi, TIDAK PERNAH dibaca OCR dari foto (dari_ocr selalu false). Pemetaan ke field API ada di KONTRAK.md bagian 5.5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kontrak_versi", "dari_ocr", "sesi_id", "nomor_sertifikat", "nomor_order", "teknisi",
+    "metode_kalibrasi", "standar_acuan", "standar_dicek", "status_standar", "thermohygro",
+    "kondisi", "tanggal_terbit", "dikalibrasi_oleh", "diperiksa_oleh"
+  ],
+  "properties": {
+    "kontrak_versi": { "const": "0.1" },
+    "dari_ocr": { "const": false },
+    "sesi_id": { "type": "integer", "minimum": 1 },
+    "nomor_sertifikat": { "type": ["string", "null"], "maxLength": 100 },
+    "nomor_order": { "type": ["string", "null"], "maxLength": 100 },
+    "teknisi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["employee_id", "kode_teknisi", "nama"],
+      "properties": {
+        "employee_id": { "type": ["string", "null"], "maxLength": 50 },
+        "kode_teknisi": { "type": ["string", "null"], "maxLength": 50 },
+        "nama": { "type": ["string", "null"], "maxLength": 255 }
+      }
+    },
+    "metode_kalibrasi": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "kode_lengkap", "nama"],
+          "properties": {
+            "id": { "type": "integer", "minimum": 1 },
+            "kode_lengkap": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "nama": { "type": "string", "minLength": 1, "maxLength": 255 }
+          }
+        }
+      ]
+    },
+    "standar_acuan": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "nama", "serial_number", "no_sertifikat"],
+          "properties": {
+            "id": { "type": "integer", "minimum": 1 },
+            "nama": { "type": "string", "minLength": 1, "maxLength": 255 },
+            "serial_number": { "type": ["string", "null"], "maxLength": 255 },
+            "no_sertifikat": { "type": ["string", "null"], "maxLength": 100 }
+          }
+        }
+      ]
+    },
+    "standar_dicek": {
+      "description": "Baris Usage Check. dipakai=false berarti diperiksa tetapi tidak dipakai.",
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["standard_id", "nama", "serial_number", "dipakai", "keterangan"],
+        "properties": {
+          "standard_id": { "type": "integer", "minimum": 1 },
+          "nama": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "serial_number": { "type": ["string", "null"], "maxLength": 255 },
+          "dipakai": { "type": "boolean" },
+          "keterangan": { "type": ["string", "null"], "maxLength": 255 }
+        }
+      }
+    },
+    "status_standar": {
+      "description": "Status TERBURUK dari semua standar sesi (valid < warning < expired), dihitung server. pesan sudah siap tampil; klien jangan menyusun sendiri.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ringkasan", "pesan"],
+      "properties": {
+        "ringkasan": { "enum": ["valid", "warning", "expired"] },
+        "pesan": { "type": ["string", "null"], "maxLength": 200 }
+      }
+    },
+    "thermohygro": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "nama", "serial_number"],
+          "properties": {
+            "id": { "type": "integer", "minimum": 1 },
+            "nama": { "type": "string", "minLength": 1, "maxLength": 255 },
+            "serial_number": { "type": ["string", "null"], "maxLength": 255 }
+          }
+        }
+      ]
+    },
+    "kondisi": {
+      "description": "suhu_ruang dan kelembaban = angka yang dicetak (sesudah koreksi sertifikat thermohygro, dihitung server). Apakah itu sama dengan 'rata-rata' di header Excel BELUM dibuktikan (menunggu matriks T1).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suhu_awal", "suhu_akhir", "kelembaban_awal", "kelembaban_akhir", "suhu_ruang", "kelembaban"],
+      "properties": {
+        "suhu_awal": { "type": ["number", "null"], "minimum": -50, "maximum": 150 },
+        "suhu_akhir": { "type": ["number", "null"], "minimum": -50, "maximum": 150 },
+        "kelembaban_awal": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "kelembaban_akhir": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "suhu_ruang": { "type": ["number", "null"], "minimum": -50, "maximum": 150 },
+        "kelembaban": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
+      }
+    },
+    "tanggal_terbit": {
+      "description": "Tanggal penerbitan sertifikat (YYYY-MM-DD); null sebelum terbit.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "dikalibrasi_oleh": { "type": ["string", "null"], "maxLength": 255 },
+    "diperiksa_oleh": { "type": ["string", "null"], "maxLength": 255 }
+  }
+}

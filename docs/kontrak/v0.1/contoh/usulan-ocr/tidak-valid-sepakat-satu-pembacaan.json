@@ -1,0 +1,124 @@
+{
+  "kontrak_versi": "0.1",
+  "pindai_id": "pdi-01jd8k2m4q9x",
+  "foto_ref": "lampiran/2026/11/pdi-01jd8k2m4q9x/foto-1",
+  "formulir": {
+    "kode": "SIDIK-FM-CAL-9999",
+    "revisi": 1,
+    "skor": 41,
+    "skor_kedua": 12
+  },
+  "versi_skema": 1,
+  "item": [
+    {
+      "item_id": "itm-9999-a001",
+      "nilai_usulan": "10.003",
+      "keyakinan": 0.93,
+      "status": "sepakat_dua_pembacaan",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-a001",
+      "pembacaan": [
+        {
+          "pembaca": "lokal_rapidocr",
+          "teks": "10.003",
+          "keyakinan": 0.91
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-a002",
+      "nilai_usulan": "10.005",
+      "keyakinan": 0.41,
+      "status": "ragu",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-a002",
+      "pembacaan": [
+        {
+          "pembaca": "lokal_rapidocr",
+          "teks": "10.005",
+          "keyakinan": 0.41
+        },
+        {
+          "pembaca": "google_vision",
+          "teks": "10.065",
+          "keyakinan": 0.38
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-b001",
+      "nilai_usulan": "Mikrometer luar",
+      "keyakinan": 0.62,
+      "status": "ragu",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-b001",
+      "pembacaan": [
+        {
+          "pembaca": "google_vision",
+          "teks": "Mikrometer luar",
+          "keyakinan": 0.62
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-c001",
+      "nilai_usulan": null,
+      "keyakinan": null,
+      "status": "tidak_terbaca",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-c001",
+      "pembacaan": [
+        {
+          "pembaca": "lokal_rapidocr",
+          "teks": null,
+          "keyakinan": null
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-d001",
+      "nilai_usulan": "1",
+      "keyakinan": 0.97,
+      "status": "sepakat_dua_pembacaan",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-d001",
+      "pembacaan": [
+        {
+          "pembaca": "rasio_gelap",
+          "teks": "1",
+          "keyakinan": 0.97
+        },
+        {
+          "pembaca": "ml_kit",
+          "teks": "1",
+          "keyakinan": 0.9
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-d002",
+      "nilai_usulan": "0",
+      "keyakinan": 0.96,
+      "status": "sepakat_dua_pembacaan",
+      "potongan_ref": "potongan/pdi-01jd8k2m4q9x/itm-9999-d002",
+      "pembacaan": [
+        {
+          "pembaca": "rasio_gelap",
+          "teks": "0",
+          "keyakinan": 0.96
+        },
+        {
+          "pembaca": "ml_kit",
+          "teks": "0",
+          "keyakinan": 0.94
+        }
+      ]
+    },
+    {
+      "item_id": "itm-9999-g001",
+      "nilai_usulan": null,
+      "keyakinan": null,
+      "status": "kosong",
+      "potongan_ref": null,
+      "pembacaan": []
+    }
+  ],
+  "dibuat_oleh": "mesin",
+  "dibuat_pada": "2026-11-24T16:08:21+07:00",
+  "pipeline_versi": "contoh-0"
+}

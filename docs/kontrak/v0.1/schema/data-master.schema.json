@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.sidik.invalid/kontrak/v0.1/data-master.schema.json",
+  "title": "Data master (kontrak antar-terminal v0.1)",
+  "description": "Bentuk BACA terpadu atas daftar yang sering berubah. Tidak ada penyimpanan baru: isinya berasal dari tabel standards dan calibration_methods yang sudah ada (CRUD tetap lewat /api/standards dan /api/calibration-methods, peran admin). Slot sesi (standar_dipakai, standar_dicek, thermohygro) memakai daftar standar yang sama.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kontrak_versi", "daftar", "dibaca_pada", "item"],
+  "properties": {
+    "kontrak_versi": { "const": "0.1" },
+    "daftar": { "enum": ["standar", "metode"] },
+    "dibaca_pada": { "$ref": "#/$defs/waktu" },
+    "item": { "type": "array", "maxItems": 2000 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "daftar": { "const": "standar" } }, "required": ["daftar"] },
+      "then": { "properties": { "item": { "items": { "$ref": "#/$defs/standar" } } } }
+    },
+    {
+      "if": { "properties": { "daftar": { "const": "metode" } }, "required": ["daftar"] },
+      "then": { "properties": { "item": { "items": { "$ref": "#/$defs/metode" } } } }
+    }
+  ],
+  "$defs": {
+    "waktu": {
+      "description": "ISO 8601 lengkap dengan zona (Z atau +07:00).",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "standar": {
+      "description": "Subset field GET /api/standards (docs/kontrak-api.md bagian Standar Acuan). Angka ketidakpastian sengaja tidak disertakan: bukan urusan formulir.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "nama", "merk", "model", "serial_number", "no_sertifikat", "tertelusur_ke", "berlaku_sampai", "masih_berlaku", "status_kalibrasi", "hari_menuju_kadaluarsa"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "nama": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "merk": { "type": ["string", "null"], "maxLength": 255 },
+        "model": { "type": ["string", "null"], "maxLength": 255 },
+        "serial_number": { "type": ["string", "null"], "maxLength": 255 },
+        "no_sertifikat": { "type": ["string", "null"], "maxLength": 100 },
+        "tertelusur_ke": { "type": ["string", "null"], "maxLength": 255 },
+        "berlaku_sampai": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "masih_berlaku": { "type": "boolean" },
+        "status_kalibrasi": {
+          "description": "Ditentukan server. Standar expired tidak boleh dipilih tanpa peringatan jelas; jangan menurunkan status sendiri dari berlaku_sampai.",
+          "enum": ["valid", "warning", "expired", null]
+        },
+        "hari_menuju_kadaluarsa": {
+          "description": "Bertanda: positif = sisa hari, 0 = habis hari ini, negatif = sudah lewat. null bila tanpa tanggal berlaku.",
+          "type": ["integer", "null"]
+        }
+      }
+    },
+    "metode": {
+      "description": "Subset field GET /api/calibration-methods (CalibrationMethodResource.php).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kode_lengkap", "nama", "aktif"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "kode_lengkap": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "nama": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "aktif": { "type": "boolean" }
+      }
+    }
+  }
+}

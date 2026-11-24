@@ -1,0 +1,47 @@
+{
+  "kontrak_versi": "0.1",
+  "dari_ocr": false,
+  "sesi_id": 1001,
+  "nomor_sertifikat": "CONTOH/0001",
+  "nomor_order": "ORD-CONTOH-01",
+  "metode_kalibrasi": {
+    "id": 5,
+    "kode_lengkap": "IK-CONTOH-01 Rev.1",
+    "nama": "Metode contoh"
+  },
+  "standar_acuan": {
+    "id": 1,
+    "nama": "Gauge Block Set Grade 0",
+    "serial_number": "GB-STD-001",
+    "no_sertifikat": "SNSU/2025/P-0142"
+  },
+  "standar_dicek": [
+    {
+      "standard_id": 1,
+      "nama": "Gauge Block Set Grade 0",
+      "serial_number": "GB-STD-001",
+      "dipakai": true,
+      "keterangan": null
+    }
+  ],
+  "status_standar": {
+    "ringkasan": "valid",
+    "pesan": null
+  },
+  "thermohygro": {
+    "id": 2,
+    "nama": "Thermohygro Contoh",
+    "serial_number": "TH-0001"
+  },
+  "kondisi": {
+    "suhu_awal": 20.1,
+    "suhu_akhir": 20.3,
+    "kelembaban_awal": 55.0,
+    "kelembaban_akhir": 56.0,
+    "suhu_ruang": 20.2,
+    "kelembaban": 55.5
+  },
+  "tanggal_terbit": "2026-11-25",
+  "dikalibrasi_oleh": "Teknisi Contoh",
+  "diperiksa_oleh": "Pemeriksa Contoh"
+}

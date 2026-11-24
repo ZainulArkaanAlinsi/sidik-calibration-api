@@ -1,0 +1,699 @@
+{
+  "kontrak_versi": "0.1",
+  "formulir": {
+    "kode": "SIDIK-FM-CAL-0513",
+    "revisi": 4
+  },
+  "versi_skema": 1,
+  "status": "draf",
+  "halaman_pt": [
+    841.8,
+    595.2
+  ],
+  "definisi_lembar_kerja": null,
+  "catatan": "DRAF heuristik. Peran dan label harus dikonfirmasi model visi lalu manusia (Studio). Warna: oranye=isian, abu=pemisah, ungu=centang kandidat, hijau=teks bebas kandidat.",
+  "item": [
+    {
+      "id": "i87d3e2f736f7",
+      "jenis": "sel",
+      "bbox_pt": [
+        40.3,
+        18.1,
+        168.5,
+        57.8
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ib361bc3d13c4",
+      "jenis": "sel",
+      "bbox_pt": [
+        497.3,
+        137.9,
+        547.0,
+        151.2
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "First",
+      "label_kolom": "Temperature(oC)",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i4c02f4bfd066",
+      "jenis": "sel",
+      "bbox_pt": [
+        497.3,
+        151.2,
+        547.0,
+        164.9
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "End",
+      "label_kolom": "Temperature(oC)",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ifb9f916f131e",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        137.9,
+        646.8,
+        151.2
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "oC",
+      "label_kolom": "Humidity",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ic0ba23b1ed79",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        151.2,
+        646.8,
+        164.9
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "oC",
+      "label_kolom": "Humidity",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i4ae1faae4725",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        204.8,
+        596.9,
+        231.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Empty Container Weight (g)",
+      "label_kolom": "1",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i8382074d3880",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        231.6,
+        596.9,
+        258.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Weight of Contents (g)",
+      "label_kolom": "1",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i53e5d43114d1",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        258.4,
+        596.9,
+        285.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Weight of Liquid (g)",
+      "label_kolom": "1",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ia4c93645b966",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        204.8,
+        646.8,
+        231.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "2",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i022fe26dc582",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        231.6,
+        646.8,
+        258.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "2",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i34ea33463214",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        258.4,
+        646.8,
+        285.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "2",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i6b9772085e5f",
+      "jenis": "sel",
+      "bbox_pt": [
+        646.8,
+        204.8,
+        696.7,
+        231.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "3",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ia764c5f00d21",
+      "jenis": "sel",
+      "bbox_pt": [
+        646.8,
+        231.6,
+        696.7,
+        258.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "3",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i44515374cda5",
+      "jenis": "sel",
+      "bbox_pt": [
+        646.8,
+        258.4,
+        696.7,
+        285.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "3",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "id7890833a59a",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        339.2,
+        596.9,
+        366.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Temperature (°C)",
+      "label_kolom": "Awal",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i43cad91c82b3",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        366.0,
+        696.7,
+        378.8
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "Awal Akhir",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i595257798b39",
+      "jenis": "sel",
+      "bbox_pt": [
+        547.0,
+        378.8,
+        696.7,
+        392.5
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "Awal Akhir",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ib34aea71c0fd",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        339.2,
+        646.8,
+        366.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "Akhir",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i81d8f6723b5b",
+      "jenis": "sel",
+      "bbox_pt": [
+        402.1,
+        459.4,
+        646.8,
+        472.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "icd5a9383c2a2",
+      "jenis": "sel",
+      "bbox_pt": [
+        402.1,
+        472.0,
+        646.8,
+        484.8
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i9e2d4821f14e",
+      "jenis": "sel",
+      "bbox_pt": [
+        596.9,
+        511.5,
+        782.4,
+        550.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "",
+      "label_kolom": "Note",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i85fda998fd2e",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        495.5,
+        59.8,
+        752.5,
+        71.6
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Received Date",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ied610fbbebb1",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        495.5,
+        73.2,
+        752.5,
+        85.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "Calibration Date",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i57e413216862",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        126.6,
+        438.3,
+        138.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "1. Name",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i2a3bc9423b26",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        140.0,
+        249.2,
+        151.8
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "2. Capacity",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i7fef19e12e20",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        180.2,
+        249.2,
+        192.0
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "5. Temperature",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "if79bfa22f6e4",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        193.6,
+        449.7,
+        205.4
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "6. Manufacture",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "i8677a77a7968",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        207.0,
+        424.1,
+        218.8
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "7. Model /Type",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ibb3bf12dff53",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        220.4,
+        424.1,
+        232.2
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "8 Serial Number",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ifc7210129cc7",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        274.3,
+        424.1,
+        286.1
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "1. Name",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    },
+    {
+      "id": "ie20cc53196bb",
+      "jenis": "teks_bebas",
+      "bbox_pt": [
+        167.1,
+        287.7,
+        424.1,
+        299.5
+      ],
+      "peran": "belum_ditentukan",
+      "label_baris": "2. Address",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": null
+      },
+      "sumber": "heuristik",
+      "perlu_dicek": true
+    }
+  ]
+}

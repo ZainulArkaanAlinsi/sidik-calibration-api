@@ -1,0 +1,19 @@
+{
+  "kontrak_versi": "0.1",
+  "daftar": "metode",
+  "dibaca_pada": "2026-11-24T16:00:00+07:00",
+  "item": [
+    {
+      "id": 5,
+      "kode_lengkap": "IK-CONTOH-01 Rev.1",
+      "nama": "Metode contoh",
+      "aktif": true
+    },
+    {
+      "id": 6,
+      "kode_lengkap": "IK-CONTOH-02 Rev.0",
+      "nama": "Metode contoh lama",
+      "aktif": false
+    }
+  ]
+}
