@@ -2209,7 +2209,7 @@ class CalibrationValidator
             ...$this->periksaVersiRumus($sesi),
             ...$this->periksaPenahanProfil($sesi),
             ...$this->periksaTitikSesiDiLuarCmc($sesi),
-        ])['hasil'];
+        ], $sesi)['hasil'];
 
         return [...$temuan, ...$this->periksaVersiAcuan($sesi, $pilihan)];
     }
