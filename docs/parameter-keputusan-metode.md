@@ -10,13 +10,18 @@ Ini data **lapis 1** (AGENTS.md §Olah data butir 1): pilihan di antara
 perilaku yang sudah ada, bukan rumus baru. Struktur rumus (lapis 2) tidak
 disentuh.
 
-## Status implementasi (diperbarui per commit di PR ini)
+## Status implementasi (24 Nov 2026, PR #298)
 
 | Bagian | Status |
 |---|---|
-| Registri 7 parameter + pembaca satu pintu + ledger append-only + tes | SELESAI, terbukti (`ParameterKeputusanMetodeTest`) |
-| Integrasi ke profil (refractometer, spectrophotometer, conductivity, tanggal terbit) + lingkup tanggal di pintu hitung + jejak sesi + tes bawaan identik | LIHAT DAFTAR COMMIT PR; yang belum ada commit-nya = belum dikerjakan |
+| Registri 7 parameter, pembaca satu pintu, ledger append-only | SELESAI, `ParameterKeputusanMetodeTest` |
+| Lingkup tanggal di pintu hitung (`PenentuVersiAcuan::jalankan/jalankanDengan`: simpan, update, preview, `kalibrasi:hitung-ulang`, validator, simulasi) | SELESAI |
+| Refractometer#24, Spectrophotometer#15, Conductivity#18 (parameter `hitung`) | SELESAI: tes vs sel workbook + bawaan identik terhadap rekaman kode lama |
+| Tanggal terbit ph_meter#28, conductivity#36, spectrophotometer#4, turbidimeter#4 (parameter `cetak`) | SELESAI: tes vs sel workbook; nilai beku di snapshot, versi penetapan TIDAK distempel di snapshot |
+| Jejak sesi (`type_b_components`, `sumber: parameter_metode`) | SELESAI untuk parameter `hitung` |
+| Jalur penuh lewat DB (simpan/preview/validator/hitung-ulang, sesi lama, penetapan dicabut) | `ParameterMetodeSesiSpektroTest` (profil per kelompok); Refractometer dan Conductivity (per titik) diuji di tingkat unit |
 | Penetapan lewat Studio Web | spesifikasi saja (`docs/perintah-frontend-parameter-metode.md`) |
+| Suite MySQL penuh | belum dijalankan lokal (3 jam); gerbang CI |
 
 ## Yang ada sekarang
 
