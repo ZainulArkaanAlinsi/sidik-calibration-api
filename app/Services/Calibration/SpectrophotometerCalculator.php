@@ -80,6 +80,13 @@ class SpectrophotometerCalculator
      */
     private const RENTANG_SPEKTRAL_NM = 1100.0;
 
+    /**
+     * Sedekat apa nilai titik boleh meleset dari nilai yang dikecualikan
+     * (`spek.stdev_maks_kecualikan_nm`) dan tetap dianggap titik yang sama. Sama
+     * dengan `SpectrophotometerProfile::TOLERANSI_TITIK` (0,05 nm = 5x resolusi alat).
+     */
+    private const TOLERANSI_TITIK_KECUALI = 0.05;
+
     /** Derajat kebebasan tiap komponen Type B, persis kolom `vi` di sheet-nya. */
     private const VI_SERTIFIKAT_STANDAR = 200.0;
 
@@ -206,13 +213,20 @@ class SpectrophotometerCalculator
 
         // `MAX. STDEV` — sel M36 / M49 / M67 di sheet `PERHITUNGAN`. Satu angka
         // buat seluruh kelompok, dan itu yang jadi Type A budget-nya.
-        $stdevMaks = max(array_column($hasilTitik, 'standar_deviasi'));
+        //
+        // Bawaan: SEMUA titik kelompok. Parameter keputusan metode
+        // `spectrophotometer.max_stdev_holmium` (butir TM spectrophotometer#15) bisa
+        // mengecualikan titik tertentu lewat `$spek['stdev_maks_kecualikan_nm']`:
+        // workbook `PERHITUNGAN!M36 =MAX(M27:M35)` tidak membaca M26 (279,6 nm).
+        [$untukMaks, $dikecualikan] = $this->titikUntukStdevMaks($hasilTitik, (array) ($spek['stdev_maks_kecualikan_nm'] ?? []));
+
+        $stdevMaks = max(array_column($untukMaks, 'standar_deviasi'));
 
         // Jumlah pengulangan yang nentuin `vi` Type A & pembagi blok %T. Diambil
         // dari titik yang STDEV-nya paling besar, karena baris budget-nya emang
         // baris itu — bukan rata-rata jumlah pengulangan seluruh kelompok.
         $n = 0;
-        foreach ($hasilTitik as $t) {
+        foreach ($untukMaks as $t) {
             if ($t['standar_deviasi'] === $stdevMaks) {
                 $n = $t['jumlah_pengulangan'];
 
@@ -248,8 +262,84 @@ class SpectrophotometerCalculator
             'cmc' => $cmc,
             'u95_sertifikat' => max($uHitung, $cmc),
             'sumber_u95' => $cmc > $uHitung ? 'cmc' : 'hitung',
-            'catatan_audit' => $this->catatanAudit($budget, $dipakai, $uHitung, $cmc, $gum),
+            'catatan_audit' => [
+                ...$this->catatanAudit($budget, $dipakai, $uHitung, $cmc, $gum),
+                ...$this->catatanStdevMaks($hasilTitik, $dikecualikan, $stdevMaks, (string) $spek['satuan']),
+            ],
         ];
+    }
+
+    /**
+     * Titik yang ikut MAX STDEV, dan titik yang dikecualikan karenanya.
+     *
+     * Titik dikenali lewat nilai nominalnya (bukan posisi): lembar kertas Rev.5
+     * tidak punya 279,6 nm, dan mengecualikan "titik pertama" menurut urutan akan
+     * membuang 287,7 nm. Bila yang tersisa kosong (hanya titik yang dikecualikan
+     * yang terisi) titik itu TETAP dipakai: `MAX` atas rentang kosong di Excel
+     * bernilai 0, dan nol yang lahir dari sel kosong tidak ditiru.
+     *
+     * @param  list<array<string, mixed>>  $hasilTitik
+     * @param  list<float|int|string>  $kecualikanNm
+     * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
+     */
+    private function titikUntukStdevMaks(array $hasilTitik, array $kecualikanNm): array
+    {
+        if ($kecualikanNm === []) {
+            return [$hasilTitik, []];
+        }
+
+        $dikecualikan = array_values(array_filter(
+            $hasilTitik,
+            static function (array $t) use ($kecualikanNm): bool {
+                foreach ($kecualikanNm as $nm) {
+                    if (abs((float) $t['titik_ukur'] - (float) $nm) <= self::TOLERANSI_TITIK_KECUALI) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+        ));
+
+        $sisa = array_values(array_udiff(
+            $hasilTitik,
+            $dikecualikan,
+            static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke'],
+        ));
+
+        return $sisa === [] ? [$hasilTitik, []] : [$sisa, $dikecualikan];
+    }
+
+    /**
+     * Catatan audit bila ada titik yang dikecualikan dari MAX STDEV: berapa STDEV
+     * titik itu, berapa MAX tanpa dia, dan berapa MAX bila semua titik ikut,
+     * supaya selisih dari bawaan kode terbaca tanpa membuka kode.
+     *
+     * @param  list<array<string, mixed>>  $hasilTitik
+     * @param  list<array<string, mixed>>  $dikecualikan
+     * @return list<array<string, mixed>>
+     */
+    private function catatanStdevMaks(array $hasilTitik, array $dikecualikan, float $stdevMaks, string $satuan): array
+    {
+        if ($dikecualikan === []) {
+            return [];
+        }
+
+        $semua = max(array_column($hasilTitik, 'standar_deviasi'));
+
+        return [[
+            'kode' => 'max_stdev_tanpa_titik_pertama',
+            'pesan' => sprintf(
+                'MAX STDEV kelompok diambil TANPA titik %s %s (ikut workbook: PERHITUNGAN!M36 =MAX(M27:M35), M26 tidak ikut). '
+                .'STDEV titik itu %s, MAX tanpa dia %s, MAX bila semua titik ikut %s.',
+                implode(', ', array_map(fn (array $t): string => $this->angka((float) $t['titik_ukur']), $dikecualikan)),
+                $satuan,
+                implode(', ', array_map(fn (array $t): string => $this->angka((float) $t['standar_deviasi']), $dikecualikan)),
+                $this->angka($stdevMaks),
+                $this->angka((float) $semua),
+            ),
+            'nilai' => $stdevMaks,
+        ]];
     }
 
     /**
