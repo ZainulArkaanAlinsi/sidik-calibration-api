@@ -312,6 +312,12 @@
           "sel": "DATABASE!T5",
           "nilai": 0.041
         },
+        "rumus_resolusi": {
+          "sel_ui": "PERHITUNGAN U95%!M12",
+          "rumus_ui": "=L9*0.5",
+          "sel_resolusi": "PERHITUNGAN U95%!L9",
+          "rumus_resolusi": "='INPUT DATA'!E17"
+        },
         "cetak": {
           "standar": {
             "sel": "SERTIFIKAT!C22",
@@ -615,6 +621,12 @@
           "sel": "DATABASE!T6",
           "nilai": 3.1
         },
+        "rumus_resolusi": {
+          "sel_ui": "PERHITUNGAN U95%!M26",
+          "rumus_ui": "=L23*0.5",
+          "sel_resolusi": "PERHITUNGAN U95%!L23",
+          "rumus_resolusi": "='INPUT DATA'!F17"
+        },
         "cetak": {
           "standar": {
             "sel": "SERTIFIKAT!C23",
@@ -917,6 +929,12 @@
         "cmc_database": {
           "sel": "DATABASE!T7",
           "nilai": 22.0
+        },
+        "rumus_resolusi": {
+          "sel_ui": "PERHITUNGAN U95%!M40",
+          "rumus_ui": "=L37*0.5",
+          "sel_resolusi": "PERHITUNGAN U95%!L37",
+          "rumus_resolusi": "='INPUT DATA'!G17"
         },
         "cetak": {
           "standar": {

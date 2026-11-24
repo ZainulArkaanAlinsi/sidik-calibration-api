@@ -329,10 +329,14 @@ def refraktometer(path):
     dev_23 = s.sel(T, f'H{r23}')
     for t, ti in zip(titik_def, titik):
         ganti = {'perbedaan_suhu': {'ui': dev_23['nilai'] / ti['komponen']['perbedaan_suhu']['pembagi']['nilai']}}
-        ti['dengan_suhu_ruang_23c'] = skenario(
-            ti['komponen'], ti['agregat'], KOMP_REFRAKTO, ganti,
-            f"rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (U{t['blok'] + 2}) := {T}!H{r23} / pembagi; komponen lain dari cache",
-        )
+        ti['dengan_suhu_ruang_23c'] = {
+            'suhu_ruang_c': 23.0,
+            'deviasi_tabel': dev_23,
+            **skenario(
+                ti['komponen'], ti['agregat'], KOMP_REFRAKTO, ganti,
+                f"rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (N{t['blok'] + 2}) := {T}!H{r23}; komponen lain dari cache",
+            ),
+        }
 
     kond = {
         'th': s.teks(I, 'Z10'),
@@ -422,6 +426,11 @@ def turbidimeter(path):
             'agregat': agg,
             'u95_standar_database': s.sel(DB, t['db_u']),
             'cmc_database': s.sel(DB, t['cmc']),
+            # Excel: u(resolusi) memakai angka yang DIKETIK teknisi (L9 = INPUT DATA!E17, M12 = L9*0.5).
+            'rumus_resolusi': {
+                'sel_ui': f"{U}!M{t['blok'] + 1}", 'rumus_ui': s.rumus(U, f"M{t['blok'] + 1}"),
+                'sel_resolusi': f"{U}!L{t['blok'] - 2}", 'rumus_resolusi': s.rumus(U, f"L{t['blok'] - 2}"),
+            },
             'cetak': {
                 'standar': cetak(s, S, f"C{t['sert']}"), 'uut': cetak(s, S, f"J{t['sert']}"),
                 'koreksi': cetak(s, S, f"P{t['sert']}"), 'u95': cetak(s, S, f"S{t['sert']}"),

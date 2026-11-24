@@ -422,6 +422,11 @@
           }
         },
         "dengan_suhu_ruang_23c": {
+          "suhu_ruang_c": 23.0,
+          "deviasi_tabel": {
+            "sel": "Tab Konversi Temperatur!H44",
+            "nilai": -0.0013499999999999623
+          },
           "uc": 0.0007803929816658396,
           "veff": 50.2493820422934,
           "k": 2.008559112100761,
@@ -432,7 +437,7 @@
               "ui": -0.0007794228634059731
             }
           },
-          "sumber": "rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (U11) := Tab Konversi Temperatur!H44 / pembagi; komponen lain dari cache"
+          "sumber": "rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (N11) := Tab Konversi Temperatur!H44; komponen lain dari cache"
         }
       },
       {
@@ -778,6 +783,11 @@
           }
         },
         "dengan_suhu_ruang_23c": {
+          "suhu_ruang_c": 23.0,
+          "deviasi_tabel": {
+            "sel": "Tab Konversi Temperatur!H44",
+            "nilai": -0.0013499999999999623
+          },
           "uc": 0.0007808368624964497,
           "veff": 50.3637569400305,
           "k": 2.008559112100761,
@@ -788,7 +798,7 @@
               "ui": -0.0007794228634059731
             }
           },
-          "sumber": "rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (U26) := Tab Konversi Temperatur!H44 / pembagi; komponen lain dari cache"
+          "sumber": "rumus sel PERHITUNGAN U95%: komponen perbedaan_suhu (N26) := Tab Konversi Temperatur!H44; komponen lain dari cache"
         }
       }
     ],
