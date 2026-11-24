@@ -247,6 +247,12 @@ def jangka_sorong(path):
         'rumus_sertifikat': [rumus_atau_none(s, U, 'AA21'), rumus_atau_none(s, U, 'AA40'), rumus_atau_none(s, U, 'AA60')],
     }
     cetak['rumus_inch_l28'] = {'sel': f'{S}!L28', 'rumus': rumus_atau_none(s, S, 'L28')}
+    # Tanggal terbit: sertifikat mencetak tanggal kalibrasi (+0); `INPUT DATA!D135` (+4) tidak dibaca rumus mana pun.
+    cetak['tanggal_terbit'] = {
+        'sertifikat_b75': {'sel': f'{S}!B75', 'rumus': rumus_atau_none(s, S, 'B75')},
+        'sertifikat_n9': {'sel': f'{S}!N9', 'rumus': rumus_atau_none(s, S, 'N9')},
+        'input_d135': {'sel': f'{I}!D135', 'rumus': rumus_atau_none(s, I, 'D135')},
+    }
     excel['cetak'] = cetak
 
     # ---------------- konstanta (sumber sel) ----------------
@@ -491,6 +497,13 @@ def conductivity(path):
         'style1_b55': {'sel': 'SERTIFIKAT STYLE 1!B55', 'rumus': rumus_atau_none(s, 'SERTIFIKAT STYLE 1', 'B55')},
         'style2_b55': {'sel': 'SERTIFIKAT STYLE 2!B55', 'rumus': rumus_atau_none(s, 'SERTIFIKAT STYLE 2', 'B55')},
     }
+    style = {
+        'catatan_input_k57': {'sel': f'{I}!K57', 'nilai': s.nilai(I, 'K57')},
+        'style1_titik_tengah': {'sel': 'SERTIFIKAT STYLE 1!C40', 'rumus': rumus_atau_none(s, 'SERTIFIKAT STYLE 1', 'C40'),
+                                'satuan': s.nilai('SERTIFIKAT STYLE 1', 'C39')},
+        'style2_titik_tengah': {'sel': 'SERTIFIKAT STYLE 2!C36', 'rumus': rumus_atau_none(s, 'SERTIFIKAT STYLE 2', 'C36'),
+                                'satuan': s.nilai('SERTIFIKAT STYLE 2', 'C34')},
+    }
     k_cetak = {
         'blok_mikro': kolom_cetak(s, 'SERTIFIKAT STYLE 2', 'U37'),
         'blok_mili': kolom_cetak(s, 'SERTIFIKAT STYLE 2', 'U42'),
@@ -508,6 +521,7 @@ def conductivity(path):
         'konstanta': konstanta,
         'lingkungan': lingkungan,
         'tanggal_terbit': tanggal,
+        'style_sertifikat': style,
         'k_cetak': k_cetak,
         'koreksi_sel_buntu': koreksi_buntu,
         'rekonstruksi': {

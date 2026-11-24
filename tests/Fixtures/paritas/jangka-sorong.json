@@ -3998,6 +3998,20 @@
         "rumus_inch_l28": {
           "sel": "SERTIFIKAT!L28",
           "rumus": "=IF($F$11=\"\",\"\",IF($F$11=\"mm\",PERHITUNGAN!AJ46/DATABASE!$T$23,IF($F$11=\"inch\",PERHITUNGAN!V46/DATABASE!$T$24,\"pilih satuan\")))"
+        },
+        "tanggal_terbit": {
+          "sertifikat_b75": {
+            "sel": "SERTIFIKAT!B75",
+            "rumus": "=N9"
+          },
+          "sertifikat_n9": {
+            "sel": "SERTIFIKAT!N9",
+            "rumus": "='INPUT DATA'!O16"
+          },
+          "input_d135": {
+            "sel": "INPUT DATA!D135",
+            "rumus": "=O16+4"
+          }
         }
       }
     },

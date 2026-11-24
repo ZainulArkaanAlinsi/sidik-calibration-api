@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Services\Calibration\JangkaSorongCalculator;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\TabelStandarJangkaSorong;
+use App\Support\FormatMasterSertifikat;
 use App\Support\JangkaSorongMentah;
 use App\Support\TataLetakSertifikat;
 use DateTimeImmutable;
@@ -689,6 +690,22 @@ class ParitasJangkaSorongTest extends TestCase
         // Cabang `inch` sel L28 juga salah rujuk (V46 = ci Depth, bukan AJ46); cabang mm benar.
         $this->assertStringContainsString('PERHITUNGAN!V46/DATABASE!$T$24', (string) $w['excel']['cetak']['rumus_inch_l28']['rumus'], 'SERTIFIKAT!L28 cabang inch merujuk V46');
         $this->assertStringContainsString('PERHITUNGAN!AJ46/DATABASE!$T$23', (string) $w['excel']['cetak']['rumus_inch_l28']['rumus'], 'SERTIFIKAT!L28 cabang mm merujuk AJ46 (benar)');
+    }
+
+    /**
+     * Tanggal terbit: sertifikat master mencetak tanggal kalibrasi (`B75 = N9`, `N9 = INPUT DATA!O16`,
+     * +0 hari); `INPUT DATA!D135 = O16+4` tidak dibaca rumus mana pun. Aplikasi memakai +0
+     * (`FormatMasterSertifikat`), jadi SAMA dengan yang TERCETAK. Pertanyaan TM K-15 (+0 atau +4)
+     * tetap terbuka: yang diadu hanya apa yang dicetak sel.
+     */
+    public function test_tanggal_terbit_aplikasi_sama_dengan_sel_cetak_excel_tambah_nol_hari(): void
+    {
+        $t = self::w()['excel']['cetak']['tanggal_terbit'];
+
+        $this->assertSame('=N9', $t['sertifikat_b75']['rumus'], $t['sertifikat_b75']['sel']);
+        $this->assertSame("='INPUT DATA'!O16", $t['sertifikat_n9']['rumus'], $t['sertifikat_n9']['sel']);
+        $this->assertSame('=O16+4', $t['input_d135']['rumus'], $t['input_d135']['sel'].' (tidak dirujuk sertifikat)');
+        $this->assertSame(0, FormatMasterSertifikat::tanggalUntukProfil('jangka_sorong')['tambah_hari'], 'tambah hari Jangka Sorong');
     }
 
     /** U95 Inside dan Depth (`J51`, `J62`) memang merujuk budgetnya sendiri (benar) — teks cetak SAMA. */
