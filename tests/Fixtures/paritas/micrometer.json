@@ -1039,19 +1039,22 @@
                 "sel": "SERTIFIKAT!D18",
                 "nilai": 0.0,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I18",
                 "nilai": null,
                 "format": "0.000",
-                "teks": null
+                "teks": null,
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L18",
                 "nilai": null,
                 "format": "0.000",
-                "teks": null
+                "teks": null,
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1060,19 +1063,22 @@
                 "sel": "SERTIFIKAT!D19",
                 "nilai": 0.09843070866141733,
                 "format": "0.000",
-                "teks": "0.098"
+                "teks": "0.098",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I19",
                 "nilai": 2.5,
                 "format": "0.000",
-                "teks": "2.500"
+                "teks": "2.500",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L19",
                 "nilai": -2.401569291338583,
                 "format": "0.000",
-                "teks": "-2.402"
+                "teks": "-2.402",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1081,19 +1087,22 @@
                 "sel": "SERTIFIKAT!D20",
                 "nilai": 0.20078700787401577,
                 "format": "0.000",
-                "teks": "0.201"
+                "teks": "0.201",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I20",
                 "nilai": 5.1,
                 "format": "0.000",
-                "teks": "5.100"
+                "teks": "5.100",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L20",
                 "nilai": -4.899212992125984,
                 "format": "0.000",
-                "teks": "-4.899"
+                "teks": "-4.899",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1102,19 +1111,22 @@
                 "sel": "SERTIFIKAT!D21",
                 "nilai": 0.3031610236220473,
                 "format": "0.000",
-                "teks": "0.303"
+                "teks": "0.303",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I21",
                 "nilai": 7.7,
                 "format": "0.000",
-                "teks": "7.700"
+                "teks": "7.700",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L21",
                 "nilai": -7.3968389763779525,
                 "format": "0.000",
-                "teks": "-7.397"
+                "teks": "-7.397",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1123,19 +1135,22 @@
                 "sel": "SERTIFIKAT!D22",
                 "nilai": 0.40552795275590553,
                 "format": "0.000",
-                "teks": "0.406"
+                "teks": "0.406",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I22",
                 "nilai": 10.3,
                 "format": "0.000",
-                "teks": "10.300"
+                "teks": "10.300",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L22",
                 "nilai": -9.894472047244095,
                 "format": "0.000",
-                "teks": "-9.894"
+                "teks": "-9.894",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1144,19 +1159,22 @@
                 "sel": "SERTIFIKAT!D23",
                 "nilai": 0.5078830708661418,
                 "format": "0.000",
-                "teks": "0.508"
+                "teks": "0.508",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I23",
                 "nilai": 12.9,
                 "format": "0.000",
-                "teks": "12.900"
+                "teks": "12.900",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L23",
                 "nilai": -12.392116929133858,
                 "format": "0.000",
-                "teks": "-12.392"
+                "teks": "-12.392",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1165,19 +1183,22 @@
                 "sel": "SERTIFIKAT!D24",
                 "nilai": 0.5905539370078741,
                 "format": "0.000",
-                "teks": "0.591"
+                "teks": "0.591",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I24",
                 "nilai": 15.0,
                 "format": "0.000",
-                "teks": "15.000"
+                "teks": "15.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L24",
                 "nilai": -14.409446062992126,
                 "format": "0.000",
-                "teks": "-14.409"
+                "teks": "-14.409",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1186,19 +1207,22 @@
                 "sel": "SERTIFIKAT!D25",
                 "nilai": 0.6929133858267718,
                 "format": "0.000",
-                "teks": "0.693"
+                "teks": "0.693",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I25",
                 "nilai": 17.600000000000005,
                 "format": "0.000",
-                "teks": "17.600"
+                "teks": "17.600",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L25",
                 "nilai": -16.90708661417323,
                 "format": "0.000",
-                "teks": "-16.907"
+                "teks": "-16.907",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1207,19 +1231,22 @@
                 "sel": "SERTIFIKAT!D26",
                 "nilai": 0.7952846456692912,
                 "format": "0.000",
-                "teks": "0.795"
+                "teks": "0.795",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I26",
                 "nilai": 20.2,
                 "format": "0.000",
-                "teks": "20.200"
+                "teks": "20.200",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L26",
                 "nilai": -19.40471535433071,
                 "format": "0.000",
-                "teks": "-19.405"
+                "teks": "-19.405",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1228,19 +1255,22 @@
                 "sel": "SERTIFIKAT!D27",
                 "nilai": 0.8976370078740159,
                 "format": "0.000",
-                "teks": "0.898"
+                "teks": "0.898",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I27",
                 "nilai": 22.8,
                 "format": "0.000",
-                "teks": "22.800"
+                "teks": "22.800",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L27",
                 "nilai": -21.902362992125987,
                 "format": "0.000",
-                "teks": "-21.902"
+                "teks": "-21.902",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -1249,19 +1279,22 @@
                 "sel": "SERTIFIKAT!D28",
                 "nilai": 0.9842625984251969,
                 "format": "0.000",
-                "teks": "0.984"
+                "teks": "0.984",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I28",
                 "nilai": 25.001,
                 "format": "0.000",
-                "teks": "25.001"
+                "teks": "25.001",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L28",
                 "nilai": -24.016737401574805,
                 "format": "0.000",
-                "teks": "-24.017"
+                "teks": "-24.017",
+                "nol_bertanda_minus": false
               }
             }
           ],
@@ -1307,15 +1340,39 @@
       "tanggal_tetap": {
         "tanggal": "2026-06-30",
         "sumber": "hitung ulang Python dari rumus sel PERHITUNGAN U95%!K10..X17 dengan DATABASE!X11 := tanggal ini; komponen lain dari nilai-cache (tidak bergantung X11); TINV = t(0,975; floor(veff)) scipy",
+        "panjang_mm": 6.00016,
         "k10_um": 0.4348767123287671,
+        "ci_suhu_ruang": 6.0001600000000005e-05,
+        "ci_koefisien_muai": 3.9001039999999914,
         "uc_um": 0.40548191820270674,
         "veff": 489.85613536145934,
         "k": 1.964827080477113,
-        "u95_um": 0.7967018535284839
+        "u95_um": 0.7967018535284839,
+        "dengan_panjang_aplikasi": {
+          "panjang_mm": 25.00027,
+          "k10_um": 0.4348767123287671,
+          "ci_suhu_ruang": 0.0002500027,
+          "ci_koefisien_muai": 16.250175499999965,
+          "uc_um": 0.405481938660453,
+          "veff": 489.8562342201472,
+          "k": 1.964827080477113,
+          "u95_um": 0.7967018937244177
+        }
       },
       "rekonstruksi": {
         "selisih_relatif_maks_terhadap_cache": 2.2711143871926934e-14,
-        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache"
+        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache",
+        "dengan_panjang_aplikasi_pada_x11_cache": {
+          "sumber": "rumus sel V8/V9/V13 dengan F61 := total nominal terbesar sesi (penyimpangan sengaja no. 3 aplikasi); komponen lain dari cache",
+          "panjang_mm": 25.00027,
+          "k10_um": 0.3405658820490868,
+          "ci_suhu_ruang": 0.0002500027,
+          "ci_koefisien_muai": 16.250175499999965,
+          "uc_um": 0.37421659184199435,
+          "veff": 458.31671823860256,
+          "k": 1.965157098278007,
+          "u95_um": 0.735394391751699
+        }
       }
     },
     "2550": {
@@ -2398,19 +2455,22 @@
                 "sel": "SERTIFIKAT!D18",
                 "nilai": 25.00027,
                 "format": "0.000",
-                "teks": "25.000"
+                "teks": "25.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I18",
                 "nilai": 25.0,
                 "format": "0.000",
-                "teks": "25.000"
+                "teks": "25.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L18",
                 "nilai": 0.00027000000000043656,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2419,19 +2479,22 @@
                 "sel": "SERTIFIKAT!D19",
                 "nilai": 27.50041,
                 "format": "0.000",
-                "teks": "27.500"
+                "teks": "27.500",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I19",
                 "nilai": 27.5002,
                 "format": "0.000",
-                "teks": "27.500"
+                "teks": "27.500",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L19",
                 "nilai": 0.0002099999999991553,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2440,19 +2503,22 @@
                 "sel": "SERTIFIKAT!D20",
                 "nilai": 30.99997,
                 "format": "0.000",
-                "teks": "31.000"
+                "teks": "31.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I20",
                 "nilai": 31.0,
                 "format": "0.000",
-                "teks": "31.000"
+                "teks": "31.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L20",
                 "nilai": -2.999999999886427e-05,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -2461,19 +2527,22 @@
                 "sel": "SERTIFIKAT!D21",
                 "nilai": 32.70044,
                 "format": "0.000",
-                "teks": "32.700"
+                "teks": "32.700",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I21",
                 "nilai": 32.7,
                 "format": "0.000",
-                "teks": "32.700"
+                "teks": "32.700",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L21",
                 "nilai": 0.00043999999999755346,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2482,19 +2551,22 @@
                 "sel": "SERTIFIKAT!D22",
                 "nilai": 35.3001,
                 "format": "0.000",
-                "teks": "35.300"
+                "teks": "35.300",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I22",
                 "nilai": 35.3,
                 "format": "0.000",
-                "teks": "35.300"
+                "teks": "35.300",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L22",
                 "nilai": 0.00010000000000331966,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2503,19 +2575,22 @@
                 "sel": "SERTIFIKAT!D23",
                 "nilai": 37.9002,
                 "format": "0.000",
-                "teks": "37.900"
+                "teks": "37.900",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I23",
                 "nilai": 37.9,
                 "format": "0.000",
-                "teks": "37.900"
+                "teks": "37.900",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L23",
                 "nilai": 0.00019999999999953388,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2524,19 +2599,22 @@
                 "sel": "SERTIFIKAT!D24",
                 "nilai": 40.00014,
                 "format": "0.000",
-                "teks": "40.000"
+                "teks": "40.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I24",
                 "nilai": 40.0,
                 "format": "0.000",
-                "teks": "40.000"
+                "teks": "40.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L24",
                 "nilai": 0.00014000000000180535,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2545,19 +2623,22 @@
                 "sel": "SERTIFIKAT!D25",
                 "nilai": 42.59983,
                 "format": "0.000",
-                "teks": "42.600"
+                "teks": "42.600",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I25",
                 "nilai": 42.6,
                 "format": "0.000",
-                "teks": "42.600"
+                "teks": "42.600",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L25",
                 "nilai": -0.00017000000000422233,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -2566,19 +2647,22 @@
                 "sel": "SERTIFIKAT!D26",
                 "nilai": 45.200070000000004,
                 "format": "0.000",
-                "teks": "45.200"
+                "teks": "45.200",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I26",
                 "nilai": 45.2,
                 "format": "0.000",
-                "teks": "45.200"
+                "teks": "45.200",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L26",
                 "nilai": 7.000000000090267e-05,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2587,19 +2671,22 @@
                 "sel": "SERTIFIKAT!D27",
                 "nilai": 47.80041,
                 "format": "0.000",
-                "teks": "47.800"
+                "teks": "47.800",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I27",
                 "nilai": 47.8,
                 "format": "0.000",
-                "teks": "47.800"
+                "teks": "47.800",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L27",
                 "nilai": 0.0004100000000022419,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -2608,19 +2695,22 @@
                 "sel": "SERTIFIKAT!D28",
                 "nilai": 49.9999,
                 "format": "0.000",
-                "teks": "50.000"
+                "teks": "50.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I28",
                 "nilai": 49.9996,
                 "format": "0.000",
-                "teks": "50.000"
+                "teks": "50.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L28",
                 "nilai": 0.0002999999999957481,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             }
           ],
@@ -2666,15 +2756,43 @@
       "tanggal_tetap": {
         "tanggal": "2026-06-30",
         "sumber": "hitung ulang Python dari rumus sel PERHITUNGAN U95%!K10..X17 dengan DATABASE!X11 := tanggal ini; komponen lain dari nilai-cache (tidak bergantung X11); TINV = t(0,975; floor(veff)) scipy",
+        "panjang_mm": 49.9999,
         "k10_um": 0.07906849315068494,
+        "ci_suhu_ruang": 0.000499999,
+        "ci_koefisien_muai": 27.499945000000032,
         "uc_um": 0.44558088598232276,
         "veff": 481.3966161667964,
         "k": 1.9649081638999133,
-        "u95_um": 0.8755255205444225
+        "u95_um": 0.8755255205444225,
+        "u95_sertifikat_mm": 0.0008755255205444225,
+        "u95_cetak": "0.001",
+        "dengan_panjang_aplikasi": {
+          "panjang_mm": 49.9999,
+          "k10_um": 0.07906849315068494,
+          "ci_suhu_ruang": 0.000499999,
+          "ci_koefisien_muai": 27.499945000000032,
+          "uc_um": 0.44558088598232276,
+          "veff": 481.3966161667964,
+          "k": 1.9649081638999133,
+          "u95_um": 0.8755255205444225,
+          "u95_sertifikat_mm": 0.0008755255205444225,
+          "u95_cetak": "0.001"
+        }
       },
       "rekonstruksi": {
         "selisih_relatif_maks_terhadap_cache": 2.147346416573054e-14,
-        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache"
+        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache",
+        "dengan_panjang_aplikasi_pada_x11_cache": {
+          "sumber": "rumus sel V8/V9/V13 dengan F61 := total nominal terbesar sesi (penyimpangan sengaja no. 3 aplikasi); komponen lain dari cache",
+          "panjang_mm": 49.9999,
+          "k10_um": 0.061921181300735664,
+          "ci_suhu_ruang": 0.000499999,
+          "ci_koefisien_muai": 27.499945000000032,
+          "uc_um": 0.44467568104666044,
+          "veff": 477.5756678675356,
+          "k": 1.9649497280744148,
+          "u95_um": 0.8737653585539407
+        }
       }
     },
     "5075": {
@@ -3769,19 +3887,22 @@
                 "sel": "SERTIFIKAT!D18",
                 "nilai": 49.9999,
                 "format": "0.000",
-                "teks": "50.000"
+                "teks": "50.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I18",
                 "nilai": 50.0022,
                 "format": "0.000",
-                "teks": "50.002"
+                "teks": "50.002",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L18",
                 "nilai": -0.002300000000005298,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3790,19 +3911,22 @@
                 "sel": "SERTIFIKAT!D19",
                 "nilai": 52.50004,
                 "format": "0.000",
-                "teks": "52.500"
+                "teks": "52.500",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I19",
                 "nilai": 52.5018,
                 "format": "0.000",
-                "teks": "52.502"
+                "teks": "52.502",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L19",
                 "nilai": -0.0017600000000044247,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3811,19 +3935,22 @@
                 "sel": "SERTIFIKAT!D20",
                 "nilai": 51.00025,
                 "format": "0.000",
-                "teks": "51.000"
+                "teks": "51.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I20",
                 "nilai": 51.003,
                 "format": "0.000",
-                "teks": "51.003"
+                "teks": "51.003",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L20",
                 "nilai": -0.00274999999999892,
                 "format": "0.000",
-                "teks": "-0.003"
+                "teks": "-0.003",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3832,19 +3959,22 @@
                 "sel": "SERTIFIKAT!D21",
                 "nilai": 57.70019,
                 "format": "0.000",
-                "teks": "57.700"
+                "teks": "57.700",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I21",
                 "nilai": 57.7028,
                 "format": "0.000",
-                "teks": "57.703"
+                "teks": "57.703",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L21",
                 "nilai": -0.00261000000000422,
                 "format": "0.000",
-                "teks": "-0.003"
+                "teks": "-0.003",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3853,19 +3983,22 @@
                 "sel": "SERTIFIKAT!D22",
                 "nilai": 60.299899999999994,
                 "format": "0.000",
-                "teks": "60.300"
+                "teks": "60.300",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I22",
                 "nilai": 60.30219999999999,
                 "format": "0.000",
-                "teks": "60.302"
+                "teks": "60.302",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L22",
                 "nilai": -0.0022999999999981924,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3874,19 +4007,22 @@
                 "sel": "SERTIFIKAT!D23",
                 "nilai": 62.900119999999994,
                 "format": "0.000",
-                "teks": "62.900"
+                "teks": "62.900",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I23",
                 "nilai": 62.90220000000001,
                 "format": "0.000",
-                "teks": "62.902"
+                "teks": "62.902",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L23",
                 "nilai": -0.0020800000000136265,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3895,19 +4031,22 @@
                 "sel": "SERTIFIKAT!D24",
                 "nilai": 65.00018,
                 "format": "0.000",
-                "teks": "65.000"
+                "teks": "65.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I24",
                 "nilai": 65.00219999999999,
                 "format": "0.000",
-                "teks": "65.002"
+                "teks": "65.002",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L24",
                 "nilai": -0.0020199999999874763,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3916,19 +4055,22 @@
                 "sel": "SERTIFIKAT!D25",
                 "nilai": 67.60044,
                 "format": "0.000",
-                "teks": "67.600"
+                "teks": "67.600",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I25",
                 "nilai": 67.60239999999999,
                 "format": "0.000",
-                "teks": "67.602"
+                "teks": "67.602",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L25",
                 "nilai": -0.0019599999999826423,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3937,19 +4079,22 @@
                 "sel": "SERTIFIKAT!D26",
                 "nilai": 70.20009,
                 "format": "0.000",
-                "teks": "70.200"
+                "teks": "70.200",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I26",
                 "nilai": 70.2028,
                 "format": "0.000",
-                "teks": "70.203"
+                "teks": "70.203",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L26",
                 "nilai": -0.002709999999993329,
                 "format": "0.000",
-                "teks": "-0.003"
+                "teks": "-0.003",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3958,19 +4103,22 @@
                 "sel": "SERTIFIKAT!D27",
                 "nilai": 72.79993,
                 "format": "0.000",
-                "teks": "72.800"
+                "teks": "72.800",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I27",
                 "nilai": 72.8022,
                 "format": "0.000",
-                "teks": "72.802"
+                "teks": "72.802",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L27",
                 "nilai": -0.0022699999999957754,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -3979,19 +4127,22 @@
                 "sel": "SERTIFIKAT!D28",
                 "nilai": 74.9999,
                 "format": "0.000",
-                "teks": "75.000"
+                "teks": "75.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I28",
                 "nilai": 75.00219999999999,
                 "format": "0.000",
-                "teks": "75.002"
+                "teks": "75.002",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L28",
                 "nilai": -0.002299999999991087,
                 "format": "0.000",
-                "teks": "-0.002"
+                "teks": "-0.002",
+                "nol_bertanda_minus": false
               }
             }
           ],
@@ -4037,15 +4188,43 @@
       "tanggal_tetap": {
         "tanggal": "2026-06-30",
         "sumber": "hitung ulang Python dari rumus sel PERHITUNGAN U95%!K10..X17 dengan DATABASE!X11 := tanggal ini; komponen lain dari nilai-cache (tidak bergantung X11); TINV = t(0,975; floor(veff)) scipy",
+        "panjang_mm": 74.9999,
         "k10_um": 0.09427397260273973,
+        "ci_suhu_ruang": 0.000749999,
+        "ci_koefisien_muai": 41.249945000000054,
         "uc_um": 0.4662216648128723,
         "veff": 314.9441798176326,
         "k": 1.9675476980852264,
-        "u95_um": 0.9173133634000289
+        "u95_um": 0.9173133634000289,
+        "u95_sertifikat_mm": 0.0009173133634000289,
+        "u95_cetak": "0.001",
+        "dengan_panjang_aplikasi": {
+          "panjang_mm": 74.9999,
+          "k10_um": 0.09427397260273973,
+          "ci_suhu_ruang": 0.000749999,
+          "ci_koefisien_muai": 41.249945000000054,
+          "uc_um": 0.4662216648128723,
+          "veff": 314.9441798176326,
+          "k": 1.9675476980852264,
+          "u95_um": 0.9173133634000289,
+          "u95_sertifikat_mm": 0.0009173133634000289,
+          "u95_cetak": "0.001"
+        }
       },
       "rekonstruksi": {
         "selisih_relatif_maks_terhadap_cache": 1.328235886334208e-13,
-        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache"
+        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache",
+        "dengan_panjang_aplikasi_pada_x11_cache": {
+          "sumber": "rumus sel V8/V9/V13 dengan F61 := total nominal terbesar sesi (penyimpangan sengaja no. 3 aplikasi); komponen lain dari cache",
+          "panjang_mm": 74.9999,
+          "k10_um": 0.07382903982313863,
+          "ci_suhu_ruang": 0.000749999,
+          "ci_koefisien_muai": 41.249945000000054,
+          "uc_um": 0.46499142194007664,
+          "veff": 311.6899591741987,
+          "k": 1.9676211333064952,
+          "u95_um": 0.9149269486155324
+        }
       },
       "konflik_k1": {
         "butir": "K-1 (konflik-excel-kertas.md): titik ke-3 pita 50-75 mm, 51,0 (kertas 0522.C, master, aplikasi) lawan 55,6 (cetakan Excel job, bukan sel workbook master)",
@@ -5169,19 +5348,22 @@
                 "sel": "SERTIFIKAT!D18",
                 "nilai": 74.9999,
                 "format": "0.000",
-                "teks": "75.000"
+                "teks": "75.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I18",
                 "nilai": 75.00019999999999,
                 "format": "0.000",
-                "teks": "75.000"
+                "teks": "75.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L18",
                 "nilai": -0.0002999999999957481,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -5190,19 +5372,22 @@
                 "sel": "SERTIFIKAT!D19",
                 "nilai": 77.4998,
                 "format": "0.000",
-                "teks": "77.500"
+                "teks": "77.500",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I19",
                 "nilai": 77.50019999999999,
                 "format": "0.000",
-                "teks": "77.500"
+                "teks": "77.500",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L19",
                 "nilai": -0.00039999999999906777,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -5211,19 +5396,22 @@
                 "sel": "SERTIFIKAT!D20",
                 "nilai": 80.09971,
                 "format": "0.000",
-                "teks": "80.100"
+                "teks": "80.100",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I20",
                 "nilai": 80.1002,
                 "format": "0.000",
-                "teks": "80.100"
+                "teks": "80.100",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L20",
                 "nilai": -0.0004899999999992133,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -5232,19 +5420,22 @@
                 "sel": "SERTIFIKAT!D21",
                 "nilai": 82.70002000000001,
                 "format": "0.000",
-                "teks": "82.700"
+                "teks": "82.700",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I21",
                 "nilai": 82.7002,
                 "format": "0.000",
-                "teks": "82.700"
+                "teks": "82.700",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L21",
                 "nilai": -0.00017999999998608018,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -5253,19 +5444,22 @@
                 "sel": "SERTIFIKAT!D22",
                 "nilai": 85.30032,
                 "format": "0.000",
-                "teks": "85.300"
+                "teks": "85.300",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I22",
                 "nilai": 85.3,
                 "format": "0.000",
-                "teks": "85.300"
+                "teks": "85.300",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L22",
                 "nilai": 0.0003200000000020964,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -5274,19 +5468,22 @@
                 "sel": "SERTIFIKAT!D23",
                 "nilai": 87.9006,
                 "format": "0.000",
-                "teks": "87.901"
+                "teks": "87.901",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I23",
                 "nilai": 87.9002,
                 "format": "0.000",
-                "teks": "87.900"
+                "teks": "87.900",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L23",
                 "nilai": 0.00039999999999906777,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -5295,19 +5492,22 @@
                 "sel": "SERTIFIKAT!D24",
                 "nilai": 90.00015,
                 "format": "0.000",
-                "teks": "90.000"
+                "teks": "90.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I24",
                 "nilai": 90.00019999999999,
                 "format": "0.000",
-                "teks": "90.000"
+                "teks": "90.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L24",
                 "nilai": -4.999999998744897e-05,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             },
             {
@@ -5316,19 +5516,22 @@
                 "sel": "SERTIFIKAT!D25",
                 "nilai": 92.60000000000001,
                 "format": "0.000",
-                "teks": "92.600"
+                "teks": "92.600",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I25",
                 "nilai": 92.6,
                 "format": "0.000",
-                "teks": "92.600"
+                "teks": "92.600",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L25",
                 "nilai": 1.4210854715202004e-14,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -5337,19 +5540,22 @@
                 "sel": "SERTIFIKAT!D26",
                 "nilai": 95.20037,
                 "format": "0.000",
-                "teks": "95.200"
+                "teks": "95.200",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I26",
                 "nilai": 95.2002,
                 "format": "0.000",
-                "teks": "95.200"
+                "teks": "95.200",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L26",
                 "nilai": 0.00017000000001132776,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -5358,19 +5564,22 @@
                 "sel": "SERTIFIKAT!D27",
                 "nilai": 97.80039000000001,
                 "format": "0.000",
-                "teks": "97.800"
+                "teks": "97.800",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I27",
                 "nilai": 97.80019999999999,
                 "format": "0.000",
-                "teks": "97.800"
+                "teks": "97.800",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L27",
                 "nilai": 0.00019000000001767603,
                 "format": "0.000",
-                "teks": "0.000"
+                "teks": "0.000",
+                "nol_bertanda_minus": false
               }
             },
             {
@@ -5379,19 +5588,22 @@
                 "sel": "SERTIFIKAT!D28",
                 "nilai": 100.00012,
                 "format": "0.000",
-                "teks": "100.000"
+                "teks": "100.000",
+                "nol_bertanda_minus": false
               },
               "uut": {
                 "sel": "SERTIFIKAT!I28",
                 "nilai": 100.00019999999999,
                 "format": "0.000",
-                "teks": "100.000"
+                "teks": "100.000",
+                "nol_bertanda_minus": false
               },
               "koreksi": {
                 "sel": "SERTIFIKAT!L28",
                 "nilai": -7.999999999697138e-05,
                 "format": "0.000",
-                "teks": "-0.000"
+                "teks": "-0.000",
+                "nol_bertanda_minus": true
               }
             }
           ],
@@ -5437,15 +5649,43 @@
       "tanggal_tetap": {
         "tanggal": "2026-06-30",
         "sumber": "hitung ulang Python dari rumus sel PERHITUNGAN U95%!K10..X17 dengan DATABASE!X11 := tanggal ini; komponen lain dari nilai-cache (tidak bergantung X11); TINV = t(0,975; floor(veff)) scipy",
+        "panjang_mm": 100.00012,
         "k10_um": 0.10947945205479452,
+        "ci_suhu_ruang": 0.0010000012,
+        "ci_koefisien_muai": 40.00004799999986,
         "uc_um": 0.4685151736273207,
         "veff": 307.34304931875295,
         "k": 1.9677212881552213,
-        "u95_um": 0.9219072809702187
+        "u95_um": 0.9219072809702187,
+        "u95_sertifikat_mm": 0.0009219072809702187,
+        "u95_cetak": "0.001",
+        "dengan_panjang_aplikasi": {
+          "panjang_mm": 100.00012,
+          "k10_um": 0.10947945205479452,
+          "ci_suhu_ruang": 0.0010000012,
+          "ci_koefisien_muai": 40.00004799999986,
+          "uc_um": 0.4685151736273207,
+          "veff": 307.34304931875295,
+          "k": 1.9677212881552213,
+          "u95_um": 0.9219072809702187,
+          "u95_sertifikat_mm": 0.0009219072809702187,
+          "u95_cetak": "0.001"
+        }
       },
       "rekonstruksi": {
         "selisih_relatif_maks_terhadap_cache": 1.43565638575966e-13,
-        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache"
+        "catatan": "rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache",
+        "dengan_panjang_aplikasi_pada_x11_cache": {
+          "sumber": "rumus sel V8/V9/V13 dengan F61 := total nominal terbesar sesi (penyimpangan sengaja no. 3 aplikasi); komponen lain dari cache",
+          "panjang_mm": 100.00012,
+          "k10_um": 0.08573698789954337,
+          "ci_suhu_ruang": 0.0010000012,
+          "ci_koefisien_muai": 40.00004799999986,
+          "uc_um": 0.466863464847766,
+          "veff": 303.12814452286256,
+          "k": 1.9678240977517993,
+          "u95_um": 0.918705176487334
+        }
       }
     }
   }

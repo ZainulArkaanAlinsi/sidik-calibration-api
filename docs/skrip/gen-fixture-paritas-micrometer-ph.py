@@ -147,6 +147,32 @@ def teks_excel(nilai, fmt):
     return ('-' if nilai < 0 else '') + teks
 
 
+def catat_nol(kolom):
+    """Tandai sel bernilai negatif yang membulat ke nol (`-0.000`).
+
+    `teks` di fixture ini EMULASI Python atas tampilan Excel, bukan teks yang
+    dibaca dari render Excel. Untuk nilai negatif yang membulat ke nol emulasi
+    memberi `-0.000`, sedangkan repo mencatat PDF master micrometer tanpa minus
+    (`MicrometerProfile::tandaNolDicetak`, G0-b P4). Dua bukti saling
+    bertentangan -> tes membandingkan teks TANPA tanda untuk baris ini dan
+    menyebutnya MENUNGGU di docs/paritas-micrometer-ph.md.
+    """
+    teks = kolom.get('teks')
+    kolom['nol_bertanda_minus'] = bool(
+        teks is not None and kolom['nilai'] is not None and kolom['nilai'] < 0
+        and not any(c in '123456789' for c in teks)
+    )
+    return kolom
+
+
+def polinomial(rumus, kol_suhu):
+    """a, b, c dari `=(a*H42^2)-(b*H42)+c` (konstanta tertulis di rumus sel, bukan di sel data)."""
+    m = re.fullmatch(r'=\(([\d.]+)\*' + kol_suhu + r'42\^2\)-\(([\d.]+)\*' + kol_suhu + r'42\)\+([\d.]+)', rumus or '')
+    if not m:
+        raise ValueError(f'rumus polinomial tak dikenal: {rumus}')
+    return {'a': float(m.group(1)), 'b': -float(m.group(2)), 'c': float(m.group(3))}
+
+
 def tinv(p, df):
     """`TINV(p, df)` Excel: dua-sisi, derajat bebas dipotong ke bilangan bulat."""
     from scipy import stats
@@ -248,7 +274,7 @@ def mikro(kode, path, label):
         def kol(huruf):
             fmt = s.format(S, f'{huruf}{r}')
             v = s.n(S, f'{huruf}{r}', wajib=False)
-            return {'sel': f'{S}!{huruf}{r}', 'nilai': v, 'format': fmt, 'teks': teks_excel(v, fmt)}
+            return catat_nol({'sel': f'{S}!{huruf}{r}', 'nilai': v, 'format': fmt, 'teks': teks_excel(v, fmt)})
         cetak_titik.append({'titik_ke': i, 'standar': kol('D'), 'uut': kol('I'), 'koreksi': kol('L')})
 
     def kol_tunggal(sel):
@@ -295,7 +321,16 @@ def mikro(kode, path, label):
     w13 = s.nilai(DB, 'W13')
     l21 = s.n(P, 'L21')
 
-    def rantai(umur_hari):
+    f61 = excel['panjang_f61_mm']['nilai']
+    delta_alpha = komponen['koefisien_muai']['u_mentah']['nilai']  # K9 = Δα
+    delta_suhu = komponen['suhu_ruang']['u_mentah']['nilai']  # K8 = Q31
+    # Panjang yang dipakai APLIKASI untuk ci termal: total nominal TERBESAR sesi
+    # (MicrometerCalculator::budget, penyimpangan no. 3), bukan `F61` master
+    # (keping pertama tumpukan titik terakhir). Sama persis di tiga pita
+    # berkeping tunggal; beda di 0-25 mm (6,00016 lawan 25,00027).
+    panjang_app = max(t['total_nominal_mm']['nilai'] for t in titik_x)
+
+    def rantai(umur_hari, panjang):
         kk = dict(nilai_k)
         kk['drift_standar'] = (0.02 + 0.00025 * l21) * (umur_hari / 365)
         ui, ci, vi = {}, {}, {}
@@ -303,16 +338,24 @@ def mikro(kode, path, label):
             ui[sb] = kk[sb] / komponen[sb]['pembagi']['nilai']
             ci[sb] = komponen[sb]['ci']['nilai']
             vi[sb] = komponen[sb]['vi']['nilai']
+        # ci termal menurut rumus sel: V8 = K9*F61, V9 = F61*K8, V13 = V8
+        ci['suhu_ruang'] = delta_alpha * panjang
+        ci['koefisien_muai'] = panjang * delta_suhu
+        ci['selisih_suhu'] = ci['suhu_ruang']
         aa = {sb: (ui[sb] * ci[sb]) ** 2 for sb in ui}
         uc2 = sum(aa.values())
         uc = math.sqrt(uc2)
         pembagi_veff = sum(aa[sb] ** 2 / vi[sb] for sb in aa)
         veff = uc ** 4 / pembagi_veff
         k = tinv(0.05, veff)
-        return {'k10_um': kk['drift_standar'], 'uc_um': uc, 'veff': veff, 'k': k, 'u95_um': k * uc}
+        return {
+            'panjang_mm': panjang, 'k10_um': kk['drift_standar'],
+            'ci_suhu_ruang': ci['suhu_ruang'], 'ci_koefisien_muai': ci['koefisien_muai'],
+            'uc_um': uc, 'veff': veff, 'k': k, 'u95_um': k * uc,
+        }
 
     umur_cache = (x11 - w13).total_seconds() / 86400
-    rek = rantai(umur_cache)
+    rek = rantai(umur_cache, f61)
     selisih = max(
         rel(rek['k10_um'], komponen['drift_standar']['u_mentah']['nilai']),
         rel(rek['uc_um'], excel['agregat']['uc_um']['nilai']),
@@ -324,7 +367,16 @@ def mikro(kode, path, label):
         raise SystemExit(f'{kode}: rekonstruksi menyimpang dari cache ({selisih:.3e} > {TOL_REKONSTRUKSI}); berhenti.')
 
     umur_tetap = (datetime.fromisoformat(TANGGAL_TETAP) - w13).total_seconds() / 86400
-    tetap = rantai(umur_tetap)
+    tetap = rantai(umur_tetap, f61)
+    cache_app = rantai(umur_cache, panjang_app)
+    tetap_app = rantai(umur_tetap, panjang_app)
+
+    cmc_um = excel['agregat']['cmc_um']['nilai']
+    if cmc_um:
+        for skenario in (tetap, tetap_app):
+            u_sert_mm = max(skenario['u95_um'], cmc_um) / 1000
+            skenario['u95_sertifikat_mm'] = u_sert_mm
+            skenario['u95_cetak'] = teks_excel(u_sert_mm, excel['cetak']['u95']['format'])
 
     # --- tumpukan keping alternatif titik 3 pita 50-75 (konflik K-1, cetakan job) ---
     konflik = None
@@ -364,10 +416,16 @@ def mikro(kode, path, label):
             'sumber': 'hitung ulang Python dari rumus sel PERHITUNGAN U95%!K10..X17 dengan DATABASE!X11 := tanggal ini; '
                       'komponen lain dari nilai-cache (tidak bergantung X11); TINV = t(0,975; floor(veff)) scipy',
             **tetap,
+            'dengan_panjang_aplikasi': tetap_app,
         },
         'rekonstruksi': {
             'selisih_relatif_maks_terhadap_cache': selisih,
             'catatan': 'rantai K5..X17 dihitung ulang dari sel dasar pada X11 tersimpan, dibandingkan ke nilai-cache',
+            'dengan_panjang_aplikasi_pada_x11_cache': {
+                'sumber': 'rumus sel V8/V9/V13 dengan F61 := total nominal terbesar sesi (penyimpangan sengaja no. 3 aplikasi); '
+                          'komponen lain dari cache',
+                **cache_app,
+            },
         },
     }
     if konflik:
@@ -439,7 +497,9 @@ def ph(kode, path, label):
             sel = f'{huruf}{t["cetak"]}'
             fmt = s.format(S, sel)
             v = s.n(S, sel)
-            return {'sel': f'{S}!{sel}', 'nilai': v, 'format': fmt, 'teks': teks_excel(v, fmt)}
+            return catat_nol({'sel': f'{S}!{sel}', 'nilai': v, 'format': fmt, 'teks': teks_excel(v, fmt)})
+
+        koef = polinomial(s.rumus(P, f'{t["standar_kol"]}35'), ks)
 
         titik.append({
             'nama': t['nama'],
@@ -451,6 +511,7 @@ def ph(kode, path, label):
                 'stdev_sampel': s.sel(P, f'{kb}44'),
                 'koreksi_lembar_uut_minus_standar': s.sel(P, f'{kb}43'),
             },
+            'polinomial_buffer': {'sel': f'{P}!{t["standar_kol"]}35', 'rumus': s.rumus(P, f'{t["standar_kol"]}35'), **koef},
             'u95_sertifikat_buffer': s.sel(DB, f'V{t["db"]}'),
             'cmc': s.sel(DB, t['cmc']),
             'komponen': komp,
@@ -460,6 +521,28 @@ def ph(kode, path, label):
 
     if max_rel > TOL_REKONSTRUKSI:
         raise SystemExit(f'ph {kode}: rekonstruksi menyimpang dari cache ({max_rel:.3e}); berhenti.')
+
+    # Skenario "UTemperature milik aplikasi": aplikasi menyimpan SATU konstanta
+    # (Yokogawa, workbook `for trial`: AE4 = sqrt(0,36^2 + 0,03^2)) untuk semua
+    # sesi. Komponen `temperature` lembar ini diganti dengan itu; sisanya tetap.
+    u_temp_app = 0.36124783736376886  # PERHITUNGAN U95%!AE4 workbook `for trial` (diverifikasi di bawah)
+    if kode == 'trial':
+        assert abs(u_temp_app - s.n(U, 'AE4')) < 1e-15, 'AE4 workbook trial bukan 0,36124783736376886'
+    for t in titik:
+        komp = {n: dict(v) for n, v in t['komponen'].items()}
+        ui_baru = u_temp_app / komp['temperature']['pembagi']['nilai']
+        aa = []
+        for n in KOMPONEN_PH:
+            ui = ui_baru if n == 'temperature' else komp[n]['ui']['nilai']
+            aa.append((ui * komp[n]['ci']['nilai']) ** 2)
+        uc = math.sqrt(sum(aa))
+        veff = uc ** 4 / sum(a ** 2 / komp[n]['vi']['nilai'] for a, n in zip(aa, KOMPONEN_PH))
+        k = tinv(0.05, veff)
+        t['dengan_utemperature_aplikasi'] = {
+            'u_temperature': u_temp_app, 'ui_temperature': ui_baru, 'uc': uc, 'veff': veff, 'k': k,
+            'u_hitung': uc * k, 'u_cetak': max(uc * k, t['agregat']['cmc']['nilai']),
+            'sumber': 'rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache',
+        }
 
     fk = s.format(S, 'U24')
     hasil = {

@@ -97,6 +97,13 @@
               "nilai": -0.009244572000000062
             }
           },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!G35",
+            "rumus": "=(0.00003*H42^2)-(0.0023*H42)+4.0455",
+            "a": 3e-05,
+            "b": -0.0023,
+            "c": 4.0455
+          },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V13",
             "nilai": 0.02
@@ -316,26 +323,40 @@
               "sel": "SERTIFIKAT!C21",
               "nilai": 4.009244572,
               "format": "0.00",
-              "teks": "4.01"
+              "teks": "4.01",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J21",
               "nilai": 4.0,
               "format": "0.00",
-              "teks": "4.00"
+              "teks": "4.00",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P21",
               "nilai": 0.009244572000000062,
               "format": "0.00",
-              "teks": "0.01"
+              "teks": "0.01",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S21",
               "nilai": 0.02343221021262627,
               "format": "0.00",
-              "teks": "0.02"
+              "teks": "0.02",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.011903193270260156,
+            "veff": 277.9602315947359,
+            "k": 1.9685650464204225,
+            "u_hitung": 0.023432210212620944,
+            "u_cetak": 0.023432210212620944,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         },
         {
@@ -399,6 +420,13 @@
               "sel": "PERHITUNGAN!I43",
               "nilai": 0.015092799999999684
             }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!I35",
+            "rumus": "=(0.00008*J42^2)-(0.0076*J42)+7.1182",
+            "a": 8e-05,
+            "b": -0.0076,
+            "c": 7.1182
           },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V14",
@@ -619,26 +647,40 @@
               "sel": "SERTIFIKAT!C22",
               "nilai": 6.9889072,
               "format": "0.00",
-              "teks": "6.99"
+              "teks": "6.99",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J22",
               "nilai": 7.004,
               "format": "0.00",
-              "teks": "7.00"
+              "teks": "7.00",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P22",
               "nilai": -0.015092799999999684,
               "format": "0.00",
-              "teks": "-0.02"
+              "teks": "-0.02",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S22",
               "nilai": 0.02110894987572546,
               "format": "0.00",
-              "teks": "0.02"
+              "teks": "0.02",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.010711619968364562,
+            "veff": 223.13211787627415,
+            "k": 1.970658960834481,
+            "u_hitung": 0.021108949875711186,
+            "u_cetak": 0.021108949875711186,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         },
         {
@@ -702,6 +744,13 @@
               "sel": "PERHITUNGAN!K43",
               "nilai": 0.13112309999999816
             }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!K35",
+            "rumus": "=(0.00009*L42^2)-(0.0148*L42)+10.262",
+            "a": 9e-05,
+            "b": -0.0148,
+            "c": 10.262
           },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V15",
@@ -922,26 +971,40 @@
               "sel": "SERTIFIKAT!C23",
               "nilai": 9.978876900000001,
               "format": "0.00",
-              "teks": "9.98"
+              "teks": "9.98",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J23",
               "nilai": 10.11,
               "format": "0.00",
-              "teks": "10.11"
+              "teks": "10.11",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P23",
               "nilai": -0.13112309999999816,
               "format": "0.00",
-              "teks": "-0.13"
+              "teks": "-0.13",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S23",
               "nilai": 0.031,
               "format": "0.00",
-              "teks": "0.03"
+              "teks": "0.03",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.015388610956781184,
+            "veff": 221.49458541210603,
+            "k": 1.9707562704880786,
+            "u_hitung": 0.030327201537178067,
+            "u_cetak": 0.031,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         }
       ],
@@ -1058,6 +1121,13 @@
               "sel": "PERHITUNGAN!G43",
               "nilai": 0.003839300000000989
             }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!G35",
+            "rumus": "=(0.00003*H42^2)-(0.0023*H42)+4.0455",
+            "a": 3e-05,
+            "b": -0.0023,
+            "c": 4.0455
           },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V13",
@@ -1278,26 +1348,40 @@
               "sel": "SERTIFIKAT!C21",
               "nilai": 4.0057607,
               "format": "0.000",
-              "teks": "4.006"
+              "teks": "4.006",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J21",
               "nilai": 4.009600000000001,
               "format": "0.000",
-              "teks": "4.010"
+              "teks": "4.010",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P21",
               "nilai": -0.003839300000000989,
               "format": "0.000",
-              "teks": "-0.004"
+              "teks": "-0.004",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S21",
               "nilai": 0.023,
               "format": "0.000",
-              "teks": "0.023"
+              "teks": "0.023",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.011554047344076734,
+            "veff": 246.7517836674221,
+            "k": 1.9696541761781063,
+            "u_hitung": 0.022757477603020295,
+            "u_cetak": 0.023,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         },
         {
@@ -1361,6 +1445,13 @@
               "sel": "PERHITUNGAN!I43",
               "nilai": 0.02317999999999909
             }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!I35",
+            "rumus": "=(0.00008*J42^2)-(0.0076*J42)+7.1182",
+            "a": 8e-05,
+            "b": -0.0076,
+            "c": 7.1182
           },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V14",
@@ -1581,26 +1672,40 @@
               "sel": "SERTIFIKAT!C22",
               "nilai": 6.97642,
               "format": "0.000",
-              "teks": "6.976"
+              "teks": "6.976",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J22",
               "nilai": 6.999599999999999,
               "format": "0.000",
-              "teks": "7.000"
+              "teks": "7.000",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P22",
               "nilai": -0.02317999999999909,
               "format": "0.000",
-              "teks": "-0.023"
+              "teks": "-0.023",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S22",
               "nilai": 0.021,
               "format": "0.000",
-              "teks": "0.021"
+              "teks": "0.021",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.010027402572284943,
+            "veff": 202.194289414768,
+            "k": 1.9717773846678006,
+            "u_hitung": 0.01977180561899118,
+            "u_cetak": 0.021,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         },
         {
@@ -1664,6 +1769,13 @@
               "sel": "PERHITUNGAN!K43",
               "nilai": 0.05543190000000031
             }
+          },
+          "polinomial_buffer": {
+            "sel": "PERHITUNGAN!K35",
+            "rumus": "=(0.00009*L42^2)-(0.0148*L42)+10.262",
+            "a": 9e-05,
+            "b": -0.0148,
+            "c": 10.262
           },
           "u95_sertifikat_buffer": {
             "sel": "DATABASE!V15",
@@ -1884,26 +1996,40 @@
               "sel": "SERTIFIKAT!C23",
               "nilai": 9.9451681,
               "format": "0.000",
-              "teks": "9.945"
+              "teks": "9.945",
+              "nol_bertanda_minus": false
             },
             "uut": {
               "sel": "SERTIFIKAT!J23",
               "nilai": 10.0006,
               "format": "0.000",
-              "teks": "10.001"
+              "teks": "10.001",
+              "nol_bertanda_minus": false
             },
             "koreksi": {
               "sel": "SERTIFIKAT!P23",
               "nilai": -0.05543190000000031,
               "format": "0.000",
-              "teks": "-0.055"
+              "teks": "-0.055",
+              "nol_bertanda_minus": false
             },
             "u95": {
               "sel": "SERTIFIKAT!S23",
               "nilai": 0.031,
               "format": "0.000",
-              "teks": "0.031"
+              "teks": "0.031",
+              "nol_bertanda_minus": false
             }
+          },
+          "dengan_utemperature_aplikasi": {
+            "u_temperature": 0.36124783736376886,
+            "ui_temperature": 0.18062391868188443,
+            "uc": 0.015136688778566014,
+            "veff": 207.27867161376756,
+            "k": 1.9714903918653968,
+            "u_hitung": 0.029841836491599664,
+            "u_cetak": 0.031,
+            "sumber": "rumus sel PERHITUNGAN U95%: komponen temperature (M13/T13) := AE4 workbook trial / pembagi; komponen lain dari cache"
           }
         }
       ],
