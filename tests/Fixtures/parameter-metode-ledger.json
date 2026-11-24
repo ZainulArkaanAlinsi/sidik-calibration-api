@@ -1,4 +1,4 @@
 {
-  "_aturan": "Ledger APPEND-ONLY hash tiap penetapan di database/data/parameter-keputusan-metode.json. Format: \"penetapan\": {\"<kunci>\": {\"<nomor>\": \"<hash>\"}} dengan hash dari ParameterKeputusanMetode::hashPenetapan($entri). Entri baru WAJIB didaftarkan di sini dalam PR yang sama; entri lama tidak boleh berubah atau hilang (ParameterKeputusanMetodeTest::test_ledger_penetapan_append_only).",
+  "_aturan": "Ledger APPEND-ONLY hash tiap penetapan di database/data/parameter-keputusan-metode.json. Format: \"penetapan\": {\"<kunci>\": {\"<nomor>\": \"<hash>\"}} dengan hash dari ParameterKeputusanMetode::hashPenetapan($entri) atas SELURUH isi entri, termasuk `dicatat_pada` (mengubah tanggal itu sesudahnya memutus ledger). Entri baru WAJIB didaftarkan di sini dalam PR yang sama; entri lama tidak boleh berubah atau hilang (ParameterKeputusanMetodeTest::test_ledger_penetapan_append_only).",
   "penetapan": {}
 }

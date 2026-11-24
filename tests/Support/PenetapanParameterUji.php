@@ -20,6 +20,7 @@ trait PenetapanParameterUji
                 $p['penetapan'][] = [
                     'nomor' => count($p['penetapan']) + 1,
                     'berlaku_mulai' => $berlakuMulai,
+                    'dicatat_pada' => $berlakuMulai,
                     'tanggal_keputusan' => $berlakuMulai,
                     'nilai' => $nilai,
                     'diputuskan_oleh' => 'Manajer Teknis (uji, bukan keputusan nyata)',

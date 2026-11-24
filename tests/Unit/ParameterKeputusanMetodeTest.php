@@ -17,7 +17,8 @@ use Tests\TestCase;
  *  - BAWAAN = perilaku kode. Tanpa lingkup tanggal jawabannya selalu bawaan, jadi
  *    pembaca yang lupa membuka lingkup tidak pernah menggeser angka.
  *  - Penetapan hanya berlaku mulai `berlaku_mulai` (sesi lama tidak bergeser) dan
- *    tidak boleh berlaku surut.
+ *    tidak boleh berlaku surut: `tanggal_keputusan <= dicatat_pada <= berlaku_mulai`,
+ *    dan `berlaku_mulai` tidak turun antar nomor penetapan satu parameter.
  *  - Penetapan APPEND-ONLY: ledger hash di `tests/Fixtures/parameter-metode-ledger.json`.
  *    Entri baru WAJIB didaftarkan di sana dalam PR yang sama; entri lama yang
  *    berubah atau hilang = merah.
@@ -87,11 +88,12 @@ class ParameterKeputusanMetodeTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function entri(int $nomor, string $mulai, string $nilai = 'b', ?string $keputusan = null): array
+    private function entri(int $nomor, string $mulai, string $nilai = 'b', ?string $keputusan = null, ?string $dicatat = null): array
     {
         return [
             'nomor' => $nomor,
             'berlaku_mulai' => $mulai,
+            'dicatat_pada' => $dicatat ?? $mulai,
             'tanggal_keputusan' => $keputusan ?? $mulai,
             'nilai' => $nilai,
             'diputuskan_oleh' => 'Manajer Teknis uji',
@@ -329,6 +331,140 @@ class ParameterKeputusanMetodeTest extends TestCase
         $this->assertCount(1, $daftar[0]['penetapan']);
     }
 
+    // ------------------------------------------------------------------ urutan tanggal penetapan (temuan G1 tinjauan PR #298)
+
+    /**
+     * @param  list<array<string, mixed>>  $penetapan
+     * @return array<string, mixed>
+     */
+    private function periksaFiktif(array $penetapan): array
+    {
+        return ParameterKeputusanMetode::periksa($this->fiktif($penetapan));
+    }
+
+    public function test_urutan_keputusan_dicatat_berlaku_yang_sah_diterima_termasuk_hari_yang_sama(): void
+    {
+        // Diputuskan 1 Des, dicatat 3 Des, berlaku 8 Des.
+        $terperiksa = $this->periksaFiktif([$this->entri(1, '2026-12-08', 'b', '2026-12-01', '2026-12-03')]);
+        $this->assertSame('2026-12-03', $terperiksa['parameter']['uji.pilihan']['penetapan'][0]['dicatat_pada']);
+
+        // Ketiganya hari yang sama: batas tepat, bukan pelanggaran.
+        $this->assertCount(1, $this->periksaFiktif([$this->entri(1, '2026-12-08', 'b', '2026-12-08', '2026-12-08')])['parameter']['uji.pilihan']['penetapan']);
+
+        // berlaku_mulai tepat sama dengan dicatat_pada; dicatat_pada tepat sama dengan tanggal_keputusan.
+        $this->assertCount(1, $this->periksaFiktif([$this->entri(1, '2026-12-03', 'b', '2026-12-03', '2026-12-03')])['parameter']['uji.pilihan']['penetapan']);
+    }
+
+    public function test_entri_tanpa_dicatat_pada_ditolak_dengan_pesan_yang_menyebutnya(): void
+    {
+        $entri = $this->entri(1, '2026-12-01');
+        unset($entri['dicatat_pada']);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('`dicatat_pada` bukan tanggal Y-m-d yang sah');
+
+        $this->periksaFiktif([$entri]);
+    }
+
+    public function test_dicatat_pada_yang_bukan_tanggal_sah_ditolak(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('`dicatat_pada` bukan tanggal Y-m-d yang sah');
+
+        $this->periksaFiktif([[...$this->entri(1, '2026-12-01'), 'dicatat_pada' => '2026-02-31']]);
+    }
+
+    public function test_berlaku_mulai_sebelum_dicatat_pada_ditolak_sebagai_berlaku_surut(): void
+    {
+        // Diputuskan 1 Des, dicatat ke registri 5 Des, tetapi berlaku "1 Des": mundur dari hari pencatatan.
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('berlaku_mulai sebelum dicatat_pada');
+
+        $this->periksaFiktif([$this->entri(1, '2026-12-01', 'b', '2026-12-01', '2026-12-05')]);
+    }
+
+    public function test_berlaku_mulai_sehari_sebelum_dicatat_pada_sudah_ditolak(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('berlaku_mulai sebelum dicatat_pada');
+
+        $this->periksaFiktif([$this->entri(1, '2026-12-04', 'b', '2026-12-01', '2026-12-05')]);
+    }
+
+    public function test_dicatat_pada_sebelum_tanggal_keputusan_ditolak(): void
+    {
+        // Dicatat 3 Des untuk keputusan yang baru diambil 5 Des: tanggal keputusan atau pencatatan salah.
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('dicatat sebelum diputuskan');
+
+        $this->periksaFiktif([$this->entri(1, '2026-12-10', 'b', '2026-12-05', '2026-12-03')]);
+    }
+
+    public function test_berlaku_mulai_tidak_boleh_turun_antar_nomor_penetapan(): void
+    {
+        // Nomor 2 sah sendiri (dicatat 9 Jan, berlaku 9 Jan) tetapi berlaku SEBELUM nomor 1 (10 Jan).
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('berlaku_mulai turun dibanding penetapan sebelumnya (2027-01-09 < 2027-01-10)');
+
+        $this->periksaFiktif([
+            $this->entri(1, '2027-01-10', 'b'),
+            $this->entri(2, '2027-01-09', 'a'),
+        ]);
+    }
+
+    public function test_penurunan_dideteksi_juga_antara_nomor_dua_dan_tiga(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('penetapan #3 berlaku_mulai turun');
+
+        $this->periksaFiktif([
+            $this->entri(1, '2027-01-10', 'b'),
+            $this->entri(2, '2027-02-10', 'a'),
+            $this->entri(3, '2027-01-20', 'b'),
+        ]);
+    }
+
+    public function test_berlaku_mulai_menaik_atau_sama_antar_nomor_diterima(): void
+    {
+        $terperiksa = $this->periksaFiktif([
+            $this->entri(1, '2026-12-01', 'b'),
+            $this->entri(2, '2027-01-10', 'a'),
+            $this->entri(3, '2027-01-10', 'b'),
+        ]);
+
+        $this->assertCount(3, $terperiksa['parameter']['uji.pilihan']['penetapan']);
+    }
+
+    public function test_urutan_berlaku_mulai_dinilai_per_parameter_bukan_lintas_parameter(): void
+    {
+        $isi = $this->fiktif([$this->entri(1, '2027-03-01', 'b')]);
+
+        $kedua = $this->fiktif([$this->entri(1, '2026-12-01', 'b')])['parameter'][0];
+        $kedua['kunci'] = 'uji.pilihan_lain';
+        $isi['parameter'][] = $kedua;
+
+        $terperiksa = ParameterKeputusanMetode::periksa($isi);
+
+        $this->assertSame(['uji.pilihan', 'uji.pilihan_lain'], array_keys($terperiksa['parameter']));
+    }
+
+    public function test_dicatat_pada_ikut_hash_ledger_jadi_mengubahnya_memutus_ledger(): void
+    {
+        $asli = $this->entri(1, '2026-12-08', 'b', '2026-12-01', '2026-12-03');
+        $diubah = [...$asli, 'dicatat_pada' => '2026-12-04'];
+
+        $this->assertNotSame(ParameterKeputusanMetode::hashPenetapan($asli), ParameterKeputusanMetode::hashPenetapan($diubah));
+    }
+
+    public function test_pembaca_tetap_memakai_berlaku_mulai_bukan_dicatat_pada(): void
+    {
+        // Dicatat 3 Des, berlaku 8 Des: sesi bertanggal 5 Des (sesudah dicatat, sebelum berlaku) tetap bawaan.
+        $gerbang = $this->gerbang($this->fiktif([$this->entri(1, '2026-12-08', 'b', '2026-12-01', '2026-12-03')]));
+
+        $this->assertSame('a', $gerbang->nilai('uji.pilihan', '2026-12-05'));
+        $this->assertSame('b', $gerbang->nilai('uji.pilihan', '2026-12-08'));
+    }
+
     // ------------------------------------------------------------------ penolakan registri rusak
 
     /**
@@ -338,7 +474,24 @@ class ParameterKeputusanMetodeTest extends TestCase
     {
         return [
             'berlaku surut' => [static function (array $r): array {
-                $r['parameter'][0]['penetapan'] = [[...self::entriStatik(1, '2026-12-01'), 'tanggal_keputusan' => '2026-12-05']];
+                $r['parameter'][0]['penetapan'] = [[...self::entriStatik(1, '2026-12-01'), 'dicatat_pada' => '2026-12-05', 'tanggal_keputusan' => '2026-12-01']];
+
+                return $r;
+            }],
+            'dicatat sebelum diputuskan' => [static function (array $r): array {
+                $r['parameter'][0]['penetapan'] = [[...self::entriStatik(1, '2026-12-10'), 'dicatat_pada' => '2026-12-03', 'tanggal_keputusan' => '2026-12-05']];
+
+                return $r;
+            }],
+            'tanpa dicatat_pada' => [static function (array $r): array {
+                $entri = self::entriStatik(1, '2026-12-01');
+                unset($entri['dicatat_pada']);
+                $r['parameter'][0]['penetapan'] = [$entri];
+
+                return $r;
+            }],
+            'berlaku_mulai turun antar nomor' => [static function (array $r): array {
+                $r['parameter'][0]['penetapan'] = [self::entriStatik(1, '2027-01-10'), self::entriStatik(2, '2027-01-09')];
 
                 return $r;
             }],
@@ -426,6 +579,7 @@ class ParameterKeputusanMetodeTest extends TestCase
         return [
             'nomor' => $nomor,
             'berlaku_mulai' => $mulai,
+            'dicatat_pada' => $mulai,
             'tanggal_keputusan' => $mulai,
             'nilai' => $nilai,
             'diputuskan_oleh' => 'Manajer Teknis uji',

@@ -556,51 +556,10 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
-     * Style sertifikat buat sesi ini — DITURUNKAN dari satuan tiap titik,
-     * bukan dipilih orang.
-     *
-     *  - **style 1** — 25 µS/cm · 1412 µS/cm · 111 mS/cm
-     *  - **style 2** — 25 µS/cm · 1,412 mS/cm · 111 mS/cm
-     *  - **style 3** — semuanya mS/cm
-     *
-     * ## Nomornya SENGAJA kebalik dari nama sheet di master
-     *
-     * Sheet `SERTIFIKAT STYLE 1` di workbook nyetak titik tengah dalam mS/cm
-     * (sel `C40 = PERHITUNGAN!J39`), dan `STYLE 2` nyetaknya dalam µS/cm
-     * (`C36 = H39`) — jadi label di file itu kebalikan dari yang dipakai di
-     * sini.
-     *
-     * Itu bukan kekeliruan baca. Lab sendiri yang bilang label di file-nya
-     * salah ("coba lihat style satu ini salah, harusnya mikrosimen"), lalu
-     * menegaskan urutan yang benar: opsi pertama µS·µS·mS, opsi kedua
-     * µS·mS·mS. Penomoran di sini ngikut lab, karena itu yang dipakai ngomong
-     * sehari-hari dan yang nyampe ke pelanggan — keputusan 11 Agt 2026.
-     *
-     * Yang perlu diingat waktu ngadu hasil sistem sama cetakan Excel lama:
-     * ANGKANYA sama persis, cuma nomor style-nya yang ketuker.
-     *
-     * @param  list<float>  $titikUkur  titik yang beneran diukur di sesi ini
-     */
-    /**
-     * Nilai acuan dari polinomial suhu selalu keluar dalam satuan NATIVE
-     * botolnya. Titik tengah bisa dibaca dua satuan dari botol yang sama, jadi
-     * varian mS/cm harus dibagi 1000.
-     *
-     * Sisi kembarannya udah lama ada di `komponenBudget()` buat KETIDAKPASTIAN
-     * botol — sel `M23 = IF(I21="mS/cm", DATABASE!V14/1000, DATABASE!V14)`.
-     * Yang kelewat cuma NILAI ACUANNYA, dan itu nggak pernah ketahuan karena
-     * jalur mS/cm belum pernah dijalanin satu sesi pun: sesi contoh lab
-     * (`2405.32.A.NK`) baca titik tengah dalam µS/cm.
-     *
-     * Tanpa ini, sesi varian mS/cm nyimpen `titik_ukur = 1412` di sebelah
-     * pembacaan `1,413`, dan kolom Correction sertifikat keluar `+1410,587`
-     * mS/cm — bukan `-0,001`.
-     *
-     * Yang dijaga di sini:
-     *  - Cuma titik TENGAH yang kena. Titik 111 emang native mS/cm (botol &
-     *    polinomialnya sama-sama mS/cm), jadi nggak boleh ikut dibagi.
-     *  - Syarat botolnya masih µS/cm bikin ini mati sendiri kalau suatu saat
-     *    lab nyimpen botol 1412 dalam mS/cm — nggak kebagi dua kali.
+     * Nilai acuan standar untuk titik ini: jalur induk, kecuali titik tengah
+     * 1412 µS/cm saat parameter keputusan metode
+     * `conductivity.nilai_acuan_larutan_1412` = `polinomial_suhu` (alasan dan
+     * batasnya di komentar dalam method).
      */
     public function nilaiAcuanStandar(Standard $standard, ?float $suhuLarutan, float $titikUkur): ?float
     {
@@ -625,6 +584,27 @@ class ConductivityProfile extends CalibrationProfile
         return parent::nilaiAcuanStandar($standard, $suhuLarutan, $titikUkur);
     }
 
+    /**
+     * Nilai acuan dari polinomial suhu selalu keluar dalam satuan NATIVE
+     * botolnya. Titik tengah bisa dibaca dua satuan dari botol yang sama, jadi
+     * varian mS/cm harus dibagi 1000.
+     *
+     * Sisi kembarannya udah lama ada di `komponenBudget()` buat KETIDAKPASTIAN
+     * botol — sel `M23 = IF(I21="mS/cm", DATABASE!V14/1000, DATABASE!V14)`.
+     * Yang kelewat cuma NILAI ACUANNYA, dan itu nggak pernah ketahuan karena
+     * jalur mS/cm belum pernah dijalanin satu sesi pun: sesi contoh lab
+     * (`2405.32.A.NK`) baca titik tengah dalam µS/cm.
+     *
+     * Tanpa ini, sesi varian mS/cm nyimpen `titik_ukur = 1412` di sebelah
+     * pembacaan `1,413`, dan kolom Correction sertifikat keluar `+1410,587`
+     * mS/cm — bukan `-0,001`.
+     *
+     * Yang dijaga di sini:
+     *  - Cuma titik TENGAH yang kena. Titik 111 emang native mS/cm (botol &
+     *    polinomialnya sama-sama mS/cm), jadi nggak boleh ikut dibagi.
+     *  - Syarat botolnya masih µS/cm bikin ini mati sendiri kalau suatu saat
+     *    lab nyimpen botol 1412 dalam mS/cm — nggak kebagi dua kali.
+     */
     public function faktorKanonik(float $titikUkur, Equipment $equipment): float
     {
         $tengah = self::TITIK[1]['varian_mili'] ?? null;
@@ -806,6 +786,32 @@ class ConductivityProfile extends CalibrationProfile
         ]];
     }
 
+    /**
+     * Style sertifikat buat sesi ini — DITURUNKAN dari satuan tiap titik,
+     * bukan dipilih orang.
+     *
+     *  - **style 1** — 25 µS/cm · 1412 µS/cm · 111 mS/cm
+     *  - **style 2** — 25 µS/cm · 1,412 mS/cm · 111 mS/cm
+     *  - **style 3** — semuanya mS/cm
+     *
+     * ## Nomornya SENGAJA kebalik dari nama sheet di master
+     *
+     * Sheet `SERTIFIKAT STYLE 1` di workbook nyetak titik tengah dalam mS/cm
+     * (sel `C40 = PERHITUNGAN!J39`), dan `STYLE 2` nyetaknya dalam µS/cm
+     * (`C36 = H39`) — jadi label di file itu kebalikan dari yang dipakai di
+     * sini.
+     *
+     * Itu bukan kekeliruan baca. Lab sendiri yang bilang label di file-nya
+     * salah ("coba lihat style satu ini salah, harusnya mikrosimen"), lalu
+     * menegaskan urutan yang benar: opsi pertama µS·µS·mS, opsi kedua
+     * µS·mS·mS. Penomoran di sini ngikut lab, karena itu yang dipakai ngomong
+     * sehari-hari dan yang nyampe ke pelanggan — keputusan 11 Agt 2026.
+     *
+     * Yang perlu diingat waktu ngadu hasil sistem sama cetakan Excel lama:
+     * ANGKANYA sama persis, cuma nomor style-nya yang ketuker.
+     *
+     * @param  list<float>  $titikUkur  titik yang beneran diukur di sesi ini
+     */
     public function styleSertifikat(array $titikUkur, ?Equipment $equipment = null): int
     {
         $satuan = array_map(
