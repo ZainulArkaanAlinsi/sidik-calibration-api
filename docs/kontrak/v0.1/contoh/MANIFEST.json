@@ -1,0 +1,279 @@
+{
+  "kontrak_versi": "0.1",
+  "catatan": "Tiap contoh tidak valid HARUS gagal di (jalur_galat, kata_kunci) ini. Jalur = JSON Pointer ke data yang salah (\"\" = akar). Kata kunci menurut Opis; validator lain boleh menamai beda, jalurnya tetap.",
+  "skema-formulir": {
+    "valid": [
+      "valid-dipublikasi-contoh-bentuk.json",
+      "valid-draf-konversi-0513-rev4.json",
+      "valid-draf-revisi-2-id-dipertahankan.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-alamat-sel-tanpa-sheet.json",
+        "alasan": "sel_input \"C12\" tanpa nama lembar; harus Sheet!C12.",
+        "jalur_galat": "/item/0/pemetaan/sel_input",
+        "kata_kunci": "pattern"
+      },
+      {
+        "berkas": "tidak-valid-bbox-tiga-angka.json",
+        "alasan": "bbox_pt hanya tiga angka; harus [x0, y0, x1, y1].",
+        "jalur_galat": "/item/0/bbox_pt",
+        "kata_kunci": "minItems"
+      },
+      {
+        "berkas": "tidak-valid-bentuk-skema-draf-lama.json",
+        "alasan": "Butir memakai bentuk skema_draf (nomor, peran_awal, perlu_model_visi) yang bukan v0.1.",
+        "jalur_galat": "/item/0",
+        "kata_kunci": "required"
+      },
+      {
+        "berkas": "tidak-valid-dipublikasi-masih-perlu-dicek.json",
+        "alasan": "Skema dipublikasi masih membawa butir perlu_dicek=true.",
+        "jalur_galat": "/item/0/perlu_dicek",
+        "kata_kunci": "const"
+      },
+      {
+        "berkas": "tidak-valid-ditinjau-peran-belum-ditentukan.json",
+        "alasan": "Skema ditinjau masih membawa peran belum_ditentukan.",
+        "jalur_galat": "/item/1/peran",
+        "kata_kunci": "not"
+      },
+      {
+        "berkas": "tidak-valid-label-dipetakan.json",
+        "alasan": "Butir berperan label tidak boleh punya sel_input.",
+        "jalur_galat": "/item/0/pemetaan/sel_input",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-master-di-luar-enum.json",
+        "alasan": "master \"standar\" bukan nama slot (standar_dipakai, standar_dicek, thermohygro, metode_kalibrasi).",
+        "jalur_galat": "/item/0/pemetaan/master",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-peran-di-luar-enum.json",
+        "alasan": "peran \"isian\" adalah kosakata skema_draf; v0.1 memakai isian_angka, isian_teks, dst.",
+        "jalur_galat": "/item/0/peran",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-sel-input-tanpa-definisi.json",
+        "alasan": "definisi_lembar_kerja null tetapi sel_input terisi.",
+        "jalur_galat": "/item/0/pemetaan/sel_input",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-versi-kontrak-lain.json",
+        "alasan": "kontrak_versi \"0.2\" ditolak oleh schema 0.1 (konsumen menarik versi baru).",
+        "jalur_galat": "/kontrak_versi",
+        "kata_kunci": "const"
+      }
+    ]
+  },
+  "usulan-ocr": {
+    "valid": [
+      "valid-semua-status.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-dibuat-oleh-bukan-mesin.json",
+        "alasan": "Usulan OCR hanya boleh dibuat_oleh \"mesin\".",
+        "jalur_galat": "/dibuat_oleh",
+        "kata_kunci": "const"
+      },
+      {
+        "berkas": "tidak-valid-keyakinan-di-atas-satu.json",
+        "alasan": "keyakinan 1.2 di atas 1.",
+        "jalur_galat": "/item/0/keyakinan",
+        "kata_kunci": "maximum"
+      },
+      {
+        "berkas": "tidak-valid-nilai-usulan-angka.json",
+        "alasan": "nilai_usulan berupa angka JSON; harus teks persis hasil baca.",
+        "jalur_galat": "/item/0/nilai_usulan",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-sepakat-satu-bacaan.json",
+        "alasan": "sepakat_dua_pembacaan dengan hanya satu bacaan.",
+        "jalur_galat": "/item/0/bacaan",
+        "kata_kunci": "minItems"
+      },
+      {
+        "berkas": "tidak-valid-skor-negatif.json",
+        "alasan": "skor kecocokan formulir negatif.",
+        "jalur_galat": "/formulir/skor",
+        "kata_kunci": "minimum"
+      },
+      {
+        "berkas": "tidak-valid-status-warna.json",
+        "alasan": "status \"hijau\" (kosakata lama); data tidak memakai nama warna.",
+        "jalur_galat": "/item/0/status",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-tanpa-versi-skema.json",
+        "alasan": "versi_skema hilang; usulan tidak menunjuk skema yang tetap.",
+        "jalur_galat": "",
+        "kata_kunci": "required"
+      },
+      {
+        "berkas": "tidak-valid-tidak-terbaca-bernilai.json",
+        "alasan": "tidak_terbaca tetapi nilai_usulan berisi teks.",
+        "jalur_galat": "/item/3/nilai_usulan",
+        "kata_kunci": "type"
+      }
+    ]
+  },
+  "konfirmasi-permintaan": {
+    "valid": [
+      "valid-pertama.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-item-kosong.json",
+        "alasan": "Permintaan konfirmasi tanpa butir.",
+        "jalur_galat": "/item",
+        "kata_kunci": "minItems"
+      },
+      {
+        "berkas": "tidak-valid-klien-menyebut-pelaku.json",
+        "alasan": "Klien menulis dikonfirmasi_oleh sendiri; pelaku hanya dari token.",
+        "jalur_galat": "",
+        "kata_kunci": "additionalProperties"
+      },
+      {
+        "berkas": "tidak-valid-master-id-nol.json",
+        "alasan": "master_id 0 bukan id baris.",
+        "jalur_galat": "/item/4/master_id",
+        "kata_kunci": "minimum"
+      },
+      {
+        "berkas": "tidak-valid-nilai-final-angka.json",
+        "alasan": "nilai_final berupa angka JSON; harus teks agar 4.10 tidak jadi 4.1.",
+        "jalur_galat": "/item/1/nilai_final",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-tanpa-nilai-final.json",
+        "alasan": "Butir tanpa nilai_final (null dipakai untuk menyatakan kosong; hilang tidak boleh).",
+        "jalur_galat": "/item/0",
+        "kata_kunci": "required"
+      }
+    ]
+  },
+  "konfirmasi": {
+    "valid": [
+      "valid-urutan-1.json",
+      "valid-urutan-2-koreksi.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-alasan-hanya-spasi.json",
+        "alasan": "alasan_jika_diubah hanya spasi.",
+        "jalur_galat": "/item/1/alasan_jika_diubah",
+        "kata_kunci": "pattern"
+      },
+      {
+        "berkas": "tidak-valid-alasan-padahal-tidak-diubah.json",
+        "alasan": "diubah=false tetapi alasan terisi.",
+        "jalur_galat": "/item/0/alasan_jika_diubah",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-diubah-tanpa-alasan.json",
+        "alasan": "diubah=true tanpa alasan.",
+        "jalur_galat": "/item/1/alasan_jika_diubah",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-peran-pelanggan.json",
+        "alasan": "peran pelanggan tidak boleh mengonfirmasi hasil lab.",
+        "jalur_galat": "/dikonfirmasi_oleh/peran",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-urutan-nol.json",
+        "alasan": "urutan konfirmasi mulai dari 1.",
+        "jalur_galat": "/urutan",
+        "kata_kunci": "minimum"
+      },
+      {
+        "berkas": "tidak-valid-waktu-tanpa-zona.json",
+        "alasan": "waktu tanpa penanda T dan zona.",
+        "jalur_galat": "/waktu",
+        "kata_kunci": "format"
+      }
+    ]
+  },
+  "data-master": {
+    "valid": [
+      "valid-metode.json",
+      "valid-standar.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-bentuk-metode-di-daftar-standar.json",
+        "alasan": "Butir berbentuk metode di dalam daftar standar.",
+        "jalur_galat": "/item/0",
+        "kata_kunci": "required"
+      },
+      {
+        "berkas": "tidak-valid-daftar-di-luar-enum.json",
+        "alasan": "daftar \"thermohygro\" bukan daftar sendiri; thermohygro adalah slot dari daftar standar.",
+        "jalur_galat": "/daftar",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-hari-berupa-teks.json",
+        "alasan": "hari_menuju_kadaluarsa berupa teks; harus bilangan bulat.",
+        "jalur_galat": "/item/0/hari_menuju_kadaluarsa",
+        "kata_kunci": "type"
+      },
+      {
+        "berkas": "tidak-valid-status-kalibrasi-di-luar-enum.json",
+        "alasan": "status_kalibrasi \"ok\" bukan valid/warning/expired.",
+        "jalur_galat": "/item/0/status_kalibrasi",
+        "kata_kunci": "enum"
+      }
+    ]
+  },
+  "header-pekerjaan": {
+    "valid": [
+      "valid-lengkap.json",
+      "valid-sesi-belum-terbit.json"
+    ],
+    "tidak_valid": [
+      {
+        "berkas": "tidak-valid-dari-ocr.json",
+        "alasan": "Header pekerjaan tidak pernah dibaca OCR.",
+        "jalur_galat": "/dari_ocr",
+        "kata_kunci": "const"
+      },
+      {
+        "berkas": "tidak-valid-ringkasan-huruf-besar.json",
+        "alasan": "ringkasan \"VALID\" huruf besar; nilai sah valid/warning/expired.",
+        "jalur_galat": "/status_standar/ringkasan",
+        "kata_kunci": "enum"
+      },
+      {
+        "berkas": "tidak-valid-suhu-di-luar-rentang.json",
+        "alasan": "suhu 400 C di luar -50..150.",
+        "jalur_galat": "/kondisi/suhu_ruang",
+        "kata_kunci": "maximum"
+      },
+      {
+        "berkas": "tidak-valid-tanggal-bukan-iso.json",
+        "alasan": "tanggal \"25/11/2026\" bukan ISO YYYY-MM-DD.",
+        "jalur_galat": "/tanggal_terbit",
+        "kata_kunci": "pattern"
+      },
+      {
+        "berkas": "tidak-valid-tanpa-teknisi.json",
+        "alasan": "Blok teknisi hilang.",
+        "jalur_galat": "",
+        "kata_kunci": "required"
+      }
+    ]
+  }
+}

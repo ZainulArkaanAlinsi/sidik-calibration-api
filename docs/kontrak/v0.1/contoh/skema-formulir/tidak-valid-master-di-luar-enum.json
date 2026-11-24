@@ -1,0 +1,42 @@
+{
+  "kontrak_versi": "0.1",
+  "formulir": {
+    "kode": "SIDIK-FM-CAL-9999",
+    "revisi": 1
+  },
+  "versi_skema": 1,
+  "status": "dipublikasi",
+  "halaman_pt": [
+    595.2,
+    841.8
+  ],
+  "definisi_lembar_kerja": {
+    "profil": "contoh_alat",
+    "versi": 1
+  },
+  "catatan": "CONTOH BENTUK, bukan formulir nyata. Kode 9999, koordinat, dan alamat sel (Sheet1!C12 dst.) dikarang untuk memperlihatkan bentuk; jangan disalin ke data nyata.",
+  "item": [
+    {
+      "id": "itm-9999-d001",
+      "jenis": "sel",
+      "bbox_pt": [
+        60.0,
+        300.0,
+        70.0,
+        310.0
+      ],
+      "peran": "centang",
+      "label_baris": "Gauge Block Set Grade 0",
+      "label_kolom": "",
+      "satuan": "",
+      "kelompok": "Standard Name",
+      "desimal": null,
+      "pemetaan": {
+        "sel_input": null,
+        "master": "standar"
+      },
+      "sumber": "manusia",
+      "perlu_dicek": false
+    }
+  ]
+}
