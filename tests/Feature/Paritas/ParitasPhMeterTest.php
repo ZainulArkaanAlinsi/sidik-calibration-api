@@ -67,6 +67,25 @@ class ParitasPhMeterTest extends TestCase
 
     private const URUTAN_BUFFER = ['pH 4' => 0, 'pH 7' => 1, 'pH 10' => 2];
 
+    /**
+     * `calibration_capabilities.u_temperature` adalah `decimal(20,8)`: MySQL (produksi)
+     * membulatkan 0,36124783736376886 ke 0,36124784 (galat <= 5e-9; SQLite menyimpan
+     * float penuh). Konstanta lain di baris itu (ci_suhu, u_perbedaan_suhu,
+     * ci_perbedaan_suhu, CMC) tepat di 8 desimal. Efek terburuk galat itu, dihitung dari
+     * budget pH 10 (ci suhu terbesar 0,01021, uc terkecil di antara titik 0,0107):
+     * ui(temperature) = u/2 -> 2,5e-9 mutlak; uici -> 2,6e-11 mutlak; uc -> 3e-10
+     * relatif; v_eff ~ uc^4 -> 4x. Batas di bawah = efek itu dibulatkan ke atas, JAUH di
+     * bawah galat konstanta yang salah (>= 1e-4). Hanya komponen/tahap yang bergantung
+     * u_temperature memakainya; komponen lain tetap ketat.
+     */
+    private const TOL_SIMPAN_UI = 2.5e-9;
+
+    private const TOL_SIMPAN_UICI = 3e-11;
+
+    private const TOL_SIMPAN_REL = 1e-9;
+
+    private const TOL_SIMPAN_VEFF = 4e-9;
+
     private ?EquipmentCategory $kategori = null;
 
     protected function setUp(): void
@@ -232,16 +251,17 @@ class ParitasPhMeterTest extends TestCase
 
                 if ($kunci === 'temperature' && $kode === 'imte_wq_129') {
                     $app = $t['dengan_utemperature_aplikasi'];
-                    $this->assertSamaHitungUlang($app['ui_temperature'], (float) $b['u_baku'], "{$ke}: ui = UTemperature aplikasi / 2 (konflik J1)");
+                    $this->assertSamaHitungUlang($app['ui_temperature'], (float) $b['u_baku'], "{$ke}: ui = UTemperature aplikasi / 2 (konflik J1)", 0.0, self::TOL_SIMPAN_UI);
                     $this->assertGreaterThan(self::nilai($x['ui']), (float) $b['u_baku'], "{$ke}: ui aplikasi HARUS lebih besar dari {$x['ui']['sel']} (termometer Constant U95 0,5 < Yokogawa 0,72)");
                     $this->assertSamaExcel($x['ci'], (float) $b['ci'], "{$ke}: ci");
 
                     continue;
                 }
 
-                $this->assertSamaExcel($x['ui'], (float) $b['u_baku'], "{$ke}: ui = u/pembagi");
+                $simpan = $kunci === 'temperature'; // satu-satunya komponen yang bergantung kolom decimal(20,8) yang dibulatkan
+                $this->assertSamaExcel($x['ui'], (float) $b['u_baku'], "{$ke}: ui = u/pembagi", rel: $simpan ? 0.0 : self::TOL_REL, mutlak: $simpan ? self::TOL_SIMPAN_UI : self::TOL_MUTLAK);
                 $this->assertSamaExcel($x['ci'], (float) $b['ci'], "{$ke}: ci");
-                $this->assertSamaExcel($x['uici'], (float) $b['nilai'], "{$ke}: ui*ci");
+                $this->assertSamaExcel($x['uici'], (float) $b['nilai'], "{$ke}: ui*ci", rel: $simpan ? 0.0 : self::TOL_REL, mutlak: $simpan ? self::TOL_SIMPAN_UICI : self::TOL_MUTLAK);
             }
         }
     }
@@ -256,8 +276,8 @@ class ParitasPhMeterTest extends TestCase
             $a = $t['agregat'];
             $ke = $t['nama'];
 
-            $this->assertSamaExcel($a['uc'], $h['ketidakpastian_gabungan'], "{$ke}: uc");
-            $this->assertSamaExcel($a['veff'], (float) $h['derajat_kebebasan_efektif'], "{$ke}: v_eff");
+            $this->assertSamaExcel($a['uc'], $h['ketidakpastian_gabungan'], "{$ke}: uc", rel: self::TOL_SIMPAN_REL);
+            $this->assertSamaExcel($a['veff'], (float) $h['derajat_kebebasan_efektif'], "{$ke}: v_eff", rel: self::TOL_SIMPAN_VEFF);
             $this->assertKSamaExcel($a['k'], $h['faktor_cakupan_k'], "{$ke}: k (TINV, df dipotong)");
             $this->assertUSamaExcel($a['u_hitung'], $h['ketidakpastian_gabungan'] * $h['faktor_cakupan_k'], "{$ke}: U = k*uc sebelum lantai");
             $this->assertUSamaExcel($a['u_cetak'], $h['ketidakpastian_diperluas'], "{$ke}: U sesudah lantai CMC (=MAX(U; CMC))");
@@ -279,8 +299,8 @@ class ParitasPhMeterTest extends TestCase
             $ke = $t['nama'];
 
             // (a) satu-satunya penyebab: rumus sel dengan UTemperature aplikasi == aplikasi.
-            $this->assertSamaHitungUlang($skenario['uc'], $h['ketidakpastian_gabungan'], "{$ke}: uc (rumus sel dengan UTemperature aplikasi)");
-            $this->assertSamaHitungUlang($skenario['veff'], (float) $h['derajat_kebebasan_efektif'], "{$ke}: v_eff");
+            $this->assertSamaHitungUlang($skenario['uc'], $h['ketidakpastian_gabungan'], "{$ke}: uc (rumus sel dengan UTemperature aplikasi)", self::TOL_SIMPAN_REL);
+            $this->assertSamaHitungUlang($skenario['veff'], (float) $h['derajat_kebebasan_efektif'], "{$ke}: v_eff", self::TOL_SIMPAN_VEFF);
             $this->assertSamaHitungUlang($skenario['k'], $h['faktor_cakupan_k'], "{$ke}: k", 0.0, self::TOL_K);
             $this->assertSamaHitungUlang($skenario['u_hitung'], $h['ketidakpastian_gabungan'] * $h['faktor_cakupan_k'], "{$ke}: U sebelum lantai", self::TOL_K_REL);
 
