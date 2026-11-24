@@ -15,7 +15,7 @@ Hanya perilaku BAWAAN yang diuji. Parameter keputusan metode PR #298 dibiarkan d
 | Chlorine Meter (mg/L, 2 titik) | titik 1,74 SAMA di semua tahap; titik 1,83: komponen Type A beda karena sel tempelan (P-27), angka TERCETAK sama (0,08) | 24 | 2 | 6 |
 | Jumlah (102 butir) | | 72 | 6 | 24 |
 
-Di luar 6 SELISIH, tidak ada tahap hitung yang berbeda dari Excel di sampel. Tiga dari sepuluh konflik (P-20, P-21, P-23) hanya muncul pada masukan yang berbeda dari sesi contoh workbook atau pada cara Excel membaca selnya; P-22 dan P-28 adalah ketidakkonsistenan di dalam workbook itu sendiri. Daftar lengkap dan efek ke angka cetak ada di bagian 6.
+Di luar 6 SELISIH, tidak ada tahap hitung yang berbeda dari Excel di sampel. Satu-satunya angka CETAK sampel yang berbeda dari Excel: U95 kelembaban Refractometer (P-21, `± 5,2` lawan `± 5,3`). P-20 baru berpengaruh pada suhu ruang di luar 21,0-21,1 C; P-23 bila RH awal berbeda dari akhir (sampel mengetik 2 dan 55; seeder memakai 55/55); P-25 bila resolusi ketikan lebih halus dari master; P-27 tidak mengubah angka cetak (lantai CMC). P-22 dan P-28 adalah ketidakkonsistenan di dalam workbook itu sendiri. Daftar lengkap dan efek ke angka cetak ada di bagian 6.
 
 ## 2. Cara membaca, menjalankan, dan menghasilkan ulang
 
@@ -36,7 +36,7 @@ Sama dengan `docs/paritas-micrometer-ph.md` bagian 2 (`MenegakkanParitas`: relat
 | uc, U sebelum lantai (dan U cetak bila tanpa lantai) | relatif 1e-10 | komponen suhu hanya 4e-5..3,2e-4 dari jumlah kuadrat (terburuk 1000 NTU), jadi pergeseran uc <= ~5e-12 |
 | v_eff | relatif 1e-9 | v_eff ~ uc^4: 4x pergeseran uc; k aman karena `floor(v_eff)` jauh dari bilangan bulat |
 
-Disimulasikan pada SQLite dengan nilai dibulatkan 8 desimal (lihat atas): hijau. Efek terhadap ui/uici di SQLite penuh tercatat <= 7e-17 (Refractometer) dan <= 6e-16 (Turbidimeter, Chlorine).
+Disimulasikan pada SQLite dengan nilai dibulatkan 8 desimal (lihat atas): hijau. Selisih mutlak ui terbesar yang teramati di SQLite (float penuh): 7,3e-17 (Refractometer), 6,4e-16 (Turbidimeter), 5,6e-16 (Chlorine).
 
 ## 3. Refractometer, rincian per butir
 
