@@ -87,7 +87,7 @@ Selisih dengan bentuk contoh di draf kontrak (bagian 4 draf), semuanya sengaja:
 | item tanpa asal | tambah `sumber` (`heuristik \| model_visi \| manusia`) | Jejak dari mana label dan peran berasal; `model_visi` belum diizinkan penyedianya (`KOORDINASI.md` bagian 10 butir 5). |
 | `pemetaan.master`: "nama_master" bebas | enum slot: `standar_dipakai \| standar_dicek \| thermohygro \| metode_kalibrasi` | Slot sudah ada di sesi (bagian 4.7). |
 | `status`: `hijau \| kuning \| merah` | `sepakat_dua_pembacaan \| ragu \| tidak_terbaca \| kosong` | Aturan keras: tulisan tangan tidak pernah hijau (`KOORDINASI.md` bagian 10 butir 4; `AGENTS.md` OCR awan butir 5). Tidak ada nama warna di data; warna urusan tampilan. `kosong` ada karena kotak kosong adalah hasil yang sah. |
-| `pembaca` (satu string) | `pembacaan[]` `{pembaca, teks, keyakinan}` | Tanpa semua pembacaan mentah, "persentase sel sepakat yang ternyata salah" (angka terpenting di prompt OCR F) tidak bisa dihitung dari data tersimpan. |
+| `pembaca` (satu string) | `bacaan[]` `{pembaca, teks, keyakinan}` (nama diminta terminal OCR, `KOORDINASI.md` bagian 11) | Tanpa semua pembacaan mentah, "persentase sel sepakat yang ternyata salah" (angka terpenting di prompt OCR F) tidak bisa dihitung dari data tersimpan. |
 | usulan: tanpa waktu | tambah `dibuat_pada`, `pipeline_versi` | Pengulangan pengukuran dan audit. |
 | konfirmasi: satu butir `{item_id, nilai_final, dikonfirmasi_oleh, waktu, alasan_jika_diubah}` | satu catatan per tindakan: `{pindai_id, urutan, dikonfirmasi_oleh, waktu, item[]}` dengan `nilai_usulan`, `nilai_sebelum`, `nilai_final`, `diubah`, `master_id` | Satu ketukan "kirim" = satu tindakan manusia. `nilai_sebelum` membuat koreksi kedua dan seterusnya tetap lengkap sebelum/sesudahnya. Pelaku dan waktu tidak dikirim klien. |
 | (tidak ada) | `definisi_lembar_kerja` di tingkat skema | Pemetaan `sel_input` hanya bermakna terhadap satu versi definisi. |
@@ -142,7 +142,7 @@ Bukti: 41 dari 41 draf dikonversi dengan aturan ini dan lulus `skema-formulir.sc
 
 ### 4.5 Usulan OCR
 
-Bidang: `kontrak_versi`, `pindai_id`, `foto_ref`, `formulir {kode, revisi, skor, skor_kedua}`, `versi_skema`, `item[]`, `dibuat_oleh: "mesin"`, `dibuat_pada`, `pipeline_versi`. Butir: `item_id`, `nilai_usulan`, `keyakinan`, `status`, `potongan_ref`, `pembacaan[]`.
+Bidang: `kontrak_versi`, `pindai_id`, `foto_ref`, `formulir {kode, revisi, skor, skor_kedua}`, `versi_skema`, `item[]`, `dibuat_oleh: "mesin"`, `dibuat_pada`, `pipeline_versi`. Butir: `item_id`, `nilai_usulan`, `keyakinan`, `status`, `potongan_ref`, `bacaan[]`.
 
 - `nilai_usulan` adalah teks persis hasil baca: tidak dikoreksi, tidak dibulatkan, tidak "dibetulkan" ke nilai standar (prompt OCR, aturan keras). Kedekatan dengan nilai standar hanya boleh jadi penanda perlu dicek.
 - `status`: `sepakat_dua_pembacaan` (dua pembaca BERBEDA, teks sama persis; tetap wajib dikonfirmasi), `ragu`, `tidak_terbaca` (nilai `null`), `kosong` (kotak kosong di kertas, nilai `null`).
@@ -344,7 +344,7 @@ JSON Schema tidak bisa menyatakan perbandingan antar-field atau antar-dokumen. A
 | R2 | `item[].id` unik dalam satu dokumen skema. |
 | R3 | `sel_input` ada di daftar input definisi lembar kerja yang dirujuk. |
 | R4 | `usulan-ocr.item[].item_id` ada di skema yang ditunjuk `(kode, revisi, versi_skema)` dan berperan `isian_angka`, `isian_teks`, `centang`, atau `tanggal`. |
-| R5 | `sepakat_dua_pembacaan`: paling sedikit dua `pembacaan` dari `pembaca` BERBEDA dengan `teks` sama persis, dan sama dengan `nilai_usulan`. |
+| R5 | `sepakat_dua_pembacaan`: paling sedikit dua `bacaan` dari `pembaca` BERBEDA dengan `teks` sama persis, dan sama dengan `nilai_usulan`. |
 | R6 | Peran `centang`: `nilai_usulan` dan `nilai_final` hanya `"1"` atau `"0"` (atau `null` bila kosong di `nilai_final`). |
 | R7 | Konfirmasi `urutan` 1 mencakup semua butir `ragu` dan `tidak_terbaca`. |
 | R8 | `nilai_final` per peran: `isian_angka` `^-?[0-9]+(\.[0-9]+)?$` (titik desimal; klien mengonversi koma); `tanggal` `YYYY-MM-DD`; `centang` R6; `isian_teks` tidak kosong, dipangkas. |

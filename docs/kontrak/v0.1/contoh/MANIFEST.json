@@ -94,9 +94,9 @@
         "kata_kunci": "type"
       },
       {
-        "berkas": "tidak-valid-sepakat-satu-pembacaan.json",
-        "alasan": "sepakat_dua_pembacaan dengan hanya satu pembacaan.",
-        "jalur_galat": "/item/0/pembacaan",
+        "berkas": "tidak-valid-sepakat-satu-bacaan.json",
+        "alasan": "sepakat_dua_pembacaan dengan hanya satu bacaan.",
+        "jalur_galat": "/item/0/bacaan",
         "kata_kunci": "minItems"
       },
       {

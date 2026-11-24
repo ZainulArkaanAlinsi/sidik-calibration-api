@@ -79,7 +79,7 @@
     "item_usulan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["item_id", "nilai_usulan", "keyakinan", "status", "potongan_ref", "pembacaan"],
+      "required": ["item_id", "nilai_usulan", "keyakinan", "status", "potongan_ref", "bacaan"],
       "properties": {
         "item_id": { "$ref": "#/$defs/id_item" },
         "nilai_usulan": {
@@ -102,8 +102,8 @@
           "type": ["string", "null"],
           "maxLength": 200
         },
-        "pembacaan": {
-          "description": "Semua pembacaan mentah yang dipakai memutuskan status (agar 'sepakat tetapi salah' bisa diukur).",
+        "bacaan": {
+          "description": "Semua bacaan mentah yang dipakai memutuskan status (agar 'sepakat tetapi salah' bisa diukur).",
           "type": "array",
           "maxItems": 5,
           "items": {
@@ -138,7 +138,7 @@
             "properties": { "status": { "const": "sepakat_dua_pembacaan" } },
             "required": ["status"]
           },
-          "then": { "properties": { "pembacaan": { "minItems": 2 } } }
+          "then": { "properties": { "bacaan": { "minItems": 2 } } }
         }
       ]
     }
