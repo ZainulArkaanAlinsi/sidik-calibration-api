@@ -73,9 +73,23 @@ Bukti per pilihan (sel workbook + `path:baris @79280fc2`) ada di registri
    memulangkan `bawaan` registri (nomor penetapan 0). Pembaca yang lupa membuka
    lingkup salah ke arah perilaku lama, tidak pernah ke arah angka yang bergeser.
 2. **Penetapan** (satu entri di `penetapan[]`): `nomor` (1, 2, 3 tanpa celah),
-   `berlaku_mulai`, `tanggal_keputusan`, `nilai` (kode pilihan), `diputuskan_oleh`,
-   `alasan`, `rujukan` (min. 10 karakter). `berlaku_mulai >= tanggal_keputusan`:
-   registri menolak penetapan berlaku surut saat dibaca.
+   `tanggal_keputusan`, `dicatat_pada`, `berlaku_mulai`, `nilai` (kode pilihan),
+   `diputuskan_oleh`, `alasan`, `rujukan` (min. 10 karakter). Registri menegakkan
+   tiga hal saat dibaca (kalau salah satu dilanggar, registri gagal keras):
+   - `tanggal_keputusan <= dicatat_pada <= berlaku_mulai`. `dicatat_pada` = hari
+     entri itu masuk registri (hari PR penetapannya dibuat).
+   - `berlaku_mulai` tidak boleh turun antar nomor penetapan satu parameter
+     (nomor 2 tidak boleh berlaku lebih awal dari nomor 1; sama boleh, nomor
+     terbesar menang).
+   - Setiap entri wajib punya ketiga tanggal itu (tanggal Y-m-d yang sah).
+
+   **Batasnya, supaya tidak dibaca lebih dari yang sebenarnya:** registri hanya
+   menjaga urutan antar tanggal yang tertulis di berkas. `dicatat_pada` diketik
+   penulis PR, jadi registri TIDAK bisa membuktikan bahwa tanggal itu sama dengan
+   hari PR dibuat atau hari deploy; PR yang menulis `dicatat_pada` lebih awal dari
+   kenyataan lolos tes. Penutup celah itu dua hal di luar kode: peninjau PR
+   mencocokkan `dicatat_pada` dengan hari PR dibuat dan `berlaku_mulai` dengan hari
+   deploy, dan ledger hash (butir 4) mengunci tanggal itu setelah masuk.
 3. **Tanggal.** Pilihan yang berlaku = penetapan dengan `berlaku_mulai <=
    tanggal_kalibrasi` yang `berlaku_mulai`-nya paling akhir (seri: `nomor`
    terbesar). Sesi dengan `tanggal_kalibrasi` sebelumnya tidak bergeser.
@@ -97,8 +111,9 @@ ledger. Contoh isi (nilai contoh, bukan keputusan):
 ```json
 {
   "nomor": 1,
-  "berlaku_mulai": "2026-12-08",
   "tanggal_keputusan": "2026-12-04",
+  "dicatat_pada": "2026-12-05",
+  "berlaku_mulai": "2026-12-08",
   "nilai": "baris_tetap_21c",
   "diputuskan_oleh": "Manajer Teknis, nama lengkap",
   "alasan": "Workbook tervalidasi memakai sel tetap baris 24; keputusan batch 4 Des.",
@@ -108,8 +123,11 @@ ledger. Contoh isi (nilai contoh, bukan keputusan):
 
 `berlaku_mulai` harus hari deploy PR itu atau sesudahnya; entri yang berlaku
 sebelum deploy menggeser hitung ulang sesi yang sudah dihitung dengan bawaan
-(validator akan melaporkan `ketidakpastian_beda`). Itu pelanggaran aturan, bukan
-sesuatu yang diizinkan registri.
+(validator akan melaporkan `ketidakpastian_beda`). Registri menolak
+`berlaku_mulai` yang lebih awal dari `dicatat_pada` (dan `dicatat_pada` yang lebih
+awal dari `tanggal_keputusan`), tetapi tidak membandingkannya dengan tanggal
+deploy yang sebenarnya: itu tetap pemeriksaan peninjau PR (lihat butir 2 di
+atas). `dicatat_pada` isi dengan hari PR dibuat, bukan hari keputusan.
 
 ## Langkah berikut: penetapan lewat Studio Web (BELUM dibangun)
 
@@ -145,9 +163,12 @@ rollout `DATA_ACUAN_SUMBER=db` sebelum dibangun.
 ## Risiko yang diketahui
 
 - **Hasil lama tanpa baris `parameter_metode`.** Dibaca sebagai bawaan pada
-  skema 1. Benar selama tidak ada penetapan berlaku surut (dijaga registri dan
-  ledger), dan salah bila seseorang menetapkan `berlaku_mulai` sebelum tanggal
-  deploy lalu menghitung ulang sesi lama.
+  skema 1. Benar selama tidak ada penetapan berlaku surut. Registri dan ledger
+  hanya menjaga urutan tanggal yang tertulis (`tanggal_keputusan <= dicatat_pada
+  <= berlaku_mulai`, `berlaku_mulai` tidak turun antar nomor); tanggal
+  `dicatat_pada` sendiri diketik penulis PR. Jadi salah bila seseorang menulis
+  `dicatat_pada` dan `berlaku_mulai` lebih awal dari hari deploy sebenarnya lalu
+  menghitung ulang sesi lama; yang menahannya peninjau PR, bukan kode.
 - **Jalur hitung yang belum membuka lingkup.** Empat pintu sudah membukanya
   (store/update/preview, `kalibrasi:hitung-ulang`, `CalibrationValidator`,
   simulasi versi acuan) lewat `PenentuVersiAcuan`. Jalur baru yang memanggil

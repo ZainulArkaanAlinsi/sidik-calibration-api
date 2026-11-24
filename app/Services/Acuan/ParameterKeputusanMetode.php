@@ -362,6 +362,7 @@ final class ParameterKeputusanMetode
         }
 
         $nomorSebelumnya = 0;
+        $berlakuSebelumnya = null;
 
         foreach ($penetapan as $p) {
             $nomor = is_array($p) ? ($p['nomor'] ?? null) : null;
@@ -372,15 +373,28 @@ final class ParameterKeputusanMetode
 
             $nomorSebelumnya = $nomor;
 
-            foreach (['berlaku_mulai', 'tanggal_keputusan'] as $tgl) {
+            foreach (['berlaku_mulai', 'dicatat_pada', 'tanggal_keputusan'] as $tgl) {
                 if (! is_string($p[$tgl] ?? null) || ! self::tanggalSah($p[$tgl])) {
                     throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} `{$tgl}` bukan tanggal Y-m-d yang sah.");
                 }
             }
 
-            if ($p['berlaku_mulai'] < $p['tanggal_keputusan']) {
-                throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} berlaku surut (berlaku_mulai sebelum tanggal_keputusan) — sesi lama dan sertifikat terbit tidak boleh bergeser.");
+            // Tiga tanggal, satu urutan: tanggal_keputusan <= dicatat_pada <= berlaku_mulai.
+            // `dicatat_pada` = hari entri ini masuk registri (hari PR-nya dibuat); sesi
+            // yang sudah dihitung sebelum hari itu tidak boleh bergeser oleh entri ini.
+            if ($p['dicatat_pada'] < $p['tanggal_keputusan']) {
+                throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} dicatat sebelum diputuskan (dicatat_pada sebelum tanggal_keputusan).");
             }
+
+            if ($p['berlaku_mulai'] < $p['dicatat_pada']) {
+                throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} berlaku surut (berlaku_mulai sebelum dicatat_pada) — sesi lama dan sertifikat terbit tidak boleh bergeser.");
+            }
+
+            if ($berlakuSebelumnya !== null && $p['berlaku_mulai'] < $berlakuSebelumnya) {
+                throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} berlaku_mulai turun dibanding penetapan sebelumnya ({$p['berlaku_mulai']} < {$berlakuSebelumnya}) — penetapan wajib menaik menurut nomor.");
+            }
+
+            $berlakuSebelumnya = $p['berlaku_mulai'];
 
             if (! is_string($p['nilai'] ?? null) || ! in_array($p['nilai'], $kode, true)) {
                 throw new RuntimeException("Registri parameter keputusan metode: `{$kunci}` penetapan #{$nomor} `nilai` bukan salah satu pilihan.");
