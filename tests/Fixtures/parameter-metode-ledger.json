@@ -1,0 +1,4 @@
+{
+  "_aturan": "Ledger APPEND-ONLY hash tiap penetapan di database/data/parameter-keputusan-metode.json. Format: \"penetapan\": {\"<kunci>\": {\"<nomor>\": \"<hash>\"}} dengan hash dari ParameterKeputusanMetode::hashPenetapan($entri). Entri baru WAJIB didaftarkan di sini dalam PR yang sama; entri lama tidak boleh berubah atau hilang (ParameterKeputusanMetodeTest::test_ledger_penetapan_append_only).",
+  "penetapan": {}
+}

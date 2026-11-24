@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\Calibration\SpectrophotometerCalculator;
 use App\Services\Calibration\TabelStandarSpectrophotometer;
 use App\Support\Regresi;
@@ -88,6 +89,9 @@ use Illuminate\Support\Carbon;
  */
 class SpectrophotometerProfile extends CalibrationProfile
 {
+    /** Kunci registri `parameter-keputusan-metode.json` (butir TM spectrophotometer#15). */
+    public const PARAMETER_MAX_STDEV_HOLMIUM = 'spectrophotometer.max_stdev_holmium';
+
     /**
      * Kode FORMULIR lembar kerjanya, bukan kode metodenya.
      *
@@ -805,6 +809,9 @@ class SpectrophotometerProfile extends CalibrationProfile
                 'k_standar' => (float) ($standar->faktor_cakupan ?: 2.0),
                 'resolusi' => $blok['resolusi'],
                 'cmc' => (float) $kemampuan->ketidakpastian_terbaik,
+                // Parameter keputusan metode: titik yang tidak ikut MAX STDEV. Kosong
+                // (bawaan) = semua titik, persis perilaku sebelum parameter ada.
+                ...$this->spekStdevMaks($grup),
             ],
         );
 
@@ -848,6 +855,27 @@ class SpectrophotometerProfile extends CalibrationProfile
     }
 
     /**
+     * `stdev_maks_kecualikan_nm` untuk satu kelompok, dari parameter keputusan
+     * metode `spectrophotometer.max_stdev_holmium`. Hanya kelompok Holmium yang
+     * punya pengecualian di workbook (`PERHITUNGAN!M36 =MAX(M27:M35)`; M49 dan M67
+     * memuat semua titik). Pilihan bawaan `semua_titik` tidak menambah kunci apa pun.
+     *
+     * @return array<string, list<float>>
+     */
+    private function spekStdevMaks(string $grup): array
+    {
+        if ($grup !== SpectrophotometerCalculator::GRUP_HOLMIUM) {
+            return [];
+        }
+
+        $putusan = app(ParameterKeputusanMetode::class)->putusan(self::PARAMETER_MAX_STDEV_HOLMIUM);
+
+        return $putusan->nilai === 'tanpa_titik_pertama'
+            ? ['stdev_maks_kecualikan_nm' => [(float) $putusan->data['titik_dikecualikan_nm']]]
+            : [];
+    }
+
+    /**
      * Rincian budget buat kolom `type_b_components`, bentuknya sama persis
      * kayak yang dikeluarin `GumCalculator::hitungDariBudget()` supaya layar
      * & lembar perhitungan nggak perlu tau alat ini beda.
@@ -876,8 +904,14 @@ class SpectrophotometerProfile extends CalibrationProfile
                 'sumber' => $catatan['kode'],
                 'keterangan' => $catatan['pesan'],
                 'distribusi' => '-',
-                'nilai' => $catatan['ketidakpastian_diperluas'] ?? $hasil['cmc'],
+                'nilai' => $catatan['nilai'] ?? $catatan['ketidakpastian_diperluas'] ?? $hasil['cmc'],
             ];
+        }
+
+        // Jejak parameter keputusan metode (nilai + versi penetapan), di ujung supaya
+        // posisi baris lain tidak bergeser.
+        foreach ($this->jejakParameterMetode() as $baris) {
+            $audit[] = $baris;
         }
 
         // Titik di luar rentang CMC yang diakreditasi TETAP dihitung & dicetak

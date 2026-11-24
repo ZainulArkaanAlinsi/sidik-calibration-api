@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\Acuan\PenentuVersiAcuan;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
@@ -147,7 +148,7 @@ class PerhitunganBuilder
                 // perhitungan nggak bisa beda sama angka yang tersimpan.
                 $standar = $standarPerTitik->get((int) $titikKe)?->standard ?? $sesi->standard;
 
-                $nilaiStandar = $this->nilaiStandar($standar, $rataSuhu, $pembacaan->first());
+                $nilaiStandar = $this->nilaiStandar($standar, $rataSuhu, $pembacaan->first(), $profil, $sesi);
 
                 // Alat ber-standar tumpukan keping: nilai standar titik ini adalah
                 // JUMLAH nilai terkoreksi keping yang sudah dihitung dan disimpan
@@ -225,10 +226,27 @@ class PerhitunganBuilder
      * buffer; kalau standarnya nggak punya (atau suhu larutan nggak dicatat),
      * jatuh ke nilai nominal yang diisi teknisi.
      */
-    private function nilaiStandar(?Standard $standar, ?float $rataSuhu, ?RawMeasurement $contoh): ?float
+    private function nilaiStandar(?Standard $standar, ?float $rataSuhu, ?RawMeasurement $contoh, CalibrationProfile $profil, CalibrationSession $sesi): ?float
     {
-        return $standar?->nilaiPadaSuhu($rataSuhu)
-            ?? ($contoh !== null ? (float) $contoh->titik_ukur : null);
+        $nominal = $contoh !== null ? (float) $contoh->titik_ukur : null;
+        $dariKurva = null;
+
+        if ($standar !== null) {
+            // Lewat profil dan di lingkup tanggal sesi, sama dengan jalur hitung
+            // (`GumCalculator::hitungTitik`): lembar perhitungan tidak boleh menampilkan
+            // nilai acuan yang berbeda dari yang dipakai menghitung. Bawaannya
+            // `Standard::nilaiPadaSuhu()` persis seperti sebelum parameter keputusan metode.
+            $kanonik = $nominal !== null && $sesi->equipment !== null
+                ? $nominal * $profil->faktorKanonik($nominal, $sesi->equipment)
+                : (float) $nominal;
+
+            $dariKurva = app(ParameterKeputusanMetode::class)->untukTanggal(
+                $sesi->tanggal_kalibrasi,
+                fn (): ?float => $profil->nilaiAcuanStandar($standar, $rataSuhu, $kanonik),
+            );
+        }
+
+        return $dariKurva ?? $nominal;
     }
 
     /**

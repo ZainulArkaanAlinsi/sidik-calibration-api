@@ -206,8 +206,8 @@ final class SimulasiVersiAcuan
             $pilihan = $this->penentu->untukSesiTersimpan($sesi);
             $baris['versi_pembanding'] = $pilihan['versi'] === null ? 'berkas JSON' : PenentuVersiAcuan::label($pilihan['versi']);
 
-            $lama = $this->penentu->jalankanDengan($pilihan['versi'], fn (): ?array => $profil->hitungPerGrup($siap, $alat))['hasil'];
-            $baru = $this->penentu->jalankanDengan($versi, fn (): ?array => $profil->hitungPerGrup($siap, $alat))['hasil'];
+            $lama = $this->penentu->jalankanDengan($pilihan['versi'], fn (): ?array => $profil->hitungPerGrup($siap, $alat), $sesi)['hasil'];
+            $baru = $this->penentu->jalankanDengan($versi, fn (): ?array => $profil->hitungPerGrup($siap, $alat), $sesi)['hasil'];
 
             if ($lama === null || $baru === null) {
                 $baris['galat'] = 'profil alat ini menghitung per titik; simulasi baru mendukung profil ber-hitungPerGrup()';

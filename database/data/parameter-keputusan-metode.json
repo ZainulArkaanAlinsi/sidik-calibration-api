@@ -1,0 +1,310 @@
+{
+  "_aturan": "REGISTRI PARAMETER KEPUTUSAN METODE (lapis 1, AGENTS.md butir Olah data 1). Satu-satunya tempat pilihan metode yang MASIH menunggu Manajer Teknis (TM) didaftarkan. Tiap parameter punya `bawaan` = perilaku kode PADA 79280fc2, sehingga selama `penetapan` kosong tidak ada angka sertifikat yang berubah. `penetapan` APPEND-ONLY: pilihan non-bawaan baru berlaku bila ada entri di sana, dan hanya untuk sesi yang `tanggal_kalibrasi`-nya >= `berlaku_mulai` entri itu (sesi lama dan sertifikat terbit tidak bergeser). Entri lama TIDAK diubah atau dihapus; perubahan berikutnya = entri baru dengan `nomor` berikutnya. Setiap entri wajib: nomor, berlaku_mulai (>= tanggal_keputusan, tidak boleh berlaku surut), tanggal_keputusan, nilai (kode pilihan), diputuskan_oleh (nama + jabatan orang yang memutuskan), alasan, rujukan. Dijaga ParameterKeputusanMetodeTest + tests/Fixtures/parameter-metode-ledger.json (hash tiap entri; entri baru WAJIB ditambahkan ke ledger di PR yang sama). Pembaca satu-satunya: App\\Services\\Acuan\\ParameterKeputusanMetode. Spesifikasi untuk Studio Web: docs/parameter-keputusan-metode.md dan docs/perintah-frontend-parameter-metode.md.",
+  "skema_versi": 1,
+  "dibuat": {
+    "tanggal": "2026-11-24",
+    "dasar_bawaan": "origin/main API 79280fc2",
+    "sumber_pertanyaan": "LEMBAR-CENTANG-MANAJER-TEKNIS.md bagian C1/C2 dan peta/VERIFIKASI-24NOV.md bagian 1a (T1, 24 Nov 2026); keputusan pemilik 24 Nov 2026: pertanyaan TM tidak menghentikan pekerjaan, jadi parameter dengan bawaan = perilaku sekarang."
+  },
+  "parameter": [
+    {
+      "kunci": "refractometer.sumber_deviasi_suhu",
+      "profil": "refractometer",
+      "lingkup": "hitung",
+      "judul": "Sumber komponen u(perbedaan temperatur) Refractometer",
+      "pertanyaan": "Komponen 'Pengaruh Perbedaan Temperature' dihitung dari suhu ruang sesi, atau dari sel tetap baris 24 Tab Konversi Temperatur (21,0 C) seperti workbook?",
+      "butir_tm": [
+        "refractometer#24"
+      ],
+      "pilihan": [
+        {
+          "kode": "suhu_ruang",
+          "label": "Dari suhu ruang sesi",
+          "perilaku": "deviasi = -koef x (T_ruang diturunkan ke kelipatan 0,1 - 20), dijepit ke rentang tabel 19,0-30,2 C",
+          "setara_master": "tidak",
+          "bukti": "app/Services/Calibration/Profiles/RefractometerProfile.php:339-348 @79280fc2; docblock :327 menyebut VLOOKUP approximate, tidak cocok dengan rumus workbook",
+          "bukti_singkat": "kode: RefractometerProfile.php:339-348; workbook tidak membaca suhu ruang di sini"
+        },
+        {
+          "kode": "baris_tetap_21c",
+          "label": "Sel tetap baris 24 (21,0 C), seperti workbook",
+          "perilaku": "deviasi = -koef x (21,0 - 20); suhu ruang sesi tidak dibaca",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Refractometer.xlsm 'PERHITUNGAN U95%'!N11 dan N26 = IF(M4=\"oBrix\",'Tab Konversi Temperatur'!E24,IF(M4=\"n20D\",'Tab Konversi Temperatur'!H24,...)); B24 = 21; H24 = -0,00045000000000006146 (n20D); E24 = -0,07000000000000028 (oBrix); cache-sel Master_Olah_Data_Refractometer.xlsm.json",
+          "bukti_singkat": "workbook: 'PERHITUNGAN U95%'!N11/N26 -> 'Tab Konversi Temperatur'!H24/E24 (baris 24, B24 = 21,0)",
+          "data": {
+            "suhu_c": 21.0
+          }
+        }
+      ],
+      "bawaan": "suhu_ruang",
+      "bukti_bawaan": "RefractometerProfile.php:339-348 @79280fc2 (tidak tercatat sebagai penyimpangan sengaja: header profil :37-42 hanya mencatat divisor 1 dan ci 0,0001)",
+      "dampak": "Komponen ini = 98% dari uc kuadrat pada sampel master (AC11 6,75e-8 dari AC14 6,90e-8, U cetak 0,000527). Sama hanya bila rata-rata suhu ruang jatuh di 21,0-21,1 C; pada 23,0 C deviasi -0,00135 lawan -0,00045 (U sekitar 3 kali).",
+      "penetapan": []
+    },
+    {
+      "kunci": "spectrophotometer.max_stdev_holmium",
+      "profil": "spectrophotometer",
+      "lingkup": "hitung",
+      "judul": "MAX STDEV kelompok Holmium (Type A budget)",
+      "pertanyaan": "STDEV terbesar kelompok Holmium diambil dari semua titik, atau tanpa titik pertama 279,6 nm seperti sel M36 workbook?",
+      "butir_tm": [
+        "spectrophotometer#15",
+        "spectrophotometer#12 (terkait: 10 atau 9 titik Holmium, belum dijadikan parameter)"
+      ],
+      "pilihan": [
+        {
+          "kode": "semua_titik",
+          "label": "Semua titik kelompok",
+          "perilaku": "MAX STDEV atas seluruh titik Holmium yang terisi",
+          "setara_master": "tidak",
+          "bukti": "app/Services/Calibration/SpectrophotometerCalculator.php:209 @79280fc2; docs/handoff-backend-spectrophotometer.md:22-30",
+          "bukti_singkat": "kode: SpectrophotometerCalculator.php:209"
+        },
+        {
+          "kode": "tanpa_titik_pertama",
+          "label": "Tanpa titik pertama 279,6 nm, seperti workbook",
+          "perilaku": "MAX STDEV atas titik Holmium selain 279,6 nm; bila hanya titik itu yang terisi, titik itu tetap dipakai dan hal ini ditulis di jejak",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Spectrofotometer.xlsm PERHITUNGAN!M36 =MAX(M27:M35) (mengabaikan M26 = titik 1, 279,6 nm); M49 =MAX(M40:M48) dan M67 =MAX(M57:M66) memuat semua titik; M36 disuapkan ke 'PERHITUNGAN U95%'!E10 =PERHITUNGAN!M36; cache-sel Master_Olah_Data_Spectrofotometer.xlsm.json (M36 = 0,15588457268125408, H10 = 0,11844666116576621)",
+          "bukti_singkat": "workbook: PERHITUNGAN!M36 =MAX(M27:M35), M26 (279,6 nm) tidak ikut",
+          "data": {
+            "titik_dikecualikan_nm": 279.6
+          }
+        }
+      ],
+      "bawaan": "semua_titik",
+      "bukti_bawaan": "SpectrophotometerCalculator.php:209 @79280fc2 (tidak tercatat sebagai penyimpangan sengaja); kertas Rev.5 hanya 9 titik Holmium tanpa 279,6 nm (SpectrophotometerProfile.php:68-70 @79280fc2), jadi pengecualian di workbook bisa sengaja",
+      "dampak": "Berbeda hanya bila STDEV titik 279,6 nm adalah yang terbesar (di sampel master M26 = 0). Mengubah Type A, v_eff, k, dan U95 kelompok Holmium.",
+      "penetapan": []
+    },
+    {
+      "kunci": "conductivity.nilai_acuan_larutan_1412",
+      "profil": "conductivity_meter",
+      "lingkup": "hitung",
+      "judul": "Nilai acuan larutan standar 1412 uS/cm",
+      "pertanyaan": "Nilai acuan larutan 1412 uS/cm (1,412 mS/cm): konstanta 1412, atau polinomial suhu 2E-13 T^2 + 27 T + 738 yang bernilai 1413,0 pada 25 C?",
+      "butir_tm": [
+        "conductivity_meter#18"
+      ],
+      "pilihan": [
+        {
+          "kode": "konstanta_1412",
+          "label": "Konstanta 1412 uS/cm (arahan lab 11 Agt 2026)",
+          "perilaku": "nilai acuan = 1412 pada semua suhu larutan (koefisien a=0, b=0, c=1412 di standards.koefisien_suhu)",
+          "setara_master": "sebagian",
+          "bukti": "app/Services/Calibration/Profiles/ConductivityProfile.php:214-217 @79280fc2 (E-5); Master Olah Data_Conductivity.xlsm PERHITUNGAN!H26 = 1412 (konstanta, varian uS/cm)",
+          "bukti_singkat": "workbook: PERHITUNGAN!H26 = 1412 (varian uS/cm); kode: ConductivityProfile.php:214-217"
+        },
+        {
+          "kode": "polinomial_suhu",
+          "label": "Polinomial suhu larutan, seperti sel J26 varian mS/cm",
+          "perilaku": "nilai acuan = 2E-13 T^2 + 27 T + 738 (uS/cm) pada suhu rata-rata larutan titik itu; tanpa suhu larutan tetap nominal (Excel dengan K33 kosong memberi 738, tidak ditiru)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Conductivity.xlsm PERHITUNGAN!J26 =((0.0000000000002*K33^2)+(27*K33)+738)/1000 dengan K33 =AVERAGE(K28:K32) (suhu larutan), varian mS/cm; polinomial pada 25 C = 1413,000000000125 uS/cm (hitung tangan); koefisien tersimpan di ConductivityProfile.php:228 KOEF_SUHU_1412_TERDOKUMENTASI @79280fc2; INPUT DATA!H39 berlabel 1413",
+          "bukti_singkat": "workbook: PERHITUNGAN!J26 polinomial suhu larutan (varian mS/cm), 1413,0 pada 25 C"
+        }
+      ],
+      "bawaan": "konstanta_1412",
+      "bukti_bawaan": "ConductivityProfile.php:186-228 @79280fc2 (E-5, sengaja: arahan lisan lab 11 Agt 2026, belum tertulis)",
+      "dampak": "Nilai acuan titik tengah bergeser sampai sekitar 1 uS/cm pada 25 C dan lebih jauh di suhu lain; mengubah Correction dan U95 yang tercetak. Excel memakai konstanta pada varian uS/cm (H26) dan polinomial pada varian mS/cm (J26): pilihan polinomial_suhu diterapkan ke KEDUA varian karena pertanyaan TM menyangkut nilai tersertifikasi larutan, bukan varian.",
+      "penetapan": []
+    },
+    {
+      "kunci": "sertifikat.tambah_hari.ph_meter",
+      "profil": "ph_meter",
+      "lingkup": "cetak",
+      "judul": "Issuance Date sertifikat pH Meter",
+      "pertanyaan": "Tanggal terbit pH = tanggal kalibrasi + N hari (N berapa), atau tanggal terbit sistem?",
+      "butir_tm": [
+        "ph_meter#28"
+      ],
+      "pilihan": [
+        {
+          "kode": "terbit_sistem",
+          "label": "Tanggal terbit sistem (bentuk lama)",
+          "perilaku": "Issuance Date = hari penerbitan sebenarnya",
+          "setara_master": "tidak",
+          "bukti": "app/Support/FormatMasterSertifikat.php:94 @79280fc2 (tambah_hari null; alasan :33-47: nilai bentrok antar workbook atau tak terbukti)",
+          "bukti_singkat": "kode: FormatMasterSertifikat.php:94 (null)",
+          "data": {
+            "tambah_hari": null
+          }
+        },
+        {
+          "kode": "tambah_3",
+          "label": "Tanggal kalibrasi + 3 hari (master revisi 13)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 3, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "pH meter_IMTE-WQ-129.xlsm (revisi 13) SERTIFIKAT!B41 =T12+3 (T12 = 2025-05-30, B41 = 2025-06-02); INPUT DATA!D51 di workbook yang sama =O16+4",
+          "bukti_singkat": "workbook revisi 13: SERTIFIKAT!B41 =T12+3",
+          "data": {
+            "tambah_hari": 3
+          }
+        },
+        {
+          "kode": "tambah_4",
+          "label": "Tanggal kalibrasi + 4 hari (master revisi 17, terbaru)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 4, hari penerbitan)",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_pH for trial.xlsm (revisi 17) SERTIFIKAT!B41 =T12+4 (T12 = 2024-05-26, B41 = 2024-05-30) dan INPUT DATA!D51 =O16+4",
+          "bukti_singkat": "workbook revisi 17: SERTIFIKAT!B41 =T12+4",
+          "data": {
+            "tambah_hari": 4
+          }
+        }
+      ],
+      "bawaan": "terbit_sistem",
+      "bukti_bawaan": "FormatMasterSertifikat.php:94 @79280fc2",
+      "dampak": "Hanya tanggal yang tercetak di sertifikat baru; nilai antara dan angka hasil tidak berubah. Dibekukan di snapshot (tata_letak.tanggal_master.tambah_hari), sertifikat yang sudah terbit tidak berubah.",
+      "penetapan": []
+    },
+    {
+      "kunci": "sertifikat.tambah_hari.conductivity_meter",
+      "profil": "conductivity_meter",
+      "lingkup": "cetak",
+      "judul": "Issuance Date sertifikat Conductivity",
+      "pertanyaan": "Tanggal terbit Conductivity = tanggal kalibrasi + N hari (N berapa), atau tanggal terbit sistem?",
+      "butir_tm": [
+        "conductivity_meter#36"
+      ],
+      "pilihan": [
+        {
+          "kode": "terbit_sistem",
+          "label": "Tanggal terbit sistem (bentuk lama)",
+          "perilaku": "Issuance Date = hari penerbitan sebenarnya",
+          "setara_master": "tidak",
+          "bukti": "app/Support/FormatMasterSertifikat.php:81 @79280fc2 (tambah_hari null)",
+          "bukti_singkat": "kode: FormatMasterSertifikat.php:81 (null)",
+          "data": {
+            "tambah_hari": null
+          }
+        },
+        {
+          "kode": "tambah_2",
+          "label": "Tanggal kalibrasi + 2 hari",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 2, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Conductivity.xlsm 'SERTIFIKAT STYLE 2'!B55 =S12+2 (2024-05-15) dan INPUT DATA!D57 =Q16+2",
+          "bukti_singkat": "workbook: 'SERTIFIKAT STYLE 2'!B55 =S12+2, INPUT DATA!D57 =Q16+2",
+          "data": {
+            "tambah_hari": 2
+          }
+        },
+        {
+          "kode": "tambah_4",
+          "label": "Tanggal kalibrasi + 4 hari",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 4, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Conductivity.xlsm 'SERTIFIKAT STYLE 1'!B55 =S12+4 (2024-05-17)",
+          "bukti_singkat": "workbook: 'SERTIFIKAT STYLE 1'!B55 =S12+4",
+          "data": {
+            "tambah_hari": 4
+          }
+        }
+      ],
+      "bawaan": "terbit_sistem",
+      "bukti_bawaan": "FormatMasterSertifikat.php:81 @79280fc2",
+      "dampak": "Hanya tanggal tercetak pada sertifikat baru. Satu workbook memuat +2 dan +4 di lembar berbeda, jadi tidak ada satu perilaku master yang bisa ditiru tanpa jawaban TM.",
+      "penetapan": []
+    },
+    {
+      "kunci": "sertifikat.tambah_hari.spectrophotometer",
+      "profil": "spectrophotometer",
+      "lingkup": "cetak",
+      "judul": "Issuance Date sertifikat Spectrophotometer",
+      "pertanyaan": "Tanggal terbit Spectrophotometer = tanggal kalibrasi + 1, + 4, atau tanggal terbit sistem?",
+      "butir_tm": [
+        "spectrophotometer#4"
+      ],
+      "pilihan": [
+        {
+          "kode": "tambah_1",
+          "label": "Tanggal kalibrasi + 1 hari (lembar SERTIFIKAT)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 1, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Spectrofotometer.xlsm SERTIFIKAT!B70 =R9+1 (R9 = 2023-07-21, B70 = 2023-07-22); app/Support/FormatMasterSertifikat.php:97 @79280fc2",
+          "bukti_singkat": "workbook: SERTIFIKAT!B70 =R9+1; kode: FormatMasterSertifikat.php:97",
+          "data": {
+            "tambah_hari": 1
+          }
+        },
+        {
+          "kode": "tambah_4",
+          "label": "Tanggal kalibrasi + 4 hari (lembar INPUT DATA)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 4, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Spectrofotometer.xlsm INPUT DATA!D80 =O16+4 (2023-07-25)",
+          "bukti_singkat": "workbook: INPUT DATA!D80 =O16+4",
+          "data": {
+            "tambah_hari": 4
+          }
+        },
+        {
+          "kode": "terbit_sistem",
+          "label": "Tanggal terbit sistem",
+          "perilaku": "Issuance Date = hari penerbitan sebenarnya",
+          "setara_master": "tidak",
+          "bukti": "pilihan C di LEMBAR-CENTANG-MANAJER-TEKNIS.md spectrophotometer#4; tidak ada sel workbook",
+          "bukti_singkat": "tanpa sel workbook; pilihan C lembar centang spectrophotometer#4",
+          "data": {
+            "tambah_hari": null
+          }
+        }
+      ],
+      "bawaan": "tambah_1",
+      "bukti_bawaan": "FormatMasterSertifikat.php:97 @79280fc2",
+      "dampak": "Hanya tanggal tercetak pada sertifikat baru.",
+      "penetapan": []
+    },
+    {
+      "kunci": "sertifikat.tambah_hari.turbidimeter",
+      "profil": "turbidimeter",
+      "lingkup": "cetak",
+      "judul": "Issuance Date sertifikat Turbidimeter",
+      "pertanyaan": "Tanggal terbit Turbidimeter = tanggal kalibrasi + 4, + 1, atau tanggal terbit sistem?",
+      "butir_tm": [
+        "turbidimeter#4"
+      ],
+      "pilihan": [
+        {
+          "kode": "terbit_sistem",
+          "label": "Tanggal terbit sistem (DITAHAN, keputusan koordinator)",
+          "perilaku": "Issuance Date = hari penerbitan sebenarnya",
+          "setara_master": "tidak",
+          "bukti": "app/Support/FormatMasterSertifikat.php:104 @79280fc2 dan alasan :33-47 (master lama +1 berlawanan dengan job Jun 2026 +4, bukti kertas lama bertentangan dengan PDF master)",
+          "bukti_singkat": "kode: FormatMasterSertifikat.php:104 (null, ditahan)",
+          "data": {
+            "tambah_hari": null
+          }
+        },
+        {
+          "kode": "tambah_1",
+          "label": "Tanggal kalibrasi + 1 hari (lembar SERTIFIKAT)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 1, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Turbidimeter.xlsm SERTIFIKAT!B40 =T9+1 (2024-06-23)",
+          "bukti_singkat": "workbook: SERTIFIKAT!B40 =T9+1",
+          "data": {
+            "tambah_hari": 1
+          }
+        },
+        {
+          "kode": "tambah_4",
+          "label": "Tanggal kalibrasi + 4 hari (lembar INPUT DATA)",
+          "perilaku": "Issuance Date = min(tanggal kalibrasi + 4, hari penerbitan)",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Turbidimeter.xlsm INPUT DATA!D55 =O16+4 (2024-06-26)",
+          "bukti_singkat": "workbook: INPUT DATA!D55 =O16+4",
+          "data": {
+            "tambah_hari": 4
+          }
+        }
+      ],
+      "bawaan": "terbit_sistem",
+      "bukti_bawaan": "FormatMasterSertifikat.php:104 @79280fc2",
+      "dampak": "Hanya tanggal tercetak pada sertifikat baru.",
+      "penetapan": []
+    }
+  ]
+}

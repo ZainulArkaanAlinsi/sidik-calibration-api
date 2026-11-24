@@ -208,7 +208,7 @@ class PenentuVersiAcuan
      */
     public function jalankan(CalibrationSession $sesi, callable $hitung): array
     {
-        return $this->jalankanDengan($this->untukSesi($sesi), $hitung);
+        return $this->jalankanDengan($this->untukSesi($sesi), $hitung, $sesi);
     }
 
     /**
@@ -222,8 +222,20 @@ class PenentuVersiAcuan
      * @param  callable(): T  $hitung
      * @return array{hasil: T, versi: ?PaketAcuanVersi}
      */
-    public function jalankanDengan(?PaketAcuanVersi $versi, callable $hitung): array
+    public function jalankanDengan(?PaketAcuanVersi $versi, callable $hitung, ?CalibrationSession $sesi = null): array
     {
+        // Parameter keputusan metode (`ParameterKeputusanMetode`): tanggal kalibrasi sesi
+        // yang dihitung menentukan penetapan mana yang berlaku, apa pun sumber data
+        // acuannya (json/db). Dibuka DI SINI karena semua pintu hitung (simpan, preview,
+        // hitung ulang, validator, simulasi) lewat sini. Tanpa `$sesi` (bentuk lembar)
+        // tidak ada lingkup tanggal dan parameter memakai bawaan kodenya.
+        if ($sesi !== null) {
+            return app(ParameterKeputusanMetode::class)->untukTanggal(
+                $sesi->tanggal_kalibrasi ?? now(),
+                fn (): array => $this->jalankanDengan($versi, $hitung),
+            );
+        }
+
         if ($versi === null || ! $this->sumberDb()) {
             return ['hasil' => $hitung(), 'versi' => null];
         }
