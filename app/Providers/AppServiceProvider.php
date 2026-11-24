@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\CalibrationSession;
 use App\Observers\SesiKabarTahapAlat;
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\Acuan\SumberAcuan;
 use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
@@ -162,6 +163,11 @@ class AppServiceProvider extends ServiceProvider
         // lingkup yang dibuka pemanggil tidak pernah terlihat oleh tabelnya —
         // hitungan jalan dari JSON tanpa satu pun error. Lihat SumberAcuan.
         $this->app->singleton(SumberAcuan::class);
+
+        // Parameter keputusan metode: SINGLETON juga, alasannya sama dengan SumberAcuan:
+        // lingkup tanggal yang dibuka pintu hitung (`PenentuVersiAcuan`) hidup di instance ini
+        // dan profil membacanya lewat container di tengah hitungan.
+        $this->app->singleton(ParameterKeputusanMetode::class);
     }
 
     /**
