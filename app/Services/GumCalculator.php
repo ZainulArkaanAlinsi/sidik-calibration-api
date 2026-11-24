@@ -166,7 +166,10 @@ class GumCalculator
         // Nilai acuan dari polinomial botol selalu keluar di satuan native
         // botolnya — yang, sesudah penaikan di atas, sama dengan satuan kerja
         // kita sekarang.
-        $titikUkur = $standard->nilaiPadaSuhu($suhuLarutan) ?? $titikUkur;
+        // Lewat profil: bawaannya `Standard::nilaiPadaSuhu()` persis (null -> nominal), dan
+        // cuma Conductivity yang bisa menggantinya: parameter keputusan metode
+        // `conductivity.nilai_acuan_larutan_1412`.
+        $titikUkur = $profil->nilaiAcuanStandar($standard, $suhuLarutan, $titikUkur) ?? $titikUkur;
 
         $n = count($pembacaan);
 
@@ -282,6 +285,17 @@ class GumCalculator
 
         $error *= $skala;
         $hasil = $this->turunkanKeSatuanLaporan($hasil, $skala);
+
+        // Jejak parameter keputusan metode: pilihan yang berlaku pada tanggal sesi
+        // (nilai + versi penetapannya) ikut tersimpan di jejak titik ini, supaya
+        // sertifikat lama bisa dihitung ulang persis. Ditambahkan SESUDAH penurunan
+        // satuan: barisnya tanpa angka, jadi tak ada yang perlu diskalakan. Kosong
+        // untuk profil tanpa parameter `hitung`.
+        $jejakParameter = $profil->jejakParameterMetode();
+
+        if ($jejakParameter !== [] && is_array($hasil['type_b_components'] ?? null)) {
+            $hasil['type_b_components'] = [...$hasil['type_b_components'], ...$jejakParameter];
+        }
 
         return [
             'standard_id' => $standard->id,
