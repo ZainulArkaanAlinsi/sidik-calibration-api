@@ -72,7 +72,7 @@ Catatan untuk konsumen (T4 hanya menjalankan Opis di PHP; yang berikut BELUM dij
 |---|---|---|
 | Skema formulir | `skema-formulir` | Satu dokumen per (kode, revisi, versi_skema). |
 | Usulan OCR | `usulan-ocr` | Satu dokumen per pindaian. Hanya ada bila formulir berhasil dikenali; kegagalan mengenali dijawab sebagai galat (bagian 6.3), bukan dokumen. |
-| Konfirmasi | `konfirmasi-permintaan` (masuk) dan `konfirmasi` (tersimpan) | Dipisah supaya klien tidak bisa menulis pelaku dan waktu sendiri; keduanya diisi server dari token. |
+| Konfirmasi | `konfirmasi-permintaan` (masuk) dan `konfirmasi` (tersimpan) | Dipisah supaya klien tidak bisa menulis pelaku dan waktu sendiri; keduanya hanya ada di catatan tersimpan, diisi server dari token. |
 | Data master | `data-master` | Bentuk BACA terpadu atas `standards` dan `calibration_methods`. Tidak ada tabel master baru; sunting tetap lewat `/api/standards` dan `/api/calibration-methods`. |
 | Pemetaan (binding) | objek `pemetaan` di tiap item skema | Bukan dokumen sendiri: daur hidup dan jejak auditnya harus sama dengan skema yang memuatnya. Dokumen terpisah memungkinkan skema yang sudah dipublikasi menunjuk pemetaan yang masih bisa berubah. |
 | Header pekerjaan | `header-pekerjaan` | Bentuk BACA gabungan dari sesi kalibrasi. `dari_ocr` selalu `false`. |
@@ -174,7 +174,7 @@ Pemetaan slot master ke sesi kalibrasi yang SUDAH ada (`CalibrationResource.php`
 | `thermohygro` | `thermohygro_standard_id` | `CalibrationController.php:5771`, `CalibrationResource.php:311` |
 | `metode_kalibrasi` | `calibration_method_id` | `CalibrationResource.php:306` |
 
-Konsekuensi: daftar master tidak berversi di v0.1 (sama seperti `/api/standards` sekarang; perubahan tercatat di `audit_logs`), dan hasil mencatat standar yang dipakai lewat id baris di sesi. Standar kedaluwarsa dijawab `422 standar_kedaluwarsa` bila dipakai, sama dengan aturan `docs/kontrak-api.md` bagian Standar Acuan. Bagaimana kotak centang di kertas dikaitkan ke butir master tertentu (label cetak, urutan, atau tulisan tangan) BELUM diputuskan (K5 di bagian 10); v0.1 hanya mengikat kotak ke SLOT, dan butir master dipilih manusia saat konfirmasi lewat `master_id`.
+Konsekuensi: daftar master tidak berversi di v0.1 (sama seperti `/api/standards` sekarang; model `Standard` memakai `Diaudit`, `Standard.php:23`), dan hasil mencatat standar yang dipakai lewat id baris di sesi. Standar kedaluwarsa (`masih_berlaku: false`) ditolak `422` bila dipakai, sama dengan aturan `docs/kontrak-api.md` bagian Standar Acuan; jalur baru memberi `kode: standar_kedaluwarsa` (nama baru, belum ada kode mesin-terbaca untuk ini di jalur lama). Bagaimana kotak centang di kertas dikaitkan ke butir master tertentu (label cetak, urutan, atau tulisan tangan) BELUM diputuskan (K5 di bagian 10); v0.1 hanya mengikat kotak ke SLOT, dan butir master dipilih manusia saat konfirmasi lewat `master_id`.
 
 ### 4.8 Pemetaan (binding)
 
@@ -317,7 +317,7 @@ Penyimpanan skema, pindaian, usulan, dan konfirmasi belum dirancang. Sebelum men
 | `versi_skema_bentrok` | 409 | `versi_skema` sudah ada | |
 | `skema_tidak_draf` | 409 | menyunting skema yang bukan `draf` | `status` |
 | `skema_belum_lengkap` | 422 | `ajukan` dengan butir `belum_ditentukan` atau `perlu_dicek` | jumlah dan `item_id` pertama |
-| `pemisahan_wewenang` | 422 | pelaku publikasi ikut membuat/menyunting/mengajukan | `temuan` (meniru `PemisahanWewenang`) |
+| `pemisahan_wewenang` | 422 | pelaku publikasi ikut membuat/menyunting/mengajukan (kode yang SUDAH ada, dipakai ulang) | `temuan` (bentuk `PemisahanWewenang::hasil`, `PemisahanWewenang.php:167`) |
 | `id_item_ganda` | 422 | `id` kembar dalam satu dokumen | |
 | `id_item_berganti_arti` | 422 | `id` yang sudah punya data dipakai untuk kotak lain, atau `id` pensiun dipakai ulang | |
 | `formulir_tidak_pasti` | 422 | skor rendah atau selisih dengan kandidat kedua kecil | `kandidat: [{kode, revisi, skor}]`; klien meminta teknisi memilih |
@@ -336,7 +336,7 @@ Penyimpanan skema, pindaian, usulan, dan konfirmasi belum dirancang. Sebelum men
 
 ## 7. Aturan di luar JSON Schema
 
-JSON Schema tidak bisa menyatakan perbandingan antar-field atau antar-dokumen. Aturan berikut tetap bagian kontrak; server menegakkannya dan tes kontrak (bagian 9) memeriksa semua contoh sah terhadapnya.
+JSON Schema tidak bisa menyatakan perbandingan antar-field atau antar-dokumen. Aturan berikut tetap bagian kontrak; server menegakkannya (belum diimplementasi) dan tes kontrak (bagian 9) memeriksa contoh sah terhadap yang bisa diperiksa tanpa server.
 
 | Kode | Aturan |
 |---|---|
@@ -368,7 +368,7 @@ Format `depan.belakang`, diambil dari draf dan dipakai persis.
 
 ## 9. Cara membuktikan "nyambung"
 
-- Tes kontrak API: `tests/Unit/Kontrak/KontrakV01Test.php`. Memuat semua schema, memeriksa hanya memakai kata kunci JSON Schema yang diizinkan, memeriksa `$defs` bernama sama identik antar-berkas, memvalidasi SEMUA contoh sah (harus lulus) dan SEMUA contoh tidak sah (harus gagal, di jalur dan kata kunci yang tertulis di `contoh/MANIFEST.json`, bukan gagal karena sebab lain), memeriksa R1, R2, R4, R5, R6, R9, R10 pada contoh sah, dan memeriksa hash schema.
+- Tes kontrak API: `tests/Unit/Kontrak/KontrakV01Test.php`. Memuat semua schema, memeriksa hanya memakai kata kunci JSON Schema yang diizinkan, memeriksa `$defs` bernama sama identik antar-berkas, memvalidasi SEMUA contoh sah (harus lulus) dan SEMUA contoh tidak sah (harus gagal, di jalur dan kata kunci yang tertulis di `contoh/MANIFEST.json`, bukan gagal karena sebab lain), memeriksa R1 dan R2 pada semua skema contoh, R4 sampai R11 dan R14 pada rantai contoh (R3, R12, R13 butuh server dan belum bisa diuji), dan memeriksa hash schema.
 - Tiap konsumen menyalin `schema/` dan `contoh/` (atau menariknya) dan menjalankan pemeriksaan yang sama dengan validator bahasanya. Salinan wajib lulus pemeriksaan `SHA256SUMS.txt`.
 - Contoh sah saling terhubung: skema `SIDIK-FM-CAL-9999 rev 1 versi 1` → usulan `pdi-01jd8k2m4q9x` → permintaan konfirmasi → catatan konfirmasi urutan 1 → koreksi urutan 2. Kode 9999 dan koordinatnya dikarang untuk memperlihatkan bentuk; satu-satunya contoh dari data nyata adalah `valid-draf-konversi-0513-rev4.json`.
 - Alur ujung ke ujung (draf kontrak 6.2) baru bisa diuji setelah endpoint bagian 6.2 diimplementasi dan satu alat dipilih T1; belum ada.
