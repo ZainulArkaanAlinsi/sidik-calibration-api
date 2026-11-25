@@ -4055,6 +4055,75 @@ sampai ke Vision karena sisi kita (penolakan lokal, kredensial kosong atau rusak
 
 ---
 
+## 22A. OCR awan atas potongan sel angka (25 Nov 2026)
+
+**Status: kode ada, BAWAAN MATI, tes memakai Google palsu.** Keputusan pemilik 25 Nov 2026: ke Google hanya potongan
+sel angka (dan formulir kosong); bukan foto utuh, bukan sel identitas (nama, alamat, nomor seri pelanggan, tanda tangan);
+Gemini tidak termasuk. `POST /api/ocr/halaman` (foto utuh, bagian 22) tidak berubah. Aditif: tidak ada rute, kunci, atau izin
+lama yang berubah. Catatan klien: `docs/perintah-frontend-ocr-sel-awan.md`.
+
+### `POST /api/worksheet-scans/{worksheetScan}/ocr-awan` — JSON, teknisi pemilik / Master Data / super admin
+
+Gerbang, semuanya harus terbuka: saklar Super Admin `pindai_lembar` DAN `ocr_cloud_sel` (`503 fitur_dimatikan`, sebelum
+route model binding), env `GOOGLE_VISION_AKTIF` (`503 ocr_cloud_belum_aktif`, tanpa env baru), lalu kepemilikan (organisasi
+lain `404`, teknisi lain `403`, viewer `403`, tamu `401`). Saklar hanya bisa MEMATIKAN (daftar tersimpan = yang dimatikan);
+bawaan mati dijamin env. Limiter `ocr-sel-awan`: 4/menit per akun.
+
+| Field | Wajib | Isi |
+|---|---|---|
+| `kunci` | tidak | daftar kunci sel (`tabel\|baris\|repeat\|field`), 1 sampai `ocr.awan_sel.maks_sel_per_permintaan` (48). Tanpa kolom ini server memilih sel angka yang belum hijau dan tidak kosong |
+
+**Tidak ada gambar dari klien.** Server memotong sendiri dari `citra_warp_path` memakai kotak sel di `worksheet_scan_cells`
+(JPEG kualitas 85, margin `ocr.awan_sel.margin_px` = 4 px, tanpa pembesaran). Penyaring GAGAL-TUTUP: sel hanya dikirim bila
+barisnya bertipe `angka` di `worksheet_scans.hasil.tabel`. Tidak dikirim: `isian`, `centang`, baris `jam`, sel yang tidak
+ketemu di peta tipe, sel kosong di HP; identitas dan tanggal bukan baris sel. Citra formulir asli yang rasionya tidak cocok
+dengan `ukuran_referensi` tidak dipotong (`citra_bukan_halaman_utuh`).
+
+**`200`** — `hasil[]` per sel `{kunci, teks_awan, keyakinan, status, teks_normal, nilai_awan, dinormalkan, alasan[]}`,
+`dilewati[]` `{kunci, alasan}`, dan `meta` `{sumber, fitur, unit, jumlah_dikirim, jumlah_panggilan, usulan: true, sebagian,
+dilewati_otomatis, sisa_sel_scan}`.
+
+- `teks_awan` = teks Google APA ADANYA (`null` bila Google gagal untuk sel itu, `""` bila tak ada tulisan). `teks_normal` /
+  `nilai_awan` = bentuk angka murni dari `NormalisasiAngka` bila lolos, selain itu `null`; `dinormalkan: true` bila bentuknya
+  beda dari `teks_awan`. Tidak ada koreksi diam-diam (huruf tidak diganti digit, "1,413" ambigu ditolak, spasi di tengah ditolak).
+- `status` paling tinggi `kuning`, tidak pernah `hijau`; `merah` untuk teks yang tidak lolos normalisasi, `keyakinan` < `ocr.ambang.kuning`
+  (0,60) atau tidak ada, dan sel yang ditolak Google; `kosong` bila Google tidak melihat tulisan.
+- **Nilai sel di database TIDAK berubah.** Endpoint ini hanya mengusulkan.
+- `meta.sebagian: true` bila Google gagal di tengah (sel yang belum terbaca ada di `dilewati`, alasan `google_gagal`).
+
+**Pengiriman ke Google:** `GoogleVisionOcr::bacaSel`, satu `POST /v1/images:annotate` berisi paling banyak 16 gambar
+(`DOCUMENT_TEXT_DETECTION`), respons dicocokkan menurut urutan dan ditolak seluruhnya bila jumlahnya tidak sama. Batch tidak
+lebih murah per sel (asumsi 1 gambar = 1 unit); yang dihemat putaran jaringan, permintaan token, dan baris log. Satu panggilan
+= satu baris `worksheet_extraction_logs` = satu jatah `GOOGLE_VISION_MAKS_PER_SESI`; sisa jatah dihitung sebelum mengirim.
+
+**Batas** (config `ocr.awan_sel`, tanpa env baru): `maks_sel_per_permintaan` 48, `maks_sel_per_scan` 80 (hitungan LUNAK di cache,
+TTL 30 hari, bisa hilang bersama cache; pagar biaya, bukan catatan resmi), `margin_px` 4. Jatah dan batas kegagalan per lembar
+SATU kolam dengan jalur foto utuh (`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`, juga tidak dikunci).
+
+**Galat** (`message`, `kode`, `fallback_manual: true`; `message` kalimat tetap, pesan Google tidak diteruskan):
+
+| HTTP | `kode` | Sebab |
+|---|---|---|
+| `503` | `fitur_dimatikan` / `ocr_cloud_belum_aktif` / `ocr_cloud_belum_disetel` | seperti bagian 22 |
+| `503` | `citra_tidak_bisa_dipotong` | ekstensi GD tidak ada di server |
+| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada atau tidak terbaca |
+| `422` | — (validasi Laravel, tanpa `kode`) | `kunci` kosong, bukan larik, atau lebih dari batas per permintaan |
+| `422` | `gambar_tidak_terbaca` | Google menolak semua potongan dalam permintaan |
+| `429` | `batas_per_lembar` / `gagal_berulang_per_lembar` | seperti bagian 22 (kolam yang sama) |
+| `429` | `batas_sel_per_scan` | batas sel per hasil pindai habis |
+| `429` | — | limiter `ocr-sel-awan` |
+| `502` | `ocr_cloud_gagal` | Google gagal, waktu habis, atau jaringan putus |
+
+**Audit:** tiap panggilan Google masuk `worksheet_extraction_logs` (`model` = `google-vision:DOCUMENT_TEXT_DETECTION`) dengan
+`unit_vision` (jumlah gambar terjawab), `ukuran_gambar_byte` (jumlah byte semua potongan), `durasi_ms`, `status`. Gambar dan
+teks hasil TIDAK disimpan. Penolakan lokal (env mati, batas) masuk dengan `unit_vision` NULL. Sinyal admin
+(`ocr_dihentikan`, `GET /api/admin/ocr-cloud`) dipakai bersama bagian 22.
+
+> **Belum terbukti:** akurasi pada tulisan tangan nyata (tidak ada panggilan nyata ke Google, tidak ada foto uji berlabel
+> manusia), asumsi 1 gambar = 1 unit tagihan, dan kualitas potongan sel kecil tanpa pembesaran.
+
+---
+
 ## Operasional: kesehatan dan saklar fitur (19 Nov 2026)
 
 Semuanya **aditif**: kunci, rute, dan izin lama tidak berubah. Latar dan keputusan:
@@ -4104,7 +4173,9 @@ Kunci baru `kesehatan`; kunci lama (`status`, `app`, `time`, `direktori_perusaha
 | `PUT /organization/fitur` | **super admin saja** | Body `{fitur_nonaktif: [kode...], alasan}` menggantikan seluruh daftar; `alasan` wajib 5-400; kode tak dikenal atau fitur inti -> `422`; audit `fitur_dimatikan` / `fitur_dinyalakan` per fitur (daftar lama/baru, pelaku, alasan); throttle `fitur-saklar` 20/menit |
 
 - Kode awal: `pindai_lembar` (`/worksheet-templates*`, `/worksheet-scans*`), `kirim_email_sertifikat`
-  (`POST /certificates/{id}/kirim-email`); sejak 23 Nov 2026 juga `ocr_cloud` (`POST /ocr/halaman`, bagian 22).
+  (`POST /certificates/{id}/kirim-email`); sejak 23 Nov 2026 juga `ocr_cloud` (`POST /ocr/halaman`, bagian 22); sejak
+  25 Nov 2026 juga `ocr_cloud_sel` (`POST /worksheet-scans/{id}/ocr-awan`, bagian 22A, yang juga berada di belakang
+  `pindai_lembar`). Daftar ini hanya bisa mematikan; bawaan "mati" dijamin env `GOOGLE_VISION_AKTIF`.
   Rute fitur yang mati menjawab `503` dengan
   `{"kode": "fitur_dimatikan", "fitur": "<kode>", "message": "..."}` — sesudah pemeriksaan peran (peran tanpa hak
   tetap `403`) dan sebelum route model binding.
