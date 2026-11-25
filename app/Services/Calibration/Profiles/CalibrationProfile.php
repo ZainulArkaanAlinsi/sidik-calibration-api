@@ -368,6 +368,20 @@ abstract class CalibrationProfile
     }
 
     /**
+     * [tandaNolDicetak] untuk SATU sesi. Bawaannya meneruskan ke [tandaNolDicetak],
+     * jadi profil lain tidak bergeser. Profil yang tanda minus nolnya jadi
+     * parameter keputusan metode (Turbidimeter, `turbidimeter.tanda_minus_nol`)
+     * menimpanya dan membaca pilihan yang berlaku pada `tanggal_kalibrasi` sesi.
+     *
+     * Dipanggil `CertificateSnapshotBuilder` (dibekukan per baris di snapshot) dan
+     * `CalibrationResource` (tabel hasil di layar) — dua tempat yang HARUS sama.
+     */
+    public function tandaNolDicetakUntukSesi(CalibrationSession $sesi): bool
+    {
+        return $this->tandaNolDicetak();
+    }
+
+    /**
      * Peringatan khas alat ini buat SATU sesi, di luar aturan umum validator.
      *
      * Balikin daftar `[kode, pesan]`; `CalibrationValidator` yang mbungkus jadi
@@ -2845,7 +2859,39 @@ abstract class CalibrationProfile
 
     public function punyaToleransi(): bool
     {
-        return true;
+        return ! $this->tanpaVonisMetode();
+    }
+
+    /**
+     * Kunci parameter keputusan metode `<alat>.vonis_pass_fail` milik profil ini,
+     * atau `null` bila profil tidak punya saklar vonis (hampir semua profil).
+     * Profil yang punya (Chlorine, pH, Refractometer, Turbidimeter) menimpanya.
+     */
+    protected function kunciParameterVonis(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * `true` bila pilihan yang berlaku adalah `tanpa_vonis`: workbook master tidak
+     * punya sel toleransi maupun PASS/FAIL, jadi hasilnya hanya Correction dan
+     * U95. Pilihan dibaca dari tanggal lingkup (`PenentuVersiAcuan`) atau, di luar
+     * lingkup, bawaan kode (`dengan_toleransi`) — perilaku sebelum saklar ini.
+     *
+     * Memengaruhi tiga hal yang HARUS searah: toleransi titik dikosongkan
+     * (`GumCalculator::hitungTitik`), gerbang "toleransi alat kosong" di preview
+     * (`CalibrationController::alasanBelumBisaDihitung`), dan galat
+     * `toleransi_kosong` di validator. Ketiganya berjalan di lingkup tanggal
+     * `PenentuVersiAcuan::jalankanDengan` — simpan, preview, hitung ulang, dan
+     * validator memakai pintu yang sama, jadi sesi yang sama tidak divonis dua
+     * cara. Angka u, U, k, error, dan koreksi tidak disentuh.
+     */
+    public function tanpaVonisMetode(): bool
+    {
+        $kunci = $this->kunciParameterVonis();
+
+        return $kunci !== null
+            && app(ParameterKeputusanMetode::class)->nilai($kunci) === 'tanpa_vonis';
     }
 
     /**

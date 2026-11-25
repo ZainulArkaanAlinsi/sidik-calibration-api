@@ -582,8 +582,10 @@ class CalibrationResource extends JsonResource
             // riwayat & approval di HP nampilin tabel Calibration Report yang
             // SAMA, dan kalau angkanya beda dari PDF-nya, yang ketahuan duluan
             // justru teknisi yang lagi mriksa hasilnya sendiri.
-            'tanda_nol' => $alat !== null
-                ? (self::profil($alat)?->tandaNolDicetak() ?? true)
+            // Dengan sesi: pilihan parameter keputusan metode pada tanggal sesi
+            // (`tandaNolDicetakUntukSesi`), sama dengan yang dibekukan snapshot.
+            'tanda_nol' => $profil !== null
+                ? ($sesi !== null ? $profil->tandaNolDicetakUntukSesi($sesi) : $profil->tandaNolDicetak())
                 : true,
             // Keterangan/kelompok titik ini — kolom "Remark" di sertifikat.
             // Chlorine misahin `Free Chlorine` dari `Total Chlorine`;

@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Acuan\ParameterKeputusanMetode;
 use App\Services\GumCalculator;
 
 /**
@@ -45,6 +46,15 @@ use App\Services\GumCalculator;
  */
 class TimbanganCalculator
 {
+    /**
+     * Parameter keputusan metode butir TM timbangan-B1 (registri
+     * `database/data/parameter-keputusan-metode.json`): `bagi_k` (bawaan, kode sejak
+     * 16 Sep 2026) atau `master` (U mentah seperti master kg). Hanya varian yang
+     * `turunanUKoreksi`-nya [VarianMasterTimbangan::U_KOREKSI_MENTAH] (kg); gram dan
+     * substitusi tidak berubah.
+     */
+    public const PARAMETER_SUMBER_UI_KOREKSI_KG = 'timbangan.sumber_ui_koreksi_kg';
+
     public function __construct(private readonly GumCalculator $gum = new GumCalculator) {}
 
     /**
@@ -544,7 +554,18 @@ class TimbanganCalculator
         // kenyataan, padahal angka ini yang dipakai menentukan minimum weight.
         // `turunanUKoreksi` tetap disimpan supaya versi master bisa dicetak di
         // jejak audit.
-        $uKoreksi = $koreksi['ketidakpastian_diperluas'] / max($koreksi['faktor_cakupan_k'], 1e-9);
+        //
+        // Parameter `timbangan.sumber_ui_koreksi_kg` = `master` mengembalikan U mentah
+        // HANYA untuk varian kg (`ui = U`, sama dengan `_budget.penimbangan` master kg). Bawaan
+        // `bagi_k` = baris di bawah, tidak berubah. Pilihan dibaca di lingkup tanggal
+        // sesi (`PenentuVersiAcuan`); tanpa lingkup selalu bawaan. Penahanan sertifikat
+        // timbangan (`profil_ditahan`) tidak ikut terlepas oleh pilihan ini.
+        $uMentah = $varian->turunanUKoreksi === VarianMasterTimbangan::U_KOREKSI_MENTAH
+            && app(ParameterKeputusanMetode::class)->nilai(self::PARAMETER_SUMBER_UI_KOREKSI_KG) === 'master';
+
+        $uKoreksi = $uMentah
+            ? $koreksi['ketidakpastian_diperluas']
+            : $koreksi['ketidakpastian_diperluas'] / max($koreksi['faktor_cakupan_k'], 1e-9);
 
         return [
             [
@@ -565,7 +586,9 @@ class TimbanganCalculator
             ],
             [
                 'sumber' => 'uncertainty_of_correction',
-                'keterangan' => 'Uncertainty of Correction',
+                'keterangan' => $uMentah
+                    ? 'Uncertainty of Correction (U mentah seperti master kg — parameter '.self::PARAMETER_SUMBER_UI_KOREKSI_KG.' = master)'
+                    : 'Uncertainty of Correction',
                 'distribusi' => 'rectangular',
                 'u' => $uKoreksi,
                 'ci' => 1.0,
