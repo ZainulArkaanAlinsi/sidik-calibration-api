@@ -305,6 +305,244 @@
       "bukti_bawaan": "FormatMasterSertifikat.php:104 @79280fc2",
       "dampak": "Hanya tanggal tercetak pada sertifikat baru.",
       "penetapan": []
+    },
+    {
+      "kunci": "turbidimeter.tanda_minus_nol",
+      "profil": "turbidimeter",
+      "lingkup": "cetak",
+      "judul": "Tanda minus pada koreksi nol Turbidimeter",
+      "pertanyaan": "Koreksi negatif yang membulat ke nol dicetak dengan tanda minus (-0,00 / -0,0 seperti kertas lama) atau tanpa minus (0,00 / 0,0 seperti PDF master)?",
+      "butir_tm": [
+        "turbidimeter#29"
+      ],
+      "pilihan": [
+        {
+          "kode": "dipertahankan",
+          "label": "Tanda minus dipertahankan (-0,00 / -0,0), perilaku kode sekarang",
+          "perilaku": "Koreksi negatif yang membulat ke nol dicetak dengan minus. Hanya cetak; nilai antara dan pembulatan tidak berubah.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/Calibration/Profiles/TurbidimeterProfile.php:684 @79280fc2 (tandaNolDicetak() = true, ditahan dari G0-b P4, keputusan koordinator 10 Nov 2026); kertas lama 0189-CAL-624 mencetak -0,00 / -0,0 sedangkan PDF master-olah-data-turbidimeter mencetak 0.00 / 0.0",
+          "bukti_singkat": "kode: TurbidimeterProfile.php:684; kertas lama 0189-CAL-624 bertanda minus, PDF master tanpa minus",
+          "data": {
+            "tanda_nol": true
+          }
+        },
+        {
+          "kode": "tanpa_minus",
+          "label": "Tanpa tanda minus (0,00 / 0,0), seperti PDF master",
+          "perilaku": "Koreksi negatif yang membulat ke nol dicetak tanpa minus, sama dengan alat lain yang sudah lewat G0-b. Hanya cetak; sertifikat yang sudah terbit tidak berubah.",
+          "setara_master": "ya",
+          "bukti": "PDF master-olah-data-turbidimeter (lebih baru dari kertas 0189-CAL-624) mencetak 0.00 / 0.0; lembar-centang turbidimeter#29; alat lain sudah tanpa minus lewat G0-b (config/sertifikat.php:27 dan :32-34 @79280fc2)",
+          "bukti_singkat": "PDF master turbidimeter: 0.00 / 0.0 (lembar-centang turbidimeter#29)",
+          "data": {
+            "tanda_nol": false
+          }
+        }
+      ],
+      "bawaan": "dipertahankan",
+      "bukti_bawaan": "TurbidimeterProfile.php:684 @79280fc2",
+      "dampak": "Hanya tanda minus pada koreksi yang membulat ke nol di sertifikat dan tabel hasil layar untuk sesi dengan tanggal kalibrasi sesudah berlaku_mulai. Dibekukan per baris di snapshot, jadi sertifikat terbit tidak bergeser.",
+      "penetapan": []
+    },
+    {
+      "kunci": "chlorine_meter.vonis_pass_fail",
+      "profil": "chlorine_meter",
+      "lingkup": "hitung",
+      "judul": "Vonis PASS/FAIL Chlorine Meter",
+      "pertanyaan": "Hasil kalibrasi Chlorine Meter memuat vonis PASS/FAIL terhadap toleransi alat yang diisi Master Data (guarded acceptance), atau tanpa vonis (hanya Correction dan U95) seperti workbook master?",
+      "butir_tm": [
+        "chlorine_meter#31"
+      ],
+      "pilihan": [
+        {
+          "kode": "dengan_toleransi",
+          "label": "Dengan vonis, memakai toleransi alat (perilaku kode sekarang)",
+          "perilaku": "PASS bila |error| + U <= equipments.toleransi, selain itu FAIL. Titik belum dihitung (preview), sesi tidak lolos validator (ERROR toleransi_kosong), dan sertifikat tidak terbit selama toleransi alat kosong.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/GumCalculator.php:250-252 (toleransi dari kolom alat), :302 (keputusan) dan :888 (keputusan()) @79280fc2; app/Http/Controllers/Api/CalibrationController.php:5496-5497 @79280fc2 (gerbang preview); app/Services/CalibrationValidator.php:204 dan :266 @79280fc2 (toleransi_kosong); docs/paritas-analitik-batch2.md konflik P-29 (Master Olah Data_Chlorine Meter.xlsm tanpa sel vonis); angka seeder 0,15 mg/L hanya demo",
+          "bukti_singkat": "kode: GumCalculator.php:250-252, CalibrationValidator.php:204; workbook tidak punya sel vonis atau toleransi"
+        },
+        {
+          "kode": "tanpa_vonis",
+          "label": "Tanpa vonis (hanya Correction dan U95), seperti workbook",
+          "perilaku": "Toleransi titik dipaksa kosong sehingga keputusan titik dan sesi = null walau equipments.toleransi terisi. Gerbang toleransi kosong di preview dan di validator tidak berlaku. Error, koreksi, u, U, dan k tidak berubah.",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Chlorine Meter.xlsm tidak memuat sel toleransi maupun PASS/FAIL (docs/paritas-analitik-batch2.md konflik P-29, tes ParitasChlorineMeterTest::test_p29_profil_menuntut_toleransi_walau_excel_tidak_punya); lembar-centang chlorine_meter#31",
+          "bukti_singkat": "workbook: tidak ada sel PASS/FAIL maupun toleransi"
+        }
+      ],
+      "bawaan": "dengan_toleransi",
+      "bukti_bawaan": "GumCalculator.php:250-252 dan :302, CalibrationController.php:5496-5497, CalibrationValidator.php:204 dan :266 @79280fc2",
+      "dampak": "Hanya vonis dan gerbang toleransi; angka u, U, k, error, dan koreksi sama pada kedua pilihan. Tampilan mobile (CategoryController punya_toleransi) mengikuti bawaan sampai klien disesuaikan.",
+      "penetapan": []
+    },
+    {
+      "kunci": "ph_meter.vonis_pass_fail",
+      "profil": "ph_meter",
+      "lingkup": "hitung",
+      "judul": "Vonis PASS/FAIL pH Meter",
+      "pertanyaan": "Hasil kalibrasi pH Meter memuat vonis PASS/FAIL terhadap toleransi alat yang diisi Master Data (guarded acceptance), atau tanpa vonis (hanya Correction dan U95) seperti workbook master?",
+      "butir_tm": [
+        "ph_meter#26"
+      ],
+      "pilihan": [
+        {
+          "kode": "dengan_toleransi",
+          "label": "Dengan vonis, memakai toleransi alat (perilaku kode sekarang)",
+          "perilaku": "PASS bila |error| + U <= equipments.toleransi, selain itu FAIL. Titik belum dihitung (preview), sesi tidak lolos validator (ERROR toleransi_kosong), dan sertifikat tidak terbit selama toleransi alat kosong.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/GumCalculator.php:250-252 (toleransi dari kolom alat), :302 (keputusan) dan :888 (keputusan()) @79280fc2; app/Http/Controllers/Api/CalibrationController.php:5496-5497 @79280fc2 (gerbang preview); app/Services/CalibrationValidator.php:204 dan :266 @79280fc2 (toleransi_kosong); lembar-centang ph_meter#26 (workbook pH tanpa toleransi; angka 0,2 pH di kode dicatat repo sebagai asumsi)",
+          "bukti_singkat": "kode: GumCalculator.php:250-252, CalibrationValidator.php:204; workbook tidak punya sel vonis atau toleransi"
+        },
+        {
+          "kode": "tanpa_vonis",
+          "label": "Tanpa vonis (hanya Correction dan U95), seperti workbook",
+          "perilaku": "Toleransi titik dipaksa kosong sehingga keputusan titik dan sesi = null walau equipments.toleransi terisi. Gerbang toleransi kosong di preview dan di validator tidak berlaku. Error, koreksi, u, U, dan k tidak berubah.",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_pH for trial.xlsm tidak memuat sel toleransi maupun PASS/FAIL; lembar-centang ph_meter#26",
+          "bukti_singkat": "workbook: tidak ada sel PASS/FAIL maupun toleransi"
+        }
+      ],
+      "bawaan": "dengan_toleransi",
+      "bukti_bawaan": "GumCalculator.php:250-252 dan :302, CalibrationController.php:5496-5497, CalibrationValidator.php:204 dan :266 @79280fc2",
+      "dampak": "Hanya vonis dan gerbang toleransi; angka u, U, k, error, dan koreksi sama pada kedua pilihan. Tampilan mobile (CategoryController punya_toleransi) mengikuti bawaan sampai klien disesuaikan.",
+      "penetapan": []
+    },
+    {
+      "kunci": "refractometer.vonis_pass_fail",
+      "profil": "refractometer",
+      "lingkup": "hitung",
+      "judul": "Vonis PASS/FAIL Refractometer",
+      "pertanyaan": "Hasil kalibrasi Refractometer memuat vonis PASS/FAIL terhadap toleransi alat yang diisi Master Data (guarded acceptance), atau tanpa vonis (hanya Correction dan U95) seperti workbook master?",
+      "butir_tm": [
+        "refractometer#31"
+      ],
+      "pilihan": [
+        {
+          "kode": "dengan_toleransi",
+          "label": "Dengan vonis, memakai toleransi alat (perilaku kode sekarang)",
+          "perilaku": "PASS bila |error| + U <= equipments.toleransi, selain itu FAIL. Titik belum dihitung (preview), sesi tidak lolos validator (ERROR toleransi_kosong), dan sertifikat tidak terbit selama toleransi alat kosong.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/GumCalculator.php:250-252 (toleransi dari kolom alat), :302 (keputusan) dan :888 (keputusan()) @79280fc2; app/Http/Controllers/Api/CalibrationController.php:5496-5497 @79280fc2 (gerbang preview); app/Services/CalibrationValidator.php:204 dan :266 @79280fc2 (toleransi_kosong); docs/paritas-analitik-batch2.md R-35 (Master Olah Data_Refractometer.xlsm tanpa sel vonis); angka seeder 0,005 n20D hanya demo",
+          "bukti_singkat": "kode: GumCalculator.php:250-252, CalibrationValidator.php:204; workbook tidak punya sel vonis atau toleransi"
+        },
+        {
+          "kode": "tanpa_vonis",
+          "label": "Tanpa vonis (hanya Correction dan U95), seperti workbook",
+          "perilaku": "Toleransi titik dipaksa kosong sehingga keputusan titik dan sesi = null walau equipments.toleransi terisi. Gerbang toleransi kosong di preview dan di validator tidak berlaku. Error, koreksi, u, U, dan k tidak berubah.",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Refractometer.xlsm tidak memuat sel toleransi maupun PASS/FAIL (docs/paritas-analitik-batch2.md R-35 / konflik P-29); lembar-centang refractometer#31",
+          "bukti_singkat": "workbook: tidak ada sel PASS/FAIL maupun toleransi"
+        }
+      ],
+      "bawaan": "dengan_toleransi",
+      "bukti_bawaan": "GumCalculator.php:250-252 dan :302, CalibrationController.php:5496-5497, CalibrationValidator.php:204 dan :266 @79280fc2",
+      "dampak": "Hanya vonis dan gerbang toleransi; angka u, U, k, error, dan koreksi sama pada kedua pilihan. Tampilan mobile (CategoryController punya_toleransi) mengikuti bawaan sampai klien disesuaikan.",
+      "penetapan": []
+    },
+    {
+      "kunci": "turbidimeter.vonis_pass_fail",
+      "profil": "turbidimeter",
+      "lingkup": "hitung",
+      "judul": "Vonis PASS/FAIL Turbidimeter",
+      "pertanyaan": "Hasil kalibrasi Turbidimeter memuat vonis PASS/FAIL terhadap toleransi alat yang diisi Master Data (guarded acceptance), atau tanpa vonis (hanya Correction dan U95) seperti workbook master?",
+      "butir_tm": [
+        "turbidimeter#27"
+      ],
+      "pilihan": [
+        {
+          "kode": "dengan_toleransi",
+          "label": "Dengan vonis, memakai toleransi alat (perilaku kode sekarang)",
+          "perilaku": "PASS bila |error| + U <= equipments.toleransi, selain itu FAIL. Titik belum dihitung (preview), sesi tidak lolos validator (ERROR toleransi_kosong), dan sertifikat tidak terbit selama toleransi alat kosong.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/GumCalculator.php:250-252 (toleransi dari kolom alat), :302 (keputusan) dan :888 (keputusan()) @79280fc2; app/Http/Controllers/Api/CalibrationController.php:5496-5497 @79280fc2 (gerbang preview); app/Services/CalibrationValidator.php:204 dan :266 @79280fc2 (toleransi_kosong); docs/paritas-analitik-batch2.md T-28 (Master Olah Data_Turbidimeter.xlsm tanpa sel vonis); angka seeder 24 NTU hanya demo",
+          "bukti_singkat": "kode: GumCalculator.php:250-252, CalibrationValidator.php:204; workbook tidak punya sel vonis atau toleransi"
+        },
+        {
+          "kode": "tanpa_vonis",
+          "label": "Tanpa vonis (hanya Correction dan U95), seperti workbook",
+          "perilaku": "Toleransi titik dipaksa kosong sehingga keputusan titik dan sesi = null walau equipments.toleransi terisi. Gerbang toleransi kosong di preview dan di validator tidak berlaku. Error, koreksi, u, U, dan k tidak berubah.",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Turbidimeter.xlsm tidak memuat sel toleransi maupun PASS/FAIL (docs/paritas-analitik-batch2.md T-28 / konflik P-29, tes ParitasTurbidimeterTest::test_p29_profil_menuntut_toleransi_walau_excel_tidak_punya); lembar-centang turbidimeter#27",
+          "bukti_singkat": "workbook: tidak ada sel PASS/FAIL maupun toleransi"
+        }
+      ],
+      "bawaan": "dengan_toleransi",
+      "bukti_bawaan": "GumCalculator.php:250-252 dan :302, CalibrationController.php:5496-5497, CalibrationValidator.php:204 dan :266 @79280fc2",
+      "dampak": "Hanya vonis dan gerbang toleransi; angka u, U, k, error, dan koreksi sama pada kedua pilihan. Tampilan mobile (CategoryController punya_toleransi) mengikuti bawaan sampai klien disesuaikan.",
+      "penetapan": []
+    },
+    {
+      "kunci": "timbangan.sumber_ui_koreksi_kg",
+      "profil": "timbangan",
+      "lingkup": "hitung",
+      "judul": "Sumber u(Uncertainty of Correction) Timbangan varian kg",
+      "pertanyaan": "Komponen Uncertainty of Correction varian kg memakai U sertifikat standar dibagi k (perilaku kode sejak 16 Sep 2026), atau U mentah seperti master kg (ui = U)?",
+      "butir_tm": [
+        "timbangan-B1"
+      ],
+      "pilihan": [
+        {
+          "kode": "bagi_k",
+          "label": "U standar dibagi k (perilaku kode sekarang)",
+          "perilaku": "ui = U koreksi / k, diseragamkan dengan varian gram dan substitusi; U95 tercetak sampai 37% lebih kecil dari master kg.",
+          "setara_master": "tidak",
+          "bukti": "app/Services/Calibration/TimbanganCalculator.php:547 @79280fc2 ($uKoreksi = U / max(k, 1e-9)); docs/pertanyaan-lab-timbangan.md:48-63 dan :196-210 (contoh ui 0,01003 lawan master 0,01967 mentah); config profil_ditahan timbangan",
+          "bukti_singkat": "kode: TimbanganCalculator.php:547; master kg memakai ui = U mentah"
+        },
+        {
+          "kode": "master",
+          "label": "U mentah seperti master kg (ui = U)",
+          "perilaku": "Hanya varian kg: ui = U koreksi mentah, tanpa dibagi k. Varian gram dan substitusi tetap U / k. Penahanan sertifikat timbangan (profil_ditahan) tidak ikut terlepas.",
+          "setara_master": "ya",
+          "bukti": "database/data/sesi-master-timbangan.json _budget.penimbangan (ui kg = U mentah) dan VarianMasterTimbangan::KG turunanUKoreksi = U_KOREKSI_MENTAH @79280fc2; docs/pertanyaan-lab-timbangan.md:48-63 (master kg ui = U, kelebihan sekitar 2x menurut GUM); lembar-centang timbangan B1",
+          "bukti_singkat": "workbook timbangan kg: ui = U mentah (sesi-master-timbangan.json _budget)"
+        }
+      ],
+      "bawaan": "bagi_k",
+      "bukti_bawaan": "TimbanganCalculator.php:547 @79280fc2",
+      "dampak": "Hanya varian kg. Pilihan master membesarkan u komponen koreksi sekitar k kali (U95 tercetak naik menuju 0,043-0,053 kg pada sampel master). Penahanan sertifikat timbangan tetap sampai dilepas lewat PR terpisah.",
+      "penetapan": []
+    },
+    {
+      "kunci": "refractometer.sumber_resolusi",
+      "profil": "refractometer",
+      "lingkup": "hitung",
+      "judul": "Sumber resolusi alat pada budget Refractometer",
+      "pertanyaan": "Resolusi pada komponen Daya Baca dan koefisien sensitivitas suhu memakai konstanta 0,0001 (perilaku kode), resolusi yang diisi pada data alat (seperti sel INPUT DATA!E16 workbook), atau yang lebih besar dari keduanya?",
+      "butir_tm": [
+        "refractometer#15"
+      ],
+      "pilihan": [
+        {
+          "kode": "konstanta",
+          "label": "Konstanta 0,0001 (perilaku kode sekarang)",
+          "perilaku": "Resolusi = RefractometerProfile::RESOLUSI (0,0001) untuk semua alat; resolusi di data alat tidak dibaca.",
+          "setara_master": "sebagian",
+          "bukti": "app/Services/Calibration/Profiles/RefractometerProfile.php:134 (RESOLUSI), :390 dan :456 (resolusiTitik) @79280fc2; Master Olah Data_Refractometer.xlsm INPUT DATA!E16 = 0,0001 (sama hanya bila alat 0,0001)",
+          "bukti_singkat": "kode: RefractometerProfile.php:134 dan :390; workbook membaca INPUT DATA!E16"
+        },
+        {
+          "kode": "isian_teknisi",
+          "label": "Resolusi yang diisi pada data alat, seperti workbook",
+          "perilaku": "Resolusi = equipments.resolusi bila terisi dan lebih dari nol; bila kosong atau nol jatuh ke konstanta 0,0001 (tidak mengarang angka).",
+          "setara_master": "ya",
+          "bukti": "Master Olah Data_Refractometer.xlsm INPUT DATA!E16 (resolusi alat, nilai sampel 0,0001) dipakai PERHITUNGAN U95%!N10 (= E16/2, pembagi akar 3) dan sebagai ci komponen suhu; lembar-centang refractometer#15",
+          "bukti_singkat": "workbook: INPUT DATA!E16 -> PERHITUNGAN U95%!N10"
+        },
+        {
+          "kode": "lebih_besar",
+          "label": "Yang lebih besar antara konstanta dan resolusi pada data alat",
+          "perilaku": "Resolusi = max(0,0001; equipments.resolusi) bila resolusi alat terisi dan lebih dari nol, selain itu konstanta. Tidak pernah lebih kecil dari konstanta maupun dari isian.",
+          "setara_master": "sebagian",
+          "bukti": "Master Olah Data_Refractometer.xlsm INPUT DATA!E16 (sama dengan workbook bila isian >= 0,0001); pola max(master, resolusi alat) yang sama dipakai Turbidimeter (turbidimeter#13); lembar-centang refractometer#15",
+          "bukti_singkat": "workbook INPUT DATA!E16 bila isian >= 0,0001; pola sama turbidimeter#13"
+        }
+      ],
+      "bawaan": "konstanta",
+      "bukti_bawaan": "RefractometerProfile.php:134, :390 dan :456 @79280fc2",
+      "dampak": "Mengubah u(Daya Baca) dan ci komponen suhu hanya untuk alat yang resolusinya di data alat berbeda dari 0,0001. Sumber isian adalah data alat (equipments.resolusi), bukan isian per sesi.",
+      "penetapan": []
     }
   ]
 }

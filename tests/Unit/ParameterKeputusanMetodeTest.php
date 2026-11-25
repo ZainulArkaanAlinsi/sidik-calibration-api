@@ -33,6 +33,13 @@ class ParameterKeputusanMetodeTest extends TestCase
         'sertifikat.tambah_hari.conductivity_meter',
         'sertifikat.tambah_hari.spectrophotometer',
         'sertifikat.tambah_hari.turbidimeter',
+        'turbidimeter.tanda_minus_nol',
+        'chlorine_meter.vonis_pass_fail',
+        'ph_meter.vonis_pass_fail',
+        'refractometer.vonis_pass_fail',
+        'turbidimeter.vonis_pass_fail',
+        'timbangan.sumber_ui_koreksi_kg',
+        'refractometer.sumber_resolusi',
     ];
 
     protected function tearDown(): void
@@ -104,7 +111,7 @@ class ParameterKeputusanMetodeTest extends TestCase
 
     // ------------------------------------------------------------------ berkas nyata
 
-    public function test_berkas_registri_sah_dan_memuat_ketujuh_parameter(): void
+    public function test_berkas_registri_sah_dan_memuat_keempat_belas_parameter(): void
     {
         $terperiksa = ParameterKeputusanMetode::periksa($this->berkas());
 
@@ -284,13 +291,19 @@ class ParameterKeputusanMetodeTest extends TestCase
     public function test_baris_jejak_hanya_untuk_parameter_hitung_milik_profil_itu(): void
     {
         $gerbang = $this->gerbang();
+        $kunci = static fn (string $profil): array => array_column($gerbang->barisJejakProfil($profil), 'parameter');
 
-        $this->assertCount(1, $gerbang->barisJejakProfil('refractometer'));
+        $this->assertSame(
+            ['refractometer.sumber_deviasi_suhu', 'refractometer.vonis_pass_fail', 'refractometer.sumber_resolusi'],
+            $kunci('refractometer'),
+        );
         $this->assertCount(1, $gerbang->barisJejakProfil('spectrophotometer'));
         $this->assertCount(1, $gerbang->barisJejakProfil('conductivity_meter'));
-        // Parameter `cetak` (tanggal terbit) tidak ikut: nilainya beku di snapshot.
-        $this->assertSame([], $gerbang->barisJejakProfil('ph_meter'));
-        $this->assertSame([], $gerbang->barisJejakProfil('turbidimeter'));
+        $this->assertSame(['ph_meter.vonis_pass_fail'], $kunci('ph_meter'));
+        $this->assertSame(['chlorine_meter.vonis_pass_fail'], $kunci('chlorine_meter'));
+        $this->assertSame(['timbangan.sumber_ui_koreksi_kg'], $kunci('timbangan'));
+        // Parameter `cetak` (tanggal terbit, tanda minus nol) tidak ikut: nilainya beku di snapshot.
+        $this->assertSame(['turbidimeter.vonis_pass_fail'], $kunci('turbidimeter'));
         $this->assertSame([], $gerbang->barisJejakProfil('micrometer'));
     }
 

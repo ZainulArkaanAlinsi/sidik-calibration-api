@@ -647,13 +647,14 @@ class CertificateSnapshotBuilder
                     'satuan' => $satuanCetak,
                     // Koreksi negatif yang membulat ke nol kecetak `-0,0` atau
                     // `0,0` — beda per alat, dibaca dari master masing-masing
-                    // (lihat `CalibrationProfile::tandaNolDicetak()`).
+                    // (lihat `CalibrationProfile::tandaNolDicetak()`; Turbidimeter
+                    // memilihnya per tanggal sesi lewat `tandaNolDicetakUntukSesi()`).
                     //
                     // Ikut dibekukan sama alasannya kayak `desimal` & `satuan`.
                     // Sertifikat yang udah terbit nggak punya kunci ini, dan
                     // pembacanya jatuh ke `true` — persis perilaku lamanya, jadi
                     // dokumen yang udah dipegang pelanggan nggak berubah bentuk.
-                    'tanda_nol' => $profil?->tandaNolDicetak() ?? true,
+                    'tanda_nol' => $profil?->tandaNolDicetakUntukSesi($sesi) ?? true,
                     // Kolom Standard Value: nol di belakang dibuang (`100`)
                     // atau ditulis penuh (`100,0`). Beda per master — lihat
                     // `CalibrationProfile::nolBelakangStandarDibuang()`.

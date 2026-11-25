@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Acuan\ParameterKeputusanMetode;
 
 /**
  * Profil Turbidimeter (alat ke-2). Metode `SIDIK-IK-CAL-0523`, form
@@ -51,6 +52,9 @@ class TurbidimeterProfile extends CalibrationProfile
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0530_Rev.2';
 
     public const JUMLAH_PENGULANGAN = 5;
+
+    /** Parameter keputusan metode butir TM turbidimeter#29 — lihat [tandaNolDicetakUntukSesi]. */
+    public const PARAMETER_TANDA_MINUS_NOL = 'turbidimeter.tanda_minus_nol';
 
     /**
      * Tiga titik standar turbidity yang lab BENERAN punya (DATABASE S13/S14/S15),
@@ -129,6 +133,16 @@ class TurbidimeterProfile extends CalibrationProfile
     public function kode(): string
     {
         return 'turbidimeter';
+    }
+
+    /**
+     * Saklar vonis Turbidimeter: `turbidimeter.vonis_pass_fail`. Pilihan `tanpa_vonis`
+     * mengosongkan toleransi titik, jadi hasilnya hanya Correction dan U95 seperti
+     * workbook master. Bawaan `dengan_toleransi` = perilaku kode sebelum saklar.
+     */
+    protected function kunciParameterVonis(): ?string
+    {
+        return 'turbidimeter.vonis_pass_fail';
     }
 
     public function namaAlatKemampuan(): string
@@ -680,9 +694,34 @@ class TurbidimeterProfile extends CalibrationProfile
      * Menunggu konfirmasi pemilik; `FormatMasterSertifikat` juga menahan
      * `tambah_hari` turbidimeter (`null`). Hanya cetak: nilai antara dan pembulatan
      * tidak berubah.
+     *
+     * Ini BAWAAN. Pemilik memilih lewat parameter `turbidimeter.tanda_minus_nol`
+     * yang dibaca [tandaNolDicetakUntukSesi]; metode ini tidak dipanggil langsung
+     * oleh sertifikat atau layar.
      */
     public function tandaNolDicetak(): bool
     {
         return true;
+    }
+
+    /**
+     * Parameter keputusan metode butir TM turbidimeter#29: `dipertahankan`
+     * (bawaan, = [tandaNolDicetak]) atau `tanpa_minus` (PDF master `0.00` / `0.0`).
+     * Dibaca pada `tanggal_kalibrasi` sesi, jadi sertifikat yang sudah terbit tidak
+     * bergeser: nilainya dibekukan per baris di snapshot (`baris[].tanda_nol`).
+     * Sesi tanpa tanggal memakai bawaan, sama seperti `sertifikat.tambah_hari.*`.
+     */
+    public function tandaNolDicetakUntukSesi(CalibrationSession $sesi): bool
+    {
+        if ($sesi->tanggal_kalibrasi === null) {
+            return $this->tandaNolDicetak();
+        }
+
+        $putusan = app(ParameterKeputusanMetode::class)
+            ->putusan(self::PARAMETER_TANDA_MINUS_NOL, $sesi->tanggal_kalibrasi);
+
+        return $putusan->bawaan
+            ? $this->tandaNolDicetak()
+            : ($putusan->data['tanda_nol'] ?? $this->tandaNolDicetak());
     }
 }
