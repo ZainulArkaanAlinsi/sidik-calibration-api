@@ -4223,7 +4223,7 @@ ini sebagai "jatuh ke pembaca di HP / isi manual"**. `message` kalimat tetap; pe
 | HTTP | `kode` | Sebab |
 |---|---|---|
 | `503` | `fitur_dimatikan` / `ocr_cloud_belum_aktif` / `ocr_cloud_belum_disetel` | seperti bagian 22 |
-| `422` | `permintaan_tidak_valid` | field wajib hilang, `sel` kosong atau lebih dari 48, `kunci` bukan teks, `gambar` bukan berkas. Membawa `errors` (nama field -> kalimat) |
+| `422` | `permintaan_tidak_valid` | field wajib hilang, `sel` kosong atau lebih dari 48, `kunci` bukan teks, `gambar` bukan berkas. Membawa `errors` (nama field -> daftar kalimat, bentuk galat validasi Laravel; kunci bersarang seperti `sel.0.gambar`) |
 | `422` | `templat_tidak_dikenal` | `template_id` / `kertas` / `kode_dokumen` tidak menghasilkan templat |
 | `422` | `tidak_ada_potongan_valid` | tidak ada satu pun sel yang boleh dikirim (semuanya ada di `dilewati`) |
 | `422` | `gambar_tidak_terbaca` | Google menolak semua potongan dalam permintaan |
