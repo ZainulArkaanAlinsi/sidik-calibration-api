@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrHalamanController;
 use App\Http\Controllers\Api\OcrSelAwanController;
+use App\Http\Controllers\Api\OcrSelUnggahController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationFiturController;
@@ -903,6 +904,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
             // Hanya USULAN: tidak mengubah nilai sel. Jalur foto utuh (`POST /ocr/halaman`) tidak berubah.
             Route::post('/worksheet-scans/{worksheetScan}/ocr-awan', [OcrSelAwanController::class, 'baca'])
                 ->middleware(['fitur:ocr_cloud_sel', 'throttle:ocr-sel-awan']);
+            // Sama dengan di atas, tetapi untuk aplikasi Lab yang TIDAK punya hasil pindai di server (foto utuh
+            // tidak keluar dari HP, K-50-11): HP memotong sendiri dan mengunggah HANYA potongan sel angka.
+            // Gerbang dan saklar sama (`pindai_lembar`, `ocr_cloud_sel`, `GOOGLE_VISION_AKTIF`); limiter sendiri.
+            // Kunci sel dicocokkan ke templat server dan hanya baris `angka` yang lolos. Tidak ada yang disimpan.
+            Route::post('/ocr/sel-awan', [OcrSelUnggahController::class, 'baca'])
+                ->middleware(['fitur:ocr_cloud_sel', 'throttle:ocr-sel-unggah']);
         });
 
         // BACA DOKUMEN GENERIK — lembar APA PUN, termasuk yang belum punya
