@@ -441,6 +441,9 @@ class AppServiceProvider extends ServiceProvider
         // jauh lebih ketat dari `dokumen-baca`. Batas per lembar ada di
         // controller (dihitung dari log), ini hanya pagar kecepatan per akun.
         $perMenitPengguna('ocr-halaman', 6);
+        // OCR awan atas potongan sel: satu permintaan = beberapa gambar (sampai 16 per panggilan Google),
+        // jadi batasnya lebih ketat; jatah per lembar tetap dihitung dari log di controller.
+        $perMenitPengguna('ocr-sel-awan', 4);
         $perMenitPengguna('dokumen-bacaan', 120);
         $perMenitPengguna('dokumen-koreksi', 120);
         $perMenitPengguna('sertifikat-kirim-email', 20);

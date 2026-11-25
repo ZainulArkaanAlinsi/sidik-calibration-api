@@ -48,6 +48,8 @@ final class FiturSaklar
 
     public const OCR_CLOUD = 'ocr_cloud';
 
+    public const OCR_CLOUD_SEL = 'ocr_cloud_sel';
+
     /**
      * Kode → keterangan untuk layar pengaturan. Urutan di sini = urutan
      * tampil dan urutan `fitur_nonaktif` yang dikembalikan.
@@ -77,6 +79,16 @@ final class FiturSaklar
             'deskripsi' => 'Pengiriman foto halaman lembar kerja ke Google Cloud Vision lewat server. '
                 .'Bawaan server MATI (env GOOGLE_VISION_AKTIF): saklar ini hanya bisa mematikan, '
                 .'tidak menyalakan. Pengisian manual dan pembacaan di HP tetap jalan.',
+        ],
+        // Kill switch OCR awan KHUSUS potongan sel angka (`POST /worksheet-scans/{id}/ocr-awan`).
+        // Terpisah dari `ocr_cloud` (foto halaman utuh) supaya jalur yang hanya mengirim
+        // potongan angka bisa dimatikan sendiri. Sama seperti di atas: bukan pengganti env
+        // `GOOGLE_VISION_AKTIF` (bawaan mati) dan hanya bisa mematikan.
+        self::OCR_CLOUD_SEL => [
+            'label' => 'OCR awan sel angka (Google Vision)',
+            'deskripsi' => 'Pengiriman POTONGAN sel angka dari hasil pindai ke Google Cloud Vision lewat server '
+                .'(bukan foto utuh, bukan sel identitas). Bawaan server MATI (env GOOGLE_VISION_AKTIF): '
+                .'saklar ini hanya bisa mematikan, tidak menyalakan. Pengisian manual dan pembacaan di HP tetap jalan.',
         ],
     ];
 

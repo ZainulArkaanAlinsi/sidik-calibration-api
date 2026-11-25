@@ -69,9 +69,15 @@ class SaklarFiturTest extends TestCase
             ['GET', '/api/worksheet-scans/999999'],
             ['GET', '/api/worksheet-scans/999999/sel/a1/crop'],
             ['POST', '/api/worksheet-scans/999999/koreksi'],
+            // Dijaga DUA saklar: `pindai_lembar` (grup) dan `ocr_cloud_sel` (rute).
+            ['POST', '/api/worksheet-scans/999999/ocr-awan'],
         ],
         // Urutan mengikuti urutan pendaftaran rute di routes/api.php (tes
         // pemeta membandingkan tanpa mengurutkan antar-kode).
+        // Potongan sel angka saja; saklarnya terpisah dari `ocr_cloud` (foto halaman utuh).
+        'ocr_cloud_sel' => [
+            ['POST', '/api/worksheet-scans/999999/ocr-awan'],
+        ],
         'ocr_cloud' => [
             ['POST', '/api/ocr/halaman'],
         ],
@@ -129,7 +135,7 @@ class SaklarFiturTest extends TestCase
     {
         $b = $organisasi !== null && $organisasi->is($this->orgB);
 
-        return in_array($kode, ['pindai_lembar', 'ocr_cloud'], true)
+        return in_array($kode, ['pindai_lembar', 'ocr_cloud', 'ocr_cloud_sel'], true)
             ? ($b ? [$this->teknisiB, $this->adminB] : [$this->teknisiA, $this->adminA])
             : ($b ? [$this->adminB] : [$this->adminA]);
     }
@@ -586,7 +592,7 @@ class SaklarFiturTest extends TestCase
     public function test_daftar_resmi_tidak_memuat_fitur_inti(): void
     {
         $this->assertSame([], array_values(array_intersect(FiturSaklar::kode(), FiturSaklar::INTI)));
-        $this->assertSame(['pindai_lembar', 'kirim_email_sertifikat', 'ocr_cloud'], FiturSaklar::kode());
+        $this->assertSame(['pindai_lembar', 'kirim_email_sertifikat', 'ocr_cloud', 'ocr_cloud_sel'], FiturSaklar::kode());
     }
 
     private function templat(string $uri): string
@@ -596,6 +602,7 @@ class SaklarFiturTest extends TestCase
             '/api/worksheet-scans/999999' => '/api/worksheet-scans/{worksheetScan}',
             '/api/worksheet-scans/999999/sel/a1/crop' => '/api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop',
             '/api/worksheet-scans/999999/koreksi' => '/api/worksheet-scans/{worksheetScan}/koreksi',
+            '/api/worksheet-scans/999999/ocr-awan' => '/api/worksheet-scans/{worksheetScan}/ocr-awan',
             '/api/certificates/999999/kirim-email' => '/api/certificates/{certificate}/kirim-email',
             default => $uri,
         };
