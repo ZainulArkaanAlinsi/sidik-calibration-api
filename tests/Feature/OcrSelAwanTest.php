@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Tests\Concerns\MembuatKunciUji;
+use Tests\Support\CitraSintetis;
 use Tests\TestCase;
 
 /**
@@ -877,6 +878,138 @@ class OcrSelAwanTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertSame([['kunci' => 'tabel_a|1|1|pembacaan', 'alasan' => 'citra_bukan_halaman_utuh']], $r->json('dilewati'));
+    }
+
+    /**
+     * Habis memori waktu mendekode citra itu FATAL (500 tanpa `fallback_manual`), dan JPEG 750 KB bisa berisi
+     * 48 MP. Pengamannya `App\Support\PengamanCitra`; batasnya `ocr.maks_piksel_citra`. Kode mesin tetap
+     * `citra_rusak` (kontrak 22A tidak bertambah kode).
+     */
+    public function test_citra_melebihi_batas_piksel_ditolak_422_citra_rusak_tanpa_menghubungi_google(): void
+    {
+        config(['ocr.maks_piksel_citra' => 1000]); // citra uji 400x600 = 240000 piksel
+        $this->fakeGoogle();
+
+        $this->kirim()
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'citra_rusak')
+            ->assertJsonPath('fallback_manual', true);
+
+        Http::assertNothingSent();
+        $this->assertSame(
+            1,
+            WorksheetExtractionLog::where('status', 'ditolak')->where('error', 'like', '%citra_terlalu_besar%')->count(),
+            'Penolakan harus tercatat di log tanpa isi gambar.',
+        );
+    }
+
+    public function test_citra_yang_headernya_mengaku_48_mp_ditolak_tanpa_didekode(): void
+    {
+        // Berkas 8x8 dengan header 6000x8000. Tanpa pengaman GD mendekodenya jadi citra 6000x8000 dan Google
+        // dihubungi; jadi 422 + tanpa panggilan hanya mungkin kalau header dicek lebih dulu.
+        Storage::disk('local')->put((string) $this->scan->citra_warp_path, CitraSintetis::jpegMengaku(6000, 8000));
+        $this->fakeGoogle();
+
+        $this->kirim()
+            ->assertStatus(422)
+            ->assertJsonPath('kode', 'citra_rusak')
+            ->assertJsonPath('fallback_manual', true);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_citra_tepat_di_batas_piksel_masih_dipotong(): void
+    {
+        config(['ocr.maks_piksel_citra' => 400 * 600]);
+        $this->fakeGoogle();
+
+        $this->kirim()->assertOk();
+
+        $this->assertSame(2, $this->jumlahGambarTerkirim());
+    }
+
+    public function test_foto_hp_12_mp_sungguhan_lolos_dipotong_dan_dikirim(): void
+    {
+        // 4000x3000 SUNGGUHAN (didekode penuh, ~50 MB GD): yang ditolak pengaman adalah 48 MP, bukan foto HP biasa.
+        Storage::disk('local')->put((string) $this->scan->citra_warp_path, CitraSintetis::jpegSungguhan(4000, 3000));
+        $this->fakeGoogle();
+
+        $this->kirim(null, ['kunci' => ['tabel_a|1|1|pembacaan']])->assertOk();
+
+        $this->assertSame(1, $this->jumlahGambarTerkirim());
+    }
+
+    // -------------------------------------------- kontrak yang dikunci (tinjauan PR #305)
+
+    public function test_scan_tanpa_sesi_tidak_kena_jatah_sesi_tetapi_tetap_dipagari_batas_sel_per_scan(): void
+    {
+        // Perilaku yang DIPILIH dan dikunci (kontrak 22A): hasil pindai tanpa sesi tidak punya baris jatah per
+        // lembar, jadi pagarnya tinggal limiter per menit dan `maks_sel_per_scan`. Mengubahnya = keputusan baru.
+        $this->scan->update(['calibration_session_id' => null]);
+        config(['services.google_vision.maks_per_sesi' => 1, 'ocr.awan_sel.maks_sel_per_scan' => 4]);
+        $this->fakeGoogle();
+
+        // Dengan sesi, permintaan kedua sudah kena `batas_per_lembar` (maks_per_sesi = 1). Tanpa sesi tidak.
+        $this->kirim()->assertOk()->assertJsonPath('meta.sisa_sel_scan', 2);
+        $this->kirim()->assertOk()->assertJsonPath('meta.sisa_sel_scan', 0);
+        $this->kirim()
+            ->assertStatus(429)
+            ->assertJsonPath('kode', 'batas_sel_per_scan')
+            ->assertJsonPath('fallback_manual', true);
+
+        $this->assertSame(2, $this->jumlahPanggilanVision());
+        $this->assertSame(
+            2,
+            WorksheetExtractionLog::whereNull('calibration_session_id')->where('status', 'sukses')->count(),
+            'Panggilan tanpa sesi tetap tercatat (waktu, unit), hanya tanpa sesi.',
+        );
+    }
+
+    public function test_jatah_bersama_foto_utuh_menghabiskan_jatah_jalur_sel(): void
+    {
+        // `JatahOcrAwan` dan `OcrHalamanController` berbagi kolam lewat baris log per sesi. Kalau salah satu
+        // mengubah cara menghitung, kolamnya pecah tanpa error; tes ini yang merah.
+        config(['services.google_vision.maks_per_sesi' => 1]);
+        $this->fakeGoogle();
+
+        $this->actingAs($this->teknisi->fresh())->postJson('/api/ocr/halaman', [
+            'foto' => UploadedFile::fake()->image('lembar.jpg', 1000, 1400),
+            'calibration_session_id' => $this->sesi->id,
+        ])->assertOk();
+
+        $this->kirim()
+            ->assertStatus(429)
+            ->assertJsonPath('kode', 'batas_per_lembar')
+            ->assertJsonPath('fallback_manual', true);
+
+        $this->assertSame(1, $this->jumlahPanggilanVision(), 'Google dihubungi lagi sesudah jatah lembar habis.');
+    }
+
+    public function test_jatah_bersama_jalur_sel_menghabiskan_jatah_foto_utuh(): void
+    {
+        config(['services.google_vision.maks_per_sesi' => 1]);
+        $this->fakeGoogle();
+
+        $this->kirim()->assertOk();
+
+        $this->actingAs($this->teknisi->fresh())->postJson('/api/ocr/halaman', [
+            'foto' => UploadedFile::fake()->image('lembar.jpg', 1000, 1400),
+            'calibration_session_id' => $this->sesi->id,
+        ])->assertStatus(429)->assertJsonPath('kode', 'batas_per_lembar');
+
+        $this->assertSame(1, $this->jumlahPanggilanVision(), 'Google dihubungi lagi sesudah jatah lembar habis.');
+    }
+
+    public function test_kunci_ganda_dalam_satu_permintaan_dikirim_dan_ditagih_sekali(): void
+    {
+        $this->fakeGoogle();
+        $kunci = 'tabel_a|1|1|pembacaan';
+
+        $r = $this->kirim(null, ['kunci' => [$kunci, $kunci, $kunci]])->assertOk();
+
+        $this->assertSame(1, $this->jumlahGambarTerkirim());
+        $this->assertSame([$kunci], $this->kunciHasil($r));
+        $r->assertJsonPath('meta.sisa_sel_scan', 79);
     }
 
     // ------------------------------------------------- jalur lama tidak terganggu
