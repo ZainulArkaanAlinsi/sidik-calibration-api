@@ -19,7 +19,7 @@ disentuh.
 | Lingkup tanggal di pintu hitung (`PenentuVersiAcuan::jalankan/jalankanDengan`: simpan, update, preview, `kalibrasi:hitung-ulang`, validator, simulasi) | SELESAI |
 | Refractometer#24, Spectrophotometer#15, Conductivity#18 (parameter `hitung`) | SELESAI: tes vs sel workbook + bawaan identik terhadap rekaman kode lama |
 | Tanggal terbit ph_meter#28, conductivity#36, spectrophotometer#4, turbidimeter#4 (parameter `cetak`) | SELESAI: tes vs sel workbook; nilai beku di snapshot, versi penetapan TIDAK distempel di snapshot |
-| Jejak sesi (`type_b_components`, `sumber: parameter_metode`) | SELESAI untuk parameter `hitung` |
+| Jejak sesi (`type_b_components`, `sumber: parameter_metode`) | SELESAI untuk profil yang memanggil `jejakParameterMetode()` (jalur generik `GumCalculator` + `SpectrophotometerProfile`). BELUM untuk Timbangan: `TimbanganCalculator` tidak menulis baris itu (tinjauan PR #306) |
 | Jalur penuh lewat DB (simpan/preview/validator/hitung-ulang, sesi lama, penetapan dicabut) | `ParameterMetodeSesiSpektroTest` (profil per kelompok); Refractometer dan Conductivity (per titik) diuji di tingkat unit |
 | Penetapan lewat Studio Web | spesifikasi saja (`docs/perintah-frontend-parameter-metode.md`) |
 | Suite MySQL penuh | belum dijalankan lokal (3 jam); gerbang CI |
@@ -106,11 +106,15 @@ Bukti per pilihan (sel workbook + `path:baris @79280fc2`) ada di registri
    `tests/Fixtures/parameter-metode-ledger.json` (hash tiap entri): entri baru
    WAJIB ditambahkan ke ledger di PR yang sama, entri lama yang berubah atau
    hilang = tes merah.
-5. **Jejak.** Tiap hasil hitung profil ber-parameter `hitung` membawa satu baris
+5. **Jejak.** Hasil hitung yang melewati `jejakParameterMetode()` (jalur generik
+   `GumCalculator` dan `SpectrophotometerProfile`) membawa satu baris
    `sumber: parameter_metode` dengan `parameter`, `pilihan`, `penetapan`,
    `berlaku_mulai`, `status`, `tanggal_acuan`, dan kalimat yang menyebut apakah
    perilaku itu SAMA/BERBEDA/SEBAGIAN dari workbook master beserta sel dasarnya.
    Hasil lama (tanpa baris itu) dibaca sebagai bawaan pada skema registri 1.
+   **Timbangan belum:** `TimbanganCalculator` tidak memanggilnya, jadi saklar
+   `master` hanya terjejak sebagai nama parameter di teks komponen "Uncertainty
+   of Correction", tanpa nomor penetapan, `berlaku_mulai`, dan status.
 
 ### Cara menetapkan jawaban TM (sekarang)
 
