@@ -444,6 +444,17 @@ class AppServiceProvider extends ServiceProvider
         // OCR awan atas potongan sel: satu permintaan = beberapa gambar (sampai 16 per panggilan Google),
         // jadi batasnya lebih ketat; jatah per lembar tetap dihitung dari log di controller.
         $perMenitPengguna('ocr-sel-awan', 4);
+        // OCR awan atas potongan sel yang DIUNGGAH HP (`POST /ocr/sel-awan`). Ember sendiri, terpisah dari
+        // `ocr-sel-awan`: dua jalur berbeda, jadi satu akun bisa memakai keduanya (paling banyak 8/menit
+        // gabungan). Jawaban 429 membawa `kode` dan `fallback_manual` seperti semua galat jalur ini, supaya klien
+        // jatuh ke pembaca di HP, bukan buntu.
+        RateLimiter::for('ocr-sel-unggah', fn (Request $request) => Limit::perMinute(4)
+            ->by('ocr-sel-unggah|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn () => response()->json([
+                'message' => 'Terlalu sering membaca lewat awan. Tunggu sebentar, atau baca di HP.',
+                'kode' => 'terlalu_sering',
+                'fallback_manual' => true,
+            ], 429)));
         $perMenitPengguna('dokumen-bacaan', 120);
         $perMenitPengguna('dokumen-koreksi', 120);
         $perMenitPengguna('sertifikat-kirim-email', 20);

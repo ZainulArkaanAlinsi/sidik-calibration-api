@@ -71,12 +71,15 @@ class SaklarFiturTest extends TestCase
             ['POST', '/api/worksheet-scans/999999/koreksi'],
             // Dijaga DUA saklar: `pindai_lembar` (grup) dan `ocr_cloud_sel` (rute).
             ['POST', '/api/worksheet-scans/999999/ocr-awan'],
+            // Potongan sel yang diunggah HP: juga dijaga DUA saklar, sama dengan `ocr-awan`.
+            ['POST', '/api/ocr/sel-awan'],
         ],
         // Urutan mengikuti urutan pendaftaran rute di routes/api.php (tes
         // pemeta membandingkan tanpa mengurutkan antar-kode).
         // Potongan sel angka saja; saklarnya terpisah dari `ocr_cloud` (foto halaman utuh).
         'ocr_cloud_sel' => [
             ['POST', '/api/worksheet-scans/999999/ocr-awan'],
+            ['POST', '/api/ocr/sel-awan'],
         ],
         'ocr_cloud' => [
             ['POST', '/api/ocr/halaman'],
@@ -89,6 +92,12 @@ class SaklarFiturTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // `POST /api/ocr/sel-awan` memeriksa env sebelum isi permintaan, jadi dengan env mati (bawaan tes) ia
+        // menjawab 503 `ocr_cloud_belum_aktif`, status yang SAMA dengan `fitur_dimatikan` dan membuat
+        // `test_rute_fitur_normal_saat_nyala` salah membaca. Dinyalakan di sini; panggilan tanpa badan berhenti
+        // di validasi 422 sebelum menyentuh Google.
+        config(['services.google_vision.aktif' => true]);
 
         $this->orgA = Organization::factory()->create();
         $this->orgB = Organization::factory()->create();

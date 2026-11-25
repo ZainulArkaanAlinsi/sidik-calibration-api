@@ -317,11 +317,27 @@ return [
      *  - `margin_px`: ruang di luar kotak sel yang ikut dipotong. Lebih kecil dari margin layar
      *    review (6) karena potongan ini DIBACA mesin: sisa angka sel tetangga yang ikut terpotong
      *    terbaca sebagai bagian dari angka sel ini.
+     *
+     * Empat kunci di bawah khusus jalur UNGGAH (`POST /api/ocr/sel-awan`, `OcrSelUnggahController`),
+     * tempat HP memotong sendiri dan mengunggah potongannya. `maks_sel_per_permintaan` dipakai
+     * bersama. Keempat angkanya TEBAKAN AWAL yang belum diukur pada potongan sel foto nyata.
+     *
+     *  - `maks_byte_potongan`: ukuran berkas SATU potongan (300 KB). Potongan sel yang wajar jauh di
+     *    bawahnya; batas ini menolak foto halaman yang diselundupkan sebagai "potongan".
+     *  - `maks_piksel_potongan`: lebar x tinggi SATU potongan, dibaca dari header (500.000). Lebih
+     *    ketat dari plafon umum `maks_piksel_citra`, yang tetap berlaku di bawahnya.
+     *  - `maks_sel_unggah_per_lembar`: total sel unggahan yang sampai ke Google untuk SATU sesi kerja,
+     *    lintas permintaan (hitungan LUNAK di Cache, bukan catatan resmi). Dua kali batas 22A.
+     *  - `maks_sel_unggah_tanpa_sesi_per_hari`: padanannya per akun per hari untuk unggahan tanpa sesi.
      */
     'awan_sel' => [
         'maks_sel_per_permintaan' => 48,
         'maks_sel_per_scan' => 80,
         'margin_px' => 4,
+        'maks_byte_potongan' => 307_200,
+        'maks_piksel_potongan' => 500_000,
+        'maks_sel_unggah_per_lembar' => 160,
+        'maks_sel_unggah_tanpa_sesi_per_hari' => 240,
     ],
 
     /*
