@@ -46,6 +46,7 @@ use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\Studio\HitungWorkbookController;
 use App\Http\Controllers\Api\Studio\ImporWorkbookController;
+use App\Http\Controllers\Api\Studio\ParameterMetodeController;
 use App\Http\Controllers\Api\Studio\StudioSesiController;
 use App\Http\Controllers\Api\Studio\WorkbookController;
 use App\Http\Controllers\Api\TechnicianController;
@@ -482,6 +483,28 @@ Route::middleware(['auth:sanctum', 'studio'])->prefix('studio')->group(function 
     // Tahap C: hitung ulang "bagaimana jika" (stateless; tidak menulis data lab).
     Route::post('/workbook/{workbook}/hitung', HitungWorkbookController::class)
         ->middleware('throttle:studio-hitung');
+
+    // Studio Tahap 1 (25 Nov 2026): keputusan metode Lembar Centang ditetapkan dari
+    // Studio, bukan PR kode. Registri parameter GLOBAL (satu lab), jadi tak ada
+    // `organization_id` di sini. Tiga rute POST memakai ember jatah tulis sendiri
+    // (`studio-parameter-tulis`); yang menentukan angka hanya penetapan `disetujui`.
+    // `{penetapan}` sengaja angka biasa (bukan route-model-binding): 404 seragam
+    // datang dari controller/handler, bukan dari binding yang bisa membocorkan beda
+    // "tidak ada" lawan "bukan milikmu".
+    Route::prefix('parameter-metode')->group(function () {
+        Route::get('/', [ParameterMetodeController::class, 'index'])
+            ->middleware('throttle:studio-baca');
+
+        Route::middleware('throttle:studio-parameter-tulis')->group(function () {
+            // Tanpa `where()` pada `{kunci}`: kunci tak dikenal dijawab 404 oleh controller,
+            // dan gerbang `studio` harus jalan lebih dulu (403) untuk kunci apa pun.
+            Route::post('/{kunci}/penetapan', [ParameterMetodeController::class, 'catat']);
+            Route::post('/penetapan/{penetapan}/setujui', [ParameterMetodeController::class, 'setujui'])
+                ->where('penetapan', '[0-9]{1,18}');
+            Route::post('/penetapan/{penetapan}/tarik', [ParameterMetodeController::class, 'tarik'])
+                ->where('penetapan', '[0-9]{1,18}');
+        });
+    });
 });
 
 /*

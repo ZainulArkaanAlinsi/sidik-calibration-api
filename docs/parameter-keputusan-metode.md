@@ -21,18 +21,21 @@ disentuh.
 | Tanggal terbit ph_meter#28, conductivity#36, spectrophotometer#4, turbidimeter#4 (parameter `cetak`) | SELESAI: tes vs sel workbook; nilai beku di snapshot, versi penetapan TIDAK distempel di snapshot |
 | Jejak sesi (`type_b_components`, `sumber: parameter_metode`) | SELESAI untuk profil yang memanggil `jejakParameterMetode()` (jalur generik `GumCalculator` + `SpectrophotometerProfile`). BELUM untuk Timbangan: `TimbanganCalculator` tidak menulis baris itu (tinjauan PR #306) |
 | Jalur penuh lewat DB (simpan/preview/validator/hitung-ulang, sesi lama, penetapan dicabut) | `ParameterMetodeSesiSpektroTest` (profil per kelompok); Refractometer dan Conductivity (per titik) diuji di tingkat unit |
-| Penetapan lewat Studio Web | spesifikasi saja (`docs/perintah-frontend-parameter-metode.md`) |
+| Penetapan lewat Studio Web, sisi API (Studio Tahap 1, 25 Nov 2026) | SELESAI sisi API: tabel `parameter_metode_penetapan`, 4 endpoint di grup Studio, aturan D3 di server, kontrak di `docs/perintah-frontend-parameter-metode-studio.md`. Layar Studio Web belum (pekerjaan frontend) |
 | Suite MySQL penuh | belum dijalankan lokal (3 jam); gerbang CI |
 
 ## Yang ada sekarang
 
 | Bagian | Tempat |
 |---|---|
-| Registri (data, append-only) | `database/data/parameter-keputusan-metode.json` |
-| Pintu baca TUNGGAL | `App\Services\Acuan\ParameterKeputusanMetode` (singleton), jawabannya `PutusanMetode` |
+| Registri: DEFINISI parameter (kunci, pilihan, bawaan, bukti) | `database/data/parameter-keputusan-metode.json`. `penetapan[]` di berkas ini kini catatan sejarah beku (lihat "Penetapan: berkas dan DB") |
+| Registri: PENETAPAN baru (25 Nov 2026) | tabel `parameter_metode_penetapan` + jejak transisi `parameter_metode_penetapan_jejak` (migrasi `2026_11_25_100000_*`), model `ParameterMetodePenetapan`, `ParameterMetodePenetapanJejak` |
+| Penulis penetapan (aturan D3, transaksi, jejak) | `App\Services\Acuan\PenetapanParameterMetode`; galat domain `PenetapanMetodeDitolak` |
+| Endpoint Studio | `App\Http\Controllers\Api\Studio\ParameterMetodeController`, FormRequest di `app/Http/Requests/Studio/`, rute `/api/studio/parameter-metode...` |
+| Pintu baca TUNGGAL | `App\Services\Acuan\ParameterKeputusanMetode` (terikat `scoped`, bukan singleton lagi, supaya cache penetapan tidak basi), jawabannya `PutusanMetode` |
 | Lingkup tanggal | dibuka `PenentuVersiAcuan::jalankan()/jalankanDengan()` (simpan, preview, hitung ulang, validator, simulasi) dan `CalibrationProfile::tataLetakSertifikat($sesi)` (cetak) |
 | Jejak sesi | baris `parameter_metode` di `uncertainty_calculations.type_b_components` untuk parameter berlingkup `hitung`; untuk `cetak`, nilai beku di snapshot (`tata_letak.tanggal_master.tambah_hari`) |
-| Penjaga | `ParameterKeputusanMetodeTest`, `ParameterMetodeBawaanIdentikTest`, `ParameterMetode{Refractometer,Spektro,Konduktivitas,TanggalTerbit,Sesi}Test`, ledger `tests/Fixtures/parameter-metode-ledger.json`, golden `tests/Fixtures/parameter-metode-golden-bawaan.json` |
+| Penjaga | `ParameterKeputusanMetodeTest`, `ParameterMetodeBawaanIdentikTest`, `ParameterMetode{Refractometer,Spektro,Konduktivitas,TanggalTerbit,Sesi}Test`, ledger `tests/Fixtures/parameter-metode-ledger.json`, golden `tests/Fixtures/parameter-metode-golden-bawaan.json`. Studio Tahap 1: `StudioParameterMetodeApiTest` (akses, kontrak, aturan D3), `ParameterKeputusanMetodePenetapanDbTest` (resolusi dari DB), `ParameterMetodePenetapanStudioSesiTest` (sesi sebelum/sesudah `berlaku_mulai`), `CorsStudioTest` |
 
 Pola yang dipakai ulang, bukan penyimpanan baru: `log-metode-tekanan-piston.json`
 (log append-only + pembaca `App\Support\LogMetodeTekananPiston`), ledger berhash
@@ -81,7 +84,9 @@ Bukti per pilihan (sel workbook + `path:baris @79280fc2`) ada di registri
 1. **Bawaan.** `putusan($kunci)` tanpa lingkup tanggal dan tanpa argumen
    memulangkan `bawaan` registri (nomor penetapan 0). Pembaca yang lupa membuka
    lingkup salah ke arah perilaku lama, tidak pernah ke arah angka yang bergeser.
-2. **Penetapan** (satu entri di `penetapan[]`): `nomor` (1, 2, 3 tanpa celah),
+2. **Penetapan** (sejak 25 Nov 2026 jalur normalnya baris di tabel DB lewat
+   Studio, lihat "Penetapan: berkas dan DB"; bentuk berkas di bawah tetap sah dan
+   tetap dibaca). Satu entri di `penetapan[]`: `nomor` (1, 2, 3 tanpa celah),
    `tanggal_keputusan`, `dicatat_pada`, `berlaku_mulai`, `nilai` (kode pilihan),
    `diputuskan_oleh`, `alasan`, `rujukan` (min. 10 karakter). Registri menegakkan
    tiga hal saat dibaca (kalau salah satu dilanggar, registri gagal keras):
@@ -100,12 +105,17 @@ Bukti per pilihan (sel workbook + `path:baris @79280fc2`) ada di registri
    mencocokkan `dicatat_pada` dengan hari PR dibuat dan `berlaku_mulai` dengan hari
    deploy, dan ledger hash (butir 4) mengunci tanggal itu setelah masuk.
 3. **Tanggal.** Pilihan yang berlaku = penetapan dengan `berlaku_mulai <=
-   tanggal_kalibrasi` yang `berlaku_mulai`-nya paling akhir (seri: `nomor`
-   terbesar). Sesi dengan `tanggal_kalibrasi` sebelumnya tidak bergeser.
-4. **Append-only.** Entri lama tidak diubah/dihapus. Tes membaca
+   tanggal_kalibrasi` yang nomornya terbesar (entri berkas dan baris DB
+   `disetujui` digabung; `menunggu_tm` dan `ditarik` tidak ikut). Tidak ada
+   penetapan = bawaan kode. Sesi dengan `tanggal_kalibrasi` sebelumnya tidak
+   bergeser.
+4. **Append-only.** Entri berkas lama tidak diubah/dihapus. Tes membaca
    `tests/Fixtures/parameter-metode-ledger.json` (hash tiap entri): entri baru
-   WAJIB ditambahkan ke ledger di PR yang sama, entri lama yang berubah atau
-   hilang = tes merah.
+   di BERKAS WAJIB ditambahkan ke ledger di PR yang sama, entri lama yang
+   berubah atau hilang = tes merah. Baris DB dijaga lain: model menolak
+   mengubah kolom selain `status`, `keputusan_oleh`, `tanggal_keputusan` dan
+   menolak menghapus; tiap perubahan status menulis satu baris
+   `parameter_metode_penetapan_jejak` yang juga tidak bisa diubah atau dihapus.
 5. **Jejak.** Hasil hitung yang melewati `jejakParameterMetode()` (jalur generik
    `GumCalculator` dan `SpectrophotometerProfile`) membawa satu baris
    `sumber: parameter_metode` dengan `parameter`, `pilihan`, `penetapan`,
@@ -116,62 +126,119 @@ Bukti per pilihan (sel workbook + `path:baris @79280fc2`) ada di registri
    `master` hanya terjejak sebagai nama parameter di teks komponen "Uncertainty
    of Correction", tanpa nomor penetapan, `berlaku_mulai`, dan status.
 
+## Penetapan: berkas dan DB (Studio Tahap 1, 25 Nov 2026)
+
+Penetapan jawaban TM dulu hanya lewat PR ke berkas registri. Sekarang jalur
+normalnya tabel `parameter_metode_penetapan`, ditulis dari Sidik Studio lewat API
+(kontrak: `docs/perintah-frontend-parameter-metode-studio.md`). DEFINISI parameter
+(kunci, pilihan, bawaan, bukti) tetap di `database/data/parameter-keputusan-metode.json`.
+
+**Pembagian tugas**
+
+| Hal | Tempat |
+|---|---|
+| Definisi, pilihan, bawaan, bukti per pilihan | berkas JSON (berubah lewat PR kode, seperti dulu) |
+| Penetapan baru (jawaban TM) | tabel DB, lewat Studio |
+| Riwayat perubahan status penetapan | `parameter_metode_penetapan_jejak` (siapa, kapan, dari/ke status, catatan) |
+
+**Keputusan: berkas `penetapan[]` DIPERTAHANKAN sebagai catatan sejarah beku, tidak dihapus.**
+Alasannya:
+
+1. Perilaku dan tes #298 tidak berubah. Tes-tesnya menyuntik penetapan berkas lewat
+   `pakai()`; menghapus jalur itu berarti mengubah tes yang sudah hijau.
+2. Ledger hash (`tests/Fixtures/parameter-metode-ledger.json`) menjaga entri berkas yang
+   pernah masuk. Menghapus jalurnya menghapus bukti yang dijaga ledger itu.
+3. Biayanya nol: keempat belas parameter berisi `penetapan: []`, jadi tidak ada data yang
+   harus dimigrasi dan tidak ada angka yang bergeser.
+
+Pilihan yang berlaku dihitung dari GABUNGAN entri berkas dan baris DB berstatus
+`disetujui` (satu query untuk semua parameter, tanpa N+1; cache dibersihkan setiap
+penetapan berubah). Penetapan dengan `berlaku_mulai <= tanggal_kalibrasi` sesi dan
+nomor terbesar menang; tidak ada = bawaan kode. **Hanya `disetujui` yang menggeser
+angka.** `menunggu_tm` dan `ditarik` tidak pernah.
+
+Nomor penetapan baru = (jumlah entri berkas atau nomor DB terbesar, mana yang lebih
+besar) + 1, jadi satu urutan untuk berkas dan DB. **Jangan menambah entri berkas baru
+sesudah parameter itu punya baris DB**: nomornya bisa bentrok. Jalur berkas masih
+diterima registri dan tesnya, tetapi bukan lagi jalur normal.
+
+**Aturan yang ditegakkan server (D3)**
+
+- Waktu pencatatan (`dicatat_pada`) diambil dari jam server; klien tidak bisa
+  mengirimnya.
+- `berlaku_mulai` tidak boleh lebih awal dari tanggal server (tidak berlaku surut),
+  diperiksa saat dicatat DAN saat disetujui. Bila lewat sebelum disetujui: tarik lalu
+  catat ulang.
+- `berlaku_mulai` tidak boleh turun menurut nomor; pembandingnya penetapan terakhir
+  yang belum ditarik (entri berkas selalu ikut), supaya salah ketik tanggal yang sudah
+  ditarik tidak mengunci parameter.
+- Append-only, dua lapis: model menolak mengubah kolom selain `status`, `keputusan_oleh`,
+  `tanggal_keputusan` dan menolak menghapus; trigger database (migrasi
+  `2026_11_25_110000`) menahan hal yang sama untuk UPDATE/DELETE mentah lewat query
+  builder, dan membekukan keputusan yang sudah dicatat. Jejak transisi tidak bisa
+  diubah atau dihapus di kedua lapis. Batas trigger: lihat "Append-only di database"
+  di bagian "Risiko yang diketahui".
+- Transisi sah hanya `menunggu_tm` ke `disetujui` atau `ditarik`, dan `disetujui` ke
+  `ditarik`. Tarik wajib beralasan (min. 10 karakter); setujui wajib menyebut TM yang
+  memutuskan dan tanggal keputusannya.
+- Pencatatan dan setiap transisi berjalan dalam transaksi dengan kunci baris; dua
+  pencatatan serentak pada parameter yang sama: yang kedua dapat 409 `konflik_nomor`
+  (nomor bentrok pada indeks unik, atau deadlock MySQL 1213 / SQLSTATE 40001 karena
+  dua transaksi saling mengunci rentang kosong). Yang kalah tidak menyimpan apa pun.
+
+**Kenapa tabel sendiri, bukan `paket_acuan`.** Rancangan lama (bagian "Yang tidak
+dibangun" di bawah) menyandarkan penetapan pada `paket_acuan` dan `acuan.sumber = db`.
+Tabel khusus tidak bergantung pada rollout `DATA_ACUAN_SUMBER`, tidak menambah kolom
+di `uncertainty_calculations` (jejak parameter tetap di `type_b_components`), dan
+tidak menyentuh tabel lain: migrasinya murni tambahan (dua tabel baru), jalan di
+SQLite dan MySQL 8. Lingkup tanggal, jejak `parameter_metode` di
+`type_b_components`, dan angka bawaan (golden tidak berubah) sama seperti #298.
+
+**Akses.** Hanya grup Studio (`auth:sanctum` plus gerbang `studio`: token ability
+`studio` dan akun sama dengan `STUDIO_AKUN`). Rute ini tidak dilebarkan ke lapisan 1.
+Aplikasi mobile tidak berubah.
+
 ### Cara menetapkan jawaban TM (sekarang)
 
-PR kecil yang menambah SATU entri `penetapan` di registri, plus satu baris di
-ledger. Contoh isi (nilai contoh, bukan keputusan):
+1. Studio mencatat jawabannya: `POST /api/studio/parameter-metode/{kunci}/penetapan`
+   dengan `nilai`, `berlaku_mulai`, `catatan`. Status `menunggu_tm`; belum memengaruhi
+   angka.
+2. TM memutuskan. Studio menyetujui: `POST .../penetapan/{id}/setujui` dengan
+   `keputusan_oleh` dan `tanggal_keputusan`. Status `disetujui`; sesi bertanggal
+   kalibrasi `berlaku_mulai` atau sesudahnya memakai pilihan itu.
+3. Salah catat atau keputusan berubah: `POST .../penetapan/{id}/tarik` dengan alasan,
+   lalu catat yang baru. Menarik penetapan yang sudah berlaku mengembalikan hitung ulang
+   sesi bertanggal sesudahnya ke penetapan sebelumnya atau bawaan; hasil yang sudah
+   tersimpan tidak berubah, tetapi validator melaporkan `hitung_ulang_beda` untuk
+   sesi yang dulu dihitung dengan penetapan itu. Respons `tarik` membawa `peringatan`
+   untuk kasus ini.
 
-```json
-{
-  "nomor": 1,
-  "tanggal_keputusan": "2026-12-04",
-  "dicatat_pada": "2026-12-05",
-  "berlaku_mulai": "2026-12-08",
-  "nilai": "baris_tetap_21c",
-  "diputuskan_oleh": "Manajer Teknis, nama lengkap",
-  "alasan": "Workbook tervalidasi memakai sel tetap baris 24; keputusan batch 4 Des.",
-  "rujukan": "LEMBAR-CENTANG-MANAJER-TEKNIS.md C1 refractometer#24, dicentang B"
-}
-```
+Agen otomatis TIDAK PERNAH menyetujui penetapan di produksi: keputusan metode
+adalah keputusan Manajer Teknis, dan setujui hanya dari akun Studio manusia.
 
-`berlaku_mulai` harus hari deploy PR itu atau sesudahnya; entri yang berlaku
-sebelum deploy menggeser hitung ulang sesi yang sudah dihitung dengan bawaan
-(validator akan melaporkan `ketidakpastian_beda`). Registri menolak
-`berlaku_mulai` yang lebih awal dari `dicatat_pada` (dan `dicatat_pada` yang lebih
-awal dari `tanggal_keputusan`), tetapi tidak membandingkannya dengan tanggal
-deploy yang sebenarnya: itu tetap pemeriksaan peninjau PR (lihat butir 2 di
-atas). `dicatat_pada` isi dengan hari PR dibuat, bukan hari keputusan.
+## Yang tidak dibangun: penetapan lewat `paket_acuan` (rancangan 24 Nov, ditinggalkan)
 
-## Langkah berikut: penetapan lewat Studio Web (BELUM dibangun)
-
-Pola Data Acuan versi (`paket_acuan` + `AlurVersiAcuan`: draf, ajukan,
-simulasi, sahkan oleh `super_admin` lain, alasan, pelaku, log append-only)
-adalah tujuan yang tepat untuk menulis penetapan dari Studio Web. Tidak
-dibangun sekarang karena, dengan bukti:
+Rancangan awal memakai pola Data Acuan versi (`paket_acuan` + `AlurVersiAcuan`: draf,
+ajukan, simulasi, sahkan oleh `super_admin` lain). Tidak dipakai, dengan bukti:
 
 1. **Sumbernya masih berkas.** `config('acuan.sumber')` dipatok `json`
    (`config/acuan.php:23`, `render.yaml`); versi DB baru dibaca setelah rollout
-   tahap 3, yang bukan efek samping deploy. Menulis penetapan ke DB sekarang
-   tidak akan dibaca produksi.
+   tahap 3, yang bukan efek samping deploy. Penetapan di DB acuan tidak akan dibaca
+   produksi.
 2. **Stempel versi satu kolom.** `uncertainty_calculations.paket_acuan_versi_id`
-   menunjuk SATU versi per hasil; parameter lintas profil (refractometer,
-   spectro, conductivity) tidak bisa distempel di kolom itu tanpa kolom baru
-   (pilihan terakhir menurut AGENTS.md).
+   menunjuk SATU versi per hasil; parameter lintas profil tidak bisa distempel di
+   kolom itu tanpa kolom baru (pilihan terakhir menurut AGENTS.md).
 3. **Dua dari tiga profil bukan paket.** `conductivity_meter` dan `ph_meter`
    tidak ada di `SkemaAcuanProfilTest::BERSKEMA`; paketnya belum ada.
 4. **Berkas tabel acuan digenerate.** `tabel-standar-*.json` tidak boleh diedit
-   tangan (AGENTS.md §Generator); menambah lembar `parameter_metode` ke sana
-   berarti mengubah generator yang membaca workbook terenkripsi.
+   tangan (AGENTS.md §Generator).
 
-Rancangan yang diusulkan untuk langkah itu: satu paket virtual
-`parameter_metode` per organisasi (bukan per profil), isi = daftar penetapan
-yang sama bentuknya dengan registri, versi lewat `AlurVersiAcuan` yang sama,
-pembaca `ParameterKeputusanMetode` menimpa `penetapan[]` berkas dengan versi DB
-yang berlaku pada `tanggal_kalibrasi` bila `acuan.sumber = db`, dan stempel
-`paket_acuan_versi_id` tetap milik tabel acuan (jejak parameter tetap di
-`type_b_components`). Spesifikasi endpoint dan layar:
-`docs/perintah-frontend-parameter-metode.md`. Butuh keputusan pemilik soal
-rollout `DATA_ACUAN_SUMBER=db` sebelum dibangun.
+Tabel khusus di atas menghindari keempatnya. Yang hilang dibanding rancangan itu:
+alur draf, ajukan, simulasi, sahkan oleh `super_admin` lain. Penggantinya adalah
+dua langkah (catat, setujui) dengan jejak transisi; pemisahan wewenang antar akun
+tidak ditegakkan karena Studio memakai satu akun (`STUDIO_AKUN`). Simulasi dampak
+tidak ada: yang ada hanya teks `dampak` per parameter di registri. Itu celah yang
+diketahui, bukan kelupaan.
 
 ## Risiko yang diketahui
 
@@ -193,3 +260,48 @@ rollout `DATA_ACUAN_SUMBER=db` sebelum dibangun.
   diterapkan ke keduanya karena pertanyaan TM menyangkut nilai tersertifikasi
   larutan. TM wajib mengetahui ini sebelum menjawab.
 - **Gerbang MySQL** suite penuh belum dijalankan (3 jam); CI yang menjalankan.
+- **Menarik penetapan yang sudah `disetujui`.** Hitung ulang sesi bertanggal
+  sesudah `berlaku_mulai` kembali ke penetapan sebelumnya atau bawaan. Sesi yang
+  sudah tersimpan dengan penetapan itu tidak berubah, tetapi validator melaporkan
+  `hitung_ulang_beda` / `ketidakpastian_beda` untuk sesi tersebut. Disengaja dan
+  dijaga tes; respons `tarik` membawa `peringatan`. Menarik sebelum ada sesi yang
+  memakainya tidak berdampak.
+- **Tanggal server, bukan tanggal WIB.** `berlaku_mulai >= tanggal server` dibaca
+  dari `APP_TIMEZONE` (bawaan UTC). Mendekati tengah malam WIB tanggal server bisa
+  tertinggal sehari; tarik dan catat ulang bila tertolak `berlaku_surut` padahal
+  tanggalnya hari ini menurut WIB.
+- **Satu akun Studio.** Pemisahan pencatat dan penyetuju tidak bisa ditegakkan
+  (`STUDIO_AKUN` tunggal). Jejak tetap mencatat user, email, dan waktu tiap transisi.
+- **CORS dipersempit.** Sebelum `config/cors.php` ada, bawaan framework
+  mengizinkan `*` untuk `api/*`. Sekarang bawaan kode (tanpa env apa pun) = empat
+  origin yang terbukti ada di repo: dua dev lokal Studio Web (`localhost:5173`,
+  `127.0.0.1:5173`) dan dua domain Firebase Hosting bundel web Flutter
+  (`https://sidik-kalibrasi.web.app`, `https://sidik-kalibrasi.firebaseapp.com`;
+  sumber di kepala `config/cors.php`). `CORS_ALLOWED_ORIGINS` MENAMBAH, tidak pernah
+  mengganti, jadi mengisinya tidak bisa memutus bundel web. Origin produksi Studio
+  Web belum ada di repo mana pun, jadi tetap lewat env. Kunci itu BELUM ada di
+  `render.yaml`/`.env.example` dan env Render belum diubah (butuh pemilik; tinjauan
+  PR #304 meminta keduanya, lihat serah terima di bawah). Aplikasi mobile native
+  dan panel Filament tidak terkena CORS.
+- **Append-only di database.** Selain penjaga model, migrasi
+  `2026_11_25_110000_kunci_append_only_penetapan_metode` memasang trigger
+  (`pmp_tolak_hapus`, `pmp_tolak_ubah_isi`, `pmpj_tolak_ubah`, `pmpj_tolak_hapus`)
+  supaya UPDATE/DELETE mentah lewat query builder ditolak. Penetapan hanya boleh
+  berubah di `status`, `keputusan_oleh`, `tanggal_keputusan`, `updated_at`;
+  keputusan dibekukan begitu status keluar dari `menunggu_tm`; `ditarik` status
+  akhir; penetapan tidak bisa dihapus; jejak tidak bisa diubah atau dihapus.
+  Batasnya: (1) MySQL ber-binlog tanpa `log_bin_trust_function_creators` menolak
+  `CREATE TRIGGER` dan migrasi sengaja tidak gagal (galat ke log + stderr), jadi
+  trigger ini BELUM terpantau `/api/health` (`append_only_db`) dan belum ikut
+  `acuan:pasang-trigger`; (2) `TRUNCATE` dan aksi FK berantai tidak menyalakan
+  trigger di MySQL (`oleh_user_id ... nullOnDelete`), sedangkan di SQLite
+  menghapus user yang punya baris jejak gagal; (3) transisi status lewat SQL
+  mentah tanpa baris jejak tidak tertahan (trigger tidak bisa menuntut baris di
+  tabel lain). Dijaga `tests/Feature/PenetapanMetodeAppendOnlyDbTest.php`.
+  `down()` migrasi tabel menolak jalan selama tabel berisi baris.
+- **Binding `scoped`.** `ParameterKeputusanMetode` kini `scoped` (bukan singleton)
+  supaya cache penetapan tidak bertahan melewati satu request/job; worker antrean
+  menyegarkannya per job. Pemanggil yang menyimpan instance antar job tidak akan
+  melihat penetapan baru: ambil lewat container tiap kali.
+- **Suite MySQL.** Tes baru berjalan di dua suite lewat shard CI (profil MySQL
+  enam shard); hasil lokal MySQL hanya yang tertulis di PR.

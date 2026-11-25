@@ -164,10 +164,13 @@ class AppServiceProvider extends ServiceProvider
         // hitungan jalan dari JSON tanpa satu pun error. Lihat SumberAcuan.
         $this->app->singleton(SumberAcuan::class);
 
-        // Parameter keputusan metode: SINGLETON juga, alasannya sama dengan SumberAcuan:
+        // Parameter keputusan metode: satu instance bersama, alasannya sama dengan SumberAcuan:
         // lingkup tanggal yang dibuka pintu hitung (`PenentuVersiAcuan`) hidup di instance ini
-        // dan profil membacanya lewat container di tengah hitungan.
-        $this->app->singleton(ParameterKeputusanMetode::class);
+        // dan profil membacanya lewat container di tengah hitungan. `scoped`, bukan `singleton`:
+        // instance ini juga menyimpan penetapan dari DB (dimuat sekali), dan `scoped` dilepas
+        // di akhir tiap request/job antrean (Octane, `queue:work`), jadi proses berumur panjang
+        // tidak menahan penetapan yang sudah berubah. Dalam satu request tetap SATU instance.
+        $this->app->scoped(ParameterKeputusanMetode::class);
     }
 
     /**
@@ -519,6 +522,8 @@ class AppServiceProvider extends ServiceProvider
         // ketat. Simulasi menghitung ulang SEMUA sesi profil itu: lebih ketat.
         $perMenitPengguna('data-acuan-tulis', 20);
         $perMenitPengguna('data-acuan-simulasi', 6);
+        // Studio Tahap 1 — catat/setujui/tarik penetapan keputusan metode: aksi jarang.
+        $perMenitPengguna('studio-parameter-tulis', 20);
         // Studio tahap C — hitung ulang workbook (±0,5–3 s CPU & ±250 MB per
         // panggilan). Klien memanggil sesudah edit, bukan per ketukan.
         // Ember & kunci sama dengan `$perMenitPengguna`, tapi 429-nya MEMBAWA

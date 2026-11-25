@@ -260,6 +260,10 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'lembar' => 'balok_ukur',
             'kolom' => 'nilai_terkoreksi_mm',
             'orderItem' => (string) $barisPaket->id,
+            // Studio Tahap 1 (25 Nov 2026): `POST /studio/parameter-metode/penetapan/{penetapan}/setujui|tarik`.
+            // Rutenya `[0-9]+` dan gerbang `studio` jalan sebelum binding model, jadi
+            // id yang tidak ada tetap menguji gerbangnya (403), bukan 404.
+            'penetapan' => '1',
             'penugasan' => (string) $penugasan->id,
             'penugasanItem' => (string) $barisPenugasan->id,
             'calibration' => (string) $sesi->id,

@@ -5,6 +5,9 @@ namespace App\Services\Acuan;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -29,7 +32,23 @@ use RuntimeException;
  * terbaru hari ini": pembaca yang lupa membuka lingkup salah ke arah perilaku
  * lama, tidak pernah ke arah angka yang bergeser.
  *
- * Kelas ini singleton di container (lingkupnya state), seperti `SumberAcuan`.
+ * ## Penetapan: DB (Studio Tahap 1, 25 Nov 2026)
+ *
+ * DEFINISI parameter tetap di berkas; PENETAPAN-nya kini baris tabel
+ * `parameter_metode_penetapan` yang diisi lewat Studio. Hanya baris
+ * `disetujui` yang dibaca di sini (`menunggu_tm` dan `ditarik` tidak pernah
+ * menggeser angka). Yang berlaku untuk sebuah tanggal = baris disetujui dengan
+ * `berlaku_mulai <= tanggal` yang `nomor`-nya terbesar; tanpa baris = bawaan
+ * kode. Entri `penetapan[]` di berkas (kosong sejak dibuat) tetap dibaca sebagai
+ * rekaman sejarah yang sudah disetujui, dan nomor baris DB melanjutkannya.
+ *
+ * Baris DB dimuat SEKALI per instance (satu query untuk semua parameter, bukan
+ * satu per `putusan()`), lalu dibuang tiap penetapan berubah
+ * ([penetapanBerubah]). Instance-nya `scoped`: hidup per request HTTP dan per job
+ * antrean, jadi proses berumur panjang tidak menahan cache basi.
+ *
+ * Kelas ini di container sebagai `scoped` (lingkupnya state), seperti `SumberAcuan`
+ * yang singleton: satu instance per request/job, dilepas sesudahnya.
  */
 final class ParameterKeputusanMetode
 {
@@ -53,6 +72,17 @@ final class ParameterKeputusanMetode
 
     /** @var list<?string> tumpukan tanggal lingkup (Y-m-d, null = "tanpa tanggal") */
     private array $lingkup = [];
+
+    /**
+     * Penetapan DISETUJUI dari DB per kunci parameter, urut nomor (cache per
+     * instance; `null` = belum dimuat). Bentuk elemen sama dengan entri berkas.
+     *
+     * @var array<string, list<array<string, mixed>>>|null
+     */
+    private ?array $penetapanDb = null;
+
+    /** Peringatan tabel belum ada cukup sekali per proses. */
+    private static bool $sudahMemperingatkanTabel = false;
 
     /**
      * Jalankan `$aksi` dengan `$tanggal` sebagai tanggal kalibrasi yang menentukan
@@ -87,24 +117,29 @@ final class ParameterKeputusanMetode
      * tanggal lingkup bila `$tanggal` null. Tanpa keduanya: bawaan kode.
      *
      * Entri yang berlaku = penetapan dengan `berlaku_mulai <= tanggal` yang
-     * `berlaku_mulai`-nya paling akhir (seri → `nomor` terbesar).
+     * `nomor`-nya terbesar. Pembaca ini TIDAK membandingkan `berlaku_mulai`
+     * antar penetapan; yang menjamin "nomor terbesar" sama dengan "paling akhir
+     * berlaku" adalah penulisan (`PenetapanParameterMetode::catat()`): `berlaku_mulai`
+     * tidak boleh turun menurut nomor di antara baris yang belum ditarik.
      */
     public function putusan(string $kunci, DateTimeInterface|string|null $tanggal = null): PutusanMetode
     {
         $parameter = $this->parameter($kunci);
         $acuan = $tanggal !== null ? self::tanggalKeTeks($tanggal) : $this->tanggalLingkup();
+        $penetapan = $this->penetapanEfektif($kunci, $parameter);
 
         $berlaku = null;
 
         if ($acuan !== null) {
-            foreach ($parameter['penetapan'] as $p) {
+            foreach ($penetapan as $p) {
                 if ($p['berlaku_mulai'] > $acuan) {
                     continue;
                 }
 
-                if ($berlaku === null
-                    || $p['berlaku_mulai'] > $berlaku['berlaku_mulai']
-                    || ($p['berlaku_mulai'] === $berlaku['berlaku_mulai'] && $p['nomor'] > $berlaku['nomor'])) {
+                // Nomor terbesar menang. Penulisan penetapan menjaga `berlaku_mulai`
+                // tidak turun menurut nomor, jadi nomor terbesar yang sudah berlaku
+                // juga yang `berlaku_mulai`-nya paling akhir.
+                if ($berlaku === null || $p['nomor'] > $berlaku['nomor']) {
                     $berlaku = $p;
                 }
             }
@@ -120,7 +155,7 @@ final class ParameterKeputusanMetode
             bawaan: $berlaku === null,
             nomorPenetapan: (int) ($berlaku['nomor'] ?? 0),
             berlakuMulai: $berlaku['berlaku_mulai'] ?? null,
-            status: $parameter['penetapan'] === [] ? self::STATUS_MENUNGGU : self::STATUS_DIPUTUSKAN,
+            status: $penetapan === [] ? self::STATUS_MENUNGGU : self::STATUS_DIPUTUSKAN,
             tanggalAcuan: $acuan,
             parameter: $parameter,
         );
@@ -165,7 +200,9 @@ final class ParameterKeputusanMetode
     /**
      * Seluruh registri untuk layar Studio Web (baca saja): tiap parameter beserta
      * pilihan yang berlaku pada `$tanggal` (default: hari ini — untuk TAMPILAN,
-     * bukan untuk menghitung).
+     * bukan untuk menghitung). `penetapan` di sini = penetapan yang MEMENGARUHI
+     * hitungan (berkas + `disetujui` DB); daftar lengkap semua status (menunggu,
+     * ditarik, jejak) milik `PenetapanParameterMetode::daftar()`.
      *
      * @return list<array<string, mixed>>
      */
@@ -196,11 +233,53 @@ final class ParameterKeputusanMetode
                     'penetapan' => $putusan->nomorPenetapan,
                     'berlaku_mulai' => $putusan->berlakuMulai,
                 ],
-                'penetapan' => $p['penetapan'],
+                'penetapan' => $this->penetapanEfektif((string) $kunci, $p),
             ];
         }
 
         return $hasil;
+    }
+
+    /**
+     * Kode pilihan sah `$kunci` (urutan registri). Gagal keras bila kunci tak ada.
+     *
+     * @return list<string>
+     */
+    public function kodePilihan(string $kunci): array
+    {
+        return array_values(array_map(
+            static fn (array $pil): string => (string) $pil['kode'],
+            $this->parameter($kunci)['pilihan'],
+        ));
+    }
+
+    /**
+     * Entri `penetapan[]` di BERKAS (rekaman sejarah, kosong sejak dibuat), urut
+     * nomor. Dipakai penulis penetapan untuk melanjutkan nomor dan menjaga
+     * `berlaku_mulai` tidak turun.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function penetapanBerkas(string $kunci): array
+    {
+        return $this->parameter($kunci)['penetapan'];
+    }
+
+    /** Buang cache penetapan DB instance ini; pembacaan berikutnya memuat ulang. */
+    public function segarkanPenetapan(): void
+    {
+        $this->penetapanDb = null;
+    }
+
+    /**
+     * Dipanggil tiap penetapan di DB berubah (dibuat atau transisi status): membuang
+     * cache instance yang sedang hidup di container.
+     */
+    public static function penetapanBerubah(): void
+    {
+        if (app()->resolved(self::class)) {
+            app(self::class)->segarkanPenetapan();
+        }
     }
 
     /** Hash isi kanonik satu entri penetapan — dasar ledger append-only di test. */
@@ -232,6 +311,97 @@ final class ParameterKeputusanMetode
         if (app()->resolved(self::class)) {
             app()->forgetInstance(self::class);
         }
+    }
+
+    /**
+     * Penetapan yang memengaruhi hitungan untuk `$kunci`: entri berkas (sudah
+     * disetujui sejak masuk registri) lalu baris DB berstatus `disetujui`, urut nomor.
+     *
+     * @param  array<string, mixed>  $parameter
+     * @return list<array<string, mixed>>
+     */
+    private function penetapanEfektif(string $kunci, array $parameter): array
+    {
+        $db = $this->penetapanDb()[$kunci] ?? [];
+
+        if ($db === []) {
+            return $parameter['penetapan'];
+        }
+
+        $kode = array_column($parameter['pilihan'], 'kode');
+
+        foreach ($db as $p) {
+            if (! in_array($p['nilai'], $kode, true)) {
+                // Baris disetujui menunjuk pilihan yang sudah tidak ada di registri:
+                // dibaca sebagai bawaan = angka bergeser tanpa tanda. Gagal keras.
+                throw new RuntimeException("Penetapan #{$p['id']} (`{$kunci}` nomor {$p['nomor']}) bernilai `{$p['nilai']}`, bukan salah satu pilihan registri.");
+            }
+        }
+
+        return [...$parameter['penetapan'], ...$db];
+    }
+
+    /**
+     * Satu query untuk SEMUA baris `disetujui` (tabelnya kecil), dikelompokkan per
+     * kunci dan di-cache per instance. Kunci yang tak ada di registri tak pernah
+     * ditanyakan, jadi barisnya diam saja.
+     *
+     * Tabel belum ada (kode sudah hidup tapi migrasi belum jalan, atau tes tanpa
+     * DB) dibaca sebagai "tidak ada penetapan": salah ke arah bawaan kode, tidak
+     * pernah ke arah angka yang bergeser. Galat DB lain tetap dilempar.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function penetapanDb(): array
+    {
+        if ($this->penetapanDb !== null) {
+            return $this->penetapanDb;
+        }
+
+        try {
+            $baris = DB::table('parameter_metode_penetapan')
+                ->where('status', 'disetujui')
+                ->orderBy('nomor')
+                ->orderBy('id')
+                ->get(['id', 'kunci', 'nomor', 'nilai', 'berlaku_mulai', 'dicatat_pada', 'tanggal_keputusan', 'keputusan_oleh', 'catatan']);
+        } catch (QueryException $e) {
+            if (! self::tabelTidakAda($e)) {
+                throw $e;
+            }
+
+            if (! self::$sudahMemperingatkanTabel) {
+                self::$sudahMemperingatkanTabel = true;
+                Log::warning('Tabel parameter_metode_penetapan belum ada; parameter keputusan metode memakai bawaan kode. Jalankan migrasi.');
+            }
+
+            return $this->penetapanDb = [];
+        }
+
+        $hasil = [];
+
+        foreach ($baris as $r) {
+            $hasil[(string) $r->kunci][] = [
+                'id' => (int) $r->id,
+                'nomor' => (int) $r->nomor,
+                'berlaku_mulai' => substr((string) $r->berlaku_mulai, 0, 10),
+                'dicatat_pada' => substr((string) $r->dicatat_pada, 0, 10),
+                'tanggal_keputusan' => $r->tanggal_keputusan === null ? null : substr((string) $r->tanggal_keputusan, 0, 10),
+                'nilai' => (string) $r->nilai,
+                'diputuskan_oleh' => $r->keputusan_oleh,
+                'alasan' => $r->catatan,
+                'rujukan' => 'Studio, penetapan #'.$r->id,
+                'sumber' => 'db',
+            ];
+        }
+
+        return $this->penetapanDb = $hasil;
+    }
+
+    private static function tabelTidakAda(QueryException $e): bool
+    {
+        return ($e->errorInfo[0] ?? null) === '42S02'
+            || str_contains($e->getMessage(), 'no such table')
+            || str_contains($e->getMessage(), "doesn't exist");
     }
 
     /**
