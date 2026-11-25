@@ -64,7 +64,7 @@ adalah kalimat tetap; tampilkan apa adanya.
 | `503` | `ocr_cloud_belum_aktif` | env server mati (bawaan) |
 | `503` | `ocr_cloud_belum_disetel` | kredensial server belum benar |
 | `503` | `citra_tidak_bisa_dipotong` | server tanpa GD |
-| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada di server atau rusak; pindai ulang |
+| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada di server, rusak, atau terlalu besar (lebih dari 16 juta piksel, mis. 48 MP); pindai ulang. Tidak ada kode baru untuk "terlalu besar": tangani sama dengan `citra_rusak` |
 | `422` | `gambar_tidak_terbaca` | Google tidak bisa membaca satu pun potongan |
 | `429` | `batas_per_lembar` | jatah panggilan per sesi habis |
 | `429` | `gagal_berulang_per_lembar` | Google gagal berulang untuk sesi itu; **berhenti memanggil untuk lembar itu** |
@@ -84,7 +84,13 @@ adalah kalimat tetap; tampilkan apa adanya.
    tandai "usulan awan". Konfirmasi manusia wajib sebelum nilai dipakai.
 4. Tangani semua galat di atas dengan jatuh ke jalur lama. Jangan mengulang otomatis pada `429`/`502`.
 5. Batas yang perlu diketahui: 80 sel per hasil pindai (hitungan lunak, bisa hilang saat cache dibersihkan), 5 panggilan per
-   sesi (`GOOGLE_VISION_MAKS_PER_SESI`, satu panggilan = hingga 16 sel).
+   sesi (`GOOGLE_VISION_MAKS_PER_SESI`, satu panggilan = hingga 16 sel). Jatah per sesi dipakai BERSAMA dengan
+   `POST /api/ocr/halaman` (foto utuh): satu panggilan dari jalur mana pun mengurangi sisa jatah keduanya.
+6. Hasil pindai TANPA sesi kalibrasi tetap boleh memakai endpoint ini. Jatah dan batas kegagalan per sesi tidak berlaku
+   untuknya; yang membatasi tinggal 4 permintaan per menit dan 80 sel per hasil pindai. Jangan mengandalkan `batas_per_lembar`
+   untuk hasil pindai tanpa sesi.
+7. Citra hasil pindai di atas 16 juta piksel ditolak server (`422 citra_rusak`). Foto HP 12 MP lolos; kalau kamera diset
+   48/50 MP, kecilkan sebelum diunggah sebagai hasil pindai.
 
 ## Belum dikerjakan / belum terbukti
 

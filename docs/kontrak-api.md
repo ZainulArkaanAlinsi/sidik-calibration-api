@@ -4098,7 +4098,22 @@ lebih murah per sel (asumsi 1 gambar = 1 unit); yang dihemat putaran jaringan, p
 
 **Batas** (config `ocr.awan_sel`, tanpa env baru): `maks_sel_per_permintaan` 48, `maks_sel_per_scan` 80 (hitungan LUNAK di cache,
 TTL 30 hari, bisa hilang bersama cache; pagar biaya, bukan catatan resmi), `margin_px` 4. Jatah dan batas kegagalan per lembar
-SATU kolam dengan jalur foto utuh (`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`, juga tidak dikunci).
+SATU kolam dengan jalur foto utuh (`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`, juga tidak dikunci):
+satu panggilan berhasil lewat jalur mana pun mengurangi sisa jatah lembar itu untuk kedua jalur (dikunci tes dua arah).
+
+**Batas piksel citra** (config `ocr.maks_piksel_citra`, tingkat atas, tanpa env baru): **16.000.000 piksel**, lebar x tinggi,
+dibaca dari HEADER sebelum citra didekode. Foto HP 12 MP (4000x3000) dan 4608x3456 lolos; 48 MP (8000x6000) dan di atasnya
+ditolak. Alasannya memori, bukan ukuran berkas: GD memakan ~4 byte per piksel, jadi JPEG 750 KB bisa berisi 48 MP dan
+butuh ~190 MB, sedangkan `memory_limit` produksi 128 MB; kehabisan memori itu fatal (500 polos tanpa `fallback_manual`).
+Citra yang melebihi batas, sisinya nol, atau bukan citra yang terbaca dijawab `422 citra_rusak` + `fallback_manual: true`,
+Google tidak dihubungi, dan penolakannya tercatat di log tanpa isi gambar. Tidak ada kode galat baru. Pengaman yang sama
+(`App\Support\PengamanCitra`) dipakai juga oleh `GET /worksheet-scans/{id}/crop` (`422 Citra hasil pindai rusak.`) dan oleh
+penebalan tanda tangan sertifikat (citra terlalu besar dibiarkan apa adanya, sertifikat tetap terbit).
+
+**Hasil pindai tanpa sesi kalibrasi** (`calibration_session_id` null) diizinkan dan DIKUNCI tes: jatah per lembar dan batas
+kegagalan per lembar tidak berlaku karena tidak ada lembar yang dihitung. Pagarnya tinggal limiter `ocr-sel-awan` (4/menit per
+akun) dan `maks_sel_per_scan` (80 sel per hasil pindai). Baris log tetap ditulis, dengan `calibration_session_id` null.
+Pindai tanpa sesi adalah perilaku yang dipilih, bukan kelupaan; menutupnya perlu keputusan baru.
 
 **Galat** (`message`, `kode`, `fallback_manual: true`; `message` kalimat tetap, pesan Google tidak diteruskan):
 
@@ -4106,7 +4121,7 @@ SATU kolam dengan jalur foto utuh (`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION
 |---|---|---|
 | `503` | `fitur_dimatikan` / `ocr_cloud_belum_aktif` / `ocr_cloud_belum_disetel` | seperti bagian 22 |
 | `503` | `citra_tidak_bisa_dipotong` | ekstensi GD tidak ada di server |
-| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada atau tidak terbaca |
+| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada, tidak terbaca, atau melebihi `ocr.maks_piksel_citra` (16 MP) |
 | `422` | — (validasi Laravel, tanpa `kode`) | `kunci` kosong, bukan larik, atau lebih dari batas per permintaan |
 | `422` | `gambar_tidak_terbaca` | Google menolak semua potongan dalam permintaan |
 | `429` | `batas_per_lembar` / `gagal_berulang_per_lembar` | seperti bagian 22 (kolam yang sama) |
