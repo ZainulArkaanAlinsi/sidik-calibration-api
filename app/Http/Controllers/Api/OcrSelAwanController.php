@@ -163,6 +163,9 @@ class OcrSelAwanController extends Controller
             [$kode, $mesin, $pesan] = match ($potong['galat']) {
                 'gd_tidak_ada' => [503, 'citra_tidak_bisa_dipotong', 'Server belum bisa memotong citra hasil pindai. Baca di HP atau isi manual.'],
                 'citra_rusak' => [422, 'citra_rusak', 'Citra hasil pindai rusak. Pindai ulang lembarnya.'],
+                // Kode mesin sama dengan `citra_rusak` (kontrak 22A tidak bertambah kode); kalimatnya
+                // saja yang menyebut sebabnya. Citra terlalu besar tidak didekode (lihat `PotongSelAngka`).
+                'citra_terlalu_besar' => [422, 'citra_rusak', 'Citra hasil pindai terlalu besar untuk diproses server. Pindai ulang lembarnya.'],
                 default => [422, 'citra_tidak_tersimpan', 'Citra hasil pindai tidak tersimpan di server. Pindai ulang lembarnya.'],
             };
 

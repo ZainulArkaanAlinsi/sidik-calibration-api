@@ -14,6 +14,7 @@ use App\Services\Ocr\FormulirAsli;
 use App\Services\Ocr\PemrosesScanLembarKerja;
 use App\Services\Ocr\TemplateLembarKerja;
 use App\Services\Ocr\ValidasiSel;
+use App\Support\PengamanCitra;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -285,9 +286,11 @@ class WorksheetScanController extends Controller
         abort_if(! extension_loaded('gd'), 503, 'Server belum bisa motong citra (ekstensi GD nggak ada).');
 
         $kotak = $sel->kotak ?? [];
-        $gambar = @imagecreatefromstring((string) $disk->get($path));
+        // Lewat `PengamanCitra`: citra yang pikselnya melewati batas memori tidak didekode (fatal =
+        // 500 polos), dan jatuh ke jawaban 422 yang sama dengan citra rusak.
+        $gambar = PengamanCitra::dekode((string) $disk->get($path));
 
-        abort_if($gambar === false, 422, 'Citra hasil pindai rusak.');
+        abort_if($gambar === null, 422, 'Citra hasil pindai rusak.');
 
         if (($worksheetScan->hasil['kertas'] ?? null) === 'asli') {
             $kotak = $this->kotakPikselFormulirAsli($worksheetScan, $kotak, imagesx($gambar), imagesy($gambar));

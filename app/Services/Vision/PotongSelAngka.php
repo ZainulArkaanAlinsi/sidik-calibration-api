@@ -4,6 +4,7 @@ namespace App\Services\Vision;
 
 use App\Models\WorksheetScan;
 use App\Models\WorksheetScanCell;
+use App\Support\PengamanCitra;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -32,7 +33,7 @@ final class PotongSelAngka
      *     potongan: array<string, string>,
      *     gagal: array<string, string>
      * } `galat` = seluruh citra tidak bisa dipakai (`citra_tidak_tersimpan`, `gd_tidak_ada`,
-     *   `citra_rusak`); `potongan` = kunci → isi JPEG; `gagal` = kunci → alasan per sel.
+     *   `citra_rusak`, `citra_terlalu_besar`); `potongan` = kunci → isi JPEG; `gagal` = kunci → alasan per sel.
      */
     public function potong(WorksheetScan $scan, iterable $sel): array
     {
@@ -47,10 +48,12 @@ final class PotongSelAngka
             return $this->galat('gd_tidak_ada');
         }
 
-        $gambar = @imagecreatefromstring((string) $disk->get($path));
+        // Dekode hanya lewat `PengamanCitra`: dimensi dicek dari header SEBELUM didekode, karena
+        // kehabisan memori itu fatal (500 tanpa `fallback_manual`) dan JPEG 750 KB bisa berisi 48 MP.
+        $gambar = PengamanCitra::dekode((string) $disk->get($path), $alasan);
 
-        if ($gambar === false) {
-            return $this->galat('citra_rusak');
+        if ($gambar === null) {
+            return $this->galat($alasan === PengamanCitra::TERLALU_BESAR ? 'citra_terlalu_besar' : 'citra_rusak');
         }
 
         $lebar = imagesx($gambar);

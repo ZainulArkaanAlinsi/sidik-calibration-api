@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Support\CitraSintetis;
 use Tests\TestCase;
 
 /**
@@ -702,6 +703,35 @@ class WorksheetScanTest extends TestCase
         $this->assertStringContainsString('private', $respons->headers->get('Cache-Control'));
         // JPEG asli, bukan badan kosong: dua byte pertamanya penanda SOI.
         $this->assertStringStartsWith("\xFF\xD8", $respons->getContent());
+    }
+
+    /**
+     * Citra tersimpan yang pikselnya melewati batas memori TIDAK didekode: jawabannya 422 yang sama dengan
+     * citra rusak, bukan 500 karena PHP habis memori (fatal). Unggahan dibatasi 8 MB tapi tidak dibatasi
+     * dimensinya, dan JPEG 750 KB bisa berisi 48 MP (`PengamanCitra`).
+     *
+     * Berkasnya sintetis: JPEG 8x8 dengan header yang mengaku 6000x8000. Tanpa pengaman GD mendekodenya jadi
+     * citra 6000x8000 dan jawabannya 200; jadi 422 di sini hanya mungkin kalau header dicek lebih dulu.
+     */
+    public function test_crop_sel_citra_terlalu_besar_ditolak_422_tanpa_didekode(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD nggak ada — endpoint crop-nya emang nolak duluan di server begini.');
+        }
+
+        Storage::fake('local');
+
+        $scanId = $this->actingAs($this->teknisi)->post(self::URL, [
+            ...$this->payload(),
+            'citra_warp' => UploadedFile::fake()->image('lembar-warp.jpg', 1654, 2339),
+        ])->assertCreated()->json('scan_id');
+
+        $path = (string) WorksheetScan::query()->findOrFail($scanId)->citra_warp_path;
+        Storage::disk('local')->put($path, CitraSintetis::jpegMengaku(6000, 8000));
+
+        $this->actingAs($this->teknisi)
+            ->get("/api/worksheet-scans/{$scanId}/sel/".rawurlencode('sebelum_adjustment|1|1|pembacaan').'/crop')
+            ->assertStatus(422);
     }
 
     /**

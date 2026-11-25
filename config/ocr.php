@@ -324,4 +324,21 @@ return [
         'margin_px' => 4,
     ],
 
+    /*
+     * Batas piksel (lebar x tinggi) citra yang boleh didekode server. SATU kunci untuk semua jalur
+     * (potong sel lama, potong sel OCR awan, penebal tanda tangan) lewat `App\Support\PengamanCitra`,
+     * satu-satunya tempat yang memanggil `imagecreatefromstring`. Sengaja tanpa env() (kunci env baru
+     * wajib ikut `render.yaml` dan `.env.example`); mengubah angka ini = PR.
+     *
+     * Kenapa angkanya 16 juta: memori GD truecolor ~4 byte per piksel, bukan per byte berkas. Diukur
+     * 25 Nov 2026 (`memory_get_peak_usage`): 12 MP = 50 MB, 16 MP = 68 MB, 20 MP = 82 MB, 48 MP =
+     * 194 MB. `memory_limit` produksi 128 MB (`docker/entrypoint.sh`), dasar request Laravel ~45 MB,
+     * isi berkas ikut termuat (batas unggah 8 MB): (128 - 45 - 8) / 4 x ~0,8 = ~16 juta piksel.
+     * Melewati `memory_limit` itu FATAL (500 tanpa `fallback_manual`, `@` tidak menangkapnya), jadi
+     * batasnya harus dicek dari header SEBELUM didekode. 16 MP meloloskan foto HP 12 MP (4000x3000)
+     * dan 4608x3456, dan menolak 48 MP (8000x6000). Nilai di sini harus sama dengan
+     * `PengamanCitra::BATAS_PIKSEL_BAWAAN` (dijaga `PengamanCitraTest`).
+     */
+    'maks_piksel_citra' => 16_000_000,
+
 ];
