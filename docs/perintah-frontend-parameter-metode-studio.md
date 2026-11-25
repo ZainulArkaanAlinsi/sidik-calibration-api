@@ -59,7 +59,7 @@ Tanpa token: 401. Akun nonaktif: 401 `akun_nonaktif`.
 
 ## Daftar: `GET /api/studio/parameter-metode`
 
-Satu elemen per parameter registri (saat ini 7), beserta SEMUA penetapannya dalam semua status.
+Satu elemen per parameter registri (saat ini 14), beserta SEMUA penetapannya dalam semua status.
 
 ```json
 {

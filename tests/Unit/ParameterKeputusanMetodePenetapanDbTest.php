@@ -274,7 +274,7 @@ class ParameterKeputusanMetodePenetapanDbTest extends TestCase
         $gerbang = $this->gerbang();
 
         $this->assertSame('semua_titik', $gerbang->nilai(self::KUNCI, '2099-12-31'));
-        $this->assertCount(7, $gerbang->semua('2099-12-31'));
+        $this->assertCount(14, $gerbang->semua('2099-12-31'));
     }
 
     public function test_tabel_belum_ada_dibaca_sebagai_bawaan_dan_diperingatkan_sekali(): void

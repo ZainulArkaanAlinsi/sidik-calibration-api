@@ -204,7 +204,7 @@ class StudioParameterMetodeApiTest extends TestCase
         $respons = $this->studio('GET', '/api/studio/parameter-metode')->assertOk();
 
         $data = collect($respons->json('data'));
-        $this->assertCount(7, $data);
+        $this->assertCount(14, $data);
 
         $spektro = $data->firstWhere('kunci', self::KUNCI);
         $this->assertSame('semua_titik', $spektro['bawaan']);

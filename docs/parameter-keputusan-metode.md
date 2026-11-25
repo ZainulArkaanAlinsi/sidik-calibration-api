@@ -148,7 +148,7 @@ Alasannya:
    `pakai()`; menghapus jalur itu berarti mengubah tes yang sudah hijau.
 2. Ledger hash (`tests/Fixtures/parameter-metode-ledger.json`) menjaga entri berkas yang
    pernah masuk. Menghapus jalurnya menghapus bukti yang dijaga ledger itu.
-3. Biayanya nol: ketujuh parameter berisi `penetapan: []`, jadi tidak ada data yang
+3. Biayanya nol: keempat belas parameter berisi `penetapan: []`, jadi tidak ada data yang
    harus dimigrasi dan tidak ada angka yang bergeser.
 
 Pilihan yang berlaku dihitung dari GABUNGAN entri berkas dan baris DB berstatus
