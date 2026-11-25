@@ -300,4 +300,61 @@ return [
         'aturan_versi' => 'asli-1',
     ],
 
+    /*
+     * OCR awan atas POTONGAN SEL ANGKA hasil pindai
+     * (`POST /api/worksheet-scans/{id}/ocr-awan`, `OcrSelAwanController`).
+     *
+     * Sengaja TANPA env() (aturan repo: kunci env baru wajib ikut `render.yaml` dan `.env.example`,
+     * dan batas biaya tidak boleh bergeser diam-diam lewat dashboard). Mengubah angka di sini = PR.
+     * Gerbang menyala/mati tetap env `GOOGLE_VISION_AKTIF` + saklar `ocr_cloud_sel`; jatah panggilan
+     * per lembar tetap `services.google_vision.maks_per_sesi` / `maks_gagal_per_sesi`.
+     *
+     *  - `maks_sel_per_permintaan`: sel yang diproses dalam SATU permintaan HTTP. Google menerima
+     *    16 gambar per panggilan, jadi 48 = paling banyak 3 panggilan (3 baris log, 3 jatah sesi).
+     *  - `maks_sel_per_scan`: total sel yang boleh dikirim ke Google untuk SATU hasil pindai, lintas
+     *    permintaan. Pencacahnya `Cache` (tabel log tidak punya kolom id pindai), jadi ini batas LUNAK:
+     *    cache yang dibersihkan menyetel ulang hitungannya. Pagar yang keras tetap jatah per sesi.
+     *  - `margin_px`: ruang di luar kotak sel yang ikut dipotong. Lebih kecil dari margin layar
+     *    review (6) karena potongan ini DIBACA mesin: sisa angka sel tetangga yang ikut terpotong
+     *    terbaca sebagai bagian dari angka sel ini.
+     *
+     * Empat kunci di bawah khusus jalur UNGGAH (`POST /api/ocr/sel-awan`, `OcrSelUnggahController`),
+     * tempat HP memotong sendiri dan mengunggah potongannya. `maks_sel_per_permintaan` dipakai
+     * bersama. Keempat angkanya TEBAKAN AWAL yang belum diukur pada potongan sel foto nyata.
+     *
+     *  - `maks_byte_potongan`: ukuran berkas SATU potongan (300 KB). Potongan sel yang wajar jauh di
+     *    bawahnya; batas ini menolak foto halaman yang diselundupkan sebagai "potongan".
+     *  - `maks_piksel_potongan`: lebar x tinggi SATU potongan, dibaca dari header (500.000). Lebih
+     *    ketat dari plafon umum `maks_piksel_citra`, yang tetap berlaku di bawahnya.
+     *  - `maks_sel_unggah_per_lembar`: total sel unggahan yang sampai ke Google untuk SATU sesi kerja,
+     *    lintas permintaan (hitungan LUNAK di Cache, bukan catatan resmi). Dua kali batas 22A.
+     *  - `maks_sel_unggah_tanpa_sesi_per_hari`: padanannya per akun per hari untuk unggahan tanpa sesi.
+     */
+    'awan_sel' => [
+        'maks_sel_per_permintaan' => 48,
+        'maks_sel_per_scan' => 80,
+        'margin_px' => 4,
+        'maks_byte_potongan' => 307_200,
+        'maks_piksel_potongan' => 500_000,
+        'maks_sel_unggah_per_lembar' => 160,
+        'maks_sel_unggah_tanpa_sesi_per_hari' => 240,
+    ],
+
+    /*
+     * Batas piksel (lebar x tinggi) citra yang boleh didekode server. SATU kunci untuk semua jalur
+     * (potong sel lama, potong sel OCR awan, penebal tanda tangan) lewat `App\Support\PengamanCitra`,
+     * satu-satunya tempat yang memanggil `imagecreatefromstring`. Sengaja tanpa env() (kunci env baru
+     * wajib ikut `render.yaml` dan `.env.example`); mengubah angka ini = PR.
+     *
+     * Kenapa angkanya 16 juta: memori GD truecolor ~4 byte per piksel, bukan per byte berkas. Diukur
+     * 25 Nov 2026 (`memory_get_peak_usage`): 12 MP = 50 MB, 16 MP = 68 MB, 20 MP = 82 MB, 48 MP =
+     * 194 MB. `memory_limit` produksi 128 MB (`docker/entrypoint.sh`), dasar request Laravel ~45 MB,
+     * isi berkas ikut termuat (batas unggah 8 MB): (128 - 45 - 8) / 4 x ~0,8 = ~16 juta piksel.
+     * Melewati `memory_limit` itu FATAL (500 tanpa `fallback_manual`, `@` tidak menangkapnya), jadi
+     * batasnya harus dicek dari header SEBELUM didekode. 16 MP meloloskan foto HP 12 MP (4000x3000)
+     * dan 4608x3456, dan menolak 48 MP (8000x6000). Nilai di sini harus sama dengan
+     * `PengamanCitra::BATAS_PIKSEL_BAWAAN` (dijaga `PengamanCitraTest`).
+     */
+    'maks_piksel_citra' => 16_000_000,
+
 ];

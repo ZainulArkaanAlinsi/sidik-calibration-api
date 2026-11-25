@@ -41,6 +41,16 @@ class PhMeterProfile extends CalibrationProfile
         return 'ph_meter';
     }
 
+    /**
+     * Saklar vonis pH Meter: `ph_meter.vonis_pass_fail`. Pilihan `tanpa_vonis`
+     * mengosongkan toleransi titik, jadi hasilnya hanya Correction dan U95 seperti
+     * workbook master. Bawaan `dengan_toleransi` = perilaku kode sebelum saklar.
+     */
+    protected function kunciParameterVonis(): ?string
+    {
+        return 'ph_meter.vonis_pass_fail';
+    }
+
     public function namaAlatKemampuan(): string
     {
         return 'pH Meter';

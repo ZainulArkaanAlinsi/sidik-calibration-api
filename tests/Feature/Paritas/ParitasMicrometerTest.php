@@ -571,25 +571,63 @@ class ParitasMicrometerTest extends TestCase
         $this->assertSame(['2550' => 2, '5075' => 0, '75100' => 6], $jumlah, 'baris koreksi membulat-ke-nol berubah: perbarui docs/paritas-micrometer-ph.md bagian MENUNGGU tanda minus');
     }
 
-    // ------------------------------------------------------------------ K-1 (menunggu keputusan TM)
+    // ------------------------------------------------------------------ K-10 (keputusan default, 25 Nov 2026)
+
+    /**
+     * K-10, `KEPUTUSAN-DEFAULT.md` (default A, kategori [T], keyakinan rendah):
+     * blok `Note :` kerataan/kesejajaran muka ukur (master `165:167!B31:G33`,
+     * `G32 = INPUT DATA!W25`, `G33 = W30`) HANYA mencetak yang diisi teknisi.
+     * Kosong = barisnya tidak dicetak, tidak pernah "Baik" karangan; kedua
+     * kosong = tanpa blok. Tes ini mengunci perilaku kode yang sudah dipilih
+     * default; tidak membuktikan isi master pada sesi yang kotaknya kosong.
+     */
+    #[Group('keputusan-default')]
+    public function test_k10_kerataan_kesejajaran_tanpa_isian_tidak_dicetak(): void
+    {
+        $profil = new MicrometerProfile;
+
+        $kosong = new CalibrationSession;
+        $kosong->spesifikasi_alat = [MicrometerMentah::KUNCI_SESI => ['resolusi_mm' => 0.001]];
+        $this->assertSame([], $profil->catatanSertifikat($kosong), 'kedua kotak kosong: tanpa blok Note');
+
+        $satu = new CalibrationSession;
+        $satu->spesifikasi_alat = [MicrometerMentah::KUNCI_SESI => ['kerataan_muka_ukur' => 'baik']];
+        $blok = $profil->catatanSertifikat($satu);
+        $this->assertCount(1, $blok);
+        $this->assertSame([['Kerataan Muka Ukur dalam Kondisi', ':', 'Baik']], $blok[0]['tabel'], 'hanya baris yang diisi yang dicetak');
+
+        $buruk = new CalibrationSession;
+        $buruk->spesifikasi_alat = [MicrometerMentah::KUNCI_SESI => ['kesejajaran_muka_ukur' => 'Buruk', 'kerataan_muka_ukur' => '']];
+        $this->assertSame([['Kesejajaran Muka Ukur dalam Kondisi', ':', 'Buruk']], $profil->catatanSertifikat($buruk)[0]['tabel']);
+    }
+
+    // ------------------------------------------------------------------ K-1 (keputusan default, 25 Nov 2026)
 
     /**
      * K-1, `konflik-excel-kertas.md`: titik ke-3 pita 50-75 mm — 51,0 (kertas 0522.C,
      * workbook master, aplikasi) lawan 55,6 (cetakan Excel job 0455-CAL-1026).
      *
-     * STATUS: MENUNGGU KEPUTUSAN MANAJER TEKNIS. Tes ini TIDAK memilih; dia
-     * mengunci apa yang benar hari ini supaya perubahan apa pun terlihat:
+     * STATUS (25 Nov 2026): KEPUTUSAN DEFAULT B DITERAPKAN, tanpa perubahan kode.
+     * Sumber: `sidik-dokumentasi/2026-11-25/keputusan/KEPUTUSAN-DEFAULT.md`, butir
+     * A1/K-1 (default B = titik 3 tetap 51,0; kategori [T]; keyakinan sedang),
+     * diputuskan koordinator atas delegasi pemilik. Keputusan ini BELUM
+     * dikonfirmasi Manajer Teknis; bila TM memilih 55,6, ubah tabel varian +
+     * kertas Rev.2, dan tes ini merah menunjuk ke sini.
+     *
+     * Tes ini mengunci keadaan yang dipilih default B:
      *
      *  - aplikasi = kertas = workbook master = 51,0 (total terkoreksi 51,00025 mm);
      *  - tumpukan 55,6 (50,0+1,2+2,5+1,9) memang dikenal tabel keping (Excel menerimanya,
-     *    nilai 55,60025) — tetapi aplikasi TIDAK dapat merepresentasikannya: nominal
+     *    nilai 55,60025) — tetapi aplikasi TIDAK merepresentasikannya: nominal
      *    titik dipatok varian kertas, kiriman HP hanya diperiksa terhadapnya.
      *
-     * Bila TM memutuskan 55,6: ubah tabel varian + kertas Rev.2, dan tes ini
-     * merah menunjuk ke sini.
+     * Catatan fixture: string `konflik_k1.status` ("menunggu keputusan Manajer
+     * Teknis") ditulis `docs/skrip/gen-fixture-paritas-micrometer-ph.py` dan
+     * mencatat keadaan 24 Nov. Fixture bangkitan tidak disunting tangan (generator
+     * butuh workbook ber-sandi); assertion string itu dibiarkan apa adanya.
      */
-    #[Group('menunggu-keputusan-tm')]
-    public function test_k1_titik_ketiga_50_75_aplikasi_sama_dengan_kertas_dan_master_menunggu_keputusan(): void
+    #[Group('keputusan-default')]
+    public function test_k1_titik_ketiga_50_75_aplikasi_sama_dengan_kertas_dan_master_keputusan_default_51_0(): void
     {
         $v = self::v('5075');
         $k1 = $v['konflik_k1'];
@@ -618,7 +656,7 @@ class ParitasMicrometerTest extends TestCase
 
         // ...tetapi aplikasi tidak punya jalan menerimanya: tidak ada titik bernominal 55,6 di varian 50-75.
         $nominalVarian = array_map(static fn (array $t): float => (float) $t['nominal_cetak_mm'], $varian['titik']);
-        $this->assertNotContains(55.6, $nominalVarian, 'K-1: 55,6 masuk tabel varian — keputusan TM sudah diterapkan? perbarui docs/paritas-micrometer-ph.md');
+        $this->assertNotContains(55.6, $nominalVarian, 'K-1: 55,6 masuk tabel varian — keputusan default B (51,0) berubah? perbarui docs/paritas-micrometer-ph.md');
         $this->assertSame('menunggu keputusan Manajer Teknis', $k1['status']);
     }
 }

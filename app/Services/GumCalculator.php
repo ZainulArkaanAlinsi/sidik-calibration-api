@@ -254,6 +254,17 @@ class GumCalculator
         $toleransi = $profil->toleransiTitik($titikUkur, $rataRata, $equipment, $konteksTitik)
             ?? $toleransiAlat;
 
+        // Parameter keputusan metode `<alat>.vonis_pass_fail` = `tanpa_vonis`: workbook
+        // master tidak punya sel toleransi maupun PASS/FAIL, jadi titik ini hanya
+        // dilaporkan Correction dan U95-nya. Toleransi tidak ikut masuk ke budget
+        // (`komponenBudget` dan tiga jalur hitung di bawah tidak menerimanya), jadi
+        // u, U, k, error, dan koreksi tidak tersentuh; `keputusan()` di bawah
+        // memulangkan null untuk toleransi kosong. Bawaan (`dengan_toleransi`) tidak
+        // lewat sini sama sekali.
+        if ($profil->tanpaVonisMetode()) {
+            $toleransi = null;
+        }
+
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
         $komponen = $kemampuan !== null

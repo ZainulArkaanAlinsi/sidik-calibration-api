@@ -526,6 +526,8 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > **Yang mobile perlu lakuin:** form Alat berhenti mewajibkan `toleransi` waktu `punya_toleransi: false`. Field yang nggak ada di response (server lama) dianggap `true` — perilaku lama.
 >
+> **Saklar `tanpa_vonis` nggak mengubah jawaban ini (PR #306).** Parameter keputusan metode `tanpa_vonis` bisa ditetapkan Manajer Teknis buat pH Meter, Turbidimeter, Chlorine Meter, dan Refractometer, tapi `punya_toleransi` buat keempatnya TETAP `true` walau penetapannya berlaku: jawabannya nggak dibaca per tanggal kalibrasi (`CategoryController.php:180`). Form Alat tetap mewajibkan `toleransi`. Yang berubah cuma sesi yang dihitung sesudah penetapan berlaku: dihitung tanpa toleransi, jadi nggak ada vonis PASS/FAIL.
+>
 > **Kenapa ini penting, bukan kosmetik:** form Alat dulu mewajibkan `toleransi` buat SEMUA alat, alasannya "nanti kena 422". 422 itu nggak pernah datang (lihat catatan di §4), dan yang datang justru teknisi mengarang angka toleransi — mengarang kriteria kelulusan buat alat yang nggak divonis. Mengisi kolom itu pernah mematikan seluruh sesi Conductivity.
 >
 > ### Rentang master dipecah per GOLONGAN, bukan per alat
@@ -570,7 +572,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > - **Tiap titik ukur minimal 2 pembacaan.** Type A itu standar deviasi antar-pengulangan — dari satu angka nggak ada sebaran yang bisa dihitung. (Aturan "minimal 3" yang kamu tulis di contoh reject itu **nggak** dipaksain backend — biar tetap jadi penilaian admin.)
 >   **⚠️ Update 17 Nov 2026 — dua alat punya batas IK yang DITEGAKKAN:** **Micrometer 5** pembacaan per titik dan **Timer/Stopwatch 3** ulangan per set point (`CalibrationProfile::minPengulanganIK()`; alat lain tetap 2). Menyimpan lembar (draf maupun kirim) **tetap boleh** setengah jadi dan tidak ada pembacaan yang dibuang, tapi `POST /calibrations/{id}/approve` dijawab `422` dengan `validasi.temuan[]` berkode `pengulangan_kurang_dari_ik` (tingkat `error`; `konteks.minimum` + `konteks.titik[] {titik_ke, titik_ukur, terisi, minimum}`) selama masih ada titik aktif di bawah batas. Sesi yang **sudah disetujui** tidak berubah — validator hanya melaporkannya sebagai `info`. `GET /calibrations/{id}/validasi` menampilkan temuan yang sama. Lihat `docs/pertanyaan-lab-pengulangan-ik.md`.
 > - **Alat yang `toleransi`-nya masih kosong ditolak — TAPI cuma buat alat yang emang divonis PASS/FAIL.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
->   **⚠️ Update 27 Agt — batasannya:** 43 dari 48 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
+>   **⚠️ Update 27 Agt — batasannya:** 43 dari 48 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3). Saklar `tanpa_vonis` (PR #306) nggak mengubah jawaban itu: pH, Turbidimeter, Chlorine, dan Refractometer tetap `true` walau penetapannya berlaku.
 > - **Standar yang sertifikatnya kadaluarsa ditolak.** Ketertelusurannya putus.
 > - `tanggal_kalibrasi` nggak boleh di masa depan.
 >
@@ -609,17 +611,17 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ```
 > Catatan buat mobile: **nggak ada `satuan` atau `pembacaan` di dalam tiap `titik`** — beda dari yang mobile kira sebelumnya. Pembacaan mentahnya ada di field terpisah `pembacaan_mentah` (array top-level, cuma ikut di `GET /api/calibrations/{id}` — bukan di daftar), isinya `{id, titik_ke, pembacaan_ke, pembacaan, input_source, is_verified, photo_path, ocr_confidence, ocr_raw_text}`, dikelompokkan lewat `titik_ke` yang sama. `type_b_komponen` yang mobile tulis sebelumnya salah nama field — yang bener `type_b_components` (komponennya `sumber`/`keterangan`/`distribusi`/`nilai`, dan `keterangan` udah diformat siap-tampil, jangan disusun ulang jadi kalimat sendiri).
 >
-> **Butir baru di `type_b_components`: `sumber: "parameter_metode"` (PR #298, merge `3ab0a8f3`).** Tiap `titik` sesi **Refractometer**, **Conductivity Meter**, dan **Spectrophotometer** yang dihitung/dihitung ulang sesudah PR itu membawa SATU elemen tambahan di ujung daftar budget, **juga saat tidak ada keputusan baru** (pilihan bawaan = perilaku kode yang lama). Bentuknya tetap empat kunci yang sama dengan butir lain, tapi artinya beda:
+> **Butir baru di `type_b_components`: `sumber: "parameter_metode"` (PR #298, merge `3ab0a8f3`).** Tiap `titik` sesi **Refractometer**, **Conductivity Meter**, dan **Spectrophotometer** yang dihitung/dihitung ulang sesudah PR itu membawa SATU elemen tambahan di ujung daftar budget, **juga saat tidak ada keputusan baru** (pilihan bawaan = perilaku kode yang lama). **Diperluas PR #306:** sesi yang dihitung sesudahnya juga membawa SATU butir tiap `titik` buat **pH Meter**, **Turbidimeter**, dan **Chlorine Meter**, dan **Refractometer** kini membawa TIGA butir tiap `titik` (dulu satu), juga tanpa keputusan apa pun. Bentuknya tetap empat kunci yang sama dengan butir lain, tapi artinya beda:
 > ```json
 > { "sumber": "parameter_metode",
 >   "keterangan": "Parameter keputusan metode refractometer.sumber_deviasi_suhu = suhu_ruang (bawaan kode (belum ada penetapan yang berlaku pada tanggal kalibrasi); status menunggu TM; butir TM refractometer#24). Perilaku ini BERBEDA dari workbook master. Dasar: …. Pilihan lain: baris_tetap_21c.",
 >   "distribusi": "-", "nilai": null }
 > ```
 > - **`nilai` selalu `null`** (bukan 0 dan bukan angka): butir ini catatan jejak, **bukan komponen ketidakpastian**. Tidak ikut `type_b`, `ketidakpastian_gabungan`, atau `ketidakpastian_diperluas`; angka sertifikat tidak berubah karenanya. Klien yang menjumlahkan `nilai` semua butir harus melewati `null` (di Dart `UncertaintyComponent.fromJson` sudah menganggapnya 0), dan yang memfilter berdasarkan `sumber` boleh membuang `parameter_metode` dari tabel budget.
-> - **`keterangan` berupa kalimat siap-tampil**, menyebut nama parameter, pilihan yang berlaku, asalnya (`bawaan kode …` atau `penetapan #N berlaku mulai <tanggal>`), status (`menunggu TM` / `diputuskan`), butir lembar centang TM, lalu apakah perilaku itu SAMA / SEBAGIAN / BERBEDA dari workbook master beserta sel dasarnya. **Untuk pilihan bawaan ketiga alat itu kalimatnya BUKAN "SAMA"**: Refractometer dan Spectrophotometer menyebut BERBEDA dari workbook master, Conductivity SEBAGIAN — memang begitu keadaannya sampai Manajer Teknis menjawab, jadi jangan disembunyikan dan jangan ditulis ulang di klien.
+> - **`keterangan` berupa kalimat siap-tampil**, menyebut nama parameter, pilihan yang berlaku, asalnya (`bawaan kode …` atau `penetapan #N berlaku mulai <tanggal>`), status (`menunggu TM` / `diputuskan`), butir lembar centang TM, lalu apakah perilaku itu SAMA / SEBAGIAN / BERBEDA dari workbook master beserta sel dasarnya. **Untuk pilihan bawaan alat-alat itu kalimatnya BUKAN "SAMA"**: Refractometer, Spectrophotometer, pH Meter, Turbidimeter, dan Chlorine Meter menyebut BERBEDA dari workbook master, Conductivity SEBAGIAN — memang begitu keadaannya sampai Manajer Teknis menjawab, jadi jangan disembunyikan dan jangan ditulis ulang di klien.
 > - **`distribusi` = `"-"`**, sama dengan butir catatan lain yang bukan komponen (mis. `titik_luar_rentang_cmc`).
 > - **Posisi tidak dijamin ujung.** Di Spectrophotometer butir ini ada SESUDAH baris budget dan catatan audit tetapi SEBELUM `titik_luar_rentang_cmc` bila titiknya di luar rentang CMC; cari lewat `sumber`, jangan lewat indeks.
-> - **Sesi lama** (dihitung sebelum PR itu) tidak punya butirnya sampai `kalibrasi:hitung-ulang` menjalankannya; jangan menganggap ketiadaannya sebagai galat (dibaca sebagai pilihan bawaan). Alat lain tidak mendapat butir ini sama sekali.
+> - **Sesi lama** (dihitung sebelum PR itu) tidak punya butirnya sampai `kalibrasi:hitung-ulang` menjalankannya; jangan menganggap ketiadaannya sebagai galat (dibaca sebagai pilihan bawaan). Alat tanpa parameter `hitung` di registri tidak mendapat butir ini. **Timbangan juga tidak**, walau punya parameter (saklar `master`): `TimbanganCalculator` tidak memanggil `jejakParameterMetode()`, jadi jejaknya cuma nama parameter di teks komponen "Uncertainty of Correction", tanpa nomor penetapan, `berlaku_mulai`, atau status.
 > - Kunci tambahan di sisi server (`parameter`, `pilihan`, `penetapan`, `berlaku_mulai`, dll.) **tidak dikirim** ke klien; `CalibrationResource` hanya meneruskan `sumber`, `keterangan`, `distribusi`, `nilai`.
 >
 > **`titik` cuma keisi setelah sesi lewat kalkulasi** (`disetujui` / `menunggu_approval` yang udah diproses) — mobile nganggep array kosong `[]` buat `draft`, dan nampilin pesan "belum dihitung" bukan tabel kosong.
@@ -4055,6 +4057,201 @@ sampai ke Vision karena sisi kita (penolakan lokal, kredensial kosong atau rusak
 
 ---
 
+## 22A. OCR awan atas potongan sel angka (25 Nov 2026)
+
+**Status: kode ada, BAWAAN MATI, tes memakai Google palsu.** Keputusan pemilik 25 Nov 2026: ke Google hanya potongan
+sel angka (dan formulir kosong); bukan foto utuh, bukan sel identitas (nama, alamat, nomor seri pelanggan, tanda tangan);
+Gemini tidak termasuk. `POST /api/ocr/halaman` (foto utuh, bagian 22) tidak berubah. Aditif: tidak ada rute, kunci, atau izin
+lama yang berubah. Catatan klien: `docs/perintah-frontend-ocr-sel-awan.md`.
+
+### `POST /api/worksheet-scans/{worksheetScan}/ocr-awan` — JSON, teknisi pemilik / Master Data / super admin
+
+Gerbang, semuanya harus terbuka: saklar Super Admin `pindai_lembar` DAN `ocr_cloud_sel` (`503 fitur_dimatikan`, sebelum
+route model binding), env `GOOGLE_VISION_AKTIF` (`503 ocr_cloud_belum_aktif`, tanpa env baru), lalu kepemilikan (organisasi
+lain `404`, teknisi lain `403`, viewer `403`, tamu `401`). Saklar hanya bisa MEMATIKAN (daftar tersimpan = yang dimatikan);
+bawaan mati dijamin env. Limiter `ocr-sel-awan`: 4/menit per akun.
+
+| Field | Wajib | Isi |
+|---|---|---|
+| `kunci` | tidak | daftar kunci sel (`tabel\|baris\|repeat\|field`), 1 sampai `ocr.awan_sel.maks_sel_per_permintaan` (48). Tanpa kolom ini server memilih sel angka yang belum hijau dan tidak kosong |
+
+**Tidak ada gambar dari klien.** Server memotong sendiri dari `citra_warp_path` memakai kotak sel di `worksheet_scan_cells`
+(JPEG kualitas 85, margin `ocr.awan_sel.margin_px` = 4 px, tanpa pembesaran). Penyaring GAGAL-TUTUP: sel hanya dikirim bila
+barisnya bertipe `angka` di `worksheet_scans.hasil.tabel`. Tidak dikirim: `isian`, `centang`, baris `jam`, sel yang tidak
+ketemu di peta tipe, sel kosong di HP; identitas dan tanggal bukan baris sel. Citra formulir asli yang rasionya tidak cocok
+dengan `ukuran_referensi` tidak dipotong (`citra_bukan_halaman_utuh`).
+
+**`200`** — `hasil[]` per sel `{kunci, teks_awan, keyakinan, status, teks_normal, nilai_awan, dinormalkan, alasan[]}`,
+`dilewati[]` `{kunci, alasan}`, dan `meta` `{sumber, fitur, unit, jumlah_dikirim, jumlah_panggilan, usulan: true, sebagian,
+dilewati_otomatis, sisa_sel_scan}`.
+
+- `teks_awan` = teks Google APA ADANYA (`null` bila Google gagal untuk sel itu, `""` bila tak ada tulisan). `teks_normal` /
+  `nilai_awan` = bentuk angka murni dari `NormalisasiAngka` bila lolos, selain itu `null`; `dinormalkan: true` bila bentuknya
+  beda dari `teks_awan`. Tidak ada koreksi diam-diam (huruf tidak diganti digit, "1,413" ambigu ditolak, spasi di tengah ditolak).
+- `status` paling tinggi `kuning`, tidak pernah `hijau`; `merah` untuk teks yang tidak lolos normalisasi, `keyakinan` < `ocr.ambang.kuning`
+  (0,60) atau tidak ada, dan sel yang ditolak Google; `kosong` bila Google tidak melihat tulisan.
+- **Nilai sel di database TIDAK berubah.** Endpoint ini hanya mengusulkan.
+- `meta.sebagian: true` bila Google gagal di tengah (sel yang belum terbaca ada di `dilewati`, alasan `google_gagal`).
+
+**Pengiriman ke Google:** `GoogleVisionOcr::bacaSel`, satu `POST /v1/images:annotate` berisi paling banyak 16 gambar
+(`DOCUMENT_TEXT_DETECTION`), respons dicocokkan menurut urutan dan ditolak seluruhnya bila jumlahnya tidak sama. Batch tidak
+lebih murah per sel (asumsi 1 gambar = 1 unit); yang dihemat putaran jaringan, permintaan token, dan baris log. Satu panggilan
+= satu baris `worksheet_extraction_logs` = satu jatah `GOOGLE_VISION_MAKS_PER_SESI`; sisa jatah dihitung sebelum mengirim.
+
+**Batas** (config `ocr.awan_sel`, tanpa env baru): `maks_sel_per_permintaan` 48, `maks_sel_per_scan` 80 (hitungan LUNAK di cache,
+TTL 30 hari, bisa hilang bersama cache; pagar biaya, bukan catatan resmi), `margin_px` 4. Jatah dan batas kegagalan per lembar
+SATU kolam dengan jalur foto utuh (`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`, juga tidak dikunci):
+satu panggilan berhasil lewat jalur mana pun mengurangi sisa jatah lembar itu untuk kedua jalur (dikunci tes dua arah).
+
+**Batas piksel citra** (config `ocr.maks_piksel_citra`, tingkat atas, tanpa env baru): **16.000.000 piksel**, lebar x tinggi,
+dibaca dari HEADER sebelum citra didekode. Foto HP 12 MP (4000x3000) dan 4608x3456 lolos; 48 MP (8000x6000) dan di atasnya
+ditolak. Alasannya memori, bukan ukuran berkas: GD memakan ~4 byte per piksel, jadi JPEG 750 KB bisa berisi 48 MP dan
+butuh ~190 MB, sedangkan `memory_limit` produksi 128 MB; kehabisan memori itu fatal (500 polos tanpa `fallback_manual`).
+Citra yang melebihi batas, sisinya nol, atau bukan citra yang terbaca dijawab `422 citra_rusak` + `fallback_manual: true`,
+Google tidak dihubungi, dan penolakannya tercatat di log tanpa isi gambar. Tidak ada kode galat baru. Pengaman yang sama
+(`App\Support\PengamanCitra`) dipakai juga oleh `GET /worksheet-scans/{id}/crop` (`422 Citra hasil pindai rusak.`) dan oleh
+penebalan tanda tangan sertifikat (citra terlalu besar dibiarkan apa adanya, sertifikat tetap terbit).
+
+**Hasil pindai tanpa sesi kalibrasi** (`calibration_session_id` null) diizinkan dan DIKUNCI tes: jatah per lembar dan batas
+kegagalan per lembar tidak berlaku karena tidak ada lembar yang dihitung. Pagarnya tinggal limiter `ocr-sel-awan` (4/menit per
+akun) dan `maks_sel_per_scan` (80 sel per hasil pindai). Baris log tetap ditulis, dengan `calibration_session_id` null.
+Pindai tanpa sesi adalah perilaku yang dipilih, bukan kelupaan; menutupnya perlu keputusan baru.
+
+**Galat** (`message`, `kode`, `fallback_manual: true`; `message` kalimat tetap, pesan Google tidak diteruskan):
+
+| HTTP | `kode` | Sebab |
+|---|---|---|
+| `503` | `fitur_dimatikan` / `ocr_cloud_belum_aktif` / `ocr_cloud_belum_disetel` | seperti bagian 22 |
+| `503` | `citra_tidak_bisa_dipotong` | ekstensi GD tidak ada di server |
+| `422` | `citra_tidak_tersimpan` / `citra_rusak` | citra hasil pindai tidak ada, tidak terbaca, atau melebihi `ocr.maks_piksel_citra` (16 MP) |
+| `422` | — (validasi Laravel, tanpa `kode`) | `kunci` kosong, bukan larik, atau lebih dari batas per permintaan |
+| `422` | `gambar_tidak_terbaca` | Google menolak semua potongan dalam permintaan |
+| `429` | `batas_per_lembar` / `gagal_berulang_per_lembar` | seperti bagian 22 (kolam yang sama) |
+| `429` | `batas_sel_per_scan` | batas sel per hasil pindai habis |
+| `429` | — | limiter `ocr-sel-awan` |
+| `502` | `ocr_cloud_gagal` | Google gagal, waktu habis, atau jaringan putus |
+
+**Audit:** tiap panggilan Google masuk `worksheet_extraction_logs` (`model` = `google-vision:DOCUMENT_TEXT_DETECTION`) dengan
+`unit_vision` (jumlah gambar terjawab), `ukuran_gambar_byte` (jumlah byte semua potongan), `durasi_ms`, `status`. Gambar dan
+teks hasil TIDAK disimpan. Penolakan lokal (env mati, batas) masuk dengan `unit_vision` NULL. Sinyal admin
+(`ocr_dihentikan`, `GET /api/admin/ocr-cloud`) dipakai bersama bagian 22.
+
+> **Belum terbukti:** akurasi pada tulisan tangan nyata (tidak ada panggilan nyata ke Google, tidak ada foto uji berlabel
+> manusia), asumsi 1 gambar = 1 unit tagihan, dan kualitas potongan sel kecil tanpa pembesaran.
+
+---
+
+## 22B. OCR awan atas potongan sel angka yang DIUNGGAH HP (25 Nov 2026)
+
+**Status: kontrak ditulis lebih dulu supaya tim mobile bisa mulai; kode menyusul di PR yang sama. BAWAAN MATI, tes memakai
+Google palsu.** Aditif: bagian 22 (`POST /api/ocr/halaman`, foto utuh) dan 22A (`POST /api/worksheet-scans/{id}/ocr-awan`)
+tidak berubah satu huruf pun. Catatan klien: `docs/perintah-frontend-ocr-sel-awan.md`.
+
+**Kenapa ada.** Aplikasi Lab tidak punya hasil pindai tersimpan di server: foto dan halaman utuh tidak pernah meninggalkan
+HP (K-50-11), dan `POST /worksheet-scans` menolak lembar tanpa data yang tidak dihasilkan HP. Jadi `scan_id` untuk 22A tidak
+pernah ada. Di sini HP memotong sendiri sel angka dari fotonya dan mengunggah HANYA potongan itu. Keputusan pemilik 24-25 Nov
+2026: ke Google hanya potongan sel angka; bukan foto utuh, bukan sel identitas, bukan tanggal, bukan centang; Gemini tidak termasuk.
+
+### `POST /api/ocr/sel-awan` — `multipart/form-data`, teknisi / Master Data / super admin
+
+Gerbang, semuanya harus terbuka (sama dengan 22A): saklar Super Admin `pindai_lembar` DAN `ocr_cloud_sel` (`503 fitur_dimatikan`),
+env `GOOGLE_VISION_AKTIF` (`503 ocr_cloud_belum_aktif`, tanpa env baru), peran (viewer `403`, tamu `401`). Bawaan mati dijamin
+env. Limiter `ocr-sel-unggah`: 4/menit per akun (terpisah dari `ocr-sel-awan` milik 22A; keduanya bisa terpakai bersamaan).
+
+| Field | Wajib | Isi |
+|---|---|---|
+| `template_id` | ya | kode templat, nilai `template_id` dari `GET /worksheet-templates` (pengenal yang SAMA dengan `POST /worksheet-scans`) |
+| `kertas` | tidak | `cetak` (bawaan) atau `asli`; sama dengan `GET /worksheet-templates/{kode}?kertas=` |
+| `kode_dokumen` | tidak | kode FM formulir asli yang dibaca HP dari kaki kertas (pemilih varian). Diabaikan untuk `cetak` |
+| `equipment_id` | tidak | alat seorganisasi; bentuk templat bisa mengikuti alat. Id alat lab lain diperlakukan seperti tanpa alat |
+| `jumlah_pengulangan` | tidak | 2 sampai 10, seperti di `GET /worksheet-templates/{kode}` |
+| `calibration_session_id` | tidak | sesi kerja seorganisasi. Dengan sesi: jatah dan batas kegagalan per lembar berlaku (kolam yang SAMA dengan 22 dan 22A). Tanpa sesi: lihat Batas |
+| `sel[n][kunci]` | ya | kunci sel templat (`tabel\|baris\|repeat\|field`), `n` = 0, 1, 2, ... |
+| `sel[n][gambar]` | ya | berkas potongan satu sel, JPEG atau PNG |
+
+Satu permintaan memuat 1 sampai `ocr.awan_sel.maks_sel_per_permintaan` (**48**) sel. Tiap `sel[n]` wajib punya `kunci` DAN `gambar`.
+
+**Server mencocokkan tiap kunci ke templat server** (`template_id` + `kertas` + `kode_dokumen` + `equipment_id` + `jumlah_pengulangan`),
+bukan ke klaim klien, dan GAGAL-TUTUP: potongan hanya dikirim ke Google bila kuncinya ada di templat DAN barisnya bertipe `angka`
+(bukan `jam`). Kunci `isian|...`, `centang|...`, baris `jam`, kunci yang tidak ada di templat, dan kunci kembar TIDAK dikirim. Identitas,
+alamat, nomor seri, tanda tangan, dan tanggal bukan kunci sel templat sama sekali, jadi tidak bisa dipilih lewat jalur ini.
+**Keputusan: penolakan per sel, bukan seluruh permintaan.** Sel yang ditolak masuk `dilewati[]` dengan alasan, potongannya
+dibuang tanpa dibaca isinya, dan sel lain tetap diproses (sama dengan 22A). Bila TIDAK ADA satu pun sel yang boleh dikirim:
+`422 tidak_ada_potongan_valid` + `fallback_manual: true` (dan `dilewati[]`), Google tidak dihubungi.
+
+**Batas potongan** (config `ocr.awan_sel`, tanpa env baru; mengubah angka = PR). Per sel, dicek di server, pelanggaran masuk
+`dilewati[]` (bukan menggagalkan sel lain):
+
+| Batas | Nilai | `dilewati[].alasan` |
+|---|---|---|
+| ukuran berkas per potongan | 300 KB (`maks_byte_potongan` = 307.200 byte) | `potongan_kebesaran_byte` |
+| piksel per potongan (lebar x tinggi, dari HEADER) | 500.000 (`maks_piksel_potongan`) | `potongan_kebesaran_piksel` |
+| bukan citra yang terbaca (rusak, format asing, sisi nol) | | `potongan_bukan_citra` |
+
+Piksel dibaca dari header lewat `App\Support\PengamanCitra` (satu-satunya tempat decode); potongan TIDAK didekode di server, byte-nya
+diteruskan apa adanya ke Google. Batas 500.000 piksel menjaga agar "potongan sel" tidak bisa berupa foto halaman yang dikecilkan
+dan dikompres; plafon umum 16 juta piksel (`ocr.maks_piksel_citra`) tetap berlaku di bawahnya. Angka 300 KB / 500.000 adalah
+tebakan awal yang BELUM diukur pada potongan sel foto nyata.
+
+**Potongan tidak disimpan.** Tidak ke disk aplikasi, tidak ke database, tidak ke log; satu-satunya jejaknya berkas sementara
+unggahan PHP, yang dihapus PHP di akhir permintaan. Yang tercatat hanya hitungan (lihat Audit).
+
+**`200`** — bentuk per sel SAMA dengan 22A: `hasil[]` `{kunci, teks_awan, keyakinan, status, teks_normal, nilai_awan, dinormalkan,
+alasan[]}`, `dilewati[]` `{kunci, alasan}`, dan `meta` `{sumber, fitur, unit, jumlah_dikirim, jumlah_panggilan, usulan: true,
+sebagian, sisa_sel_lembar}`. Beda dengan 22A: tidak ada `dilewati_otomatis` dan `sisa_sel_scan` (tidak ada hasil pindai di server;
+pemilihan sel sepenuhnya di tangan HP), dan `sisa_sel_lembar` menggantikannya.
+
+- `teks_awan` = teks Google APA ADANYA (`null` bila Google gagal untuk sel itu, `""` bila tak ada tulisan; sel kosong tetap kosong).
+  `teks_normal` / `nilai_awan` = bentuk angka murni dari `NormalisasiAngka` bila lolos, selain itu `null`; `dinormalkan: true`
+  bila bentuknya beda dari `teks_awan`. Tidak ada koreksi diam-diam (aturan `AGENTS.md`).
+- `status` paling tinggi `kuning`, tidak pernah `hijau` (tulisan tangan); `merah` untuk teks yang tidak lolos normalisasi,
+  `keyakinan` < `ocr.ambang.kuning` (0,60) atau tidak ada, dan sel yang ditolak Google; `kosong` bila Google tidak melihat tulisan.
+- **Semua ini USULAN.** Server tidak menulis nilai sel apa pun; HP menampilkan, teknisi mengonfirmasi.
+- `meta.sebagian: true` bila Google gagal di tengah (sel yang belum terbaca ada di `dilewati`, alasan `google_gagal`).
+- `dilewati[].alasan` selain tabel batas di atas: `kunci_kembar`, `tidak_ada_di_templat`, `isian_tidak_dikirim`,
+  `centang_tidak_dikirim`, `bukan_sel_angka`, `melebihi_batas_lembar`, `jatah_lembar_habis`, `google_gagal`.
+
+**Batas per lembar.** (1) Dengan `calibration_session_id`: jatah panggilan dan batas kegagalan per sesi yang SAMA dengan 22 dan 22A
+(`GOOGLE_VISION_MAKS_PER_SESI`, `GOOGLE_VISION_MAKS_GAGAL_PER_SESI`; satu panggilan Google = hingga 16 sel). (2) Hitungan sel LUNAK di
+cache (bisa hilang bersama cache; pagar biaya, bukan catatan resmi): `maks_sel_unggah_per_lembar` = **160** sel per sesi (TTL 30
+hari), atau tanpa sesi `maks_sel_unggah_tanpa_sesi_per_hari` = **240** sel per akun per hari. Angka 160 dan 240 adalah tebakan
+awal (dua kali batas 22A), belum diukur. Sel yang tidak muat dilaporkan di `dilewati` (`melebihi_batas_lembar`); bila tidak ada
+sisa sama sekali: `429 batas_sel_per_lembar`.
+
+**Galat.** Semuanya `{message, kode, fallback_manual: true}` kecuali dua yang dihasilkan middleware bersama (`503 fitur_dimatikan`
+dan jawaban `401`/`403` peran), yang tidak membawa `fallback_manual`: **klien memperlakukan SETIAP jawaban bukan-2xx dari endpoint
+ini sebagai "jatuh ke pembaca di HP / isi manual"**. `message` kalimat tetap; pesan Google tidak diteruskan.
+
+| HTTP | `kode` | Sebab |
+|---|---|---|
+| `503` | `fitur_dimatikan` / `ocr_cloud_belum_aktif` / `ocr_cloud_belum_disetel` | seperti bagian 22 |
+| `422` | `permintaan_tidak_valid` | field wajib hilang, `sel` kosong atau lebih dari 48, `kunci` bukan teks, `gambar` bukan berkas. Membawa `errors` (nama field -> daftar kalimat, bentuk galat validasi Laravel; kunci bersarang seperti `sel.0.gambar`) |
+| `422` | `templat_tidak_dikenal` | `template_id` / `kertas` / `kode_dokumen` tidak menghasilkan templat |
+| `422` | `tidak_ada_potongan_valid` | tidak ada satu pun sel yang boleh dikirim (semuanya ada di `dilewati`) |
+| `422` | `gambar_tidak_terbaca` | Google menolak semua potongan dalam permintaan |
+| `404` | `sesi_tidak_ditemukan` | sesi tidak ada atau milik organisasi lain (jawabannya SAMA persis) |
+| `403` | `bukan_sesi_anda` | teknisi memakai sesi teknisi lain |
+| `429` | `batas_per_lembar` / `gagal_berulang_per_lembar` | seperti 22 (kolam yang sama) |
+| `429` | `batas_sel_per_lembar` | hitungan sel lunak habis |
+| `429` | `terlalu_sering` | limiter `ocr-sel-unggah` |
+| `502` | `ocr_cloud_gagal` | Google gagal, waktu habis, jaringan putus, atau galat tak terduga di sisi server (tidak pernah 500 polos dari jalur ini) |
+
+**Batas PHP yang harus diketahui klien.** `max_file_uploads` PHP (bawaan **20**, `Dockerfile` hanya menyetel `upload_max_filesize` dan
+`post_max_size`) membuang diam-diam berkas ke-21 dan seterusnya dalam satu permintaan. Server mendeteksinya sebagai `gambar`
+yang hilang (`422 permintaan_tidak_valid`). Sampai nilai itu dinaikkan di server, **kirim paling banyak 20 sel per permintaan**
+(dua permintaan untuk 40 sel; limiter 4/menit cukup). Batas 48 di atas adalah batas aplikasi, bukan jaminan bahwa PHP menerimanya.
+
+**Audit:** sama dengan 22A. Tiap panggilan Google masuk `worksheet_extraction_logs` (`model` = `google-vision:DOCUMENT_TEXT_DETECTION`) dengan
+`unit_vision`, `ukuran_gambar_byte` (jumlah byte potongan yang DIKIRIM), `durasi_ms`, `status`, `calibration_session_id` (boleh NULL).
+Gambar dan teks hasil TIDAK disimpan. Penolakan lokal (env mati, batas) masuk dengan `unit_vision` NULL. Sinyal admin
+(`ocr_dihentikan`, `GET /api/admin/ocr-cloud`) dipakai bersama bagian 22.
+
+> **Belum terbukti:** akurasi pada tulisan tangan nyata, asumsi 1 gambar = 1 unit tagihan, dan kualitas potongan hasil crop di HP
+> (resolusi, margin, kompresi). Penyalaan di produksi menunggu pemilik (`AGENTS.md` §OCR awan butir 4): potongan angka tabel tetap
+> meninggalkan server walau sel identitas tidak pernah dikirim.
+
+---
+
 ## Operasional: kesehatan dan saklar fitur (19 Nov 2026)
 
 Semuanya **aditif**: kunci, rute, dan izin lama tidak berubah. Latar dan keputusan:
@@ -4104,7 +4301,9 @@ Kunci baru `kesehatan`; kunci lama (`status`, `app`, `time`, `direktori_perusaha
 | `PUT /organization/fitur` | **super admin saja** | Body `{fitur_nonaktif: [kode...], alasan}` menggantikan seluruh daftar; `alasan` wajib 5-400; kode tak dikenal atau fitur inti -> `422`; audit `fitur_dimatikan` / `fitur_dinyalakan` per fitur (daftar lama/baru, pelaku, alasan); throttle `fitur-saklar` 20/menit |
 
 - Kode awal: `pindai_lembar` (`/worksheet-templates*`, `/worksheet-scans*`), `kirim_email_sertifikat`
-  (`POST /certificates/{id}/kirim-email`); sejak 23 Nov 2026 juga `ocr_cloud` (`POST /ocr/halaman`, bagian 22).
+  (`POST /certificates/{id}/kirim-email`); sejak 23 Nov 2026 juga `ocr_cloud` (`POST /ocr/halaman`, bagian 22); sejak
+  25 Nov 2026 juga `ocr_cloud_sel` (`POST /worksheet-scans/{id}/ocr-awan`, bagian 22A, yang juga berada di belakang
+  `pindai_lembar`). Daftar ini hanya bisa mematikan; bawaan "mati" dijamin env `GOOGLE_VISION_AKTIF`.
   Rute fitur yang mati menjawab `503` dengan
   `{"kode": "fitur_dimatikan", "fitur": "<kode>", "message": "..."}` — sesudah pemeriksaan peran (peran tanpa hak
   tetap `403`) dan sebelum route model binding.

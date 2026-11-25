@@ -202,6 +202,16 @@ class ChlorineProfile extends CalibrationProfile
         return 'chlorine_meter';
     }
 
+    /**
+     * Saklar vonis Chlorine Meter: `chlorine_meter.vonis_pass_fail`. Pilihan `tanpa_vonis`
+     * mengosongkan toleransi titik, jadi hasilnya hanya Correction dan U95 seperti
+     * workbook master. Bawaan `dengan_toleransi` = perilaku kode sebelum saklar.
+     */
+    protected function kunciParameterVonis(): ?string
+    {
+        return 'chlorine_meter.vonis_pass_fail';
+    }
+
     /** Lapis 1: U95 micropipette & labu ukur (`tabel-standar-chlorine-meter.json`). */
     public function skemaAcuan(): ?array
     {

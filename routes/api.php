@@ -31,6 +31,8 @@ use App\Http\Controllers\Api\KemampuanKalibrasiController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OcrHalamanController;
+use App\Http\Controllers\Api\OcrSelAwanController;
+use App\Http\Controllers\Api\OcrSelUnggahController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationFiturController;
@@ -901,7 +903,7 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // final tetap lewat POST/PUT /calibrations.
         //
         // Saklar fitur `pindai_lembar` (Super Admin, tanpa deploy; paket OPS-KODE
-        // butir 3): keenam rute di bawah menjawab 503 `fitur_dimatikan` selama
+        // butir 3): ketujuh rute di bawah menjawab 503 `fitur_dimatikan` selama
         // dimatikan. Pengisian manual (`POST/PUT /calibrations`) TIDAK ikut —
         // pindai hanya usulan, dan lembar tetap bisa diisi tangan.
         Route::middleware('fitur:pindai_lembar')->group(function () {
@@ -918,6 +920,19 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
                 ->middleware('throttle:pindai-crop')
                 ->where('kunci', '[A-Za-z0-9_|\-\.]+');
             Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
+            // OCR awan atas POTONGAN SEL ANGKA hasil pindai (Google Vision, 25 Nov 2026). Server memotong
+            // sendiri dari citra tersimpan; hanya sel angka yang keluar dari server (bukan foto utuh,
+            // bukan identitas, bukan tanda tangan). Tiga gerbang: grup `pindai_lembar`, saklar
+            // `ocr_cloud_sel`, dan env `GOOGLE_VISION_AKTIF` (bawaan mati, dicek di controller).
+            // Hanya USULAN: tidak mengubah nilai sel. Jalur foto utuh (`POST /ocr/halaman`) tidak berubah.
+            Route::post('/worksheet-scans/{worksheetScan}/ocr-awan', [OcrSelAwanController::class, 'baca'])
+                ->middleware(['fitur:ocr_cloud_sel', 'throttle:ocr-sel-awan']);
+            // Sama dengan di atas, tetapi untuk aplikasi Lab yang TIDAK punya hasil pindai di server (foto utuh
+            // tidak keluar dari HP, K-50-11): HP memotong sendiri dan mengunggah HANYA potongan sel angka.
+            // Gerbang dan saklar sama (`pindai_lembar`, `ocr_cloud_sel`, `GOOGLE_VISION_AKTIF`); limiter sendiri.
+            // Kunci sel dicocokkan ke templat server dan hanya baris `angka` yang lolos. Tidak ada yang disimpan.
+            Route::post('/ocr/sel-awan', [OcrSelUnggahController::class, 'baca'])
+                ->middleware(['fitur:ocr_cloud_sel', 'throttle:ocr-sel-unggah']);
         });
 
         // BACA DOKUMEN GENERIK — lembar APA PUN, termasuk yang belum punya

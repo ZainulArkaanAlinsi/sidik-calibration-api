@@ -125,6 +125,13 @@ class RefractometerProfile extends CalibrationProfile
     /** Kunci registri `parameter-keputusan-metode.json`. */
     public const PARAMETER_SUMBER_SUHU = 'refractometer.sumber_deviasi_suhu';
 
+    /**
+     * Parameter keputusan metode butir TM refractometer#15: dari mana resolusi budget
+     * (komponen Daya Baca dan `ci` komponen suhu) diambil. Bawaan `konstanta` =
+     * [RESOLUSI]; lihat [resolusiBudget].
+     */
+    public const PARAMETER_SUMBER_RESOLUSI = 'refractometer.sumber_resolusi';
+
     // Kemiringan "Tab Konversi Temperatur" per satuan (n20D 0,00045/°C, °Brix
     // 0,07/°C) dan batas tabel 19,0–30,2 °C — dulu konstanta `KOEF_SUHU`,
     // `SUHU_TABEL_MIN`, `SUHU_TABEL_MAKS` — kini data acuan lapis 1:
@@ -251,6 +258,16 @@ class RefractometerProfile extends CalibrationProfile
     public function kode(): string
     {
         return 'refractometer';
+    }
+
+    /**
+     * Saklar vonis Refractometer: `refractometer.vonis_pass_fail`. Pilihan `tanpa_vonis`
+     * mengosongkan toleransi titik, jadi hasilnya hanya Correction dan U95 seperti
+     * workbook master. Bawaan `dengan_toleransi` = perilaku kode sebelum saklar.
+     */
+    protected function kunciParameterVonis(): ?string
+    {
+        return 'refractometer.vonis_pass_fail';
     }
 
     /** Lapis 1: tabel koreksi suhu (`tabel-standar-refractometer.json`). */
@@ -402,7 +419,7 @@ class RefractometerProfile extends CalibrationProfile
 
         $satuan = $this->satuan($equipment);
         $sqrt3 = sqrt(3);
-        $resolusi = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        $resolusi = $this->resolusiBudget($titikUkur, $equipment);
         $uTemperature = (float) $kemampuan->u_temperature;
         $deviasi = $this->deviasiSuhu($suhuRuang, $satuan);
         $tetap = app(ParameterKeputusanMetode::class)->nilai(self::PARAMETER_SUMBER_SUHU) === 'baris_tetap_21c';
@@ -472,6 +489,29 @@ class RefractometerProfile extends CalibrationProfile
                 'vi' => max($n - 1, 1),
             ],
         ];
+    }
+
+    /**
+     * Resolusi yang masuk budget, menurut parameter `refractometer.sumber_resolusi`:
+     *
+     *  - `konstanta` (bawaan, perilaku kode): [resolusiTitik] (0,0001), data alat tidak dibaca.
+     *  - `isian_teknisi`: `equipments.resolusi` bila terisi dan > 0 (sel `INPUT DATA!E16`
+     *    workbook), selain itu konstanta — angka tidak dikarang.
+     *  - `lebih_besar`: yang terbesar dari konstanta dan isian; tidak pernah di bawah konstanta.
+     *
+     * Sumbernya data alat (`equipments.resolusi`), bukan isian per sesi. `resolusiTitik()`
+     * sendiri tidak berubah: dipakai tempat lain yang bukan budget.
+     */
+    private function resolusiBudget(float $titikUkur, Equipment $equipment): float
+    {
+        $konstanta = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        $isian = $equipment->resolusi === null ? 0.0 : (float) $equipment->resolusi;
+
+        return match (app(ParameterKeputusanMetode::class)->nilai(self::PARAMETER_SUMBER_RESOLUSI)) {
+            'isian_teknisi' => $isian > 0.0 ? $isian : $konstanta,
+            'lebih_besar' => max($konstanta, $isian),
+            default => $konstanta,
+        };
     }
 
     /** Resolusi seragam di dua titik (sheet: "Ketelitian Baca : 0.0001 n20D"). */
