@@ -5,16 +5,21 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * Studio Tahap 1 (25 Nov 2026), keputusan D6: CORS hanya mengizinkan origin
- * Studio Web (dev server lokal) ditambah origin produksi dari env
- * `CORS_ALLOWED_ORIGINS`. Sebelum `config/cors.php` ada, bawaan framework
- * mengizinkan `*` untuk `api/*`.
+ * Studio Tahap 1 (25 Nov 2026), keputusan D6: CORS hanya mengizinkan klien
+ * peramban Sidik: Studio Web (dev server lokal), bundel web Flutter di Firebase
+ * Hosting (dua domain proyek `sidik-kalibrasi`, bawaan kode), dan origin
+ * tambahan dari env `CORS_ALLOWED_ORIGINS`. Sebelum `config/cors.php` ada,
+ * bawaan framework mengizinkan `*` untuk `api/*`.
  *
  * Yang dikunci:
- *  - dua origin dev lokal lulus preflight dan respons nyata (termasuk respons
- *    galat 401, supaya klien Studio bisa membaca pesannya);
- *  - origin asing tidak mendapat header `Access-Control-Allow-Origin`;
- *  - origin produksi hanya masuk lewat env, dinormalisasi, dan `*` ditolak;
+ *  - dua origin dev lokal DAN dua domain Firebase Hosting lulus preflight dan
+ *    respons nyata (termasuk respons galat 401, supaya klien bisa membaca
+ *    pesannya) TANPA env apa pun: bundel web Flutter tidak boleh bergantung
+ *    pada env yang bisa lupa diisi di produksi;
+ *  - origin asing (termasuk yang mirip: skema beda, sub/superdomain, akhiran,
+ *    port) tidak mendapat header `Access-Control-Allow-Origin`;
+ *  - origin tambahan hanya masuk lewat env, dinormalisasi, MENAMBAH bawaan
+ *    (tidak pernah menggantinya), dan `*` ditolak;
  *  - tidak ada kredensial lintas origin (token lewat header, bukan cookie).
  *
  * Tidak ada request yang menyentuh data: preflight dijawab middleware sebelum
@@ -27,6 +32,19 @@ class CorsStudioTest extends TestCase
     private const ORIGIN_VITE = 'http://localhost:5173';
 
     private const ORIGIN_VITE_IP = 'http://127.0.0.1:5173';
+
+    /** Bundel web Flutter (`/app`) di Firebase Hosting proyek `sidik-kalibrasi`; sumber di `config/cors.php`. */
+    private const ORIGIN_WEB_APP = 'https://sidik-kalibrasi.web.app';
+
+    private const ORIGIN_FIREBASEAPP = 'https://sidik-kalibrasi.firebaseapp.com';
+
+    /** @var list<string> */
+    private const ORIGIN_BAWAAN = [
+        self::ORIGIN_VITE,
+        self::ORIGIN_VITE_IP,
+        self::ORIGIN_WEB_APP,
+        self::ORIGIN_FIREBASEAPP,
+    ];
 
     /** @return array<string, string> */
     private function preflight(string $origin): array
@@ -77,9 +95,9 @@ class CorsStudioTest extends TestCase
         }
     }
 
-    public function test_preflight_dari_origin_vite_lokal_lulus(): void
+    public function test_preflight_dari_origin_bawaan_lulus_tanpa_env(): void
     {
-        foreach ([self::ORIGIN_VITE, self::ORIGIN_VITE_IP] as $origin) {
+        foreach (self::ORIGIN_BAWAAN as $origin) {
             $respons = $this->withHeaders($this->preflight($origin))
                 ->options(self::URI_STUDIO.'/spectrophotometer.max_stdev_holmium/penetapan');
 
@@ -97,16 +115,32 @@ class CorsStudioTest extends TestCase
 
     public function test_respons_nyata_termasuk_galat_membawa_header_origin_yang_diizinkan(): void
     {
-        $respons = $this->withHeaders(['Origin' => self::ORIGIN_VITE, 'Accept' => 'application/json'])
-            ->getJson(self::URI_STUDIO);
+        foreach (self::ORIGIN_BAWAAN as $origin) {
+            $respons = $this->withHeaders(['Origin' => $origin, 'Accept' => 'application/json'])
+                ->getJson(self::URI_STUDIO);
 
-        $respons->assertUnauthorized();
-        $respons->assertHeader('Access-Control-Allow-Origin', self::ORIGIN_VITE);
+            $respons->assertUnauthorized();
+            $respons->assertHeader('Access-Control-Allow-Origin', $origin);
+        }
     }
 
     public function test_origin_asing_tidak_mendapat_izin_di_preflight_maupun_respons_nyata(): void
     {
-        foreach (['https://situs-asing.example', 'http://localhost:3000', 'http://localhost:5174', 'https://localhost:5173'] as $origin) {
+        foreach ([
+            'https://situs-asing.example',
+            'http://localhost:3000',
+            'http://localhost:5174',
+            'https://localhost:5173',
+            // Mirip origin bawaan tetapi bukan: skema beda, akhiran, sub/superdomain, port.
+            'http://sidik-kalibrasi.web.app',
+            'https://sidik-kalibrasi.web.app.situs-asing.example',
+            'https://situs-sidik-kalibrasi.web.app',
+            'https://x.sidik-kalibrasi.web.app',
+            'https://sidik-kalibrasi.web.app:8443',
+            'https://sidik-kalibrasi.firebaseapp.com.situs-asing.example',
+            'https://sidik-kalibrasi-lain.firebaseapp.com',
+            'https://proyek-lain.web.app',
+        ] as $origin) {
             $preflight = $this->withHeaders($this->preflight($origin))
                 ->options(self::URI_STUDIO.'/spectrophotometer.max_stdev_holmium/penetapan');
             $this->assertNull($preflight->headers->get('Access-Control-Allow-Origin'), "preflight {$origin} tidak boleh diizinkan");
@@ -122,20 +156,20 @@ class CorsStudioTest extends TestCase
         $this->assertFalse(config('cors.supports_credentials'), 'token lewat header, tanpa cookie lintas origin');
     }
 
-    public function test_tanpa_env_hanya_dua_origin_lokal(): void
+    public function test_tanpa_env_hanya_origin_bawaan_dev_lokal_dan_bundel_web_flutter(): void
     {
-        $this->assertSame([self::ORIGIN_VITE, self::ORIGIN_VITE_IP], $this->configDenganEnv(null)['allowed_origins']);
-        $this->assertSame([self::ORIGIN_VITE, self::ORIGIN_VITE_IP], $this->configDenganEnv('')['allowed_origins']);
+        $this->assertSame(self::ORIGIN_BAWAAN, $this->configDenganEnv(null)['allowed_origins']);
+        $this->assertSame(self::ORIGIN_BAWAAN, $this->configDenganEnv('')['allowed_origins']);
     }
 
-    public function test_origin_produksi_dari_env_ditambahkan_dan_dinormalisasi(): void
+    public function test_origin_tambahan_dari_env_ditambahkan_dinormalisasi_dan_tidak_menggantikan_bawaan(): void
     {
-        $config = $this->configDenganEnv(' https://studio.contoh.id/ , https://studio-2.contoh.id,,http://localhost:5173 ');
+        $config = $this->configDenganEnv(' https://studio.contoh.id/ , https://studio-2.contoh.id,,http://localhost:5173,https://sidik-kalibrasi.web.app ');
 
         $this->assertSame(
-            [self::ORIGIN_VITE, self::ORIGIN_VITE_IP, 'https://studio.contoh.id', 'https://studio-2.contoh.id'],
+            [...self::ORIGIN_BAWAAN, 'https://studio.contoh.id', 'https://studio-2.contoh.id'],
             $config['allowed_origins'],
-            'spasi dan garis miring akhir dibuang, entri kosong dan duplikat dilewati',
+            'spasi dan garis miring akhir dibuang, entri kosong dan duplikat (termasuk duplikat bawaan) dilewati, bawaan tetap ada',
         );
     }
 
@@ -145,9 +179,10 @@ class CorsStudioTest extends TestCase
 
         $this->assertNotContains('*', $config['allowed_origins']);
         $this->assertContains('https://studio.contoh.id', $config['allowed_origins']);
+        $this->assertSame(self::ORIGIN_BAWAAN, array_slice($config['allowed_origins'], 0, count(self::ORIGIN_BAWAAN)));
     }
 
-    public function test_origin_produksi_dari_env_lulus_preflight(): void
+    public function test_origin_tambahan_dari_env_lulus_preflight_dan_bawaan_tetap_lulus(): void
     {
         config(['cors.allowed_origins' => $this->configDenganEnv('https://studio.contoh.id')['allowed_origins']]);
 
@@ -156,5 +191,12 @@ class CorsStudioTest extends TestCase
 
         $respons->assertNoContent();
         $respons->assertHeader('Access-Control-Allow-Origin', 'https://studio.contoh.id');
+
+        // Mengisi env untuk Studio Web tidak boleh memutus bundel web Flutter.
+        $web = $this->withHeaders($this->preflight(self::ORIGIN_WEB_APP))
+            ->options(self::URI_STUDIO.'/spectrophotometer.max_stdev_holmium/penetapan');
+
+        $web->assertNoContent();
+        $web->assertHeader('Access-Control-Allow-Origin', self::ORIGIN_WEB_APP);
     }
 }

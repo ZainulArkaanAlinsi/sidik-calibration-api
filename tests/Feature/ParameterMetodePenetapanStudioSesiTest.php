@@ -297,6 +297,49 @@ class ParameterMetodePenetapanStudioSesiTest extends TestCase
         }
     }
 
+    /**
+     * KARAKTERISASI, bukan keputusan desain (tinjauan PR #304, temuan 3): batas
+     * "tidak berlaku surut" D3 hanya melarang `berlaku_mulai` SEBELUM hari ini. Sesi
+     * bertanggal HARI INI yang sudah tersimpan sebelum penetapan `berlaku_mulai =
+     * hari ini` disetujui memang jatuh di dalam jangkauan penetapan itu, jadi:
+     *
+     *  - angka tersimpan tidak berubah sendiri;
+     *  - hitung ulang (validator, `kalibrasi:hitung-ulang`) kini memakai pilihan baru
+     *    dan angkanya BERGESER, validator berisik (`hitung_ulang_beda`).
+     *
+     * Berbeda dengan sesi bertanggal SEBELUM hari ini (tes di atas) yang tidak
+     * bergeser. Perilaku TIDAK diubah di sini; apakah sesi tersimpan hari yang sama
+     * perlu dikecualikan adalah keputusan pemilik (lihat PERBAIKAN-PR304 tinjauan).
+     */
+    public function test_sesi_bertanggal_hari_ini_yang_sudah_tersimpan_bergeser_saat_hitung_ulang_bila_penetapan_berlaku_mulai_hari_ini_disetujui(): void
+    {
+        $sesi = $this->simpan($this->hariIni());
+        $this->assertBawaan($sesi, 'sesi hari ini, disimpan sebelum ada penetapan');
+        $sebelum = $this->ucTersimpan($sesi);
+
+        $this->setujui($this->catat($this->hariIni()));
+
+        // Angka tersimpan tidak berubah sendiri.
+        foreach ($this->ucTersimpan($sesi->fresh()) as $i => $uc) {
+            $this->assertEqualsWithDelta($sebelum[$i], $uc, self::TOLERANSI_SIMPAN, "titik {$i} tersimpan berubah tanpa hitung ulang");
+        }
+
+        // Hitung ulang memakai pilihan baru: validator melaporkan selisihnya.
+        $this->assertContains('hitung_ulang_beda', $this->kodeTemuan($sesi), 'sesi hari yang sama ikut bergeser, validator harus berisik');
+
+        // Dry-run tidak menulis apa pun.
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [(string) $sesi->id], '--dry-run' => true])->assertExitCode(0);
+        foreach ($this->ucTersimpan($sesi->fresh()) as $i => $uc) {
+            $this->assertEqualsWithDelta($sebelum[$i], $uc, self::TOLERANSI_SIMPAN, "titik {$i} berubah oleh --dry-run");
+        }
+
+        // Hitung ulang sungguhan menulis angka baru = angka workbook untuk pilihan baru.
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [(string) $sesi->id]])->assertExitCode(0);
+        foreach ($this->ucTersimpan($sesi->fresh()) as $i => $uc) {
+            $this->assertEqualsWithDelta(self::UC_EXCEL, $uc, self::TOLERANSI_SIMPAN, "titik {$i} setelah hitung ulang");
+        }
+    }
+
     public function test_penetapan_yang_ditarik_mengembalikan_sesi_baru_ke_bawaan_dan_validator_melaporkan_sesi_yang_terlanjur_dihitung(): void
     {
         $id = $this->catat($this->hariIni());

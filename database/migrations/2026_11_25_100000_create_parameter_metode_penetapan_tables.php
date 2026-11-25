@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Schema;
  *  - Append-only: isi baris (`kunci`, `nomor`, `nilai`, `berlaku_mulai`,
  *    `dicatat_pada`, `catatan`) tidak pernah diubah. Yang berubah hanya
  *    `status` (`menunggu_tm` -> `disetujui` | `ditarik`; `disetujui` -> `ditarik`)
- *    beserta `keputusan_oleh` + `tanggal_keputusan` saat disetujui. Dijaga
- *    model (`ParameterMetodePenetapan`), bukan trigger, supaya sama di SQLite dan MySQL.
+ *    beserta `keputusan_oleh` + `tanggal_keputusan` saat disetujui. Dijaga DUA
+ *    lapis: model (`ParameterMetodePenetapan`, sama di SQLite dan MySQL) dan
+ *    trigger database (migrasi `2026_11_25_110000_kunci_append_only_penetapan_metode`,
+ *    yang menahan UPDATE/DELETE mentah lewat query builder).
  *  - `dicatat_pada` diisi SERVER (bukan input klien).
  *  - Global, tanpa `organization_id`: registri berkasnya juga global (satu lab
  *    saat ini, satu akun Studio), jadi tabel ini mengikutinya.
@@ -25,11 +28,17 @@ use Illuminate\Support\Facades\Schema;
  *
  * `parameter_metode_penetapan_jejak` = jejak audit tiap transisi status (siapa,
  * kapan, dari-ke, catatan). Tulis-sekali, dijaga model yang sama polanya dengan
- * `AuditLog`.
+ * `AuditLog` dan trigger database yang sama.
  *
  * Aditif murni dan kompatibel SQLite + MySQL 8: tanpa kolom JSON, tanpa
  * ekspresi spesifik mesin, `berlaku_mulai`/`tanggal_keputusan` bertipe `date`
  * dan dibaca sebagai teks Y-m-d (dibandingkan sebagai teks di PHP, bukan di SQL).
+ *
+ * `down()` menolak jalan bila salah satu tabel sudah berisi baris: isinya jejak
+ * audit keputusan metode (siapa menetapkan dan menyetujui apa, kapan) dan
+ * `dropIfExists` akan membuangnya tanpa bekas. Kosongkan tabelnya dengan sadar
+ * (cadangan lebih dulu, lihat `docs/aturan-akses-database.md` butir 4) bila
+ * memang itu yang dimaksud.
  */
 return new class extends Migration
 {
@@ -72,6 +81,15 @@ return new class extends Migration
 
     public function down(): void
     {
+        foreach (['parameter_metode_penetapan_jejak', 'parameter_metode_penetapan'] as $tabel) {
+            if (Schema::hasTable($tabel) && DB::table($tabel)->exists()) {
+                throw new RuntimeException(
+                    "Rollback ditolak: {$tabel} berisi jejak audit keputusan metode yang akan hilang. "
+                    .'Cadangkan dan kosongkan tabelnya dengan sadar (docs/aturan-akses-database.md butir 4), baru ulangi.'
+                );
+            }
+        }
+
         Schema::dropIfExists('parameter_metode_penetapan_jejak');
         Schema::dropIfExists('parameter_metode_penetapan');
     }

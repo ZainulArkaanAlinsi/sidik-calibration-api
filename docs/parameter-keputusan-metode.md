@@ -159,8 +159,12 @@ diterima registri dan tesnya, tetapi bukan lagi jalur normal.
 - `berlaku_mulai` tidak boleh turun menurut nomor; pembandingnya penetapan terakhir
   yang belum ditarik (entri berkas selalu ikut), supaya salah ketik tanggal yang sudah
   ditarik tidak mengunci parameter.
-- Append-only: model menolak mengubah kolom selain `status`, `keputusan_oleh`,
-  `tanggal_keputusan` dan menolak menghapus. Jejak transisi juga tidak bisa diubah.
+- Append-only, dua lapis: model menolak mengubah kolom selain `status`, `keputusan_oleh`,
+  `tanggal_keputusan` dan menolak menghapus; trigger database (migrasi
+  `2026_11_25_110000`) menahan hal yang sama untuk UPDATE/DELETE mentah lewat query
+  builder, dan membekukan keputusan yang sudah dicatat. Jejak transisi tidak bisa
+  diubah atau dihapus di kedua lapis. Batas trigger: lihat "Append-only di database"
+  di bagian "Risiko yang diketahui".
 - Transisi sah hanya `menunggu_tm` ke `disetujui` atau `ditarik`, dan `disetujui` ke
   `ditarik`. Tarik wajib beralasan (min. 10 karakter); setujui wajib menyebut TM yang
   memutuskan dan tanggal keputusannya.
@@ -256,14 +260,32 @@ diketahui, bukan kelupaan.
 - **Satu akun Studio.** Pemisahan pencatat dan penyetuju tidak bisa ditegakkan
   (`STUDIO_AKUN` tunggal). Jejak tetap mencatat user, email, dan waktu tiap transisi.
 - **CORS dipersempit.** Sebelum `config/cors.php` ada, bawaan framework
-  mengizinkan `*` untuk `api/*`. Sekarang hanya dua origin dev lokal Studio Web
-  ditambah `CORS_ALLOWED_ORIGINS`. Origin produksi Studio Web belum terdaftar;
-  kunci itu sengaja BELUM ditambahkan ke `render.yaml`/`.env.example` (di luar
-  lingkup tugas) dan env Render belum diubah. Serah terima pemilik: isi
-  `CORS_ALLOWED_ORIGINS` di dashboard Render, lalu daftarkan di kedua berkas
-  (AGENTS.md butir 9) supaya sinkron blueprint tidak menghapusnya. Klien lain yang
-  memakai `*` dari peramban (bila ada) ikut tertutup; aplikasi mobile native tidak
-  terkena CORS.
+  mengizinkan `*` untuk `api/*`. Sekarang bawaan kode (tanpa env apa pun) = empat
+  origin yang terbukti ada di repo: dua dev lokal Studio Web (`localhost:5173`,
+  `127.0.0.1:5173`) dan dua domain Firebase Hosting bundel web Flutter
+  (`https://sidik-kalibrasi.web.app`, `https://sidik-kalibrasi.firebaseapp.com`;
+  sumber di kepala `config/cors.php`). `CORS_ALLOWED_ORIGINS` MENAMBAH, tidak pernah
+  mengganti, jadi mengisinya tidak bisa memutus bundel web. Origin produksi Studio
+  Web belum ada di repo mana pun, jadi tetap lewat env. Kunci itu BELUM ada di
+  `render.yaml`/`.env.example` dan env Render belum diubah (butuh pemilik; tinjauan
+  PR #304 meminta keduanya, lihat serah terima di bawah). Aplikasi mobile native
+  dan panel Filament tidak terkena CORS.
+- **Append-only di database.** Selain penjaga model, migrasi
+  `2026_11_25_110000_kunci_append_only_penetapan_metode` memasang trigger
+  (`pmp_tolak_hapus`, `pmp_tolak_ubah_isi`, `pmpj_tolak_ubah`, `pmpj_tolak_hapus`)
+  supaya UPDATE/DELETE mentah lewat query builder ditolak. Penetapan hanya boleh
+  berubah di `status`, `keputusan_oleh`, `tanggal_keputusan`, `updated_at`;
+  keputusan dibekukan begitu status keluar dari `menunggu_tm`; `ditarik` status
+  akhir; penetapan tidak bisa dihapus; jejak tidak bisa diubah atau dihapus.
+  Batasnya: (1) MySQL ber-binlog tanpa `log_bin_trust_function_creators` menolak
+  `CREATE TRIGGER` dan migrasi sengaja tidak gagal (galat ke log + stderr), jadi
+  trigger ini BELUM terpantau `/api/health` (`append_only_db`) dan belum ikut
+  `acuan:pasang-trigger`; (2) `TRUNCATE` dan aksi FK berantai tidak menyalakan
+  trigger di MySQL (`oleh_user_id ... nullOnDelete`), sedangkan di SQLite
+  menghapus user yang punya baris jejak gagal; (3) transisi status lewat SQL
+  mentah tanpa baris jejak tidak tertahan (trigger tidak bisa menuntut baris di
+  tabel lain). Dijaga `tests/Feature/PenetapanMetodeAppendOnlyDbTest.php`.
+  `down()` migrasi tabel menolak jalan selama tabel berisi baris.
 - **Binding `scoped`.** `ParameterKeputusanMetode` kini `scoped` (bukan singleton)
   supaya cache penetapan tidak bertahan melewati satu request/job; worker antrean
   menyegarkannya per job. Pemanggil yang menyimpan instance antar job tidak akan

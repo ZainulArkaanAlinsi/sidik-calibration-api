@@ -117,7 +117,10 @@ final class ParameterKeputusanMetode
      * tanggal lingkup bila `$tanggal` null. Tanpa keduanya: bawaan kode.
      *
      * Entri yang berlaku = penetapan dengan `berlaku_mulai <= tanggal` yang
-     * `berlaku_mulai`-nya paling akhir (seri → `nomor` terbesar).
+     * `nomor`-nya terbesar. Pembaca ini TIDAK membandingkan `berlaku_mulai`
+     * antar penetapan; yang menjamin "nomor terbesar" sama dengan "paling akhir
+     * berlaku" adalah penulisan (`PenetapanParameterMetode::catat()`): `berlaku_mulai`
+     * tidak boleh turun menurut nomor di antara baris yang belum ditarik.
      */
     public function putusan(string $kunci, DateTimeInterface|string|null $tanggal = null): PutusanMetode
     {

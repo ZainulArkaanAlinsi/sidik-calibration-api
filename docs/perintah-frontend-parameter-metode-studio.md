@@ -247,18 +247,23 @@ yang sudah menampilkan galat per kolom tidak butuh cabang baru).
 ## CORS (D6)
 
 API sebelumnya mengizinkan semua origin (bawaan framework `*`). Sekarang `config/cors.php` hanya
-mengizinkan `http://localhost:5173` dan `http://127.0.0.1:5173` (dev server Vite) ditambah origin produksi
-dari env `CORS_ALLOWED_ORIGINS` (daftar dipisah koma, tanpa garis miring akhir; `*` dibuang). Token lewat
+mengizinkan, TANPA env apa pun: `http://localhost:5173` dan `http://127.0.0.1:5173` (dev server Vite),
+`https://sidik-kalibrasi.web.app` dan `https://sidik-kalibrasi.firebaseapp.com` (Firebase Hosting, tempat
+bundel web Flutter di `/app`). Origin produksi Studio Web ditambahkan lewat env `CORS_ALLOWED_ORIGINS`
+(daftar dipisah koma, tanpa garis miring akhir; `*` dibuang). Env MENAMBAH bawaan, tidak menggantinya. Token lewat
 header `Authorization`, tanpa cookie, jadi `supports_credentials` tetap `false`. Header yang boleh dibaca
 klien: `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`. Dijaga `tests/Feature/CorsStudioTest.php`.
 
 **Serah terima ke pemilik (wajib sebelum Studio produksi):**
 
 - Isi `CORS_ALLOWED_ORIGINS` di dashboard Render dengan origin Studio produksi, mis. `https://<domain studio>`.
-  Tanpa itu, Studio di produksi gagal di preflight CORS.
-- Kunci itu BELUM ada di `render.yaml` dan `.env.example` (pekerjaan ini dilarang menyentuh keduanya).
-  Sesuai AGENTS.md butir 9, daftarkan di kedua berkas itu; kalau tidak, sinkron blueprint bisa menimpa env
-  dashboard secara diam-diam.
+  Tanpa itu, Studio di produksi gagal di preflight CORS. Bundel web Flutter tidak bergantung pada env ini
+  (dua domain Firebase Hosting sudah bawaan kode).
+- Kunci itu BELUM ada di `render.yaml` dan `.env.example` (`.env*` terlarang disentuh di pekerjaan ini, dan
+  `BlueprintDanEnvExampleSejalanTest` menuntut keduanya diubah bersama). Sesuai AGENTS.md butir 9, tambahkan
+  di kedua berkas dalam satu perubahan: `render.yaml` dekat `STUDIO_AKUN` (`- key: CORS_ALLOWED_ORIGINS`,
+  `sync: false`) dan `.env.example` (`CORS_ALLOWED_ORIGINS=` kosong); kalau tidak, sinkron blueprint bisa
+  menimpa env dashboard secara diam-diam.
 - Aplikasi mobile dan panel Filament tidak melewati CORS, jadi tidak terpengaruh.
 
 ## Verifikasi
