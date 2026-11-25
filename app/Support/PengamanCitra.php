@@ -70,8 +70,14 @@ final class PengamanCitra
         return $gambar;
     }
 
-    /** Alasan menolak mendekode `$isi`, null bila boleh. Hanya membaca header. */
-    public static function tolak(string $isi): ?string
+    /**
+     * Alasan menolak mendekode `$isi`, null bila boleh. Hanya membaca header.
+     *
+     * `$batasPiksel` null = plafon umum ([batasPiksel]). Pemanggil yang punya batas lebih ketat (potongan sel
+     * yang diunggah HP, `OcrSelUnggahController`) menyebutnya di sini; batas itu hanya boleh MENGETATKAN, jadi
+     * nilai di atas plafon umum tetap dipotong plafon.
+     */
+    public static function tolak(string $isi, ?int $batasPiksel = null): ?string
     {
         $ukuran = $isi === '' ? false : @getimagesizefromstring($isi);
 
@@ -88,7 +94,13 @@ final class PengamanCitra
 
         // Header PNG boleh mengaku sisi sampai 2^31; kalau hasil kalinya meluap, PHP menjadikannya float
         // dan perbandingannya tetap benar (ditolak), bukan membungkus jadi angka kecil.
-        return $lebar * $tinggi > self::batasPiksel() ? self::TERLALU_BESAR : null;
+        $batas = self::batasPiksel();
+
+        if ($batasPiksel !== null && $batasPiksel > 0) {
+            $batas = min($batas, $batasPiksel);
+        }
+
+        return $lebar * $tinggi > $batas ? self::TERLALU_BESAR : null;
     }
 
     public static function batasPiksel(): int
