@@ -1,5 +1,11 @@
 # Perintah frontend: parameter keputusan metode (spesifikasi untuk Studio Web)
 
+> **DIGANTIKAN 25 Nov 2026 (Studio Tahap 1, sisi API).** Kontrak yang berlaku dan
+> sudah dibangun ada di `docs/perintah-frontend-parameter-metode-studio.md`. Endpoint
+> yang diusulkan di berkas ini (usulan, simulasi, sahkan, tolak) TIDAK dibangun;
+> yang ada hanya daftar, catat, setujui, dan tarik di grup Studio. Berkas ini
+> disimpan sebagai riwayat rancangan, jangan dipakai untuk membangun layar.
+
 Dibuat 24 Nov 2026. **Ini SPESIFIKASI. Belum ada endpoint, belum ada layar.** API
 sekarang hanya MEMBACA registri di dalam perhitungan; penetapan jawaban TM
 dilakukan lewat PR (lihat `docs/parameter-keputusan-metode.md`). Berkas ini
