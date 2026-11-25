@@ -300,4 +300,28 @@ return [
         'aturan_versi' => 'asli-1',
     ],
 
+    /*
+     * OCR awan atas POTONGAN SEL ANGKA hasil pindai
+     * (`POST /api/worksheet-scans/{id}/ocr-awan`, `OcrSelAwanController`).
+     *
+     * Sengaja TANPA env() (aturan repo: kunci env baru wajib ikut `render.yaml` dan `.env.example`,
+     * dan batas biaya tidak boleh bergeser diam-diam lewat dashboard). Mengubah angka di sini = PR.
+     * Gerbang menyala/mati tetap env `GOOGLE_VISION_AKTIF` + saklar `ocr_cloud_sel`; jatah panggilan
+     * per lembar tetap `services.google_vision.maks_per_sesi` / `maks_gagal_per_sesi`.
+     *
+     *  - `maks_sel_per_permintaan`: sel yang diproses dalam SATU permintaan HTTP. Google menerima
+     *    16 gambar per panggilan, jadi 48 = paling banyak 3 panggilan (3 baris log, 3 jatah sesi).
+     *  - `maks_sel_per_scan`: total sel yang boleh dikirim ke Google untuk SATU hasil pindai, lintas
+     *    permintaan. Pencacahnya `Cache` (tabel log tidak punya kolom id pindai), jadi ini batas LUNAK:
+     *    cache yang dibersihkan menyetel ulang hitungannya. Pagar yang keras tetap jatah per sesi.
+     *  - `margin_px`: ruang di luar kotak sel yang ikut dipotong. Lebih kecil dari margin layar
+     *    review (6) karena potongan ini DIBACA mesin: sisa angka sel tetangga yang ikut terpotong
+     *    terbaca sebagai bagian dari angka sel ini.
+     */
+    'awan_sel' => [
+        'maks_sel_per_permintaan' => 48,
+        'maks_sel_per_scan' => 80,
+        'margin_px' => 4,
+    ],
+
 ];

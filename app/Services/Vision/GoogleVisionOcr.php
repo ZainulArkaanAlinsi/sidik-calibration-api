@@ -41,6 +41,9 @@ final class GoogleVisionOcr
     /** Asumsi, BELUM terverifikasi. Lihat komentar kelas. */
     public const UNIT_PER_GAMBAR = 1;
 
+    /** Batas Google: 16 gambar per permintaan `images:annotate`. Pemanggil membagi lot di atas ini. */
+    public const MAKS_GAMBAR_PER_PANGGILAN = 16;
+
     /** Pagar ukuran respons ke aplikasi; halaman padat tetap jauh di bawah ini. */
     private const MAKS_BLOK = 800;
 
@@ -129,6 +132,165 @@ final class GoogleVisionOcr
         }
 
         return $this->urai($halaman, $mulai, $jumlahHalaman);
+    }
+
+    /**
+     * OCR mentah untuk BANYAK potongan sel angka dalam SATU panggilan `images:annotate`
+     * (batch, paling banyak [MAKS_GAMBAR_PER_PANGGILAN] gambar). Dipakai
+     * `OcrSelAwanController`; jalur foto utuh (`bacaHalaman`) tidak berubah.
+     *
+     * Kenapa batch, bukan satu panggilan per sel: tagihan Google dihitung per GAMBAR (asumsi,
+     * lihat [UNIT_PER_GAMBAR]), jadi batch tidak lebih murah per sel. Yang dihemat putaran
+     * jaringan, permintaan token, dan baris log: satu lembar belasan sel = satu panggilan
+     * dan satu baris `worksheet_extraction_logs`, bukan belasan yang menghabiskan jatah
+     * `maks_per_sesi` lebih dulu.
+     *
+     * Urutan hasil = urutan gambar yang dikirim; Google mengembalikan `responses` sejajar. Bila
+     * jumlah `responses` tidak sama dengan jumlah gambar, SELURUH panggilan dianggap gagal: sel
+     * tidak boleh dicocokkan menurut tebakan, karena angka salah-sel lebih buruk daripada kosong.
+     *
+     * Hasil per gambar hanya teks mentah (kata digabung spasi) dan keyakinan TERENDAH di antara
+     * kata-katanya (null bila Google tidak memberi). Tidak ada penafsiran angka di sini, dan teks
+     * tidak boleh dicatat oleh pemanggil.
+     *
+     * Unit = jumlah gambar yang dijawab Google tanpa galat (ada teks atau tidak). Bila tidak satu
+     * pun, `ok` false dan unit 0 supaya ikut hitungan kegagalan.
+     *
+     * @param  list<string>  $isiGambar  isi biner tiap gambar (JPEG/PNG), 1..16
+     * @return array{
+     *     ok: bool,
+     *     status: string,
+     *     error: ?string,
+     *     unit: int,
+     *     durasi_ms: int,
+     *     sel: list<array{ok: bool, teks: string, keyakinan: ?float, jumlah_kata: int}>
+     * }
+     */
+    public function bacaSel(array $isiGambar): array
+    {
+        $mulai = hrtime(true);
+        $jumlah = count($isiGambar);
+
+        if ($jumlah < 1 || $jumlah > self::MAKS_GAMBAR_PER_PANGGILAN) {
+            return $this->gagalSel('ditolak', 'Jumlah gambar per panggilan harus 1 sampai '.self::MAKS_GAMBAR_PER_PANGGILAN.'.', $mulai);
+        }
+
+        try {
+            $token = $this->token->ambil();
+        } catch (GagalMenghubungiGoogle $e) {
+            return $this->gagalSel('gagal', $e->getMessage(), $mulai);
+        } catch (RuntimeException $e) {
+            return $this->gagalSel('belum_disetel', $e->getMessage(), $mulai);
+        }
+
+        $permintaan = [];
+        foreach (array_values($isiGambar) as $isi) {
+            $permintaan[] = [
+                'image' => ['content' => base64_encode($isi)],
+                'features' => [['type' => self::FITUR]],
+            ];
+        }
+
+        try {
+            $resp = Http::withToken($token)
+                ->acceptJson()
+                ->timeout((int) config('services.google_vision.timeout', 30))
+                ->baseUrl((string) config('services.google_vision.base_url', 'https://vision.googleapis.com'))
+                ->post('/v1/images:annotate', ['requests' => $permintaan]);
+        } catch (ConnectionException) {
+            return $this->gagalSel('gagal', 'Tidak bisa menghubungi Google Vision (waktu habis atau jaringan).', $mulai);
+        }
+
+        if (! $resp->successful()) {
+            if ($resp->status() === 401) {
+                $this->token->lupakan();
+            }
+
+            // Sama seperti `bacaHalaman`: hanya status HTTP dan kode status Google (enum pendek);
+            // `error.message` Google tidak dicatat karena bisa memuat nomor proyek.
+            $status = $resp->json('error.status');
+            $rinci = is_string($status) && preg_match('/^[A-Z_]{3,40}$/', $status) === 1 ? ' '.$status : '';
+
+            return $this->gagalSel('gagal', 'Google Vision menolak permintaan (HTTP '.$resp->status().$rinci.').', $mulai);
+        }
+
+        $balasan = $resp->json('responses');
+        if (! is_array($balasan) || ! array_is_list($balasan) || count($balasan) !== $jumlah) {
+            return $this->gagalSel('gagal', 'Respons Google Vision tidak sejajar dengan gambar yang dikirim.', $mulai);
+        }
+
+        $sel = [];
+        $unit = 0;
+        foreach ($balasan as $r) {
+            if (! is_array($r) || (isset($r['error']) && is_array($r['error']))) {
+                $sel[] = ['ok' => false, 'teks' => '', 'keyakinan' => null, 'jumlah_kata' => 0];
+
+                continue;
+            }
+
+            $unit += self::UNIT_PER_GAMBAR;
+            $sel[] = $this->uraiSel($r);
+        }
+
+        if ($unit === 0) {
+            return $this->gagalSel('ditolak', 'Google Vision tidak bisa membaca satu pun gambar dalam permintaan ini.', $mulai);
+        }
+
+        return [
+            'ok' => true,
+            'status' => 'sukses',
+            'error' => null,
+            'unit' => $unit,
+            'durasi_ms' => $this->durasi($mulai),
+            'sel' => $sel,
+        ];
+    }
+
+    /**
+     * Satu respons gambar: kata-kata di halaman pertama digabung spasi (urutan baca Google) dan
+     * keyakinan = yang TERENDAH. Spasi di tengah sengaja dipertahankan: pembersihan angka
+     * (`NormalisasiAngka`) menolak spasi di tengah, dan itu keputusan di sana, bukan di sini.
+     *
+     * @param  array<string, mixed>  $r
+     * @return array{ok: bool, teks: string, keyakinan: ?float, jumlah_kata: int}
+     */
+    private function uraiSel(array $r): array
+    {
+        $halaman = $r['fullTextAnnotation']['pages'][0] ?? null;
+        $kata = [];
+        $keyakinan = null;
+
+        foreach ((array) (is_array($halaman) ? ($halaman['blocks'] ?? []) : []) as $b) {
+            foreach ((array) (is_array($b) ? ($b['paragraphs'] ?? []) : []) as $p) {
+                foreach ((array) (is_array($p) ? ($p['words'] ?? []) : []) as $w) {
+                    $teks = $this->teksKata($w);
+                    if ($teks === '') {
+                        continue;
+                    }
+                    $kata[] = $teks;
+
+                    $k = is_array($w) ? $this->keyakinan($w['confidence'] ?? null) : null;
+                    if ($k !== null) {
+                        $keyakinan = $keyakinan === null ? $k : min($keyakinan, $k);
+                    }
+                }
+            }
+        }
+
+        return ['ok' => true, 'teks' => implode(' ', $kata), 'keyakinan' => $keyakinan, 'jumlah_kata' => count($kata)];
+    }
+
+    /** @return array<string, mixed> */
+    private function gagalSel(string $status, string $error, int|float $mulai): array
+    {
+        return [
+            'ok' => false,
+            'status' => $status,
+            'error' => $error,
+            'unit' => 0,
+            'durasi_ms' => $this->durasi($mulai),
+            'sel' => [],
+        ];
     }
 
     /**
