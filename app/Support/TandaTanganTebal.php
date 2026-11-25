@@ -112,9 +112,11 @@ final class TandaTanganTebal
             return $isi;
         }
 
-        $sumber = @imagecreatefromstring($isi);
+        // Lewat `PengamanCitra`: tanda tangan yang pikselnya melewati batas memori tidak didekode
+        // (fatal = sertifikat tidak terbit), dan dikembalikan apa adanya seperti berkas rusak.
+        $sumber = PengamanCitra::dekode($isi);
 
-        if ($sumber === false) {
+        if ($sumber === null) {
             return $isi;
         }
 

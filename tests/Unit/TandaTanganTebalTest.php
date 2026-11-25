@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Support\TandaTanganTebal;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\CitraSintetis;
 
 /**
  * Goresan tanda tangan wajib tercetak setebal pena, tanpa bentuknya berubah.
@@ -301,6 +302,21 @@ class TandaTanganTebalTest extends TestCase
         }
 
         $this->assertNull(TandaTanganTebal::pena(null, 24.9));
+    }
+
+    /**
+     * Tanda tangan yang header-nya mengaku puluhan megapiksel tidak didekode (`PengamanCitra`): habis memori
+     * itu fatal dan sertifikatnya tidak terbit sama sekali. Jalurnya sama dengan berkas rusak: isi aslinya
+     * dikembalikan apa adanya, sertifikat tetap terbit.
+     *
+     * Yang membuktikan adalah JPEG: tanpa pengaman, GD mendekodenya jadi 6000x8000 dan hasil olahnya BEDA dari
+     * masukan (diperiksa 25 Nov 2026). PNG sintetis gagal didekode juga tanpa pengaman, jadi hanya pelengkap.
+     */
+    public function test_citra_terlalu_besar_dikembalikan_apa_adanya_tanpa_didekode(): void
+    {
+        foreach ([CitraSintetis::pngMengaku(8000, 6000), CitraSintetis::jpegMengaku(6000, 8000)] as $besar) {
+            $this->assertSame($besar, TandaTanganTebal::pena($besar, 24.9));
+        }
     }
 
     /** Lebar cetak yang tidak masuk akal dilewat, bukan bikin pembagian nol. */
