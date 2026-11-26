@@ -1,0 +1,1293 @@
+{
+  "_digenerate_oleh": "docs/skrip/gen-fixture-paritas-batch4.py",
+  "_catatan": "Disalin dari nilai-cache workbook master (alamat sel di tiap nilai). Tanpa nama/alamat pelanggan, nomor sertifikat, nomor order, atau nama teknisi. Jangan disunting dengan tangan.",
+  "workbook": {
+    "label": "Master Pressure (DRUCK07G, DRUCK13G, SPMK, Differential): lembar SERTIFIKAT",
+    "varian": {
+      "druck07g": {
+        "sha256": "a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3ce1669fa939301fb88",
+        "satuan_kolom": {
+          "sel": "SERTIFIKAT!E20",
+          "nilai": "cmHg"
+        },
+        "satuan_u95": {
+          "sel": "SERTIFIKAT!S35",
+          "nilai": "cmHg"
+        },
+        "baris": [
+          {
+            "baris": 22,
+            "setelan": {
+              "sel": "SERTIFIKAT!E22",
+              "nilai": 0.0,
+              "format": "0",
+              "teks": "0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 23,
+            "setelan": {
+              "sel": "SERTIFIKAT!E23",
+              "nilai": 100.0,
+              "format": "0",
+              "teks": "100",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I23",
+              "nilai": 99.57248916157873,
+              "format": "0.0",
+              "teks": "99.6",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L23",
+              "nilai": 99.40582249491209,
+              "format": "0.0",
+              "teks": "99.4",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N23",
+              "nilai": -0.42751083842127,
+              "format": "0.0",
+              "teks": "-0.4",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": -0.594177505087913,
+              "format": "0.0",
+              "teks": "-0.6",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R23",
+              "nilai": 0.3000000000000047,
+              "format": "0.0",
+              "teks": "0.3",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T23",
+              "nilai": 0.10000000000001578,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V23",
+              "nilai": 0.09999999999999447,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 24,
+            "setelan": {
+              "sel": "SERTIFIKAT!E24",
+              "nilai": 500.0,
+              "format": "0",
+              "teks": "500",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I24",
+              "nilai": 496.324154553137,
+              "format": "0.0",
+              "teks": "496.3",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L24",
+              "nilai": 496.55748788647026,
+              "format": "0.0",
+              "teks": "496.6",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N24",
+              "nilai": -3.6758454468629793,
+              "format": "0.0",
+              "teks": "-3.7",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P24",
+              "nilai": -3.4425121135297445,
+              "format": "0.0",
+              "teks": "-3.4",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R24",
+              "nilai": -0.30000000000004734,
+              "format": "0.0",
+              "teks": "-0.3",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T24",
+              "nilai": -0.49999999999999367,
+              "format": "0.0",
+              "teks": "-0.5",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V24",
+              "nilai": 0.10000000000001578,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 25,
+            "setelan": {
+              "sel": "SERTIFIKAT!E25",
+              "nilai": 1000.0,
+              "format": "0",
+              "teks": "1000",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I25",
+              "nilai": 993.0908212198036,
+              "format": "0.0",
+              "teks": "993.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L25",
+              "nilai": 993.1908212198035,
+              "format": "0.0",
+              "teks": "993.2",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N25",
+              "nilai": -6.909178780196385,
+              "format": "0.0",
+              "teks": "-6.9",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P25",
+              "nilai": -6.809178780196476,
+              "format": "0.0",
+              "teks": "-6.8",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R25",
+              "nilai": 0.09999999999993052,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T25",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V25",
+              "nilai": -0.3999999999998926,
+              "format": "0.0",
+              "teks": "-0.4",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 26,
+            "setelan": {
+              "sel": "SERTIFIKAT!E26",
+              "nilai": 1500.0,
+              "format": "0",
+              "teks": "1500",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I26",
+              "nilai": 1490.224154553137,
+              "format": "0.0",
+              "teks": "1490.2",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L26",
+              "nilai": 1489.8574878864704,
+              "format": "0.0",
+              "teks": "1489.9",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N26",
+              "nilai": -9.775845446863059,
+              "format": "0.0",
+              "teks": "-9.8",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P26",
+              "nilai": -10.14251211352962,
+              "format": "0.0",
+              "teks": "-10.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T26",
+              "nilai": 0.7000000000000253,
+              "format": "0.0",
+              "teks": "0.7",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V26",
+              "nilai": 0.40000000000006314,
+              "format": "0.0",
+              "teks": "0.4",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 27,
+            "setelan": {
+              "sel": "SERTIFIKAT!E27",
+              "nilai": -100.0,
+              "format": "0",
+              "teks": "-100",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I27",
+              "nilai": -99.99999999999999,
+              "format": "0.0",
+              "teks": "-100.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L27",
+              "nilai": -99.99999999999999,
+              "format": "0.0",
+              "teks": "-100.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N27",
+              "nilai": 1.4210854715202004e-14,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P27",
+              "nilai": 1.4210854715202004e-14,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R27",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T27",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V27",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "u95": {
+          "sel": "SERTIFIKAT!P35",
+          "nilai": 0.0519256426528453,
+          "format": "0.000",
+          "teks": "0.052",
+          "nol_bertanda_minus": false
+        },
+        "k": {
+          "sel": "SERTIFIKAT!U36",
+          "nilai": 2.0,
+          "format": "General",
+          "teks": "2"
+        }
+      },
+      "druck13g": {
+        "sha256": "5ccb64f527c7547fd61a8b3b0291451a16e79edce93f576df31c02e534452dd3",
+        "satuan_kolom": {
+          "sel": "SERTIFIKAT!E20",
+          "nilai": "Psi"
+        },
+        "satuan_u95": {
+          "sel": "SERTIFIKAT!S35",
+          "nilai": "Psi"
+        },
+        "baris": [
+          {
+            "baris": 22,
+            "setelan": {
+              "sel": "SERTIFIKAT!E22",
+              "nilai": 0.0,
+              "format": "0",
+              "teks": "0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I22",
+              "nilai": 0.077,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L22",
+              "nilai": -0.0613,
+              "format": "0.0",
+              "teks": "-0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N22",
+              "nilai": 0.077,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": -0.0613,
+              "format": "0.0",
+              "teks": "-0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 23,
+            "setelan": {
+              "sel": "SERTIFIKAT!E23",
+              "nilai": 80.0,
+              "format": "0",
+              "teks": "80",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I23",
+              "nilai": 80.078,
+              "format": "0.0",
+              "teks": "80.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L23",
+              "nilai": 79.9434,
+              "format": "0.0",
+              "teks": "79.9",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N23",
+              "nilai": 0.07800000000000296,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": -0.05660000000000309,
+              "format": "0.0",
+              "teks": "-0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R23",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T23",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V23",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 24,
+            "setelan": {
+              "sel": "SERTIFIKAT!E24",
+              "nilai": 100.0,
+              "format": "0",
+              "teks": "100",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I24",
+              "nilai": 100.078,
+              "format": "0.0",
+              "teks": "100.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L24",
+              "nilai": 99.9434,
+              "format": "0.0",
+              "teks": "99.9",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N24",
+              "nilai": 0.07800000000000296,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P24",
+              "nilai": -0.05660000000000309,
+              "format": "0.0",
+              "teks": "-0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R24",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T24",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V24",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 25,
+            "setelan": {
+              "sel": "SERTIFIKAT!E25",
+              "nilai": 150.0,
+              "format": "0",
+              "teks": "150",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I25",
+              "nilai": 150.079,
+              "format": "0.0",
+              "teks": "150.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L25",
+              "nilai": 149.9655,
+              "format": "0.0",
+              "teks": "150.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N25",
+              "nilai": 0.07900000000000773,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P25",
+              "nilai": -0.03450000000000841,
+              "format": "0.0",
+              "teks": "-0.0",
+              "nol_bertanda_minus": true
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R25",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T25",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V25",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 26,
+            "setelan": {
+              "sel": "SERTIFIKAT!E26",
+              "nilai": 200.0,
+              "format": "0",
+              "teks": "200",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I26",
+              "nilai": 200.079,
+              "format": "0.0",
+              "teks": "200.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L26",
+              "nilai": 200.0046,
+              "format": "0.0",
+              "teks": "200.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N26",
+              "nilai": 0.07900000000000773,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P26",
+              "nilai": 0.004600000000010596,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "u95": {
+          "sel": "SERTIFIKAT!P35",
+          "nilai": 0.21119628545744232,
+          "format": "0.0",
+          "teks": "0.2",
+          "nol_bertanda_minus": false
+        },
+        "k": {
+          "sel": "SERTIFIKAT!U36",
+          "nilai": 2.0,
+          "format": "General",
+          "teks": "2"
+        }
+      },
+      "spmk": {
+        "sha256": "27cce61b06fb4dec1ab714d5494433b954c9e14a02771a600745d3d21b30bbaf",
+        "satuan_kolom": {
+          "sel": "SERTIFIKAT!E20",
+          "nilai": "kg/cm2"
+        },
+        "satuan_u95": {
+          "sel": "SERTIFIKAT!S35",
+          "nilai": "kg/cm2"
+        },
+        "baris": [
+          {
+            "baris": 22,
+            "setelan": {
+              "sel": "SERTIFIKAT!E22",
+              "nilai": 0.0,
+              "format": "0.000",
+              "teks": "0.000",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I22",
+              "nilai": 0.019495109271089855,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L22",
+              "nilai": 0.01616177593775652,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N22",
+              "nilai": 0.019495109271089855,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": 0.01616177593775652,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R22",
+              "nilai": 0.01,
+              "format": "0.00",
+              "teks": "0.01",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T22",
+              "nilai": 0.0,
+              "format": "0.00",
+              "teks": "0.00",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V22",
+              "nilai": 0.0,
+              "format": "0.00",
+              "teks": "0.00",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 23,
+            "setelan": {
+              "sel": "SERTIFIKAT!E23",
+              "nilai": 5.0,
+              "format": "0.000",
+              "teks": "5.000",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I23",
+              "nilai": 5.022828442604423,
+              "format": "0.00",
+              "teks": "5.02",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L23",
+              "nilai": 5.022828442604423,
+              "format": "0.00",
+              "teks": "5.02",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N23",
+              "nilai": 0.02282844260442296,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": 0.02282844260442296,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R23",
+              "nilai": 0.009999999999999802,
+              "format": "0.00",
+              "teks": "0.01",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T23",
+              "nilai": 0.0,
+              "format": "0.00",
+              "teks": "0.00",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V23",
+              "nilai": -0.009999999999999802,
+              "format": "0.00",
+              "teks": "-0.01",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 24,
+            "setelan": {
+              "sel": "SERTIFIKAT!E24",
+              "nilai": 10.0,
+              "format": "0.000",
+              "teks": "10.000",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I24",
+              "nilai": 10.032828442604423,
+              "format": "0.00",
+              "teks": "10.03",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L24",
+              "nilai": 10.019495109271087,
+              "format": "0.00",
+              "teks": "10.02",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N24",
+              "nilai": 0.03282844260442275,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P24",
+              "nilai": 0.01949510927108733,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R24",
+              "nilai": 0.029999999999999406,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T24",
+              "nilai": -0.009999999999999802,
+              "format": "0.00",
+              "teks": "-0.01",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V24",
+              "nilai": 0.019999999999999605,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "u95": {
+          "sel": "SERTIFIKAT!P35",
+          "nilai": 0.43022341610493586,
+          "format": "0.00",
+          "teks": "0.43",
+          "nol_bertanda_minus": false
+        },
+        "k": {
+          "sel": "SERTIFIKAT!U36",
+          "nilai": 2.0,
+          "format": "General",
+          "teks": "2"
+        }
+      },
+      "differential": {
+        "sha256": "91564b56c246e643cacb9c0a32f5eaa6613e499b4db9e99cd71dbfe5ac424596",
+        "satuan_kolom": {
+          "sel": "SERTIFIKAT!E20",
+          "nilai": "Psi"
+        },
+        "satuan_u95": {
+          "sel": "SERTIFIKAT!S35",
+          "nilai": "Psi"
+        },
+        "baris": [
+          {
+            "baris": 22,
+            "setelan": {
+              "sel": "SERTIFIKAT!E22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V22",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 23,
+            "setelan": {
+              "sel": "SERTIFIKAT!E23",
+              "nilai": 2.0,
+              "format": "0.0",
+              "teks": "2.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I23",
+              "nilai": 2.1659704857988777,
+              "format": "0.0",
+              "teks": "2.2",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L23",
+              "nilai": 2.099303819132211,
+              "format": "0.0",
+              "teks": "2.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N23",
+              "nilai": 0.16597048579887774,
+              "format": "0.0",
+              "teks": "0.2",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P23",
+              "nilai": 0.09930381913221087,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R23",
+              "nilai": 0.09999999999999988,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T23",
+              "nilai": 0.09999999999999988,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V23",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 24,
+            "setelan": {
+              "sel": "SERTIFIKAT!E24",
+              "nilai": 4.0,
+              "format": "0.0",
+              "teks": "4.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I24",
+              "nilai": 4.199303819132211,
+              "format": "0.0",
+              "teks": "4.2",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L24",
+              "nilai": 4.09930381913221,
+              "format": "0.0",
+              "teks": "4.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N24",
+              "nilai": 0.1993038191322114,
+              "format": "0.0",
+              "teks": "0.2",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P24",
+              "nilai": 0.09930381913220998,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R24",
+              "nilai": 0.10000000000000112,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T24",
+              "nilai": 0.10000000000000112,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V24",
+              "nilai": 0.10000000000000112,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 25,
+            "setelan": {
+              "sel": "SERTIFIKAT!E25",
+              "nilai": 6.0,
+              "format": "0.0",
+              "teks": "6.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I25",
+              "nilai": 6.165970485798878,
+              "format": "0.0",
+              "teks": "6.2",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L25",
+              "nilai": 6.09930381913221,
+              "format": "0.0",
+              "teks": "6.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N25",
+              "nilai": 0.1659704857988782,
+              "format": "0.0",
+              "teks": "0.2",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P25",
+              "nilai": 0.09930381913220998,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R25",
+              "nilai": 0.10000000000000112,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T25",
+              "nilai": 0.10000000000000112,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V25",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 26,
+            "setelan": {
+              "sel": "SERTIFIKAT!E26",
+              "nilai": 8.0,
+              "format": "0.0",
+              "teks": "8.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I26",
+              "nilai": 8.132637152465543,
+              "format": "0.0",
+              "teks": "8.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L26",
+              "nilai": 8.065970485798877,
+              "format": "0.0",
+              "teks": "8.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N26",
+              "nilai": 0.1326371524655432,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P26",
+              "nilai": 0.06597048579887677,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T26",
+              "nilai": 0.19999999999999893,
+              "format": "0.0",
+              "teks": "0.2",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V26",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "baris": 27,
+            "setelan": {
+              "sel": "SERTIFIKAT!E27",
+              "nilai": 10.0,
+              "format": "0.0",
+              "teks": "10.0",
+              "nol_bertanda_minus": false
+            },
+            "standar_up": {
+              "sel": "SERTIFIKAT!I27",
+              "nilai": 10.132637152465543,
+              "format": "0.0",
+              "teks": "10.1",
+              "nol_bertanda_minus": false
+            },
+            "standar_down": {
+              "sel": "SERTIFIKAT!L27",
+              "nilai": 10.065970485798877,
+              "format": "0.0",
+              "teks": "10.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_up": {
+              "sel": "SERTIFIKAT!N27",
+              "nilai": 0.1326371524655432,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "koreksi_down": {
+              "sel": "SERTIFIKAT!P27",
+              "nilai": 0.06597048579887677,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_1": {
+              "sel": "SERTIFIKAT!R27",
+              "nilai": 0.0,
+              "format": "0.0",
+              "teks": "0.0",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_2": {
+              "sel": "SERTIFIKAT!T27",
+              "nilai": 0.10000000000000028,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            },
+            "histeresis_3": {
+              "sel": "SERTIFIKAT!V27",
+              "nilai": 0.10000000000000028,
+              "format": "0.0",
+              "teks": "0.1",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "u95": {
+          "sel": "SERTIFIKAT!P35",
+          "nilai": 0.05798345998891353,
+          "format": "0.00",
+          "teks": "0.06",
+          "nol_bertanda_minus": false
+        },
+        "k": {
+          "sel": "SERTIFIKAT!U36",
+          "nilai": 2.0,
+          "format": "0",
+          "teks": "2"
+        }
+      }
+    }
+  }
+}
