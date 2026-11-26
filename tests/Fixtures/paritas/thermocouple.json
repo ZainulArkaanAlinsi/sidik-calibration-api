@@ -1,0 +1,855 @@
+{
+  "_digenerate_oleh": "docs/skrip/gen-fixture-paritas-batch7.py",
+  "_catatan": "Disalin dari nilai-cache workbook master (alamat sel di tiap nilai). Tanpa nama/alamat pelanggan, nomor sertifikat, nomor order, atau nama teknisi. Jangan disunting dengan tangan.",
+  "workbook": {
+    "berkas": "Master Olah Data_Suhu_Thermocouple.xlsm",
+    "sha256_12": "381e5000a8bb",
+    "rekonstruksi": {
+      "selisih_relatif_maks_terhadap_cache": 5.77410967118877e-16,
+      "selisih_relatif_maks_k_terhadap_cache": 0.0,
+      "catatan_k": "k master = polinomial AC32 (aritmetika murni, direkonstruksi dari AC31 pada batas yang sama dengan sel lain). Kuantil eksak hanya muncul di `skenario`."
+    },
+    "masukan": {
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal": {
+            "sel": "INPUT DATA!B51",
+            "nilai": 50.0
+          },
+          "set_point": {
+            "sel": "INPUT DATA!L34",
+            "nilai": 50.0
+          },
+          "no_probe": {
+            "sel": "INPUT DATA!B34",
+            "nilai": 1.0
+          },
+          "standar": {
+            "sel": [
+              "INPUT DATA!D34",
+              "INPUT DATA!F34",
+              "INPUT DATA!H34",
+              "INPUT DATA!I34",
+              "INPUT DATA!K34"
+            ],
+            "nilai": [
+              49.5,
+              49.5,
+              49.5,
+              49.5,
+              49.5
+            ]
+          },
+          "uut": {
+            "sel": [
+              "INPUT DATA!D51",
+              "INPUT DATA!F51",
+              "INPUT DATA!H51",
+              "INPUT DATA!I51",
+              "INPUT DATA!K51"
+            ],
+            "nilai": [
+              49.9,
+              49.9,
+              49.9,
+              49.9,
+              49.9
+            ]
+          }
+        },
+        {
+          "titik_ke": 2,
+          "nominal": {
+            "sel": "INPUT DATA!B52",
+            "nilai": 100.0
+          },
+          "set_point": {
+            "sel": "INPUT DATA!L35",
+            "nilai": 100.0
+          },
+          "no_probe": {
+            "sel": "INPUT DATA!B35",
+            "nilai": 2.0
+          },
+          "standar": {
+            "sel": [
+              "INPUT DATA!D35",
+              "INPUT DATA!F35",
+              "INPUT DATA!H35",
+              "INPUT DATA!I35",
+              "INPUT DATA!K35"
+            ],
+            "nilai": [
+              99.0,
+              99.0,
+              99.0,
+              99.0,
+              99.0
+            ]
+          },
+          "uut": {
+            "sel": [
+              "INPUT DATA!D52",
+              "INPUT DATA!F52",
+              "INPUT DATA!H52",
+              "INPUT DATA!I52",
+              "INPUT DATA!K52"
+            ],
+            "nilai": [
+              99.9,
+              99.9,
+              99.9,
+              99.9,
+              99.9
+            ]
+          }
+        },
+        {
+          "titik_ke": 3,
+          "nominal": {
+            "sel": "INPUT DATA!B53",
+            "nilai": 150.0
+          },
+          "set_point": {
+            "sel": "INPUT DATA!L36",
+            "nilai": 150.0
+          },
+          "no_probe": {
+            "sel": "INPUT DATA!B36",
+            "nilai": 3.0
+          },
+          "standar": {
+            "sel": [
+              "INPUT DATA!D36",
+              "INPUT DATA!F36",
+              "INPUT DATA!H36",
+              "INPUT DATA!I36",
+              "INPUT DATA!K36"
+            ],
+            "nilai": [
+              148.6,
+              148.6,
+              148.6,
+              148.6,
+              148.6
+            ]
+          },
+          "uut": {
+            "sel": [
+              "INPUT DATA!D53",
+              "INPUT DATA!F53",
+              "INPUT DATA!H53",
+              "INPUT DATA!I53",
+              "INPUT DATA!K53"
+            ],
+            "nilai": [
+              150.1,
+              150.1,
+              150.1,
+              150.1,
+              150.1
+            ]
+          }
+        }
+      ],
+      "spek": {
+        "merk_kalibrator": {
+          "sel": "INPUT DATA!X12",
+          "nilai": "Yokogawa"
+        },
+        "merk_kalibrator_uut": {
+          "sel": "INPUT DATA!X21",
+          "nilai": "Yokogawa"
+        },
+        "sensor_standar": {
+          "sel": "INPUT DATA!X13",
+          "nilai": "Thermocouple Type K"
+        },
+        "dryblock": {
+          "sel": "INPUT DATA!X20",
+          "nilai": "A"
+        },
+        "resolusi_alat": {
+          "sel": "INPUT DATA!E16",
+          "nilai": 0.1
+        },
+        "cmc_pita_minus20_150": {
+          "sel": "DATABASE!S5",
+          "nilai": 0.84
+        },
+        "cmc_pita_150_400": {
+          "sel": "DATABASE!S6",
+          "nilai": 1.5
+        },
+        "cmc_pita_400_600": {
+          "sel": "DATABASE!S7",
+          "nilai": 3.3
+        }
+      }
+    },
+    "titik": [
+      {
+        "titik_ke": 1,
+        "standar_rata_rata": {
+          "sel": "PERHITUNGAN FC!J23",
+          "nilai": 49.5
+        },
+        "standar_sd": {
+          "sel": "PERHITUNGAN FC!K23",
+          "nilai": 0.0
+        },
+        "indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P23",
+          "nilai": 50.0
+        },
+        "koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q23",
+          "nilai": -0.14500000000000085
+        },
+        "koreksi_probe": {
+          "sel": "PERHITUNGAN FC!R23",
+          "nilai": -0.08
+        },
+        "standar_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S23",
+          "nilai": 49.275
+        },
+        "uut_rata_rata": {
+          "sel": "PERHITUNGAN FC!J42",
+          "nilai": 49.9
+        },
+        "uut_sd": {
+          "sel": "PERHITUNGAN FC!K42",
+          "nilai": 0.0
+        },
+        "uut_indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P42",
+          "nilai": 50.0
+        },
+        "uut_koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q42",
+          "nilai": -0.14500000000000085
+        },
+        "uut_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S42",
+          "nilai": 49.754999999999995
+        },
+        "koreksi": {
+          "sel": "SERTIFIKAT!L20",
+          "nilai": -0.4799999999999969
+        },
+        "sertifikat": {
+          "standar": {
+            "sel": "SERTIFIKAT!E20",
+            "nilai": 49.275,
+            "format": "0.0",
+            "teks": "49.3",
+            "nol_bertanda_minus": false
+          },
+          "uut": {
+            "sel": "SERTIFIKAT!J20",
+            "nilai": 49.754999999999995,
+            "format": "0.0",
+            "teks": "49.8",
+            "nol_bertanda_minus": false
+          },
+          "koreksi": {
+            "sel": "SERTIFIKAT!L20",
+            "nilai": -0.4799999999999969,
+            "format": "0.0",
+            "teks": "-0.5",
+            "nol_bertanda_minus": false
+          }
+        }
+      },
+      {
+        "titik_ke": 2,
+        "standar_rata_rata": {
+          "sel": "PERHITUNGAN FC!J24",
+          "nilai": 99.0
+        },
+        "standar_sd": {
+          "sel": "PERHITUNGAN FC!K24",
+          "nilai": 0.0
+        },
+        "indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P24",
+          "nilai": 100.0
+        },
+        "koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q24",
+          "nilai": -0.1700000000000017
+        },
+        "koreksi_probe": {
+          "sel": "PERHITUNGAN FC!R24",
+          "nilai": 0.275
+        },
+        "standar_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S24",
+          "nilai": 99.105
+        },
+        "uut_rata_rata": {
+          "sel": "PERHITUNGAN FC!J43",
+          "nilai": 99.9
+        },
+        "uut_sd": {
+          "sel": "PERHITUNGAN FC!K43",
+          "nilai": 0.0
+        },
+        "uut_indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P43",
+          "nilai": 100.0
+        },
+        "uut_koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q43",
+          "nilai": -0.1700000000000017
+        },
+        "uut_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S43",
+          "nilai": 99.73
+        },
+        "koreksi": {
+          "sel": "SERTIFIKAT!L21",
+          "nilai": -0.625
+        },
+        "sertifikat": {
+          "standar": {
+            "sel": "SERTIFIKAT!E21",
+            "nilai": 99.105,
+            "format": "0.0",
+            "teks": "99.1",
+            "nol_bertanda_minus": false
+          },
+          "uut": {
+            "sel": "SERTIFIKAT!J21",
+            "nilai": 99.73,
+            "format": "0.0",
+            "teks": "99.7",
+            "nol_bertanda_minus": false
+          },
+          "koreksi": {
+            "sel": "SERTIFIKAT!L21",
+            "nilai": -0.625,
+            "format": "0.0",
+            "teks": "-0.6",
+            "nol_bertanda_minus": false
+          }
+        }
+      },
+      {
+        "titik_ke": 3,
+        "standar_rata_rata": {
+          "sel": "PERHITUNGAN FC!J25",
+          "nilai": 148.6
+        },
+        "standar_sd": {
+          "sel": "PERHITUNGAN FC!K25",
+          "nilai": 0.0
+        },
+        "indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P25",
+          "nilai": 100.0
+        },
+        "koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q25",
+          "nilai": -0.1700000000000017
+        },
+        "koreksi_probe": {
+          "sel": "PERHITUNGAN FC!R25",
+          "nilai": 0.275
+        },
+        "standar_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S25",
+          "nilai": 148.705
+        },
+        "uut_rata_rata": {
+          "sel": "PERHITUNGAN FC!J44",
+          "nilai": 150.1
+        },
+        "uut_sd": {
+          "sel": "PERHITUNGAN FC!K44",
+          "nilai": 0.0
+        },
+        "uut_indeks_tabel": {
+          "sel": "PERHITUNGAN FC!P44",
+          "nilai": 200.0
+        },
+        "uut_koreksi_meter": {
+          "sel": "PERHITUNGAN FC!Q44",
+          "nilai": -0.13999999999998636
+        },
+        "uut_terkoreksi": {
+          "sel": "PERHITUNGAN FC!S44",
+          "nilai": 149.96
+        },
+        "koreksi": {
+          "sel": "SERTIFIKAT!L22",
+          "nilai": -1.2549999999999955
+        },
+        "sertifikat": {
+          "standar": {
+            "sel": "SERTIFIKAT!E22",
+            "nilai": 148.705,
+            "format": "0.0",
+            "teks": "148.7",
+            "nol_bertanda_minus": false
+          },
+          "uut": {
+            "sel": "SERTIFIKAT!J22",
+            "nilai": 149.96,
+            "format": "0.0",
+            "teks": "150.0",
+            "nol_bertanda_minus": false
+          },
+          "koreksi": {
+            "sel": "SERTIFIKAT!L22",
+            "nilai": -1.2549999999999955,
+            "format": "0.0",
+            "teks": "-1.3",
+            "nol_bertanda_minus": false
+          }
+        }
+      }
+    ],
+    "sesi": {
+      "sd_maks_standar": {
+        "sel": "PERHITUNGAN FC!M23",
+        "nilai": 0.0
+      },
+      "sd_maks_uut": {
+        "sel": "PERHITUNGAN FC!M42",
+        "nilai": 0.0
+      },
+      "indeks_maks": {
+        "sel": "PERHITUNGAN FC!P37",
+        "nilai": 100.0
+      },
+      "titik_maks_uut": {
+        "sel": "PERHITUNGAN FC!D56",
+        "nilai": 150.0
+      },
+      "titik_maks_u95": {
+        "sel": "PERHITUNGAN U95%!U18",
+        "nilai": 150.0
+      }
+    },
+    "budget": {
+      "ketidakpastian_standar": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!O20",
+          "nilai": 0.24
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q20",
+          "nilai": 2.0
+        },
+        "rumus_ui": "=O20/Q20",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S20",
+          "nilai": 200.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U20",
+          "nilai": 0.12
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X20",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z20",
+          "nilai": 0.12
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC20",
+          "nilai": 0.0144
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG20",
+          "nilai": 1.0368e-06
+        }
+      },
+      "ketidakpastian_sensor": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!O21",
+          "nilai": 0.44
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q21",
+          "nilai": 2.0
+        },
+        "rumus_ui": "=O21/Q21",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S21",
+          "nilai": 200.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U21",
+          "nilai": 0.22
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X21",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z21",
+          "nilai": 0.22
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC21",
+          "nilai": 0.0484
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG21",
+          "nilai": 1.17128e-05
+        }
+      },
+      "stabilitas_cold_junction": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N22",
+          "nilai": 0.1
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q22",
+          "nilai": 1.7320508075688772
+        },
+        "rumus_ui": "=N22/Q22",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S22",
+          "nilai": 200.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U22",
+          "nilai": 0.05773502691896258
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X22",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z22",
+          "nilai": 0.05773502691896258
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC22",
+          "nilai": 0.003333333333333334
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG22",
+          "nilai": 5.5555555555555574e-08
+        }
+      },
+      "drift_standar": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N23",
+          "nilai": 0.024
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q23",
+          "nilai": 2.0
+        },
+        "rumus_ui": "=N23/Q23",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S23",
+          "nilai": 50.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U23",
+          "nilai": 0.012
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X23",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z23",
+          "nilai": 0.012
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC23",
+          "nilai": 0.000144
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG23",
+          "nilai": 4.1472000000000004e-10
+        }
+      },
+      "drift_sensor": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N24",
+          "nilai": 0.5
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q24",
+          "nilai": 2.0
+        },
+        "rumus_ui": "=N24/Q24",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S24",
+          "nilai": 50.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U24",
+          "nilai": 0.25
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X24",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z24",
+          "nilai": 0.25
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC24",
+          "nilai": 0.0625
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG24",
+          "nilai": 7.8125e-05
+        }
+      },
+      "ac_pick_up": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N25",
+          "nilai": 0.1
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q25",
+          "nilai": 1.7320508075688772
+        },
+        "rumus_ui": "=N25/Q25",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S25",
+          "nilai": 1000000.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U25",
+          "nilai": 0.05773502691896258
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X25",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z25",
+          "nilai": 0.05773502691896258
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC25",
+          "nilai": 0.003333333333333334
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG25",
+          "nilai": 1.1111111111111116e-11
+        }
+      },
+      "variasi_aksial": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N26",
+          "nilai": 0.20000000000004547
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q26",
+          "nilai": 1.7320508075688772
+        },
+        "rumus_ui": "=N26/Q26",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S26",
+          "nilai": 8.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U26",
+          "nilai": 0.11547005383795142
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X26",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z26",
+          "nilai": 0.11547005383795142
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC26",
+          "nilai": 0.013333333333339399
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG26",
+          "nilai": 2.222222222224244e-05
+        }
+      },
+      "variasi_antar_lubang": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N27",
+          "nilai": 0.13
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q27",
+          "nilai": 1.7320508075688772
+        },
+        "rumus_ui": "=N27/Q27",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S27",
+          "nilai": 8.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U27",
+          "nilai": 0.07505553499465135
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X27",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z27",
+          "nilai": 0.07505553499465135
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC27",
+          "nilai": 0.005633333333333334
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG27",
+          "nilai": 3.966805555555556e-06
+        }
+      },
+      "daya_baca_indikator": {
+        "mentah": {
+          "sel": "PERHITUNGAN U95%!N28",
+          "nilai": 0.05
+        },
+        "pembagi": {
+          "sel": "PERHITUNGAN U95%!Q28",
+          "nilai": 1.7320508075688772
+        },
+        "rumus_ui": "=N28/Q28",
+        "vi": {
+          "sel": "PERHITUNGAN U95%!S28",
+          "nilai": 8.0
+        },
+        "ui": {
+          "sel": "PERHITUNGAN U95%!U28",
+          "nilai": 0.02886751345948129
+        },
+        "ci": {
+          "sel": "PERHITUNGAN U95%!X28",
+          "nilai": 1.0
+        },
+        "uici": {
+          "sel": "PERHITUNGAN U95%!Z28",
+          "nilai": 0.02886751345948129
+        },
+        "uici_kuadrat": {
+          "sel": "PERHITUNGAN U95%!AC28",
+          "nilai": 0.0008333333333333335
+        },
+        "uici4_per_vi": {
+          "sel": "PERHITUNGAN U95%!AG28",
+          "nilai": 8.680555555555559e-08
+        }
+      }
+    },
+    "agregat": {
+      "jumlah_uici_kuadrat": {
+        "sel": "PERHITUNGAN U95%!AC29",
+        "nilai": 0.1519106666666727
+      },
+      "jumlah_uici4_per_vi": {
+        "sel": "PERHITUNGAN U95%!AG29",
+        "nilai": 0.00011720641472002022
+      },
+      "uc": {
+        "sel": "PERHITUNGAN U95%!AC30",
+        "nilai": 0.3897571893713735
+      },
+      "veff": {
+        "sel": "PERHITUNGAN U95%!AC31",
+        "nilai": 196.8906795949552
+      },
+      "k": {
+        "sel": "PERHITUNGAN U95%!AC32",
+        "nilai": 1.9720882643948952
+      },
+      "u_hitung": {
+        "sel": "PERHITUNGAN U95%!AC33",
+        "nilai": 0.7686355791228244
+      },
+      "cmc": {
+        "sel": "PERHITUNGAN U95%!AC34",
+        "nilai": 0.84
+      },
+      "u_dilaporkan": {
+        "sel": "PERHITUNGAN U95%!AC35",
+        "nilai": 0.84
+      },
+      "rumus_k": "=1.95996+2.37356/AC31+2.818745/AC31^2+2.546662/AC31^3+1.761829/AC31^4+0.245458/AC31^5+1.000764/AC31^6",
+      "rumus_cmc": "=IF(AND(U18>=-20,U18<=150),DATABASE!S5,IF(AND(U18>151,U18<=400),DATABASE!S6,IF(AND(U18>401,U18<=600),DATABASE!S7,\"cek kapasitas\")))"
+    },
+    "rujukan_u95_ke_fc": [
+      "D56",
+      "P37"
+    ],
+    "sertifikat": {
+      "u95": {
+        "sel": "SERTIFIKAT!L34",
+        "nilai": 0.84,
+        "format": "0.00",
+        "teks": "0.84",
+        "nol_bertanda_minus": false
+      },
+      "k": {
+        "sel": "SERTIFIKAT!O35",
+        "nilai": 1.9720882643948952,
+        "format": "0",
+        "teks": "2",
+        "nol_bertanda_minus": false
+      }
+    },
+    "skenario": {
+      "k_kuantil_eksak_pada_veff_master": {
+        "sumber": "DIHITUNG ULANG (bukan sel Excel): scipy t.ppf(0,975; df = PERHITUNGAN U95%!AC31) tanpa pemotongan derajat bebas. Hanya untuk membuktikan penyebab selisih k polinomial AC32 vs kuantil eksak.",
+        "df": 196.8906795949552,
+        "k": 1.972085801240351,
+        "u": 0.7686346190906324,
+        "selisih_relatif_terhadap_ac32": 1.2490082663027348e-06
+      },
+      "keterulangan_ditambahkan": {
+        "sumber": "DIHITUNG ULANG (bukan sel Excel), MASUKAN HIPOTETIS: bacaan standar titik 1 diganti [49.4, 49.5, 49.5, 49.5, 49.6] (STDEV > 0, rata-rata tetap 49,5). Master TIDAK berubah (tidak ada rumus PERHITUNGAN U95% yang merujuk STDEV, lihat `rujukan_u95_ke_fc`); aplikasi menambah komponen ke-10 u = STDEV/akar(5), vi = 4. Rantai di bawah = sembilan ui-cache master + komponen itu, k = t(0,975; veff) eksak.",
+        "bacaan_standar_titik_1": [
+          49.4,
+          49.5,
+          49.5,
+          49.5,
+          49.6
+        ],
+        "sd": 0.07071067811865576,
+        "u_keterulangan": 0.03162277660168424,
+        "vi_keterulangan": 4.0,
+        "uc": 0.3910379350736611,
+        "veff": 199.0667945738084,
+        "k": 1.9719524961583834,
+        "u": 0.7711082321611258
+      },
+      "pita_cmc_celah": {
+        "sumber": "DIHITUNG ULANG (evaluasi teks rumus PERHITUNGAN U95%!AC34, bukan sel Excel), SET POINT HIPOTETIS: PERHITUNGAN FC!D56 (set point maksimum UUT) diganti nilai di celah rantai IF (150 < U18 <= 151 dan 400 < U18 <= 401). Hasil rumus = teks \"cek kapasitas\"; `MAX(AC33:AI34)` mengabaikan teks, jadi U95 master tanpa lantai CMC.",
+        "rumus": "=IF(AND(U18>=-20,U18<=150),DATABASE!S5,IF(AND(U18>151,U18<=400),DATABASE!S6,IF(AND(U18>401,U18<=600),DATABASE!S7,\"cek kapasitas\")))",
+        "titik": [
+          {
+            "u18": 150.5,
+            "cmc_master": null,
+            "teks_master": "cek kapasitas",
+            "u95_master": 0.7686355791228244
+          },
+          {
+            "u18": 400.5,
+            "cmc_master": null,
+            "teks_master": "cek kapasitas",
+            "u95_master": 0.7686355791228244
+          }
+        ]
+      }
+    }
+  }
+}
