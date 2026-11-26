@@ -123,6 +123,12 @@ class BatasAntarLabTest extends TestCase
         // `StudioGambarWorkbookTest::test_izin_gambar_sama_dengan_baca_workbook`.
         'api/studio/workbook/{workbook}/gambar/{gambar}' => 'butuh gambar nyata (id sha256); isolasi diuji StudioGambarWorkbookTest',
 
+        // Studio kelola alat (26 Nov 2026): gerbangnya `role:super_admin`, sedangkan
+        // sapuan ini bertindak sebagai admin lab (403 sebelum organisasi ditanya),
+        // jadi hijau karena alasan yang salah. Alat lab lain → 404 untuk super admin
+        // diuji `StudioAlatApiTest` dengan data nyata di dua lab.
+        'api/studio/equipments/{equipment}' => 'butuh peran super_admin (admin 403) — isolasi diuji StudioAlatApiTest',
+
         // Rute APLIKASI PELANGGAN (slice F). Batasnya PERUSAHAAN, bukan lab:
         // token internal (admin lab mana pun) sudah ditolak `aplikasi:pelanggan`
         // sebelum organisasi sempat ditanya, jadi sapuan di sini hijau karena

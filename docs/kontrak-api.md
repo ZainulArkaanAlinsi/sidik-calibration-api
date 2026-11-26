@@ -3814,6 +3814,12 @@ tiap request; ganti env = token lama mati). Token lab/sesi panel/akun lain -> `4
 Sebaliknya token `studio` di rute lab -> `403 bukan_aplikasi_ini`. Hak penuh: semua izin
 `workbook.*`, sel terkunci boleh disunting (`boleh_edit_sel_terkunci: true`). Workbook lab lain tetap 404.
 
+**Alat (26 Nov 2026):** `GET|POST /api/studio/equipments`, `GET|PUT|PATCH|DELETE /api/studio/equipments/{id}`
+— gerbang `studio` + `role:super_admin` (peran lain `403`), bentuk/validasi sama dengan `/api/equipments`
+(`EquipmentRequest`), lab lain `404`, `DELETE` = hapus-lunak, tulis ber-throttle `studio-alat-tulis` 60/menit.
+Rute lab `/api/equipments` tidak berubah dan tetap menolak token `studio`. Rincian:
+`docs/perintah-frontend-studio-alat.md`.
+
 **Pengganti `/me`:** `GET /api/studio/me` -> `{data:{user, izin:{role:"studio", boleh:[workbook.lihat,
 workbook.hitung, workbook.impor, workbook.sel-terkunci.sunting], batasan:{}}}}`;
 `POST /api/studio/logout` mencabut token. `/me/permissions` tidak lagi memuat `workbook.*`.
