@@ -435,6 +435,33 @@ class ParitasPutaranTest extends TestCase
     }
 
     /**
+     * SELISIH §3, efek ke angka CETAK: dengan tabel produksi (drift lengkap) U95 tercetak lebih besar dari Excel
+     * di setiap blok yang U-nya di atas lantai CMC: 4 dari 6 blok Tachometer (1-4) dan 5 dari 5 blok Centrifuge.
+     * Dua blok Tachometer teratas SAMA karena keduanya jatuh ke lantai CMC 5,0. Tes ini mengunci SEBARAN selisih
+     * (blok mana, ke arah mana), bukan angka aplikasi; angka Excel diambil dari sel `SERTIFIKAT!S`.
+     */
+    #[DataProvider('alat')]
+    public function test_selisih_drift_u95_tercetak_lebih_besar_dari_excel_di_atas_lantai_cmc(string $alat): void
+    {
+        $w = self::w($alat);
+        $beda = [];
+
+        foreach ($w['blok'] as $i => $blok) {
+            $h = $this->hitungBlok($alat, $i, versiMaster: false);
+            $cetakApp = self::keTitik(TataLetakSertifikat::formatAngka($h['u95_sertifikat'], '0.0'));
+
+            if ($cetakApp !== $blok['cetak_u95']['teks']) {
+                $beda[] = $i + 1;
+                $this->assertGreaterThan((float) $blok['cetak_u95']['teks'], (float) $cetakApp, "{$alat} blok ".($i + 1).": U95 tercetak aplikasi > Excel ({$blok['cetak_u95']['sel']})");
+            } else {
+                $this->assertSamaExcel($blok['agregat']['cmc'], $h['u95_sertifikat'], "{$alat} blok ".($i + 1).': cetak sama hanya karena lantai CMC');
+            }
+        }
+
+        $this->assertSame($alat === 'tachometer' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5], $beda, 'blok yang U95 tercetaknya beda dari Excel');
+    }
+
+    /**
      * SELISIH §2 — Tachometer blok 5 (baris 98-109, set point 10000/12000/14000 rpm) rusak di workbook:
      *  - pita sertifikat kalibrator `='SERTIFIKAT KALIBRATOR'!F15` (1,6; pita 5000 rpm), sedangkan nominal tertinggi
      *    blok (15000 rpm) bernaung di F18 (3,1) seperti lima blok tetangga;
