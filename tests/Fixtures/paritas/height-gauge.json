@@ -1,0 +1,1741 @@
+{
+  "_digenerate_oleh": "docs/skrip/gen-fixture-paritas-batch6.py",
+  "_catatan": "Disalin dari nilai-cache workbook master (alamat sel di tiap nilai). Tanpa nama/alamat pelanggan, nomor seri, nomor sertifikat, nomor order, atau nama teknisi. Jangan disunting dengan tangan.",
+  "workbook": {
+    "sumber": {
+      "berkas": "Master olda Height Gauge 600 mm 2026.xlsm",
+      "sha256": "9192f2da5b742a3c1bb986b1b3ffbfc63b7c41c58f2f30505c59b5333f3c9ff6",
+      "dibuka": "didekripsi di memori dengan sandi dari pemilik (SIDIK_MASTER_SANDI); tidak ada salinan terbuka-kunci"
+    },
+    "masukan": {
+      "rentang_ukur_mm": {
+        "sel": "INPUT DATA!E14",
+        "nilai": 600.0
+      },
+      "kapasitas_mm": {
+        "sel": "INPUT DATA!E15",
+        "nilai": 600.0
+      },
+      "resolusi_mm": {
+        "sel": "INPUT DATA!E16",
+        "nilai": 0.01
+      },
+      "kode_satuan": {
+        "sel": "INPUT DATA!G14",
+        "nilai": 1.0
+      },
+      "satuan": {
+        "sel": "INPUT DATA!Y13",
+        "nilai": "mm"
+      },
+      "suhu_ruang_awal_c": {
+        "sel": "INPUT DATA!E21",
+        "nilai": 20.2
+      },
+      "suhu_ruang_akhir_c": {
+        "sel": "INPUT DATA!F21",
+        "nilai": 20.3
+      },
+      "suhu_ruang_rata_c": {
+        "sel": "INPUT DATA!H21",
+        "nilai": 20.25
+      },
+      "paralelisme_mm": {
+        "sel": [
+          "INPUT DATA!C31",
+          "INPUT DATA!D31",
+          "INPUT DATA!F31"
+        ],
+        "nilai": [
+          0.0,
+          0.001,
+          0.002
+        ]
+      },
+      "evaluasi_mm": {
+        "sel": [
+          "INPUT DATA!C38",
+          "INPUT DATA!D38",
+          "INPUT DATA!F38",
+          "INPUT DATA!G38",
+          "INPUT DATA!H38",
+          "INPUT DATA!I38",
+          "INPUT DATA!J38",
+          "INPUT DATA!K38",
+          "INPUT DATA!L38",
+          "INPUT DATA!M38"
+        ],
+        "nilai": [
+          599.97,
+          599.92,
+          599.98,
+          599.95,
+          599.95,
+          599.97,
+          599.94,
+          599.98,
+          599.97,
+          599.95
+        ]
+      },
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C43",
+            "nilai": 25.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F43",
+              "INPUT DATA!G43",
+              "INPUT DATA!H43"
+            ],
+            "nilai": [
+              24.99,
+              24.99,
+              24.98
+            ]
+          }
+        },
+        {
+          "titik_ke": 2,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C46",
+            "nilai": 50.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F46",
+              "INPUT DATA!G46",
+              "INPUT DATA!H46"
+            ],
+            "nilai": [
+              49.99,
+              49.99,
+              49.98
+            ]
+          }
+        },
+        {
+          "titik_ke": 3,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C49",
+            "nilai": 100.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F49",
+              "INPUT DATA!G49",
+              "INPUT DATA!H49"
+            ],
+            "nilai": [
+              99.98,
+              99.98,
+              99.98
+            ]
+          }
+        },
+        {
+          "titik_ke": 4,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C52",
+            "nilai": 150.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F52",
+              "INPUT DATA!G52",
+              "INPUT DATA!H52"
+            ],
+            "nilai": [
+              149.97,
+              149.98,
+              149.98
+            ]
+          }
+        },
+        {
+          "titik_ke": 5,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C55",
+            "nilai": 200.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F55",
+              "INPUT DATA!G55",
+              "INPUT DATA!H55"
+            ],
+            "nilai": [
+              199.98,
+              199.98,
+              199.99
+            ]
+          }
+        },
+        {
+          "titik_ke": 6,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C58",
+            "nilai": 300.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F58",
+              "INPUT DATA!G58",
+              "INPUT DATA!H58"
+            ],
+            "nilai": [
+              299.97,
+              299.98,
+              299.98
+            ]
+          }
+        },
+        {
+          "titik_ke": 7,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C61",
+            "nilai": 400.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F61",
+              "INPUT DATA!G61",
+              "INPUT DATA!H61"
+            ],
+            "nilai": [
+              399.98,
+              399.97,
+              399.97
+            ]
+          }
+        },
+        {
+          "titik_ke": 8,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C64",
+            "nilai": 500.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F64",
+              "INPUT DATA!G64",
+              "INPUT DATA!H64"
+            ],
+            "nilai": [
+              499.97,
+              499.97,
+              499.97
+            ]
+          }
+        },
+        {
+          "titik_ke": 9,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C67",
+            "nilai": 550.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F67",
+              "INPUT DATA!G67",
+              "INPUT DATA!H67"
+            ],
+            "nilai": [
+              549.97,
+              549.97,
+              549.96
+            ]
+          }
+        },
+        {
+          "titik_ke": 10,
+          "nominal_mm": {
+            "sel": "INPUT DATA!C70",
+            "nilai": 600.0
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "INPUT DATA!F70",
+              "INPUT DATA!G70",
+              "INPUT DATA!H70"
+            ],
+            "nilai": [
+              599.97,
+              599.96,
+              599.96
+            ]
+          }
+        }
+      ]
+    },
+    "excel": {
+      "titik": [
+        {
+          "titik_ke": 1,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B35",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C35",
+            "nilai": 25.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F35",
+            "nilai": 25.0008
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H35",
+            "nilai": 25.0008
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I35",
+              "PERHITUNGAN!J35",
+              "PERHITUNGAN!K35"
+            ],
+            "nilai": [
+              24.99,
+              24.99,
+              24.98
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L35",
+            "nilai": 24.986666666666665
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y35",
+            "nilai": 25.0008
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z35",
+            "nilai": 0.005773502691895109
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA35",
+            "nilai": 0.014133333333337106
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M35:T35",
+            "nilai": true
+          },
+          "suku_termal": {
+            "suhu_standar_c_M35": {
+              "sel": "PERHITUNGAN!M35",
+              "nilai": 20.25
+            },
+            "suhu_uut_c_N35": {
+              "sel": "PERHITUNGAN!N35",
+              "nilai": 20.25
+            },
+            "theta_c_O35": {
+              "sel": "PERHITUNGAN!O35",
+              "nilai": 0.25
+            },
+            "alpha_standar_per_c_P35": {
+              "sel": "PERHITUNGAN!P35",
+              "nilai": 1.2e-06
+            },
+            "alpha_uut_per_c_Q35": {
+              "sel": "PERHITUNGAN!Q35",
+              "nilai": 1.2e-06
+            },
+            "delta_alpha_per_c_R35": {
+              "sel": "PERHITUNGAN!R35",
+              "nilai": 0.0
+            },
+            "alpha_rata_per_c_S35": {
+              "sel": "PERHITUNGAN!S35",
+              "nilai": 1.2e-06
+            },
+            "delta_theta_c_T35": {
+              "sel": "PERHITUNGAN!T35",
+              "nilai": 0.0
+            },
+            "koreksi_lain_UVWX": {
+              "U": 0.0,
+              "V": 0.0,
+              "W": 0.0,
+              "X": 0.0
+            }
+          }
+        },
+        {
+          "titik_ke": 2,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B38",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C38",
+            "nilai": 50.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F38",
+            "nilai": 50.0004
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H38",
+            "nilai": 50.0004
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I38",
+              "PERHITUNGAN!J38",
+              "PERHITUNGAN!K38"
+            ],
+            "nilai": [
+              49.99,
+              49.99,
+              49.98
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L38",
+            "nilai": 49.98666666666667
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y38",
+            "nilai": 50.0004
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z38",
+            "nilai": 0.005773502691899211
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA38",
+            "nilai": 0.01373333333332738
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M38:T38",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 3,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B41",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C41",
+            "nilai": 100.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F41",
+            "nilai": 100.0005
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H41",
+            "nilai": 100.0005
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I41",
+              "PERHITUNGAN!J41",
+              "PERHITUNGAN!K41"
+            ],
+            "nilai": [
+              99.98,
+              99.98,
+              99.98
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L41",
+            "nilai": 99.98
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y41",
+            "nilai": 100.0005
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z41",
+            "nilai": 0.0
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA41",
+            "nilai": 0.02049999999999841
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M41:T41",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 4,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B44",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C44",
+            "nilai": 150.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F44",
+            "nilai": 150.0003
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H44",
+            "nilai": 150.0003
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I44",
+              "PERHITUNGAN!J44",
+              "PERHITUNGAN!K44"
+            ],
+            "nilai": [
+              149.97,
+              149.98,
+              149.98
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L44",
+            "nilai": 149.97666666666666
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y44",
+            "nilai": 150.0003
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z44",
+            "nilai": 0.005773502691891007
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA44",
+            "nilai": 0.023633333333350492
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M44:T44",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 5,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B47",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C47",
+            "nilai": 200.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F47",
+            "nilai": 199.9993
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H47",
+            "nilai": 199.9993
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I47",
+              "PERHITUNGAN!J47",
+              "PERHITUNGAN!K47"
+            ],
+            "nilai": [
+              199.98,
+              199.98,
+              199.99
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L47",
+            "nilai": 199.98333333333335
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y47",
+            "nilai": 199.9993
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z47",
+            "nilai": 0.005773502691907416
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA47",
+            "nilai": 0.015966666666656693
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M47:T47",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 6,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B50",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C50",
+            "nilai": 300.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F50",
+            "nilai": 299.99955
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H50",
+            "nilai": 299.99955
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I50",
+              "PERHITUNGAN!J50",
+              "PERHITUNGAN!K50"
+            ],
+            "nilai": [
+              299.97,
+              299.98,
+              299.98
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L50",
+            "nilai": 299.9766666666667
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y50",
+            "nilai": 299.99955
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z50",
+            "nilai": 0.005773502691891007
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA50",
+            "nilai": 0.022883333333311384
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M50:T50",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 7,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B53",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C53",
+            "nilai": 400.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F53",
+            "nilai": 399.9982
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H53",
+            "nilai": 399.9982
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I53",
+              "PERHITUNGAN!J53",
+              "PERHITUNGAN!K53"
+            ],
+            "nilai": [
+              399.98,
+              399.97,
+              399.97
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L53",
+            "nilai": 399.97333333333336
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y53",
+            "nilai": 399.9982
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z53",
+            "nilai": 0.005773502691891007
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA53",
+            "nilai": 0.024866666666639503
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M53:T53",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 8,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B56",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C56",
+            "nilai": 500.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F56",
+            "nilai": 499.99865
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H56",
+            "nilai": 499.99865
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I56",
+              "PERHITUNGAN!J56",
+              "PERHITUNGAN!K56"
+            ],
+            "nilai": [
+              499.97,
+              499.97,
+              499.97
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L56",
+            "nilai": 499.97
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y56",
+            "nilai": 499.99865
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z56",
+            "nilai": 0.0
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA56",
+            "nilai": 0.028649999999970532
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M56:T56",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 9,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B59",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C59",
+            "nilai": 550.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F59",
+            "nilai": 549.9978
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H59",
+            "nilai": 549.9978
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I59",
+              "PERHITUNGAN!J59",
+              "PERHITUNGAN!K59"
+            ],
+            "nilai": [
+              549.97,
+              549.97,
+              549.96
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L59",
+            "nilai": 549.9666666666667
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y59",
+            "nilai": 549.9978
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z59",
+            "nilai": 0.005773502691891007
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA59",
+            "nilai": 0.031133333333286828
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M59:T59",
+            "nilai": false
+          }
+        },
+        {
+          "titik_ke": 10,
+          "jumlah_nominal": {
+            "sel": "PERHITUNGAN!B62",
+            "nilai": 1.0
+          },
+          "nominal_mm": {
+            "sel": "PERHITUNGAN!C62",
+            "nilai": 600.0
+          },
+          "standar_terkoreksi_sertifikat_mm": {
+            "sel": "PERHITUNGAN!F62",
+            "nilai": 599.9973
+          },
+          "total_nominal_mm": {
+            "sel": "PERHITUNGAN!H62",
+            "nilai": 599.9973
+          },
+          "pembacaan_mm": {
+            "sel": [
+              "PERHITUNGAN!I62",
+              "PERHITUNGAN!J62",
+              "PERHITUNGAN!K62"
+            ],
+            "nilai": [
+              599.97,
+              599.96,
+              599.96
+            ]
+          },
+          "rata_rata_mm": {
+            "sel": "PERHITUNGAN!L62",
+            "nilai": 599.9633333333334
+          },
+          "standar_terkoreksi_mm": {
+            "sel": "PERHITUNGAN!Y62",
+            "nilai": 599.9973
+          },
+          "simpangan_baku_mm": {
+            "sel": "PERHITUNGAN!Z62",
+            "nilai": 0.005773502691891007
+          },
+          "koreksi_mm": {
+            "sel": "PERHITUNGAN!AA62",
+            "nilai": 0.03396666666662895
+          },
+          "suku_termal_terisi": {
+            "sel": "PERHITUNGAN!M62:T62",
+            "nilai": false
+          }
+        }
+      ],
+      "dasar": {
+        "kapasitas_perhitungan_mm": {
+          "sel": "PERHITUNGAN!G8",
+          "nilai": 600.0
+        },
+        "resolusi_perhitungan_mm": {
+          "sel": "PERHITUNGAN!G9",
+          "nilai": 0.01
+        },
+        "suhu_awal_c": {
+          "sel": "PERHITUNGAN!E14",
+          "nilai": 20.2
+        },
+        "suhu_akhir_c": {
+          "sel": "PERHITUNGAN!F14",
+          "nilai": 20.3
+        },
+        "suhu_rata_c": {
+          "sel": "PERHITUNGAN!G14",
+          "nilai": 20.25
+        },
+        "alpha_per_c_R24": {
+          "sel": "PERHITUNGAN!R24",
+          "nilai": 1e-06
+        },
+        "delta_alpha_per_c_S24": {
+          "sel": "PERHITUNGAN!S24",
+          "nilai": 2e-06
+        },
+        "evaluasi_mm": {
+          "sel": [
+            "PERHITUNGAN!C30",
+            "PERHITUNGAN!D30",
+            "PERHITUNGAN!F30",
+            "PERHITUNGAN!G30",
+            "PERHITUNGAN!H30",
+            "PERHITUNGAN!I30",
+            "PERHITUNGAN!J30",
+            "PERHITUNGAN!K30",
+            "PERHITUNGAN!L30",
+            "PERHITUNGAN!M30"
+          ],
+          "nilai": [
+            599.97,
+            599.92,
+            599.98,
+            599.95,
+            599.95,
+            599.97,
+            599.94,
+            599.98,
+            599.97,
+            599.95
+          ]
+        },
+        "pengulangan_stdev_N30": {
+          "sel": "PERHITUNGAN!N30",
+          "nilai": 0.019321835661593185
+        },
+        "panjang_sensitivitas_mm_C65": {
+          "sel": "PERHITUNGAN!C65",
+          "nilai": 600.0
+        },
+        "simpangan_baku_maks_mm_AB65": {
+          "sel": "PERHITUNGAN!AB65",
+          "nilai": 0.005773502691907416
+        },
+        "paralelisme": {
+          "baca_mm": {
+            "sel": [
+              "PERHITUNGAN!C23",
+              "PERHITUNGAN!D23",
+              "PERHITUNGAN!F23"
+            ],
+            "nilai": [
+              0.0,
+              0.001,
+              0.002
+            ]
+          },
+          "maks_I23": {
+            "sel": "PERHITUNGAN!I23",
+            "nilai": 0.002
+          },
+          "min_I24": {
+            "sel": "PERHITUNGAN!I24",
+            "nilai": 0.0
+          },
+          "stdev_J24": {
+            "sel": "PERHITUNGAN!J24",
+            "nilai": 0.001414213562373095
+          },
+          "vonis_K25": {
+            "sel": "PERHITUNGAN!K25",
+            "nilai": "Good"
+          },
+          "vonis_K25_rumus": {
+            "sel": "PERHITUNGAN!K25",
+            "nilai": "=IF(J24<=0.01,\"Good\",\"Not Good\")"
+          }
+        },
+        "pembagi_satuan_T23": {
+          "sel": "DATABASE!T23",
+          "nilai": 1.0
+        },
+        "caliper_checker_u95_um_J19": {
+          "sel": "Std_CaliperCek!J19",
+          "nilai": 4.1
+        },
+        "caliper_checker_nominal_mm": {
+          "sel": [
+            "Std_CaliperCek!C10",
+            "Std_CaliperCek!C11",
+            "Std_CaliperCek!C12",
+            "Std_CaliperCek!C13",
+            "Std_CaliperCek!C14",
+            "Std_CaliperCek!C15",
+            "Std_CaliperCek!C16",
+            "Std_CaliperCek!C17",
+            "Std_CaliperCek!C18",
+            "Std_CaliperCek!C19"
+          ],
+          "nilai": [
+            25.0,
+            50.0,
+            100.0,
+            150.0,
+            200.0,
+            300.0,
+            400.0,
+            500.0,
+            550.0,
+            600.0
+          ]
+        },
+        "caliper_checker_terkoreksi_mm": {
+          "sel": [
+            "Std_CaliperCek!F10",
+            "Std_CaliperCek!F11",
+            "Std_CaliperCek!F12",
+            "Std_CaliperCek!F13",
+            "Std_CaliperCek!F14",
+            "Std_CaliperCek!F15",
+            "Std_CaliperCek!F16",
+            "Std_CaliperCek!F17",
+            "Std_CaliperCek!F18",
+            "Std_CaliperCek!F19"
+          ],
+          "nilai": [
+            25.0008,
+            50.0004,
+            100.0005,
+            150.0003,
+            199.9993,
+            299.99955,
+            399.9982,
+            499.99865,
+            549.9978,
+            599.9973
+          ]
+        },
+        "caliper_checker_koreksi_um": {
+          "sel": [
+            "Std_CaliperCek!I10",
+            "Std_CaliperCek!I11",
+            "Std_CaliperCek!I12",
+            "Std_CaliperCek!I13",
+            "Std_CaliperCek!I14",
+            "Std_CaliperCek!I15",
+            "Std_CaliperCek!I16",
+            "Std_CaliperCek!I17",
+            "Std_CaliperCek!I18",
+            "Std_CaliperCek!I19"
+          ],
+          "nilai": [
+            0.8,
+            0.4,
+            0.5,
+            0.3,
+            -0.7,
+            -0.45,
+            -1.8,
+            -1.35,
+            -2.2,
+            -2.7
+          ]
+        },
+        "caliper_checker_u95_um": {
+          "sel": [
+            "Std_CaliperCek!J10",
+            "Std_CaliperCek!J11",
+            "Std_CaliperCek!J12",
+            "Std_CaliperCek!J13",
+            "Std_CaliperCek!J14",
+            "Std_CaliperCek!J15",
+            "Std_CaliperCek!J16",
+            "Std_CaliperCek!J17",
+            "Std_CaliperCek!J18",
+            "Std_CaliperCek!J19"
+          ],
+          "nilai": [
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1,
+            4.1
+          ]
+        }
+      },
+      "drift": {
+        "x11_now_cache": {
+          "sel": "DATABASE!X11",
+          "nilai": "2026-06-11T15:55:46.480000"
+        },
+        "w13_tanggal_kalibrasi_standar": {
+          "sel": "DATABASE!W13",
+          "nilai": "2026-01-09T00:00:00"
+        },
+        "umur_hari_dari_cache": 153.66373240740742,
+        "k10_cache": {
+          "sel": "PERHITUNGAN U95%!K10",
+          "nilai": 0.0021769028757716536
+        },
+        "k10_rumus": "=(0.02+0.00025*PERHITUNGAN!C65)*1/1000*((DATABASE!X11-DATABASE!W13)/12)",
+        "pembagi_master": 12,
+        "catatan": "X11 = NOW() sehingga cache tumbuh tiap workbook dihitung ulang; tes mengunci tanggal sesi ke cache ini. Master membagi umur dengan 12 (K10), aplikasi dengan 365 (selisih B6-1 di docs/paritas-batch6.md)."
+      },
+      "budget": {
+        "komponen": {
+          "pengulangan": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K5",
+              "nilai": 0.019321835661593185
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N5",
+              "nilai": 3.1622776601683795
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q5",
+              "nilai": 9.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T5",
+              "nilai": 0.006110100926610084
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V5",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X5",
+              "nilai": 0.006110100926610084
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA5",
+              "nilai": 3.7333333333361405e-05
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC5",
+              "nilai": 1.5486419753109708e-10
+            }
+          },
+          "resolusi_uut": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K6",
+              "nilai": 0.005
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N6",
+              "nilai": 1.7320508075688772
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q6",
+              "nilai": 200.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T6",
+              "nilai": 0.002886751345948129
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V6",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X6",
+              "nilai": 0.002886751345948129
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA6",
+              "nilai": 8.333333333333334e-06
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC6",
+              "nilai": 3.4722222222222227e-13
+            }
+          },
+          "ketidakpastian_standar": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K7",
+              "nilai": 0.0040999999999999995
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N7",
+              "nilai": 2.0
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q7",
+              "nilai": 200.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T7",
+              "nilai": 0.0020499999999999997
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V7",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X7",
+              "nilai": 0.0020499999999999997
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA7",
+              "nilai": 4.202499999999999e-06
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC7",
+              "nilai": 8.830503124999996e-14
+            }
+          },
+          "suhu_ruang": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K8",
+              "nilai": 0.25
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N8",
+              "nilai": 1.7320508075688772
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q8",
+              "nilai": 60.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T8",
+              "nilai": 0.14433756729740646
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V8",
+              "nilai": 0.0012
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X8",
+              "nilai": 0.00017320508075688773
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA8",
+              "nilai": 3e-08
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC8",
+              "nilai": 1.4999999999999997e-17
+            }
+          },
+          "koefisien_muai": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K9",
+              "nilai": 2e-06
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N9",
+              "nilai": 2.449489742783178
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q9",
+              "nilai": 60.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T9",
+              "nilai": 8.164965809277261e-07
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V9",
+              "nilai": 150.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X9",
+              "nilai": 0.00012247448713915892
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA9",
+              "nilai": 1.5000000000000005e-08
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC9",
+              "nilai": 3.7500000000000024e-18
+            }
+          },
+          "drift_standar": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K10",
+              "nilai": 0.0021769028757716536
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N10",
+              "nilai": 1.7320508075688772
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q10",
+              "nilai": 60.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T10",
+              "nilai": 0.0012568354613264347
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V10",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X10",
+              "nilai": 0.0012568354613264347
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA10",
+              "nilai": 1.5796353768476319e-06
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC10",
+              "nilai": 4.1587465396476e-14
+            }
+          },
+          "geometri": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K11",
+              "nilai": 0.0005
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N11",
+              "nilai": 1.7320508075688772
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q11",
+              "nilai": 60.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T11",
+              "nilai": 0.0002886751345948129
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V11",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X11",
+              "nilai": 0.0002886751345948129
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA11",
+              "nilai": 8.333333333333334e-08
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC11",
+              "nilai": 1.1574074074074076e-16
+            }
+          },
+          "meja_granit": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K12",
+              "nilai": 0.0044
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N12",
+              "nilai": 2.0
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q12",
+              "nilai": 200.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T12",
+              "nilai": 0.0022
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V12",
+              "nilai": 1.0
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X12",
+              "nilai": 0.0022
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA12",
+              "nilai": 4.84e-06
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC12",
+              "nilai": 1.17128e-13
+            }
+          },
+          "selisih_suhu": {
+            "u_mentah": {
+              "sel": "PERHITUNGAN U95%!K13",
+              "nilai": 0.0
+            },
+            "pembagi": {
+              "sel": "PERHITUNGAN U95%!N13",
+              "nilai": 1.7320508075688772
+            },
+            "vi": {
+              "sel": "PERHITUNGAN U95%!Q13",
+              "nilai": 60.0
+            },
+            "ui": {
+              "sel": "PERHITUNGAN U95%!T13",
+              "nilai": 0.0
+            },
+            "ci": {
+              "sel": "PERHITUNGAN U95%!V13",
+              "nilai": 0.0012
+            },
+            "uici": {
+              "sel": "PERHITUNGAN U95%!X13",
+              "nilai": 0.0
+            },
+            "uici_kuadrat": {
+              "sel": "PERHITUNGAN U95%!AA13",
+              "nilai": 0.0
+            },
+            "uici4_per_vi": {
+              "sel": "PERHITUNGAN U95%!AC13",
+              "nilai": 0.0
+            }
+          }
+        },
+        "agregat": {
+          "jumlah_uici_kuadrat": {
+            "sel": "PERHITUNGAN U95%!AA14",
+            "nilai": 5.6417135376875704e-05
+          },
+          "sigma_uici4_per_vi": {
+            "sel": "PERHITUNGAN U95%!AC14",
+            "nilai": 1.554585747407065e-10
+          },
+          "uc": {
+            "sel": "PERHITUNGAN U95%!AA15",
+            "nilai": 0.0075111340939218825
+          },
+          "veff": {
+            "sel": "PERHITUNGAN U95%!AA16",
+            "nilai": 20.474220669021
+          },
+          "k": {
+            "sel": "PERHITUNGAN U95%!AA17",
+            "nilai": 2.085963447265865
+          },
+          "u_hitung": {
+            "sel": "PERHITUNGAN U95%!AA18",
+            "nilai": 0.01566795116743346
+          },
+          "u_cetak": {
+            "sel": "PERHITUNGAN U95%!AA20",
+            "nilai": 0.01566795116743346
+          }
+        }
+      },
+      "cetak": {
+        "satuan": {
+          "sel": "SERTIFIKAT!F11",
+          "nilai": "mm"
+        },
+        "titik": [
+          {
+            "titik_ke": 1,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!24",
+              "nilai": false
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D24",
+              "nilai": 25.0008,
+              "format": "0.00",
+              "teks": "25.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I24",
+              "nilai": 24.986666666666665,
+              "format": "0.00",
+              "teks": "24.99",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L24",
+              "nilai": 0.014133333333337106,
+              "format": "0.00",
+              "teks": "0.01",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 2,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!25",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D25",
+              "nilai": 50.0004,
+              "format": "0.00",
+              "teks": "50.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I25",
+              "nilai": 49.98666666666667,
+              "format": "0.00",
+              "teks": "49.99",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L25",
+              "nilai": 0.01373333333332738,
+              "format": "0.00",
+              "teks": "0.01",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 3,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!26",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D26",
+              "nilai": 100.0005,
+              "format": "0.00",
+              "teks": "100.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I26",
+              "nilai": 99.98,
+              "format": "0.00",
+              "teks": "99.98",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L26",
+              "nilai": 0.02049999999999841,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 4,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!27",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D27",
+              "nilai": 150.0003,
+              "format": "0.00",
+              "teks": "150.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I27",
+              "nilai": 149.97666666666666,
+              "format": "0.00",
+              "teks": "149.98",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L27",
+              "nilai": 0.023633333333350492,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 5,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!28",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D28",
+              "nilai": 199.9993,
+              "format": "0.00",
+              "teks": "200.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I28",
+              "nilai": 199.98333333333335,
+              "format": "0.00",
+              "teks": "199.98",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L28",
+              "nilai": 0.015966666666656693,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 6,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!29",
+              "nilai": false
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D29",
+              "nilai": 299.99955,
+              "format": "0.00",
+              "teks": "300.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I29",
+              "nilai": 299.9766666666667,
+              "format": "0.00",
+              "teks": "299.98",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L29",
+              "nilai": 0.022883333333311384,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 7,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!30",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D30",
+              "nilai": 399.9982,
+              "format": "0.00",
+              "teks": "400.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I30",
+              "nilai": 399.97333333333336,
+              "format": "0.00",
+              "teks": "399.97",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L30",
+              "nilai": 0.024866666666639503,
+              "format": "0.00",
+              "teks": "0.02",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 8,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!31",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D31",
+              "nilai": 499.99865,
+              "format": "0.00",
+              "teks": "500.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I31",
+              "nilai": 499.97,
+              "format": "0.00",
+              "teks": "499.97",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L31",
+              "nilai": 0.028649999999970532,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 9,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!32",
+              "nilai": true
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D32",
+              "nilai": 549.9978,
+              "format": "0.00",
+              "teks": "550.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I32",
+              "nilai": 549.9666666666667,
+              "format": "0.00",
+              "teks": "549.97",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L32",
+              "nilai": 0.031133333333286828,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "titik_ke": 10,
+            "tersembunyi": {
+              "sel": "SERTIFIKAT!33",
+              "nilai": false
+            },
+            "standar": {
+              "sel": "SERTIFIKAT!D33",
+              "nilai": 599.9973,
+              "format": "0.00",
+              "teks": "600.00",
+              "nol_bertanda_minus": false
+            },
+            "uut": {
+              "sel": "SERTIFIKAT!I33",
+              "nilai": 599.9633333333334,
+              "format": "0.00",
+              "teks": "599.96",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!L33",
+              "nilai": 0.03396666666662895,
+              "format": "0.00",
+              "teks": "0.03",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "u95": {
+          "sel": "SERTIFIKAT!J34",
+          "nilai": 0.01566795116743346,
+          "format": "0.000",
+          "teks": "0.016",
+          "nol_bertanda_minus": false
+        },
+        "k": {
+          "sel": "SERTIFIKAT!O35",
+          "nilai": 2.085963447265865,
+          "format": "General",
+          "teks": null
+        },
+        "vonis_paralelisme": {
+          "sel": "SERTIFIKAT!H38",
+          "nilai": "Good"
+        }
+      }
+    },
+    "rekonstruksi": {
+      "selisih_relatif_maks_terhadap_cache": 2.2312551408676438e-14,
+      "uc_veff": 0.0,
+      "k_u_cetak": 1.3729026132544437e-14,
+      "komponen_ui": 0.0,
+      "titik": 0.0,
+      "sel_dasar": {
+        "evaluasi_x_T23": 0.0,
+        "pengulangan_N30": 1.795609388630697e-16,
+        "panjang_C65": 0.0,
+        "sd_maks_AB65": 0.0,
+        "suhu_rata_G14": 0.0,
+        "theta_O35": 0.0,
+        "delta_alpha_S24": 0.0,
+        "paralelisme_maks": 0.0,
+        "paralelisme_min": 0.0,
+        "paralelisme_stdev_J24": 0.0,
+        "caliper_checker_terkoreksi": 0.0,
+        "caliper_checker_terkoreksi_dipakai": 0.0,
+        "pengulangan_K5": 0.0,
+        "pengulangan_Q5": 0.0,
+        "resolusi_K6": 0.0,
+        "standar_K7": 0.0,
+        "suhu_K8": 0.0,
+        "muai_K9": 0.0,
+        "ci_suhu_V8": 0.0,
+        "ci_muai_V9": 0.0,
+        "ci_selisih_suhu_V13": 0.0,
+        "selisih_suhu_K13": 0.0,
+        "geometri_K11": 0.0,
+        "meja_granit_K12": 0.0,
+        "drift_K10_dibagi_12": 2.2312551408676438e-14
+      },
+      "catatan": "komponen -> uc -> veff -> k (TINV: t 0,975, floor(veff)) -> U dihitung ulang dari sel komponen; rata/sd/koreksi/total titik dan sel dasar K5..K13, V8, V9, V13, O35, S24, C65, N30, I23..J24 dihitung ulang dari sel hulunya. Drift K10 direkonstruksi dengan pembagi 12 (rumus master)."
+    }
+  }
+}
