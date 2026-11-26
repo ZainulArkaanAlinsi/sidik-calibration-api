@@ -1,4 +1,4 @@
-"""Bangun tests/Fixtures/paritas/{hydrometer,...}.json dari workbook master (batch paritas ke-7).
+"""Bangun tests/Fixtures/paritas/{hydrometer,thermometer-glass,...}.json dari workbook master (batch paritas ke-7).
 
 Bahan uji PARITAS aplikasi-lawan-Excel (`tests/Feature/Paritas/`): MASUKAN yang
 diketik di workbook dan NILAI tiap tahap hitungan Excel, masing-masing dengan
@@ -36,7 +36,8 @@ diubah, helper-nya sengaja disalin supaya generator ini berdiri sendiri.
     py -3.12 -I -X utf8 docs/skrip/gen-fixture-paritas-batch7.py <folder-Downloads>
 
 `<folder-Downloads>` berisi `EXEL CALIBRATION SIDIK\\` dengan
-`Hydrometer 0.600 - 0.650 gmL.xlsx` dan `Hydrometer 1.800 - 2.000 gmL.xlsx`.
+`Hydrometer 0.600 - 0.650 gmL.xlsx`, `Hydrometer 1.800 - 2.000 gmL.xlsx`, dan
+`Master Olah Data_Suhu_Thermometer Glass.xlsm`.
 Dependensi: msoffcrypto-tool, openpyxl, scipy.
 """
 import hashlib
@@ -466,6 +467,235 @@ def hydrometer(sumber_dir):
     return hasil
 
 
+# ---------------------------------------------------------------------------
+# Thermometer Glass
+# ---------------------------------------------------------------------------
+
+TG_BERKAS = 'EXEL CALIBRATION SIDIK/Master Olah Data_Suhu_Thermometer Glass.xlsm'
+TG_INPUT, TG_FC, TG_U95 = 'INPUT DATA', 'PERHITUNGAN FC', 'PERHITUNGAN U95%'
+TG_BARIS_STANDAR = [23, 24, 25, 26, 27]   # PERHITUNGAN FC, satu baris per titik
+TG_BARIS_UUT = [42, 43, 44, 45, 46]
+TG_BARIS_INPUT_STANDAR = [33, 34, 35, 36, 37]   # INPUT DATA
+TG_BARIS_INPUT_UUT = [50, 51, 52, 53, 54]
+TG_BARIS_SERT = [21, 22, 23, 24, 25]
+# Kolom bacaan: INPUT DATA D,F,H,I,K -> PERHITUNGAN FC D,F,G,H,I (lima ulangan, kolom E digabung/kosong).
+TG_KOLOM_INPUT = ['D', 'F', 'H', 'I', 'K']
+TG_KOLOM_FC = ['D', 'F', 'G', 'H', 'I']
+# Urutan = baris 20..30 di PERHITUNGAN U95% = urutan budget di ThermometerGlassCalculator.
+TG_KOMPONEN = [
+    ('ketidakpastian_standar', 20, 'O'), ('ketidakpastian_sensor', 21, 'O'), ('resolusi_standar', 22, 'N'),
+    ('drift_standar', 23, 'N'), ('drift_sensor', 24, 'N'), ('resolusi_alat', 25, 'N'),
+    ('pengulangan_uut', 26, 'N'), ('pengulangan_standar', 27, 'N'), ('variasi_spasial_bath', 28, 'N'),
+    ('stabilitas_titik_es', 29, 'N'), ('stabilitas_bath', 30, 'N'),
+]
+# Rumus sel AC34 persis seperti di workbook (dibandingkan teksnya; beda = pembacaan kami yang salah).
+TG_RUMUS_K = ('=1.95996+2.37356/AC33+2.818745/AC33^2+2.546662/AC33^3+1.761829/AC33^4'
+              '+0.245458/AC33^5+1.000764/AC33^6')
+
+
+def tg_k_polinomial(v):
+    return 1.95996 + 2.37356 / v + 2.818745 / v ** 2 + 2.546662 / v ** 3 + 1.761829 / v ** 4 \
+        + 0.245458 / v ** 5 + 1.000764 / v ** 6
+
+
+def tg_k_eksak(veff):
+    """t(0,975; veff) eksak, derajat bebas pecahan TIDAK dipotong (bukan sel Excel; hanya skenario)."""
+    from scipy import stats
+
+    return float(stats.t.ppf(0.975, veff))
+
+
+def tg_stdev(x):
+    m = sum(x) / len(x)
+    return math.sqrt(sum((a - m) ** 2 for a in x) / (len(x) - 1))
+
+
+def tg_rantai(ui, vi):
+    """uc, veff dari daftar ui (ci = 1 di semua baris) dan vi — rumus AC31..AC33."""
+    aa = [u ** 2 for u in ui]
+    uc = math.sqrt(sum(aa))
+    veff = uc ** 4 / sum(a ** 2 / v for a, v in zip(aa, vi))
+    return uc, veff
+
+
+def thermometer_glass(sumber_dir):
+    sha, wf, wv = buka(os.path.join(sumber_dir, TG_BERKAS))
+    s = Sumber(wf, wv)
+    maks = 0.0
+
+    def cek(a, b):
+        nonlocal maks
+        d = rel(a, b)
+        maks = max(maks, d)
+        return d
+
+    # ---- Masukan (diketik di INPUT DATA) + cek bahwa lembar hitung membaca sel yang sama.
+    titik_masukan = []
+    for i in range(5):
+        ri, ru = TG_BARIS_INPUT_STANDAR[i], TG_BARIS_INPUT_UUT[i]
+        standar = s.deret(TG_INPUT, [f'{c}{ri}' for c in TG_KOLOM_INPUT])
+        uut = s.deret(TG_INPUT, [f'{c}{ru}' for c in TG_KOLOM_INPUT])
+        # Bacaan yang dirata-rata PERHITUNGAN FC harus persis bacaan INPUT DATA (rekonstruksi, bukan angka baru).
+        fc_standar = [s.n(TG_FC, f'{c}{TG_BARIS_STANDAR[i]}') for c in TG_KOLOM_FC]
+        fc_uut = [s.n(TG_FC, f'{c}{TG_BARIS_UUT[i]}') for c in TG_KOLOM_FC]
+        if fc_standar != standar['nilai'] or fc_uut != uut['nilai']:
+            raise SystemExit(f'BERHENTI: bacaan PERHITUNGAN FC titik {i + 1} tidak sama dengan INPUT DATA.')
+        titik_masukan.append({
+            'titik_ke': i + 1,
+            'nominal': s.sel(TG_INPUT, f'B{ru}'),
+            'set_point': s.sel(TG_INPUT, f'L{ri}'),
+            'no_probe': s.sel(TG_INPUT, f'B{ri}'),
+            'standar': standar,
+            'uut': uut,
+        })
+
+    spek = {
+        'merk_kalibrator': s.teks(TG_INPUT, 'X12'),
+        'sensor_standar': s.teks(TG_INPUT, 'X13'),
+        'oilbath': s.teks(TG_INPUT, 'X23'),
+        'resolusi_alat': s.sel(TG_INPUT, 'E16'),
+        'resolusi_standar_x2': s.sel(TG_U95, 'K17'),
+        'titik_es': [s.sel(TG_INPUT, 'N33'), s.sel(TG_INPUT, 'P33'), s.sel(TG_INPUT, 'Q33')],
+        'cmc_pita_0_100': s.sel('DATABASE', 'S5'),
+        'cmc_pita_100_200': s.sel('DATABASE', 'S6'),
+    }
+    if None in (spek['merk_kalibrator']['nilai'], spek['sensor_standar']['nilai'], spek['oilbath']['nilai']):
+        raise SystemExit('BERHENTI: sel merk/sensor/oilbath bukan teks.')
+
+    # ---- Tahap per titik (cache) + rekonstruksi aritmetika dari bacaan.
+    titik = []
+    for i in range(5):
+        rs, ru, rc = TG_BARIS_STANDAR[i], TG_BARIS_UUT[i], TG_BARIS_SERT[i]
+        bacaan_s = titik_masukan[i]['standar']['nilai']
+        bacaan_u = titik_masukan[i]['uut']['nilai']
+        avg_s, sd_s = s.sel(TG_FC, f'J{rs}'), s.sel(TG_FC, f'K{rs}')
+        avg_u, sd_u = s.sel(TG_FC, f'J{ru}'), s.sel(TG_FC, f'K{ru}')
+        km, kp, st = s.sel(TG_FC, f'Q{rs}'), s.sel(TG_FC, f'R{rs}'), s.sel(TG_FC, f'S{rs}')
+        cek(sum(bacaan_s) / 5, avg_s['nilai'])
+        cek(tg_stdev(bacaan_s), sd_s['nilai'])
+        cek(sum(bacaan_u) / 5, avg_u['nilai'])
+        cek(tg_stdev(bacaan_u), sd_u['nilai'])
+        cek(avg_s['nilai'] + km['nilai'] + kp['nilai'], st['nilai'])
+        koreksi = s.sel(S, f'L{rc}')
+        cek(s.n(S, f'E{rc}') - s.n(S, f'J{rc}'), koreksi['nilai'])
+        titik.append({
+            'titik_ke': i + 1,
+            'standar_rata_rata': avg_s, 'standar_sd': sd_s,
+            'indeks_tabel': s.sel(TG_FC, f'P{rs}'),
+            'koreksi_meter': km, 'koreksi_probe': kp, 'standar_terkoreksi': st,
+            'uut_rata_rata': avg_u, 'uut_sd': sd_u,
+            'koreksi': koreksi,
+            'sertifikat': {
+                'standar': cetak(s, S, f'E{rc}'), 'uut': cetak(s, S, f'J{rc}'), 'koreksi': cetak(s, S, f'L{rc}'),
+            },
+        })
+
+    # ---- Skalar sesi: satu anggaran untuk seluruh sesi.
+    sesi = {
+        'sd_maks_standar': s.sel(TG_FC, 'M23'),
+        'sd_maks_uut': s.sel(TG_FC, 'M42'),
+        'indeks_maks': s.sel(TG_FC, 'P37'),
+        'titik_maks_uut': s.sel(TG_FC, 'D56'),
+        'titik_es_p43': s.sel(TG_FC, 'P43'), 'titik_es_q43': s.sel(TG_FC, 'Q43'), 'titik_es_r43': s.sel(TG_FC, 'R43'),
+        'rentang_titik_es': s.sel(TG_FC, 'Q46'),
+        'rentang_titik_es_maks': s.sel(TG_FC, 'S43'), 'rentang_titik_es_min': s.sel(TG_FC, 'T43'),
+    }
+    cek(max(s.n(TG_FC, f'K{r}') for r in TG_BARIS_STANDAR), sesi['sd_maks_standar']['nilai'])
+    cek(max(s.n(TG_FC, f'K{r}') for r in TG_BARIS_UUT), sesi['sd_maks_uut']['nilai'])
+    cek(max(s.n(TG_FC, f'P{r}') for r in TG_BARIS_STANDAR), sesi['indeks_maks']['nilai'])
+    cek(sesi['rentang_titik_es_maks']['nilai'] - sesi['rentang_titik_es_min']['nilai'], sesi['rentang_titik_es']['nilai'])
+
+    # ---- Anggaran: 11 komponen, sel demi sel (baris 20..30 PERHITUNGAN U95%).
+    komponen = {}
+    ui_cache, vi_cache = [], []
+    for nama, r, kol in TG_KOMPONEN:
+        rumus_ui = s.rumus(TG_U95, f'U{r}')
+        if rumus_ui not in (f'=N{r}/Q{r}', f'=O{r}/Q{r}', f'=N{r}/SQRT(Q{r})'):
+            raise SystemExit(f'BERHENTI: rumus U{r} tak dikenal: {rumus_ui}')
+        mentah, pembagi = s.sel(TG_U95, f'{kol}{r}'), s.sel(TG_U95, f'Q{r}')
+        ui, ci, vi = s.sel(TG_U95, f'U{r}'), s.sel(TG_U95, f'X{r}'), s.sel(TG_U95, f'S{r}')
+        uici, aa, ag = s.sel(TG_U95, f'Z{r}'), s.sel(TG_U95, f'AC{r}'), s.sel(TG_U95, f'AG{r}')
+        penyebut = math.sqrt(pembagi['nilai']) if 'SQRT(Q' in rumus_ui else pembagi['nilai']
+        cek(mentah['nilai'] / penyebut, ui['nilai'])
+        cek(ui['nilai'] * ci['nilai'], uici['nilai'])
+        cek(uici['nilai'] ** 2, aa['nilai'])
+        cek(aa['nilai'] ** 2 / vi['nilai'], ag['nilai'])
+        ui_cache.append(ui['nilai'] * ci['nilai'])
+        vi_cache.append(vi['nilai'])
+        komponen[nama] = {
+            'mentah': mentah, 'pembagi': pembagi, 'rumus_ui': rumus_ui, 'vi': vi, 'ui': ui, 'ci': ci,
+            'uici': uici, 'uici_kuadrat': aa, 'uici4_per_vi': ag,
+        }
+
+    if s.rumus(TG_U95, 'AC34') != TG_RUMUS_K:
+        raise SystemExit(f'BERHENTI: rumus AC34 berubah: {s.rumus(TG_U95, "AC34")}')
+    agregat = {
+        'jumlah_uici_kuadrat': s.sel(TG_U95, 'AC31'), 'jumlah_uici4_per_vi': s.sel(TG_U95, 'AG31'),
+        'uc': s.sel(TG_U95, 'AC32'), 'veff': s.sel(TG_U95, 'AC33'), 'k': s.sel(TG_U95, 'AC34'),
+        'u_hitung': s.sel(TG_U95, 'AC35'), 'cmc': s.sel(TG_U95, 'AC36'), 'u_dilaporkan': s.sel(TG_U95, 'AC37'),
+        'rumus_k': TG_RUMUS_K,
+    }
+    uc_r, veff_r = tg_rantai(ui_cache, vi_cache)
+    cek(sum(u ** 2 for u in ui_cache), agregat['jumlah_uici_kuadrat']['nilai'])
+    cek(uc_r, agregat['uc']['nilai'])
+    cek(veff_r, agregat['veff']['nilai'])
+    # k polinomial dari veff-cache harus menghasilkan AC34 (aritmetika murni, bukan kuantil).
+    cek(tg_k_polinomial(agregat['veff']['nilai']), agregat['k']['nilai'])
+    cek(agregat['uc']['nilai'] * agregat['k']['nilai'], agregat['u_hitung']['nilai'])
+    cek(max(agregat['u_hitung']['nilai'], agregat['cmc']['nilai']), agregat['u_dilaporkan']['nilai'])
+    cek(agregat['cmc']['nilai'], spek['cmc_pita_0_100']['nilai'])
+
+    # ---- Skenario berlabel: HANYA untuk membuktikan penyebab selisih app-lawan-master.
+    uc_c, veff_c, k_c = agregat['uc']['nilai'], agregat['veff']['nilai'], agregat['k']['nilai']
+    k_eksak_c = tg_k_eksak(veff_c)
+    # (a) pengulangan standar dibagi akar(n) alih-alih n: HANYA U27 diganti, selebihnya cache master.
+    n27 = komponen['pengulangan_standar']['mentah']['nilai']
+    q27 = komponen['pengulangan_standar']['pembagi']['nilai']
+    ui_a = list(ui_cache)
+    ui_a[7] = n27 / math.sqrt(q27)
+    uc_a, veff_a = tg_rantai(ui_a, vi_cache)
+    k_a_eksak = tg_k_eksak(veff_a)
+    skenario = {
+        'k_kuantil_eksak_pada_veff_master': {
+            'sumber': 'DIHITUNG ULANG (bukan sel Excel): scipy t.ppf(0,975; df = PERHITUNGAN U95%!AC33) tanpa '
+                      'pemotongan derajat bebas. Hanya untuk membuktikan penyebab selisih k polinomial AC34 vs '
+                      'kuantil eksak.',
+            'df': veff_c, 'k': k_eksak_c, 'u': uc_c * k_eksak_c,
+            'selisih_relatif_terhadap_ac34': rel(k_eksak_c, k_c),
+        },
+        'pengulangan_standar_dibagi_akar_n': {
+            'sumber': 'DIHITUNG ULANG (bukan sel Excel): rantai AC31..AC37 dengan SATU masukan diganti, '
+                      'U27 = N27/SQRT(Q27) (pembagi akar-n) alih-alih N27/Q27 (pembagi n); selebihnya nilai-cache '
+                      'U20:U30, S20:S30. k = t(0,975; veff) eksak. Hanya untuk membuktikan penyebab selisih.',
+            'u27': ui_a[7], 'uc': uc_a, 'veff': veff_a, 'k': k_a_eksak, 'u': uc_a * k_a_eksak,
+            'k_polinomial': tg_k_polinomial(veff_a), 'u_polinomial': uc_a * tg_k_polinomial(veff_a),
+        },
+    }
+
+    cetak_u = {'u95': cetak(s, S, 'L35'), 'k': cetak(s, S, 'O36')}
+    cek(s.n(S, 'L35'), agregat['u_dilaporkan']['nilai'])
+    cek(s.n(S, 'O36'), agregat['k']['nilai'])
+
+    return {
+        'berkas': os.path.basename(TG_BERKAS),
+        'sha256_12': sha[:12],
+        'rekonstruksi': {
+            'selisih_relatif_maks_terhadap_cache': maks,
+            'selisih_relatif_maks_k_terhadap_cache': rel(tg_k_polinomial(agregat['veff']['nilai']), agregat['k']['nilai']),
+            'catatan_k': 'k master = polinomial AC34 (aritmetika murni, direkonstruksi dari AC33 pada batas yang sama '
+                         'dengan sel lain). Kuantil eksak hanya muncul di `skenario`.',
+        },
+        'masukan': {'titik': titik_masukan, 'spek': spek},
+        'titik': titik,
+        'sesi': sesi,
+        'budget': komponen,
+        'agregat': agregat,
+        'sertifikat': cetak_u,
+        'skenario': skenario,
+        'maks_selisih': maks,
+    }
+
+
 def tulis(nama, kunci, isi):
     kepala = {
         '_digenerate_oleh': 'docs/skrip/gen-fixture-paritas-batch7.py',
@@ -484,10 +714,17 @@ def main():
     os.makedirs(KELUAR, exist_ok=True)
     try:
         hyd = hydrometer(sumber)
+        tg = thermometer_glass(sumber)
     except SandiTidakAda as e:
         raise SystemExit(f'BERHENTI: variabel lingkungan {e} tidak ada.')
 
+    maks_tg = tg.pop('maks_selisih')
+    if maks_tg > TOL_REKONSTRUKSI:
+        raise SystemExit(f'BERHENTI: rekonstruksi thermometer-glass menyimpang {maks_tg:.2e} > {TOL_REKONSTRUKSI:.0e}.')
+    print(f'thermometer-glass: ok, rekonstruksi {maks_tg:.2e}')
+
     tulis('hydrometer.json', 'workbook', hyd)
+    tulis('thermometer-glass.json', 'workbook', tg)
     print('selesai:', KELUAR)
 
 
