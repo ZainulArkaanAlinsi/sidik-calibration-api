@@ -1,0 +1,3888 @@
+{
+  "_digenerate_oleh": "docs/skrip/gen-fixture-paritas-batch7.py",
+  "_catatan": "Disalin dari nilai-cache workbook master (alamat sel di tiap nilai). Tanpa nama/alamat pelanggan, nomor sertifikat, nomor order, atau nama teknisi. Jangan disunting dengan tangan.",
+  "workbook": {
+    "ringan": {
+      "berkas": "Hydrometer 0.600 - 0.650 gmL.xlsx",
+      "sha256_12": "3dac055eb0d6",
+      "rekonstruksi": {
+        "selisih_relatif_maks_terhadap_cache": 1.1341491518648645e-16,
+        "selisih_relatif_maks_k_terhadap_cache": 1.3243893045685916e-11,
+        "catatan_k": "k, U, dan U cetak memakai TINV; scipy t.ppf menyimpang ~1e-11 dari TINV Excel (iteratif)."
+      },
+      "masukan": {
+        "resolusi": {
+          "sel": "PERHITUNGAN!E9",
+          "nilai": 0.0005
+        },
+        "suhu_acuan_faktor": {
+          "sel": "PERHITUNGAN!E10",
+          "nilai": 20.0
+        },
+        "beban_tambahan_Sl": {
+          "sel": "PERHITUNGAN!E24",
+          "nilai": 54.0052
+        },
+        "massa_udara_Ma": {
+          "sel": "PERHITUNGAN!E25",
+          "nilai": 39.9327
+        },
+        "tegangan_permukaan": {
+          "sel": "PERHITUNGAN!E26",
+          "nilai": 17.5
+        },
+        "satuan_tegangan": {
+          "sel": "PERHITUNGAN!F26",
+          "nilai": "mN/m"
+        },
+        "suhu_acuan_alat_tr": {
+          "sel": "PERHITUNGAN!E27",
+          "nilai": 15.0
+        },
+        "diameter_stem": {
+          "sel": [
+            "PERHITUNGAN!N26",
+            "PERHITUNGAN!O26",
+            "PERHITUNGAN!P26"
+          ],
+          "nilai": [
+            0.708,
+            0.71,
+            0.709
+          ]
+        },
+        "suhu_awal": {
+          "sel": "PERHITUNGAN!E15",
+          "nilai": 20.4
+        },
+        "suhu_akhir": {
+          "sel": "PERHITUNGAN!F15",
+          "nilai": 20.5
+        },
+        "kelembaban_awal": {
+          "sel": "PERHITUNGAN!E16",
+          "nilai": 56.0
+        },
+        "kelembaban_akhir": {
+          "sel": "PERHITUNGAN!F16",
+          "nilai": 55.0
+        },
+        "tekanan_awal": {
+          "sel": "PERHITUNGAN!E18",
+          "nilai": 933.2
+        },
+        "tekanan_akhir": {
+          "sel": "PERHITUNGAN!F18",
+          "nilai": 933.1
+        }
+      },
+      "praolah": {
+        "suhu_ruang": {
+          "sel": "PERHITUNGAN!G15",
+          "nilai": 20.45
+        },
+        "rho_udara": {
+          "sel": "PERHITUNGAN!J78",
+          "nilai": 0.0011016523357163883
+        },
+        "f_press": {
+          "sel": "PERHITUNGAN!J85",
+          "nilai": 1.0000000020025
+        },
+        "f_temp": {
+          "sel": "PERHITUNGAN!J84",
+          "nilai": 1.000006
+        },
+        "m_air": {
+          "sel": "PERHITUNGAN!J80",
+          "nilai": 39.927001033513
+        },
+        "rho_air_titik1": {
+          "sel": "PERHITUNGAN!J82",
+          "nilai": 0.9980761251005233
+        },
+        "pid_yx": {
+          "sel": "PERHITUNGAN!M74",
+          "nilai": 0.03972768478532425
+        },
+        "pid_yl": {
+          "sel": "PERHITUNGAN!M75",
+          "nilai": 0.1649466230445667
+        },
+        "tegangan_hydrometer": {
+          "sel": "PERHITUNGAN!G26",
+          "nilai": 17.5
+        },
+        "diameter_rata": {
+          "sel": "PERHITUNGAN!Q26",
+          "nilai": 0.709
+        },
+        "diameter_N27": {
+          "sel": "PERHITUNGAN!N27",
+          "nilai": 0.71
+        },
+        "diameter_P27": {
+          "sel": "PERHITUNGAN!P27",
+          "nilai": 0.708
+        },
+        "suhu_maks_titik": {
+          "sel": "PERHITUNGAN!L52",
+          "nilai": 20.7
+        },
+        "suhu_min_titik": {
+          "sel": "PERHITUNGAN!M52",
+          "nilai": 20.6
+        },
+        "st_maks": {
+          "sel": "PERHITUNGAN!L53",
+          "nilai": 72.6588
+        },
+        "st_min": {
+          "sel": "PERHITUNGAN!M53",
+          "nilai": 72.64359999999999
+        },
+        "rho_air_maks": {
+          "sel": "PERHITUNGAN!L59",
+          "nilai": 0.9980761251005233
+        },
+        "u_massa_aquadest_E39": {
+          "sel": "NILAI U95%!E39",
+          "nilai": 0.0003713488925525428
+        },
+        "penyebut_e44": {
+          "sel": "NILAI U95%!E44",
+          "nilai": 7.076317269059096e-06
+        },
+        "penyebut_o55": {
+          "sel": "NILAI U95%!O55",
+          "nilai": 0.00023011129733685343
+        }
+      },
+      "konstanta_workbook": {
+        "alpha": {
+          "sel": "PERHITUNGAN!J83",
+          "nilai": 1e-05
+        },
+        "kappa": {
+          "sel": "PERHITUNGAN!J86",
+          "nilai": 2.5e-11
+        },
+        "err_densitas": {
+          "sel": "PERHITUNGAN!J87",
+          "nilai": 0.0002
+        },
+        "phi": {
+          "sel": "PERHITUNGAN!J89",
+          "nilai": 3.14
+        },
+        "gravitasi_cm_s2": {
+          "sel": "PERHITUNGAN!J90",
+          "nilai": 980.665
+        },
+        "err_timbang": {
+          "sel": "PERHITUNGAN!AF84",
+          "nilai": 0.0002
+        },
+        "densitas_beban_standar": {
+          "sel": "PERHITUNGAN!AF85",
+          "nilai": 8.0
+        },
+        "tekanan_acuan_hpa": {
+          "sel": "PERHITUNGAN!AD29",
+          "nilai": 1013.25
+        },
+        "densitas_sinker": {
+          "sel": "PERHITUNGAN!J91",
+          "nilai": 8.0
+        }
+      },
+      "titik": [
+        {
+          "titik_ke": 1,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!G33",
+            "nilai": 0.61
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!G34",
+              "PERHITUNGAN!G35",
+              "PERHITUNGAN!G36"
+            ],
+            "nilai": [
+              21.2727,
+              21.2726,
+              21.2856
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!G49",
+              "PERHITUNGAN!G50",
+              "PERHITUNGAN!G51"
+            ],
+            "nilai": [
+              20.6,
+              20.6,
+              20.6
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!G41",
+              "PERHITUNGAN!G42",
+              "PERHITUNGAN!G43"
+            ],
+            "nilai": [
+              -25.99935733772919,
+              -25.999457323958534,
+              -25.98645911414358
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!G44",
+            "nilai": -25.995091258610433
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!G52",
+            "nilai": 20.6
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!G53",
+            "nilai": 72.6588
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!G59",
+            "nilai": 0.9980761251005233
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!G106",
+              "PERHITUNGAN!G107",
+              "PERHITUNGAN!G108"
+            ],
+            "nilai": [
+              0.6038710331884833,
+              0.603870121290228,
+              0.6039886912032494
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!G109",
+            "nilai": 0.6039099485606535
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!G110",
+            "nilai": 6.819465310298057e-05
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F63",
+                "nilai": 6.819465310298057e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G63",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H63",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I63",
+                "nilai": 3.9372201326298984e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J63",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K63",
+                "nilai": 3.9372201326298984e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L63",
+                "nilai": 1.5501702372786195e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M63",
+                "nilai": 1.2015138822722257e-18
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F64",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G64",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H64",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I64",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J64",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K64",
+                "nilai": 0.00014433756729740645
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L64",
+                "nilai": 2.0833333333333335e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M64",
+                "nilai": 8.680555555555556e-18
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F65",
+                "nilai": 4.9133333333333515e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G65",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H65",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I65",
+                "nilai": 2.4566666666666758e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J65",
+                "nilai": 0.7919941535297305
+              },
+              "uici": {
+                "sel": "NILAI U95%!K65",
+                "nilai": 1.9456656371713782e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L65",
+                "nilai": 3.785614771669505e-22
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M65",
+                "nilai": 2.388479866580393e-45
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F66",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G66",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H66",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I66",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J66",
+                "nilai": 0.00022746830589413856
+              },
+              "uici": {
+                "sel": "NILAI U95%!K66",
+                "nilai": 1.8794568774503194e-14
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L66",
+                "nilai": 3.532358154195305e-28
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M66",
+                "nilai": 2.0795923549183433e-57
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F67",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G67",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H67",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I67",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J67",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K67",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L67",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M67",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F68",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G68",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H68",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I68",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J68",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K68",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L68",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M68",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F69",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G69",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H69",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I69",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J69",
+                "nilai": 0.004996826995391796
+              },
+              "uici": {
+                "sel": "NILAI U95%!K69",
+                "nilai": 9.277830855076967e-07
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L69",
+                "nilai": 8.607814537541821e-13
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M69",
+                "nilai": 1.234907851878605e-26
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F70",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G70",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H70",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I70",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J70",
+                "nilai": 0.019203318642506156
+              },
+              "uici": {
+                "sel": "NILAI U95%!K70",
+                "nilai": 3.5655655556141305e-06
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L70",
+                "nilai": 1.2713257731381903e-11
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M70",
+                "nilai": 2.6937820357423624e-24
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F71",
+                "nilai": 0.0020000000000000018
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G71",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H71",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I71",
+                "nilai": 0.0005773502691896263
+              },
+              "ci": {
+                "sel": "NILAI U95%!J71",
+                "nilai": 0.2996837039708289
+              },
+              "uici": {
+                "sel": "NILAI U95%!K71",
+                "nilai": 0.00017302246715930234
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L71",
+                "nilai": 2.9936774141891855e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M71",
+                "nilai": 1.79242089204529e-17
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F72",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G72",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H72",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I72",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J72",
+                "nilai": -0.29968190587857835
+              },
+              "uici": {
+                "sel": "NILAI U95%!K72",
+                "nilai": -4.325535725756433e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L72",
+                "nilai": 1.871025931479523e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M72",
+                "nilai": 7.001476072537634e-20
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F73",
+                "nilai": 0.015200000000007208
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G73",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H73",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I73",
+                "nilai": 0.0043878620458432365
+              },
+              "ci": {
+                "sel": "NILAI U95%!J73",
+                "nilai": 0.01358887753332108
+              },
+              "uici": {
+                "sel": "NILAI U95%!K73",
+                "nilai": 5.962611997407142e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L73",
+                "nilai": 3.5552741831623593e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M73",
+                "nilai": 2.527994903492156e-19
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K74",
+              "nilai": 0.00043439833024504947
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L74",
+              "nilai": 5.9396516756989014e-08
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M74",
+              "nilai": 2.815606291099416e-17
+            },
+            "uc": {
+              "sel": "NILAI U95%!K75",
+              "nilai": 0.00024371400607472074
+            },
+            "veff": {
+              "sel": "NILAI U95%!K76",
+              "nilai": 125.29969882563776
+            },
+            "k": {
+              "sel": "NILAI U95%!K77",
+              "nilai": 1.9791241094237992
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K78",
+              "nilai": 0.0004823402652267381
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L79",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L80",
+              "nilai": 0.0007
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I55",
+              "nilai": 0.7919941535297305,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I57",
+              "nilai": 0.00022746830589413856,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C55",
+              "nilai": 0.004996826995391796,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C58",
+              "nilai": 0.019203318642506156,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C57",
+              "nilai": 0.2996837039708289,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F55",
+              "nilai": -0.29968190587857835,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F57",
+              "nilai": 0.01358887753332108,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.00023011129733685343
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.00023011129733685343
+              },
+              "master_memakai_penyebut_skala_sendiri": false,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.01358887753332108,
+                "sumber": "NILAI U95%!F57 (master sudah memakai O55; sama dengan nilai-cache)"
+              }
+            }
+          }
+        },
+        {
+          "titik_ke": 2,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!H33",
+            "nilai": 0.625
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!H34",
+              "PERHITUNGAN!H35",
+              "PERHITUNGAN!H36"
+            ],
+            "nilai": [
+              22.7483,
+              22.7446,
+              22.7491
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!H49",
+              "PERHITUNGAN!H50",
+              "PERHITUNGAN!H51"
+            ],
+            "nilai": [
+              20.6,
+              20.6,
+              20.6
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!H41",
+              "PERHITUNGAN!H42",
+              "PERHITUNGAN!H43"
+            ],
+            "nilai": [
+              -24.523960537502514,
+              -24.52766002798831,
+              -24.523160647667748
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!H44",
+            "nilai": -24.524927071052858
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!H52",
+            "nilai": 20.6
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!H53",
+            "nilai": 72.6588
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!H59",
+            "nilai": 0.9980761251005233
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!H106",
+              "PERHITUNGAN!H107",
+              "PERHITUNGAN!H108"
+            ],
+            "nilai": [
+              0.6176342693773432,
+              0.6175989727141755,
+              0.6176419016197218
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!H109",
+            "nilai": 0.617625047903747
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!H110",
+            "nilai": 2.2901952194437586e-05
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F97",
+                "nilai": 2.2901952194437586e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G97",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H97",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I97",
+                "nilai": 1.3222448264426481e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J97",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K97",
+                "nilai": 1.3222448264426481e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L97",
+                "nilai": 1.7483313810543487e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M97",
+                "nilai": 1.528331308989703e-20
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F98",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G98",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H98",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I98",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J98",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K98",
+                "nilai": 0.00014433756729740645
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L98",
+                "nilai": 2.0833333333333335e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M98",
+                "nilai": 8.680555555555556e-18
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F99",
+                "nilai": 4.9133333333333515e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G99",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H99",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I99",
+                "nilai": 2.4566666666666758e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J99",
+                "nilai": 0.810059731204111
+              },
+              "uici": {
+                "sel": "NILAI U95%!K99",
+                "nilai": 1.9900467396581067e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L99",
+                "nilai": 3.9602860260238603e-22
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M99",
+                "nilai": 2.6139775679866434e-45
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F100",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G100",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H100",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I100",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J100",
+                "nilai": 0.00020752795731697699
+              },
+              "uici": {
+                "sel": "NILAI U95%!K100",
+                "nilai": 1.714699747331522e-14
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L100",
+                "nilai": 2.9401952234987854e-28
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M100",
+                "nilai": 1.4407913253808452e-57
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F101",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G101",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H101",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I101",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J101",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K101",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L101",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M101",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F102",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G102",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H102",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I102",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J102",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K102",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L102",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M102",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F103",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G103",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H103",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I103",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J103",
+                "nilai": 0.004457126533917297
+              },
+              "uici": {
+                "sel": "NILAI U95%!K103",
+                "nilai": 8.275745011683709e-07
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L103",
+                "nilai": 6.84879554984078e-13
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M103",
+                "nilai": 7.817666747253145e-27
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F104",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G104",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H104",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I104",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J104",
+                "nilai": 0.019203318642506156
+              },
+              "uici": {
+                "sel": "NILAI U95%!K104",
+                "nilai": 3.5655655556141305e-06
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L104",
+                "nilai": 1.2713257731381903e-11
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M104",
+                "nilai": 2.6937820357423624e-24
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F105",
+                "nilai": 0.0020000000000000018
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G105",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H105",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I105",
+                "nilai": 0.0005773502691896263
+              },
+              "ci": {
+                "sel": "NILAI U95%!J105",
+                "nilai": 0.3065195583730313
+              },
+              "uici": {
+                "sel": "NILAI U95%!K105",
+                "nilai": 0.000176969149538555
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L105",
+                "nilai": 3.131807988839944e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M105",
+                "nilai": 1.9616442557923392e-17
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F106",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G106",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H106",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I106",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J106",
+                "nilai": -0.3065177192667157
+              },
+              "uici": {
+                "sel": "NILAI U95%!K106",
+                "nilai": -4.424202193250712e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L106",
+                "nilai": 1.9573565046764413e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M106",
+                "nilai": 7.66248897279835e-20
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F107",
+                "nilai": 0.015200000000007208
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G107",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H107",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I107",
+                "nilai": 0.0043878620458432365
+              },
+              "ci": {
+                "sel": "NILAI U95%!J107",
+                "nilai": 0.01358887753332108
+              },
+              "uici": {
+                "sel": "NILAI U95%!K107",
+                "nilai": 5.962611997407142e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L107",
+                "nilai": 3.5552741831623593e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M107",
+                "nilai": 2.527994903492156e-19
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K108",
+              "nilai": 0.00041110838674531105
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L108",
+              "nilai": 5.948864007562159e-08
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M108",
+              "nilai": 2.866867610375352e-17
+            },
+            "uc": {
+              "sel": "NILAI U95%!K109",
+              "nilai": 0.00024390293166672185
+            },
+            "veff": {
+              "sel": "NILAI U95%!K110",
+              "nilai": 123.44128780971201
+            },
+            "k": {
+              "sel": "NILAI U95%!K111",
+              "nilai": 1.979438685093305
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K112",
+              "nilai": 0.0004827908983487781
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L113",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L114",
+              "nilai": 0.0007
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I90",
+              "nilai": 0.810059731204111,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I92",
+              "nilai": 0.00020752795731697699,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C90",
+              "nilai": 0.004457126533917297,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C93",
+              "nilai": 0.019203318642506156,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C92",
+              "nilai": 0.3065195583730313,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F90",
+              "nilai": -0.3065177192667157,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F92",
+              "nilai": 0.01358887753332108,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O90",
+                "nilai": 0.0002407288671319638
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.00023011129733685343
+              },
+              "master_memakai_penyebut_skala_sendiri": false,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.01358887753332108,
+                "sumber": "NILAI U95%!F92 (master sudah memakai O55; sama dengan nilai-cache)"
+              }
+            }
+          }
+        },
+        {
+          "titik_ke": 3,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!I33",
+            "nilai": 0.65
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!I34",
+              "PERHITUNGAN!I35",
+              "PERHITUNGAN!I36"
+            ],
+            "nilai": [
+              25.4602,
+              25.4608,
+              25.4621
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!I49",
+              "PERHITUNGAN!I50",
+              "PERHITUNGAN!I51"
+            ],
+            "nilai": [
+              20.7,
+              20.7,
+              20.7
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!I41",
+              "PERHITUNGAN!I42",
+              "PERHITUNGAN!I43"
+            ],
+            "nilai": [
+              -21.81257789808678,
+              -21.811977980710704,
+              -21.81067815972921
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!I44",
+            "nilai": -21.811744679508895
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!I52",
+            "nilai": 20.7
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!I53",
+            "nilai": 72.64359999999999
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!I59",
+            "nilai": 0.9980548064013033
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!I106",
+              "PERHITUNGAN!I107",
+              "PERHITUNGAN!I108"
+            ],
+            "nilai": [
+              0.6446242796055408,
+              0.6446305160501291,
+              0.6446440287614176
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!I109",
+            "nilai": 0.6446329414723625
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!I110",
+            "nilai": 1.0095508616156517e-05
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F131",
+                "nilai": 1.0095508616156517e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G131",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H131",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I131",
+                "nilai": 5.828644617144151e-06
+              },
+              "ci": {
+                "sel": "NILAI U95%!J131",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K131",
+                "nilai": 5.828644617144151e-06
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L131",
+                "nilai": 3.3973098072963493e-11
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M131",
+                "nilai": 5.770856963375979e-22
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F132",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G132",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H132",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I132",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J132",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K132",
+                "nilai": 0.00014433756729740645
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L132",
+                "nilai": 2.0833333333333335e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M132",
+                "nilai": 8.680555555555556e-18
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F133",
+                "nilai": 6.213333333333324e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G133",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H133",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I133",
+                "nilai": 3.106666666666662e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J133",
+                "nilai": 0.8456587625985604
+              },
+              "uici": {
+                "sel": "NILAI U95%!K133",
+                "nilai": 2.6271798891395236e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L133",
+                "nilai": 6.902074169899159e-22
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M133",
+                "nilai": 7.939771307798194e-45
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F134",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G134",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H134",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I134",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J134",
+                "nilai": 0.00016823460573922393
+              },
+              "uici": {
+                "sel": "NILAI U95%!K134",
+                "nilai": 1.3900384299203375e-14
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L134",
+                "nilai": 1.932206836655397e-28
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M134",
+                "nilai": 6.222372099363094e-58
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F135",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G135",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H135",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I135",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J135",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K135",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L135",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M135",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F136",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G136",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H136",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I136",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J136",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K136",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L136",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M136",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F137",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G137",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H137",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I137",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J137",
+                "nilai": 0.0034611113941297755
+              },
+              "uici": {
+                "sel": "NILAI U95%!K137",
+                "nilai": 6.426399416055398e-07
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L137",
+                "nilai": 4.1298609454677153e-13
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M137",
+                "nilai": 2.8426252381499154e-27
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F138",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G138",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H138",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I138",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J138",
+                "nilai": 0.019203318642506156
+              },
+              "uici": {
+                "sel": "NILAI U95%!K138",
+                "nilai": 3.5655655556141305e-06
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L138",
+                "nilai": 1.2713257731381903e-11
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M138",
+                "nilai": 2.6937820357423624e-24
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F139",
+                "nilai": 0.0020000000000000018
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G139",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H139",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I139",
+                "nilai": 0.0005773502691896263
+              },
+              "ci": {
+                "sel": "NILAI U95%!J139",
+                "nilai": 0.2996837039708289
+              },
+              "uici": {
+                "sel": "NILAI U95%!K139",
+                "nilai": 0.00017302246715930234
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L139",
+                "nilai": 2.9936774141891855e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M139",
+                "nilai": 1.79242089204529e-17
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F140",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G140",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H140",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I140",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J140",
+                "nilai": -0.31998799584968884
+              },
+              "uici": {
+                "sel": "NILAI U95%!K140",
+                "nilai": -4.618628888531668e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L140",
+                "nilai": 2.133173280997927e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M140",
+                "nilai": 9.100856493526921e-20
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F141",
+                "nilai": 0.015200000000007208
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G141",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H141",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I141",
+                "nilai": 0.0043878620458432365
+              },
+              "ci": {
+                "sel": "NILAI U95%!J141",
+                "nilai": 0.01358887753332108
+              },
+              "uici": {
+                "sel": "NILAI U95%!K141",
+                "nilai": 5.962611997407142e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L141",
+                "nilai": 3.5552741831623593e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M141",
+                "nilai": 2.527994903492156e-19
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K142",
+              "nilai": 0.0003976387055744885
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L142",
+              "nilai": 5.814201917194288e-08
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M142",
+              "nilai": 2.6976119909121713e-17
+            },
+            "uc": {
+              "sel": "NILAI U95%!K143",
+              "nilai": 0.00024112656255987825
+            },
+            "veff": {
+              "sel": "NILAI U95%!K144",
+              "nilai": 125.3143300363034
+            },
+            "k": {
+              "sel": "NILAI U95%!K145",
+              "nilai": 1.9791241094237992
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K146",
+              "nilai": 0.00047721939338474104
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L147",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L148",
+              "nilai": 0.0007
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I124",
+              "nilai": 0.8456587625985604,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I126",
+              "nilai": 0.00016823460573922393,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C124",
+              "nilai": 0.0034611113941297755,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C127",
+              "nilai": 0.019203318642506156,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C126",
+              "nilai": 0.31998991577766384,
+              "selisih_relatif_terhadap_ci_komponen": 0.06345891168940512
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F124",
+              "nilai": -0.31998799584968884,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F126",
+              "nilai": 0.01358887753332108,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O124",
+                "nilai": 0.0002623520099643598
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.00023011129733685343
+              },
+              "master_memakai_penyebut_skala_sendiri": false,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.01358887753332108,
+                "sumber": "NILAI U95%!F126 (master sudah memakai O55; sama dengan nilai-cache)"
+              }
+            }
+          },
+          "skenario_ci_stem_C126": {
+            "uc": 0.00024967263986371544,
+            "veff": 120.11593611961433,
+            "k": 1.9799304050527766,
+            "u_hitung": 0.0004943344509759621,
+            "u_cetak": 0.0007,
+            "ci_stem_diganti": 0.31998991577766384,
+            "sumber": "rantai NILAI U95% skala 3 dihitung ulang dengan ci Stem Diameter = NILAI U95%!C126"
+          }
+        }
+      ],
+      "sertifikat": {
+        "titik": [
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E17",
+              "nilai": 0.61,
+              "format": "0.000",
+              "teks": "0.610",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J17",
+              "nilai": 0.6039099485606535,
+              "format": "0.000",
+              "teks": "0.604",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O17",
+              "nilai": -0.006090051439346489,
+              "format": "0.000",
+              "teks": "-0.006",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S17",
+              "nilai": 0.0007,
+              "format": "0.00000",
+              "teks": "0.00070",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E18",
+              "nilai": 0.625,
+              "format": "0.000",
+              "teks": "0.625",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J18",
+              "nilai": 0.617625047903747,
+              "format": "0.000",
+              "teks": "0.618",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O18",
+              "nilai": -0.007374952096253051,
+              "format": "0.000",
+              "teks": "-0.007",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S18",
+              "nilai": 0.0007,
+              "format": "0.00000",
+              "teks": "0.00070",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E19",
+              "nilai": 0.65,
+              "format": "0.000",
+              "teks": "0.650",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J19",
+              "nilai": 0.6446329414723625,
+              "format": "0.000",
+              "teks": "0.645",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O19",
+              "nilai": -0.005367058527637525,
+              "format": "0.000",
+              "teks": "-0.005",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S19",
+              "nilai": 0.0007,
+              "format": "0.00000",
+              "teks": "0.00070",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "k": {
+          "sel": "SERTIFIKAT!U23",
+          "nilai": 1.9791241094237992,
+          "format": "0",
+          "teks": "2",
+          "nol_bertanda_minus": false
+        },
+        "resolusi": {
+          "sel": "SERTIFIKAT!I10",
+          "nilai": 0.0005,
+          "format": "0.000",
+          "teks": "0.001",
+          "nol_bertanda_minus": false
+        }
+      }
+    },
+    "berat": {
+      "berkas": "Hydrometer 1.800 - 2.000 gmL.xlsx",
+      "sha256_12": "1e9427d310e7",
+      "rekonstruksi": {
+        "selisih_relatif_maks_terhadap_cache": 4.1220003117298806e-16,
+        "selisih_relatif_maks_k_terhadap_cache": 3.72597452608323e-11,
+        "catatan_k": "k, U, dan U cetak memakai TINV; scipy t.ppf menyimpang ~1e-11 dari TINV Excel (iteratif)."
+      },
+      "masukan": {
+        "resolusi": {
+          "sel": "PERHITUNGAN!E9",
+          "nilai": 0.001
+        },
+        "suhu_acuan_faktor": {
+          "sel": "PERHITUNGAN!E10",
+          "nilai": 20.0
+        },
+        "beban_tambahan_Sl": {
+          "sel": "PERHITUNGAN!E24",
+          "nilai": 0.0
+        },
+        "massa_udara_Ma": {
+          "sel": "PERHITUNGAN!E25",
+          "nilai": 54.2144
+        },
+        "tegangan_permukaan": {
+          "sel": "PERHITUNGAN!E26",
+          "nilai": 75.0
+        },
+        "satuan_tegangan": {
+          "sel": "PERHITUNGAN!F26",
+          "nilai": "mN/m"
+        },
+        "suhu_acuan_alat_tr": {
+          "sel": "PERHITUNGAN!E27",
+          "nilai": 20.0
+        },
+        "diameter_stem": {
+          "sel": [
+            "PERHITUNGAN!N26",
+            "PERHITUNGAN!O26",
+            "PERHITUNGAN!P26"
+          ],
+          "nilai": [
+            0.615,
+            0.615,
+            0.615
+          ]
+        },
+        "suhu_awal": {
+          "sel": "PERHITUNGAN!E15",
+          "nilai": 20.4
+        },
+        "suhu_akhir": {
+          "sel": "PERHITUNGAN!F15",
+          "nilai": 20.5
+        },
+        "kelembaban_awal": {
+          "sel": "PERHITUNGAN!E16",
+          "nilai": 56.0
+        },
+        "kelembaban_akhir": {
+          "sel": "PERHITUNGAN!F16",
+          "nilai": 55.0
+        },
+        "tekanan_awal": {
+          "sel": "PERHITUNGAN!E18",
+          "nilai": 933.2
+        },
+        "tekanan_akhir": {
+          "sel": "PERHITUNGAN!F18",
+          "nilai": 933.1
+        }
+      },
+      "praolah": {
+        "suhu_ruang": {
+          "sel": "PERHITUNGAN!G15",
+          "nilai": 20.45
+        },
+        "rho_udara": {
+          "sel": "PERHITUNGAN!J80",
+          "nilai": 0.0011016523357163883
+        },
+        "f_press": {
+          "sel": "PERHITUNGAN!J87",
+          "nilai": 1.0000000020025
+        },
+        "f_temp": {
+          "sel": "PERHITUNGAN!J86",
+          "nilai": 1.000004
+        },
+        "m_air": {
+          "sel": "PERHITUNGAN!J82",
+          "nilai": 54.20673434999262
+        },
+        "rho_air_titik1": {
+          "sel": "PERHITUNGAN!J84",
+          "nilai": 0.9981184511248792
+        },
+        "pid_yx": {
+          "sel": "PERHITUNGAN!M76",
+          "nilai": 0.14768804841612582
+        },
+        "pid_yl": {
+          "sel": "PERHITUNGAN!M77",
+          "nilai": 0.14313768118572603
+        },
+        "tegangan_hydrometer": {
+          "sel": "PERHITUNGAN!G26",
+          "nilai": 75.0
+        },
+        "diameter_rata": {
+          "sel": "PERHITUNGAN!Q26",
+          "nilai": 0.615
+        },
+        "diameter_N27": {
+          "sel": "PERHITUNGAN!N27",
+          "nilai": 0.615
+        },
+        "diameter_P27": {
+          "sel": "PERHITUNGAN!P27",
+          "nilai": 0.615
+        },
+        "suhu_maks_titik": {
+          "sel": "PERHITUNGAN!L52",
+          "nilai": 20.4
+        },
+        "suhu_min_titik": {
+          "sel": "PERHITUNGAN!M52",
+          "nilai": 20.4
+        },
+        "st_maks": {
+          "sel": "PERHITUNGAN!L53",
+          "nilai": 72.6892
+        },
+        "st_min": {
+          "sel": "PERHITUNGAN!M53",
+          "nilai": 72.6892
+        },
+        "rho_air_maks": {
+          "sel": "PERHITUNGAN!L59",
+          "nilai": 0.9981184511248792
+        },
+        "u_massa_aquadest_E39": {
+          "sel": "NILAI U95%!E39",
+          "nilai": 0.0003713488925525428
+        },
+        "penyebut_e44": {
+          "sel": "NILAI U95%!E44",
+          "nilai": 6.138403920802325e-06
+        },
+        "penyebut_o55": {
+          "sel": "NILAI U95%!O55",
+          "nilai": 0.0011100324625028819
+        }
+      },
+      "konstanta_workbook": {
+        "alpha": {
+          "sel": "PERHITUNGAN!J85",
+          "nilai": 1e-05
+        },
+        "kappa": {
+          "sel": "PERHITUNGAN!J88",
+          "nilai": 2.5e-11
+        },
+        "err_densitas": {
+          "sel": "PERHITUNGAN!J89",
+          "nilai": 0.0002
+        },
+        "phi": {
+          "sel": "PERHITUNGAN!J91",
+          "nilai": 3.14
+        },
+        "gravitasi_cm_s2": {
+          "sel": "PERHITUNGAN!J92",
+          "nilai": 980.665
+        },
+        "err_timbang": {
+          "sel": "PERHITUNGAN!AE86",
+          "nilai": 0.0002
+        },
+        "densitas_beban_standar": {
+          "sel": "PERHITUNGAN!AE87",
+          "nilai": 8.0
+        },
+        "tekanan_acuan_hpa": {
+          "sel": "PERHITUNGAN!AC29",
+          "nilai": 1013.25
+        }
+      },
+      "titik": [
+        {
+          "titik_ke": 1,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!G33",
+            "nilai": 1.8
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!G34",
+              "PERHITUNGAN!G35",
+              "PERHITUNGAN!G36"
+            ],
+            "nilai": [
+              24.1957,
+              24.1985,
+              24.1929
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!G49",
+              "PERHITUNGAN!G50",
+              "PERHITUNGAN!G51"
+            ],
+            "nilai": [
+              20.4,
+              20.4,
+              20.4
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!G41",
+              "PERHITUNGAN!G42",
+              "PERHITUNGAN!G43"
+            ],
+            "nilai": [
+              24.192168121363895,
+              24.19496773578558,
+              24.189368506942216
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!G44",
+            "nilai": 24.192168121363895
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!G52",
+            "nilai": 20.4
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!G53",
+            "nilai": 72.6892
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!G59",
+            "nilai": 0.9981184511248792
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!G101",
+              "PERHITUNGAN!G102",
+              "PERHITUNGAN!G103"
+            ],
+            "nilai": [
+              1.7977039811633482,
+              1.797870779695627,
+              1.7975372135968375
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!G104",
+            "nilai": 1.7977039914852708
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!G105",
+            "nilai": 0.00016678304963432217
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F63",
+                "nilai": 0.00016678304963432217
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G63",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H63",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I63",
+                "nilai": 9.629223860264263e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J63",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K63",
+                "nilai": 9.629223860264263e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L63",
+                "nilai": 9.272195215108258e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M63",
+                "nilai": 4.298680205353824e-17
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F64",
+                "nilai": 0.001
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G64",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H64",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I64",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "NILAI U95%!J64",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K64",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L64",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M64",
+                "nilai": 1.388888888888889e-16
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F65",
+                "nilai": 2.9049999999999893e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G65",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H65",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I65",
+                "nilai": 1.4524999999999946e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J65",
+                "nilai": 3.333585669987012
+              },
+              "uici": {
+                "sel": "NILAI U95%!K65",
+                "nilai": 4.8420331856561166e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L65",
+                "nilai": 2.3445285370995123e-21
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M65",
+                "nilai": 9.161356768789966e-44
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F66",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G66",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H66",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I66",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J66",
+                "nilai": -0.0025777230285131984
+              },
+              "uici": {
+                "sel": "NILAI U95%!K66",
+                "nilai": -2.1298436523090298e-13
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L66",
+                "nilai": 4.536233983281067e-26
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M66",
+                "nilai": 3.4295697918456697e-53
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F67",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G67",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H67",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I67",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J67",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K67",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L67",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M67",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F68",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G68",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H68",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I68",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J68",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K68",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L68",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M68",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F69",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G69",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H69",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I69",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J69",
+                "nilai": -0.10881102585593508
+              },
+              "uici": {
+                "sel": "NILAI U95%!K69",
+                "nilai": -2.0203426974553796e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L69",
+                "nilai": 4.0817846151612797e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M69",
+                "nilai": 2.776827607427886e-21
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F70",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G70",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H70",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I70",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J70",
+                "nilai": 0.15531405176676305
+              },
+              "uici": {
+                "sel": "NILAI U95%!K70",
+                "nilai": 2.883785056071788e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L70",
+                "nilai": 8.316216249622967e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M70",
+                "nilai": 1.1526575451748848e-20
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F71",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G71",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H71",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I71",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J71",
+                "nilai": 2.1409067209711052
+              },
+              "uici": {
+                "sel": "NILAI U95%!K71",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L71",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M71",
+                "nilai": 0.0
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F72",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G72",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H72",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I72",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J72",
+                "nilai": -2.140898157374662
+              },
+              "uici": {
+                "sel": "NILAI U95%!K72",
+                "nilai": -0.0003090120318669588
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L72",
+                "nilai": 9.548843583854634e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M72",
+                "nilai": 1.8236082757784363e-16
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F73",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G73",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H73",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I73",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J73",
+                "nilai": 0.09533803843207936
+              },
+              "uici": {
+                "sel": "NILAI U95%!K73",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L73",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M73",
+                "nilai": 0.0
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K74",
+              "nilai": 0.0001413917767529702
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L74",
+              "nilai": 1.909701293641265e-07
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M74",
+              "nilai": 3.642777895188377e-16
+            },
+            "uc": {
+              "sel": "NILAI U95%!K75",
+              "nilai": 0.000437001292176724
+            },
+            "veff": {
+              "sel": "NILAI U95%!K76",
+              "nilai": 100.1147787723283
+            },
+            "k": {
+              "sel": "NILAI U95%!K77",
+              "nilai": 1.9839715185235556
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K78",
+              "nilai": 0.0008669981172366112
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L79",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L80",
+              "nilai": 0.0008669981172366112
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I55",
+              "nilai": 3.333585669987012,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I57",
+              "nilai": -0.0025777230285131984,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C55",
+              "nilai": -0.10881102585593508,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C58",
+              "nilai": 0.15531405176676305,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C57",
+              "nilai": 2.1409067209711052,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F55",
+              "nilai": -2.140898157374662,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F57",
+              "nilai": 0.09533803843207936,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.0011100324625028819
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.0011100324625028819
+              },
+              "master_memakai_penyebut_skala_sendiri": false,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.09533803843207936,
+                "sumber": "NILAI U95%!F57 (master sudah memakai O55; sama dengan nilai-cache)"
+              }
+            }
+          }
+        },
+        {
+          "titik_ke": 2,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!H33",
+            "nilai": 1.9
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!H34",
+              "PERHITUNGAN!H35",
+              "PERHITUNGAN!H36"
+            ],
+            "nilai": [
+              25.7667,
+              25.7658,
+              25.7685
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!H49",
+              "PERHITUNGAN!H50",
+              "PERHITUNGAN!H51"
+            ],
+            "nilai": [
+              20.4,
+              20.4,
+              20.4
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!H41",
+              "PERHITUNGAN!H42",
+              "PERHITUNGAN!H43"
+            ],
+            "nilai": [
+              25.76295178438647,
+              25.76205190832236,
+              25.764751536514694
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!H44",
+            "nilai": 25.763251743074505
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!H52",
+            "nilai": 20.4
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!H53",
+            "nilai": 72.6892
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!H59",
+            "nilai": 0.9981184511248792
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!H101",
+              "PERHITUNGAN!H102",
+              "PERHITUNGAN!H103"
+            ],
+            "nilai": [
+              1.8964230301474945,
+              1.8963633699729725,
+              1.896542361765358
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!H104",
+            "nilai": 1.8964429206286084
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!H105",
+            "nilai": 9.113856957707426e-05
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F97",
+                "nilai": 9.113856957707426e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G97",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H97",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I97",
+                "nilai": 5.261887767888126e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J97",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K97",
+                "nilai": 5.261887767888126e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L97",
+                "nilai": 2.7687462881850687e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M97",
+                "nilai": 3.832978004169298e-18
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F98",
+                "nilai": 0.001
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G98",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H98",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I98",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "NILAI U95%!J98",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K98",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L98",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M98",
+                "nilai": 1.388888888888889e-16
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F99",
+                "nilai": 2.9049999999999893e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G99",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H99",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I99",
+                "nilai": 1.4524999999999946e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J99",
+                "nilai": 3.5177171559161824
+              },
+              "uici": {
+                "sel": "NILAI U95%!K99",
+                "nilai": 5.109484168968236e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L99",
+                "nilai": 2.6106828472937023e-21
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M99",
+                "nilai": 1.1359441548589255e-43
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F100",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G100",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H100",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I100",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J100",
+                "nilai": -0.0027809542996355676
+              },
+              "uici": {
+                "sel": "NILAI U95%!K100",
+                "nilai": -2.2977634900738874e-13
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L100",
+                "nilai": 5.279717056316531e-26
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M100",
+                "nilai": 4.64590203245995e-53
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F101",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G101",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H101",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I101",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J101",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K101",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L101",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M101",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F102",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G102",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H102",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I102",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J102",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K102",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L102",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M102",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F103",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G103",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H103",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I103",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J103",
+                "nilai": -0.11124518155454279
+              },
+              "uici": {
+                "sel": "NILAI U95%!K103",
+                "nilai": -2.0655387486043013e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L103",
+                "nilai": 4.266450321985823e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M103",
+                "nilai": 3.033766391662155e-21
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F104",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G104",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H104",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I104",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J104",
+                "nilai": 0.15531405176676305
+              },
+              "uici": {
+                "sel": "NILAI U95%!K104",
+                "nilai": 2.883785056071788e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L104",
+                "nilai": 8.316216249622967e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M104",
+                "nilai": 1.1526575451748848e-20
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F105",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G105",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H105",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I105",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J105",
+                "nilai": 2.2591602142211955
+              },
+              "uici": {
+                "sel": "NILAI U95%!K105",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L105",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M105",
+                "nilai": 0.0
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F106",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G106",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H106",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I106",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J106",
+                "nilai": -2.259151177616485
+              },
+              "uici": {
+                "sel": "NILAI U95%!K106",
+                "nilai": -0.0003260803851342345
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L106",
+                "nilai": 1.0632841756929069e-07
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M106",
+                "nilai": 2.261146476557889e-16
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F107",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G107",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H107",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I107",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J107",
+                "nilai": 0.10616095205954539
+              },
+              "uici": {
+                "sel": "NILAI U95%!K107",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L107",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M107",
+                "nilai": 0.0
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K108",
+              "nilai": 8.01981047081617e-05
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L108",
+              "nilai": 1.953251287386304e-07
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M108",
+              "nilai": 3.688780424861983e-16
+            },
+            "uc": {
+              "sel": "NILAI U95%!K109",
+              "nilai": 0.0004419560257973981
+            },
+            "veff": {
+              "sel": "NILAI U95%!K110",
+              "nilai": 103.4268823907837
+            },
+            "k": {
+              "sel": "NILAI U95%!K111",
+              "nilai": 1.9832641447734605
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K112",
+              "nilai": 0.0008765155395305542
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L113",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L114",
+              "nilai": 0.0008765155395305542
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I90",
+              "nilai": 3.5177171559161824,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I92",
+              "nilai": -0.0027809542996355676,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C90",
+              "nilai": -0.11124518155454279,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C93",
+              "nilai": 0.15531405176676305,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C92",
+              "nilai": 2.2591602142211955,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F90",
+              "nilai": -2.259151177616485,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F92",
+              "nilai": 0.10616095205954539,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O90",
+                "nilai": 0.0012360449719160157
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.0011100324625028819
+              },
+              "master_memakai_penyebut_skala_sendiri": true,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.09533803843207936,
+                "sumber": "NILAI U95%!F92 x O55 / O90 (dihitung ulang; bukan nilai-cache)"
+              }
+            }
+          }
+        },
+        {
+          "titik_ke": 3,
+          "titik_ukur": {
+            "sel": "PERHITUNGAN!I33",
+            "nilai": 2.0
+          },
+          "massa": {
+            "sel": [
+              "PERHITUNGAN!I34",
+              "PERHITUNGAN!I35",
+              "PERHITUNGAN!I36"
+            ],
+            "nilai": [
+              27.1826,
+              27.1814,
+              27.1837
+            ]
+          },
+          "suhu": {
+            "sel": [
+              "PERHITUNGAN!I49",
+              "PERHITUNGAN!I50",
+              "PERHITUNGAN!I51"
+            ],
+            "nilai": [
+              20.4,
+              20.4,
+              20.4
+            ]
+          },
+          "massa_terkoreksi_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!I41",
+              "PERHITUNGAN!I42",
+              "PERHITUNGAN!I43"
+            ],
+            "nilai": [
+              27.178656805693706,
+              27.177456970941552,
+              27.179756654216508
+            ]
+          },
+          "massa_terkoreksi_rata": {
+            "sel": "PERHITUNGAN!I44",
+            "nilai": 27.178623476950587
+          },
+          "suhu_rata": {
+            "sel": "PERHITUNGAN!I52",
+            "nilai": 20.4
+          },
+          "tegangan_permukaan_titik": {
+            "sel": "PERHITUNGAN!I53",
+            "nilai": 72.6892
+          },
+          "rho_air_titik": {
+            "sel": "PERHITUNGAN!I59",
+            "nilai": 0.9981184511248792
+          },
+          "densitas_per_ulangan": {
+            "sel": [
+              "PERHITUNGAN!I101",
+              "PERHITUNGAN!I102",
+              "PERHITUNGAN!I103"
+            ],
+            "nilai": [
+              1.9951751824915664,
+              1.9950871314769896,
+              1.9952559027531929
+            ]
+          },
+          "densitas_rata": {
+            "sel": "PERHITUNGAN!I104",
+            "nilai": 1.9951727389072496
+          },
+          "simpangan_baku": {
+            "sel": "PERHITUNGAN!I105",
+            "nilai": 8.441216882687723e-05
+          },
+          "komponen": {
+            "Hydrometer Indication": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F131",
+                "nilai": 8.441216882687723e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G131",
+                "nilai": 1.7320508075688772
+              },
+              "vi": {
+                "sel": "NILAI U95%!H131",
+                "nilai": 2.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I131",
+                "nilai": 4.873538839507771e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J131",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K131",
+                "nilai": 4.873538839507771e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L131",
+                "nilai": 2.375138082019075e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M131",
+                "nilai": 2.820640454328625e-18
+              }
+            },
+            "Resolution of Hydrometer": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F132",
+                "nilai": 0.001
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G132",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H132",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I132",
+                "nilai": 0.0002886751345948129
+              },
+              "ci": {
+                "sel": "NILAI U95%!J132",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K132",
+                "nilai": 0.0002886751345948129
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L132",
+                "nilai": 8.333333333333334e-08
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M132",
+                "nilai": 1.388888888888889e-16
+              }
+            },
+            "Liquid Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F133",
+                "nilai": 2.9049999999999893e-11
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G133",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H133",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I133",
+                "nilai": 1.4524999999999946e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J133",
+                "nilai": 3.7019281917107314
+              },
+              "uici": {
+                "sel": "NILAI U95%!K133",
+                "nilai": 5.3770506984598176e-11
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L133",
+                "nilai": 2.8912674213807213e-21
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M133",
+                "nilai": 1.3932378836562543e-43
+              }
+            },
+            "Air Temperature": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F134",
+                "nilai": 1.6524999999999997e-10
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G134",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H134",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I134",
+                "nilai": 8.262499999999999e-11
+              },
+              "ci": {
+                "sel": "NILAI U95%!J134",
+                "nilai": -0.002984273372255747
+              },
+              "uici": {
+                "sel": "NILAI U95%!K134",
+                "nilai": -2.4657558738263105e-13
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L134",
+                "nilai": 6.079952029308952e-26
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M134",
+                "nilai": 6.1609694464496745e-53
+              }
+            },
+            "Density of Liquid Reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F135",
+                "nilai": 5e-05
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G135",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H135",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I135",
+                "nilai": 2.5e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J135",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K135",
+                "nilai": 2.5e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L135",
+                "nilai": 6.25e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M135",
+                "nilai": 6.5104166666666674e-21
+              }
+            },
+            "Density of Air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F136",
+                "nilai": 0.00011016523357163884
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G136",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H136",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I136",
+                "nilai": 3.180196362896184e-05
+              },
+              "ci": {
+                "sel": "NILAI U95%!J136",
+                "nilai": 1.0
+              },
+              "uici": {
+                "sel": "NILAI U95%!K136",
+                "nilai": 3.180196362896184e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L136",
+                "nilai": 1.0113648906578116e-09
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M136",
+                "nilai": 2.0457178841105744e-20
+              }
+            },
+            "Mass of Hydrometer in the air": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F137",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G137",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H137",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I137",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J137",
+                "nilai": -0.11343808530839361
+              },
+              "uici": {
+                "sel": "NILAI U95%!K137",
+                "nilai": -2.1062553676276423e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L137",
+                "nilai": 4.4363116736602546e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M137",
+                "nilai": 3.2801435443090414e-21
+              }
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F138",
+                "nilai": 0.0003713488925525428
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G138",
+                "nilai": 2.0
+              },
+              "vi": {
+                "sel": "NILAI U95%!H138",
+                "nilai": 60.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I138",
+                "nilai": 0.0001856744462762714
+              },
+              "ci": {
+                "sel": "NILAI U95%!J138",
+                "nilai": 0.15531405176676305
+              },
+              "uici": {
+                "sel": "NILAI U95%!K138",
+                "nilai": 2.883785056071788e-05
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L138",
+                "nilai": 8.316216249622967e-10
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M138",
+                "nilai": 1.1526575451748848e-20
+              }
+            },
+            "Stem Diameter": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F139",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G139",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H139",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I139",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J139",
+                "nilai": 2.1409067209711052
+              },
+              "uici": {
+                "sel": "NILAI U95%!K139",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L139",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M139",
+                "nilai": 0.0
+              }
+            },
+            "Local Gravity": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F140",
+                "nilai": 0.0005
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G140",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H140",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I140",
+                "nilai": 0.00014433756729740645
+              },
+              "ci": {
+                "sel": "NILAI U95%!J140",
+                "nilai": -2.377455280589944
+              },
+              "uici": {
+                "sel": "NILAI U95%!K140",
+                "nilai": -0.00034315611155872537
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L140",
+                "nilai": 1.1775611690010438e-07
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M140",
+                "nilai": 2.7733006134782097e-16
+              }
+            },
+            "Surface Tension of liquid reference": {
+              "u_mentah": {
+                "sel": "NILAI U95%!F141",
+                "nilai": 0.0
+              },
+              "pembagi": {
+                "sel": "NILAI U95%!G141",
+                "nilai": 3.4641016151377544
+              },
+              "vi": {
+                "sel": "NILAI U95%!H141",
+                "nilai": 50.0
+              },
+              "ui": {
+                "sel": "NILAI U95%!I141",
+                "nilai": 0.0
+              },
+              "ci": {
+                "sel": "NILAI U95%!J141",
+                "nilai": 0.11757065873807891
+              },
+              "uici": {
+                "sel": "NILAI U95%!K141",
+                "nilai": 0.0
+              },
+              "uici_kuadrat": {
+                "sel": "NILAI U95%!L141",
+                "nilai": 0.0
+              },
+              "uici4_per_vi": {
+                "sel": "NILAI U95%!M141",
+                "nilai": 0.0
+              }
+            }
+          },
+          "agregat": {
+            "jumlah_uici": {
+              "sel": "NILAI U95%!K142",
+              "nilai": 5.883172546849991e-05
+            },
+            "jumlah_uici_kuadrat": {
+              "sel": "NILAI U95%!L142",
+              "nilai": 2.063762059984458e-07
+            },
+            "sigma_uici4_per_vi": {
+              "sel": "NILAI U95%!M142",
+              "nilai": 4.190813650055424e-16
+            },
+            "uc": {
+              "sel": "NILAI U95%!K143",
+              "nilai": 0.0004542864800964759
+            },
+            "veff": {
+              "sel": "NILAI U95%!K144",
+              "nilai": 101.62975965717222
+            },
+            "k": {
+              "sel": "NILAI U95%!K145",
+              "nilai": 1.9837310029556046
+            },
+            "u_hitung": {
+              "sel": "NILAI U95%!K146",
+              "nilai": 0.0009011821747909535
+            },
+            "cmc_ketikan": {
+              "sel": "NILAI U95%!L147",
+              "nilai": 0.0007
+            },
+            "u_cetak": {
+              "sel": "NILAI U95%!L148",
+              "nilai": 0.0009011821747909535
+            }
+          },
+          "ci_turunan": {
+            "Liquid Temperature": {
+              "sel": "NILAI U95%!I124",
+              "nilai": 3.7019281917107314,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Air Temperature": {
+              "sel": "NILAI U95%!I126",
+              "nilai": -0.002984273372255747,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in the air": {
+              "sel": "NILAI U95%!C124",
+              "nilai": -0.11343808530839361,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Mass of Hydrometer in Liquid Ref": {
+              "sel": "NILAI U95%!C127",
+              "nilai": 0.15531405176676305,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Stem Diameter": {
+              "sel": "NILAI U95%!C126",
+              "nilai": 2.377464790411066,
+              "selisih_relatif_terhadap_ci_komponen": 0.0995001357723829
+            },
+            "Local Gravity": {
+              "sel": "NILAI U95%!F124",
+              "nilai": -2.377455280589944,
+              "selisih_relatif_terhadap_ci_komponen": 0.0
+            },
+            "Surface Tension of liquid reference": {
+              "sel": "NILAI U95%!F126",
+              "nilai": 0.11757065873807891,
+              "selisih_relatif_terhadap_ci_komponen": 0.0,
+              "penyebut_skala": {
+                "sel": "NILAI U95%!O124",
+                "nilai": 0.0013688895847179777
+              },
+              "penyebut_skala1": {
+                "sel": "NILAI U95%!O55",
+                "nilai": 0.0011100324625028819
+              },
+              "master_memakai_penyebut_skala_sendiri": true,
+              "skenario_ci_penyebut_skala1": {
+                "nilai": 0.09533803843207934,
+                "sumber": "NILAI U95%!F126 x O55 / O124 (dihitung ulang; bukan nilai-cache)"
+              }
+            }
+          },
+          "skenario_ci_stem_C126": {
+            "uc": 0.0004542864800964759,
+            "veff": 101.62975965717223,
+            "k": 1.983731002885281,
+            "u_hitung": 0.0009011821747590064,
+            "u_cetak": 0.0009011821747590064,
+            "ci_stem_diganti": 2.377464790411066,
+            "sumber": "rantai NILAI U95% skala 3 dihitung ulang dengan ci Stem Diameter = NILAI U95%!C126"
+          }
+        }
+      ],
+      "sertifikat": {
+        "titik": [
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E17",
+              "nilai": 1.8,
+              "format": "0.000",
+              "teks": "1.800",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J17",
+              "nilai": 1.7977039914852708,
+              "format": "0.000",
+              "teks": "1.798",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O17",
+              "nilai": -0.0022960085147292197,
+              "format": "0.000",
+              "teks": "-0.002",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S17",
+              "nilai": 0.0008669981172366112,
+              "format": "0.0000",
+              "teks": "0.0009",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E18",
+              "nilai": 1.9,
+              "format": "0.000",
+              "teks": "1.900",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J18",
+              "nilai": 1.8964429206286084,
+              "format": "0.000",
+              "teks": "1.896",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O18",
+              "nilai": -0.0035570793713914917,
+              "format": "0.000",
+              "teks": "-0.004",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S18",
+              "nilai": 0.0008765155395305542,
+              "format": "0.0000",
+              "teks": "0.0009",
+              "nol_bertanda_minus": false
+            }
+          },
+          {
+            "nominal": {
+              "sel": "SERTIFIKAT!E19",
+              "nilai": 2.0,
+              "format": "0.000",
+              "teks": "2.000",
+              "nol_bertanda_minus": false
+            },
+            "aktual": {
+              "sel": "SERTIFIKAT!J19",
+              "nilai": 1.9951727389072496,
+              "format": "0.000",
+              "teks": "1.995",
+              "nol_bertanda_minus": false
+            },
+            "koreksi": {
+              "sel": "SERTIFIKAT!O19",
+              "nilai": -0.004827261092750446,
+              "format": "0.000",
+              "teks": "-0.005",
+              "nol_bertanda_minus": false
+            },
+            "u95": {
+              "sel": "SERTIFIKAT!S19",
+              "nilai": 0.0009011821747909535,
+              "format": "0.0000",
+              "teks": "0.0009",
+              "nol_bertanda_minus": false
+            }
+          }
+        ],
+        "k": {
+          "sel": "SERTIFIKAT!U23",
+          "nilai": 1.9839715185235556,
+          "format": "0",
+          "teks": "2",
+          "nol_bertanda_minus": false
+        },
+        "resolusi": {
+          "sel": "SERTIFIKAT!I10",
+          "nilai": 0.001,
+          "format": "0.000",
+          "teks": "0.001",
+          "nol_bertanda_minus": false
+        }
+      }
+    }
+  }
+}
