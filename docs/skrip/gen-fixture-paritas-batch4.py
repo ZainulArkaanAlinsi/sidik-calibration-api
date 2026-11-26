@@ -46,9 +46,14 @@ AKAR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 KELUAR = os.path.join(AKAR, 'tests', 'Fixtures', 'paritas')
 
 TOL_REKONSTRUKSI = 1e-11
+# `TINV` Excel mendekati kuantil t; selisihnya terhadap kuantil eksak ~1e-11 relatif di derajat
+# bebas ratusan ribu (rpm), dan menular ke U = k*uc. Sama dengan TOL_K_REL di MenegakkanParitas.
+TOL_REKONSTRUKSI_K = 1e-9
 
 BERKAS = {
     'do_meter': 'EXEL CALIBRATION SIDIK/Master Olah Data_DO Meter.xlsm',
+    'tachometer': 'EXEL CALIBRATION SIDIK/Master Olda Tachometer.xlsm',
+    'centrifuge': 'EXEL CALIBRATION SIDIK/Master Olda Centrifuge.xlsm',
 }
 
 I, P, U, DB, S = 'INPUT DATA', 'PERHITUNGAN', 'PERHITUNGAN U95%', 'DATABASE', 'SERTIFIKAT'
@@ -351,8 +356,201 @@ def do_meter(path):
     return hasil
 
 
+# ----------------------------------------------------------------------------
+# Kelompok putaran (rpm): Tachometer dan Centrifuge. Satu mesin hitung, dua workbook
+# berbentuk sama; yang berbeda hanya jumlah blok dan urutan kolom SERTIFIKAT.
+# ----------------------------------------------------------------------------
+KOL_RPM = dict(u='N', pembagi='Q', vi='S', ui='U', ci='X', uici='Z', kuadrat='AC', pangkat4='AG', agg='AC')
+KOMP_RPM = ['ketidakpastian_standar', 'resolusi_standar', 'resolusi_alat', 'drift_standar', 'pengulangan_pembacaan']
+KOLOM_UKUR = ('G', 'I', 'K')
+DRIFT = 'Drift Std Kalibrator'
+SK = 'SERTIFIKAT KALIBRATOR'
+SERT_AWAL, SERT_AKHIR = 19, 40
+
+
+def _baris_sertifikat(s, kolom_c, kolom_j, rujukan):
+    """Baris `SERTIFIKAT` yang kolom C atau J-nya menunjuk `PERHITUNGAN!<rujukan>`, dari rumusnya."""
+    cocok = []
+    for r in range(SERT_AWAL, SERT_AKHIR):
+        for kol in (kolom_c, kolom_j):
+            if s.rumus(S, f'{kol}{r}') == f'=PERHITUNGAN!{rujukan}':
+                cocok.append((r, kol))
+    if len(cocok) != 1:
+        raise SystemExit(f'putaran: PERHITUNGAN!{rujukan} dirujuk {len(cocok)} kali di SERTIFIKAT (harus 1).')
+    return cocok[0]
+
+
+def _rujukan_pengulangan(rumus, baris_sendiri):
+    """Bentuk dan baris yang dirujuk rumus komponen pengulangan, dibanding baris stdev blok sendiri."""
+    m = re.fullmatch(r'=MAX\(PERHITUNGAN!G(\d+):L(\d+)\)', rumus or '')
+    if m and m.group(1) == m.group(2):
+        bentuk, baris = 'max_sebaris', int(m.group(1))
+    else:
+        m = re.fullmatch(r'=PERHITUNGAN!G(\d+)', rumus or '')
+        bentuk, baris = ('satu_sel', int(m.group(1))) if m else ('lain', None)
+    return {'rumus': rumus, 'bentuk': bentuk, 'baris': baris, 'baris_stdev_blok_sendiri': baris_sendiri,
+            'ke_baris_sendiri': baris == baris_sendiri}
+
+
+def _masukan_resolusi_standar(s, rumus):
+    """Sel masukan daya baca tachometer standar (`=K94*0.5` -> K94) beserta label pita di sel atasnya."""
+    m = re.fullmatch(r'=([A-Z]+)(\d+)\*0\.5', rumus or '')
+    if not m:
+        raise SystemExit(f'putaran: rumus resolusi standar {rumus!r} bukan =<sel>*0.5.')
+    kol, baris = m.group(1), int(m.group(2))
+    return {'masukan': s.sel(U, f'{kol}{baris}'), 'label_pita': s.teks(U, f'{kol}{baris - 1}')}
+
+
+def _tabel_sertifikat_kalibrator(s):
+    """Baris sertifikat kalibrator (nominal, koreksi = nominal - UUT, U95 bila ada) dari sheet `SERTIFIKAT KALIBRATOR`."""
+    baris = []
+    for r in range(9, 30):
+        nominal = angka(s.nilai(SK, f'C{r}'))
+        if nominal is None:
+            continue
+        u95 = angka(s.nilai(SK, f'F{r}'))
+        baris.append({
+            'nominal': s.sel(SK, f'C{r}'),
+            'koreksi': s.sel(SK, f'E{r}'),
+            'u95': s.sel(SK, f'F{r}') if u95 is not None else None,
+        })
+    return baris
+
+
+def putaran(path, jenis, baris_ukur, blok_u95, rusak):
+    """Fixture satu alat rpm. `rusak`: {indeks blok: catatan} untuk blok yang rusak di master."""
+    sha, wf, wv = buka(path)
+    s = Sumber(wf, wv)
+
+    titik, ke = [], 0
+    peta_baris = {}
+    for r in baris_ukur:
+        for c in KOLOM_UKUR:
+            ke += 1
+            sp = s.n(P, f'{c}{r + 1}', wajib=False)
+            baca = [s.n(P, f'{c}{r + 3 + i}', wajib=False) for i in range(5)]
+            if sp is None or any(b is None for b in baca):
+                continue
+            sel_sp, sel_tk = f'{c}{r + 1}', f'{c}{r + 11}'
+            baris_c, kol_sp = _baris_sertifikat(s, 'C', 'J', sel_sp)
+            baris_tk, kol_tk = _baris_sertifikat(s, 'C', 'J', sel_tk)
+            if baris_c != baris_tk or kol_sp == kol_tk:
+                raise SystemExit(f'putaran: titik {ke} set point dan terkoreksi tidak sebaris di SERTIFIKAT.')
+            if s.rumus(S, f'P{baris_c}') != f'=C{baris_c}-J{baris_c}':
+                raise SystemExit(f'putaran: P{baris_c} bukan C-J.')
+            peta_baris[ke] = baris_c
+            titik.append({
+                'titik_ke': ke, 'baris': r, 'kolom': c,
+                'set_point': s.sel(P, sel_sp),
+                'pembacaan': s.deret(P, [f'{c}{r + 3 + i}' for i in range(5)]),
+                'excel': {
+                    'rata_rata': s.sel(P, f'{c}{r + 8}'),
+                    'nominal_standar': s.sel(P, f'{c}{r + 9}'),
+                    'koreksi_standar': s.sel(P, f'{c}{r + 10}'),
+                    'nilai_terkoreksi': s.sel(P, sel_tk),
+                    'koreksi': s.sel(P, f'{c}{r + 12}'),
+                    'standar_deviasi': s.sel(P, f'{c}{r + 13}'),
+                },
+                # Kolom mana di SERTIFIKAT memegang set point dan mana terkoreksi (urutan beda per alat).
+                'cetak': {
+                    'kolom_set_point': kol_sp, 'kolom_terkoreksi': kol_tk,
+                    'set_point': cetak(s, S, f'{kol_sp}{baris_c}'),
+                    'terkoreksi': cetak(s, S, f'{kol_tk}{baris_c}'),
+                    'koreksi': cetak(s, S, f'P{baris_c}'),
+                },
+            })
+
+    blok = []
+    for idx, (r_ukur, r0) in enumerate(zip(baris_ukur, blok_u95)):
+        komp, agg, rk = blok_budget(s, KOL_RPM, r0, KOMP_RPM)
+        rantai_blok = rantai([(komp[x]['ui']['nilai'], komp[x]['ci']['nilai'], komp[x]['vi']['nilai']) for x in KOMP_RPM])
+        rk_uc_veff = max(rel(rantai_blok['uc'], agg['uc']['nilai']), rel(rantai_blok['veff'], agg['veff']['nilai']))
+        if rk_uc_veff > TOL_REKONSTRUKSI or rk > TOL_REKONSTRUKSI_K:
+            raise SystemExit(f'{jenis}: rekonstruksi blok r{r0} menyimpang dari cache '
+                             f'(uc/veff {rk_uc_veff:.3e}, termasuk k {rk:.3e}); berhenti.')
+        sel_u95 = f'AC{r0 + 11}'
+        baris_u95 = [r for r in range(SERT_AWAL, SERT_AKHIR)
+                     if s.rumus(S, f'S{r}') == f"='PERHITUNGAN U95%'!{sel_u95}"]
+        if len(baris_u95) != 1:
+            raise SystemExit(f'{jenis}: U95 blok r{r0} dirujuk {len(baris_u95)} kali di SERTIFIKAT.')
+        blok.append({
+            'baris_ukur': r_ukur, 'baris_u95': r0,
+            'titik_ke': [t['titik_ke'] for t in titik if t['baris'] == r_ukur],
+            'rusak': idx in rusak, 'catatan': rusak.get(idx),
+            'pengulangan_rujukan': _rujukan_pengulangan(s.rumus(U, f'N{r0 + 4}'), r_ukur + 13),
+            'komponen': komp, 'agregat': agg,
+            'rumus_komponen': {n: {'sel': f'{U}!N{r0 + j}', 'rumus': s.rumus(U, f'N{r0 + j}')} for j, n in enumerate(KOMP_RPM)},
+            'rumus_cmc': {'sel': f'{U}!AC{r0 + 10}', 'rumus': s.rumus(U, f'AC{r0 + 10}')},
+            'resolusi_uut_ditampilkan': s.sel(U, f'N{r0 + 2}'),
+            'resolusi_standar_masukan': _masukan_resolusi_standar(s, s.rumus(U, f'N{r0 + 1}')),
+            'cetak_u95': cetak(s, S, f'S{baris_u95[0]}'),
+            'selisih_rekonstruksi': rk,
+            'selisih_rekonstruksi_uc_veff': rk_uc_veff,
+        })
+
+    k_baris = [r for r in range(SERT_AWAL, SERT_AKHIR + 10)
+               if s.rumus(S, f'U{r}') == f"='PERHITUNGAN U95%'!AC17"]
+    if len(k_baris) != 1:
+        raise SystemExit(f'{jenis}: sel k di SERTIFIKAT dirujuk {len(k_baris)} kali.')
+
+    cmc_pita = []
+    for r in range(5, 10):
+        label, nilai = s.nilai(DB, f'R{r}'), s.nilai(DB, f'S{r}')
+        if isinstance(label, str) and angka(nilai) is not None:
+            cmc_pita.append({'label': {'sel': f'{DB}!R{r}', 'nilai': label}, 'cmc': s.sel(DB, f'S{r}')})
+
+    hasil = {
+        'label': jenis,
+        'berkas': os.path.basename(path),
+        'sha256_12': sha[:12],
+        'titik': titik,
+        'blok': blok,
+        'cetak_k': cetak(s, S, f'U{k_baris[0]}'),
+        'k_blok_pertama': s.sel(U, 'AC17'),
+        'drift': {
+            'k35': s.sel(DRIFT, 'K35'),
+            'rumus_k35': {'sel': f'{DRIFT}!K35', 'rumus': s.rumus(DRIFT, 'K35')},
+            # Kolom K (rentang koreksi lintas sertifikat) hanya berrumus di baris-baris ini.
+            'baris_berrumus': [r for r in range(13, 35) if s.rumus(DRIFT, f'K{r}')],
+        },
+        'cmc_pita': cmc_pita,
+        'sertifikat_kalibrator': _tabel_sertifikat_kalibrator(s),
+        'rekonstruksi': {
+            'selisih_relatif_maks_terhadap_cache': max(b['selisih_rekonstruksi'] for b in blok),
+            'catatan': 'komponen -> uc -> veff -> k (t 0,975; floor(veff)) -> U -> max(U, CMC) dihitung ulang dari sel komponen per blok',
+        },
+    }
+    print(f'{jenis}: ok, {len(titik)} titik, {len(blok)} blok, rekonstruksi maks '
+          f'{hasil["rekonstruksi"]["selisih_relatif_maks_terhadap_cache"]:.2e}')
+    return hasil
+
+
+CATATAN_TACHO_BLOK5 = (
+    'Rusak di tiga tempat: pita sertifikat kalibrator menunjuk F15 (1,6) padahal nominal standar tertinggi '
+    'blok (titik 14000 rpm, nominal 15000) bernaung di F18 (3,1); u_drift menunjuk tautan luar ke sel K54 '
+    'workbook lain yang kosong (ter-cache 0); pengulangan menunjuk PERHITUNGAN!G113:L113 yang kosong (0). '
+    'Penyimpangan keempat di luar daftar tiga itu: daya baca tachometer standar K94 diketik 0,1 (K93 '
+    'berlabel 7000-10000) padahal blok ini berisi titik sampai 14000 rpm dan aplikasi memakai 1 di atas '
+    '10000 rpm (blok 6 K113 = 1), jadi komponen resolusi standar blok ini 10x lebih kecil di Excel.'
+)
+CATATAN_CENTRI_BLOK1 = (
+    'Pengulangan menunjuk PERHITUNGAN!G34, SATU sel, sementara sepuluh blok lain di kedua workbook memakai '
+    'MAX() sebaris penuh; workbook Tachometer memakai MAX(G34:L34) di blok yang datanya sama.'
+)
+
+
+def tachometer(path):
+    return putaran(path, 'Infrared Tachometer', [21, 36, 51, 66, 81, 96], [9, 40, 60, 79, 98, 117], {4: CATATAN_TACHO_BLOK5})
+
+
+def centrifuge(path):
+    return putaran(path, 'Centrifuge', [21, 36, 51, 66, 81], [9, 40, 60, 79, 98], {0: CATATAN_CENTRI_BLOK1})
+
+
 GENERATOR = {
     'do_meter': ('do-meter.json', do_meter),
+    'tachometer': ('tachometer.json', tachometer),
+    'centrifuge': ('centrifuge.json', centrifuge),
 }
 
 
