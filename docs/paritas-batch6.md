@@ -9,8 +9,11 @@ Label: **SAMA** = aplikasi = Excel dalam toleransi bertulis, dibuktikan tes yang
 | Alat | Hasil | SAMA | SELISIH | MENUNGGU |
 |---|---|---|---|---|
 | Height Gauge (mm, 10 titik, 600 mm) | Semua tahap SAMA kecuali komponen drift; U95 aplikasi 0,0154996 lawan Excel 0,0156680 mm, tercetak `0.015` lawan `0.016`, dan selisih itu habis dijelaskan B6-1 | 17 | 3 (B6-1..B6-3) | 2 |
+| Differential Pressure | DILEWATI: tidak ada bukti tambahan yang tidak menggandakan (bagian 5) | - | - | - |
+| Vacuum Gauge | DILEWATI: tidak punya workbook sendiri, tercakup lewat DRUCK13G jenis vakum (bagian 6) | - | - | - |
 
-Bagian Differential Pressure dan Vacuum Gauge ditambahkan di bawah (bagian 5 dan 6) sesuai urutan pengerjaan.
+Dua alat terakhir dilewati dengan alasan di bagian 5 dan 6; tidak ada tes baru untuk keduanya.
+
 
 ## 2. Cara membaca, menjalankan, dan menghasilkan ulang
 
@@ -78,10 +81,18 @@ Tiga mutasi sementara pada `app/` (dipulihkan dari `HEAD`; `git diff -- app` kos
 - Komponen resolusi dibagi 2 bukan akar 3: tes komponen budget dan tes agregat/profil merah (uc 0,00726 lawan 0,00741; selisih 1,4e-4).
 - `TITIK_DICETAK_SERTIFIKAT` [1, 6, 10] -> [1, 5, 10]: tes titik tercetak merah.
 
-## 5. Differential Pressure
+## 5. Differential Pressure: dilewati
 
-(diisi setelah dikerjakan atau dilewati)
+Workbook ada (`Master Olda Pressure Differential.xlsm`, varian `Tabel::DIFFERENTIAL`), tetapi bukti app-lawan-Excel untuk varian ini SUDAH ada dan tes baru hanya akan menggandakannya:
 
-## 6. Vacuum Gauge
+- Rantai `PERHITUNGAN FC` dan `PERHITUNGAN U95%` (962 sel keempat master, toleransi 1e-12, mode MASTER dan BENAR): `tests/Unit/TekananMasterTest.php`, di `main`. Nilai harapannya dari `database/data/sesi-master-tekanan.json`, yang dibangun `docs/skrip/gen-tabel-standar-tekanan.py` dari cache workbook yang sama.
+- CMC lampiran (no. 26, 0,0093 mbar) lawan sel master: `tests/Feature/TekananCmcTest.php`, di `main`.
+- Lembar `SERTIFIKAT` langsung (tabel hasil, U95 `P35`, k `U36`, nilai dan teks tercetak, mode MASTER dan BENAR, termasuk selisih T-2 yang ditahan): `tests/Feature/Paritas/ParitasTekananTest.php`, di PR #309 (terbuka, belum digabung), dengan fixture `tests/Fixtures/paritas/tekanan.json`.
+- Jalur sesi ujung ke ujung (preview, simpan, tabel sertifikat): `tests/Feature/TekananSesiTest.php` (varian Differential ada di sana).
+- `DifferentialPressureProfile` hanya subclass identitas dari `TekananProfile` (kode, nama CMC, alias, varian, jenis non-vakum, kode IK); semua hitungannya di `TekananCalculator`/`TekananProfile`, yang sudah diadu di atas.
 
-(diisi setelah dikerjakan atau dilewati)
+Membuat fixture lembar `SERTIFIKAT` Differential di cabang ini berarti mengulang fixture #309 (berkas `tekanan.json` yang sama akan bentrok saat digabung). Yang BELUM ada dan tidak dikerjakan di sini: jalur `HitungUlangSesi`/validator untuk Tekanan (butir PR-9 di `docs/paritas-batch4.md`, butuh DB, ranah gate MySQL).
+
+## 6. Vacuum Gauge: dilewati
+
+Tidak ada workbook sendiri. `VacuumGaugeProfile` memakai varian yang sama dengan Pressure Gauge (DRUCK07G -0,8~2 bar dan DRUCK13G 0~20 bar; `database/data/sesi-master-tekanan.json` hanya memuat empat sesi: `druck07g`, `druck13g`, `spmk`, `differential`). Jenis vakum diadu lewat sesi `druck13g` (`jenis_tekanan = vakum`): rantai di `TekananMasterTest` (termasuk `test_t11_druck13g_vakum_membaca_kolom_u95_hanya_di_mode_master`) dan lembar `SERTIFIKAT` di PR #309 (butir PR-6, selisih ditahan T-2 dan T-11). CMC vakum diadu `TekananCmcTest` (kasus `07G vakum` dan `13G vakum` memakai `VacuumGaugeProfile`). Batas bukti: sesi tersimpan DRUCK07G di `sesi-master-tekanan.json` berjenis `non_vakum`, jadi 07G sebagai Vacuum Gauge hanya punya bukti CMC, tidak punya sesi hitung acuan dari workbook. Tes baru di sini akan menggandakan, jadi dilewati.
