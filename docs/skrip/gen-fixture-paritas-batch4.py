@@ -55,6 +55,7 @@ BERKAS = {
     'tachometer': 'EXEL CALIBRATION SIDIK/Master Olda Tachometer.xlsm',
     'centrifuge': 'EXEL CALIBRATION SIDIK/Master Olda Centrifuge.xlsm',
     'thermohygro': 'EXEL CALIBRATION SIDIK/Master Olah Data Suhu & Kelembapan.xlsm',
+    'tekanan': '.',   # empat workbook di folder Downloads itu sendiri, lihat TEKANAN_BERKAS
 }
 
 I, P, U, DB, S = 'INPUT DATA', 'PERHITUNGAN', 'PERHITUNGAN U95%', 'DATABASE', 'SERTIFIKAT'
@@ -668,11 +669,69 @@ def thermohygro(path):
     return hasil
 
 
+TEKANAN_BERKAS = {
+    'druck07g': 'Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm',
+    'druck13g': 'Master Olda Pressure DRUCK13G 0~20bar.xlsm',
+    'spmk': 'Master Olda Pressure SPMK.xlsm',
+    'differential': 'Master Olda Pressure Differential.xlsm',
+}
+# Kolom tabel hasil SERTIFIKAT: E setelan, I/L standar naik/turun, N/P koreksi naik/turun, R/T/V histeresis 1..3.
+TEKANAN_KOLOM = {'setelan': 'E', 'standar_up': 'I', 'standar_down': 'L', 'koreksi_up': 'N', 'koreksi_down': 'P',
+                 'histeresis_1': 'R', 'histeresis_2': 'T', 'histeresis_3': 'V'}
+TEKANAN_BARIS_AWAL = 22
+
+
+def teks_umum(nilai):
+    """Teks sel berformat `General`: bilangan bulat tanpa desimal, selain itu 15 angka penting."""
+    if float(nilai).is_integer():
+        return str(int(nilai))
+    return f'{nilai:.15g}'
+
+
+def cetak_k(s, sheet, sel):
+    fmt = s.format(sheet, sel)
+    v = s.n(sheet, sel)
+    return {'sel': f'{sheet}!{sel}', 'nilai': v, 'format': fmt, 'teks': teks_umum(v) if fmt == 'General' else teks_excel(v, fmt)}
+
+
+def tekanan_satu(path):
+    """Tabel hasil SERTIFIKAT (E22:V..), U95 `P35` dan k `U36` satu master tekanan: nilai, format, teks tercetak."""
+    sha, wf, wv = buka(path)
+    s = Sumber(wf, wv)
+    n = 0
+    while angka(s.nilai(S, f'E{TEKANAN_BARIS_AWAL + n}')) is not None:
+        n += 1
+    if n == 0:
+        raise ValueError('tabel SERTIFIKAT kosong')
+    baris = [
+        {'baris': TEKANAN_BARIS_AWAL + i, **{k: cetak(s, S, f'{c}{TEKANAN_BARIS_AWAL + i}') for k, c in TEKANAN_KOLOM.items()}}
+        for i in range(n)
+    ]
+    # Satuan kolom (`E20`) dan U95 (`S35`) adalah teks satuan alat, bukan data pelanggan.
+    hasil = {
+        'sha256': sha,
+        'satuan_kolom': s.teks(S, 'E20'),
+        'satuan_u95': s.teks(S, 'S35'),
+        'baris': baris,
+        'u95': cetak(s, S, 'P35'),
+        'k': cetak_k(s, S, 'U36'),
+    }
+    wv.close()
+    return hasil
+
+
+def tekanan(sumber):
+    hasil = {nama: tekanan_satu(os.path.join(sumber, berkas)) for nama, berkas in TEKANAN_BERKAS.items()}
+    print('tekanan: ok, ' + ', '.join(f'{n}={len(v["baris"])} baris' for n, v in hasil.items()))
+    return {'label': 'Master Pressure (DRUCK07G, DRUCK13G, SPMK, Differential): lembar SERTIFIKAT', 'varian': hasil}
+
+
 GENERATOR = {
     'do_meter': ('do-meter.json', do_meter),
     'tachometer': ('tachometer.json', tachometer),
     'centrifuge': ('centrifuge.json', centrifuge),
     'thermohygro': ('thermohygro.json', thermohygro),
+    'tekanan': ('tekanan.json', tekanan),
 }
 
 
