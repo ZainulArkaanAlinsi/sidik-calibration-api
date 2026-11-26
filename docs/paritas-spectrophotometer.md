@@ -4,7 +4,7 @@ Dibuat 26 Nov 2026 (cabang `feat/paritas-batch3`, dari `origin/main` ea6f4b07). 
 
 Label: **SAMA** = aplikasi = Excel dalam toleransi bertulis, dibuktikan tes yang dijalankan. **SELISIH** = beda yang terukur (konflik bernomor, tes menegaskan perilaku aplikasi SEKARANG dengan penanda `SELISIH P-nn`). **MENUNGGU** = butuh keputusan orang atau bukti yang belum ada, atau belum diuji di sini (alasannya ditulis). Status "TERBUKTI" per alat BUKAN diputuskan di sini; ini bukti yang tersedia untuk koordinator dan TM.
 
-Hanya perilaku BAWAAN yang diuji. Keputusan bawaan yang dirujuk ada di `C:\Users\USER\sidik-dokumentasi\2026-11-25\keputusan\KEPUTUSAN-DEFAULT.md` (nomor #). Konfigurasi `kalibrasi.r2_spektro` dipatok ke `rsq_standar_uut` (nilai bawaan produksi) dan parameter keputusan metode dibiarkan di bawaannya.
+Hanya perilaku BAWAAN yang diuji. Keputusan bawaan yang dirujuk ada di dokumen keputusan bawaan lab (nomor #). Konfigurasi `kalibrasi.r2_spektro` dipatok ke `rsq_standar_uut` (nilai bawaan produksi) dan parameter keputusan metode dibiarkan di bawaannya.
 
 ## 1. Ringkasan
 
