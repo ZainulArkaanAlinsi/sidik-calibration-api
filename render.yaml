@@ -214,14 +214,21 @@ services:
         sync: false
 
       # OCR awan Google Cloud Vision (DOCUMENT_TEXT_DETECTION), keputusan pemilik
-      # 23 Nov 2026. BAWAAN MATI dan sengaja TERPISAH dari VISION_AKTIF di atas
-      # (menyalakan yang ini tidak menyalakan jalur LLM). Dinyalakan HANYA atas
-      # perintah pemilik, SETELAH pemilik memastikan kontrak pelanggan mengizinkan
-      # foto halaman (memuat nama & nomor sertifikat) dikirim ke pihak ketiga dan
-      # ISO/IEC 17025 bagian 4.2 tidak dilanggar. Kredensial = JSON service account
+      # 23 Nov 2026. Sengaja TERPISAH dari VISION_AKTIF di atas (menyalakan yang
+      # ini tidak menyalakan jalur LLM). Kredensial = JSON service account
       # (mentah atau base64) di dashboard; TIDAK pernah di repo atau di aplikasi.
+      # DINYALAKAN 26 Nov 2026 atas perintah pemilik ("malam ini gpp aktivin semua
+      # nya"); pemilik juga sudah mengisi "true" di dashboard. Nilai di berkas ini
+      # wajib "true" juga: blueprint menimpa setelan dashboard tiap deploy (kasus
+      # ARSIP_DRIVER, 1 Sep 2026), jadi "true" yang hanya ada di dashboard kembali
+      # ke "false" dan pembacaan sel di aplikasi dijawab 503 ocr_cloud_belum_aktif.
+      # Dijaga BlueprintNilaiOcrTest; mematikan lagi = ubah berkas ini DAN tesnya.
+      # Syarat AGENTS.md bagian OCR awan butir 4 (kontrak pelanggan mengizinkan
+      # foto dikirim ke pihak ketiga, ISO/IEC 17025 bagian 4.2) belum tercatat
+      # terjawab di repo; pemilik memutuskan tetap menyalakan. Yang dikirim ke
+      # Google hanya potongan sel angka dan formulir kosong, bukan foto halaman.
       - key: GOOGLE_VISION_AKTIF
-        value: "false"
+        value: "true"
       - key: GOOGLE_VISION_KREDENSIAL
         sync: false
 
