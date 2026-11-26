@@ -447,7 +447,8 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 | sel terkunci boleh disunting. Karena itu rute-rute ini TIDAK memakai
 | `aplikasi:internal`/`role:` — token lab (`internal`, wildcard, sesi panel) dan
 | akun lab lain (termasuk super admin) dijawab 403, dan sebaliknya token `studio`
-| ditolak `aplikasi:internal` di semua rute lab. Klien Studio memakai
+| ditolak `aplikasi:internal` di semua rute lab. (Satu-satunya `role:` di grup
+| ini: blok `equipments`, `role:super_admin` — lihat komentarnya.) Klien Studio memakai
 | `/studio/me` dan `/studio/logout` sebagai ganti `/me`, `/me/permissions`,
 | dan `/logout`.
 |
@@ -503,6 +504,35 @@ Route::middleware(['auth:sanctum', 'studio'])->prefix('studio')->group(function 
                 ->where('penetapan', '[0-9]{1,18}');
             Route::post('/penetapan/{penetapan}/tarik', [ParameterMetodeController::class, 'tarik'])
                 ->where('penetapan', '[0-9]{1,18}');
+        });
+    });
+
+    // Studio mengelola ALAT (26 Nov 2026) — daftar, detail, tambah, ubah, hapus-lunak.
+    // Rute lab `/api/equipments` tetap ber-`aplikasi:internal` dan menolak token
+    // `studio` (403 `bukan_aplikasi_ini`); itu TIDAK dilonggarkan. Jalur ini rute
+    // BARU di grup Studio, memakai ulang controller + `EquipmentRequest` lab, jadi
+    // aturan validasi, penyaring `organization_id`, 404 lintas-lab (`PenjagaOrganisasi`),
+    // soft delete, dan jejak `audit_logs` (trait `Diaudit`) sama persis dengan Lab.
+    //
+    // Gerbang tambahan HANYA di blok ini: `role:super_admin`. `studio` (di atas)
+    // menerima akun lab berperan apa pun; alat dibatasi super admin. Urutan
+    // prioritas middleware menaruh `studio` lalu `role:` DI DEPAN route-model-
+    // binding, jadi peran lain mendapat 403 seragam untuk ID ada/tidak ada.
+    // Tulis memakai ember jatah sendiri (`studio-alat-tulis`); rute tulis alat di
+    // Lab tidak ber-throttle, tetapi Studio token-nya satu akun dan kliennya
+    // bisa mengimpor massal.
+    Route::prefix('equipments')->middleware('role:super_admin')->group(function () {
+        Route::get('/', [EquipmentController::class, 'index'])
+            ->middleware('throttle:studio-baca');
+        Route::get('/{equipment}', [EquipmentController::class, 'show'])
+            ->middleware('throttle:studio-baca');
+
+        Route::middleware('throttle:studio-alat-tulis')->group(function () {
+            Route::post('/', [EquipmentController::class, 'store']);
+            // `sometimes` di `EquipmentRequest`: PATCH parsial didukung, PUT idem.
+            Route::match(['put', 'patch'], '/{equipment}', [EquipmentController::class, 'update']);
+            // Soft delete (`Equipment` memakai `SoftDeletes`): baris tetap ada.
+            Route::delete('/{equipment}', [EquipmentController::class, 'destroy']);
         });
     });
 });

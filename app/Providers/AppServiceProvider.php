@@ -524,6 +524,10 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('data-acuan-simulasi', 6);
         // Studio Tahap 1 — catat/setujui/tarik penetapan keputusan metode: aksi jarang.
         $perMenitPengguna('studio-parameter-tulis', 20);
+        // Studio — tambah/ubah/hapus-lunak ALAT (26 Nov 2026). Satu akun, tapi
+        // klien bisa menambah alat berurutan dari lembar; longgar untuk itu,
+        // tetap berpagar terhadap skrip. Limiter yang tak terdaftar = tanpa batas.
+        $perMenitPengguna('studio-alat-tulis', 60);
         // Studio tahap C — hitung ulang workbook (±0,5–3 s CPU & ±250 MB per
         // panggilan). Klien memanggil sesudah edit, bukan per ketukan.
         // Ember & kunci sama dengan `$perMenitPengguna`, tapi 429-nya MEMBAWA
