@@ -13,9 +13,9 @@ Nomor temuan baru: `B4-n`. Selisih yang sudah punya keputusan lama dirujuk ke `d
 | DO Meter (mg/L, %O2) | rantai penuh mg/L SAMA (konstanta, standar, 5 komponen, uc, v_eff, k, U, lantai CMC, angka cetak, tanggal terbit, kondisi lingkungan TH-2); 2 SELISIH (B4-1, P-25) | 7 | 2 | 2 |
 | Tachometer inframerah (18 titik, 6 blok) | semua kolom titik SAMA; 5 dari 6 blok SAMA dengan tabel versi-master; blok 5 rusak di workbook | 6 | 6 | 2 |
 | Centrifuge (15 titik, 5 blok) | semua kolom titik SAMA; 4 dari 5 blok SAMA dengan tabel versi-master; blok 1 pengulangan satu sel | 7 | 4 | 2 |
-| Thermohygrometer (10 titik: 5 suhu, 3 %RH Biobase, 2 %RH GEA) | titik, konstanta, tabel koreksi, komponen non-akar-ganda, agregasi dengan masukan Excel, U95/k tercetak, CMC lampiran SAMA; 8 baris budget akar ganda (A-1) dan turunannya, k pecahan, urutan tabel Humidity, `M63 #REF!` SELISIH | 8 | 5 | 4 |
+| Thermohygrometer (10 titik: 5 suhu, 3 %RH Biobase, 2 %RH GEA) | titik, konstanta, tabel koreksi, komponen non-akar-ganda, agregasi dengan masukan Excel, U95/k tercetak, CMC lampiran SAMA; 8 baris budget akar ganda (A-1) dan turunannya, k pecahan, urutan tabel Humidity, `M63 #REF!` SELISIH | 8 | 4 | 4 |
 | Tekanan (DRUCK07G, DRUCK13G, SPMK, Differential: lembar SERTIFIKAT) | mode MASTER SAMA di semua sel tabel hasil, U95, k, nilai dan teks; SPMK mode BENAR SAMA; tiga varian lain berselisih tepat di yang dibetulkan T-1/T-2/T-11 dan ditahan sampai TM menjawab | 4 | 3 | 3 |
-| Jumlah (65 butir) | | 32 | 20 | 13 |
+| Jumlah (64 butir) | | 32 | 19 | 13 |
 
 Angka cetak sampel yang berbeda dari Excel: U95 di 4 dari 6 blok Tachometer dan di 5 dari 5 blok Centrifuge (drift §3, bagian 4); Thermohygrometer tidak berbeda di satu pun angka cetak (A-1 menggeser nilai antara, bukan cetak); Tekanan tidak berbeda di mode MASTER, dan berbeda di mode BENAR pada U95/k DRUCK07G, U95 Differential, dan kolom naik DRUCK13G (sesi itu tidak terbit sampai TM menjawab). Tidak ada angka cetak lain. Selisih terbesar yang mengubah nilai antara adalah Tachometer blok 5 (U 1,69 lawan 4,45 rpm sebelum lantai CMC), tetapi U cetaknya SAMA (5,0) karena lantai CMC.
 
