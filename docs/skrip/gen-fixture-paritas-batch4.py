@@ -54,6 +54,7 @@ BERKAS = {
     'do_meter': 'EXEL CALIBRATION SIDIK/Master Olah Data_DO Meter.xlsm',
     'tachometer': 'EXEL CALIBRATION SIDIK/Master Olda Tachometer.xlsm',
     'centrifuge': 'EXEL CALIBRATION SIDIK/Master Olda Centrifuge.xlsm',
+    'thermohygro': 'EXEL CALIBRATION SIDIK/Master Olah Data Suhu & Kelembapan.xlsm',
 }
 
 I, P, U, DB, S = 'INPUT DATA', 'PERHITUNGAN', 'PERHITUNGAN U95%', 'DATABASE', 'SERTIFIKAT'
@@ -547,10 +548,131 @@ def centrifuge(path):
     return putaran(path, 'Centrifuge', [21, 36, 51, 66, 81], [9, 40, 60, 79, 98], {0: CATATAN_CENTRI_BLOK1})
 
 
+# ----------------------------------------------------------------------------
+# Thermohygrometer: satu workbook, tiga budget (suhu; RH Biobase 50-90; RH GEA 30-49).
+# Sel yang dibaca HANYA angka. `INPUT DATA` juga memuat nama, alamat, nomor sertifikat,
+# nomor order, dan nama teknisi di sel teks; tidak satu pun dari sel itu disentuh.
+# ----------------------------------------------------------------------------
+FC, SKAL, SHC = 'PERHITUNGAN FC', 'STANDAR_KALIBRATOR', 'stabilitas dan homogenitas Cham'
+KOL_TH = dict(u='N', pembagi='Q', vi='S', ui='U', ci='X', uici='Z', kuadrat='AC', pangkat4='AG', agg='AC')
+KOMP_TH = ['ketidakpastian_standar', 'daya_baca', 'pengulangan_uut', 'drift_standar', 'stabilitas_chamber', 'homogenitas_chamber']
+# Budget GEA menaruh drift di baris kedua (U61 = N61/Q61, satu-satunya drift yang benar di master).
+KOMP_TH_GEA = ['ketidakpastian_standar', 'drift_standar', 'daya_baca', 'pengulangan_uut', 'stabilitas_chamber', 'homogenitas_chamber']
+BACA_BIOBASE = ('D', 'F', 'H', 'I', 'K')
+BACA_GEA = ('P', 'Q', 'R', 'S', 'T')
+# Kolom `PERHITUNGAN FC`: standar (rata, stdev, indeks diketik, koreksi, terkoreksi) dan UUT (rata, stdev).
+FC_BIOBASE = dict(rata='L', stdev='M', indeks='P', koreksi='Q', terkoreksi='R', u_rata='L', u_stdev='M')
+FC_GEA = dict(rata='AB', stdev='AC', indeks='AF', koreksi='AG', terkoreksi='AH', u_rata='AB', u_stdev='AC')
+
+
+def _titik_th(s, ke, parameter, chamber, sp_sel, baca, kol_fc, baris_in_std, baris_in_uut, baris_fc_std, baris_fc_uut, baris_sert):
+    """Satu titik: masukan diketik + nilai tiap tahap `PERHITUNGAN FC` + angka yang dicetak `SERTIFIKAT`."""
+    return {
+        'titik_ke': ke, 'parameter': parameter, 'chamber': chamber,
+        'masukan': {
+            'titik_ukur': s.sel(I, sp_sel),
+            'standar': s.deret(I, [f'{c}{baris_in_std}' for c in baca]),
+            'uut': s.deret(I, [f'{c}{baris_in_uut}' for c in baca]),
+        },
+        'excel': {
+            'rata_rata_standar': s.sel(FC, f"{kol_fc['rata']}{baris_fc_std}"),
+            'stdev_standar': s.sel(FC, f"{kol_fc['stdev']}{baris_fc_std}"),
+            # `VLOOKUP(<indeks>, tabel, 2, 0)`: indeks ini ANGKA yang diketik, bukan hasil pencarian terdekat.
+            'indeks_koreksi': s.sel(FC, f"{kol_fc['indeks']}{baris_fc_std}"),
+            'indeks_koreksi_diketik': s.rumus(FC, f"{kol_fc['indeks']}{baris_fc_std}") is None,
+            'koreksi_standar': s.sel(FC, f"{kol_fc['koreksi']}{baris_fc_std}"),
+            'standar_terkoreksi': s.sel(FC, f"{kol_fc['terkoreksi']}{baris_fc_std}"),
+            'rata_rata_uut': s.sel(FC, f"{kol_fc['u_rata']}{baris_fc_uut}"),
+            'stdev_uut': s.sel(FC, f"{kol_fc['u_stdev']}{baris_fc_uut}"),
+        },
+        'cetak': {
+            'standar': cetak(s, S, f'E{baris_sert}'), 'uut': cetak(s, S, f'K{baris_sert}'),
+            'koreksi': cetak(s, S, f'N{baris_sert}'),
+        },
+    }
+
+
+def _grup_th(s, kunci, parameter, chamber, titik, awal, nama_komponen, stdev_maks, sel_u95, sel_k):
+    komp, agg, rk = blok_budget(s, KOL_TH, awal, nama_komponen)
+    rantai_blok = rantai([(komp[x]['ui']['nilai'], komp[x]['ci']['nilai'], komp[x]['vi']['nilai']) for x in nama_komponen])
+    rk_uc_veff = max(rel(rantai_blok['uc'], agg['uc']['nilai']), rel(rantai_blok['veff'], agg['veff']['nilai']))
+    if rk_uc_veff > TOL_REKONSTRUKSI or rk > TOL_REKONSTRUKSI_K:
+        raise SystemExit(f'thermohygro: rekonstruksi grup {kunci} menyimpang dari cache '
+                         f'(uc/veff {rk_uc_veff:.3e}, termasuk k {rk:.3e}); berhenti.')
+    n = len(nama_komponen)
+    # Rumus tiap komponen: dari sinilah terbaca `N/Q` (benar) lawan `N/SQRT(Q)` (akar ganda).
+    rumus = {x: {kol: {'sel': f'{U}!{c}{awal + j}', 'rumus': s.rumus(U, f'{c}{awal + j}')}
+                 for kol, c in (('u', 'N'), ('pembagi', 'Q'), ('ui', 'U'))}
+             for j, x in enumerate(nama_komponen)}
+    return {
+        'kunci': kunci, 'parameter': parameter, 'chamber': chamber,
+        'titik': titik,
+        'stdev_maks_uut': s.sel(FC, stdev_maks),
+        'komponen': komp, 'agregat': agg, 'rumus_komponen': rumus,
+        'rumus_k': {'sel': f'{U}!AC{awal + n + 3}', 'rumus': s.rumus(U, f'AC{awal + n + 3}')},
+        'cetak_u95': cetak(s, S, sel_u95),
+        'cetak_k': cetak(s, S, sel_k),
+        'selisih_rekonstruksi': rk, 'selisih_rekonstruksi_uc_veff': rk_uc_veff,
+    }
+
+
+def thermohygro(path):
+    sha, wf, wv = buka(path)
+    s = Sumber(wf, wv)
+
+    suhu = [_titik_th(s, 1 + i, 'suhu', 'biobase', f'B{36 + i}', BACA_BIOBASE, FC_BIOBASE,
+                      36 + i, 53 + i, 29 + i, 46 + i, 22 + i) for i in range(5)]
+    biobase = [_titik_th(s, 6 + i, 'kelembaban', 'biobase', f'B{73 + i}', BACA_BIOBASE, FC_BIOBASE,
+                         73 + i, 90 + i, 66 + i, 83 + i, 49 + i) for i in range(3)]
+    gea = [_titik_th(s, 9 + i, 'kelembaban', 'gea', f'M{73 + i}', BACA_GEA, FC_GEA,
+                     73 + i, 90 + i, 66 + i, 83 + i, 35 + i) for i in range(2)]
+
+    # Titik UUT RH GEA di FC (`U83`/`U84`, sumbernya `INPUT DATA!M90`/`M91`) ikut dicatat: titik standar dan
+    # titik UUT diketik di dua kotak berbeda.
+    for t, r in zip(gea, (90, 91)):
+        t['masukan']['titik_uut_diketik'] = s.sel(I, f'M{r}')
+
+    grup = [
+        _grup_th(s, 'suhu_biobase', 'suhu', 'biobase', suhu, 20, KOMP_TH, 'N46', 'U22', 'T30'),
+        _grup_th(s, 'kelembaban_biobase', 'kelembaban', 'biobase', biobase, 41, KOMP_TH, 'N83', 'U49', 'T64'),
+        _grup_th(s, 'kelembaban_gea', 'kelembaban', 'gea', gea, 60, KOMP_TH_GEA, 'AD83', 'U35', 'T64'),
+    ]
+
+    koreksi_suhu = [{'titik': s.sel(SKAL, f'D{r}'), 'koreksi': s.sel(SKAL, f'E{r}')} for r in range(20, 27)]
+    koreksi_rh = [{'titik': s.sel(SKAL, f'D{r}'), 'koreksi': s.sel(SKAL, f'E{r}')} for r in range(6, 15)]
+
+    hasil = {
+        'label': 'Thermohygrometer (suhu, RH Biobase, RH GEA)',
+        'berkas': os.path.basename(path),
+        'sha256_12': sha[:12],
+        'masukan': {'resolusi_suhu': s.sel(I, 'E16'), 'resolusi_kelembaban': s.sel(I, 'E19')},
+        'konstanta': {
+            'u95_kalibrator_suhu': s.sel(SKAL, 'E27'), 'u95_kalibrator_rh': s.sel(SKAL, 'E15'),
+            'drift_kalibrator_suhu': s.sel(SKAL, 'G4'), 'drift_kalibrator_rh': s.sel(SKAL, 'I4'),
+            'stabilitas_biobase_suhu': s.sel(SHC, 'C14'), 'homogenitas_biobase_suhu': s.sel(SHC, 'B14'),
+            'stabilitas_biobase_rh': s.sel(SHC, 'G13'), 'homogenitas_biobase_rh': s.sel(SHC, 'F13'),
+            'stabilitas_gea_rh': s.sel(SHC, 'G30'), 'homogenitas_gea_rh': s.sel(SHC, 'F30'),
+            'cmc_suhu': s.sel(DB, 'S5'), 'cmc_kelembaban': s.sel(DB, 'S6'),
+            'tabel_koreksi_suhu': koreksi_suhu, 'tabel_koreksi_rh': koreksi_rh,
+        },
+        'grup': grup,
+        # Sel "Uncertainty 95% ±" di bawah tabel Humidity: rusak di master (tautan salin-tempel).
+        'u95_rh_bawah_tabel_galat': sel_galat(s, S, 'M63'),
+        'rekonstruksi': {
+            'selisih_relatif_maks_terhadap_cache': max(g['selisih_rekonstruksi'] for g in grup),
+            'catatan': 'komponen -> uc -> veff -> k (TINV: t 0,975, floor(veff)) -> U -> max(U, CMC) dihitung ulang dari sel komponen per grup',
+        },
+    }
+    print(f'thermohygro: ok, {len(suhu) + len(biobase) + len(gea)} titik, {len(grup)} grup, '
+          f'rekonstruksi maks {hasil["rekonstruksi"]["selisih_relatif_maks_terhadap_cache"]:.2e}')
+    return hasil
+
+
 GENERATOR = {
     'do_meter': ('do-meter.json', do_meter),
     'tachometer': ('tachometer.json', tachometer),
     'centrifuge': ('centrifuge.json', centrifuge),
+    'thermohygro': ('thermohygro.json', thermohygro),
 }
 
 
