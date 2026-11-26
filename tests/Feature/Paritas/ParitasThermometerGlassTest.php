@@ -608,6 +608,13 @@ class ParitasThermometerGlassTest extends TestCase
      * B7-7: digit tabel. Dua tabel referensi aplikasi lebih pendek dari sel master (nilai-cache presisi penuh):
      * koreksi probe PRT di `PERHITUNGAN FC!R23:R27` (aplikasi 5 angka penting), dan ui drift sensor
      * `PERHITUNGAN U95%!N24` (aplikasi 9 desimal, `peta-sel/suhu_3alat.json` `bulat: 9` = 0,501701242). Selisih mutlak sampai 2,3e-10 dan 1,4e-10; tidak mengubah cetak.
+     *
+     * Bingkai: ini perilaku `app/` yang SUDAH ada sebelum PR paritas ini (tabel referensi dibulatkan), bukan keputusan
+     * metode dan bukan sesuatu yang dibawa PR ini. AGENTS.md "Olah data" butir 5 melarang pembulatan nilai antara
+     * (workbook master pun tidak membulatkan di rumusnya), jadi ini temuan pelanggaran aturan repo yang dicatat sebagai
+     * pertanyaan/koreksi untuk pemilik (presisi penuh di tabel, PR terpisah), bukan "keputusan TM". Tes ini hanya
+     * mengunci keadaan sekarang supaya perubahannya terlihat; grup `menunggu-keputusan-tm` dipertahankan sebagai
+     * penanda daftar selisih terkunci, nilai harapan tidak diubah.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_b7_7_koreksi_probe_aplikasi_dibulatkan_lima_angka_penting(): void

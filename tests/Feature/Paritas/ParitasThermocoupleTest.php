@@ -32,10 +32,12 @@ use Tests\TestCase;
  *
  * Konflik yang dikunci di sini (nomor di `docs/paritas-batch7.md`, tanpa mengubah `app/`):
  *  B7-9  faktor cakupan: master polinomial `AC32`, aplikasi kuantil t eksak (selisih relatif 1,2e-6);
- *  B7-10 keterulangan: master tidak memasukkannya ke budget, aplikasi menambah komponen ke-10 saat STDEV > 0
- *        (keputusan lab 16 Sep 2026); workbook contoh ber-STDEV nol, jadi dibuktikan lewat skenario berlabel;
- *  B7-11 pita CMC: rantai `IF` master `AC34` punya celah (150..151 dan 400..401 °C, teks "cek kapasitas"),
- *        aplikasi memakai pita lampiran akreditasi yang bersambung.
+ *  B7-10 HIPOTETIS: keterulangan: master tidak memasukkannya ke budget, aplikasi menambah komponen ke-10 saat STDEV > 0
+ *        (keputusan lab 16 Sep 2026); workbook contoh ber-STDEV nol, jadi dibuktikan lewat skenario berlabel
+ *        HIPOTETIS (bukan sel Excel, tidak dihitung SAMA dari Excel);
+ *  B7-11 HIPOTETIS: pita CMC: rantai `IF` master `AC34` punya celah (150..151 dan 400..401 °C, teks "cek kapasitas"),
+ *        aplikasi memakai pita lampiran akreditasi yang bersambung; set point di celah hanya hipotetis, tidak ada
+ *        di sesi contoh.
  */
 #[Group('paritas')]
 class ParitasThermocoupleTest extends TestCase
@@ -604,10 +606,11 @@ class ParitasThermocoupleTest extends TestCase
     }
 
     /**
-     * B7-10: keterulangan. Master menghitung STDEV (`PERHITUNGAN FC!K`, `M23`, `M42`) tetapi tidak memasukkannya ke
-     * budget: sembilan komponen `AC29` semuanya Type B. Aplikasi menambah komponen ke-10 saat STDEV > 0
+     * HIPOTETIS SELISIH B7-10: keterulangan. Master menghitung STDEV (`PERHITUNGAN FC!K`, `M23`, `M42`) tetapi tidak
+     * memasukkannya ke budget: sembilan komponen `AC29` semuanya Type B. Aplikasi menambah komponen ke-10 saat STDEV > 0
      * (u = STDEV maksimum / akar 5, vi = 4; keputusan lab 16 Sep 2026). Workbook contoh ber-STDEV nol, jadi selisih ini
-     * dibuktikan dengan masukan HIPOTETIS berlabel di fixture (`skenario.keterulangan_ditambahkan`), bukan sel Excel.
+     * dibuktikan dengan masukan HIPOTETIS berlabel di fixture (`skenario.keterulangan_ditambahkan`), bukan sel Excel;
+     * nilai skenario dihitung ulang, bukan nilai-cache sel, dan tidak dihitung SAMA dari Excel.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_b7_10_keterulangan_terukur_masuk_budget_aplikasi_sebagai_komponen_kesepuluh(): void
@@ -620,37 +623,38 @@ class ParitasThermocoupleTest extends TestCase
         $h = $this->hitung($titik, 10);
         $peng = $h['budget'][9];
 
-        $this->assertSame('pengulangan', $peng['sumber'], 'SELISIH B7-10: komponen ke-10 aplikasi');
+        $this->assertSame('pengulangan', $peng['sumber'], 'HIPOTETIS SELISIH B7-10: komponen ke-10 aplikasi');
         $this->assertSame('t-student', $peng['distribusi']);
-        $this->assertSamaHitungUlang($s['sd'], (float) $h['standar_deviasi_maks'], 'SELISIH B7-10: STDEV maksimum');
-        $this->assertSamaHitungUlang($s['u_keterulangan'], (float) $peng['u'], 'SELISIH B7-10: u keterulangan = STDEV / akar 5');
-        $this->assertSame($s['vi_keterulangan'], (float) $peng['vi'], 'SELISIH B7-10: vi keterulangan = n - 1');
+        $this->assertSamaHitungUlang($s['sd'], (float) $h['standar_deviasi_maks'], 'HIPOTETIS SELISIH B7-10: STDEV maksimum');
+        $this->assertSamaHitungUlang($s['u_keterulangan'], (float) $peng['u'], 'HIPOTETIS SELISIH B7-10: u keterulangan = STDEV / akar 5');
+        $this->assertSame($s['vi_keterulangan'], (float) $peng['vi'], 'HIPOTETIS SELISIH B7-10: vi keterulangan = n - 1');
         $this->assertSame(1.0, (float) $peng['ci']);
 
         // Sembilan komponen lainnya tidak bergeser dari master.
         foreach (self::KOMPONEN as $i => $kunci) {
-            $this->assertSamaExcel($w['budget'][$kunci]['ui'], (float) $h['budget'][$i]['u'], "SELISIH B7-10: {$kunci} tetap sama dengan master");
+            $this->assertSamaExcel($w['budget'][$kunci]['ui'], (float) $h['budget'][$i]['u'], "HIPOTETIS SELISIH B7-10: {$kunci} tetap sama dengan master");
         }
 
         // Hilir: uc, v_eff, k, U = skenario (sembilan ui master + komponen itu).
-        $this->assertSamaHitungUlang($s['uc'], (float) $h['ketidakpastian_gabungan'], 'SELISIH B7-10: uc vs skenario');
-        $this->assertSamaHitungUlang($s['veff'], (float) $h['derajat_kebebasan_efektif'], 'SELISIH B7-10: v_eff vs skenario');
-        $this->assertSamaHitungUlang($s['k'], (float) $h['faktor_cakupan_k'], 'SELISIH B7-10: k vs skenario', rel: 0.0, mutlak: self::TOL_K);
-        $this->assertSamaHitungUlang($s['u'], (float) $h['ketidakpastian_diperluas'], 'SELISIH B7-10: U hitung vs skenario', rel: self::TOL_K_REL);
+        $this->assertSamaHitungUlang($s['uc'], (float) $h['ketidakpastian_gabungan'], 'HIPOTETIS SELISIH B7-10: uc vs skenario');
+        $this->assertSamaHitungUlang($s['veff'], (float) $h['derajat_kebebasan_efektif'], 'HIPOTETIS SELISIH B7-10: v_eff vs skenario');
+        $this->assertSamaHitungUlang($s['k'], (float) $h['faktor_cakupan_k'], 'HIPOTETIS SELISIH B7-10: k vs skenario', rel: 0.0, mutlak: self::TOL_K);
+        $this->assertSamaHitungUlang($s['u'], (float) $h['ketidakpastian_diperluas'], 'HIPOTETIS SELISIH B7-10: U hitung vs skenario', rel: self::TOL_K_REL);
 
         // Dan memang berbeda dari rantai master, yang tidak peduli STDEV (tidak ada rumus U95% yang merujuknya).
         $this->assertSame([], preg_grep('/^[KLM]\d+$/', $w['rujukan_u95_ke_fc']), 'master: tak ada rujukan ke sel STDEV');
-        $this->assertGreaterThan(1e-3, abs((float) $h['ketidakpastian_gabungan'] - self::nilai($w['agregat']['uc'])) / self::nilai($w['agregat']['uc']), "SELISIH B7-10: uc harus berbeda dari {$w['agregat']['uc']['sel']}");
-        $this->assertGreaterThan(1e-3, abs((float) $h['derajat_kebebasan_efektif'] - self::nilai($w['agregat']['veff'])) / self::nilai($w['agregat']['veff']), "SELISIH B7-10: v_eff harus berbeda dari {$w['agregat']['veff']['sel']}");
-        $this->assertGreaterThan(1e-3, abs((float) $h['ketidakpastian_diperluas'] - self::nilai($w['agregat']['u_hitung'])) / self::nilai($w['agregat']['u_hitung']), "SELISIH B7-10: U hitung harus berbeda dari {$w['agregat']['u_hitung']['sel']}");
+        $this->assertGreaterThan(1e-3, abs((float) $h['ketidakpastian_gabungan'] - self::nilai($w['agregat']['uc'])) / self::nilai($w['agregat']['uc']), "HIPOTETIS SELISIH B7-10: uc harus berbeda dari {$w['agregat']['uc']['sel']}");
+        $this->assertGreaterThan(1e-3, abs((float) $h['derajat_kebebasan_efektif'] - self::nilai($w['agregat']['veff'])) / self::nilai($w['agregat']['veff']), "HIPOTETIS SELISIH B7-10: v_eff harus berbeda dari {$w['agregat']['veff']['sel']}");
+        $this->assertGreaterThan(1e-3, abs((float) $h['ketidakpastian_diperluas'] - self::nilai($w['agregat']['u_hitung'])) / self::nilai($w['agregat']['u_hitung']), "HIPOTETIS SELISIH B7-10: U hitung harus berbeda dari {$w['agregat']['u_hitung']['sel']}");
 
         // Pada masukan ini lantai CMC tetap menutup selisihnya: U95 dilaporkan sama dengan master.
         $this->assertSamaExcel($w['agregat']['u_dilaporkan'], (float) $h['u95_sertifikat'], 'U95 dilaporkan tetap sama berkat lantai CMC');
     }
 
     /**
-     * B7-10 (jejak): selisih ini TIDAK diam; catatan audit `type_a_masuk_budget` menyebut sel master `M23` dan angka
-     * U95 dengan dan tanpa komponen itu, dan profil menyimpan sumbangannya di `type_a` serta `type_b_components`.
+     * HIPOTETIS SELISIH B7-10 (jejak): selisih ini TIDAK diam; catatan audit `type_a_masuk_budget` menyebut sel master
+     * `M23` dan angka U95 dengan dan tanpa komponen itu, dan profil menyimpan sumbangannya di `type_a` serta
+     * `type_b_components`. Masukannya hipotetis (bacaan standar titik 1 divariasikan), bukan sel Excel.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_b7_10_jejak_audit_dan_type_a_profil(): void
@@ -669,13 +673,14 @@ class ParitasThermocoupleTest extends TestCase
 
             $this->assertContains('pengulangan', $sumber, 'titik '.($i + 1).': komponen keterulangan di jejak');
             $this->assertContains('type_a_masuk_budget', $sumber, 'titik '.($i + 1).': catatan audit di jejak');
-            $this->assertSamaHitungUlang($s['u_keterulangan'], (float) $h['type_a'], 'SELISIH B7-10 titik '.($i + 1).': type_a profil');
+            $this->assertSamaHitungUlang($s['u_keterulangan'], (float) $h['type_a'], 'HIPOTETIS SELISIH B7-10 titik '.($i + 1).': type_a profil');
         }
     }
 
     /**
-     * B7-10 (cakupan STDEV): master menghitung STDEV standar (`M23`) dan UUT (`M42`) terpisah; aplikasi memakai satu
-     * angka, maksimum KEDUANYA. Keterulangan hanya pada pembacaan UUT pun menambah komponen di aplikasi.
+     * HIPOTETIS SELISIH B7-10 (cakupan STDEV): master menghitung STDEV standar (`M23`) dan UUT (`M42`) terpisah;
+     * aplikasi memakai satu angka, maksimum KEDUANYA. Keterulangan hanya pada pembacaan UUT pun menambah komponen di
+     * aplikasi. Bacaan UUT di bawah hipotetis, bukan sel Excel.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_b7_10_stdev_uut_saja_juga_menambah_komponen_di_aplikasi(): void
@@ -687,17 +692,18 @@ class ParitasThermocoupleTest extends TestCase
 
         $h = $this->hitung($titik, 10);
 
-        $this->assertSamaHitungUlang(self::stdevSampel($bacaanUut), (float) $h['standar_deviasi_maks'], 'SELISIH B7-10: STDEV maksimum dari UUT');
-        $this->assertSamaHitungUlang(self::stdevSampel($bacaanUut) / sqrt(5), (float) $h['budget'][9]['u'], 'SELISIH B7-10: u keterulangan dari STDEV UUT');
+        $this->assertSamaHitungUlang(self::stdevSampel($bacaanUut), (float) $h['standar_deviasi_maks'], 'HIPOTETIS SELISIH B7-10: STDEV maksimum dari UUT');
+        $this->assertSamaHitungUlang(self::stdevSampel($bacaanUut) / sqrt(5), (float) $h['budget'][9]['u'], 'HIPOTETIS SELISIH B7-10: u keterulangan dari STDEV UUT');
         $this->assertSame('pengulangan', $h['budget'][9]['sumber']);
     }
 
     /**
-     * B7-11: pita CMC. `AC34` master memilih pita lewat `IF(AND(U18>=-20,U18<=150),...,IF(AND(U18>151,U18<=400),...,
+     * HIPOTETIS SELISIH B7-11: pita CMC. `AC34` master memilih pita lewat `IF(AND(U18>=-20,U18<=150),...,IF(AND(U18>151,U18<=400),...,
      * IF(AND(U18>401,U18<=600),...,"cek kapasitas")))`: set point maksimum di 150..151 dan 400..401 °C jatuh ke teks
      * "cek kapasitas", yang diabaikan `MAX(AC33:AI34)`, jadi U95 master = U hitung tanpa lantai CMC. Aplikasi memakai
      * pita lampiran akreditasi yang bersambung (150..400 = 1,5; 400..600 = 3,3) dan menaikkan U95 ke CMC itu.
-     * Skenario (set point hipotetis di celah) dihitung generator dari TEKS rumus, bukan sel Excel.
+     * Skenario (set point hipotetis di celah) dihitung generator dari TEKS rumus, bukan sel Excel; tidak ada sesi
+     * contoh di celah itu, jadi tidak dihitung SAMA dari Excel.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_b7_11_celah_pita_cmc_master_aplikasi_memakai_pita_bersambung(): void
@@ -726,10 +732,10 @@ class ParitasThermocoupleTest extends TestCase
             $cmcApp = $cmcPita[(string) $c['u18']];
             $konteks = collect($hitungan[0]['type_b_components'])->firstWhere('sumber', 'konteks_sesi');
 
-            $this->assertEqualsWithDelta($cmcApp, (float) $konteks['cmc'], 1e-15, "SELISIH B7-11 {$ke}: CMC aplikasi dari pita lampiran");
-            $this->assertSame('cmc', $konteks['sumber_u95'], "SELISIH B7-11 {$ke}: U95 aplikasi dari lantai CMC");
-            $this->assertEqualsWithDelta($cmcApp, (float) $hitungan[0]['ketidakpastian_diperluas'], 1e-15, "SELISIH B7-11 {$ke}: U95 aplikasi = CMC");
-            $this->assertGreaterThan(0.1, (float) $hitungan[0]['ketidakpastian_diperluas'] - (float) $c['u95_master'], "SELISIH B7-11 {$ke}: U95 aplikasi harus di atas U95 master");
+            $this->assertEqualsWithDelta($cmcApp, (float) $konteks['cmc'], 1e-15, "HIPOTETIS SELISIH B7-11 {$ke}: CMC aplikasi dari pita lampiran");
+            $this->assertSame('cmc', $konteks['sumber_u95'], "HIPOTETIS SELISIH B7-11 {$ke}: U95 aplikasi dari lantai CMC");
+            $this->assertEqualsWithDelta($cmcApp, (float) $hitungan[0]['ketidakpastian_diperluas'], 1e-15, "HIPOTETIS SELISIH B7-11 {$ke}: U95 aplikasi = CMC");
+            $this->assertGreaterThan(0.1, (float) $hitungan[0]['ketidakpastian_diperluas'] - (float) $c['u95_master'], "HIPOTETIS SELISIH B7-11 {$ke}: U95 aplikasi harus di atas U95 master");
         }
     }
 }
