@@ -20,7 +20,11 @@ berkas itu tidak diubah, helper-nya sengaja disalin supaya tiap generator berdir
 - Sebelum menulis, skrip menghitung ulang rantai `PERHITUNGAN U95%` dari sel dasarnya
   (komponen -> uc -> v_eff -> k -> U) dan membandingkannya ke nilai-cache; selisih
   relatif terbesar dicatat di fixture (`rekonstruksi.*`). Di atas batas skrip
-  berhenti: berarti pembacaannya (bukan workbook) yang salah.
+  berhenti: berarti pembacaannya (bukan workbook) yang salah. Ada DUA batas:
+  `TOL_REKONSTRUKSI` (1e-11) untuk uc, v_eff, ui, titik, dan sel dasar; serta
+  `TOL_REKONSTRUKSI_K` (1e-9) untuk k, U, angka cetak U, dan komponen drift `K10`.
+- Teks cetak sisi Excel (`teks` pada `cetak()`) adalah EMULASI `teks_excel()`, bukan
+  tampilan Excel: cache workbook tidak menyimpan teks tampilan.
 
 ## Pakai
 
@@ -50,6 +54,8 @@ KELUAR = os.path.join(AKAR, 'tests', 'Fixtures', 'paritas')
 TOL_REKONSTRUKSI = 1e-11
 # `TINV` Excel mendekati kuantil t; selisihnya terhadap kuantil eksak ~1e-11 relatif di derajat
 # bebas ratusan ribu, dan menular ke U = k*uc. Sama dengan TOL_K_REL di MenegakkanParitas.
+# Juga dipakai untuk komponen drift `K10` (nama berawalan `drift`): `DATABASE!X11 = NOW()`
+# terbaca pada resolusi mikrodetik, jadi umur dan ui drift tidak dicocokkan sampai 1e-11.
 TOL_REKONSTRUKSI_K = 1e-9
 
 BERKAS = {

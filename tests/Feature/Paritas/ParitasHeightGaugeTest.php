@@ -61,6 +61,17 @@ use Tests\TestCase;
  * Satu tes penutup membuktikan B6-1 menjelaskan SELURUH beda U95 aplikasi lawan
  * Excel (uc, v_eff, k, U).
  *
+ * ## Butir MENUNGGU (bukan beda angka; butuh keputusan orang atau bukti yang belum ada)
+ *
+ * Tiap butir juga bertanda `#[Group('menunggu-keputusan-tm')]` dan mengunci keadaan sekarang:
+ *
+ *  - M-1  teks cetak `k` ("2" di aplikasi; sel Excel berformat General, teksnya tidak tersimpan).
+ *  - M-2  jejak audit tidak menyebut selisih dari master: pembagi drift (B6-1) dan angka
+ *         paralelisme master 0,001414 (B6-2); jejak hanya mencetak 0,002 (Max - Min).
+ *  - M-3  pembagi muai sqrt(6) dan dua nilai alpha (1,2e-6 lawan 2e-6): aplikasi menyalin
+ *         sel, tetapi mana yang mengikat belum dijawab lab (`docs/pertanyaan-lab-height-gauge.md`
+ *         §2 dan §3). Nilainya sama dengan sel, tidak diberi label "sama" sebagai metode.
+ *
  * ## Batas bukti (jangan dibaca lebih dari ini)
  *
  *  - Satu sesi, satu workbook, 10 titik masing-masing satu nominal Caliper Checker
@@ -71,8 +82,12 @@ use Tests\TestCase;
  *  - Teks cetak `k`: sel `SERTIFIKAT!O35` berformat General dan kolomnya sempit;
  *    cache workbook tidak menyimpan teks tampilan. Cetak "2" aplikasi bersandar pada
  *    PDF master, bukan pada workbook (lihat tes MENUNGGU `k`).
- *  - Enam dari sepuluh baris tabel hasil disembunyikan di lembar SERTIFIKAT; yang
- *    tercetak Excel (titik 1, 6, 10) sama dengan `TITIK_DICETAK_SERTIFIKAT` aplikasi.
+ *  - Tujuh dari sepuluh baris tabel hasil disembunyikan di lembar SERTIFIKAT (baris
+ *    25:28 dan 30:32); yang tercetak Excel (titik 1, 6, 10) sama dengan
+ *    `TITIK_DICETAK_SERTIFIKAT` aplikasi.
+ *  - Teks cetak Excel di fixture (`SERTIFIKAT!D24:L33`, `J34`) adalah EMULASI generator
+ *    (pembulatan setengah menjauhi nol pada 15 angka penting, lalu ke desimal format sel),
+ *    bukan teks yang dibaca dari tampilan Excel: cache workbook tidak menyimpan teks tampilan.
  */
 #[Group('paritas')]
 class ParitasHeightGaugeTest extends TestCase
@@ -135,12 +150,13 @@ class ParitasHeightGaugeTest extends TestCase
     {
         $w = self::w();
         $m = $w['masukan'];
-        $dasar = $w['excel']['dasar'];
 
+        // Kapasitas dan resolusi yang DIKETIK di workbook (`INPUT DATA!E15`, `E16`); acuan
+        // hasilnya sel `PERHITUNGAN!G8`, `G9`, jadi tes menguji jalur nyata, bukan sel yang sama.
         $blok = HeightGaugeMentah::blokSesi([HeightGaugeMentah::KUNCI_SESI => [
             'satuan' => 'mm',
-            'kapasitas_mm' => self::nilai($dasar['kapasitas_perhitungan_mm']),
-            'resolusi_mm' => self::nilai($dasar['resolusi_perhitungan_mm']),
+            'kapasitas_mm' => self::nilai($m['kapasitas_mm']),
+            'resolusi_mm' => self::nilai($m['resolusi_mm']),
             'paralelisme' => self::daftar($m['paralelisme_mm']),
             'pra_evaluasi' => self::daftar($m['evaluasi_mm']),
         ]]);
@@ -266,12 +282,10 @@ class ParitasHeightGaugeTest extends TestCase
         $komp = $e['budget']['komponen'];
         $termal = $e['titik'][0]['suku_termal'];
 
-        $this->assertSamaExcel($termal['alpha_standar_per_c_P35'], (float) $k['alpha_per_c'], 'alpha standar');
-        $this->assertSamaExcel($termal['alpha_uut_per_c_Q35'], (float) $k['alpha_per_c'], 'alpha UUT');
-        $this->assertSamaExcel($dasar['delta_alpha_per_c_S24'], (float) $k['delta_alpha_per_c'], 'delta alpha (komponen koefisien muai)');
+        // Dua nilai alpha dan pembagi muai sqrt(6) TIDAK diadu di sini: nilainya sama dengan sel,
+        // tetapi mana yang mengikat belum dijawab lab (M-3, tes menunggu di bawah).
         $this->assertSamaExcel($komp['geometri']['u_mentah'], (float) $k['geometri_mm'], 'kesalahan geometri (mm)');
         $this->assertSamaExcel($komp['meja_granit']['u_mentah'], (float) $k['meja_granit_mm'], 'meja granit (mm)');
-        $this->assertSamaExcel($komp['koefisien_muai']['pembagi'], (float) $k['pembagi_muai'], 'pembagi koefisien muai (sqrt 6)');
         $this->assertSamaExcel($komp['geometri']['vi'], (float) $k['vi_type_b_rect'], 'vi Type B rectangular');
         $this->assertSamaExcel($komp['meja_granit']['vi'], (float) $k['vi_type_b_normal'], 'vi Type B normal');
         $this->assertSamaExcel(
@@ -420,7 +434,9 @@ class ParitasHeightGaugeTest extends TestCase
      *
      * Akibatnya U95 aplikasi lebih KECIL dari Excel (arah tidak aman) dan tercetak
      * 0,015 lawan Excel 0,016 pada `SERTIFIKAT!J34`. Alat ini tidak punya lantai CMC
-     * yang menahan.
+     * yang menahan. Aplikasi TIDAK menahan penerbitan karena selisih ini (lihat tes B6-4,
+     * `boleh_terbit`); keputusan menahan atau menarik sertifikat ada pada pemilik dan
+     * Manajer Teknis, bukan pada tes ini.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_selisih_b6_1_drift_pembagi_365_aplikasi_12_excel(): void
@@ -457,8 +473,9 @@ class ParitasHeightGaugeTest extends TestCase
     /**
      * SELISIH B6-2. Paralelisme ujung scriber: aplikasi `Max - Min` = 0,002 mm; Excel
      * `J24 = STDEV(I23:I24)` = STDEV(Max; Min) = 0,001414 mm. Maks dan Min sama; vonis
-     * sama ("Good", batas 0,01 mm dari rumus `K25`). Beda angka ini hanya tercetak
-     * lewat jejak audit; sertifikat mencetak vonisnya saja.
+     * sama ("Good", batas 0,01 mm dari rumus `K25`). Sertifikat mencetak vonisnya saja;
+     * jejak audit mencetak 0,002 (Max - Min) tanpa menyebut angka master 0,001414 atau
+     * alasan bedanya (M-2, tes `test_menunggu_jejak_audit_paralelisme_...`).
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_selisih_b6_2_paralelisme_max_min_aplikasi_stdev_excel(): void
@@ -551,7 +568,11 @@ class ParitasHeightGaugeTest extends TestCase
         $this->assertSame(19, (int) floor((float) $h['derajat_kebebasan_efektif']), 'aplikasi: floor(v_eff)');
         $this->assertGreaterThan(self::nilai($ag['k']), $h['faktor_cakupan_k'], 'k aplikasi > Excel (v_eff lebih kecil)');
         $this->assertSame($h['ketidakpastian_diperluas'], $h['u95_sertifikat'], 'tanpa lantai CMC: U95 sertifikat = U95');
-        $this->assertTrue($h['boleh_terbit'], 'sesi master yang sah boleh terbit');
+        // Mengunci perilaku SEKARANG: aplikasi tidak menahan penerbitan karena B6-1 (keputusan
+        // pemilik 16 Sep 2026, paraf Manajer Teknis menyusul). Ini BUKAN pernyataan bahwa B6-1
+        // aman: U cetak dan v_eff sudah beda dari Excel di atas. Keputusan menahan atau
+        // menarik sertifikat Height Gauge yang terbit ada pada pemilik dan TM.
+        $this->assertTrue($h['boleh_terbit'], 'perilaku sekarang: sesi master boleh terbit walau B6-1 menggeser U cetak dan v_eff (keputusan pemilik 16 Sep 2026, paraf TM menyusul)');
         $this->assertSame([], $h['ditolak']);
     }
 
@@ -561,6 +582,9 @@ class ParitasHeightGaugeTest extends TestCase
      * "pembagi master tetap dicetak di jejak audit", tetapi baris jejak yang ada tidak
      * menyebut pembagi 12 / K10 sama sekali. Dikunci apa adanya: kalau catatannya
      * ditambahkan, tes ini merah dan docs/paritas-batch6.md diperbarui.
+     *
+     * M-2 bagian (a): pembagi drift (B6-1). Bagian (b), paralelisme (B6-2), ada di tes
+     * berikutnya.
      */
     #[Group('menunggu-keputusan-tm')]
     public function test_menunggu_jejak_audit_tidak_menyebut_pembagi_master_drift(): void
@@ -574,6 +598,34 @@ class ParitasHeightGaugeTest extends TestCase
         $this->assertStringNotContainsString('K10', $teks, 'jejak audit belum menyebut sel master K10');
         $this->assertStringNotContainsString('/12', $teks, 'jejak audit belum menyebut pembagi master 12');
         $this->assertStringNotContainsString('365', $teks, 'jejak audit belum menyebut pembagi aplikasi 365');
+    }
+
+    /**
+     * M-2 bagian (b), B6-2. Baris `jejak_titik` mencetak paralelisme sesi dari aplikasi
+     * (`Max - Min` = 0,002 mm, "Good"), tetapi tidak menyebut angka master 0,001414
+     * (`STDEV(Max; Min)`, `PERHITUNGAN!J24`) maupun alasan bedanya. Orang yang membuka
+     * jejak sesi karena itu tidak bisa tahu dari jejak saja bahwa angka paralelisme
+     * beda dari master. Dikunci apa adanya: kalau catatannya ditambahkan, tes ini merah
+     * dan docs/paritas-batch6.md diperbarui.
+     */
+    #[Group('menunggu-keputusan-tm')]
+    public function test_menunggu_jejak_audit_paralelisme_hanya_max_min_tanpa_angka_master(): void
+    {
+        $p = self::w()['excel']['dasar']['paralelisme'];
+        $hasil = (new HeightGaugeProfile)->hitungPerGrup($this->titikProfil(), $this->alat());
+        $baris = collect($hasil['hitungan'][0]['type_b_components'])->firstWhere('sumber', 'jejak_titik');
+
+        $this->assertNotNull($baris, 'jejak audit memuat baris jejak_titik');
+        $keterangan = (string) $baris['keterangan'];
+
+        // Yang tercetak: angka aplikasi (Max - Min) beserta vonisnya.
+        $this->assertStringContainsString('paralelisme sesi 0.002 mm (Good)', $keterangan, 'jejak mencetak Max - Min aplikasi dan vonis');
+
+        // Yang belum tercetak: angka master, nama rumus master, dan alasan beda.
+        $this->assertNotEquals(self::nilai($p['stdev_J24']), 0.002, 'angka master memang beda dari angka aplikasi');
+        $this->assertStringNotContainsString('0.0014', $keterangan, 'jejak audit belum menyebut angka master '.$p['stdev_J24']['sel']);
+        $this->assertStringNotContainsString('STDEV', $keterangan, 'jejak audit belum menyebut rumus master STDEV(Max; Min)');
+        $this->assertStringNotContainsString('J24', $keterangan, 'jejak audit belum menyebut sel master J24');
     }
 
     // ------------------------------------------------------------------ jalur profil (preview = simpan = hitung ulang)
@@ -680,7 +732,9 @@ class ParitasHeightGaugeTest extends TestCase
      * (`SERTIFIKAT!D24:L33`) dan teks dihasilkan renderer produksi
      * (`TataLetakSertifikat::formatAngka`) dengan format dari profil. Kesepuluh baris
      * diadu (yang disembunyikan Excel ikut, sebagai bukti pembulatan sama); yang
-     * sungguh tercetak hanya titik 1, 6, 10 (lihat tes sebelumnya).
+     * sungguh tercetak hanya titik 1, 6, 10 (lihat tes sebelumnya). Teks sisi Excel di
+     * fixture adalah emulasi generator (`teks_excel()`, bukan tampilan Excel); kesetaraan
+     * ini terbukti sejauh emulasi itu setia pada pembulatan Excel.
      */
     public function test_angka_cetak_titik_sama_dengan_sertifikat_excel(): void
     {
@@ -750,5 +804,46 @@ class ParitasHeightGaugeTest extends TestCase
         $this->assertSame('0', $format, 'format k aplikasi');
         $this->assertSame('2', self::keTitik(TataLetakSertifikat::formatAngka(self::nilai($k), $format, $profil->tandaNolDicetak())), 'cetak aplikasi dengan k Excel');
         $this->assertSame('2', self::keTitik(TataLetakSertifikat::formatAngka($h['faktor_cakupan_k'], $format, $profil->tandaNolDicetak())), 'cetak aplikasi dengan k aplikasi');
+    }
+
+    /**
+     * MENUNGGU (M-3). Pembagi komponen koefisien muai dan dua nilai alpha. Aplikasi
+     * menyalin master apa adanya, jadi NILAI aplikasi sama dengan sel; yang belum
+     * terjawab adalah apakah nilai-nilai itu BENAR (`docs/pertanyaan-lab-height-gauge.md`
+     * §2 dan §3). Tes ini mengunci keadaan sekarang dan tidak menyebutnya "sama" sebagai
+     * metode:
+     *
+     *  - `PERHITUNGAN U95%!N9` = sqrt(6), padahal komponen rectangular lain (geometri `N11`)
+     *    memakai sqrt(3);
+     *  - alpha 1,2e-6 /C di `PERHITUNGAN!P35`/`Q35` (suku koreksi titik) lawan delta alpha
+     *    2e-6 /C di `PERHITUNGAN!S24` = 2 x `R24` (budget komponen muai, ci suhu).
+     *
+     * Efek ke U pada data ini kecil: komponen muai menyumbang 1,5e-8 dari jumlah (ui*ci)^2
+     * 5,64e-5 (`AA9` dari `AA14`), dan suku koreksi muai titik bernilai nol (B6-3).
+     */
+    #[Group('menunggu-keputusan-tm')]
+    public function test_menunggu_m3_pembagi_muai_sqrt6_dan_dua_nilai_alpha_dikunci_apa_adanya(): void
+    {
+        $e = self::w()['excel'];
+        $komp = $e['budget']['komponen'];
+        $termal = $e['titik'][0]['suku_termal'];
+        $k = (new TabelStandarHeightGauge)->konstanta();
+
+        // Aplikasi = sel workbook (disalin dari master).
+        $this->assertSamaExcel($termal['alpha_standar_per_c_P35'], (float) $k['alpha_per_c'], 'alpha standar');
+        $this->assertSamaExcel($termal['alpha_uut_per_c_Q35'], (float) $k['alpha_per_c'], 'alpha UUT');
+        $this->assertSamaExcel($e['dasar']['delta_alpha_per_c_S24'], (float) $k['delta_alpha_per_c'], 'delta alpha (komponen koefisien muai)');
+        $this->assertSamaExcel($komp['koefisien_muai']['pembagi'], (float) $k['pembagi_muai'], 'pembagi koefisien muai (sqrt 6)');
+
+        // Yang membuatnya pertanyaan lab: dua nilai berbeda untuk besaran sejenis, dan pembagi
+        // muai bukan sqrt(3) seperti komponen rectangular lain di workbook yang sama.
+        $this->assertSamaHitungUlang(sqrt(6.0), self::nilai($komp['koefisien_muai']['pembagi']), 'pembagi muai master = sqrt(6) '.$komp['koefisien_muai']['pembagi']['sel']);
+        $this->assertSamaHitungUlang(sqrt(3.0), self::nilai($komp['geometri']['pembagi']), 'pembagi geometri master = sqrt(3) '.$komp['geometri']['pembagi']['sel']);
+        $this->assertSamaHitungUlang(2.0 * self::nilai($e['dasar']['alpha_per_c_R24']), self::nilai($e['dasar']['delta_alpha_per_c_S24']), 'delta alpha master = 2 x '.$e['dasar']['alpha_per_c_R24']['sel']);
+        $this->assertNotEquals(self::nilai($termal['alpha_standar_per_c_P35']), self::nilai($e['dasar']['delta_alpha_per_c_S24']), 'dua nilai koefisien muai berbeda di workbook yang sama');
+
+        // Sumbangan komponen muai pada jumlah (ui*ci)^2: kecil pada data ini (diukur, bukan diasumsikan).
+        $rasio = self::nilai($komp['koefisien_muai']['uici_kuadrat']) / self::nilai($e['budget']['agregat']['jumlah_uici_kuadrat']);
+        $this->assertLessThan(1.0e-3, $rasio, 'komponen muai < 0,1 % dari jumlah (ui*ci)^2 pada sesi ini');
     }
 }
