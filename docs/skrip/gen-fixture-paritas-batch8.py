@@ -1,4 +1,4 @@
-"""Bangun tests/Fixtures/paritas/{utm,load-cell}.json dari workbook master gaya (batch paritas ke-8).
+"""Bangun tests/Fixtures/paritas/{utm,load-cell,sieve}.json dari workbook master (batch paritas ke-8).
 
 Bahan uji PARITAS aplikasi-lawan-Excel (`tests/Feature/Paritas/`): MASUKAN yang
 diketik di workbook dan NILAI tiap tahap hitungan Excel, masing-masing dengan
@@ -28,10 +28,12 @@ diubah, helper-nya sengaja disalin supaya generator ini berdiri sendiri.
 
 ## Pakai
 
-    py -3.12 -I -X utf8 docs/skrip/gen-fixture-paritas-batch8.py <folder-Downloads> [utm] [load_cell]
+    py -3.12 -I -X utf8 docs/skrip/gen-fixture-paritas-batch8.py <folder-Downloads> [utm] [load_cell] [sieve]
 
 `<folder-Downloads>` berisi `EXEL CALIBRATION SIDIK\\` dengan
-`Master Olah Data_Gaya_UTM.xlsm` dan `Master Olah Data_Gaya_Load Cell.xlsm`.
+`Master Olah Data_Gaya_UTM.xlsm`, `Master Olah Data_Gaya_Load Cell.xlsm`, dan
+`Master Olah Data_Sieve Mesh.xlsm`. Target `sieve` hanya membaca sel angka dan teks
+teknis (tidak membaca nama/alamat pelanggan di `INPUT DATA!Q10:Q12`, nomor sertifikat, atau nomor order).
 Dependensi: msoffcrypto-tool, openpyxl, scipy.
 """
 import hashlib
@@ -55,8 +57,9 @@ TOL_REKONSTRUKSI_K = 1e-9
 BERKAS = {
     'utm': 'EXEL CALIBRATION SIDIK/Master Olah Data_Gaya_UTM.xlsm',
     'load_cell': 'EXEL CALIBRATION SIDIK/Master Olah Data_Gaya_Load Cell.xlsm',
+    'sieve': 'EXEL CALIBRATION SIDIK/Master Olah Data_Sieve Mesh.xlsm',
 }
-KELUARAN = {'utm': 'utm.json', 'load_cell': 'load-cell.json'}
+KELUARAN = {'utm': 'utm.json', 'load_cell': 'load-cell.json', 'sieve': 'sieve.json'}
 
 I, FC, U, DB, S, MIS = 'INPUT DATA', 'PERHITUNGAN FC', 'PERHITUNGAN U95%', 'DATABASE', 'SERTIFIKAT', 'Misalignment'
 
@@ -465,7 +468,204 @@ def tabel_drift(wf, wv):
     return out
 
 
-GENERATOR = {'utm': gaya, 'load_cell': gaya}
+# ---------------------------------------------------------------- Sieve Mesh
+
+SV_IN, SV_PH, SV_UB, SV_SE = 'INPUT DATA', 'PERHITUNGAN', 'PERHITUNGAN U95%', 'SERTIFIKAT'
+SV_SK, SV_DB = 'STANDAR_KALIBRATOR', 'DATABASE'
+SV_KOL_ULANG = ['G', 'H', 'J', 'K', 'L', 'M']   # `PERHITUNGAN!G89:M91`: enam salinan opening 1..6
+SV_PARAMETER = {
+    'warp': {
+        'avg': 'G80', 'idx': 'G81', 'kor': 'G82', 'sd': 'G83', 'ulang_baris': 89, 'ulang_sd': 'H92',
+        'budget_baris': 11, 'uc': 'AC18', 'veff': 'AC19', 'k': 'AC20', 'U': 'AC21', 'cmc': 'AC22', 'u_cetak': 'AC24',
+        'sert_baris': 20, 'sd_cetak': 'G26', 'vonis_sd': 24,
+    },
+    'weft': {
+        'avg': 'J80', 'idx': 'J81', 'kor': 'J82', 'sd': 'J83', 'ulang_baris': 90, 'ulang_sd': 'K92',
+        'budget_baris': 28, 'uc': 'AC35', 'veff': 'AC36', 'k': 'AC37', 'U': 'AC38', 'cmc': 'AC39', 'u_cetak': 'AC41',
+        'sert_baris': 21, 'sd_cetak': 'G27', 'vonis_sd': 25,
+    },
+    'kawat': {
+        'avg': 'L80', 'idx': 'L81', 'kor': 'L82', 'sd': 'L83', 'ulang_baris': 91, 'ulang_sd': 'M92',
+        'budget_baris': 46, 'uc': 'AC53', 'veff': 'AC54', 'k': 'AC55', 'U': 'AC56', 'cmc': 'AC57', 'u_cetak': 'AC59',
+        'sert_baris': 22, 'sd_cetak': 'G28', 'vonis_sd': None,
+    },
+}
+SV_KOLOM_BUDGET = ['N', 'Q', 'S', 'U', 'X', 'Z']   # nilai asal, pembagi, vi, ui, ci, ui*ci
+
+
+def sieve(path, jenis):
+    sha, wf, wv = buka(path)
+    s = Sumber(wf, wv)
+
+    # ---- masukan: hanya angka, satuan/standar teknis, tanggal kalibrasi. Bukan Q10:Q12 (pelanggan).
+    tgl = s.nilai(SV_IN, 'Q16')
+    if not hasattr(tgl, 'strftime'):
+        raise SystemExit('BERHENTI: INPUT DATA!Q16 (tanggal kalibrasi) bukan tanggal.')
+    opening = []
+    for blok, kol in enumerate((('G', 'H', 'I'), ('K', 'L', 'M'))):
+        for baris in range(34, 84):
+            w, f, k = (s.n(SV_IN, f'{c}{baris}', wajib=False) for c in kol)
+            if w is None and f is None and k is None:
+                continue
+            opening.append({'no': blok * 50 + baris - 33, 'warp': w, 'weft': f, 'kawat': k,
+                            'sel': f'{SV_IN}!{kol[0]}{baris}:{kol[2]}{baris}'})
+    if len(opening) < 6:
+        raise SystemExit('BERHENTI: kurang dari enam opening terbaca.')
+    # Tiap opening harus lengkap tiga angka: sel kosong tidak boleh dibaca sebagai 0 (aturan repo).
+    for o in opening:
+        if None in (o['warp'], o['weft'], o['kawat']):
+            raise SystemExit(f"BERHENTI: opening {o['no']} tidak lengkap.")
+
+    masukan = {
+        'tipe': s.sel(SV_IN, 'F5'),
+        'tipe_teks': s.teks(SV_IN, 'Z14'),
+        'nominal': s.sel(SV_IN, 'F14'),
+        'satuan_teks': s.teks(SV_IN, 'Z13'),
+        'standar_teks': s.teks(SV_IN, 'Z10'),
+        'suhu_awal': s.sel(SV_IN, 'F23'),
+        'suhu_akhir': s.sel(SV_IN, 'G23'),
+        'suhu_rata_PERHITUNGAN_G17': s.sel(SV_PH, 'G17'),
+        'tanggal_kalibrasi': {'sel': f'{SV_IN}!Q16', 'nilai': tgl.strftime('%Y-%m-%d')},
+        'opening': opening,
+    }
+
+    # ---- tabel MPE: baris ukuran yang dipakai (STANDAR_KALIBRATOR!B41:N136, kolom 1 = ukuran mm)
+    ukuran = s.n(SV_IN, 'Z16')
+    baris_mpe = next((r for r in range(41, 137) if s.n(SV_SK, f'B{r}', wajib=False) == ukuran), None)
+    if baris_mpe is None:
+        raise SystemExit('BERHENTI: ukuran tidak ada di Tabel_MPE.')
+    mpe = {'ukuran_Z16': s.sel(SV_IN, 'Z16'), 'baris': baris_mpe}
+    for nama, kol in (('kolom5_compliance', 'F'), ('kolom6_inspection', 'G'), ('kolom7_calibration', 'H'),
+                      ('kolom9_y', 'J'), ('kolom10_stdev_maks', 'K'), ('kolom11_kawat_preferred', 'L'),
+                      ('kolom12_kawat_maks', 'M'), ('kolom13_kawat_min', 'N')):
+        mpe[nama] = s.opsi(SV_SK, f'{kol}{baris_mpe}')
+
+    # ---- rekonstruksi per parameter + penyalinan semua sel
+    maks = 0.0
+    parameter = {}
+    for nama, c in SV_PARAMETER.items():
+        nilai = [o[nama] for o in opening]
+        rata = s.sel(SV_PH, c['avg'])
+        sd = s.sel(SV_PH, c['sd'])
+        maks = max(maks, galat_bila_lebih(f'{nama} rata-rata', ukur(sum(nilai) / len(nilai), rata['nilai']), TOL_REKONSTRUKSI))
+        maks = max(maks, galat_bila_lebih(f'{nama} STDEV', ukur(statistics.stdev(nilai), sd['nilai']), TOL_REKONSTRUKSI))
+
+        ulang = s.deret(SV_PH, [f"{k}{c['ulang_baris']}" for k in SV_KOL_ULANG])
+        if ulang['nilai'] != nilai[:6]:
+            raise SystemExit(f'BERHENTI: {nama} salinan pengulangan bukan opening 1..6.')
+        ulang_sd = s.sel(SV_PH, c['ulang_sd'])
+        maks = max(maks, galat_bila_lebih(f'{nama} STDEV pengulangan', ukur(statistics.stdev(nilai[:6]), ulang_sd['nilai']), TOL_REKONSTRUKSI))
+
+        # Koreksi standar: master memakai kolom 3 (`VLOOKUP(...;3;0)`) dari K12:O21.
+        idx = s.opsi(SV_PH, c['idx'])
+        baris_k = next((r for r in range(12, 22) if s.n(SV_SK, f'K{r}', wajib=False) == idx['nilai']), None)
+        if baris_k is None:
+            raise SystemExit(f'BERHENTI: indeks koreksi {nama} tidak ada di Koreksi_Caliper.')
+        kolom3 = s.nilai(SV_SK, f'M{baris_k}')
+        kolom3_angka = 0.0 if kolom3 is None else float(kolom3)
+        terkoreksi = s.sel(SV_PH, c['kor'])
+        maks = max(maks, galat_bila_lebih(f'{nama} terkoreksi master', ukur(rata['nilai'] + kolom3_angka, terkoreksi['nilai']), TOL_REKONSTRUKSI))
+        koreksi = {
+            'indeks': idx,
+            'baris_tabel': baris_k,
+            'nilai_standar': s.sel(SV_SK, f'K{baris_k}'),
+            'penunjukan': s.sel(SV_SK, f'L{baris_k}'),
+            'kolom3_dibaca_master': {'sel': f'{SV_SK}!M{baris_k}', 'nilai': kolom3},
+            'kolom4_koreksi': s.sel(SV_SK, f'N{baris_k}'),
+            'kolom4_rumus': s.rumus(SV_SK, f'N{baris_k}'),
+            'terkoreksi_master': terkoreksi,
+        }
+
+        # Budget: enam baris komponen.
+        komp, ui_ci_vi = [], []
+        for i in range(6):
+            r = c['budget_baris'] + i
+            d = {'baris': r}
+            for kol in SV_KOLOM_BUDGET:
+                d[kol] = s.sel(SV_UB, f'{kol}{r}')
+            d['rumus_N'] = s.rumus(SV_UB, f'N{r}')
+            d['rumus_X'] = s.rumus(SV_UB, f'X{r}')
+            maks = max(maks, galat_bila_lebih(f'{nama} baris {r} ui', ukur(d['N']['nilai'] / d['Q']['nilai'], d['U']['nilai']), TOL_REKONSTRUKSI))
+            maks = max(maks, galat_bila_lebih(f'{nama} baris {r} uici', ukur(d['U']['nilai'] * d['X']['nilai'], d['Z']['nilai']), TOL_REKONSTRUKSI))
+            komp.append(d)
+            ui_ci_vi.append((d['U']['nilai'], d['X']['nilai'], d['S']['nilai']))
+        rc = rantai(ui_ci_vi)
+        uc, veff, k, big_u = (s.sel(SV_UB, c[x]) for x in ('uc', 'veff', 'k', 'U'))
+        maks = max(maks, galat_bila_lebih(f'{nama} uc', ukur(rc['uc'], uc['nilai']), TOL_REKONSTRUKSI))
+        maks = max(maks, galat_bila_lebih(f'{nama} veff', ukur(rc['veff'], veff['nilai']), TOL_REKONSTRUKSI))
+        maks = max(maks, galat_bila_lebih(f'{nama} U', ukur(k['nilai'] * rc['uc'], big_u['nilai']), TOL_REKONSTRUKSI))
+
+        # Sertifikat.
+        b = c['sert_baris']
+        sert = {
+            'H_nilai_tercetak': s.sel(SV_SE, f'H{b}'),
+            'K_koreksi_tercetak': s.sel(SV_SE, f'K{b}'),
+            'N_U95_tercetak': s.sel(SV_SE, f'N{b}'),
+            'AB': s.sel(SV_SE, f'AB{b}'),
+            'AE_vonis': s.teks(SV_SE, f'AE{b}'),
+            'G_stdev': s.sel(SV_SE, c['sd_cetak']),
+        }
+        if nama == 'kawat':
+            sert['AD_min'] = s.sel(SV_SE, 'AD22')
+            sert['AD_maks'] = s.sel(SV_SE, 'AD23')
+        else:
+            sert['AD_batas_y'] = s.sel(SV_SE, f'AD{b}')
+            v = c['vonis_sd']
+            sert['stdev_AB'] = s.sel(SV_SE, f'AB{v}')
+            sert['stdev_AD_batas'] = s.sel(SV_SE, f'AD{v}')
+            sert['stdev_AE_vonis'] = s.teks(SV_SE, f'AE{v}')
+
+        parameter[nama] = {
+            'rata': rata, 'stdev': sd, 'pengulangan': ulang, 'pengulangan_stdev': ulang_sd,
+            'koreksi': koreksi,
+            'budget': {
+                'komponen': komp, 'uc': uc, 'veff': veff, 'k': s.opsi(SV_UB, c['k']), 'U': big_u,
+                'cmc': s.opsi(SV_UB, c['cmc']), 'U_cetak': s.sel(SV_UB, c['u_cetak']),
+                'rumus_U_cetak': s.rumus(SV_UB, c['u_cetak']),
+            },
+            'sertifikat': sert,
+        }
+
+    # ---- status standar (NOW()) dan minimum opening
+    status = {
+        'sisa_hari_Z19': s.opsi(SV_IN, 'Z19'),
+        'rumus_Z19': s.rumus(SV_IN, 'Z19'),
+        'status_U25': s.opsi(SV_IN, 'U25'),
+        'tabel_standar_DB_Z13_rumus': s.rumus(SV_DB, 'Z13'),
+        'tabel_standar_DB_Z13': s.opsi(SV_DB, 'Z13'),
+    }
+    minimum = {'F16': s.opsi(SV_IN, 'F16'), 'rumus_F16': s.rumus(SV_IN, 'F16')}
+    cmc = {'DATABASE_T5': s.opsi(SV_DB, 'T5'), 'DATABASE_T6': s.opsi(SV_DB, 'T6')}
+
+    hasil = {
+        'sumber': {
+            'berkas': os.path.basename(path),
+            'sha256': sha,
+            'dibuka': 'didekripsi di memori dengan sandi dari pemilik (SIDIK_MASTER_SANDI); tidak ada salinan terbuka-kunci',
+        },
+        'masukan': masukan,
+        'excel': {
+            'nominal_PERHITUNGAN_E7': s.sel(SV_PH, 'E7'),
+            'kawat_nominal_PERHITUNGAN_E8': s.sel(SV_PH, 'E8'),
+            'k_cetak_SERTIFIKAT_O23': s.sel(SV_SE, 'O23'),
+            'tabel_mpe': mpe,
+            'minimum_opening': minimum,
+            'status_standar': status,
+            'cmc': cmc,
+            'parameter': parameter,
+        },
+        'rekonstruksi': {
+            'selisih_relatif_maks_terhadap_cache': maks,
+            'catatan': 'rata-rata, STDEV, STDEV pengulangan (opening 1..6), koreksi master (kolom 3 kosong = 0), ui = N/Q, '
+                       'ui*ci, uc, veff, U = k uc dihitung ulang dari sel hulunya dan dibandingkan ke nilai-cache. k = 2 diketik '
+                       'di master (bukan TINV), jadi tidak direkonstruksi lewat scipy.',
+        },
+    }
+    print(f'{jenis}: ok, {len(opening)} opening, 3 parameter x 6 komponen, rekonstruksi maks {maks:.2e}')
+    return hasil
+
+
+GENERATOR = {'utm': gaya, 'load_cell': gaya, 'sieve': sieve}
 
 
 def tulis(nama, kunci, isi):
