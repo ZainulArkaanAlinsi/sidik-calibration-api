@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Equipment;
+use App\Services\TahapPaket;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -62,6 +63,43 @@ class EquipmentResource extends JsonResource
             'toleransi' => $this->toleransi,
             'lokasi' => $this->lokasi,
             'nama_alat_kemampuan' => $this->nama_alat_kemampuan,
+
+            // Status per alat (ADITIF): sesi kalibrasi terakhir alat ini. Kunci
+            // ini HANYA ada kalau pemanggilnya memuat `sesiTerakhir` lewat
+            // `SesiTerakhirAlat` (`/equipments` dan `/studio/equipments`); di
+            // tempat lain Resource ini dipakai bersarang (mis. `OrderItemResource`)
+            // dan memuatnya akan menambah kueri per baris. `null` = belum ada
+            // sesi (atau, untuk teknisi, belum ada sesi MILIKNYA).
+            'sesi_terakhir' => $this->when(
+                $this->resource->relationLoaded('sesiTerakhir'),
+                fn (): ?array => $this->sesiTerakhirUntukApi(),
+            ),
+        ];
+    }
+
+    /**
+     * Tahapnya DITURUNKAN `TahapPaket` (delapan tahap yang sama dengan
+     * pelacakan paket), bukan tahap baru. `status` = status mentah sesi
+     * (`draft`, `menunggu_approval`, …).
+     *
+     * @return array{id: int, status: string, tahap: string, tahap_label: string, diperbarui_pada: ?string}|null
+     */
+    private function sesiTerakhirUntukApi(): ?array
+    {
+        $sesi = $this->resource->getRelation('sesiTerakhir');
+
+        if ($sesi === null) {
+            return null;
+        }
+
+        $tahap = app(TahapPaket::class)->untukSesi($sesi);
+
+        return [
+            'id' => $sesi->id,
+            'status' => $sesi->status,
+            'tahap' => $tahap,
+            'tahap_label' => TahapPaket::LABEL_INTERNAL[$tahap] ?? $tahap,
+            'diperbarui_pada' => $sesi->updated_at?->toIso8601String(),
         ];
     }
 
