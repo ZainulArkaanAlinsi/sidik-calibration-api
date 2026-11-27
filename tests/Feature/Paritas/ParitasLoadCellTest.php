@@ -47,9 +47,10 @@ use Tests\TestCase;
  *          hanya Pull <= 5 kN), sehingga AC22 = "cek range", AH22 dan AC23 = `#VALUE!`,
  *          dan U cetak (`P35` membaca `AH23 = MAX(AH21; AC22)`) jatuh ke U hitung TANPA
  *          lantai CMC. Aplikasi memilih satu-satunya pita Tarik lampiran (0-500 kgf =
- *          0,020601 kN) yang tidak mengikat, jadi U cetak sama selain B8-2. Apakah master
- *          sengaja tanpa lantai di rentang ini, atau lampiran kurang pita Tarik 10-88 kN,
- *          pertanyaan lab G9.
+ *          0,020601 kN) yang tidak mengikat, jadi U cetak sama selain B8-2. Pertanyaan lab G9
+ *          sudah TERJAWAB (`docs/pertanyaan-lab-gaya.md`): lampiran memang tidak memuat
+ *          pita Tarik 10-88 kN untuk Load Cell, jadi lab tidak terakreditasi untuk rentang
+ *          itu; tes ini hanya mengunci perilaku kedua sisi apa adanya.
  *  - M-1   sumber zero error (lihat [MenegakkanParitasGaya]); pertanyaan lab G8.
  *  - M-2   kolom V set point ketikan. Pada Load Cell 100 kN tabel standar tidak punya
  *          set point di 0-9 kN dan di atas 88,26 kN (G10); master mengetik 9,80665 dan
