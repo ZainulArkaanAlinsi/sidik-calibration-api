@@ -121,8 +121,28 @@ class TahapPaket
             return $item->tahap_fisik;
         }
 
-        $sesi = $item->sesiTerakhir;
+        return $this->dariSesi($item->sesiTerakhir);
+    }
 
+    /**
+     * Tahap satu alat menurut SESI-nya yang terakhir (dipakai `GET /api/equipments`).
+     *
+     * Aturannya sama dengan `untukItem()`, bukan salinan: tahap fisik baris paket
+     * yang melahirkan sesi ini menang (alat sudah `siap_diambil` / `diserahkan`),
+     * baru tahap turunan dari sesi & sertifikat. Sesi yang bukan lahir dari order
+     * (`order_item_id` kosong) langsung ke tahap turunan.
+     *
+     * @param  CalibrationSession  $sesi  butuh relasi `certificate` & `orderItem`
+     *                                    ter-load; tanpa itu jadi N+1
+     */
+    public function untukSesi(CalibrationSession $sesi): string
+    {
+        return $sesi->orderItem?->tahap_fisik ?? $this->dariSesi($sesi);
+    }
+
+    /** Tahap turunan dari sesi & sertifikatnya saja (tanpa tahap fisik). */
+    private function dariSesi(?CalibrationSession $sesi): string
+    {
         if ($sesi === null) {
             // Alat sudah masuk paket tapi belum ada sesi kalibrasinya sama sekali.
             return self::DITERIMA;
