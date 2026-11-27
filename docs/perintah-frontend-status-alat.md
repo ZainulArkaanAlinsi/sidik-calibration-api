@@ -19,7 +19,7 @@ Field baru `sesi_terakhir` ada di bentuk alat yang sama pada:
 | GET | `/api/equipments` | tiap baris `data[]` |
 | GET | `/api/equipments/{id}` | `data` |
 | POST | `/api/equipments` | selalu `null` (alat baru belum punya sesi) |
-| PUT / PATCH | `/api/equipments/{id}` | sesi terakhir alat itu |
+| PUT | `/api/equipments/{id}` | sesi terakhir alat itu (PATCH hanya ada di jalur Studio, bukan di aplikasi Lab) |
 | GET, POST, PUT, PATCH | `/api/studio/equipments[/{id}]` | controller yang sama, bentuk sama (Super Admin) |
 
 Alat yang tampil **bersarang** di respons lain (mis. `alat` di baris order) TIDAK memuat `sesi_terakhir`: kuncinya
@@ -33,7 +33,7 @@ tidak ada di sana. Jangan bergantung padanya di luar daftar/detail alat.
   "status": "menunggu_approval",
   "tahap": "menunggu_pemeriksaan",
   "tahap_label": "Menunggu pemeriksaan admin",
-  "diperbarui_pada": "2026-11-27T03:14:07+00:00"
+  "diperbarui_pada": "2026-11-27T10:14:07+07:00"
 }
 ```
 
@@ -45,7 +45,7 @@ tidak ada di sana. Jangan bergantung padanya di luar daftar/detail alat.
 | `id` | integer | id sesi kalibrasi (`/api/calibrations/{id}` untuk detailnya) |
 | `status` | string | status mentah sesi: `draft`, `menunggu_approval`, `menunggu_pengesahan`, `disetujui`, `perlu_revisi` |
 | `tahap` | string | tahap TURUNAN, salah satu dari delapan tahap pelacakan paket (tabel bawah); tidak ada tahap baru |
-| `tahap_label` | string | label internal tahap itu (`TahapPaket::LABEL_INTERNAL`); aman ditampilkan apa adanya |
+| `tahap_label` | string | label internal tahap itu (`TahapPaket::LABEL_INTERNAL`). Catatan: sesi `disetujui` yang sertifikatnya belum terbit berlabel "Menunggu pengesahan", warisan pemetaan lama padahal gerbang pengesahan sudah dicabut (K-50-07). Layar yang butuh kata yang tepat sebaiknya memetakan sendiri dari `tahap`, bukan menampilkan label ini apa adanya |
 | `diperbarui_pada` | string ISO 8601 | waktu ubah baris sesi (`updated_at`) |
 
 `status` di tingkat alat (`aktif` / `overdue` / `nonaktif`) tetap milik alat dan tidak berubah artinya. Yang baru
