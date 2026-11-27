@@ -11,6 +11,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\KonflikSerialAlat;
 use App\Services\Pencarian\CariDokumenLab;
 use App\Services\PenjagaOrganisasi;
+use App\Services\SesiTerakhirAlat;
 use App\Support\PerHalaman;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -25,7 +26,10 @@ use Illuminate\Support\Collection;
  */
 class EquipmentController extends Controller
 {
-    public function __construct(private readonly CariDokumenLab $cari) {}
+    public function __construct(
+        private readonly CariDokumenLab $cari,
+        private readonly SesiTerakhirAlat $sesiTerakhir,
+    ) {}
 
     public function index(Request $request, CalibrationProfileRegistry $registry): AnonymousResourceCollection
     {
@@ -126,6 +130,9 @@ class EquipmentController extends Controller
             )
             ->paginate(PerHalaman::dari($request))
             ->withQueryString();
+
+        // Status per alat: satu kueri sesi untuk SATU halaman, bukan per baris.
+        $this->sesiTerakhir->muat($equipments->getCollection(), $request->user());
 
         return EquipmentResource::collection($equipments);
     }
@@ -263,8 +270,11 @@ class EquipmentController extends Controller
             );
         }
 
+        $equipment->load(['customer', 'category']);
+        $this->sesiTerakhir->muat([$equipment], $request->user());
+
         return response()->json(
-            ['data' => new EquipmentResource($equipment->load(['customer', 'category']))],
+            ['data' => new EquipmentResource($equipment)],
             201,
         );
     }
@@ -273,8 +283,11 @@ class EquipmentController extends Controller
     {
         $this->pastikanSatuOrganisasi($request, $equipment);
 
+        $equipment->load(['customer', 'category']);
+        $this->sesiTerakhir->muat([$equipment], $request->user());
+
         return response()->json([
-            'data' => new EquipmentResource($equipment->load(['customer', 'category'])),
+            'data' => new EquipmentResource($equipment),
         ]);
     }
 
@@ -293,8 +306,11 @@ class EquipmentController extends Controller
             );
         }
 
+        $segar = $equipment->fresh()->load(['customer', 'category']);
+        $this->sesiTerakhir->muat([$segar], $request->user());
+
         return response()->json([
-            'data' => new EquipmentResource($equipment->fresh()->load(['customer', 'category'])),
+            'data' => new EquipmentResource($segar),
         ]);
     }
 

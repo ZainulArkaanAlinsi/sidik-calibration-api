@@ -458,6 +458,14 @@ Query params yang mobile pakai: `?search=kaliper&category=panjang&status=overdue
 >
 > **✅ 18 Jul — audit ulang, `nama_alat_kemampuan` sekarang beneran dipakai mobile.** Sebelumnya field ini kekirim di response tapi nggak pernah diisi lewat form Alat — efeknya SEMUA alat yang didaftarin lewat app selama ini kemungkinan kalibrasinya jatuh ke jalur ketidakpastian generik (standar+resolusi), bukan CMC resmi hasil akreditasi (`GumCalculator::kemampuanUntukTitik()` di backend cocokin lewat field ini + rentang, bukan cuma `equipment_category_id`). Form Alat sekarang punya dropdown "Jenis Alat (Kemampuan Kalibrasi)" yang isinya dari `GET /api/categories/{kode}` → `kemampuan[].nama_alat`, opsional tapi direkomendasiin diisi. Field `catatan` juga sekarang kepakai (ada di `EquipmentRequest` tapi belum pernah dikirim mobile).
 
+> **27 Nov 2026 — `sesi_terakhir` (ADITIF, status per alat).** Tiap alat di `GET /api/equipments` dan `GET|PUT /api/equipments/{id}`
+> (juga `/api/studio/equipments`) membawa `"sesi_terakhir": null | {"id", "status", "tahap", "tahap_label", "diperbarui_pada"}`.
+> `status` = status mentah sesi kalibrasi terakhir alat itu, `tahap` = salah satu dari delapan tahap `TahapPaket` (diturunkan,
+> bukan tahap baru). Kuncinya selalu ada; `null` = belum ada sesi. Terakhir = id sesi terbesar; sesi yang diarsipkan dan sesi
+> lab lain tidak dihitung; **teknisi hanya melihat sesi miliknya** (aturan `GET /calibrations`). Alat yang bersarang di respons
+> lain (`alat` di baris order) TIDAK memuat kunci ini. Tanpa realtime: HP melihat perubahan setelah menyegarkan. Rincian:
+> `docs/perintah-frontend-status-alat.md`. Dijaga `StatusPerAlatTest`.
+
 ### `GET /api/equipments/{id}` — 1 objek, bentuk sama.
 ### `POST /api/equipments` · `PUT /api/equipments/{id}` · `DELETE /api/equipments/{id}`
 Body sama seperti field di atas (tanpa `id`). Teknisi & admin boleh; **viewer harus ditolak `403`.**
